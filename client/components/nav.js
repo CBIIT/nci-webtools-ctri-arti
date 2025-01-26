@@ -6,7 +6,14 @@ export default function Nav({ routes }) {
     <ul>
       ${routes.map(
         (route) => html`<li>
-          <${A} href=${route.path} end=${!route.path || route.path === "/"} activeClass="active"> ${route.title} </>
+          <${A} 
+            href=${route.path} 
+            end=${!route.path || route.path === "/"} 
+            activeClass="active"
+            class="nav-link"
+          > 
+            ${route.title} 
+          </>
         </li>`
       )}
     </ul>
