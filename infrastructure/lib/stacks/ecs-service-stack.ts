@@ -20,14 +20,10 @@ export interface EcsServiceStackProps extends StackProps {
   vpc: string;
   subnets: string[];
 
-  // domain
   domainName: string;
-  // domainZone: string;
-  // certificate: string;
 
   // default resources
   desiredCount: number;
-
   priority: number;
 
   // task definition
@@ -74,7 +70,6 @@ export class EcsServiceStack extends Stack {
   constructor(scope: Construct, id: string, props: EcsServiceStackProps) {
     super(scope, id, props);
     const { desiredCount } = props;
-    console.log(props);
 
     const vpc = ec2.Vpc.fromLookup(this, "ecs-service-vpc", { vpcName: props.vpc });
     // const subnets = props.subnets.map((subnet) => ec2.Subnet.fromSubnetId(this, `ecs-service-subnet-${subnet}`, subnet));
@@ -87,29 +82,6 @@ export class EcsServiceStack extends Stack {
         logging: ecs.ExecuteCommandLogging.NONE,
       },
     });
-
-    // cluster,
-    // // domainName: props.domainName,
-    // // domainZone: route53.HostedZone.fromLookup(this, "ecs-service-hosted-zone", { domainName: props.domainZone }),
-    // // publicLoadBalancer: false,
-    // enableExecuteCommand: true,
-    // // protocol: elbv2.ApplicationProtocol.HTTPS,
-    // // loadBalancer: elbv2.ApplicationLoadBalancer.fromLookup(this, "ecs-service-load-balancer", { loadBalancerTags: { Name: tier } }),
-    // loadBalancer: elbv2.ApplicationLoadBalancer.fromLookup(this, "ecs-service-load-balancer", { loadBalancerTags: { Name: tier } }),
-    // // targetProtocol: elbv2.ApplicationProtocol.HTTPS,
-    // // listenerPort: 443,
-    // // certificate: cm.Certificate.fromCertificateArn(this, "ecs-service-certificate", props.certificate),
-    // // loadBalancerName: prefix,
-    // // openListener: true,
-    // // openListener: !Boolean(props.allowedIngress),
-    // serviceName: id,
-    // // redirectHTTP: true,
-    // desiredCount: props.desiredCount,
-    // recordType: ApplicationLoadBalancedServiceRecordType.NONE,
-    // // taskDefinition,
-    // taskImageOptions: {
-    //   image: ecs.ContainerImage.fromRegistry("amazon/amazon-ecs-sample"),
-    // },
 
     const executionRole = new iam.Role(this, "ecs-task-execution-role", {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
@@ -183,15 +155,6 @@ export class EcsServiceStack extends Stack {
       }
     }
 
-    // // Add Apache container
-    // const container = taskDefinition.addContainer("ecs-container-0", {
-    //   image: ecs.ContainerImage.fromRegistry("httpd"),
-    //   portMappings: [{ containerPort: 80 }],
-    //   logging: ecs.LogDrivers.awsLogs({
-    //     streamPrefix: "apache-service",
-    //   }),
-    // });
-
     const service = new ecs.FargateService(this, "ecs-service", {
       cluster,
       desiredCount,
@@ -237,41 +200,6 @@ export class EcsServiceStack extends Stack {
     scaling.scaleOnMemoryUtilization("memory-scaling", {
       targetUtilizationPercent: props.targetCapacityPercent,
     });
-
-
-    // const loadBalancer = new elbv2.ApplicationLoadBalancer(this, "ecs-service-load-balancer", {
-    //   vpc,
-    //   vpcSubnets: { subnetFilters: [ec2.SubnetFilter.onePerAz()] },
-    //   internetFacing: false,
-    //   loadBalancerName: prefix,
-    //   idleTimeout: Duration.seconds(60),
-    // });
-
-    // console.log({ loadBalancerTags: { Name: tier }})
-    // const service = new ApplicationLoadBalancedFargateService(this, "ecs-service", {
-    //   cluster,
-    //   // domainName: props.domainName,
-    //   // domainZone: route53.HostedZone.fromLookup(this, "ecs-service-hosted-zone", { domainName: props.domainZone }),
-    //   // publicLoadBalancer: false,
-    //   enableExecuteCommand: true,
-    //   // protocol: elbv2.ApplicationProtocol.HTTPS,
-    //   // loadBalancer: elbv2.ApplicationLoadBalancer.fromLookup(this, "ecs-service-load-balancer", { loadBalancerTags: { Name: tier } }),
-    //   loadBalancer: elbv2.ApplicationLoadBalancer.fromLookup(this, "ecs-service-load-balancer", { loadBalancerTags: { Name: tier } }),
-    //   // targetProtocol: elbv2.ApplicationProtocol.HTTPS,
-    //   // listenerPort: 443,
-    //   // certificate: cm.Certificate.fromCertificateArn(this, "ecs-service-certificate", props.certificate),
-    //   // loadBalancerName: prefix,
-    //   // openListener: true,
-    //   // openListener: !Boolean(props.allowedIngress),
-    //   serviceName: id,
-    //   // redirectHTTP: true,
-    //   desiredCount: props.desiredCount,
-    //   recordType: ApplicationLoadBalancedServiceRecordType.NONE,
-    //   // taskDefinition,
-    //   taskImageOptions: {
-    //     image: ecs.ContainerImage.fromRegistry("amazon/amazon-ecs-sample"),
-    //   },
-    // });
 
 
   }
