@@ -77,8 +77,7 @@ a:active, a:hover {
   overflow: hidden;
   z-index: -1; /* Ensures the video stays behind the content */
   position: relative;
-  /* background-color: rgb(13, 38, 72); */
-  background-color: black;
+  background-color: rgb(13, 38, 72);
 }
 
 
