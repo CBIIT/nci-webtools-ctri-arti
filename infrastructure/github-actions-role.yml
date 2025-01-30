@@ -1,0 +1,31 @@
+Parameters:
+  GitHubRepo:
+    Description: Name of GitHub repo (case sensitive)
+    Type: String
+  RoleName:
+    Description: Name of the IAM role to be created
+    Type: String
+    Default: power-user-ga-role
+
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref RoleName
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: "sts.amazonaws.com"
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubRepo}
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      
+Outputs:
+  Role:
+    Value: !GetAtt Role.Arn

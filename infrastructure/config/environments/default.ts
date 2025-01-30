@@ -14,24 +14,22 @@ const config: Config = {
     account,
     region,
   },
-  rds: {
-    vpc,
-    instanceIdentifier: `${prefix}-database`,
-    instanceType: "t4g.micro",
-    allocatedStorage: 20,
-  },
-  route53: {
-    domainName: process.env.DOMAIN_NAME || ""
-  },
+  // rds: {
+  //   vpc,
+  //   instanceIdentifier: `${prefix}-database`,
+  //   instanceType: "t4g.micro",
+  //   allocatedStorage: 20,
+  // },
   ecr: {
     repositoryName: prefix,
   },
   ecs: {
     vpc,
     subnets,
-    certificate: process.env.CERTIFICATE_ARN || "",
+    // certificate: process.env.CERTIFICATE_ARN || "",
     domainName: process.env.DOMAIN_NAME || "",
-    domainZone: process.env.DOMAIN_ZONE || "",
+    priority: 100,
+    // domainZone: process.env.DOMAIN_ZONE || "",
     desiredCount: 1,
     minCapacity: 1,
     maxCapacity: 4,
@@ -41,7 +39,7 @@ const config: Config = {
       cpu: 512,
       containers: [
         {
-          image: process.env.CLIENT_IMAGE || `${account}.dkr.ecr.us-east-1.amazonaws.com/${prefix}:client-latest`,
+          image: process.env.CLIENT_IMAGE || `${account}.dkr.ecr.${region}.amazonaws.com/${prefix}:client-latest`,
           name: "client",
           portMappings: [
             {
@@ -54,15 +52,13 @@ const config: Config = {
           }
         },
         {
-          image: process.env.SERVER_IMAGE || "httpd" || `${account}.dkr.ecr.us-east-1.amazonaws.com/${prefix}:server-latest`,
+          image: process.env.SERVER_IMAGE || "httpd" || `${account}.dkr.ecr.${region}.amazonaws.com/${prefix}:server-latest`,
           name: "backend",
           environment: {
             PORT: "8080"
           }
         },
       ],
-
-
       volumes: [
         
       ]

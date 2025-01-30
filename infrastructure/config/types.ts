@@ -9,10 +9,10 @@ export interface Config {
     account: string;
     region: string;
   },
-  route53: Route53HostedZoneStackProps,
+  // route53: Route53HostedZoneStackProps,
   ecr: EcrRepositoryStackProps;
   ecs: EcsServiceStackProps;
   // efs: EfsFilesystemStackProps;
-  rds: RdsInstanceStackProps;
+  // rds: RdsInstanceStackProps;
   tags: Record<string, string>;
 }

@@ -1,0 +1,116 @@
+﻿Parameters:
+  Name:
+    Type: String
+    Description: The name of the load balancer. This name must be unique per region per account, can have a maximum of 32 characters, must contain only alphanumeric characters or hyphens, must not begin or end with a hyphen, and must not begin with "internal-". Warning - changing this replaces the load balancer.
+
+  IpAddressType:
+    Type: String
+    Description: The type of IP addresses used by the subnets for your load balancer.
+    Default: ipv4
+    AllowedValues:
+      - ipv4
+      - dualstack
+      - dualstack-without-public-ipv4
+
+  Scheme:
+    Type: String
+    Description: The nodes of an Internet-facing load balancer have public IP addresses. The nodes of an internal load balancer have only private IP addresses. Warning - changing this replaces the load balancer.
+    Default: internet-facing
+    AllowedValues:
+      - internet-facing
+      - internal
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The ID of the VPC where the load balancer and security group will be created.
+
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: The IDs of the subnets for the load balancer. You must specify subnets from at least two Availability Zones.
+
+  CertificateArn:
+    Type: String
+    Description: The ARN of the SSL/TLS certificate for the HTTPS listener.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Network Configuration
+        Parameters:
+          - VpcId
+          - Subnets
+      - Label:
+          default: Load Balancer Configuration
+        Parameters:
+          - Name
+          - IpAddressType
+          - Scheme
+          - CertificateArn
+
+Resources:
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group allowing all ingress traffic
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          FromPort: -1
+          ToPort: -1
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "-1"
+          FromPort: -1
+          ToPort: -1
+          CidrIpv6: "::/0"
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Ref Name
+      IpAddressType: !Ref IpAddressType
+      SecurityGroups:
+        - !Ref LoadBalancerSecurityGroup
+      Subnets: !Ref Subnets
+      Scheme: !Ref Scheme
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: 900
+      Tags:
+        - Key: Name
+          Value: !Ref Name
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: "443"
+            StatusCode: HTTP_301
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Ref Name
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      

@@ -7,7 +7,7 @@ if (!process.env.ENVIRONMENT) {
 }
 const configModule = require(`./environments/${process.env.ENVIRONMENT}`);
 const config: Config = configModule.default;
-const { prefix } = configModule;
+const { prefix, tier } = configModule;
 
-export { prefix };
+export { prefix, tier };
 export default config;
