@@ -1,20 +1,19 @@
 #!/bin/bash
 set -ex
 
+export PREFIX=ctri-research-optimizer-$TIER
+export ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+export CLIENT_IMAGE=$ECR_REGISTRY/$PREFIX:client-$GITHUB_SHA
+export SERVER_IMAGE=$ECR_REGISTRY/$PREFIX:server-$GITHUB_SHA
+
+export CLIENT_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:client-latest
+export SERVER_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:server-latest
+
 pushd infrastructure
 npm install
-cdk deploy ctri-idp-$TIER-route53-hosted-zone --require-approval never # todo: remove this line
-cdk deploy ctri-idp-$TIER-ecr-repository --require-approval never
+cdk deploy $PREFIX-ecr-repository --require-approval never
 popd
-
-export ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com
-export ECR_REPOSITORY=ctri-idp-$TIER
-
-export CLIENT_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:client-$GITHUB_SHA
-export SERVER_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:server-$GITHUB_SHA
-
-export CLIENT_IMAGE_LATEST=$ECR_REGISTRY/$ECR_REPOSITORY:client-latest
-export SERVER_IMAGE_LATEST=$ECR_REGISTRY/$ECR_REPOSITORY:server-latest
 
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
@@ -27,5 +26,5 @@ docker push $SERVER_IMAGE
 docker push $SERVER_IMAGE_LATEST
 
 pushd infrastructure
-cdk deploy ctri-idp-$TIER-ecs-service --require-approval never
+cdk deploy $PREFIX-ecs-service --require-approval never
 popd
