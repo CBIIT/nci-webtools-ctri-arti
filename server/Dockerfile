@@ -17,6 +17,16 @@ RUN npm install
 
 COPY server /server
 
+COPY client /client
+
 RUN touch /server/.env
+
+ENV PORT=80
+
+ENV NODE_ENV=production
+
+ENV CLIENT_FOLDER=/client
+
+EXPOSE 80
 
 CMD ["npm", "start"]
