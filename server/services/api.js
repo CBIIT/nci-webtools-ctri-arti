@@ -1,7 +1,8 @@
+import { Transform } from 'stream';
 import { Router, json } from "express";
 import cors from "cors";
 import multer from "multer";
-import { runModel, processDocuments, processDocument } from "./inference.js";
+import { runModel, processDocuments, streamModel } from "./inference.js";
 
 const api = Router();
 const fieldSize = process.env.UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb 
@@ -29,6 +30,28 @@ api.get("/model/run", async (req, res) => {
 api.post("/model/run", async (req, res) => {
   const { model, messages } = req.body;
   res.json(await runModel(model, messages));
+});
+
+api.get("/model/stream", async (req, res) => {
+  const { model, messages } = req.query;
+  const results = await streamModel(model, messages);
+  for await (const message of results.stream) {
+    const chunk = message?.contentBlockDelta?.delta?.text;
+    if (chunk?.length > 0)
+      res.write(chunk);
+  }
+  res.end();
+});
+
+api.post("/model/stream", async (req, res) => {
+  const { model, messages } = req.body;
+  const results = await streamModel(model, messages);
+  for await (const message of results.stream) {
+    const chunk = message?.contentBlockDelta?.delta?.text;
+    if (chunk?.length > 0)
+      res.write(chunk);
+  }
+  res.end();
 });
 
 export default api;
