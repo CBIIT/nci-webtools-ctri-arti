@@ -2,42 +2,25 @@ export const defaultModel = "anthropic.claude-3-haiku-20240307-v1:0";
 
 export const models = [
   {
-    group: "AI21 Labs",
-    options: [
-      {
-        label: "Jamba 1.5 Large",
-        value: "ai21.jamba-1-5-large-v1:0",
-        inputCost1kTokens: 0.002,
-        outputCost1kTokens: 0.008,
-      },
-      {
-        label: "Jamba 1.5 Mini",
-        value: "ai21.jamba-1-5-mini-v1:0",
-        inputCost1kTokens: 0.0002,
-        outputCost1kTokens: 0.0004,
-      },
-    ],
-  },
-  {
     group: "Amazon",
     options: [
       {
-        label: "Titan Text Premier",
-        value: "amazon.titan-text-premier-v1:0",
-        inputCost1kTokens: 0.0005,
-        outputCost1kTokens: 0.0015,
+        label: "Nova Pro",
+        value: "amazon.nova-pro-v1:0",
+        inputCost1kTokens: 0.0008,
+        outputCost1kTokens: 0.0032,
       },
       {
-        label: "Titan Text G1 - Express",
-        value: "amazon.titan-text-express-v1",
-        inputCost1kTokens: 0.0002,
-        outputCost1kTokens: 0.0006,
+        label: "Nova Lite",
+        value: "amazon.nova-lite-v1:0",
+        inputCost1kTokens: 0.00006,
+        outputCost1kTokens: 0.00024,
       },
       {
-        label: "Titan Text G1 - Lite",
-        value: "amazon.titan-text-lite-v1",
-        inputCost1kTokens: 0.00015,
-        outputCost1kTokens: 0.0002,
+        label: "Nova Micro",
+        value: "amazon.nova-micro-v1:0",
+        inputCost1kTokens: 0.000035,
+        outputCost1kTokens: 0.00014,
       },
     ],
   },
@@ -51,73 +34,28 @@ export const models = [
         outputCost1kTokens: 0.015,
       },
       {
+        label: "Claude 3.5 Sonnet (v2)",
+        value: "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+        inputCost1kTokens: 0.003,
+        outputCost1kTokens: 0.015,
+      },
+      {
+        label: "Claude 3.5 Haiku",
+        value: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+        inputCost1kTokens: 0.0008,
+        outputCost1kTokens: 0.004,
+      },
+      {
         label: "Claude 3 Opus",
         value: "anthropic.claude-3-opus-20240229-v1:0",
         inputCost1kTokens: 0.015,
         outputCost1kTokens: 0.075,
       },
       {
-        label: "Claude 3 Sonnet",
-        value: "anthropic.claude-3-sonnet-20240229-v1:0",
-        inputCost1kTokens: 0.003,
-        outputCost1kTokens: 0.015,
-      },
-      {
         label: "Claude 3 Haiku",
         value: "anthropic.claude-3-haiku-20240307-v1:0",
         inputCost1kTokens: 0.00025,
         outputCost1kTokens: 0.00125,
-      },
-    ],
-  },
-  {
-    group: "Cohere",
-    options: [
-      { label: "Command R+", value: "cohere.command-r-plus-v1:0", inputCost1kTokens: 0.003, outputCost1kTokens: 0.015 },
-      { label: "Command R", value: "cohere.command-r-v1:0", inputCost1kTokens: 0.0005, outputCost1kTokens: 0.0015 },
-    ],
-  },
-  {
-    group: "Meta",
-    options: [
-      // { label: "Llama 3.2 90B Instruct", value: "meta.llama3-2-90b-instruct-v1:0" },
-      // { label: "Llama 3.2 11B Instruct", value: "meta.llama3-2-11b-instruct-v1:0" },
-      // { label: "Llama 3.2 3B Instruct", value: "meta.llama3-2-3b-instruct-v1:0" },
-      // { label: "Llama 3.2 1B Instruct", value: "meta.llama3-2-1b-instruct-v1:0" },
-      {
-        label: "Llama 3 70B Instruct",
-        value: "meta.llama3-70b-instruct-v1:0",
-        inputCost1kTokens: 0.00265,
-        outputCost1kTokens: 0.0035,
-      },
-      {
-        label: "Llama 3 8B Instruct",
-        value: "meta.llama3-8b-instruct-v1:0",
-        inputCost1kTokens: 0.0003,
-        outputCost1kTokens: 0.0006,
-      },
-    ],
-  },
-  {
-    group: "Mistral AI",
-    options: [
-      {
-        label: "Mistral Large 2 (24.02)",
-        value: "mistral.mistral-large-2402-v1:0",
-        inputCost1kTokens: 0.004,
-        outputCost1kTokens: 0.012,
-      },
-      {
-        label: "Mistral Small",
-        value: "mistral.mistral-small-2402-v1:0",
-        inputCost1kTokens: 0.001,
-        outputCost1kTokens: 0.003,
-      },
-      {
-        label: "Mixtral 8X7B Instruct",
-        value: "mistral.mixtral-8x7b-instruct-v0:1",
-        inputCost1kTokens: 0.00045,
-        outputCost1kTokens: 0.0007,
       },
     ],
   },
@@ -131,10 +69,12 @@ export function getModelLabel(value) {
 }
 
 export function getInferenceCost(model, inputTokens, outputTokens) {
-  const { inputCost1kTokens, outputCost1kTokens } = models
+  const results = models
     .map((o) => o.options)
     .flat()
     .find((o) => o.value === model);
+  if (!results) return 0;
+  const { inputCost1kTokens, outputCost1kTokens } = results;
   return inputTokens * inputCost1kTokens + outputTokens * outputCost1kTokens;
 }
 
