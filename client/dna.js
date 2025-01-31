@@ -1,246 +1,289 @@
 import * as THREE from "three";
-import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 
-(function () {
-  
-        // Generate random DNA sequence
-        function generateRandomSequence(length) {
-          const bases = ['A', 'T', 'C', 'G'];
-          let sequence = '';
-          for (let i = 0; i < length; i++) {
-              sequence += bases[Math.floor(Math.random() * bases.length)];
-          }
-          return sequence;
-      }
+const CONFIG = {
+  dna: {
+    sequenceLength: 20,
+    turns: 2,
+    height: 48,
+    radius: 3,
+    backboneThickness: 0.3,
+    baseRadius: 0.1,
+    baseGap: 0.15,
+  },
+  colors: {
+    nucleotides: {
+      A: { color: 0xff6b6b, pair: "T", pairColor: 0x4ca5ff },
+      T: { color: 0x4ca5ff, pair: "A", pairColor: 0xff6b6b },
+      C: { color: 0x7bed9f, pair: "G", pairColor: 0xffa502 },
+      G: { color: 0xffa502, pair: "C", pairColor: 0x7bed9f },
+    },
+    backbones: {
+      primary: {
+        main: 0x2e8bc0,
+        emissive: 0xb1d4e0,
+      },
+      secondary: {
+        main: 0x145da0,
+        emissive: 0x5885af,
+      },
+    },
+    pointLights: [
+      { color: 0x145da0, intensity: 3, range: 40 }, // Midnight Blue
+      { color: 0x2e8bc0, intensity: 3, range: 40 }, // Blue
+      { color: 0xb1d4e0, intensity: 3, range: 40 }, // Baby Blue
+      { color: 0x5885af, intensity: 3, range: 40 }, // Blue Gray
+    ],
+  },
+  animation: {
+    damping: 0.95,
+    rotationSpeed: 0.05,
+    movementSpeed: {
+      vertical: 0.4,
+      horizontal: 0.3,
+    },
+  },
+  camera: {
+    fov: 65,
+    near: 0.1,
+    far: 1000,
+    position: { x: 0, y: 0, z: 32 },
+  },
+  scene: {
+    fog: {
+      color: 0x000814,
+      density: 0.012,
+    },
+    ambient: {
+      color: 0x101820,
+      intensity: 0.3,
+    },
+  },
+};
 
-      // Generate a random sequence of 20 bases
-      const dnaSequence = generateRandomSequence(20);
-      console.log(`DNA Sequence: ${dnaSequence}`);
+class DNAVisualizer {
+  constructor(canvasSelector, config = CONFIG) {
+    this.config = config;
+    this.canvas = document.querySelector(canvasSelector);
+    this.setup();
+    this.createScene();
+    this.createLights();
+    this.createDNA();
+    this.setupEventListeners();
+    this.animate();
+  }
 
-      const canvas = document.getElementById("dnaCanvas");
+  setup() {
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: this.canvas,
+      antialias: true,
+      alpha: true,
+    });
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-      // Enhanced renderer settings
-      const renderer = new THREE.WebGLRenderer({
-          canvas: canvas,
-          antialias: true,
-          alpha: true,
-      });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    const { fov, near, far, position } = this.config.camera;
+    this.camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, near, far);
+    this.camera.position.set(position.x, position.y, position.z);
 
-      // Scene setup
-      const scene = new THREE.Scene();
-      // scene.background = new THREE.Color(0x0c2d48); // Dark Blue
-      scene.fog = new THREE.FogExp2(0x000814, 0.012);
+    this.targetRotation = { x: 0, y: 0 };
+    this.currentRotation = { x: 0, y: 0 };
+    this.rotationVelocity = { x: 0, y: 0 };
+  }
 
-      // Camera settings
-      const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 0, 32);
+  createScene() {
+    this.scene = new THREE.Scene();
+    const { fog, ambient } = this.config.scene;
+    this.scene.fog = new THREE.FogExp2(fog.color, fog.density);
+    const ambientLight = new THREE.AmbientLight(ambient.color, ambient.intensity);
+    this.scene.add(ambientLight);
+    return this.scene;
+  }
 
-      // Lighting setup
-      const ambientLight = new THREE.AmbientLight(0x101820, 0.3);
-      scene.add(ambientLight);
+  createLights() {
+    this.pointLights = this.config.colors.pointLights.map((light) => {
+      const pointLight = new THREE.PointLight(light.color, light.intensity, light.range);
+      this.scene.add(pointLight);
+      return pointLight;
+    });
 
-      // Main spotlight
-      const mainSpot = new THREE.SpotLight(0xffffff, 2);
-      mainSpot.position.set(15, 15, 15);
-      mainSpot.angle = Math.PI / 4;
-      mainSpot.penumbra = 0.3;
-      mainSpot.decay = 1.5;
-      mainSpot.distance = 100;
-      mainSpot.castShadow = true;
-      scene.add(mainSpot);
+    // Main spotlight
+    const mainSpot = new THREE.SpotLight(0xffffff, 2);
+    mainSpot.position.set(15, 15, 15);
+    mainSpot.angle = Math.PI / 4;
+    mainSpot.penumbra = 0.3;
+    mainSpot.decay = 1.5;
+    mainSpot.distance = 100;
+    mainSpot.castShadow = true;
+    this.scene.add(mainSpot);
+  }
 
-      // Dynamic colored point lights
-      const pointLights = [
-          new THREE.PointLight(0x145da0, 3, 40), // Midnight Blue
-          new THREE.PointLight(0x2e8bc0, 3, 40), // Blue
-          new THREE.PointLight(0xb1d4e0, 3, 40), // Baby Blue
-          new THREE.PointLight(0x5885af, 3, 40), // Blue Gray
-      ];
+  generateRandomSequence(length) {
+    const bases = Object.keys(this.config.colors.nucleotides);
+    return Array.from({ length }, () => bases[Math.floor(Math.random() * bases.length)]).join("");
+  }
 
-      pointLights[0].position.set(-5, 5, 5);
-      pointLights[1].position.set(5, -5, -5);
-      pointLights[2].position.set(0, 0, 10);
-      pointLights[3].position.set(-3, 3, -5);
-      pointLights.forEach(light => scene.add(light));
+  createBackboneMaterial(color, emissiveColor) {
+    return new THREE.MeshPhysicalMaterial({
+      color,
+      metalness: 0.4,
+      roughness: 0.15,
+      transmission: 0.25,
+      thickness: 0.5,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.1,
+      emissive: emissiveColor,
+      emissiveIntensity: 0.8,
+    });
+  }
 
-      // DNA sequence color mapping
-      const nucleotideColors = {
-          'A': { color: 0xff6b6b, pair: 'T', pairColor: 0x4ca5ff },
-          'T': { color: 0x4ca5ff, pair: 'A', pairColor: 0xff6b6b },
-          'C': { color: 0x7bed9f, pair: 'G', pairColor: 0xffa502 },
-          'G': { color: 0xffa502, pair: 'C', pairColor: 0x7bed9f }
+  helixFunction(t, phase = 0) {
+    const { turns, height, radius } = this.config.dna;
+    const angle = 2 * Math.PI * turns * t + phase;
+    const y = -height / 2 + height * t;
+    const x = radius * Math.cos(angle);
+    const z = radius * Math.sin(angle);
+    return new THREE.Vector3(x, y, z);
+  }
+
+  createBackbone(phase, color, emissiveColor) {
+    const numPoints = 400;
+    const curve = new THREE.Curve();
+    curve.getPoint = (t) => this.helixFunction(t, phase);
+
+    const tubeGeometry = new THREE.TubeGeometry(curve, numPoints, this.config.dna.backboneThickness, 16, false);
+    return new THREE.Mesh(tubeGeometry, this.createBackboneMaterial(color, emissiveColor));
+  }
+
+  createBasePairs(sequence) {
+    const group = new THREE.Group();
+    const numPairs = sequence.length;
+    const { baseRadius, baseGap } = this.config.dna;
+    const nucleotideColors = this.config.colors.nucleotides;
+
+    for (let i = 0; i < numPairs; i++) {
+      const t = i / numPairs;
+      const base = sequence[i];
+      const baseInfo = nucleotideColors[base];
+
+      const p1 = this.helixFunction(t, 0);
+      const p2 = this.helixFunction(t, Math.PI);
+
+      const center = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+      const totalDistance = p1.distanceTo(p2);
+      const halfLength = (totalDistance - baseGap) / 2;
+
+      const createBasePair = (position, color, emissiveColor) => {
+        const geometry = new THREE.CylinderGeometry(baseRadius, baseRadius, halfLength, 16);
+        geometry.translate(0, halfLength / 2, 0);
+        const material = new THREE.MeshPhysicalMaterial({
+          color,
+          emissive: emissiveColor,
+          emissiveIntensity: 0.5,
+          metalness: 0.3,
+          roughness: 0.2,
+          transmission: 0.15,
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.copy(position);
+        return mesh;
       };
 
-      // Materials
-      const createBackboneMaterial = (color, emissiveColor) => {
-          return new THREE.MeshPhysicalMaterial({
-              color: color,
-              metalness: 0.4,
-              roughness: 0.15,
-              transmission: 0.25,
-              thickness: 0.5,
-              clearcoat: 0.8,
-              clearcoatRoughness: 0.1,
-              emissive: emissiveColor,
-              emissiveIntensity: 0.8,
-          });
+      const leftPair = createBasePair(p1, baseInfo.color, baseInfo.color);
+      const rightPair = createBasePair(p2, baseInfo.pairColor, baseInfo.pairColor);
+
+      // Calculate rotations
+      const alignToCenter = (mesh, start, end) => {
+        const direction = new THREE.Vector3().subVectors(end, start).normalize();
+        const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+        mesh.setRotationFromQuaternion(quaternion);
       };
 
-      // Helix geometry functions
-      function helixFunction(t, turns = 3, height = 20, radius = 2, phase = 0) {
-          const angle = 2 * Math.PI * turns * t + phase;
-          const y = -height / 2 + height * t;
-          const x = radius * Math.cos(angle);
-          const z = radius * Math.sin(angle);
-          return new THREE.Vector3(x, y, z);
-      }
+      alignToCenter(leftPair, p1, center);
+      alignToCenter(rightPair, p2, center);
 
-      function createBackbone(turns, height, radius, phase, color, emissiveColor) {
-          const numPoints = 400;
-          const curve = new THREE.Curve();
-          curve.getPoint = (t) => helixFunction(t, turns, height, radius, phase);
-          
-          const tubeGeometry = new THREE.TubeGeometry(curve, numPoints, 0.3, 16, false);
-          const tubeMaterial = createBackboneMaterial(color, emissiveColor);
-          return new THREE.Mesh(tubeGeometry, tubeMaterial);
-      }
+      group.add(leftPair);
+      group.add(rightPair);
+    }
+    return group;
+  }
 
-      // Create DNA structure
-      const turns = 2;
-      const height = 48;
-      const radius = 3;
+  createDNA() {
+    const { backbones } = this.config.colors;
+    const dnaSequence = this.generateRandomSequence(this.config.dna.sequenceLength);
+    console.log(`DNA Sequence: ${dnaSequence}`);
 
-      const backbone1 = createBackbone(turns, height, radius, 0, 0x2e8bc0, 0xb1d4e0); // Blue to Baby Blue // Green
-      const backbone2 = createBackbone(turns, height, radius, Math.PI, 0x145da0, 0x5885af); // Midnight Blue to Blue Gray // Magenta
+    const backbone1 = this.createBackbone(0, backbones.primary.main, backbones.primary.emissive);
+    const backbone2 = this.createBackbone(Math.PI, backbones.secondary.main, backbones.secondary.emissive);
+    const basePairs = this.createBasePairs(dnaSequence);
 
-      scene.add(backbone1);
-      scene.add(backbone2);
+    this.scene.add(backbone1);
+    this.scene.add(backbone2);
+    this.scene.add(basePairs);
+  }
 
-      // Create base pairs based on sequence
-      function createBasePairs() {
-          const group = new THREE.Group();
-          const numPairs = dnaSequence.length;
-          const baseRadius = 0.1;
-          const gap = 0.15;
+  setupEventListeners() {
+    this.eventListeners = {
+      mousemove: (event) => {
+        this.targetRotation.x = (event.clientY / window.innerHeight - 0.5) * Math.PI * 0.5;
+        this.targetRotation.y = (event.clientX / window.innerWidth - 0.5) * Math.PI * 2;
+      },
+      resize: () => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        this.renderer.setSize(width, height);
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+      },
+    };
 
-          for (let i = 0; i < numPairs; i++) {
-              const t = i / numPairs;
-              const base = dnaSequence[i];
-              const baseInfo = nucleotideColors[base];
+    const cleanupListeners = Object.entries(this.eventListeners).map(([eventName, listener]) => {
+      window.addEventListener(eventName, listener);
+      return () => window.removeEventListener(eventName, listener);
+    });
 
-              const p1 = helixFunction(t, turns, height, radius, 0);
-              const p2 = helixFunction(t, turns, height, radius, Math.PI);
-              
-              const center = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
-              const totalDistance = p1.distanceTo(p2);
-              const halfLength = (totalDistance - gap) / 2;
+    return () => cleanupListeners.forEach(c => c());
+  }
 
-              // Create left base pair
-              const leftGeometry = new THREE.CylinderGeometry(baseRadius, baseRadius, halfLength, 16);
-              leftGeometry.translate(0, halfLength / 2, 0);
-              const leftMaterial = new THREE.MeshPhysicalMaterial({
-                  color: baseInfo.color,
-                  metalness: 0.3,
-                  roughness: 0.2,
-                  transmission: 0.15,
-                  emissive: baseInfo.color,
-                  emissiveIntensity: 0.5,
-              });
-              const leftPair = new THREE.Mesh(leftGeometry, leftMaterial);
-              leftPair.position.copy(p1);
+  updateRotation() {
+    const { rotationSpeed, damping } = this.config.animation;
+    this.rotationVelocity.x = (this.targetRotation.x - this.currentRotation.x) * rotationSpeed;
+    this.rotationVelocity.y = (this.targetRotation.y - this.currentRotation.y) * rotationSpeed;
 
-              // Create right base pair
-              const rightGeometry = new THREE.CylinderGeometry(baseRadius, baseRadius, halfLength, 16);
-              rightGeometry.translate(0, halfLength / 2, 0);
-              const rightMaterial = new THREE.MeshPhysicalMaterial({
-                  color: baseInfo.pairColor,
-                  metalness: 0.3,
-                  roughness: 0.2,
-                  transmission: 0.15,
-                  emissive: baseInfo.pairColor,
-                  emissiveIntensity: 0.5,
-              });
-              const rightPair = new THREE.Mesh(rightGeometry, rightMaterial);
-              rightPair.position.copy(p2);
+    this.currentRotation.x += this.rotationVelocity.x;
+    this.currentRotation.y += this.rotationVelocity.y;
 
-              // Calculate rotations
-              const toCenter = new THREE.Vector3().subVectors(center, p1).normalize();
-              const quaternion = new THREE.Quaternion().setFromUnitVectors(
-                  new THREE.Vector3(0, 1, 0),
-                  toCenter
-              );
-              leftPair.setRotationFromQuaternion(quaternion);
-              
-              const toCenterRight = new THREE.Vector3().subVectors(center, p2).normalize();
-              const quaternionRight = new THREE.Quaternion().setFromUnitVectors(
-                  new THREE.Vector3(0, 1, 0),
-                  toCenterRight
-              );
-              rightPair.setRotationFromQuaternion(quaternionRight);
+    this.rotationVelocity.x *= damping;
+    this.rotationVelocity.y *= damping;
 
-              group.add(leftPair);
-              group.add(rightPair);
-          }
-          return group;
-      }
+    this.scene.rotation.x = this.currentRotation.x;
+    this.scene.rotation.y = this.currentRotation.y;
+  }
 
-      const basePairs = createBasePairs();
-      scene.add(basePairs);
+  updateLights(time) {
+    this.pointLights.forEach((light, index) => {
+      const offset = index * ((Math.PI * 2) / this.pointLights.length);
+      light.intensity = 2 + Math.sin(time * 2 + offset) * 1;
+      light.position.x = Math.sin(time + offset) * 6;
+      light.position.z = Math.cos(time + offset) * 6;
+      light.position.y = Math.sin(time * 0.5 + offset) * 3;
+    });
+  }
 
-      // Smooth camera controls
-      const targetRotation = { x: 0, y: 0 };
-      const currentRotation = { x: 0, y: 0 };
-      const rotationVelocity = { x: 0, y: 0 };
-      const damping = 0.95;
+  animate() {
+    requestAnimationFrame(() => this.animate());
 
-      window.addEventListener('mousemove', (event) => {
-          targetRotation.x = (event.clientY / window.innerHeight - 0.5) * Math.PI * 0.5;
-          targetRotation.y = (event.clientX / window.innerWidth - 0.5) * Math.PI * 2;
-      });
+    const time = Date.now() * 0.001;
+    const { vertical, horizontal } = this.config.animation.movementSpeed;
 
-      window.addEventListener('resize', () => {
-          const width = window.innerWidth;
-          const height = window.innerHeight;
-          renderer.setSize(width, height);
-          camera.aspect = width / height;
-          camera.updateProjectionMatrix();
-      });
+    this.scene.position.y = Math.sin(time * vertical) * 0.6;
+    this.scene.position.x = Math.sin(time * horizontal) * 0.3;
 
-      function animate() {
-          requestAnimationFrame(animate);
+    this.updateRotation();
+    this.updateLights(time);
+    this.renderer.render(this.scene, this.camera);
+  }
+}
 
-          rotationVelocity.x = (targetRotation.x - currentRotation.x) * 0.05;
-          rotationVelocity.y = (targetRotation.y - currentRotation.y) * 0.05;
-
-          currentRotation.x += rotationVelocity.x;
-          currentRotation.y += rotationVelocity.y;
-
-          rotationVelocity.x *= damping;
-          rotationVelocity.y *= damping;
-
-          scene.rotation.x = currentRotation.x;
-          scene.rotation.y = currentRotation.y;
-
-          const time = Date.now() * 0.001;
-
-          scene.position.y = Math.sin(time * 0.4) * 0.6;
-          scene.position.x = Math.sin(time * 0.3) * 0.3;
-
-          // Animate point lights
-          pointLights.forEach((light, index) => {
-              const offset = index * (Math.PI * 2 / pointLights.length);
-              light.intensity = 2 + Math.sin(time * 2 + offset) * 1;
-              light.position.x = Math.sin(time + offset) * 6;
-              light.position.z = Math.cos(time + offset) * 6;
-              light.position.y = Math.sin(time * 0.5 + offset) * 3;
-          });
-
-          renderer.render(scene, camera);
-      }
-
-      animate();
-})();
+const visualizer = new DNAVisualizer(`canvas[data-component="dna-visualizer"]`);
