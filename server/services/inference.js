@@ -1,8 +1,24 @@
-import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime"; // ES Modules import
+import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { parseDocument } from "./parsers.js";
 
 // Default model ID
-export const DEFAULT_MODEL_ID = process.env.DEFAULT_MODEL_ID || "anthropic.claude-3-5-sonnet-20240620-v1:0"
+export const DEFAULT_MODEL_ID = process.env.DEFAULT_MODEL_ID || "anthropic.claude-3-5-sonnet-20240620-v1:0";
+
+export const DEFAULT_SYSTEM_PROMPT = `
+You are a methodical problem solver who approaches challenges systematically. Your process must:
+1. Explicitly state problems and cite relevant evidence
+2. Break complex issues into analyzable components
+3. Test assumptions through examples and counterexamples
+4. Document both successful and failed approaches
+5. Build logical connections between components
+6. Verify conclusions through rigorous testing
+7. Acknowledge and correct errors transparently
+
+Present your complete reasoning process, including uncertainties and revisions. Use clear, precise language that balances technical accuracy with accessibility.
+
+Format your response in two parts:
+- Place your analytical process in a <think> block
+- Place your final answer/solution in a <response> block`;
 
 /**
  * Run a model with the given messages.
@@ -16,12 +32,15 @@ export async function runModel(modelId = DEFAULT_MODEL_ID, messages = []) {
   }
 
   if (typeof messages === "string") {
-    messages = [{ role: "user", content: [{ text: messages }] }];
+    messages = [
+      { role: "system", content: [{ text: [DEFAULT_SYSTEM_PROMPT] }] },
+      { role: "user", content: [{ text: messages }] },
+    ];
   }
 
   const client = new BedrockRuntimeClient();
   const input = { modelId, messages };
-  
+
   const command = new ConverseCommand(input);
   const response = await client.send(command);
   return response;
