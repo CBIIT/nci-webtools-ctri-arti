@@ -1,4 +1,5 @@
 import { JSDOM } from "jsdom";
+import { parseDocument } from "./parsers.js";
 
 export async function search(keywords, maxResults = 10) {
   const results = [];
@@ -18,7 +19,7 @@ export async function search(keywords, maxResults = 10) {
     // Get results
     const elements = document.querySelectorAll("#links .web-result");
     const pageResults = [];
-    
+
     for (const el of elements) {
       if (results.length >= maxResults) break;
 
@@ -28,13 +29,13 @@ export async function search(keywords, maxResults = 10) {
 
       if (titleEl && linkEl) {
         const ddgUrl = new URL(linkEl.href, "https://duckduckgo.com");
-        const realUrl = ddgUrl.pathname === "/l/" ? 
-          new URLSearchParams(ddgUrl.search).get("uddg") : linkEl.href;
+        const realUrl = ddgUrl.pathname === "/l/" ? new URLSearchParams(ddgUrl.search).get("uddg") : linkEl.href;
 
         pageResults.push({
           title: titleEl?.textContent?.trim(),
           url: decodeURIComponent(realUrl),
-          snippet: snippetEl?.textContent?.trim()
+          snippet: snippetEl?.textContent?.trim(),
+          // headers: Object.fromEntries(response.headers),
         });
       }
     }
@@ -43,10 +44,10 @@ export async function search(keywords, maxResults = 10) {
     const processedResults = await Promise.all(
       pageResults.map(async (result) => ({
         ...result,
-        body: await extractTextFromUrl(result.url)
+        body: await extractTextFromUrl(result.url),
       }))
     );
-    
+
     results.push(...processedResults);
 
     // Get next page data
@@ -67,21 +68,33 @@ export async function search(keywords, maxResults = 10) {
 async function extractTextFromUrl(url, expandUrls = false) {
   try {
     const response = await fetch(url);
-    const html = await response.text();
-    const dom = new JSDOM(html);
-    const doc = dom.window.document;
+    const contentType = response.headers.get("content-type").split(";")[0].toLowerCase();
 
-    ["script", "style", "nav", "header", "footer", "noscript"].forEach((tag) => {
-      doc.querySelectorAll(tag).forEach((el) => el.remove());
-    });
+    // Get the response as ArrayBuffer to handle both text and binary
+    const buffer = await response.arrayBuffer();
 
-    if (expandUrls) {
-      doc.querySelectorAll("a").forEach((el) => {
-        el.textContent = `[${el.href}] ${el.textContent}`;
+    // Handle HTML pages
+    if (contentType.includes("text/html")) {
+      const html = new TextDecoder().decode(buffer);
+      const dom = new JSDOM(html);
+      const doc = dom.window.document;
+
+      // Remove unwanted elements
+      ["script", "style", "nav", "header", "footer", "noscript"].forEach((tag) => {
+        doc.querySelectorAll(tag).forEach((el) => el.remove());
       });
-    }
 
-    return doc.body.textContent.replace(/\s+/g, " ").trim();
+      // Expand URLs if requested
+      if (expandUrls) {
+        doc.querySelectorAll("a").forEach((el) => {
+          el.textContent = `[${el.href}] ${el.textContent}`;
+        });
+      }
+
+      return doc.body.textContent.replace(/\s+/g, " ").trim();
+    } else {
+      return parseDocument(buffer, contentType);
+    }
   } catch (error) {
     console.error(`Failed to extract text from ${url}:`, error);
     return "";
