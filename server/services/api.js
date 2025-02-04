@@ -3,6 +3,8 @@ import { Router, json } from "express";
 import cors from "cors";
 import multer from "multer";
 import { runModel, processDocuments, streamModel } from "./inference.js";
+import { proxyMiddleware } from './middleware.js';
+import { search } from './utils.js';
 
 const api = Router();
 const fieldSize = process.env.UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb 
@@ -11,8 +13,16 @@ const upload = multer({limits: { fieldSize }});
 api.use(cors());
 api.use(json({ limit: fieldSize }));
 
+
 api.get("/ping", (req, res) => {
   res.json(true);
+});
+
+api.all("/proxy", proxyMiddleware);
+
+api.get("/search", async (req, res) => {
+  const { q, limit } = req.query;
+  res.json(await search(q, limit)); 
 });
 
 api.post("/submit", upload.any(), async (req, res) => {
