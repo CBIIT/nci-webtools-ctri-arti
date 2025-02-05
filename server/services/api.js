@@ -3,7 +3,7 @@ import cors from "cors";
 import multer from "multer";
 import { runModel, processDocuments, streamModel } from "./inference.js";
 import { proxyMiddleware } from './middleware.js';
-import { search } from './utils.js';
+import { search, research } from './utils.js';
 
 const api = Router();
 const fieldSize = process.env.UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb 
@@ -21,7 +21,12 @@ api.all("/proxy", proxyMiddleware);
 
 api.get("/search", async (req, res) => {
   const { q, limit } = req.query;
-  res.json(await search(q, limit)); 
+  res.json(await search({keywords: q, maxResults: limit})); 
+});
+
+api.get("/research", async (req, res) => {
+  const { q, limit } = req.query;
+  res.json(await research({topic: q}));
 });
 
 api.post("/submit", upload.any(), async (req, res) => {
