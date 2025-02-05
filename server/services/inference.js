@@ -41,7 +41,7 @@ Share your thought process in <think> tags, your draft response in <draft> tags,
  * @param {{role: "user" | "assistant" | "system", content: string}[] | string} messages
  * @returns
  */
-export async function runModel(modelId = DEFAULT_MODEL_ID, messages = []) {
+export async function runModel(modelId = DEFAULT_MODEL_ID, messages = [], systemPrompt = DEFAULT_SYSTEM_PROMPT, toolConfig = undefined) {
   if (!messages || messages?.length === 0) {
     return null;
   }
@@ -53,9 +53,8 @@ export async function runModel(modelId = DEFAULT_MODEL_ID, messages = []) {
   }
 
   const client = new BedrockRuntimeClient();
-  const system = [{ text: DEFAULT_SYSTEM_PROMPT }];
-  const input = { modelId, messages, system };
-
+  const system = [{ text: systemPrompt }];
+  const input = { modelId, messages, system, toolConfig };
   const command = new ConverseCommand(input);
   const response = await client.send(command);
   return response;
