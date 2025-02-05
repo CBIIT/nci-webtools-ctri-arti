@@ -118,7 +118,7 @@ Note: Please use runJavascript for all mathematical operations, including basic 
     }
   } while (results.stopReason !== "end_turn");
 
-  return results;
+  return messages;
 }
 
 export async function search({ keywords, maxResults = 10 }) {
