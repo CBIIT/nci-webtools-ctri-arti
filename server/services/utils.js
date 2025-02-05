@@ -1,7 +1,127 @@
+import ivm from "isolated-vm";
 import { JSDOM } from "jsdom";
+import { inspect } from "util";
 import { parseDocument } from "./parsers.js";
+import { runModel, DEFAULT_MODEL_ID, DEFAULT_SYSTEM_PROMPT } from "./inference.js";
 
-export async function search(keywords, maxResults = 10) {
+const log = (value) => console.log(inspect(value, { depth: null, colors: true, compact: false, breakLength: 120 }));
+
+const DEFAULT_TOOLS = {
+  search,
+  runJavascript,
+};
+
+async function runTool(toolUse, tools = DEFAULT_TOOLS) {
+  const { toolUseId, name, input } = toolUse;
+  const content = [{ json: { results: (await tools?.[name]?.(input)) ?? null } }];
+  return { toolUseId, content };
+}
+
+/**
+ * Uses search + an llm model to research a topic
+ * @param {string} topic - The topic to research
+ */
+export async function research({ topic }) {
+  const modelId = "amazon.nova-pro-v1:0";
+  const prompt = `Research the following topic: ${topic}
+
+Expected deliverables:
+1. Executive summary (2-3 sentences)
+2. Key findings (organized by theme)
+3. Supporting evidence and data
+4. Analysis and implications
+5. References with brief source credibility notes`;
+
+  const messages = [{ role: "user", content: [{ text: prompt }] }];
+  const system = `You are a research assistant that combines web search with JavaScript analysis. Please follow these guidelines:
+
+1. Use runJavascript for:
+   - All calculations and arithmetic
+   - Data processing
+   - Statistical analysis
+   - Working with arrays and objects
+   
+2. Use search for:
+   - Finding facts and information
+   - Current events
+   - Expert analysis
+   - Documentation
+   
+3. Response Format:
+   - Show your work with code when using calculations
+   - Include sources when citing information
+   
+4. Tool Selection:
+   - Numbers or calculations → runJavascript
+   - Information gathering → search
+   - Complex tasks may need both tools
+
+Note: Please use runJavascript for all mathematical operations, including basic arithmetic.`;
+  const toolConfig = {
+    tools: [
+      {
+        toolSpec: {
+          name: "search",
+          description: "Search the internet for accurate, recent information",
+          inputSchema: {
+            json: {
+              type: "object",
+              properties: {
+                keywords: {
+                  type: "string",
+                  description: "Search keywords - use quotes for exact matches and boolean operators (AND, OR) for complex queries",
+                },
+                maxResults: {
+                  type: "number",
+                  description: "Optional. Maximum number of results (5-20 recommended)",
+                },
+              },
+              required: ["keywords"],
+            },
+          },
+        },
+      },
+      {
+        toolSpec: {
+          name: "runJavascript",
+          description: "Execute JavaScript code for data analysis",
+          inputSchema: {
+            json: {
+              type: "object",
+              properties: {
+                code: {
+                  type: "string",
+                  description: "JavaScript code for data processing, analysis, or visualization. For example: 'const sum = 2 + 2; sum;'",
+                },
+              },
+              required: ["code"],
+            },
+          },
+        },
+      },
+    ],
+  };
+  let results, toolUse;
+
+  do {
+    results = await runModel(modelId, messages, system, toolConfig);
+    const message = results.output.message;
+    messages.push(message);
+    // log(results);
+
+    if (results.stopReason === "tool_use") {
+      const toolUse = message.content.at(-1)?.toolUse ?? null;
+      const toolResult = await runTool(toolUse);
+      // log(toolResult.content[0].json.results);
+      messages.push({ role: "user", content: [{ toolResult }] });
+      // log(messages);
+    }
+  } while (results.stopReason !== "end_turn");
+
+  return results;
+}
+
+export async function search({ keywords, maxResults = 10 }) {
   const results = [];
   let formData = new URLSearchParams();
   formData.append("q", keywords);
@@ -99,4 +219,15 @@ async function extractTextFromUrl(url, expandUrls = false) {
     console.error(`Failed to extract text from ${url}:`, error);
     return "";
   }
+}
+
+export async function runJavascript({ code, globalContext = {}, memoryLimit = 128 }) {
+  const isolate = new ivm.Isolate({ memoryLimit });
+  const context = await isolate.createContext();
+  const jail = context.global;
+  for (const key in globalContext) {
+    await jail.set(key, globalContext[key], { copy: true });
+  }
+  const script = await isolate.compileScript(String(code));
+  return await script.run(context);
 }
