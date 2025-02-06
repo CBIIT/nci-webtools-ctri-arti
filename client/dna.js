@@ -18,46 +18,20 @@ const CONFIG = {
       G: { color: 0xffa502, pair: "C", pairColor: 0x7bed9f },
     },
     backbones: {
-      primary: {
-        main: 0x2e8bc0,
-        emissive: 0xb1d4e0,
-      },
-      secondary: {
-        main: 0x145da0,
-        emissive: 0x5885af,
-      },
-    },
-    pointLights: [
-      { color: 0x145da0, intensity: 3, range: 40 }, // Midnight Blue
-      { color: 0x2e8bc0, intensity: 3, range: 40 }, // Blue
-      { color: 0xb1d4e0, intensity: 3, range: 40 }, // Baby Blue
-      { color: 0x5885af, intensity: 3, range: 40 }, // Blue Gray
-    ],
+      primary: 0x2e8bc0,
+      secondary: 0x145da0,
+    }
   },
   animation: {
     damping: 0.95,
     rotationSpeed: 0.05,
-    movementSpeed: {
-      vertical: 0.4,
-      horizontal: 0.3,
-    },
   },
   camera: {
     fov: 65,
     near: 0.1,
     far: 1000,
     position: { x: 0, y: 0, z: 32 },
-  },
-  scene: {
-    fog: {
-      color: 0x000814,
-      density: 0.012,
-    },
-    ambient: {
-      color: 0x101820,
-      intensity: 0.3,
-    },
-  },
+  }
 };
 
 class DNAVisualizer {
@@ -66,7 +40,6 @@ class DNAVisualizer {
     this.canvas = document.querySelector(canvasSelector);
     this.setup();
     this.createScene();
-    this.createLights();
     this.createDNA();
     this.setupEventListeners();
     this.animate();
@@ -79,9 +52,7 @@ class DNAVisualizer {
       alpha: true,
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.setPixelRatio(1);
 
     const { fov, near, far, position } = this.config.camera;
     this.camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, near, far);
@@ -94,29 +65,8 @@ class DNAVisualizer {
 
   createScene() {
     this.scene = new THREE.Scene();
-    const { fog, ambient } = this.config.scene;
-    this.scene.fog = new THREE.FogExp2(fog.color, fog.density);
-    const ambientLight = new THREE.AmbientLight(ambient.color, ambient.intensity);
-    this.scene.add(ambientLight);
+    this.scene.add(new THREE.AmbientLight(0xffffff));
     return this.scene;
-  }
-
-  createLights() {
-    this.pointLights = this.config.colors.pointLights.map((light) => {
-      const pointLight = new THREE.PointLight(light.color, light.intensity, light.range);
-      this.scene.add(pointLight);
-      return pointLight;
-    });
-
-    // Main spotlight
-    const mainSpot = new THREE.SpotLight(0xffffff, 2);
-    mainSpot.position.set(15, 15, 15);
-    mainSpot.angle = Math.PI / 4;
-    mainSpot.penumbra = 0.3;
-    mainSpot.decay = 1.5;
-    mainSpot.distance = 100;
-    mainSpot.castShadow = true;
-    this.scene.add(mainSpot);
   }
 
   generateRandomSequence(length) {
@@ -124,18 +74,8 @@ class DNAVisualizer {
     return Array.from({ length }, () => bases[Math.floor(Math.random() * bases.length)]).join("");
   }
 
-  createBackboneMaterial(color, emissiveColor) {
-    return new THREE.MeshPhysicalMaterial({
-      color,
-      metalness: 0.4,
-      roughness: 0.15,
-      transmission: 0.25,
-      thickness: 0.5,
-      clearcoat: 0.8,
-      clearcoatRoughness: 0.1,
-      emissive: emissiveColor,
-      emissiveIntensity: 0.8,
-    });
+  createBackboneMaterial(color) {
+    return new THREE.MeshBasicMaterial({ color });
   }
 
   helixFunction(t, phase = 0) {
@@ -147,13 +87,13 @@ class DNAVisualizer {
     return new THREE.Vector3(x, y, z);
   }
 
-  createBackbone(phase, color, emissiveColor) {
-    const numPoints = 400;
+  createBackbone(phase, color) {
+    const numPoints = 200; 
     const curve = new THREE.Curve();
     curve.getPoint = (t) => this.helixFunction(t, phase);
 
-    const tubeGeometry = new THREE.TubeGeometry(curve, numPoints, this.config.dna.backboneThickness, 16, false);
-    return new THREE.Mesh(tubeGeometry, this.createBackboneMaterial(color, emissiveColor));
+    const tubeGeometry = new THREE.TubeGeometry(curve, numPoints, this.config.dna.backboneThickness, 8, false);
+    return new THREE.Mesh(tubeGeometry, this.createBackboneMaterial(color));
   }
 
   createBasePairs(sequence) {
@@ -174,26 +114,18 @@ class DNAVisualizer {
       const totalDistance = p1.distanceTo(p2);
       const halfLength = (totalDistance - baseGap) / 2;
 
-      const createBasePair = (position, color, emissiveColor) => {
-        const geometry = new THREE.CylinderGeometry(baseRadius, baseRadius, halfLength, 16);
+      const createBasePair = (position, color) => {
+        const geometry = new THREE.CylinderGeometry(baseRadius, baseRadius, halfLength, 8);
         geometry.translate(0, halfLength / 2, 0);
-        const material = new THREE.MeshPhysicalMaterial({
-          color,
-          emissive: emissiveColor,
-          emissiveIntensity: 0.5,
-          metalness: 0.3,
-          roughness: 0.2,
-          transmission: 0.15,
-        });
+        const material = new THREE.MeshBasicMaterial({ color });
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.copy(position);
         return mesh;
       };
 
-      const leftPair = createBasePair(p1, baseInfo.color, baseInfo.color);
-      const rightPair = createBasePair(p2, baseInfo.pairColor, baseInfo.pairColor);
+      const leftPair = createBasePair(p1, baseInfo.color);
+      const rightPair = createBasePair(p2, baseInfo.pairColor);
 
-      // Calculate rotations
       const alignToCenter = (mesh, start, end) => {
         const direction = new THREE.Vector3().subVectors(end, start).normalize();
         const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
@@ -212,10 +144,9 @@ class DNAVisualizer {
   createDNA() {
     const { backbones } = this.config.colors;
     const dnaSequence = this.generateRandomSequence(this.config.dna.sequenceLength);
-    console.log(`DNA Sequence: ${dnaSequence}`);
 
-    const backbone1 = this.createBackbone(0, backbones.primary.main, backbones.primary.emissive);
-    const backbone2 = this.createBackbone(Math.PI, backbones.secondary.main, backbones.secondary.emissive);
+    const backbone1 = this.createBackbone(0, backbones.primary);
+    const backbone2 = this.createBackbone(Math.PI, backbones.secondary);
     const basePairs = this.createBasePairs(dnaSequence);
 
     this.scene.add(backbone1);
@@ -238,12 +169,9 @@ class DNAVisualizer {
       },
     };
 
-    const cleanupListeners = Object.entries(this.eventListeners).map(([eventName, listener]) => {
+    Object.entries(this.eventListeners).forEach(([eventName, listener]) => {
       window.addEventListener(eventName, listener);
-      return () => window.removeEventListener(eventName, listener);
     });
-
-    return () => cleanupListeners.forEach(c => c());
   }
 
   updateRotation() {
@@ -261,27 +189,9 @@ class DNAVisualizer {
     this.scene.rotation.y = this.currentRotation.y;
   }
 
-  updateLights(time) {
-    this.pointLights.forEach((light, index) => {
-      const offset = index * ((Math.PI * 2) / this.pointLights.length);
-      light.intensity = 2 + Math.sin(time * 2 + offset) * 1;
-      light.position.x = Math.sin(time + offset) * 6;
-      light.position.z = Math.cos(time + offset) * 6;
-      light.position.y = Math.sin(time * 0.5 + offset) * 3;
-    });
-  }
-
   animate() {
     requestAnimationFrame(() => this.animate());
-
-    const time = Date.now() * 0.001;
-    const { vertical, horizontal } = this.config.animation.movementSpeed;
-
-    this.scene.position.y = Math.sin(time * vertical) * 0.6;
-    this.scene.position.x = Math.sin(time * horizontal) * 0.3;
-
     this.updateRotation();
-    this.updateLights(time);
     this.renderer.render(this.scene, this.camera);
   }
 }
