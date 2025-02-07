@@ -101,3 +101,11 @@ a:active, a:hover {
 * {
   transition: all 0.1s;
 }
+
+.border-transparent {
+  border-color: transparent !important;
+}
+
+.form-control:focus {
+  box-shadow: none;
+}

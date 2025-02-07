@@ -21,9 +21,7 @@
         </div>
       </div>
     </header>
-    <main class="container flex-grow-1 py-3">
-      <h1 class="h3 mb-3 text-primary">CompliAI</h1>
-      <p id="messages">This page is currently under construction. We're working on bringing you new content and features. Thank you for your patience. </p>
+    <main class="container flex-grow-1 py-3" id="app">
     </main>
     <footer class="flex-grow-0">
       <div class="bg-primary-dark text-light py-4">
@@ -127,5 +125,16 @@
         <div class="text-center">NIH ... Turning Discovery Into Health ®</div>
       </div>
     </footer>
+    <script type="importmap">
+      {
+        "imports": {
+          "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/dist/solid.min.js",
+          "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/web/dist/web.min.js",
+          "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/html/dist/html.min.js",
+          "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/store/dist/store.min.js"
+        }
+      }
+    </script>
+    <script type="module" src="knowledge-retrieval/compliai/index.js"></script>
     
 </html>
