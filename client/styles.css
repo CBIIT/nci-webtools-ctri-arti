@@ -109,3 +109,56 @@ a:active, a:hover {
 .form-control:focus {
   box-shadow: none;
 }
+
+/* textarea::-webkit-resizer {
+  display: none;
+}
+
+textarea::-moz-resizer {
+  display: none;
+} */
+
+.mw-50 {
+  max-width: 50%;
+}
+
+.text-prewrap {
+  white-space: pre-wrap !important;
+}
+
+p {
+  margin-bottom: 0;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+h2 {
+  font-size: 1.4rem;
+}
+
+h3 {
+  font-size: 1.3rem;
+}
+
+h4 {
+  font-size: 1.2rem;
+}
+
+h5 {
+  font-size: 1.1rem;
+}
+
+h6 {
+  font-size: 1rem;
+}
+
+strong {
+  font-weight: 500;
+}
+
+dl, ol, ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
