@@ -16,11 +16,11 @@ export async function* readStream(response) {
   }
 }
 
-export async function search({ keywords, maxResults = 10 }) {
-  const queryParams = new URLSearchParams({ q: keywords, limit: maxResults });
-  const response = await fetch('/api/search?' + queryParams);
-  return await response.json();
-}
+export async function search({ keywords, ...params }) {
+  const query = { q: keywords, ...params };
+  Object.keys(query).forEach(key => query[key] === undefined && delete query[key]);
+  return (await fetch('/api/search?' + new URLSearchParams(query))).json();
+ }
 
 export async function getWebsiteText({ url, expandUrls = false }) {
   try {

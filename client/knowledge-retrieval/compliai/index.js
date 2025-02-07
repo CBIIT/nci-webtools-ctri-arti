@@ -88,19 +88,27 @@ const TOOLS = [
   {
     toolSpec: {
       name: "search",
-      description: "Find specific information about distinct concepts from reliable sources",
+      description: "Search the web for relevant, factual information to answer queries. Use this to find recent or specific information that you need to verify. Each search returns up to 25 results.",
       inputSchema: {
         json: {
           type: "object",
           properties: {
             keywords: {
               type: "string",
-              description: "Search keywords - use quotes for exact matches and boolean operators (AND, OR) for complex queries",
+              description: "Search query. Use quotes for exact phrases (\"exact phrase\") and boolean operators (AND, OR, NOT) for complex queries. Be specific and include relevant dates, names, or identifiers.",
             },
-            maxResults: {
+            offset: {
               type: "number",
-              description: "Optional. Maximum number of results (5-20 recommended)",
+              description: "Number of results to skip. Use with vqd for pagination when initial results are insufficient."
             },
+            time: {
+              type: "string",
+              description: "Optional date range in YYYY-MM-DD..YYYY-MM-DD format. Use when temporal context is important."
+            },
+            vqd: {
+              type: "string",
+              description: "Search continuation token. Include this value from previous search when paginating results."
+            }
           },
           required: ["keywords"],
         },
@@ -110,15 +118,14 @@ const TOOLS = [
   {
     toolSpec: {
       name: "runJavascript",
-      description: "Execute JavaScript code for data analysis. Process data and perform calculations to verify claims and analyze patterns",
+      description: "Execute JavaScript code to analyze data, verify numerical claims, or detect patterns. Use this for mathematical calculations, data processing, or when you need to verify specific numerical assertions.",
       inputSchema: {
         json: {
           type: "object",
           properties: {
             code: {
               type: "string",
-              description:
-                "JavaScript code for data processing, analysis, or visualization. For example: 'const sum = 2 + 2; const product = 4 * 2; console.log('sum', sum); console.log('product', product);'",
+              description: "JavaScript code to execute. Structure your code to output clear, verifiable results using console.log(). Include error handling for robust analysis.",
             },
           },
           required: ["code"],
@@ -129,18 +136,18 @@ const TOOLS = [
   {
     toolSpec: {
       name: "getWebsiteText",
-      description: "Extract detailed content from authoritative web pages",
+      description: "Extract detailed content from webpages to verify claims or gather comprehensive information. Use this when you need to fact-check or analyze specific web content.",
       inputSchema: {
         json: {
           type: "object",
           properties: {
             url: {
               type: "string",
-              description: "The full URL of the webpage to extract text from (must include http:// or https://)",
+              description: "Full webpage URL (including http:// or https://). Ensure the URL is directly relevant to the information needed.",
             },
             expandUrls: {
               type: "boolean",
-              description: "Optional. If true, expands relative URLs to absolute URLs in the text output",
+              description: "Set to true to convert relative URLs in the content to absolute URLs. Use when analyzing link relationships.",
               default: false,
             },
           },
@@ -149,7 +156,7 @@ const TOOLS = [
       },
     },
   },
-];
+]
 
 async function runTool(toolUse, tools = { search, getWebsiteText, runJavascript }) {
   const { toolUseId, name, input } = toolUse;
@@ -335,7 +342,7 @@ export default function Page() {
             <optgroup label="Anthropic">
               <option value="anthropic.claude-3-opus-20240229-v1:0" disabled>Claude Opus</option>
               <option value="anthropic.claude-3-5-sonnet-20240620-v1:0" selected>Claude Sonnet</option>
-              <option value="anthropic.claude-3-5-haiku-20241022-v1:0" disabled>Claude Haiku</option>
+              <option value="anthropic.claude-3-5-haiku-20241022-v1:0">Claude Haiku</option>
             </optgroup>
             <optgroup label="Amazon">
               <option value="amazon.nova-pro-v1:0">Nova Pro</option>
