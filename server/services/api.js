@@ -20,8 +20,8 @@ api.get("/ping", (req, res) => {
 api.all("/proxy", proxyMiddleware);
 
 api.get("/search", async (req, res) => {
-  const { q, limit } = req.query;
-  res.json(await search({keywords: q, maxResults: limit})); 
+  const { q, offset, time, vqd } = req.query;
+  res.json(await search({keywords: q, offset, time, vqd})); 
 });
 
 api.get("/research", async (req, res) => {
