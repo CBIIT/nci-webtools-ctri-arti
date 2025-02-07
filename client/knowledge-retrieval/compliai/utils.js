@@ -63,65 +63,6 @@ export async function getWebsiteText({ url, expandUrls = false }) {
   }
 }
 
-function handleMessage(e) {
-  const code = e.data;
-
-  // Capture console methods
-  const logs = [];
-  const originalConsole = {};
-  ["log", "warn", "error", "info", "debug"].forEach((method) => {
-    originalConsole[method] = self.console[method];
-    self.console[method] = (...args) => {
-      logs.push({
-        type: method,
-        args: args.map((arg) =>
-          arg instanceof Error
-            ? {
-                name: arg.name,
-                message: arg.message,
-                stack: arg.stack,
-              }
-            : arg
-        ),
-      });
-    };
-  });
-
-  try {
-    // Execute the code and get the result
-    const result = eval(code);
-
-    // Handle promises
-    if (result instanceof Promise) {
-      result.then(
-        (value) => self.postMessage({ success: true, result: value, logs }),
-        (error) =>
-          self.postMessage({
-            success: false,
-            error: {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-            },
-            logs,
-          })
-      );
-    } else {
-      self.postMessage({ success: true, result, logs });
-    }
-  } catch (error) {
-    self.postMessage({
-      success: false,
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      },
-      logs,
-    });
-  }
-}
-
 /**
  * Executes JavaScript code in a sandboxed Web Worker environment
  * @param {string} code - The JavaScript code to execute
@@ -129,11 +70,7 @@ function handleMessage(e) {
  * @returns {Promise<{success: boolean, result?: any, error?: Error, logs: Array}>}
  */
 export async function runJavascript({ code, timeout = 5000 }) {
-  // Create a blob URL for the worker
-  const blob = new Blob([`self.onmessage = ${handleMessage.toString()}`], { type: "application/javascript" });
-  const workerUrl = URL.createObjectURL(blob);
-
-  // Create the worker
+  const workerUrl =  location.pathname + "/code-worker.js";
   const worker = new Worker(workerUrl);
 
   return new Promise((resolve, reject) => {
