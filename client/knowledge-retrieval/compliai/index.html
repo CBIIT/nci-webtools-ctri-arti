@@ -21,7 +21,7 @@
         </div>
       </div>
     </header>
-    <main class="container flex-grow-1 py-3" id="app">
+    <main class="container d-flex flex-column flex-grow-1 py-3" style="min-width: 480px" id="app">
     </main>
     <footer class="flex-grow-0">
       <div class="bg-primary-dark text-light py-4">
@@ -128,10 +128,14 @@
     <script type="importmap">
       {
         "imports": {
+          "marked": "https://cdn.jsdelivr.net/npm/marked@15.0.6/+esm",
           "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/dist/solid.min.js",
           "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/web/dist/web.min.js",
           "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/html/dist/html.min.js",
-          "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/store/dist/store.min.js"
+          "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/store/dist/store.min.js",
+          "mammoth": "https://cdn.jsdelivr.net/npm/mammoth@1.9.0/+esm",
+          "unpdf": "https://cdn.jsdelivr.net/npm/unpdf@0.12.1/+esm"
+
         }
       }
     </script>
