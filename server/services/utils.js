@@ -1,4 +1,5 @@
 import ivm from "isolated-vm";
+import DDG from "duck-duck-scrape";
 import { JSDOM } from "jsdom";
 import { inspect } from "util";
 import { parseDocument } from "./parsers.js";
@@ -21,44 +22,47 @@ async function runTool(toolUse, tools = DEFAULT_TOOLS) {
 
 export async function researchV2({ topic }) {
   console.log(`\n[Starting research] Topic: ${topic}`);
-  
+
   const state = {
     topic,
     steps: [],
-    finalAnswer: null
+    finalAnswer: null,
   };
 
   const TOOL_CONFIG = {
-    tools: [{
-      toolSpec: {
-        name: "search",
-        description: "Search for accurate, recent information",
-        inputSchema: {
-          json: {
-            type: "object",
-            properties: {
-              keywords: { type: "string", description: "Search keywords with quotes for exact matches" },
-              maxResults: { type: "number", description: "Optional. Results count (3-10)" }
+    tools: [
+      {
+        toolSpec: {
+          name: "search",
+          description: "Search for accurate, recent information",
+          inputSchema: {
+            json: {
+              type: "object",
+              properties: {
+                keywords: { type: "string", description: "Search keywords with quotes for exact matches" },
+                maxResults: { type: "number", description: "Optional. Results count (3-10)" },
+              },
+              required: ["keywords"],
             },
-            required: ["keywords"]
-          }
-        }
-      }
-    }, {
-      toolSpec: {
-        name: "runJavascript",
-        description: "Execute JavaScript code for numerical calculations",
-        inputSchema: {
-          json: {
-            type: "object",
-            properties: {
-              code: { type: "string", description: "JavaScript code that returns a value" }
+          },
+        },
+      },
+      {
+        toolSpec: {
+          name: "runJavascript",
+          description: "Execute JavaScript code for numerical calculations",
+          inputSchema: {
+            json: {
+              type: "object",
+              properties: {
+                code: { type: "string", description: "JavaScript code that returns a value" },
+              },
+              required: ["code"],
             },
-            required: ["code"]
-          }
-        }
-      }
-    }]
+          },
+        },
+      },
+    ],
   };
 
   const SYSTEM_PROMPT = `You are a research assistant that combines search with analysis to answer questions thoroughly and accurately.
@@ -84,28 +88,29 @@ GUIDELINES:
    - Include relevant sources`;
 
   async function processToolUse(modelResponse, currentMessages) {
-    console.log('\n[processToolUse] Processing tool response');
-    
+    console.log("\n[processToolUse] Processing tool response");
+
     if (!modelResponse.output?.message?.content) {
-      console.log('No message content found');
+      console.log("No message content found");
       return modelResponse;
     }
-    
-    const toolUse = modelResponse.output.message.content.find(c => c.toolUse)?.toolUse;
+
+    const toolUse = modelResponse.output.message.content.find((c) => c.toolUse)?.toolUse;
     if (!toolUse) {
-      console.log('No tool use found in response');
+      console.log("No tool use found in response");
       return modelResponse;
     }
 
     console.log(`Running tool: ${toolUse.name}`);
     const toolResult = await runTool(toolUse, { search, runJavascript });
-    console.log('Tool execution complete');
+    console.log("Tool execution complete");
 
     return runModel(
       modelId,
-      [...currentMessages, 
+      [
+        ...currentMessages,
         { role: "assistant", content: modelResponse.output.message.content },
-        { role: "user", content: [{ toolResult }]}
+        { role: "user", content: [{ toolResult }] },
       ],
       SYSTEM_PROMPT,
       TOOL_CONFIG
@@ -113,21 +118,21 @@ GUIDELINES:
   }
 
   async function runModelStep(prompt, currentState) {
-    console.log('\n[runModelStep] Running model with prompt:', prompt.slice(0, 100) + '...');
-    
+    console.log("\n[runModelStep] Running model with prompt:", prompt.slice(0, 100) + "...");
+
     const messages = [
-      ...currentState.steps.map(step => ({
+      ...currentState.steps.map((step) => ({
         role: "user",
-        content: [{ text: step.prompt }]
+        content: [{ text: step.prompt }],
       })),
-      { role: "user", content: [{ text: prompt }] }
+      { role: "user", content: [{ text: prompt }] },
     ];
 
     let response = await runModel(modelId, messages, SYSTEM_PROMPT, TOOL_CONFIG);
     console.log(`Initial response stop reason: ${response.stopReason}`);
-    
+
     if (response.stopReason === "tool_use") {
-      console.log('Tool use detected, processing...');
+      console.log("Tool use detected, processing...");
       response = await processToolUse(response, messages);
     }
 
@@ -135,11 +140,9 @@ GUIDELINES:
   }
 
   async function generateSubquery(currentState) {
-    console.log('\n[generateSubquery] Generating next subquery');
-    
-    const context = currentState.steps.map(s => 
-      `Step ${s.index + 1}: ${s.subquery}\nFindings: ${s.answer}`
-    ).join("\n\n");
+    console.log("\n[generateSubquery] Generating next subquery");
+
+    const context = currentState.steps.map((s) => `Step ${s.index + 1}: ${s.subquery}\nFindings: ${s.answer}`).join("\n\n");
 
     const prompt = `Topic: "${currentState.topic}"
 ${currentState.steps.length > 0 ? `Previous findings:\n${context}\n\n` : ""}
@@ -148,18 +151,24 @@ Each subquery should be specific and build on previous findings.`;
 
     const result = await runModelStep(prompt, currentState);
     const response = result.output.message?.content?.[0]?.text || "";
-    console.log('Generated subquery:', response);
+    console.log("Generated subquery:", response);
     return response.trim().toUpperCase() === "COMPLETE" ? null : response;
   }
 
   async function makeRetrievalDecision(subquery, currentState) {
-    console.log('\n[makeRetrievalDecision] Deciding retrieval for:', subquery);
+    console.log("\n[makeRetrievalDecision] Deciding retrieval for:", subquery);
 
     const prompt = `Subquery: "${subquery}"
-${currentState.steps.length > 0 ? `Context: ${JSON.stringify(currentState.steps.map(s => ({
-  query: s.subquery,
-  answer: s.answer
-})))}\n` : ""}
+${
+  currentState.steps.length > 0
+    ? `Context: ${JSON.stringify(
+        currentState.steps.map((s) => ({
+          query: s.subquery,
+          answer: s.answer,
+        }))
+      )}\n`
+    : ""
+}
 
 Should this be answered with SEARCH or existing knowledge (ANSWER)?
 Consider:
@@ -171,18 +180,18 @@ Reply only: SEARCH or ANSWER`;
 
     const result = await runModelStep(prompt, currentState);
     const decision = result.output.message?.content?.[0]?.text?.trim().toUpperCase() === "SEARCH";
-    console.log('Decision:', decision ? 'SEARCH' : 'ANSWER');
+    console.log("Decision:", decision ? "SEARCH" : "ANSWER");
     return decision;
   }
 
   async function getAnswer(subquery, shouldRetrieve, currentState) {
-    console.log('\n[getAnswer] Getting answer for:', subquery);
-    console.log('Retrieval needed:', shouldRetrieve);
-    
+    console.log("\n[getAnswer] Getting answer for:", subquery);
+    console.log("Retrieval needed:", shouldRetrieve);
+
     let context = "";
-    
+
     if (shouldRetrieve) {
-      console.log('Executing search...');
+      console.log("Executing search...");
       const searchResults = await search({ keywords: subquery, maxResults: 3 });
       context = `Retrieved information:\n${JSON.stringify(searchResults)}\n`;
     }
@@ -196,19 +205,17 @@ Provide a clear, specific answer.
 
     const result = await runModelStep(prompt, currentState);
     const answer = result.output.message?.content?.[0]?.text || "";
-    console.log('Answer generated:', answer.slice(0, 100) + '...');
+    console.log("Answer generated:", answer.slice(0, 100) + "...");
     return answer;
   }
 
   async function generateFinalAnswer(currentState) {
-    console.log('\n[generateFinalAnswer] Generating final synthesis');
-    
+    console.log("\n[generateFinalAnswer] Generating final synthesis");
+
     const prompt = `Topic: ${currentState.topic}
 
 Research steps:
-${currentState.steps.map(s => 
-  `${s.index + 1}. ${s.subquery}\nFindings: ${s.answer}`
-).join("\n\n")}
+${currentState.steps.map((s) => `${s.index + 1}. ${s.subquery}\nFindings: ${s.answer}`).join("\n\n")}
 
 Synthesize a comprehensive answer that:
 1. Addresses the core topic
@@ -218,17 +225,17 @@ Synthesize a comprehensive answer that:
 
     const result = await runModelStep(prompt, currentState);
     const finalAnswer = result.output.message?.content?.[0]?.text || "";
-    console.log('Final answer generated:', finalAnswer.slice(0, 100) + '...');
+    console.log("Final answer generated:", finalAnswer.slice(0, 100) + "...");
     return finalAnswer;
   }
 
   let stepIndex = 0;
   while (stepIndex < 10) {
     console.log(`\n[Main Loop] Step ${stepIndex + 1}`);
-    
+
     const subquery = await generateSubquery(state);
     if (!subquery) {
-      console.log('No more subqueries needed, completing research');
+      console.log("No more subqueries needed, completing research");
       break;
     }
 
@@ -240,19 +247,24 @@ Synthesize a comprehensive answer that:
       subquery,
       usedRetrieval: shouldRetrieve,
       answer,
-      prompt: `Q: ${subquery}\nA: ${answer}`
+      prompt: `Q: ${subquery}\nA: ${answer}`,
     });
   }
 
   state.finalAnswer = await generateFinalAnswer(state);
-  console.log('\n[Research Complete] Final state:', 
-    JSON.stringify({
-      topic: state.topic,
-      stepCount: state.steps.length,
-      finalAnswerLength: state.finalAnswer.length
-    }, null, 2)
+  console.log(
+    "\n[Research Complete] Final state:",
+    JSON.stringify(
+      {
+        topic: state.topic,
+        stepCount: state.steps.length,
+        finalAnswerLength: state.finalAnswer.length,
+      },
+      null,
+      2
+    )
   );
-  
+
   return state;
 }
 /**
@@ -360,68 +372,16 @@ Note: Please use runJavascript for all mathematical operations, including basic 
   return messages;
 }
 
-export async function search({ keywords, maxResults = 10 }) {
-  const results = [];
-  let formData = new URLSearchParams();
-  formData.append("q", keywords);
-
-  while (results.length < maxResults) {
-    const response = await fetch("https://html.duckduckgo.com/html/", {
-      method: "POST",
-      body: formData,
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
-    const html = await response.text();
-    const dom = new JSDOM(html);
-    const document = dom.window.document;
-
-    // Get results
-    const elements = document.querySelectorAll("#links .web-result");
-    const pageResults = [];
-
-    for (const el of elements) {
-      if (results.length >= maxResults) break;
-
-      const titleEl = el.querySelector(".result__title");
-      const snippetEl = el.querySelector(".result__snippet");
-      const linkEl = el.querySelector(".result__url");
-
-      if (titleEl && linkEl) {
-        const ddgUrl = new URL(linkEl.href, "https://duckduckgo.com");
-        const realUrl = ddgUrl.pathname === "/l/" ? new URLSearchParams(ddgUrl.search).get("uddg") : linkEl.href;
-
-        pageResults.push({
-          title: titleEl?.textContent?.trim(),
-          url: decodeURIComponent(realUrl),
-          snippet: snippetEl?.textContent?.trim(),
-          // headers: Object.fromEntries(response.headers),
-        });
-      }
-    }
-
-    // Fetch all page contents in parallel
-    const processedResults = await Promise.all(
-      pageResults.map(async (result) => ({
-        ...result,
-        body: await extractTextFromUrl(result.url),
-      }))
-    );
-
-    results.push(...processedResults);
-
-    // Get next page data
-    const form = document.querySelector("#links form");
-    if (!form) break;
-
-    formData = new URLSearchParams();
-    form.querySelectorAll("input").forEach((input) => {
-      formData.append(input.name, input.value);
-    });
-
-    if (!form || elements.length === 0) break;
-  }
-
-  return results;
+/**
+ * 
+ * @param {*} param0 
+ * @returns 
+ */
+export async function search({ keywords, offset = 0, time, vqd }) {
+  const response = await DDG.search(keywords, { offset, time, vqd });
+  const appendBody = async (result) => ({ ...result, body: await extractTextFromUrl(result.url) });
+  const results = await Promise.all((response.results || []).map(appendBody));
+  return { vqd, results };
 }
 
 async function extractTextFromUrl(url, expandUrls = false) {
