@@ -3,7 +3,7 @@ import cors from "cors";
 import multer from "multer";
 import { runModel, processDocuments, streamModel } from "./inference.js";
 import { proxyMiddleware } from './middleware.js';
-import { search, research } from './utils.js';
+import { search, research, researchV2 } from './utils.js';
 
 const api = Router();
 const fieldSize = process.env.UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb 
@@ -29,6 +29,11 @@ api.get("/research", async (req, res) => {
   res.json(await research({topic: q}));
 });
 
+api.get("/researchV2", async (req, res) => {
+  const { q, limit } = req.query;
+  res.json(await researchV2({topic: q}));
+});
+
 api.post("/submit", upload.any(), async (req, res) => {
   const { model, prompt, ids } = req.body;
   const results = await processDocuments(model, prompt, req.files);
@@ -47,23 +52,22 @@ api.post("/model/run", async (req, res) => {
 });
 
 api.get("/model/stream", async (req, res) => {
-  const { model, messages } = req.query;
-  const results = await streamModel(model, messages);
-  for await (const message of results.stream) {
-    const chunk = message?.contentBlockDelta?.delta?.text;
-    if (chunk?.length > 0)
-      res.write(chunk);
+  const { model, messages, system } = req.query;
+  const results = await streamModel(model, messages, system);
+  for await (const message of results?.stream || []) {
+    res.write(message);
+    // const chunk = message?.contentBlockDelta?.delta?.text;
+    // if (chunk?.length > 0)
+    //   res.write(chunk);
   }
   res.end();
 });
 
 api.post("/model/stream", async (req, res) => {
-  const { model, messages } = req.body;
-  const results = await streamModel(model, messages);
-  for await (const message of results.stream) {
-    const chunk = message?.contentBlockDelta?.delta?.text;
-    if (chunk?.length > 0)
-      res.write(chunk);
+  const { model, messages, system, tools } = req.body;
+  const results = await streamModel(model, messages, system, tools);
+  for await (const message of results?.stream || []) {
+    res.write(JSON.stringify(message) + '\n');
   }
   res.end();
 });

@@ -47,9 +47,7 @@ export async function runModel(modelId = DEFAULT_MODEL_ID, messages = [], system
   }
 
   if (typeof messages === "string") {
-    messages = [
-      { role: "user", content: [{ text: messages }] },
-    ];
+    messages = [{ role: "user", content: [{ text: messages }] }];
   }
 
   const client = new BedrockRuntimeClient();
@@ -62,24 +60,24 @@ export async function runModel(modelId = DEFAULT_MODEL_ID, messages = [], system
 
 /**
  * Stream a model with the given messages.
- * @param {string} modelId 
- * @param {any} messages 
+ * @param {string} modelId
+ * @param {any} messages
  * @returns {Promise<BedrockRuntimeClient.ConverseStreamCommandOutput>}
  */
-export async function streamModel(modelId = DEFAULT_MODEL_ID, messages = []) {
+export async function streamModel(modelId = DEFAULT_MODEL_ID,  messages = [], systemPrompt = DEFAULT_SYSTEM_PROMPT, tools = []) {
+
   if (!messages || messages?.length === 0) {
     return null;
   }
 
   if (typeof messages === "string") {
-    messages = [
-      { role: "user", content: [{ text: messages }] },
-    ];
+    messages = [{ role: "user", content: [{ text: messages }] }];
   }
 
   const client = new BedrockRuntimeClient();
-  const system = [{ text: DEFAULT_SYSTEM_PROMPT }];
-  const input = { modelId, messages, system };
+  const system = [{ text: systemPrompt }];
+  const toolConfig = tools.length > 0 ? { tools } : undefined;
+  const input = { modelId, messages, system, toolConfig };
 
   const command = new ConverseStreamCommand(input);
   const response = await client.send(command);
