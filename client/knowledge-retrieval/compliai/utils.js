@@ -1,6 +1,21 @@
 import mammoth from "mammoth";
 import * as unpdf from "unpdf";
 
+export async function* readStream(response) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      yield value;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export async function search({ keywords, maxResults = 10 }) {
   const queryParams = new URLSearchParams({ q: keywords, limit: maxResults });
   const response = await fetch('/api/search?' + queryParams);

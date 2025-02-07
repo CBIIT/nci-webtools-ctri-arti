@@ -2,7 +2,7 @@ import { parse as parseMarkdown } from "marked";
 import { onCleanup, createSignal } from "solid-js";
 import { render } from "solid-js/web";
 import html from "solid-js/html";
-import { getWebsiteText, runJavascript, search } from "./utils.js";
+import { getWebsiteText, runJavascript, search, readStream } from "./utils.js";
 
 // Initialize the app
 render(() => html`<${Page} />`, window.app);
@@ -211,7 +211,7 @@ export default function Page() {
         let currentToolUse = null;
         let toolInput = "";
 
-        for await (const chunk of response.body.values()) {
+        for await (const chunk of readStream(response)) {
           const values = decoder
             .decode(chunk, { stream: true })
             .trim()
