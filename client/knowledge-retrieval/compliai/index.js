@@ -241,6 +241,8 @@ export default function Page() {
                 if (currentToolUse) {
                   toolInput += delta.toolUse.input || "";
                 }
+                const toolUse = [{ name: currentToolUse?.name, input: toolInput }]
+                setActiveMessage(() =>  ({ content: [{ toolUse }] }));
               }
             }
             // Handle content block start for tool use
@@ -258,6 +260,7 @@ export default function Page() {
                 assistantMessage.content.push({ toolUse: currentToolUse });
                 toolInput = "";
                 currentToolUse = null;
+                setMessages([...currentMessages, assistantMessage]);
               } catch (e) {
                 console.error("Error parsing tool input:", e);
               }
@@ -266,9 +269,11 @@ export default function Page() {
             else if (value.messageStop) {
               if (value.messageStop.stopReason === "tool_use") {
                 const toolUse = assistantMessage.content.find((c) => c.toolUse)?.toolUse;
+                setActiveMessage(() => ({content: [{toolUse}] }));
                 if (toolUse) {
                   const toolResult = await runTool(toolUse);
                   currentMessages = [...currentMessages, assistantMessage, { role: "user", content: [{ toolResult }] }];
+                  setMessages(currentMessages);
                 }
               } else if (value.messageStop.stopReason === "end_turn") {
                 isComplete = true;
@@ -348,12 +353,13 @@ export default function Page() {
 export function Message({ message }) {
   if (!message) return null;
   const isAssistant = message.role === "assistant" || message.toolUse;
+  console.log(message);
 
   // Filter and join text content
   const textContent = message.content
-    .filter((c) => c.text)
-    .map((c) => c.text)
-    .join("\n");
+      .filter((c) => c.text)
+      .map((c) => c.text)
+      .join("\n");
 
   // Filter tool use content and results
   const toolCalls = message.content
