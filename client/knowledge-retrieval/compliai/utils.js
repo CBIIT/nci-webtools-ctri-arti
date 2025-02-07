@@ -2,69 +2,9 @@ import mammoth from "mammoth";
 import * as unpdf from "unpdf";
 
 export async function search({ keywords, maxResults = 10 }) {
-  const results = [];
-  let formData = new URLSearchParams();
-  formData.append("q", keywords);
-
-  while (results.length < maxResults) {
-    const response = await fetch(`/api/proxy?url=https://html.duckduckgo.com/html/?q=${keywords}`);
-    const html = await response.text();
-    const parser = new DOMParser();
-    const document = parser.parseFromString(html, "text/html");
-
-    // Get results
-    const elements = document.querySelectorAll("#links .web-result");
-    const pageResults = [];
-
-    for (const el of elements) {
-      if (results.length >= maxResults) break;
-
-      const titleEl = el.querySelector(".result__title");
-      const snippetEl = el.querySelector(".result__snippet");
-      const linkEl = el.querySelector(".result__url");
-
-      if (titleEl && linkEl) {
-        const ddgUrl = new URL(linkEl.href, "https://duckduckgo.com");
-        const realUrl = ddgUrl.pathname === "/l/" ? new URLSearchParams(ddgUrl.search).get("uddg") : linkEl.href;
-
-        pageResults.push({
-          title: titleEl?.textContent?.trim(),
-          url: decodeURIComponent(realUrl),
-          snippet: snippetEl?.textContent?.trim(),
-          // headers: Object.fromEntries(response.headers),
-        });
-      }
-    }
-
-    // Fetch all page contents in parallel
-    const processedResults = await Promise.all(
-      pageResults.map(async (result) => ({
-        ...result,
-        body: await getWebsiteText({ url: result.url }),
-      }))
-    );
-
-    results.push(...processedResults);
-
-    // Get next page data
-    const form = document.querySelector("#links form");
-    if (!form) break;
-
-    formData = new URLSearchParams();
-    form.querySelectorAll("input").forEach((input) => {
-      formData.append(input.name, input.value);
-    });
-
-    if (!form || elements.length === 0) break;
-  }
-
-  // retry in case of proxy error
-  if (!results.length || (results.length === 1 && !results[0].title.trim().length)) {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    return await search({ keywords, maxResults });
-  }
-
-  return results;
+  const queryParams = new URLSearchParams({ q: keywords, limit: maxResults });
+  const response = await fetch('/api/search?' + queryParams);
+  return await response.json();
 }
 
 export async function getWebsiteText({ url, expandUrls = false }) {
