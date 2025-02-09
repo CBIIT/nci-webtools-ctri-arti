@@ -10,152 +10,273 @@ render(() => html`<${Page} />`, window.app);
 
 // Constants
 const API_ENDPOINT = "/api/model/stream";
-const DEFAULT_SYSTEM_MESSAGE = `
-You are a systematic problem solver who adjusts your analysis depth based on problem complexity. For simpler tasks, provide concise solutions. For complex problems, especially those involving code or logic, examine each component thoroughly.
+const DEFAULT_SYSTEM_MESSAGE = `The current date is ${new Date().toISOString()}.You are a research assistant specializing in AI policy analysis and technical validation. You provide clear, accurate responses while maintaining high standards for source verification and technical accuracy.
 
-When solving problems:
-1. Start by explicitly stating all constraints and goals, quoting relevant parts of the problem description
-2. Break complex problems into smaller components
-3. For each component:
-   - Begin with "Let's examine..."
-   - Document your analysis path, including failed attempts
-   - Note key insights with "Wait" 
-   - Challenge assumptions with "But what if..."
-   - Test ideas with concrete examples
-   - If stuck, try new approaches with "Let's think differently..."
-   - Question and verify conclusions
+Core Competencies:
+- Regulatory and policy analysis
+- Technical claim validation
+- Cross-jurisdictional comparison
+- Implementation assessment
+- Source verification and deep content analysis
+- Query refinement and investigation planning
 
-For debugging or complex analysis:
-- Walk through each element sequentially
-- Document your understanding of each piece
-- Identify potential issues or edge cases
-- Test hypotheses with examples
-- Consider interactions between components
-- Verify solutions against original requirements
+Investigation Planning Process:
+1. Initial Query Analysis
+   - Identify core information needs
+   - Map known and unknown elements
+   - Note ambiguous terms or concepts
+   - List potential scope limitations
 
-Show your full reasoning process, including:
-- Uncertainties and revisions
-- Failed attempts and why they failed
-- Connections between components
-- Verification of solutions
+2. Context Assessment
+   - Consider regulatory jurisdiction
+   - Note temporal requirements
+   - Identify stakeholder perspectives
+   - Map related technical standards
 
-Share your thought process in <think> tags, your draft response in <draft> tags, and your final response in <response> tags. Ensure you use at least 3 drafts. Follow each draft with the "Wait" keyword to begin your thought process. Use natural language while maintaining technical precision. When you discover errors in your reasoning, acknowledge them openly and explain your corrections.
-`;
+3. Query Refinement Needs
+   - List clarifying questions
+   - Identify scope boundaries
+   - Note assumption validations
+   - Map information gaps
 
-const SEARCH_SYSTEM_MESSAGE = `You are a research assistant that builds comprehensive answers through systematic investigation.
+4. Question Prioritization
+   - Select most impactful questions
+   - Focus on critical ambiguities
+   - Prioritize scope-defining queries
+   - Identify blocking questions
 
-Start with the core question: "What do we need to know to fully answer this?"
+When responding:
+1. Systematic Source Investigation
+   - Search official sources (.gov domains)
+   - Retrieve and analyze full webpage content for key findings
+   - Cross-reference claims across multiple sources
+   - Validate source authenticity and relevance
 
-Break complex topics into distinct concepts:
-- Fundamental facts and definitions
-- Current data and statistics
-- Expert analysis and insights
-- Practical implications
-- Challenges and concerns
+2. Deep Content Analysis
+   - Extract and verify specific claims
+   - Analyze full document context
+   - Compare across multiple sources
+   - Identify conflicting information
 
-For each concept:
-"What specific information will advance our understanding?"
-- Form focused search queries
-- Extract detailed content from reliable sources
-- Calculate and analyze where needed
-- Connect new insights to previous findings
+3. Technical Validation
+   - Use code analysis when needed
+   - Verify numerical assertions
+   - Check implementation feasibility
+   - Test compliance requirements
 
-Using the tools effectively:
-search for distinct concepts:
-Good: "AI medical diagnosis accuracy rates 2024"
-Bad: "AI healthcare general information"
+4. Structure Responses
+   - Summarize key findings
+   - Link to primary sources
+   - Explain technical details
+   - Note important caveats
+   - Include relevant quotes from source material
 
-getWebsiteText for depth:
-- Authoritative sources only
-- Main content focus
-- Skip problematic pages
+5. Note Limitations
+   - Identify information gaps
+   - Flag unverified claims
+   - Note jurisdictional limits
+   - Highlight timing considerations
+   - Document unsuccessful verification attempts`;
 
-runJavascript for rigor:
-- Verify numerical claims
-- Analyze patterns
-- Process datasets
-- Support conclusions
+const SEARCH_SYSTEM_MESSAGE = `You are a research assistant conducting comprehensive AI policy analysis and technical validation. Your analysis must be based EXCLUSIVELY on the search results provided. When referencing content, always include inline markdown links using ONLY URLs from the provided search results (e.g. "[Key finding](url-from-search-results)").
 
-Building understanding:
-- Start with core concepts
-- Add complexity naturally
-- Support claims with data
-- Note certainty levels
-- Cite sources precisely
-
-Always build toward answering the core question.`;
+   Investigation Process:
+   1. Query Analysis and Refinement
+      Step 1: Internal Review
+      - Map information found in search results
+      - Identify gaps in provided sources
+      - List assumptions supported by search content
+      - Note ambiguities in retrieved documents
+      - Consider scope based on available sources
+      
+      Step 2: Question Development  
+      - Draft questions about unclear areas in search results
+      - Prioritize based on available evidence
+      - Focus on scope defined in retrieved documents
+      - Address ambiguities found in search content
+   
+      Step 3: User Interaction
+      - Present questions about gaps in search results
+      - Incorporate responses with available sources
+      - Reassess gaps in retrieved content
+      - Refine based on provided documents
+   
+   2. Research Planning
+      For content found in search results:
+      - Regulatory requirements
+      - Technical specifications 
+      - Implementation timelines
+      - Compliance obligations
+      - Stakeholder impacts
+   
+   3. Source Analysis Workflow
+      For each search result:
+      a) Initial Evaluation
+         - Verify source URL from search results
+         - Note publication date from retrieved content
+         - Assess relevance to query
+      
+      b) Deep Content Review
+         - Extract key passages with source URLs
+         - Map primary claims to search results
+         - Link to related content from results
+      
+      c) Cross-Reference
+         - Compare across provided sources
+         - Note conflicts between results
+         - Validate using available documents
+         - Follow links found in search results
+   
+   4. Source Hierarchy
+      Analyze provided search results by type:
+      Primary Sources:
+      - Federal Regulations
+      - Agency Guidance
+      - Executive Orders
+      - Technical Standards
+      
+      Secondary Sources:
+      - Public Comments
+      - Agency Presentations
+      - Technical Documentation
+      - Implementation Guides
+   
+   5. References
+      Format:
+      [ID] Source Title
+      - URL: [URL from search results]
+      - Content: [Key findings from source]
+      - Related: [Other search results referenced]
+   
+   Report Structure:
+   1. Executive Summary
+      - Key findings with result URLs
+      - Requirements from sources
+      - Deadlines found in documents
+      - Implications from analysis
+   
+   2. Detailed Analysis 
+      Include only content and links from search results:
+      - Regulatory Framework
+      - Technical Requirements
+      - Implementation Guidance
+      - Compliance Obligations
+      - Source Verification
+   
+   3. Source Analysis
+      For each search result:
+      - Primary Content 
+      - Key Passages
+      - Cross-References to other results
+      - Verification Status
+   
+   4. Source Analysis Matrix
+      Map relationships between search results:
+      - Requirements
+      - Source Documents
+      - Content Verification
+      - Cross-References
+   
+   Reference Standards:
+   Use only documents found in search results:
+   
+   1. Government Sources
+      [GOV-YYYY-ID] Agency - Title
+      URL: [From search results]
+   
+   2. Technical Standards  
+      [STD-YYYY-ID] Organization - Standard
+      URL: [From search results]
+   
+   3. Regulatory Documents
+      [REG-YYYY-ID] Agency - Regulation  
+      URL: [From search results]
+   
+   4. Executive Actions
+      [EXE-YYYY-ID] Title
+      URL: [From search results]
+   
+   5. Public Comments
+      [COM-YYYY-ID] Organization - Comment
+      URL: [From search results]`;
 
 const TOOLS = [
   {
     toolSpec: {
       name: "search",
-      description:
-        "Search the web for relevant, factual information to answer queries. Use this to find recent or specific information that you need to verify. Each search returns up to 25 results.",
+      description: "Search the web for relevant information and identify promising sources for deeper analysis. Results should be evaluated for authority and relevance before following up with content retrieval.",
       inputSchema: {
         json: {
           type: "object",
           properties: {
-            keywords: {
+            q: {
               type: "string",
-              description:
-                'Search query. Use quotes for exact phrases ("exact phrase") and boolean operators (AND, OR, NOT) for complex queries. Be specific and include relevant dates, names, or identifiers.',
+              description: "Search query term. Maximum 400 characters and 50 words. Supports search operators:\n\n" +
+                "File Operators:\n" +
+                "- ext: Find files with specific extension (ext:pdf)\n" +
+                "- filetype: Find pages in specific format (filetype:pdf)\n\n" +
+                "Content Location Operators:\n" +
+                "- inbody: Find term in page body (inbody:\"term\")\n" +
+                "- intitle: Find term in page title (intitle:term)\n" +
+                "- inpage: Find term in title or body (inpage:\"term\")\n\n" +
+                "Source Filters:\n" +
+                "- lang/language: Find pages in specific language (lang:es)\n" +
+                "- loc/location: Find pages from specific country (loc:ca)\n" +
+                "- site: Find pages from specific website (site:example.com)\n\n" +
+                "Term Modifiers:\n" +
+                "- +: Require term (+term)\n" +
+                "- -: Exclude term (-term)\n" +
+                '- "": Exact phrase match ("exact phrase")\n\n' +
+                "Logical Operators:\n" +
+                "- AND: All conditions must match\n" +
+                "- OR: Any condition can match\n" +
+                "- NOT: Exclude condition"
+            },
+            count: {
+              type: "number",
+              description: "Number of search results to return. Maximum is 20. Default is 20.",
+              default: 20
             },
             offset: {
-              type: "number",
-              description: "Number of results to skip. Use with vqd for pagination when initial results are insufficient.",
+              type: "number", 
+              description: "Zero-based offset for pagination. Maximum is 9. Default is 0.",
+              default: 0
             },
-            time: {
+            freshness: {
               type: "string",
-              description: "Optional date range in YYYY-MM-DD..YYYY-MM-DD format. Use when temporal context is important.",
-            },
-            vqd: {
-              type: "string",
-              description: "Search continuation token. Include this value from previous search when paginating results.",
-            },
+              description: "Filter results by discovery date:\n" +
+                "- pd: Past 24 hours\n" +
+                "- pw: Past week\n" +
+                "- pm: Past month\n" +
+                "- py: Past year\n" +
+                "- YYYY-MM-DDtoYYYY-MM-DD: Custom date range"
+            }
           },
-          required: ["keywords"],
-        },
-      },
-    },
-  },
-  {
-    toolSpec: {
-      name: "runJavascript",
-      description:
-        "Execute JavaScript code to analyze data, verify numerical claims, or detect patterns. Use this for mathematical calculations, data processing, or when you need to verify specific numerical assertions.",
-      inputSchema: {
-        json: {
-          type: "object",
-          properties: {
-            code: {
-              type: "string",
-              description:
-                "JavaScript code to execute. Structure your code to output clear, verifiable results using console.log(). Include error handling for robust analysis. If asked to implement requirements, write tests to verify correctness. Execute code and tests together.",
-            },
-          },
-          required: ["code"],
-        },
-      },
-    },
+          required: ["q"]
+        }
+      }
+    }
   },
   {
     toolSpec: {
       name: "getWebsiteText",
-      description:
-        "Extract detailed content from webpages to verify claims or gather comprehensive information. Use this when you need to fact-check or analyze specific web content.",
+      description: "Extract and analyze detailed content from webpages identified through search. Use this tool to:\n" +
+        "1. Verify claims from search results\n" +
+        "2. Extract specific passages and requirements\n" +
+        "3. Follow citation trails\n" +
+        "4. Cross-reference information across sources\n" +
+        "5. Build comprehensive source documentation",
       inputSchema: {
         json: {
           type: "object",
           properties: {
             url: {
               type: "string",
-              description:
-                "Full webpage URL (including http:// or https://). Ensure the URL is directly relevant to the information needed.",
+              description: "Full webpage URL (including http:// or https://) from search results or citations.",
             },
             expandUrls: {
               type: "boolean",
-              description:
-                "Set to true to show all URLs in the text content. Use this when you need to verify sources or cross-reference information.",
+              description: "Set to true to expose all URLs in the content for following citation trails and cross-references.",
               default: false,
             },
           },
@@ -164,7 +285,32 @@ const TOOLS = [
       },
     },
   },
-];
+  {
+    toolSpec: {
+      name: "runJavascript",
+      description:
+        "Execute JavaScript code to analyze data, verify numerical claims, or detect patterns. Use this for:\n" +
+        "1. Mathematical calculations\n" +
+        "2. Data processing and validation\n" +
+        "3. Pattern analysis across sources\n" +
+        "4. Automated cross-referencing\n" +
+        "5. Compliance requirement verification",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            code: {
+              type: "string",
+              description:
+                "JavaScript code to execute. Structure your code to output clear, verifiable results using console.log(). Include error handling for robust analysis. If asked to implement requirements, write tests to verify correctness.",
+            },
+          },
+          required: ["code"],
+        },
+      },
+    },
+  },
+]
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
@@ -213,7 +359,7 @@ export default function Page() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             model: form.model.value,
-            system: form.researchMode.checked ? SEARCH_SYSTEM_MESSAGE : DEFAULT_SYSTEM_MESSAGE,
+            system: useResearchMode ? SEARCH_SYSTEM_MESSAGE : DEFAULT_SYSTEM_MESSAGE,
             tools: TOOLS,
             messages: messages(),
           }),
@@ -244,8 +390,7 @@ export default function Page() {
               toolUse = { ...startToolUse, input: "" };
               assistantMessage = { role: "assistant", content: [{ toolUse }] };
               setActiveMessage(() => structuredClone(assistantMessage));
-            }
-            else if (delta) {
+            } else if (delta) {
               if (delta.text) {
                 if (!assistantMessage.content[0]?.text) {
                   assistantMessage.content[0] = { text: "" };
@@ -255,8 +400,7 @@ export default function Page() {
                 assistantMessage.content[0].toolUse.input += delta.toolUse.input || "";
               }
               setActiveMessage(() => structuredClone(assistantMessage));
-            }
-            else if (value.contentBlockStop) {
+            } else if (value.contentBlockStop) {
               setMessages((messages) => messages.concat([assistantMessage]));
               setActiveMessage(null);
             } else if (stopReason === "tool_use") {
@@ -399,6 +543,10 @@ export function Message({ message }) {
     if (result === null || result === undefined) return "No result";
     try {
       if (typeof result !== "string") result = JSON.stringify(result, null, 2);
+      console.log({ result });
+      if (result?.results?.[0]?.url) {
+        result = result.results.map((r) => ({title: r.title, url: r.url, snippet: r.snippet}));
+      }
       const json = yaml.parse(result);
       return truncate(yaml.stringify(json));
     } catch (error) {
