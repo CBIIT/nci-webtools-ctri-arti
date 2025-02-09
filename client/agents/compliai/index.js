@@ -550,7 +550,7 @@ export function Message({ message }) {
               <div class="card-body p-2">
                 ${isCodeOnly(tool.input)
                   ? html`<pre class="mb-0"><code>${tool.input.code}</code></pre>`
-                  : html`<pre class="mb-0"><code>${JSON.stringify(tool.input, null, 2)}</code></pre>`}
+                  : html`<pre class="mb-0"><code>${formatResult(tool.input, null, 2)}</code></pre>`}
               </div>
             </div>
           `}
