@@ -1,9 +1,13 @@
-import { parse as parseMarkdown } from "marked";
+import { parse as parseMarkdown, Renderer } from "marked";
 import { onCleanup, createSignal } from "solid-js";
 import { render } from "solid-js/web";
 import html from "solid-js/html";
 import yaml from "yaml";
 import { getWebsiteText, runJavascript, search, readStream } from "./utils.js";
+
+const renderer = new Renderer();
+renderer._table = renderer.table;
+renderer.table = (token) => renderer._table(token).replace("<table>", '<table class="table table-sm table-striped table-hover">');
 
 // Initialize the app
 render(() => html`<${Page} />`, window.app);
@@ -279,6 +283,7 @@ Key capabilities:
   },
 ];
 
+
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
  * @param {*} toolUse
@@ -522,13 +527,15 @@ export function Message({ message }) {
     }
   };
 
+  
+
   return html`
     <div class="d-flex flex-wrap">
       ${textContent?.trim().length > 0 &&
       html`
         <span
           class=${["card mb-2 p-2 small", isAssistant ? "bg-light w-100 border-secondary" : "bg-white"].join(" ")}
-          innerHTML=${parseMarkdown(textContent)}>
+          innerHTML=${parseMarkdown(textContent, { renderer })}></span>
         </span>
       `}
       ${toolCalls.map(
