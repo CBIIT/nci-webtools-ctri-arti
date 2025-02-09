@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "mammoth": "^1.9.0",
+    "unpdf": "^0.12.1"
+  }
+}
