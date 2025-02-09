@@ -20,6 +20,7 @@
     "jsdom": "^26.0.0",
     "mammoth": "^1.9.0",
     "multer": "^1.4.5-lts.1",
+    "proxy-agent": "^6.5.0",
     "unpdf": "^0.12.1"
   }
 }
