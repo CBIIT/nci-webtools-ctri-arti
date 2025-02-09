@@ -3,7 +3,7 @@ import cors from "cors";
 import multer from "multer";
 import { runModel, processDocuments, streamModel } from "./inference.js";
 import { proxyMiddleware } from './middleware.js';
-import { search, research, researchV2 } from './utils.js';
+import { braveSearch as search, research, researchV2 } from './utils.js';
 
 const api = Router();
 const fieldSize = process.env.UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb 
@@ -20,8 +20,8 @@ api.get("/ping", (req, res) => {
 api.all("/proxy", proxyMiddleware);
 
 api.get("/search", async (req, res) => {
-  const { q, offset, time, vqd } = req.query;
-  res.json(await search({keywords: q, offset, time, vqd})); 
+  // const { q, offset, time, vqd } = req.query;
+  res.json(await search(req.query)); 
 });
 
 api.get("/research", async (req, res) => {

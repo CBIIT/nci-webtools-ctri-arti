@@ -1,5 +1,6 @@
 import ivm from "isolated-vm";
 import DDG from "duck-duck-scrape";
+import { ProxyAgent } from "proxy-agent";
 import { JSDOM } from "jsdom";
 import { inspect } from "util";
 import { parseDocument } from "./parsers.js";
@@ -10,7 +11,7 @@ const log = (value) => console.log(inspect(value, { depth: null, colors: true, c
 const modelId = "amazon.nova-pro-v1:0";
 
 const DEFAULT_TOOLS = {
-  search,
+  search: ddgSearch,
   runJavascript,
 };
 
@@ -373,12 +374,63 @@ Note: Please use runJavascript for all mathematical operations, including basic 
 }
 
 /**
- * 
- * @param {*} param0 
- * @returns 
+ * @param {Object} opts - Search options (q, count, offset, freshness, goggles)
+ * @param {string} apiKey - Brave Search API key
  */
-export async function search({ keywords, offset = 0, time, vqd }) {
-  const response = await DDG.search(keywords, { offset, time, vqd });
+export async function braveSearch(opts, apiKey = process.env.BRAVE_SEARCH_API_KEY) {
+  for (let key in opts) {
+    if (opts[key] === undefined) {
+      delete opts[key];
+    }
+  }
+  const url = `https://api.search.brave.com/res/v1/web/search?${new URLSearchParams(opts)}`;
+  const response = await fetch(url, {
+    headers: {
+      "Accept": "application/json",
+      "Accept-Encoding": "gzip",
+      "X-Subscription-Token": apiKey,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
+/**
+ *
+ * @param {*} param0
+ * @returns
+ */
+export async function ddgSearch({ keywords, offset = 0, time, vqd }, env = process.env) {
+  const { PROXY_SOURCE } = env;
+  const response = await retry(10, 500, async () => {
+    let agent;
+    if (PROXY_SOURCE) {
+      const parseProxies = (proxies) => {
+        try {
+          const results = JSON.parse(proxies);
+          if (Array.isArray(results?.data)) {
+            return results.data.map((proxy) => `${proxy.protocols[0]}://${proxy.ip}:${proxy.port}`);
+          }
+        } catch (error) {
+          return proxies.split("\n");
+        }
+      };
+      const proxyResponse = await fetch(PROXY_SOURCE).then((res) => res.text());
+      const proxies = parseProxies(proxyResponse);
+      let proxy = proxies[Math.floor(Math.random() * proxies.length)];
+      // prepend protocol if missing (use https:// by default)
+      if (!/.+:\/\//.test(proxy)) {
+        proxy = `https://${proxy}`;
+      }
+      console.log("using some proxy", proxy);
+      agent = new ProxyAgent(proxy);
+    }
+    return await DDG.search(keywords, { offset, time, vqd }, { agent });
+  });
   const appendBody = async (result) => ({ ...result, body: await extractTextFromUrl(result.url) });
   const results = await Promise.all((response.results || []).map(appendBody));
   return { vqd, results };
@@ -429,4 +481,39 @@ export async function runJavascript({ code, globalContext = {}, memoryLimit = 12
   }
   const script = await isolate.compileScript(String(code));
   return await script.run(context);
+}
+
+/**
+ * Retries a function with exponential backoff
+ * @param {number} maxAttempts - Maximum number of retry attempts
+ * @param {number} initialDelay - Initial delay in milliseconds
+ * @param {Function} fn - Async function to retry
+ * @returns {Promise<any>} - Result of the function execution
+ * @throws {Error} - Throws the last error encountered after all retries are exhausted
+ */
+export async function retry(maxAttempts, initialDelay, fn) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      console.error(`Attempt ${attempt} failed:`, error);
+
+      if (attempt === maxAttempts) {
+        break;
+      }
+
+      // Calculate delay with exponential backoff: initialDelay * 2^(attempt-1)
+      const delay = initialDelay * Math.pow(2, attempt - 1);
+
+      // Add some jitter to prevent thundering herd problem
+      const jitter = Math.random() * 100;
+
+      await new Promise((resolve) => setTimeout(resolve, delay + jitter));
+    }
+  }
+
+  throw new Error(`Failed after ${maxAttempts} attempts. Last error: ${lastError.message}`);
 }
