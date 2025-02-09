@@ -17,23 +17,23 @@
       <div class="bg-primary-dark text-light">
         <div class="container py-1">
           <a href="." class="link-light fs-5">Research Optimizer</a>
-          <span class="text-light fs-5 ms-1"> / Knowledge Retrieval</span>
+          <span class="text-light fs-5 ms-1"> / Agents</span>
         </div>
       </div>
     </header>
 
     <main class="container flex-grow-1 py-3">
-      <h1 class="h3 mb-3 text-primary">Interactive Knowledge Bases</h1>
+      <h1 class="h3 mb-3 text-primary">Agents</h1>
 
       <div class="row">
         <div class="col-md-3">
-          <a href="./knowledge-retrieval/compliai" class="card cursor-pointer shadow-hover mb-4 text-decoration-none" style="border-left: 4px solid steelblue">
+          <a href="./agents/compliai" class="card cursor-pointer shadow-hover mb-4 text-decoration-none" style="border-left: 4px solid steelblue">
             <div class="card-body">
               <div class="card-title">
                 <h2 class="h6 text-center text-primary">CompliAI</h2>
               </div>
               <div class="card-text text-center fw-normal">
-                <div class="small text-muted">AI Policy Knowledge Base</div>
+                <div class="small text-muted">AI Policy Research and Compliance</div>
               </div>
             </div>
           </a>
@@ -41,8 +41,6 @@
       </div>
 
       
-      
-
     </main>
     <footer class="flex-grow-0">
       <div class="bg-primary-dark text-light py-4">
@@ -146,26 +144,5 @@
         <div class="text-center">NIH ... Turning Discovery Into Health ®</div>
       </div>
     </footer>
-    <script type="importmap">
-      {
-        "imports": {
-          "htm": "https://esm.sh/htm@3.1.1",
-          "idb": "https://esm.sh/idb@8.0.0",
-          "preact": "https://esm.sh/preact@10.23.2",
-          "preact/hooks": "https://esm.sh/preact@10.23.2/hooks",
-          "preact-iso": "https://esm.sh/preact-iso@2.6.3?deps=preact@10.23.2",
-          "@preact/signals": "https://esm.sh/@preact/signals@1.3.0?deps=preact@10.23.2",
-          "sortable": "https://esm.sh/@shopify/draggable@1.1.3/build/esm/Sortable/Sortable.mjs"
-        }
-      }
-    </script>
-    <script type="module">
-      import { h, render } from "preact";
-      import htm from "htm";
-      import App from "./components/document-processing-app.js";
-
-      const html = htm.bind(h);
-      render(html`<${App} />`, window.app);
-    </script>
   </body>
 </html>

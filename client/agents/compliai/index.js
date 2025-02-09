@@ -2,6 +2,7 @@ import { parse as parseMarkdown } from "marked";
 import { onCleanup, createSignal } from "solid-js";
 import { render } from "solid-js/web";
 import html from "solid-js/html";
+import yaml from "yaml";
 import { getWebsiteText, runJavascript, search, readStream } from "./utils.js";
 
 // Initialize the app
@@ -330,6 +331,15 @@ export default function Page() {
           disabled />
 
         <div class="input-group w-auto align-items-center">
+
+          <div class="form-check form-switch mb-0 form-control-sm">
+            <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="researchMode" name="researchMode" checked />
+            <label class="form-check-label cursor-pointer" for="shareScreen">
+              <span class="visually-hidden">Share Screen</span>
+              <i class="bi bi-search"></i>
+            </label>
+          </div>
+
           <div class="form-check form-switch mb-0 form-control-sm">
             <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="researchMode" name="researchMode" checked />
             <label class="form-check-label cursor-pointer" for="researchMode">
@@ -391,8 +401,16 @@ export function Message({ message }) {
   // Helper to format tool result
   const formatResult = (result) => {
     if (result === null || result === undefined) return "No result";
-    if (typeof result === "string") return truncate(result);
-    return truncate(JSON.stringify(result, null, 2));
+    try {
+      if (typeof result !== "string") 
+        result = JSON.stringify(result, null, 2);
+      const json = yaml.parse(result);
+      const yamlText = yaml.stringify(json, { indent, customTags });
+      return yamlText;
+    } catch (error) {
+      console.error(error);
+      return truncate(result.toString());
+    }
   };
 
   return html`
