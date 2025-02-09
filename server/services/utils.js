@@ -454,7 +454,7 @@ export async function ddgSearch({ keywords, offset = 0, time, vqd }, env = proce
   return { vqd, results };
 }
 
-async function extractTextFromUrl(url, expandUrls = false) {
+export async function extractTextFromUrl(url, expandUrls = false) {
   try {
     const response = await fetch(url);
     const contentType = response.headers.get("content-type").split(";")[0].toLowerCase();
