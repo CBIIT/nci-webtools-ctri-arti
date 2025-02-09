@@ -1,4 +1,6 @@
 cdk.context.json
 .env
 node_modules
+venv
 .aider*
+.jupyterlite.doit.db
