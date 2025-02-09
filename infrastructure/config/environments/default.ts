@@ -55,7 +55,8 @@ const config: Config = {
           image: process.env.SERVER_IMAGE || "httpd" || `${account}.dkr.ecr.${region}.amazonaws.com/${prefix}:server-latest`,
           name: "backend",
           environment: {
-            PORT: "8080"
+            PORT: "8080",
+            BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY || "",
           }
         },
       ],
