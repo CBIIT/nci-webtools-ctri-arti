@@ -1,5 +1,5 @@
 import mammoth from "mammoth";
-import * as unpdf from "unpdf";
+const GOGGLE_URL="https://raw.githubusercontent.com/CBIIT/search-filters/refs/heads/main/us_ai_policy.goggle";
 
 export async function* readStream(response) {
   const reader = response.body.getReader();
@@ -16,8 +16,8 @@ export async function* readStream(response) {
   }
 }
 
-export async function search({ keywords, ...params }) {
-  const query = { q: keywords, ...params };
+export async function search(params) {
+  const query = { goggles: GOGGLE_URL, ...params };
   Object.keys(query).forEach(key => query[key] === undefined && delete query[key]);
   return (await fetch('/api/search?' + new URLSearchParams(query))).json();
  }
