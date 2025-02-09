@@ -383,11 +383,14 @@ export async function braveSearch(opts, apiKey = process.env.BRAVE_SEARCH_API_KE
       delete opts[key];
     }
   }
+  Object.assign(opts, {
+    summary: true,
+    extra_snippets: true,
+  });
   const url = `https://api.search.brave.com/res/v1/web/search?${new URLSearchParams(opts)}`;
   const response = await fetch(url, {
     headers: {
       "Accept": "application/json",
-      "Accept-Encoding": "gzip",
       "X-Subscription-Token": apiKey,
     },
   });
@@ -396,7 +399,22 @@ export async function braveSearch(opts, apiKey = process.env.BRAVE_SEARCH_API_KE
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  return await response.json();
+  const data = await response.json();
+  if (data.summarizer) {
+    const opts = {
+      key: data.summarizer.key,
+    };
+    const summarizerResponse = await fetch(`https://api.search.brave.com/res/v1/summarizer/search?${new URLSearchParams(opts)}`, {
+      headers: {
+        "Accept": "application/json",
+        "X-Subscription-Token": apiKey,
+      },
+    });
+    const summarizerData = await summarizerResponse.json();
+    data.summary = summarizerData;
+  }
+
+  return data;
 }
 
 /**
