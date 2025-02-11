@@ -531,8 +531,7 @@ export default function Page() {
               type="checkbox"
               role="switch"
               id="researchMode"
-              name="researchMode"
-              checked />
+              name="researchMode" />
             <label class="form-check-label text-secondary cursor-pointer" for="researchMode">
               <span class="visually-hidden">Enable Research Mode</span>
               <svg xmlns="http://www.w3.org/2000/svg" height="16" fill="currentColor" viewBox="0 0 640 512">
