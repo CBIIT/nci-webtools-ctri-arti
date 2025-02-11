@@ -1,10 +1,10 @@
 import mammoth from "mammoth";
-const GOGGLE_URL="https://raw.githubusercontent.com/CBIIT/search-filters/refs/heads/main/us_ai_policy.goggle";
+const GOGGLE_URL = "https://raw.githubusercontent.com/CBIIT/search-filters/refs/heads/main/us_ai_policy.goggle";
 
 export async function* readStream(response) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
-  
+
   try {
     while (true) {
       const { done, value } = await reader.read();
@@ -18,49 +18,14 @@ export async function* readStream(response) {
 
 export async function search(params) {
   const query = { goggles: GOGGLE_URL, ...params };
-  Object.keys(query).forEach(key => query[key] === undefined && delete query[key]);
-  return (await fetch('/api/search?' + new URLSearchParams(query))).json();
- }
+  Object.keys(query).forEach((key) => query[key] === undefined && delete query[key]);
+  return (await fetch("/api/search?" + new URLSearchParams(query))).json();
+}
 
-export async function getWebsiteText({ url, expandUrls = false }) {
-  try {
-    const response = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
-    const contentType = response.headers.get("content-type")?.split(";")[0].toLowerCase() || "";
-
-    // Get the response as ArrayBuffer to handle both text and binary
-    const buffer = await response.arrayBuffer();
-
-    // Handle HTML pages
-    if (contentType.includes("text/html")) {
-      const html = new TextDecoder().decode(buffer);
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
-
-      // Remove unwanted elements
-      ["script", "style", "nav", "header", "footer", "noscript"].forEach((tag) => {
-        doc.querySelectorAll(tag).forEach((el) => el.remove());
-      });
-
-      // Expand URLs if requested
-      if (expandUrls) {
-        doc.querySelectorAll("a").forEach((el) => {
-          const href = el.getAttribute("href");
-          if (href) {
-            // Convert relative URLs to absolute
-            const absoluteUrl = new URL(href, url).href;
-            el.textContent = `[${absoluteUrl}] ${el.textContent}`;
-          }
-        });
-      }
-
-      return doc.body.textContent.replace(/\s+/g, " ").trim();
-    } else {
-      return parseDocument(buffer, contentType);
-    }
-  } catch (error) {
-    console.error(`Failed to extract text from ${url}:`, error);
-    return "";
-  }
+export async function getWebsiteText(params) {
+  const query = { ...params };
+  Object.keys(query).forEach((key) => query[key] === undefined && delete query[key]);
+  return (await fetch("/api/browse?" + new URLSearchParams(query))).text() || "No text found";
 }
 
 /**
@@ -70,7 +35,7 @@ export async function getWebsiteText({ url, expandUrls = false }) {
  * @returns {Promise<{success: boolean, result?: any, error?: Error, logs: Array}>}
  */
 export async function runJavascript({ code, timeout = 5000 }) {
-  const workerUrl =  location.pathname + "/code-worker.js";
+  const workerUrl = location.pathname + "/code-worker.js";
   const worker = new Worker(workerUrl);
 
   return new Promise((resolve, reject) => {
