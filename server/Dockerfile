@@ -27,6 +27,8 @@ ENV NODE_ENV=production
 
 ENV CLIENT_FOLDER=/client
 
+ENV AWS_MAX_ATTEMPTS=20
+
 EXPOSE 80
 
 CMD ["npm", "start"]
