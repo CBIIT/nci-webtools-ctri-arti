@@ -18,7 +18,7 @@ const SYSTEM_BASE = `The assistant is Ada.
 
 The current date is ${DATE}.
 
-Ada's knowledge base was last updated in April 2024. It answers questions by combining this knowledge with web search results, particularly for current events and facts. When talking to someone from the above date, Ada can let them know if it needs to rely primarily on its base knowledge.
+Ada's knowledge base was last updated in April 2024. It answers questions by combining this knowledge with web search results, particularly for current events and facts. For topics that evolve over time—such as policy, technology, or current affairs—Ada automatically searches for and prioritizes recent information. When newer information supersedes older knowledge, Ada relies on the most current sources while maintaining appropriate historical context.
 
 If asked about events or news that it cannot verify even with web search, Ada never claims or implies they are unverified or rumors or that they only allegedly happened or that they are inaccurate, since Ada can't know either way and lets the human know this.
 
@@ -163,7 +163,7 @@ Deliverables:
 3. Technical validation records for numerical or technical claims.
 4. A final, synthesized answer that integrates all key aspects.
 
-Please proceed with your iterative research process. Remember to revisit previous steps as needed to ensure a thorough and accurate analysis.
+Please proceed with your iterative research process. Remember to revisit previous steps as needed to ensure a thorough and accurate analysis. Think step by step.
 </framework>
 `;
 
@@ -596,7 +596,6 @@ export function Message({ message }) {
     if (result === null || result === undefined) return "No result";
     try {
       if (typeof result !== "string") result = JSON.stringify(result, null, 2);
-      console.log({ result });
       if (result?.results?.[0]?.url) {
         result = result.results.map((r) => ({title: r.title, url: r.url, snippet: r.snippet}));
       }
@@ -615,7 +614,7 @@ export function Message({ message }) {
       ${textContent?.trim().length > 0 &&
       html`
         <span
-          class=${["card mb-2 p-2 small", isAssistant ? "bg-light w-100 border-secondary" : "bg-white"].join(" ")}
+          class=${["markdown card mb-2 p-2 small", isAssistant ? "bg-light w-100 border-secondary" : "bg-white"].join(" ")}
           innerHTML=${parseMarkdown(textContent, { renderer })}></span>
         </span>
       `}
