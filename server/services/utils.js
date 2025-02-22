@@ -373,6 +373,20 @@ Note: Please use runJavascript for all mathematical operations, including basic 
   return messages;
 }
 
+async function braveRequest(url, opts = {}, apiKey = process.env.BRAVE_SEARCH_API_KEY) {
+  const response = await fetch(url, {
+    headers: {
+      "Accept": "application/json",
+      "X-Subscription-Token": apiKey,
+    },
+    ...opts,
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return await response.json();
+};
+
 /**
  * @param {Object} opts - Search options (q, count, offset, freshness, goggles)
  * @param {string} apiKey - Brave Search API key
@@ -384,37 +398,26 @@ export async function braveSearch(opts, apiKey = process.env.BRAVE_SEARCH_API_KE
     }
   }
   Object.assign(opts, {
-    summary: true,
-    extra_snippets: true,
-  });
-  const url = `https://api.search.brave.com/res/v1/web/search?${new URLSearchParams(opts)}`;
-  const response = await fetch(url, {
-    headers: {
-      "Accept": "application/json",
-      "X-Subscription-Token": apiKey,
-    },
+    summary: false,
+    extra_snippets: false,
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  const newsUrl = `https://api.search.brave.com/res/v1/news/search?${new URLSearchParams(opts)}`;
+  const newsResults = await braveRequest(newsUrl);
+
+  const searchUrl = `https://api.search.brave.com/res/v1/web/search?${new URLSearchParams(opts)}`;
+  const searchResults = await braveRequest(searchUrl);
+
+  if (searchResults.summarizer) {
+    const opts = { key: searchResults.summarizer.key };
+    const summarizerUrl = `https://api.search.brave.com/res/v1/summarizer/search?${new URLSearchParams(opts)}`;
+    data.summary = await braveRequest(summarizerUrl);
   }
 
-  const data = await response.json();
-  if (data.summarizer) {
-    const opts = {
-      key: data.summarizer.key,
-    };
-    const summarizerResponse = await fetch(`https://api.search.brave.com/res/v1/summarizer/search?${new URLSearchParams(opts)}`, {
-      headers: {
-        "Accept": "application/json",
-        "X-Subscription-Token": apiKey,
-      },
-    });
-    const summarizerData = await summarizerResponse.json();
-    data.summary = summarizerData;
+  return {
+    newsResults,
+    searchResults,
   }
-
-  return data;
 }
 
 /**
@@ -480,7 +483,7 @@ export async function extractTextFromUrl(url, expandUrls = false) {
       // Expand URLs if requested
       if (expandUrls) {
         doc.querySelectorAll("a").forEach((el) => {
-          el.textContent = `[${el.href}] ${el.textContent}`;
+          el.textContent = ` [${el.textContent}](${el.href}) `;
         });
       }
 
