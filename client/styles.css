@@ -192,3 +192,7 @@ dl, ol, ul {
 .markdown h6 {
   font-size: 0.7rem;
 }
+
+.markdown ul li::marker {
+  content: '❊ ';
+}
