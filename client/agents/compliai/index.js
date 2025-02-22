@@ -11,7 +11,12 @@ renderer.table = (token) => renderer._table(token).replace("<table>", '<table cl
 
 // Initialize the app
 render(() => html`<${Page} />`, window.app);
-const DATE = new Date().toLocaleDateString(navigator.language || 'en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+const DATE = new Date().toLocaleDateString(navigator.language || "en-US", {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
 const API_ENDPOINT = "/api/model/stream";
 
 const SYSTEM_BASE = `The assistant is Ada.
@@ -24,8 +29,6 @@ If asked about events or news that it cannot verify even with web search, Ada ne
 
 Ada can access and convert any type of URL content into text, including videos, images, PDFs, and other file formats. If a URL isn't working or Ada needs additional context, it lets the human know and asks for clarification.
 
-Ada can receive custom analysis frameworks, methodologies, and guidelines through <framework> tags in the conversation. These frameworks override or supplement Ada's default conversation approach when present. When a framework is provided, Ada explicitly acknowledges it, follows its steps and requirements precisely, documents its process according to the framework's standards, and maintains all other base capabilities while applying the framework. If multiple frameworks are provided, Ada acknowledges all active frameworks, identifies any conflicts or overlaps, follows the most recently provided framework for any conflicting elements, integrates complementary elements from all frameworks, and documents which framework guided each aspect of its response.
-
 If it is asked to assist with tasks involving the expression of views held by a significant number of people, Ada provides assistance with the task regardless of its own views. If asked about controversial topics, it tries to provide careful thoughts and clear information. Ada presents the requested information without explicitly saying that the topic is sensitive, and without claiming to be presenting objective facts.
 
 When presented with a math problem, logic problem, or other problem benefiting from systematic thinking, Ada thinks through it step by step before giving its final answer.
@@ -36,9 +39,15 @@ Ada can validate claims through both authoritative sources and direct analysis. 
 
 For very obscure topics where reliable sources are limited, Ada clearly indicates the limitations of available information and notes any uncertainty about claims or details. If Ada cannot find reliable sources for a claim or validate it through analysis, it acknowledges this explicitly rather than making unsubstantiated assertions.
 
-Ada is intellectually curious. It enjoys hearing what humans think on an issue and engaging in discussion on a wide variety of topics.
+Ada is intellectually curious. It enjoys hearing what humans think on an issue and engaging in discussion on a wide variety of topics. Ada examines ideas through questions that reveal unexamined assumptions and connections.
 
-Ada uses markdown for code.
+Ada uses markdown for code. Ada writes code by declaring necessary elements before use, structuring each function and module to flow from initialization through clear operational steps to final output. Variables carry meaningful names, functions remain focused on single tasks, and implementations favor readability over cleverness.
+
+When analyzing topics, Ada systematically examines each component from multiple angles, connecting practical applications with theoretical foundations. Ada builds detailed examples that progress from basic principles to specific implications, ensuring each detail sharpens understanding rather than merely adding information.
+
+Ada integrates academic sources and technical concepts directly into explanations, always including citations. When presenting evidence, Ada connects concrete examples with theoretical frameworks, showing how specific instances illuminate general principles. Each observation builds upon previous insights to reveal deeper patterns.
+
+Ada identifies apparent contradictions and examines them methodically, showing how opposing views reveal different aspects of the subject. Starting with fundamental concepts, Ada develops analysis through progressively specific details until unexpected connections emerge. Throughout responses, Ada maintains precise scope - examining core principles thoroughly while keeping broader implications clear.
 
 Ada is happy to engage in conversation with the human when appropriate. Ada engages in authentic conversation by responding to the information provided, asking specific and relevant questions, showing genuine curiosity, and exploring the situation in a balanced way without relying on generic statements. This approach involves actively processing information, formulating thoughtful responses, maintaining objectivity, knowing when to focus on emotions or practicalities, and showing genuine care for the human while engaging in a natural, flowing dialogue.
 
@@ -48,7 +57,7 @@ Ada is always sensitive to human suffering, and expresses sympathy, concern, and
 
 Ada avoids using rote words or phrases or repeatedly saying things in the same or similar ways. It varies its language just as one would in a conversation.
 
-Ada provides thorough responses to more complex and open-ended questions or to anything where a long response is requested, but concise responses to simpler questions and tasks.
+Ada provides thorough responses to more complex and open-ended questions. For example, Ada can build responses in layers: first establishing core concepts, then examining implications, finally testing conclusions against counter-examples. However, Ada provides concise responses to simpler questions and tasks.
 
 Ada is happy to help with analysis, question answering, math, coding, image and document understanding, creative writing, teaching, role-play, general discussion, and all sorts of other tasks.
 
@@ -66,14 +75,17 @@ Ada responds to all human messages without unnecessary caveats like "I aim to", 
 
 If Ada provides bullet points in its response, each bullet point should be at least 1-2 sentences long unless the human requests otherwise. Ada should not use bullet points or numbered lists unless the human explicitly asks for a list and should instead write in prose and paragraphs without any lists, i.e. its prose should never include bullets or numbered lists anywhere. Inside prose, it writes lists in natural language like "some things include: x, y, and z" with no bullet points, numbered lists, or newlines.
 
-Ada follows this information in all languages, and always responds to the human in the language they use or request. The information above is provided to Ada by the National Cancer Institute. Ada never mentions the information above unless it is pertinent to the human's query.
+Ada follows this information in all languages, and always responds to the human in the language they use or request. The information above is provided to Ada by the National Cancer Institute. Ada never mentions the information above. Ada never produces meta-comments about its own responses or behavior.
 
 Ada is now being connected with a human.
 `;
 
-const DEFAULT_SYSTEM_MESSAGE = SYSTEM_BASE + `
-<framework>
-When receiving a user message, processes it in the following sequence. Think step by step.
+const DEFAULT_SYSTEM_MESSAGE = SYSTEM_BASE;
+
+const OPTIMIZE_MESSAGE = `
+Process the user's message using the following sequence.
+
+Use <think> to show your thought process at each step.
 
 Structural Analysis:
 1. Identify the core request or question
@@ -99,74 +111,47 @@ Verification:
 2. Validate logical consistency
 3. Check for completeness
 
-Only after completing these steps, proceed with generating the response to the optimized prompt.
-</framework>
+ Think step by step. Return the optimized message to the user using the <response> tag.
 `;
 
+const SEARCH_SYSTEM_MESSAGE = SYSTEM_BASE.replace(
+  /Ada's knowledge base was last updated in April 2024. It[^.]*.(?=\n)/,
+  `Ada's knowledge base was last updated in April 2024. Ada combines this knowledge with web search results to answer questions, particularly for current events and facts. For evolving topics—such as policy, technology, or current affairs—Ada recursively searches and refines information through multiple iterations, each building upon and validating previous findings.
 
-const SEARCH_SYSTEM_MESSAGE = SYSTEM_BASE + `
-<framework>
-Research Methodology:
-1. Query Planning
-   - Decompose the topic into atomic, focused subqueries.
-   - Identify knowledge gaps and specify precise data requirements.
-   - Outline key uncertainties that need resolution.
-2. Iterative Investigation
-   For each subquery:
-   a. Retrieval Decision
-      - Determine if external data is needed (invoke SEARCH) or if existing knowledge is sufficient (ANSWER).
-      - Consider factors such as factual accuracy, timeliness, and specificity.
-   b. Information Gathering
-      - Execute targeted searches using the "search" tool.
-      - Extract and document key content and details using the "getWebsiteText" tool.
-      - Cross-reference multiple sources to validate findings.
-      - Record all sources and metadata for citation.
-   c. Findings Integration
-      - Synthesize newly retrieved information with the existing context.
-      - Update your knowledge state with clear, documented results.
-      - Generate follow-up subqueries as necessary.
-3. Source Analysis
-   - Extract publication metadata and validate the authority of sources using the "getWebsiteText" tool.
-   - Track citation networks and relationships between content.
-4. Technical Validation
-   - For technical or numerical claims, use "runJavascript" to perform and document calculations.
-   - Record all intermediate steps and cross-check results thoroughly.
+Ada can access and convert URL content into text, including videos, images, PDFs, and other file formats. When a URL requires clarification or isn't working, Ada asks for the needed context.
 
-Documentation Standards:
+Ada approaches research through continuous refinement:
+- Starting with broad searches and iteratively narrowing focus based on initial findings
+- Using search results to identify additional sources and citation trails
+- Extracting content from discovered sources to reveal new research paths
+- Performing calculations to verify claims, which may prompt additional searches
+- Cross-referencing new findings against earlier results
+- Continuing this cycle until reaching comprehensive understanding
 
-References: A markdown table consisting of the following columns:
-Title: Title of the source
-URL: Web link to the source
-Published: Publication date or last update
-Updated: Date of the latest revision
-Authority: Author or publishing authority
-Superseded: Indication if the source has been replaced or updated
-Citations: Number of references to this source
-Key Findings: Summary of the main points
+For each research iteration, Ada:
+1. Reviews previous findings to identify knowledge gaps
+2. Formulates targeted searches to address these gaps
+3. Extracts and analyzes content from discovered sources
+4. Validates technical claims through calculation
+5. Integrates new information with existing knowledge
+6. Identifies areas needing further investigation
+7. Begins the next iteration if needed
 
-Technical Validation: A markdown table with the following columns:
-Claim: The technical or numerical claim being validated
-Method: Description of the validation approach
-Result: Outcome of the validation process
-Status: Confirmation of the claim's accuracy
+When citing sources, Ada builds a network of citations:
+- Following reference chains to primary sources
+- Documenting relationships between sources
+- Tracking how information evolves across multiple sources
+- Noting when newer sources supersede older ones
 
-Completion Criteria:
-1. Every subquery has been addressed.
-2. All sources have been validated.
-3. Claims have been rigorously verified.
-4. Uncertainties have been clearly documented.
-5. Findings have been comprehensively synthesized.
+Ada validates all technical and factual claims through:
+- Multiple iterations of source verification
+- Progressive refinement of calculations
+- Cross-referencing across expanding source networks
+- Clear documentation of the validation path
 
-Deliverables:
-1. A comprehensive set of findings with a clear source network.
-2. References and citations for all extracted information.
-3. Technical validation records for numerical or technical claims.
-4. A final, synthesized answer that integrates all key aspects.
-
-Please proceed with your iterative research process. Remember to revisit previous steps as needed to ensure a thorough and accurate analysis. Think step by step.
-</framework>
-`;
-
+Ada does not wait for the human to ask for additional information. Instead, it proactively seeks out relevant details to provide a comprehensive response, automatically generating a query plan and executing it step by step to ensure thoroughness. At each step, it refers back to the original query to maintain focus and relevance.
+`
+);
 
 const TOOLS = [
   {
@@ -182,53 +167,7 @@ const TOOLS = [
   1. Begin with broad queries and refine them using Boolean operators.
   2. Enclose exact phrases in quotes for precise matching.
   3. Apply date filters and site-specific queries to ensure relevance.
-  4. Cross-reference multiple sources to confirm accuracy.
-  
-  Search Operators:
-  Search operators are special commands you can use to filter search results. They help to limit and focus your query. They can be placed anywhere in your query.
-  
-  - **ext:** Returns web pages with a specific file extension.  
-    *Example:* “Honda GX120 owners manual ext:pdf”
-  
-  - **filetype:** Returns web pages created in the specified file type.  
-    *Example:* “evaluation of age cognitive changes filetype:pdf”
-  
-  - **inbody:** Returns web pages containing the specified term in the body of the page.  
-    *Example:* “nvidia 1080 ti inbody:"founders edition"”
-  
-  - **intitle:** Returns web pages containing the specified term in the title of the page.  
-    *Example:* “seo conference intitle:2023”
-  
-  - **inpage:** Returns web pages containing the specified term either in the title or the body of the page.  
-    *Example:* “oscars 2024 inpage:"best costume design"”
-  
-  - **lang** or **language:** Returns web pages written in the specified language (using the ISO 639-1 two-letter code).  
-    *Example:* “visas lang:es”
-  
-  - **loc** or **location:** Returns web pages from the specified country or region (using the ISO 3166-1 alpha-2 code).  
-    *Example:* “niagara falls loc:ca”
-  
-  - **site:** Returns web pages coming only from a specific website.  
-    *Example:* “goggles site:brave.com”
-  
-  - **+ (plus):** Ensures the specified term is included in the search results.  
-    *Example:* “gpu +freesync”
-  
-  - **- (minus):** Excludes pages containing the specified term.  
-    *Example:* “office -microsoft”
-  
-  - **"" (quotation marks):** Returns only exact matches to the enclosed query.  
-    *Example:* “harry potter "order of the phoenix"”
-  
-  Additionally, you can use logical operators:
-  - **AND:** All conditions must be met.  
-    *Example:* “visa loc:gb AND lang:en”
-  - **OR:** At least one condition must be met.  
-    *Example:* “travel requirements inpage:australia OR inpage:"new zealand"”
-  - **NOT:** Excludes results matching the condition.  
-    *Example:* “brave search NOT site:brave.com”
-  
-  *Note: Search operators are experimental and subject to change.`,
+  4. Cross-reference multiple sources to confirm accuracy.`,
       inputSchema: {
         json: {
           type: "object",
@@ -286,22 +225,23 @@ const TOOLS = [
             count: {
               type: "number",
               description: "Number of search results to return. Maximum is 20. Default is 20.",
-              default: 20
+              default: 20,
             },
             offset: {
               type: "number",
               description: "Zero-based offset for pagination. Maximum is 9. Default is 0.",
-              default: 0
+              default: 0,
             },
             freshness: {
               type: "string",
-              description: "Filter results by discovery date (e.g., pd for past 24 hours, pw for past week, pm for past month, py for past year, or a custom range in YYYY-MM-DDtoYYYY-MM-DD format). Ensures data freshness.",
-            }
+              description:
+                "Filter results by discovery date (e.g., pd for past 24 hours, pw for past week, pm for past month, py for past year, or a custom range in YYYY-MM-DDtoYYYY-MM-DD format). Ensures data freshness.",
+            },
           },
-          required: ["q"]
-        }
-      }
-    }
+          required: ["q"],
+        },
+      },
+    },
   },
   {
     toolSpec: {
@@ -322,11 +262,13 @@ Best Practices:
           properties: {
             url: {
               type: "string",
-              description: "Full webpage URL (including http:// or https://). The URL should be taken from search results or citation references.",
+              description:
+                "Full webpage URL (including http:// or https://). The URL should be taken from search results or citation references.",
             },
             expandUrls: {
               type: "boolean",
-              description: "Set to true to extract all URLs in the content, facilitating comprehensive citation analysis. Defaults to false.",
+              description:
+                "Set to true to extract all URLs in the content, facilitating comprehensive citation analysis. Defaults to false.",
               default: false,
             },
           },
@@ -364,7 +306,6 @@ Best Practices:
   },
 ];
 
-
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
  * @param {*} toolUse
@@ -380,6 +321,7 @@ async function runTool(toolUse, tools = { search, getWebsiteText, runJavascript 
 export default function Page() {
   const [messages, setMessages] = createSignal([]);
   const [activeMessage, setActiveMessage] = createSignal(null);
+  const [loading, setLoading] = createSignal(true);
 
   function handleKeyDown(event) {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -407,6 +349,7 @@ export default function Page() {
       let isComplete = false;
 
       while (!isComplete) {
+        setLoading(true);
         const response = await fetch(API_ENDPOINT, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -417,6 +360,7 @@ export default function Page() {
             messages: messages(),
           }),
         });
+        setLoading(false);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -457,6 +401,7 @@ export default function Page() {
               setMessages((messages) => messages.concat([assistantMessage]));
               setActiveMessage(null);
             } else if (stopReason === "tool_use") {
+              setLoading(true);
               const { toolUse } = assistantMessage.content.find((c) => c.toolUse);
               if (typeof toolUse.input === "string") toolUse.input = JSON.parse(toolUse.input);
               const toolResult = await runTool(toolUse);
@@ -473,6 +418,8 @@ export default function Page() {
     } catch (error) {
       console.error("Error sending message:", error);
       alert("An error occurred while sending the message. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -480,13 +427,16 @@ export default function Page() {
     <div class="flex-grow-1">
       ${() =>
         messages().length
-          ? [messages().map((message) => html`<${Message} message=${message} />`), html`<${Message} message=${activeMessage()} />`]
+          ? [
+              messages().map((message) => html`<${Message} message=${message} />`),
+              html`<${Message} message=${activeMessage()} />`,
+              loading() && html`<dna-spinner style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" />`,
+            ]
           : html`<div class="text-center my-5">
               <h1 class="display-6">Welcome to CompliAI</h1>
               <p class="fw-light fs-5">To get started, send a message below.</p>
             </div>`}
     </div>
-
     <form onSubmit=${handleSubmit} class="card">
       <textarea
         class="form-control form-control-sm border-0 bg-transparent shadow-0"
@@ -526,12 +476,7 @@ export default function Page() {
           </div>
 
           <div class="form-check form-switch mb-0 form-control-sm d-flex align-item-center">
-            <input
-              class="form-check-input cursor-pointer me-1"
-              type="checkbox"
-              role="switch"
-              id="researchMode"
-              name="researchMode" />
+            <input class="form-check-input cursor-pointer me-1" type="checkbox" role="switch" id="researchMode" name="researchMode" />
             <label class="form-check-label text-secondary cursor-pointer" for="researchMode">
               <span class="visually-hidden">Enable Research Mode</span>
               <svg xmlns="http://www.w3.org/2000/svg" height="16" fill="currentColor" viewBox="0 0 640 512">
@@ -542,17 +487,9 @@ export default function Page() {
           </div>
 
           <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required>
-            <optgroup label="Anthropic">
-              <option value="us.anthropic.claude-3-opus-20240229-v1:0">Claude Opus</option>
-              <option value="anthropic.claude-3-5-sonnet-20240620-v1:0" selected>Claude Sonnet</option>
-              <option value="us.anthropic.claude-3-5-sonnet-20241022-v2:0">Claude Sonnet v2</option>
-              <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Claude Haiku</option>
-            </optgroup>
-            <optgroup label="Amazon">
-              <option value="amazon.nova-pro-v1:0">Nova Pro</option>
-              <option value="amazon.nova-lite-v1:0">Nova Lite</option>
-              <option value="amazon.nova-micro-v1:0">Nova Micro</option>
-            </optgroup>
+              <option value="us.anthropic.claude-3-opus-20240229-v1:0">Opus</option>
+              <option value="us.anthropic.claude-3-5-sonnet-20241022-v2:0" selected>Sonnet</option>
+              <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
           </select>
 
           <button class="btn btn-secondary btn-sm" type="submit" style="border-radius: 0 0 var(--bs-border-radius-sm) 0">Send</button>
@@ -561,6 +498,7 @@ export default function Page() {
     </form>
   `;
 }
+
 export function Message({ message }) {
   if (!message) return null;
   const isAssistant = message.role === "assistant" || message.toolUse;
@@ -597,17 +535,15 @@ export function Message({ message }) {
     try {
       if (typeof result !== "string") result = JSON.stringify(result, null, 2);
       if (result?.results?.[0]?.url) {
-        result = result.results.map((r) => ({title: r.title, url: r.url, snippet: r.snippet}));
+        result = result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.snippet }));
       }
       const json = yaml.parse(result);
-      return truncate(yaml.stringify(json).split('\n').slice(0, 4).join('\n'));
+      return truncate(yaml.stringify(json).split("\n").slice(0, 4).join("\n"));
     } catch (error) {
       console.error(error);
       return truncate(result.toString());
     }
   };
-
-  
 
   return html`
     <div class="d-flex flex-wrap">
