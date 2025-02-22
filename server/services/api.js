@@ -60,10 +60,10 @@ api.get("/model/stream", async (req, res) => {
   const { model, messages, system } = req.query;
   const results = await streamModel(model, messages, system);
   for await (const message of results?.stream || []) {
-    res.write(message);
-    // const chunk = message?.contentBlockDelta?.delta?.text;
-    // if (chunk?.length > 0)
-    //   res.write(chunk);
+    // res.write(message);
+    const chunk = message?.contentBlockDelta?.delta?.text;
+    if (chunk?.length > 0)
+      res.write(chunk);
   }
   res.end();
 });
