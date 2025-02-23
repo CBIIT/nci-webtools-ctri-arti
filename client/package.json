@@ -1,6 +1,8 @@
 {
   "devDependencies": {
+    "@langchain/textsplitters": "^0.1.0",
     "@solidjs/router": "^0.15.3",
+    "kokoro-js": "^1.2.0",
     "solid-js": "^1.9.4"
   }
 }
