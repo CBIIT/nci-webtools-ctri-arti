@@ -1,3 +1,4 @@
+import { KokoroTTS, TextSplitterStream } from "kokoro-js";
 import mammoth from "mammoth";
 const GOGGLE_URL = "https://raw.githubusercontent.com/CBIIT/search-filters/refs/heads/main/us_ai_policy.goggle";
 
@@ -114,4 +115,96 @@ export async function parsePdf(buffer) {
   const pdf = await unpdf.getDocumentProxy(new Uint8Array(buffer));
   const results = await unpdf.extractText(pdf, { mergePages: true });
   return results.text.trim() || "No text found in PDF";
+}
+
+export function getClientEnvironment() {
+  const now = new Date();
+  const { language, platform, deviceMemory, hardwareConcurrency } = navigator;
+  const timeFormat = Intl.DateTimeFormat().resolvedOptions();
+  const timeFormatter = new Intl.DateTimeFormat(language, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    timeZoneName: "long",
+    hour12: true,
+  });
+  const time = timeFormatter.format(now);
+  const memory = deviceMemory >= 8 ? "greater than 8 GB" : `approximately ${deviceMemory} GB`;
+  return { time, language, platform, memory, hardwareConcurrency, timeFormat };
+}
+
+export async function playAudio(text, voice = "af_heart") {
+  const modelId = "onnx-community/Kokoro-82M-v1.0-ONNX";
+  const tts = await KokoroTTS.from_pretrained(modelId, {
+    dtype: "fp32",
+    device: "webgpu",
+  });
+  
+  const splitter = new TextSplitterStream();
+  const audioStream = tts.stream(splitter, { voice });
+
+  // Utility function for delaying execution.
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // Asynchronously push text tokens into the splitter.
+  async function pushTokens(text) {
+    const tokens = text.match(/\s*\S+/g) || [];
+    for (const token of tokens) {
+      splitter.push(token);
+      await sleep(10);
+    }
+    splitter.close();
+  }
+
+  pushTokens(text);
+
+  let shouldStop = false;
+  let currentAudio = null;
+  
+  function handleKeydown(e) {
+    if (e.key === "Escape") {
+      shouldStop = true;
+      currentAudio?.pause();
+    }
+  }
+  
+  document.addEventListener("keydown", handleKeydown);
+
+  try {
+    // Process each audio chunk from the stream.
+    for await (const { audio } of audioStream) {
+      if (shouldStop) break;
+
+      const blob = audio.toBlob();
+      const url = URL.createObjectURL(blob);
+
+      // Play the current audio chunk and wait until it ends.
+      await new Promise((resolve, reject) => {
+        const audioEl = new Audio(url);
+        currentAudio = audioEl;
+        audioEl.play().catch(reject);
+        audioEl.onended = () => {
+          URL.revokeObjectURL(url);
+          resolve();
+        };
+        audioEl.onerror = (err) => {
+          URL.revokeObjectURL(url);
+          reject(err);
+        };
+      });
+    }
+  } catch (error) {
+    console.error("Audio playback interrupted or error occurred:", error);
+  } finally {
+    document.removeEventListener("keydown", handleKeydown);
+  }
+}
+
+export async function preloadModels() {
+  window.MODELS_LOADED = window.MODELS_LOADED || false;
+  const model_id = "onnx-community/Kokoro-82M-v1.0-ONNX";
+  await KokoroTTS.from_pretrained(model_id, { dtype: "fp32", device: "webgpu" });
+  window.MODELS_LOADED = true;
 }
