@@ -1,4 +1,6 @@
 import { KokoroTTS, TextSplitterStream } from "kokoro-js";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+
 import mammoth from "mammoth";
 const GOGGLE_URL = "https://raw.githubusercontent.com/CBIIT/search-filters/refs/heads/main/us_ai_policy.goggle";
 
@@ -141,35 +143,31 @@ export async function playAudio(text, voice = "af_heart") {
     dtype: "fp32",
     device: "webgpu",
   });
-  
+
   const splitter = new TextSplitterStream();
   const audioStream = tts.stream(splitter, { voice });
-
-  // Utility function for delaying execution.
-  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-  // Asynchronously push text tokens into the splitter.
-  async function pushTokens(text) {
-    const tokens = text.match(/\s*\S+/g) || [];
-    for (const token of tokens) {
-      splitter.push(token);
-      await sleep(10);
-    }
-    splitter.close();
+  const separators = ["\n", "."];
+  const textSplitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 300,
+    chunkOverlap: 0,
+    separators,
+    keepSeparator: true,
+  });
+  for (let chunk of await textSplitter.splitText(text)) {
+    splitter.push(chunk);
   }
-
-  pushTokens(text);
+  splitter.close();
 
   let shouldStop = false;
   let currentAudio = null;
-  
+
   function handleKeydown(e) {
     if (e.key === "Escape") {
       shouldStop = true;
       currentAudio?.pause();
     }
   }
-  
+
   document.addEventListener("keydown", handleKeydown);
 
   try {
@@ -186,6 +184,7 @@ export async function playAudio(text, voice = "af_heart") {
         currentAudio = audioEl;
         audioEl.play().catch(reject);
         audioEl.onended = () => {
+          audioEl.remove();
           URL.revokeObjectURL(url);
           resolve();
         };
