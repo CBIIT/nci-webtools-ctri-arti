@@ -137,13 +137,9 @@ export function getClientEnvironment() {
   return { time, language, platform, memory, hardwareConcurrency, timeFormat };
 }
 
-export async function playAudio(text, voice = "af_heart") {
-  const modelId = "onnx-community/Kokoro-82M-v1.0-ONNX";
-  const tts = await KokoroTTS.from_pretrained(modelId, {
-    dtype: "fp32",
-    device: "webgpu",
-  });
-
+export async function playAudio(text, voice = "af_heart", cancelKey = "Escape") {
+  const tts = await preloadModels();
+  if (!tts) return false;
   const splitter = new TextSplitterStream();
   const audioStream = tts.stream(splitter, { voice });
   const separators = ["\n", "."];
@@ -162,7 +158,7 @@ export async function playAudio(text, voice = "af_heart") {
   let currentAudio = null;
 
   function handleKeydown(e) {
-    if (e.key === "Escape") {
+    if (e.key === cancelKey) {
       shouldStop = true;
       currentAudio?.pause();
     }
@@ -203,7 +199,13 @@ export async function playAudio(text, voice = "af_heart") {
 
 export async function preloadModels() {
   window.MODELS_LOADED = window.MODELS_LOADED || false;
-  const model_id = "onnx-community/Kokoro-82M-v1.0-ONNX";
-  await KokoroTTS.from_pretrained(model_id, { dtype: "fp32", device: "webgpu" });
+  if (!navigator.gpu) {
+    window.MODELS_LOADED = false;
+    return false;
+  }
+  const modelId = "onnx-community/Kokoro-82M-v1.0-ONNX";
+  const modelOptions = { dtype: "fp32", device: "webgpu" };
+  const tts = await KokoroTTS.from_pretrained(modelId, modelOptions);
   window.MODELS_LOADED = true;
+  return tts;
 }
