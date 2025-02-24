@@ -1,4 +1,3 @@
-import ivm from "isolated-vm";
 import DDG from "duck-duck-scrape";
 import { ProxyAgent } from "proxy-agent";
 import { JSDOM } from "jsdom";
@@ -498,14 +497,7 @@ export async function extractTextFromUrl(url, expandUrls = false) {
 }
 
 export async function runJavascript({ code, globalContext = {}, memoryLimit = 128 }) {
-  const isolate = new ivm.Isolate({ memoryLimit });
-  const context = await isolate.createContext();
-  const jail = context.global;
-  for (const key in globalContext) {
-    await jail.set(key, globalContext[key], { copy: true });
-  }
-  const script = await isolate.compileScript(String(code));
-  return await script.run(context);
+  return false
 }
 
 /**
