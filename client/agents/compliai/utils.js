@@ -102,55 +102,35 @@ export async function runJavascript({ code, timeout = 5000 }) {
  * @returns {Promise<string>}
  */
 export async function parseDocument(buffer, mimetype, url) {
-  // strip encoding from mimetype
-  let mime = mimetype.split(";")[0].trim().toLowerCase();
-  let ext = url.split('.').pop().toLowerCase();
-  const mimetypes ={
-    pdf: "application/pdf",
-    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  const filetype = detectFileType(buffer);
+  switch (filetype) {
+    case "PDF":
+      return await parsePdf(buffer);
+    case "DOCX":
+      return await parseDocx(buffer);
   }
-
-  if (mime === mimetypes.pdf || ext === "pdf") {
-    return await parsePdf(buffer);
-  } else if (mime === mimetypes.docx || ext === "docx") {
-    return await parseDocx(buffer);
-  }
-
   return extractMarkdown(new TextDecoder("utf-8").decode(buffer), url);
 }
 
 export function extractMarkdown(htmlString, baseUrl) {
   const turndownService = new TurndownService()
-
   turndownService.addRule('remove', {
     filter: ['style', 'script'],
     replacement: () => ""
   });
-
-  // turndownService.keep(['a']);
-
-  // const url = new URL(baseUrl);
-  // console.log(url);
-
-  // Parse the HTML into a DOM document.
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlString, 'text/html');
   const links = doc.querySelectorAll('a');
-
   links.forEach(link => {
     const href = link.getAttribute('href');
     if (href && !href.startsWith('http')) {
       link.setAttribute('href', new URL(href, baseUrl).href);
     }
   });
-
-  // Use Readability to get the main content.
   const article = new Readability(doc).parse();
   if (!article) {
     throw new Error("Could not extract article content.");
   }
-  console.log(article);
-  // Convert the extracted HTML content to Markdown.
   const markdown = turndownService.turndown(article.content);
   return markdown;
 }
@@ -273,4 +253,66 @@ export async function preloadModels() {
   const tts = await KokoroTTS.from_pretrained(modelId, modelOptions);
   window.MODELS_LOADED = true;
   return tts;
+
+}
+/**
+ * Detects if a file is TEXT, BINARY, PDF, or DOCX
+ * @param {ArrayBuffer} buffer - The file buffer to analyze
+ * @returns {string} - 'TEXT', 'BINARY', 'PDF', or 'DOCX'
+ */
+function detectFileType(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const fileStart = bytesToString(bytes, 0, 50);
+  
+  if (fileStart.startsWith('%PDF-')) {
+    return 'PDF';
+  }
+  
+  if (fileStart.startsWith('PK\x03\x04')) {
+    // Look for Content_Types.xml to identify DOCX
+    const searchArea = bytesToString(bytes, 0, Math.min(bytes.length, 10000));
+    if (searchArea.includes('[Content_Types].xml')) {
+      return 'DOCX';
+    }
+  }
+  
+  return isTextFile(bytes) ? 'TEXT' : 'BINARY';
+}
+
+/**
+ * Helper function to convert a byte array to a string
+ * @param {Uint8Array} bytes - The byte array
+ * @param {number} start - Starting index
+ * @param {number} length - How many bytes to convert
+ * @returns {string} - The resulting string
+ */
+function bytesToString(bytes, start, length) {
+  const end = Math.min(start + length, bytes.length);
+  return String.fromCharCode.apply(null, bytes.slice(start, end));
+}
+
+/**
+ * Determines if content is likely a text file
+ * @param {Uint8Array} bytes - The byte array to analyze
+ * @returns {boolean} - True if likely a text file, false if likely binary
+ */
+function isTextFile(bytes) {
+  const MAX_SAMPLE_SIZE = 1000;
+  const sampleSize = Math.min(bytes.length, MAX_SAMPLE_SIZE);
+  let binaryCount = 0;
+  
+  for (let i = 0; i < sampleSize; i++) {
+    const byte = bytes[i];
+    // Skip common text file control characters (CR, LF, TAB)
+    if (byte === 0x0D || byte === 0x0A || byte === 0x09) {
+      continue;
+    }
+    // Count null bytes and control characters as binary indicators
+    if (byte === 0x00 || (byte < 0x20 && byte !== 0x09)) {
+      binaryCount++;
+    }
+  }
+  
+  // If more than 10% of the sample contains binary data, consider it binary
+  return binaryCount <= sampleSize * 0.1;
 }
