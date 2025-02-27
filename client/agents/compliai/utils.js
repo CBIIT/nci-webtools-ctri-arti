@@ -142,14 +142,15 @@ export async function playAudio(text, voice = "af_heart", cancelKey = "Escape") 
   if (!tts) return false;
   const splitter = new TextSplitterStream();
   const audioStream = tts.stream(splitter, { voice });
-  const separators = ["\n", "."];
+  const separators = ["\n"];
   const textSplitter = new RecursiveCharacterTextSplitter({
     chunkSize: 300,
     chunkOverlap: 0,
     separators,
     keepSeparator: true,
   });
-  for (let chunk of await textSplitter.splitText(text)) {
+  const textChunks = await textSplitter.splitText(text.replace(/\n/g, "."));
+  for (let chunk of textChunks) {
     splitter.push(chunk);
   }
   splitter.close();
