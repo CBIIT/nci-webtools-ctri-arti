@@ -74,6 +74,15 @@ export async function streamModel(modelId = DEFAULT_MODEL_ID,  messages = [], sy
     messages = [{ role: "user", content: [{ text: messages }] }];
   }
 
+  // workaround for empty text content
+  for (const message of messages) {
+    for (const content of message.content) {
+      if (content.text && !content.text.trim().length) {
+        content.text = " ";
+      }
+    }
+  }
+
   const client = new BedrockRuntimeClient();
   const system = [{ text: systemPrompt }];
   const toolConfig = tools.length > 0 ? { tools } : undefined;
