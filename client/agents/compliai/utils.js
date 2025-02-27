@@ -19,10 +19,12 @@ export async function* readStream(response) {
   }
 }
 
-export async function search(params) {
-  const query = { goggles: GOGGLE_URL, ...params };
-  Object.keys(query).forEach((key) => query[key] === undefined && delete query[key]);
-  return (await fetch("/api/search?" + new URLSearchParams(query))).json();
+export async function search(query) {
+  const params = { affiliate: "usagov_all_gov", format: "json", query: query.q };
+  const url = "https://find.search.gov/search?" + new URLSearchParams(params);
+  const proxyUrl = "/api/proxy?" + new URLSearchParams({ url });
+  const response = await fetch(proxyUrl);
+  return await response.json();
 }
 
 export async function getWebsiteText(params) {
