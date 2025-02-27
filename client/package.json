@@ -1,8 +1,10 @@
 {
   "devDependencies": {
     "@langchain/textsplitters": "^0.1.0",
-    "@solidjs/router": "^0.15.3",
+    "@mozilla/readability": "^0.5.0",
     "kokoro-js": "^1.2.0",
-    "solid-js": "^1.9.4"
+    "pdfjs-dist": "^4.10.38",
+    "solid-js": "^1.9.4",
+    "turndown": "^7.2.0"
   }
 }
