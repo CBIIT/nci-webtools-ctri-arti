@@ -1,47 +1,21 @@
-import { BedrockRuntimeClient, ConverseCommand, ConverseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
+import { BedrockRuntimeClient, ConverseCommand, ConverseStreamCommand, ConverseStreamCommandOutput } from "@aws-sdk/client-bedrock-runtime";
 import { parseDocument } from "./parsers.js";
 
-// Default model ID
-export const DEFAULT_MODEL_ID = process.env.DEFAULT_MODEL_ID || "anthropic.claude-3-5-sonnet-20240620-v1:0";
-
-export const DEFAULT_SYSTEM_PROMPT = `
-You are a systematic problem solver who adjusts your analysis depth based on problem complexity. For simpler tasks, provide concise solutions. For complex problems, especially those involving code or logic, examine each component thoroughly.
-
-When solving problems:
-1. Start by explicitly stating all constraints and goals, quoting relevant parts of the problem description
-2. Break complex problems into smaller components
-3. For each component:
-   - Begin with "Let's examine..."
-   - Document your analysis path, including failed attempts
-   - Note key insights with "Ah" or "Wait" 
-   - Challenge assumptions with "But what if..."
-   - Test ideas with concrete examples
-   - If stuck, try new approaches with "Let's think differently..."
-   - Question and verify conclusions
-
-For debugging or complex analysis:
-- Walk through each element sequentially
-- Document your understanding of each piece
-- Identify potential issues or edge cases
-- Test hypotheses with examples
-- Consider interactions between components
-- Verify solutions against original requirements
-
-Show your full reasoning process, including:
-- Uncertainties and revisions
-- Failed attempts and why they failed
-- Connections between components
-- Verification of solutions
-
-Share your thought process in <think> tags, your draft response in <draft> tags, and your final response in <response> tags. Use natural language while maintaining technical precision. When you discover errors in your reasoning, acknowledge them openly and explain your corrections.`;
+/** Default Bedrock Model ID */
+export const DEFAULT_MODEL_ID = process.env.DEFAULT_MODEL_ID;
 
 /**
  * Run a model with the given messages.
  * @param {string} modelId
- * @param {{role: "user" | "assistant" | "system", content: string}[] | string} messages
+ * @param {Messages} messages
  * @returns
  */
-export async function runModel(modelId = DEFAULT_MODEL_ID, messages = [], systemPrompt = DEFAULT_SYSTEM_PROMPT, toolConfig = undefined) {
+export async function runModel(
+  modelId = DEFAULT_MODEL_ID,
+  messages = [],
+  systemPrompt = "You are a helpful assistant.",
+  toolConfig = undefined
+) {
   if (!messages || messages?.length === 0) {
     return null;
   }
@@ -62,10 +36,15 @@ export async function runModel(modelId = DEFAULT_MODEL_ID, messages = [], system
  * Stream a model with the given messages.
  * @param {string} modelId
  * @param {any} messages
- * @returns {Promise<BedrockRuntimeClient.ConverseStreamCommandOutput>}
+ * @returns {Promise<ConverseStreamCommandOutput>}
  */
-export async function streamModel(modelId = DEFAULT_MODEL_ID,  messages = [], systemPrompt = DEFAULT_SYSTEM_PROMPT, tools = []) {
-
+export async function streamModel(
+  modelId = DEFAULT_MODEL_ID,
+  messages = [],
+  systemPrompt = "You are proactive, curious, and decisive. You communicate warmly with thoughtful examples, keeping responses concise yet insightful. You show genuine interest while focusing precisely on what people need.",
+  thoughtBudget = 0,
+  tools = []
+) {
   if (!messages || messages?.length === 0) {
     return null;
   }
@@ -74,11 +53,16 @@ export async function streamModel(modelId = DEFAULT_MODEL_ID,  messages = [], sy
     messages = [{ role: "user", content: [{ text: messages }] }];
   }
 
-  // workaround for empty text content
+  // process messages to ensure they are in the correct format
   for (const message of messages) {
     for (const content of message.content) {
+      // workaround for empty text content
       if (content.text && !content.text.trim().length) {
         content.text = " ";
+      }
+      // convert base64 to Uint8Array
+      if (content?.source?.bytes && typeof content.source.bytes === "string") {
+        content.source.bytes = Uint8Array.from(Buffer.from(content.source.bytes, "base64"));
       }
     }
   }
@@ -86,7 +70,10 @@ export async function streamModel(modelId = DEFAULT_MODEL_ID,  messages = [], sy
   const client = new BedrockRuntimeClient();
   const system = [{ text: systemPrompt }];
   const toolConfig = tools.length > 0 ? { tools } : undefined;
-  const input = { modelId, messages, system, toolConfig };
+  const performanceConfig = { latency: modelId.includes("haiku") ? "optimized" : "standard" };
+  const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
+  const additionalModelRequestFields = thoughtBudget > 0 ? { thinking } : undefined;
+  const input = { modelId, messages, system, toolConfig, performanceConfig, additionalModelRequestFields };
 
   const command = new ConverseStreamCommand(input);
   const response = await client.send(command);
