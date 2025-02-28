@@ -3,7 +3,7 @@ import { ProxyAgent } from "proxy-agent";
 import { JSDOM } from "jsdom";
 import { inspect } from "util";
 import { parseDocument } from "./parsers.js";
-import { runModel, DEFAULT_MODEL_ID, DEFAULT_SYSTEM_PROMPT } from "./inference.js";
+import { runModel } from "./inference.js";
 
 const log = (value) => console.log(inspect(value, { depth: null, colors: true, compact: false, breakLength: 120 }));
 
