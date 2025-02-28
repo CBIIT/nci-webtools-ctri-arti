@@ -57,20 +57,17 @@ api.post("/model/run", async (req, res) => {
 });
 
 api.get("/model/stream", async (req, res) => {
-  const { model, messages, system } = req.query;
-  const results = await streamModel(model, messages, system);
+  const { model, messages, system, thoughtBudget, tools } = req.query;
+  const results = await streamModel(model, messages, system, thoughtBudget, JSON.parse(tools));
   for await (const message of results?.stream || []) {
-    // res.write(message);
-    const chunk = message?.contentBlockDelta?.delta?.text;
-    if (chunk?.length > 0)
-      res.write(chunk);
+    res.write(JSON.stringify(message) + '\n');
   }
   res.end();
 });
 
 api.post("/model/stream", async (req, res) => {
-  const { model, messages, system, tools } = req.body;
-  const results = await streamModel(model, messages, system, tools);
+  const { model, messages, system, thoughtBudget, tools } = req.body;
+  const results = await streamModel(model, messages, system, thoughtBudget, tools);
   for await (const message of results?.stream || []) {
     res.write(JSON.stringify(message) + '\n');
   }
