@@ -1,4 +1,13 @@
-# Research Optimizer
+# NCI Research Optimizer
+
+## Commands
+- Server: `npm run start` or `npm run start:dev` (watch mode)
+- Client: Serve static files from client directory
+
+## Code Structure
+- Server: Express.js backend with AWS Bedrock API integration
+- Client: Static HTML/JS frontend using SolidJS (buildless), Bootstrap CSS, Web components using standard JS modules
+
 ## API Usage Examples
 
 ### model/run
