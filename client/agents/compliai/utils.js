@@ -1,20 +1,19 @@
 import { KokoroTTS, TextSplitterStream } from "kokoro-js";
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Readability } from "@mozilla/readability";
-import TurndownService from "turndown";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import mammoth from "mammoth";
-import * as unpdf from "unpdf";
+import TurndownService from "turndown";
 import * as pdfjsLib from "pdfjs-dist";
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
 
-// The workerSrc property shall be specified.
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
-
-const GOGGLE_URL = "https://raw.githubusercontent.com/CBIIT/search-filters/refs/heads/main/us_ai_policy.goggle";
-
+/**
+ * Reads a fetch response body as an async generator of chunks
+ * @param {Response} response - The fetch Response object to read
+ * @yields {Uint8Array} Binary chunks from the response stream
+ * @returns {AsyncGenerator<Uint8Array>} An async generator yielding binary chunks
+ */
 export async function* readStream(response) {
   const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-
   try {
     while (true) {
       const { done, value } = await reader.read();
@@ -26,72 +25,101 @@ export async function* readStream(response) {
   }
 }
 
-export async function search(query) {
-  const params = { affiliate: "usagov_all_gov", format: "json", query: query.q };
-  const url = "https://find.search.gov/search?" + new URLSearchParams(params);
-  const response = await fetch("/api/proxy?" + new URLSearchParams({ url }))
-  return await response.json();
+/**
+ * Fetches content through a proxy
+ * @param {string} url - The URL to fetch
+ * @param {object} requestInit - Fetch options
+ * @returns {Promise<object|string>} - JSON or text response
+ */
+async function fetchProxy(url, requestInit = {}) {
+  const response = await fetch("/api/proxy?" + new URLSearchParams({ url }), requestInit);
+
+  if (!response.ok) {
+    throw new Error(`Proxy fetch failed: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json().catch(() => response.text());
 }
 
-export async function getWebsiteText({url}) {
+/**
+ * Searches usa.gov for the given query
+ * @param {string} query - The search term
+ * @param {number} maxResults - Maximum results to return (default 100)
+ * @returns {Promise<Array>} - Array of search results
+ */
+export async function search(query, maxResults = 100) {
+  const allResults = [];
+  const params = { affiliate: "usagov_all_gov", format: "json", query };
+  let page = 1;
+  let data;
+
+  do {
+    data = await fetchProxy("https://find.search.gov/search?" + new URLSearchParams({ ...params, page: page++ }));
+    if (data?.results?.length) {
+      allResults.push(...data.results);
+    } else {
+      break;
+    }
+  } while (allResults.length < Math.min(data.total, maxResults));
+
+  return allResults.slice(0, maxResults);
+}
+
+/**
+ * Returns the content of a website as text
+ * @param {string} url
+ * @returns {Promise<string>}
+ */
+export async function browse(url) {
   const response = await fetch("/api/proxy?" + new URLSearchParams({ url }));
   const bytes = await response.arrayBuffer();
   if (!response.ok) {
     const text = new TextDecoder("utf-8").decode(bytes);
-    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}\n${text}`);
+    return `Failed to read ${url}: ${response.status} ${response.statusText}\n${text}`;
   }
   const mimetype = response.headers.get("content-type");
   return await parseDocument(bytes, mimetype, url);
 }
 
 /**
- * Executes JavaScript code in a sandboxed Web Worker environment
- * @param {string} code - The JavaScript code to execute
- * @param {number} [timeout=5000] - Timeout in milliseconds
- * @returns {Promise<{success: boolean, result?: any, error?: Error, logs: Array}>}
+ * Runs JavaScript code in a sandboxed environment
+ * @param {string} source - Code to execute
+ * @param {number} [timeout=5000] - Timeout in ms
+ * @returns {Promise<string>} - Console output or error
  */
-export async function runJavascript({ code, timeout = 5000 }) {
-  const workerUrl = location.pathname + "/code-worker.js";
-  const worker = new Worker(workerUrl);
-
-  return new Promise((resolve, reject) => {
-    // Set timeout
-    const timeoutId = setTimeout(() => {
+export async function code(source, timeout = 5000) {
+  const worker = new Worker(URL.createObjectURL(new Blob([`
+    self.onmessage = e => {
+      let output = "";
+      self.console.log = (...args) => output += args.join(' ') + '\\n';
+      try {
+        new Function(e.data)();
+        self.postMessage(output || "");
+      } catch (err) {
+        self.postMessage(String(err));
+      }
+    };
+  `], { type: 'application/javascript' })));
+  
+  return new Promise(resolve => {
+    const tid = setTimeout(() => {
       worker.terminate();
-      URL.revokeObjectURL(workerUrl);
-      resolve({
-        success: false,
-        error: { name: "TimeoutError", message: `Execution timed out after ${timeout}ms` },
-        logs: [],
-      });
+      resolve("Timeout");
     }, timeout);
-
-    // Handle worker message
-    worker.onmessage = (e) => {
-      clearTimeout(timeoutId);
+    
+    worker.onmessage = e => {
+      clearTimeout(tid);
       worker.terminate();
-      URL.revokeObjectURL(workerUrl);
       resolve(e.data);
     };
-
-    // Handle worker error
-    worker.onerror = (error) => {
-      clearTimeout(timeoutId);
+    
+    worker.onerror = (event) => {
+      clearTimeout(tid);
       worker.terminate();
-      URL.revokeObjectURL(workerUrl);
-      resolve({
-        success: false,
-        error: {
-          name: error.name || "Error",
-          message: error.message || "Unknown error occurred",
-          stack: error.stack,
-        },
-        logs: [],
-      });
+      resolve(`Error: ${event.message}`);
     };
-
-    // Start execution
-    worker.postMessage(code);
+    
+    worker.postMessage(source);
   });
 }
 
@@ -101,7 +129,7 @@ export async function runJavascript({ code, timeout = 5000 }) {
  * @param {string} mimetype
  * @returns {Promise<string>}
  */
-export async function parseDocument(buffer, mimetype, url) {
+export async function parseDocument(buffer) {
   const filetype = detectFileType(buffer);
   switch (filetype) {
     case "PDF":
@@ -109,30 +137,52 @@ export async function parseDocument(buffer, mimetype, url) {
     case "DOCX":
       return await parseDocx(buffer);
   }
-  return extractMarkdown(new TextDecoder("utf-8").decode(buffer), url);
+  return toMarkdown(new TextDecoder("utf-8").decode(buffer));
 }
 
-export function extractMarkdown(htmlString, baseUrl) {
-  const turndownService = new TurndownService()
-  turndownService.addRule('remove', {
-    filter: ['style', 'script'],
-    replacement: () => ""
+export function toMarkdown(htmlString) {
+  const turndownService = new TurndownService();
+
+  // Remove style and script tags
+  turndownService.addRule("remove", {
+    filter: ["style", "script"],
+    replacement: () => "",
   });
+
+  // Parse HTML into a DOM
   const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlString, 'text/html');
-  const links = doc.querySelectorAll('a');
-  links.forEach(link => {
-    const href = link.getAttribute('href');
-    if (href && !href.startsWith('http')) {
-      link.setAttribute('href', new URL(href, baseUrl).href);
+  const doc = parser.parseFromString(htmlString, "text/html");
+
+  // Process links - make same-domain links relative
+  const links = doc.querySelectorAll("a");
+  links.forEach((link) => {
+    const href = link.getAttribute("href");
+    if (!href) return; // Skip links without href
+
+    try {
+      const url = new URL(href, window.location.origin);
+      if (url.hostname === location.hostname) {
+        link.setAttribute("href", href.replace(/^https?:\/\/[^/]+/, ""));
+      }
+    } catch (error) {
+      // Invalid URL, leave it as is
     }
   });
-  const article = new Readability(doc).parse();
-  if (!article) {
-    throw new Error("Could not extract article content.");
+
+  // Extract content using Readability
+  try {
+    const article = new Readability(doc).parse();
+    if (!article) {
+      throw new Error("Could not extract article content.");
+    }
+
+    // Convert to markdown
+    return turndownService.turndown(article.content);
+  } catch (error) {
+    // If Readability fails, try to convert the body content instead
+    const body = doc.body ? doc.body.innerHTML : htmlString;
+    return turndownService.turndown(body);
   }
-  const markdown = turndownService.turndown(article.content);
-  return markdown;
 }
 
 /**
@@ -157,12 +207,16 @@ async function parsePdf(arrayBuffer) {
   for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
     const page = await pdf.getPage(pageNumber);
     const textContent = await page.getTextContent();
-    const pageText = textContent.items.map(item => item.str).join(' ');
+    const pageText = textContent.items.map((item) => item.str).join(" ");
     pagesText.push(pageText);
   }
-  return pagesText.join('\n');
+  return pagesText.join("\n");
 }
 
+/**
+ * Returns the client environment information
+ * @returns {any} - The client environment information
+ */
 export function getClientEnvironment() {
   const now = new Date();
   const { language, platform, deviceMemory, hardwareConcurrency } = navigator;
@@ -181,20 +235,26 @@ export function getClientEnvironment() {
   return { time, language, platform, memory, hardwareConcurrency, timeFormat };
 }
 
+/**
+ * Plays audio from text using the TTS model
+ * @param {string} text - The text to convert to audio
+ * @param {string} voice - The voice to use for TTS
+ * @param {string} cancelKey - The key to cancel audio playback
+ * @returns {boolean} - True if successful, false if an error occurred
+ */
 export async function playAudio(text, voice = "af_heart", cancelKey = "Escape") {
-  const tts = await preloadModels();
+  const tts = await loadTTS();
   if (!tts) return false;
+  if (!text) return false;
   const splitter = new TextSplitterStream();
   const audioStream = tts.stream(splitter, { voice });
-  const separators = ["\n"];
   const textSplitter = new RecursiveCharacterTextSplitter({
     chunkSize: 300,
     chunkOverlap: 0,
-    separators,
     keepSeparator: true,
   });
   const textChunks = await textSplitter.splitText(text.replace(/\n/g, "."));
-  for (let chunk of textChunks) {
+  for (const chunk of textChunks) {
     splitter.push(chunk);
   }
   splitter.close();
@@ -216,8 +276,7 @@ export async function playAudio(text, voice = "af_heart", cancelKey = "Escape") 
     for await (const { audio } of audioStream) {
       if (shouldStop) break;
 
-      const blob = audio.toBlob();
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(audio.toBlob());
 
       // Play the current audio chunk and wait until it ends.
       await new Promise((resolve, reject) => {
@@ -235,48 +294,56 @@ export async function playAudio(text, voice = "af_heart", cancelKey = "Escape") 
         };
       });
     }
+
+    return true;
   } catch (error) {
-    console.error("Audio playback interrupted or error occurred:", error);
+    console.error("Audio playback error:", error);
+    return false;
   } finally {
     document.removeEventListener("keydown", handleKeydown);
   }
 }
 
-export async function preloadModels() {
-  window.MODELS_LOADED = window.MODELS_LOADED || false;
+/**
+ * Loads the TTS model
+ * @param {string} modelId - The model ID to load
+ * @param {object} modelOptions - The model options
+ * @returns {Promise<KokoroTTS>} - The loaded TTS model
+ */
+export async function loadTTS(modelId = "onnx-community/Kokoro-82M-v1.0-ONNX", modelOptions = { dtype: "fp32", device: "webgpu" }) {
   if (!navigator.gpu) {
-    window.MODELS_LOADED = false;
+    window.TTS_LOADED = false;
     return false;
   }
-  const modelId = "onnx-community/Kokoro-82M-v1.0-ONNX";
-  const modelOptions = { dtype: "fp32", device: "webgpu" };
   const tts = await KokoroTTS.from_pretrained(modelId, modelOptions);
-  window.MODELS_LOADED = true;
+  window.TTS_LOADED = true;
   return tts;
-
 }
+
 /**
- * Detects if a file is TEXT, BINARY, PDF, or DOCX
+ * Detects if a file is TEXT, BINARY, PDF, ZIP, or DOCX
  * @param {ArrayBuffer} buffer - The file buffer to analyze
- * @returns {string} - 'TEXT', 'BINARY', 'PDF', or 'DOCX'
+ * @returns {string} - 'TEXT', 'BINARY', 'PDF', 'ZIP', or 'DOCX'
  */
 function detectFileType(buffer) {
   const bytes = new Uint8Array(buffer);
   const fileStart = bytesToString(bytes, 0, 50);
-  
-  if (fileStart.startsWith('%PDF-')) {
-    return 'PDF';
+
+  if (fileStart.startsWith("%PDF-")) {
+    return "PDF";
   }
-  
-  if (fileStart.startsWith('PK\x03\x04')) {
+
+  if (fileStart.startsWith("PK\x03\x04")) {
     // Look for Content_Types.xml to identify DOCX
     const searchArea = bytesToString(bytes, 0, Math.min(bytes.length, 10000));
-    if (searchArea.includes('[Content_Types].xml')) {
-      return 'DOCX';
+    if (searchArea.includes("[Content_Types].xml")) {
+      return "DOCX";
+    } else {
+      return "ZIP";
     }
   }
-  
-  return isTextFile(bytes) ? 'TEXT' : 'BINARY';
+
+  return isTextFile(bytes) ? "TEXT" : "BINARY";
 }
 
 /**
@@ -300,11 +367,11 @@ function isTextFile(bytes) {
   const MAX_SAMPLE_SIZE = 1000;
   const sampleSize = Math.min(bytes.length, MAX_SAMPLE_SIZE);
   let binaryCount = 0;
-  
+
   for (let i = 0; i < sampleSize; i++) {
     const byte = bytes[i];
     // Skip common text file control characters (CR, LF, TAB)
-    if (byte === 0x0D || byte === 0x0A || byte === 0x09) {
+    if (byte === 0x0d || byte === 0x0a || byte === 0x09) {
       continue;
     }
     // Count null bytes and control characters as binary indicators
@@ -312,7 +379,43 @@ function isTextFile(bytes) {
       binaryCount++;
     }
   }
-  
+
   // If more than 10% of the sample contains binary data, consider it binary
   return binaryCount <= sampleSize * 0.1;
+}
+
+
+/**
+ * Retries a function with exponential backoff
+ * @param {number} maxAttempts - Maximum number of retry attempts
+ * @param {number} initialDelay - Initial delay in milliseconds
+ * @param {Function} fn - Async function to retry
+ * @returns {Promise<any>} - Result of the function execution
+ * @throws {Error} - Throws the last error encountered after all retries are exhausted
+ */
+export async function retry(maxAttempts, initialDelay, fn) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      console.error(`Attempt ${attempt} failed:`, error);
+
+      if (attempt === maxAttempts) {
+        break;
+      }
+
+      // Calculate delay with exponential backoff: initialDelay * 2^(attempt-1)
+      const delay = initialDelay * Math.pow(2, attempt - 1);
+
+      // Add some jitter to prevent thundering herd problem
+      const jitter = Math.random() * 100;
+
+      await new Promise((resolve) => setTimeout(resolve, delay + jitter));
+    }
+  }
+
+  throw new Error(`Failed after ${maxAttempts} attempts. Last error: ${lastError.message}`);
 }
