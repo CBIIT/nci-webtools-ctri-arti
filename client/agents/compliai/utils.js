@@ -525,3 +525,28 @@ export function parseStreamingJson(incompleteJson) {
     return incompleteJson;
   }
 }
+
+/**
+ * Converts a file to base64
+ * @param {File} file - The file to convert
+ * @param {boolean} truncate - Whether to truncate the base64 string prefix
+ * @returns {Promise<string>} - The base64 string
+ */
+export function fileToBase64(file, truncate = false) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = (error) => reject(error);
+    reader.onload = () => resolve(truncate ? reader.result.split(",")[1] : reader.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Splits a filename into name and extension
+ * @param {string} filename - The filename to split
+ * @returns {[string, string]} - The filename and extension 
+ */
+export function splitFilename(filename) {
+  const idx = filename.lastIndexOf('.');
+  return idx > 0 ? [filename.slice(0, idx), filename.slice(idx + 1)] : [filename, ''];
+}
