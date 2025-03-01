@@ -58,7 +58,7 @@ api.post("/model/run", async (req, res) => {
 
 api.get("/model/stream", async (req, res) => {
   const { model, messages, system, thoughtBudget, tools } = req.query;
-  const results = await streamModel(model, messages, system, thoughtBudget, JSON.parse(tools));
+  const results = await streamModel(model, messages, system, thoughtBudget, JSON.parse(tools || '[]'));
   for await (const message of results?.stream || []) {
     res.write(JSON.stringify(message) + '\n');
   }
