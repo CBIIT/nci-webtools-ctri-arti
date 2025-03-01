@@ -2,7 +2,7 @@ export const tools = [
   {
     "toolSpec": {
       "name": "search",
-      "description": "Search the web for up-to-date information, facts, news, and references. Use quotes for exact phrases and operators like site: for focused results.",
+      "description": "Search the web for up-to-date information, facts, news, and references. Use quotes for exact phrases and operators like site: for focused results. Use the browse tool to further analyze specific pages.",
       "inputSchema": {
         "json": {
           "type": "object",
@@ -36,7 +36,7 @@ export const tools = [
   {
     "toolSpec": {
       "name": "code",
-      "description": "Execute JavaScript code for calculations, data processing, or validation. Always use this for math. Outputs the result of any console.log statements.",
+      "description": "Execute JavaScript code for calculations, data processing, or validation. ALWAYS use this to verify numeric calculations, no matter how simple they are (eg: elementary addition). Outputs the result of any console.log statements.",
       "inputSchema": {
         "json": {
           "type": "object",
