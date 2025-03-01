@@ -60,13 +60,13 @@ export async function streamModel(
   // process messages to ensure they are in the correct format
   for (const message of messages) {
     for (const content of message.content) {
-      // workaround for empty text content
-      if (content.text && !content.text.trim().length) {
+      const text = content.text?.trim() || "";
+      const source = content.document?.source || content.image?.source;
+      if (text === "" && !source) {
         content.text = " ";
       }
-      // convert base64 to Uint8Array
-      if (content?.source?.bytes && typeof content.source.bytes === "string") {
-        content.source.bytes = Uint8Array.from(Buffer.from(content.source.bytes, "base64"));
+      if (source?.bytes && typeof source.bytes === "string") {
+        source.bytes = Uint8Array.from(Buffer.from(source.bytes, "base64"));
       }
     }
   }
