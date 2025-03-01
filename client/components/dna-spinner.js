@@ -244,18 +244,27 @@ export class DNASpinnerComponent extends HTMLElement {
   updateRotation() {
     const { rotationSpeed, damping } = this.config.animation;
     this.rotationVelocity.x = (this.targetRotation.x - this.currentRotation.x) * rotationSpeed;
-
     this.currentRotation.x += this.rotationVelocity.x;
     this.rotationVelocity.x *= damping;
-
     this.scene.rotation.x = this.currentRotation.x;
     this.scene.rotation.z = Math.PI / 2;
   }
 
   animate() {
-    requestAnimationFrame(() => this.animate());
+    this.animationFrameRequestId = requestAnimationFrame(() => this.animate());
     this.updateRotation();
     this.renderer.render(this.scene, this.camera);
+  }
+
+  disconnectedCallback() {
+    this.shadowRoot.removeEventListener("mousemove", this.mouseMoveListener);
+    this.resizeObserver.disconnect();
+    if (this.animationFrameRequestId) {
+      cancelAnimationFrame(this.animationFrameRequestId);
+    }
+    if (this.renderer) {
+      this.renderer.dispose();
+    }
   }
 }
 
