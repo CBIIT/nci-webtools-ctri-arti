@@ -14,11 +14,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dis
  */
 export async function runTool(toolUse, tools = { search, browse, code }) {
   let { toolUseId, name, input } = toolUse;
-  console.log("Running tool:", name, input);
   try {
     const results = await tools?.[name]?.(input);
     const content = [{ json: { results } }];
-    console.log("Tool output:", content);
     return { toolUseId, content };
   } catch (error) {
     console.error("Tool error:", error);
