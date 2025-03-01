@@ -1,7 +1,7 @@
 import html from "solid-js/html";
 import { parse as parseMarkdown } from "marked";
 import yaml from "yaml";
-import { parseStreamingJson } from "./utils.js";
+import { parseStreamingJson, playAudio } from "./utils.js";
 
 export default function Message({ message, active }) {
   if (!message) return null;
@@ -56,12 +56,7 @@ export default function Message({ message, active }) {
         <span
           class=${["markdown card mb-2 p-2 small", isAssistant ? "bg-light w-100 border-secondary" : "bg-white"].join(" ")}
           innerHTML=${parseMarkdown(textContent)}></span>
-        ${isAssistant &&
-        window.MODELS_LOADED &&
-        !active &&
-        html`<button onClick=${() => playAudio(textContent)} class="position-absolute border-0 p-0 me-1 bg-transparent top-0 end-0">
-          ▷
-        </button>`}
+          ${isAssistant && !active && window.tts && html`<button onClick=${() => playAudio(textContent)} class="position-absolute border-0 p-0 me-1 bg-transparent top-0 end-0">▷</button>`}
       `}
       ${toolCalls.map(
         (tool) => html`
