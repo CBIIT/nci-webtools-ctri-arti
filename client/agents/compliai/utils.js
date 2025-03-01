@@ -7,6 +7,28 @@ import * as pdfjsLib from "pdfjs-dist";
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
 
 /**
+ * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
+ * @param {any} toolUse - The tool use object
+ * @param {any} tools - The tools object with tool names as keys and functions as values.
+ * @returns {Promise<any>} - The tool output
+ */
+export async function runTool(toolUse, tools = { search, browse, code }) {
+  let { toolUseId, name, input } = toolUse;
+  console.log("Running tool:", name, input);
+  try {
+    const results = await tools?.[name]?.(input);
+    const content = [{ json: { results } }];
+    console.log("Tool output:", content);
+    return { toolUseId, content };
+  } catch (error) {
+    console.error("Tool error:", error);
+    const errorText = error.stack || error.message || String(error);
+    const content = [{ text: `Error running ${name}: ${errorText}` }];
+    return { toolUseId, content };
+  }
+}
+
+/**
  * Reads a fetch response body as an async generator of chunks
  * @param {Response} response - The fetch Response object to read
  * @yields {Uint8Array} Binary chunks from the response stream
@@ -47,7 +69,7 @@ async function fetchProxy(url, requestInit = {}) {
  * @param {number} maxResults - Maximum results to return (default 100)
  * @returns {Promise<Array>} - Array of search results
  */
-export async function search(query, maxResults = 100) {
+export async function search({ query, maxResults = 100 }) {
   const allResults = [];
   const params = { affiliate: "usagov_all_gov", format: "json", query };
   let page = 1;
@@ -70,7 +92,7 @@ export async function search(query, maxResults = 100) {
  * @param {string} url
  * @returns {Promise<string>}
  */
-export async function browse(url) {
+export async function browse({ url }) {
   const response = await fetch("/api/proxy?" + new URLSearchParams({ url }));
   const bytes = await response.arrayBuffer();
   if (!response.ok) {
@@ -87,8 +109,12 @@ export async function browse(url) {
  * @param {number} [timeout=5000] - Timeout in ms
  * @returns {Promise<string>} - Console output or error
  */
-export async function code(source, timeout = 5000) {
-  const worker = new Worker(URL.createObjectURL(new Blob([`
+export async function code({ source, timeout = 5000 }) {
+  const worker = new Worker(
+    URL.createObjectURL(
+      new Blob(
+        [
+          `
     self.onmessage = e => {
       let output = "";
       self.console.log = (...args) => output += args.join(' ') + '\\n';
@@ -99,26 +125,31 @@ export async function code(source, timeout = 5000) {
         self.postMessage(String(err));
       }
     };
-  `], { type: 'application/javascript' })));
-  
-  return new Promise(resolve => {
+  `,
+        ],
+        { type: "application/javascript" }
+      )
+    )
+  );
+
+  return new Promise((resolve) => {
     const tid = setTimeout(() => {
       worker.terminate();
       resolve("Timeout");
     }, timeout);
-    
-    worker.onmessage = e => {
+
+    worker.onmessage = (e) => {
       clearTimeout(tid);
       worker.terminate();
       resolve(e.data);
     };
-    
+
     worker.onerror = (event) => {
       clearTimeout(tid);
       worker.terminate();
       resolve(`Error: ${event.message}`);
     };
-    
+
     worker.postMessage(source);
   });
 }
@@ -140,6 +171,11 @@ export async function parseDocument(buffer) {
   return toMarkdown(new TextDecoder("utf-8").decode(buffer));
 }
 
+/**
+ * Converts HTML to Markdown
+ * @param {string} htmlString - The HTML content
+ * @returns {string} - The markdown content
+ */
 export function toMarkdown(htmlString) {
   const turndownService = new TurndownService();
 
@@ -217,7 +253,7 @@ async function parsePdf(arrayBuffer) {
  * Returns the client environment information
  * @returns {any} - The client environment information
  */
-export function getClientEnvironment() {
+export function getClientContext() {
   const now = new Date();
   const { language, platform, deviceMemory, hardwareConcurrency } = navigator;
   const timeFormat = Intl.DateTimeFormat().resolvedOptions();
@@ -245,7 +281,7 @@ export function getClientEnvironment() {
 export async function playAudio(text, voice = "af_heart", cancelKey = "Escape") {
   const tts = await loadTTS();
   if (!tts) return false;
-  if (!text) return false;
+  if (!text) return true; // TTS loaded, nothing to play - success
   const splitter = new TextSplitterStream();
   const audioStream = tts.stream(splitter, { voice });
   const textSplitter = new RecursiveCharacterTextSplitter({
@@ -384,7 +420,6 @@ function isTextFile(bytes) {
   return binaryCount <= sampleSize * 0.1;
 }
 
-
 /**
  * Retries a function with exponential backoff
  * @param {number} maxAttempts - Maximum number of retry attempts
@@ -418,4 +453,75 @@ export async function retry(maxAttempts, initialDelay, fn) {
   }
 
   throw new Error(`Failed after ${maxAttempts} attempts. Last error: ${lastError.message}`);
+}
+
+export function parseStreamingJson(incompleteJson) {
+  // Handle empty input
+  if (!incompleteJson || incompleteJson.trim() === "") {
+    return null;
+  }
+
+  try {
+    return JSON.parse(incompleteJson);
+  } catch (e) {
+    // Continue with auto-completion logic
+  }
+
+  let str = incompleteJson;
+  let inString = false;
+  let escaped = false;
+  const closingStack = [];
+
+  // Process each character to track structure using a stack
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+
+    // Handle escape sequences within strings
+    if (char === "\\" && inString) {
+      escaped = !escaped;
+    } else if (char === '"' && !escaped) {
+      inString = !inString;
+      escaped = false;
+    } else {
+      escaped = false;
+    }
+
+    // When not in a string, track opening and closing tokens
+    if (!inString) {
+      if (char === "{") {
+        closingStack.push("}");
+      } else if (char === "[") {
+        closingStack.push("]");
+      } else if (char === "}" || char === "]") {
+        // If the closing token matches the expected one, pop from the stack
+        if (closingStack.length && closingStack[closingStack.length - 1] === char) {
+          closingStack.pop();
+        }
+      }
+    }
+  }
+
+  // If we ended inside a string, close it
+  if (inString) {
+    str += '"';
+  }
+
+  // Append any missing closing characters in the correct order
+  while (closingStack.length) {
+    str += closingStack.pop();
+  }
+
+  // Fix incomplete key-value pairs at the end (e.g., {"key": )
+  str = str.replace(/("([^"\\]*(\\.[^"\\]*)*)"\s*:\s*)$/g, "$1null");
+
+  // Remove any trailing commas at the end or before closing braces/brackets
+  str = str.replace(/,\s*$/g, "");
+  str = str.replace(/,\s*([\]}])/g, "$1");
+
+  // Try to parse the fixed JSON string
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    return incompleteJson;
+  }
 }
