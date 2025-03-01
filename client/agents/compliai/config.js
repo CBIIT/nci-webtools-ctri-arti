@@ -19,7 +19,7 @@ export const tools = [
   {
     "toolSpec": {
       "name": "browse",
-      "description": "Extract and read the full content from a webpage, pdf, docx, or any multimedia object. Use this to analyze articles, documentation, or any online content in detail.",
+      "description": "Extract and read the full content from a webpage, pdf, docx, or any multimedia object. Use this to analyze articles, documentation, or any online content.",
       "inputSchema": {
         "json": {
           "type": "object",
@@ -36,7 +36,7 @@ export const tools = [
   {
     "toolSpec": {
       "name": "code",
-      "description": "Execute JavaScript code for calculations, data processing, or validation. Outputs the result of any console.log statements.",
+      "description": "Execute JavaScript code for calculations, data processing, or validation. Always use this for math. Outputs the result of any console.log statements.",
       "inputSchema": {
         "json": {
           "type": "object",
