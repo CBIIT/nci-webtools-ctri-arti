@@ -1,19 +1,14 @@
-import { onCleanup, createSignal } from "solid-js";
 import { render } from "solid-js/web";
 import html from "solid-js/html";
-import { parse as parseMarkdown } from "marked";
-import yaml from "yaml";
-import { readStream, loadTTS, runTool, getClientContext, parseStreamingJson, fileToBase64 } from "./utils.js";
-import { systemPrompt, tools } from "./config.js";
-import { search, browse, code, splitFilename } from "./utils.js";
+import Message from "./message.js";
+import { useSubmitMessage } from "./hooks.js";
+import { loadTTS } from "./utils.js";
 
 render(() => html`<${Page} />`, window.app);
 loadTTS().then((tts) => (window.tts = tts)); // Load TTS in background
 
 export default function Page() {
-  const [messages, setMessages] = createSignal([]);
-  const [activeMessage, setActiveMessage] = createSignal(null);
-  const [loading, setLoading] = createSignal(true);
+  const { messages, activeMessage, loading, submitMessage } = useSubmitMessage();
 
   function handleKeyDown(event) {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -22,138 +17,16 @@ export default function Page() {
     }
   }
 
-  async function handleSubmit(event) {
-    event?.preventDefault();
-    /** @type {HTMLFormElement} */
+  function handleSubmit(event) {
+    event.preventDefault();
     const form = event.target;
-    /** @type {string} */
     const message = form.message.value;
-    /** @type {FileList} */
     const inputFiles = form.inputFiles.files;
-    /** @type {boolean} */
     const reasoningMode = form.reasoningMode.checked;
-
-    const userMessage = {
-      role: "user",
-      content: [{ text: message }],
-    };
-    if (inputFiles.length) {
-      for (const file of inputFiles) {
-        const imageTypes = ["png", "jpeg", "gif", "webp"];
-        const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
-        const validTypes = [...imageTypes, ...documentTypes];
-        if (!validTypes) {
-          alert(`Invalid file format. Valid formats include: ${validTypes}`);
-          return;
-        }
-        let [name, format] = splitFilename(file.name);
-        name = name.replace(/[^a-zA-Z0-9\s\[\]\(\)\-]/g, "_").replace(/\s{2,}/g, " "); // adhere to anthropic filename restrictions
-        const bytes = await fileToBase64(file, true);
-        const contentType = imageTypes.includes(format) ? "image" : "document";
-        userMessage.content.push({
-          [contentType]: {
-            name,
-            format,
-            source: { bytes },
-          },
-        });
-      }
-    }
-
+    const model = form.model.value;
+    submitMessage({ message, inputFiles, reasoningMode, model });
     form.message.value = "";
     form.inputFiles.value = "";
-    setMessages((messages) => messages.concat([userMessage]));
-
-    try {
-      let isComplete = false;
-
-      while (!isComplete) {
-        setLoading(true);
-        const response = await fetch("/api/model/stream", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            model: form.model.value,
-            system: systemPrompt(getClientContext()),
-            thoughtBudget: reasoningMode ? 4000 : 0,
-            messages: messages(),
-            tools,
-          }),
-        });
-        setLoading(false);
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const decoder = new TextDecoder();
-        let assistantMessage = {
-          role: "assistant",
-          content: [],
-        };
-        for await (const chunk of readStream(response)) {
-          const values = decoder
-            .decode(chunk, { stream: true })
-            .trim()
-            .split("\n")
-            .map((e) => JSON.parse(e));
-
-          for (const value of values) {
-            const { contentBlockStart, contentBlockDelta, contentBlockStop, messageStop } = value;
-            const toolUse = contentBlockStart?.start?.toolUse;
-            const stopReason = messageStop?.stopReason;
-
-            if (toolUse) {
-              toolUse.input = "";
-              assistantMessage.content.push({ toolUse });
-              setActiveMessage(() => structuredClone(assistantMessage));
-            } else if (contentBlockDelta) {
-              const { delta, contentBlockIndex } = contentBlockDelta;
-              const { text, toolUse, reasoningContent } = delta;
-              if (reasoningContent) {
-                if (!assistantMessage.content[contentBlockIndex]?.reasoningContent?.text) {
-                  assistantMessage.content[contentBlockIndex] = { reasoningContent: { text: "" } };
-                }
-                assistantMessage.content[contentBlockIndex].reasoningContent.text += reasoningContent.text;
-              } else if (text) {
-                if (!assistantMessage.content[contentBlockIndex]?.text) {
-                  assistantMessage.content[contentBlockIndex] = { text: "" };
-                }
-                assistantMessage.content[contentBlockIndex].text += text;
-              } else if (toolUse) {
-                assistantMessage.content[contentBlockIndex].toolUse.input += toolUse.input;
-              }
-              setActiveMessage(() => structuredClone(assistantMessage));
-            } else if (contentBlockStop) {
-              const { contentBlockIndex } = contentBlockStop;
-              const { toolUse } = assistantMessage.content[contentBlockIndex];
-              if (toolUse) {
-                toolUse.input = JSON.parse(toolUse.input);
-                setActiveMessage(() => structuredClone(assistantMessage));
-              }
-            } else if (stopReason) {
-              setActiveMessage(null);
-              setMessages((messages) => messages.concat([structuredClone(assistantMessage)]));
-              if (stopReason === "tool_use") {
-                setLoading(true);
-                const toolUses = assistantMessage.content.filter((c) => c.toolUse).map((c) => c.toolUse);
-                const toolResults = await Promise.all(toolUses.map((t) => runTool(t, { search, browse, code })));
-                const toolResultsMessage = { role: "user", content: toolResults.map((r) => ({ toolResult: r })) };
-                setMessages((messages) => messages.concat([toolResultsMessage]));
-                setLoading(false);
-              } else {
-                isComplete = true;
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error sending message:", error);
-      alert("An error occurred while sending the message. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
   }
 
   return html`
@@ -209,98 +82,5 @@ export default function Page() {
         </div>
       </div>
     </form>
-  `;
-}
-
-export function Message({ message, active }) {
-  if (!message) return null;
-  const isAssistant = message.role === "assistant" || message.toolUse;
-
-  // Filter and join text content
-  const textContent = message.content
-    .filter((c) => c.text)
-    .map((c) => c.text)
-    .join("\n");
-
-  // Filter tool use content and results
-  const toolCalls = message.content
-    .filter((c) => c.toolUse || c.toolResult)
-    .map((c) => ({
-      ...c.toolUse,
-      result: c.toolResult?.content[0]?.json?.results,
-    }));
-
-  // Helper to check if input is just code
-  const isCodeOnly = (input) => {
-    const keys = Object.keys(input);
-    return keys.length === 1 && keys[0] === "code";
-  };
-
-  // Helper to truncate long strings
-  const truncate = (str, maxLength = 2000) => {
-    if (!str || str.length <= maxLength) return str;
-    return str.slice(0, maxLength) + "\n...";
-  };
-
-  // Helper to format tool result
-  const formatResult = (result) => {
-    if (result === null || result === undefined) return "No result";
-    try {
-      if (typeof result !== "string") result = JSON.stringify(result, null, 2);
-      if (result?.results?.[0]?.url) {
-        result = result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.snippet }));
-      }
-      const json = parseStreamingJson(result);
-      return truncate(yaml.stringify(json).split("\n").slice(0, 4).join("\n"));
-    } catch (error) {
-      console.error(error);
-      return truncate(result.toString());
-    }
-  };
-
-  return html`
-    <div class="d-flex flex-wrap position-relative">
-      ${textContent?.trim().length > 0 &&
-      html`
-        <span
-          class=${["markdown card mb-2 p-2 small", isAssistant ? "bg-light w-100 border-secondary" : "bg-white"].join(" ")}
-          innerHTML=${parseMarkdown(textContent)}></span>
-        ${isAssistant &&
-        window.MODELS_LOADED &&
-        !active &&
-        html`<button onClick=${() => playAudio(textContent)} class="position-absolute border-0 p-0 me-1 bg-transparent top-0 end-0">
-          ▷
-        </button>`}
-      `}
-      ${toolCalls.map(
-        (tool) => html`
-          ${tool.name &&
-          tool.input &&
-          html`
-            <div class="card w-100 mb-2 border-secondary">
-              <div class="card-header bg-secondary bg-opacity-10 py-1 px-2">
-                <small class="text-secondary">Tool Call: ${tool.name}</small>
-              </div>
-              <div class="card-body p-2">
-                ${isCodeOnly(tool.input)
-                  ? html`<pre class="mb-0"><code>${tool.input.code}</code></pre>`
-                  : html`<pre class="mb-0"><code>${formatResult(tool.input, null, 2)}</code></pre>`}
-              </div>
-            </div>
-          `}
-          ${tool.result &&
-          html`
-            <div class="card w-100 mb-2 border-success">
-              <div class="card-header bg-success bg-opacity-10 py-1 px-2">
-                <small class="text-success">Tool Result</small>
-              </div>
-              <div class="card-body p-2">
-                <pre class="mb-0"><code>${formatResult(tool.result)}</code></pre>
-              </div>
-            </div>
-          `}
-        `
-      )}
-    </div>
   `;
 }
