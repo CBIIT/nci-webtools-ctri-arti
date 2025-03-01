@@ -59,18 +59,14 @@ export async function streamModel(
 
   // process messages to ensure they are in the correct format
   for (const message of messages) {
-    for (const content of message.content) {
-      const text = content.text?.trim() || "";
+    for (const content of message.content.filter(Boolean)) {
       const source = content.document?.source || content.image?.source;
-      if (text === "" && !source) {
-        content.text = " ";
-      }
       if (source?.bytes && typeof source.bytes === "string") {
         source.bytes = Uint8Array.from(Buffer.from(source.bytes, "base64"));
       }
     }
   }
-
+  
   const client = new BedrockRuntimeClient();
   const system = [{ text: systemPrompt }];
   const toolConfig = tools.length > 0 ? { tools } : undefined;
