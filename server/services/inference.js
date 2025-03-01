@@ -1,4 +1,4 @@
-import { BedrockRuntimeClient, ConverseCommand, ConverseStreamCommand, ConverseStreamCommandOutput } from "@aws-sdk/client-bedrock-runtime";
+import { BedrockRuntimeClient, ConverseCommand, ConverseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
 import { parseDocument } from "./parsers.js";
 
 /** Default Bedrock Model ID */
@@ -33,10 +33,14 @@ export async function runModel(
 }
 
 /**
- * Stream a model with the given messages.
- * @param {string} modelId
- * @param {any} messages
- * @returns {Promise<ConverseStreamCommandOutput>}
+ * Stream a conversation with an AI model by sending messages and receiving responses in a stream format.
+ * 
+ * @param {string} modelId - The ID of the model to use (defaults to DEFAULT_MODEL_ID)
+ * @param {Array|string} messages - Array of message objects or a string that will be converted to a user message
+ * @param {string} systemPrompt - The system prompt to guide the model's behavior
+ * @param {number} thoughtBudget - Token budget for the model's thinking process (0 disables thinking feature)
+ * @param {Array} tools - Array of tools the model can use during the conversation
+ * @returns {Promise<import("@aws-sdk/client-bedrock-runtime").ConverseStreamCommandOutput>} A promise that resolves to a stream of model responses
  */
 export async function streamModel(
   modelId = DEFAULT_MODEL_ID,
