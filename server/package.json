@@ -12,7 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.741.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.758.0",
     "cors": "^2.8.5",
     "duck-duck-scrape": "^2.2.7",
     "express": "^5.0.0",
