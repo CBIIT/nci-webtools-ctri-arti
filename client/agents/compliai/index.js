@@ -3,9 +3,9 @@ import { render } from "solid-js/web";
 import html from "solid-js/html";
 import { parse as parseMarkdown } from "marked";
 import yaml from "yaml";
-import { readStream, loadTTS, runTool, getClientContext, parseStreamingJson } from "./utils.js";
+import { readStream, loadTTS, runTool, getClientContext, parseStreamingJson, fileToBase64 } from "./utils.js";
 import { systemPrompt, tools } from "./config.js";
-import { search, browse, code } from "./utils.js";
+import { search, browse, code, splitFilename } from "./utils.js";
 
 render(() => html`<${Page} />`, window.app);
 loadTTS().then((tts) => (window.tts = tts)); // Load TTS in background
@@ -24,14 +24,42 @@ export default function Page() {
 
   async function handleSubmit(event) {
     event?.preventDefault();
+    /** @type {HTMLFormElement} */
     const form = event.target;
+    /** @type {string} */
     const message = form.message.value;
+    /** @type {FileList} */
+    const inputFiles = form.inputFiles.files;
+    /** @type {boolean} */
     const reasoningMode = form.reasoningMode.checked;
 
     const userMessage = {
       role: "user",
       content: [{ text: message }],
     };
+    if (inputFiles.length) {
+      for (const file of inputFiles) {
+        const imageTypes = ["png", "jpeg", "gif", "webp"];
+        const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
+        const validTypes = [...imageTypes, ...documentTypes];
+        if (!validTypes) {
+          alert(`Invalid file format. Valid formats include: ${validTypes}`);
+          return;
+        }
+        let [name, format] = splitFilename(file.name);
+        name = name.replace(/[^a-zA-Z0-9\s\[\]\(\)\-]/g, "_").replace(/\s{2,}/g, " "); // adhere to anthropic filename restrictions
+        const bytes = await fileToBase64(file, true);
+        const contentType = imageTypes.includes(format) ? "image" : "document";
+        userMessage.content.push({
+          [contentType]: {
+            name,
+            format,
+            source: { bytes },
+          },
+        });
+      }
+    }
+
     form.message.value = "";
     form.inputFiles.value = "";
     setMessages((messages) => messages.concat([userMessage]));
@@ -78,16 +106,7 @@ const input = { // ConverseStreamRequest
               bytes: new Uint8Array(), // e.g. Buffer.from("") or new TextEncoder().encode("")
             },
           },
-          video: { // VideoBlock
-            format: "mkv" || "mov" || "mp4" || "webm" || "flv" || "mpeg" || "mpg" || "wmv" || "three_gp", // required
-            source: { // VideoSource Union: only one key present
-              bytes: new Uint8Array(), // e.g. Buffer.from("") or new TextEncoder().encode("")
-              s3Location: { // S3Location
-                uri: "STRING_VALUE", // required
-                bucketOwner: "STRING_VALUE",
-              },
-            },
-          },
+          
           toolUse: { // ToolUseBlock
             toolUseId: "STRING_VALUE", // required
             name: "STRING_VALUE", // required
@@ -353,8 +372,8 @@ const response = await client.send(command);
           id="inputFiles"
           name="inputFiles"
           class="form-control form-control-sm w-auto bg-transparent border-transparent"
-          multiple
-          disabled />
+          accept="image/*,.pdf,.csv,.doc,.docx,.xls,.xlsx,.html,.txt,.md"
+          multiple />
 
         <div class="input-group w-auto align-items-center">
           <div class="form-check form-switch mb-0 form-control-sm d-flex align-item-center">
