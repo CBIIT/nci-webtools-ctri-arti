@@ -287,7 +287,7 @@ export async function playAudio(text, voice = "af_heart", cancelKey = "Escape") 
     chunkOverlap: 0,
     keepSeparator: true,
   });
-  const textChunks = await textSplitter.splitText(text.replace(/\n/g, "."));
+  const textChunks = await textSplitter.splitText(text.replace(/\n/g, ".").replace(/\.+/g, "."));
   for (const chunk of textChunks) {
     splitter.push(chunk);
   }
