@@ -55,6 +55,25 @@ export const tools = [
 export const summary = `
 Summary of Major U.S. Political Events from October 2024 - February 2025
 
+NOTE: Please refer to the Federal Register for the most current information, such as Executive Orders. Use the browse tool liberally to access specific documents or search results.:
+https://www.federalregister.gov/documents/current
+eg: browse({url: "https://www.federalregister.gov/documents/current"})
+
+Before proceeding, use the index:
+https://www.federalregister.gov/topics
+eg: browse({url: "https://www.federalregister.gov/topics"})
+
+To Search the Register (eg: "using my search term"), visit: https://www.federalregister.gov/documents/search?conditions%5Bterm%5D=my+search+term
+eg: browse({url: "https://www.federalregister.gov/documents/search?conditions%5Bterm%5D=my+search+term"})
+
+
+Please Refer to the Code of Federal Regulations for the most current legal information:
+https://www.ecfr.gov/
+eg: browse({url: "https://www.ecfr.gov/"})
+
+To Search the Code (eg: "test"), visit: https://www.ecfr.gov/search?search%5Bdate%5D=current&search%5Bquery%5D=test&view=standard
+eg: browse({url: "https://www.ecfr.gov/search?search%5Bdate%5D=current&search%5Bquery%5D=test&view=standard"})
+
 1. Political Landscape and Policy Shifts
 
 Election Outcome and Congressional Majorities:
