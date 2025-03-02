@@ -31,17 +31,13 @@ export default function Page() {
 
   return html`
     <div class="flex-grow-1">
-      ${() =>
-        messages().length
-          ? [
-              messages().map((message) => html`<${Message} message=${message} />`),
-              html`<${Message} message=${activeMessage()} active=${true} />`,
-              loading() && html`<dna-spinner style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" />`,
-            ]
-          : html`<div class="text-center my-5">
-              <h1 class="display-6">Welcome to CompliAI</h1>
-              <p class="fw-light fs-5">To get started, send a message below.</p>
-            </div>`}
+    <div class="text-center my-5" hidden=${() => messages().length > 0}>
+      <h1 class="display-6">Welcome to CompliAI</h1>
+      <p class="fw-light fs-5">To get started, send a message below.</p>
+    </div>
+    ${() => messages().map((message) => html`<${Message} message=${message} />`)}
+    ${() => activeMessage() && html`<${Message} message=${activeMessage} active=${true} />`}
+    <dna-spinner style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" hidden=${() => !loading()} />
     </div>
     <form onSubmit=${handleSubmit} class="card">
       <textarea
