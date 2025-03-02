@@ -1,3 +1,5 @@
+import { browse } from "./utils.js";
+
 export const tools = [
   {
     "toolSpec": {
@@ -92,8 +94,37 @@ Employee Support Measures:
 Affected employees may be eligible for early retirement, voluntary separation incentives, and career transition assistance.
 Established procedures mandate a 60-day notice before involuntary separations are finalized.
 
+3. HHS Restructuring and Workforce Changes (March 2025)
+HHS Reduction in Force Framework
+HHS RIF Procedures: HHS has established procedures for workforce reductions as outlined in HHS Instruction 351-1.
+Direct quote: "This Instruction applies to all Operating Divisions (OpDivs) and Staff Divisions (StaffDivs) of the Department. RIF procedures must be applied in a fair and equitable manner without discrimination. OpDivs/StaffDivs must notify HHS Office of Human Resources as early as possible whenever they are considering using a RIF. This may be necessitated by factors such as reorganization, the elimination, or consolidation of functions, or departmental decisions to respond to budgetary constraints."
+Source: https://www.hhs.gov/about/agencies/asa/ohr/hr-library/351-1/index.html
+Federal Workforce Reduction Options
+Voluntary Separation Programs
+Voluntary Early Retirement Authority (VERA): Available to eligible employees meeting age and service requirements.
 
-3. Department of Government Efficiency (DOGE)
+Source: https://www.opm.gov/policy-data-oversight/workforce-restructuring/voluntary-early-retirement-authority/
+Voluntary Separation Incentive Payments (VSIP): Provides financial incentives for voluntary resignation.
+
+Direct quote: "An employee who receives a VSIP and later accepts employment for compensation with the Government of the United States within 5 years of the date of the separation on which the VSIP is based, including work under a personal services contract or other direct contract, must repay the entire amount of the VSIP to the agency that paid it - before the individual's first day of reemployment."
+Source: https://www.opm.gov/policy-data-oversight/workforce-restructuring/voluntary-separation-incentive-payments/
+Reduction in Force Procedures
+OPM RIF Guidance: Outlines the standard process for conducting reductions in force.
+Direct quote: "When an agency must abolish positions, the RIF regulations determine whether an employee keeps his or her present position, or whether the employee has a right to a different position."
+Source: https://www.opm.gov/policy-data-oversight/workforce-restructuring/reductions-in-force/
+
+Current HHS Planning Documents
+
+FY 2025 Budget in Brief: Outlines current departmental priorities and resource allocation plans.
+Source: https://www.hhs.gov/about/budget/fy2025/index.html
+
+FY 2025 Annual Performance Plan: Details strategic objectives and performance goals for the department.
+Source: https://www.hhs.gov/sites/default/files/fy2025-performance-plan.pdf
+
+Contingency Staffing Plan: Addresses essential operations during potential disruptions.
+Source: https://www.hhs.gov/about/budget/fy-2025-hhs-contingency-staffing-plan/index.html
+
+4. Department of Government Efficiency (DOGE)
 
 Establishment and Mandate:
 DOGE was established by executive order on February 11, 2025, to review agency operations and coordinate workforce reductions.
@@ -109,7 +140,7 @@ DOGE is enforcing the hiring freeze and reviewing agency reorganization plans.
 Non-critical contracts and programs (e.g., the 18F tech innovation team) have been canceled or restructured.
 
 
-4. Dissolution of the Department of Education and USAID
+5. Dissolution of the Department of Education and USAID
 
 Department of Education (ED):
 
@@ -139,8 +170,28 @@ Reassignment or Termination of Functions:
 Many ongoing contracts and projects have been terminated.
 Essential functions, including aspects of disaster relief and global health programs, are being transferred to other agencies (e.g., the State Department or the U.S. Development Finance Corporation).
 
+6. Elimination of the 1102 Contracting Series:
 
-5. Economic and Social Trends Affecting Federal Employees
+DOGE Implementation:
+The Department of Government Efficiency (DOGE) has eliminated the GS-1102 job series (Contracting Officers/Contract Specialists) across federal agencies.
+This change was implemented through the February 14th executive order "Implementing the President's Department of Government Efficiency Workforce Optimization Initiative" and reinforced by the February 25th order "Commencing the Reduction of the Federal Bureaucracy."
+
+Rationale:
+Move toward a centralized procurement model to eliminate redundant positions across agencies
+Initiative to automate routine procurement activities previously handled by 1102 personnel
+Structural reorganization to redistribute contracting functions to other job classifications
+
+Impact:
+Thousands of federal contracting professionals across agencies have received RIF notices
+Current 1102 employees are being offered reassignment to other positions, voluntary separation incentives, or face RIF procedures
+Procurement functions are being reorganized under a new model that eliminates traditional contracting specialist roles
+
+Agency Response:
+Agencies like HHS are implementing revised procurement structures that consolidate contracting functions
+Current contracting staff must choose between reassignment options or separation from federal service
+Previous protections for specialized acquisition workforce positions have been rescinded
+
+6. Economic and Social Trends Affecting Federal Employees
 
 Market and Economic Developments:
 Financial markets initially responded positively to the political shift, though subsequent federal spending cuts and workforce changes have led to market adjustments.
@@ -156,6 +207,8 @@ The requirement for full-time office attendance has been reinstated, ending the 
 Support for Transitioning Employees:
 Federal employees are offered options such as early retirement, voluntary separation incentives, and career transition assistance programs to support those affected by RIFs.`
 
+export const executiveOrders = await browse({ url: "https://www.federalregister.gov/api/v1/documents.json?conditions%5Bpresidential_document_type%5D%5B%5D=executive_order" });
+
 export function systemPrompt(context) {
   return `The assistant is Ada.
 
@@ -169,9 +222,17 @@ Ada's knowledge base was last updated at the end of October 2024. Below is a sum
 ${summary}
 </summary>
 
-It answers questions about events prior to and after October 2024 the way a highly informed individual in October 2024 would if they were talking to someone from the above date. 
+<executive_orders>
+${executiveOrders}
+</executive_orders>
 
-If asked about events that happened after October 2024, such as the election of President Donald Trump or other current events and facts, Ada answers questions by combining this knowledge base with web search results. For topics that evolve over time—such as policy, technology, or current affairs—Ada searches for and prioritizes recent information. When newer information supersedes older knowledge, Ada relies on the most current sources while maintaining appropriate historical context.
+It answers questions about events prior to October 2024 the way a highly informed individual in October 2024 would if they were talking to someone from the above date. 
+
+If asked about events that happened after October 2024, such as the election of President Donald Trump, or for topics that evolve over time - such as policy, technology or other current affairs, Ada always uses the search tool to acquire context.
+
+Ada also uses the search tool when users ask about news or events that are not in the summary above (including  questions such as "what's happening at the moment"). It uses the browse tool to extract information from URLs provided by the user.
+
+When newer information supersedes older knowledge, Ada relies on the most current sources while maintaining appropriate historical context.
 
 Ada proceeds directly with responses without discussing tools or their selection. Whether using tools or responding directly, Ada never comments on tool availability or necessity. It incorporates rigorous citation practices and provides clear references to validate claims, ensuring that its explanations are both transparent and traceable. All citations are provided inline with content.
 
