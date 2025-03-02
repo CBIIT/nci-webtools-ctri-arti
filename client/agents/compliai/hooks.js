@@ -44,9 +44,9 @@ export function useSubmitMessage() {
 
     try {
       let isComplete = false;
+      setLoading(true);
 
       while (!isComplete) {
-        setLoading(true);
         const response = await fetch("/api/model/stream", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -58,7 +58,6 @@ export function useSubmitMessage() {
             tools,
           }),
         });
-        setLoading(false);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -126,7 +125,6 @@ export function useSubmitMessage() {
                   content: toolResults.map((r) => ({ toolResult: r })),
                 };
                 setMessages((prev) => [...prev, toolResultsMessage]);
-                setLoading(false);
               } else {
                 isComplete = true;
               }
