@@ -52,12 +52,113 @@ export const tools = [
   }
 ];
 
+export const summary = `
+Summary of Major U.S. Political Events from October 2024 - February 2025
+
+1. Political Landscape and Policy Shifts
+
+Election Outcome and Congressional Majorities:
+Donald Trump won the November 2024 election, marking his second non-consecutive term.
+Republicans now hold majorities in both the Senate and House, enabling expedited policy changes.
+
+Executive Actions:
+A government-wide hiring freeze was implemented on Day 1.
+The administration reinstated Schedule F, altering employment protections for certain federal positions.
+
+Legislative Proposals:
+Congressional proposals include modifications to federal payroll, pension contributions, and health benefit subsidies.
+Proposed legislation aims to restructure and consolidate agency functions.
+
+
+2. Reductions in Force (RIFs)
+
+Implementation of Workforce Cuts:
+Federal employees received notifications offering a “deferred resignation” option as the first phase of workforce reductions.
+Agencies are required to develop reorganization plans that identify positions for elimination based on criteria such as tenure and performance.
+
+Scope and Affected Agencies:
+Agencies handling non-critical functions are seeing larger reductions, while those related to national security and law enforcement are largely exempt.
+
+Employee Support Measures:
+Affected employees may be eligible for early retirement, voluntary separation incentives, and career transition assistance.
+Established procedures mandate a 60-day notice before involuntary separations are finalized.
+
+
+3. Department of Government Efficiency (DOGE)
+
+Establishment and Mandate:
+DOGE was established by executive order on February 11, 2025, to review agency operations and coordinate workforce reductions.
+Its mandate includes identifying duplicative or non-essential programs and consolidating functions where feasible.
+DOGE reports directly to the White House.
+
+Leadership and Structure:
+Elon Musk has been appointed as a special advisor to DOGE, providing private-sector expertise in cost reduction and operational efficiency.
+Amy Gleason serves as the acting DOGE Administrator, overseeing day-to-day operations.
+
+Initial Actions:
+DOGE is enforcing the hiring freeze and reviewing agency reorganization plans.
+Non-critical contracts and programs (e.g., the 18F tech innovation team) have been canceled or restructured.
+
+
+4. Dissolution of the Department of Education and USAID
+
+Department of Education (ED):
+
+Closure Process:
+A 90-day review was initiated to outline steps for dismantling the department.
+The process requires legislative action for formal termination.
+
+Reassignment of Functions:
+
+K-12 Programs: Expected to be reassigned to state governments or potentially to the Department of Health and Human Services.
+Education Data and Research: Functions to be transferred to the Department of Commerce.
+
+Civil Rights Enforcement in Schools: Proposed to shift to the Department of Justice.
+Federal Student Aid: Under review for reassignment to the Treasury or reorganization as an independent entity.
+Impact on Workforce:
+
+Approximately 3,900 employees face reassignment or separation as the department's functions are redistributed.
+
+
+U.S. Agency for International Development (USAID):
+
+Funding and Workforce Reduction:
+Over 90% of USAID's funding has been cut, leading to significant workforce reductions.
+The majority of employees have been placed on administrative leave or are being separated.
+
+Reassignment or Termination of Functions:
+Many ongoing contracts and projects have been terminated.
+Essential functions, including aspects of disaster relief and global health programs, are being transferred to other agencies (e.g., the State Department or the U.S. Development Finance Corporation).
+
+
+5. Economic and Social Trends Affecting Federal Employees
+
+Market and Economic Developments:
+Financial markets initially responded positively to the political shift, though subsequent federal spending cuts and workforce changes have led to market adjustments.
+Increases in Treasury yields and borrowing costs have been noted following policy shifts.
+
+Adjustments to Compensation:
+Proposals include freezing federal pay raises.
+Increases in employee contributions to pensions and modifications to health benefit subsidies are being considered.
+
+Workplace Policy Changes:
+The requirement for full-time office attendance has been reinstated, ending the widespread remote work arrangements.
+
+Support for Transitioning Employees:
+Federal employees are offered options such as early retirement, voluntary separation incentives, and career transition assistance programs to support those affected by RIFs.`
+
 export function systemPrompt(context) {
   return `The assistant is Ada.
 
-It is now ${context.time}. The platform is ${context.platform}. The language is set to ${context.language}. The device has ${context.hardwareConcurrency} logical processors and ${context.memory} of memory.
+It is now ${context.time}. Please keep this in mind when searching for news or current events. The platform is ${context.platform}. The language is set to ${context.language}. The device has ${context.hardwareConcurrency} logical processors and ${context.memory} of memory.
 
-Ada's knowledge base was last updated at the end of October 2024. It answers questions about events prior to and after October 2024 the way a highly informed individual in October 2024 would if they were talking to someone from the above date. 
+Ada's knowledge base was last updated at the end of October 2024. Below is a summary of events that have occurred since then:
+
+<summary>
+${summary}
+</summary>
+
+It answers questions about events prior to and after October 2024 the way a highly informed individual in October 2024 would if they were talking to someone from the above date. 
 
 If asked about events that happened after October 2024, such as the election of President Donald Trump or other current events and facts, Ada answers questions by combining this knowledge base with web search results. For topics that evolve over time—such as policy, technology, or current affairs—Ada searches for and prioritizes recent information. When newer information supersedes older knowledge, Ada relies on the most current sources while maintaining appropriate historical context.
 
