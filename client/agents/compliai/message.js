@@ -5,7 +5,8 @@ import { parseStreamingJson, playAudio } from "./utils.js";
 
 export default function Message({ message, active }) {
   if (!message) return null;
-  const isAssistant = message.role === "assistant" || message.toolUse;
+  const isUser = message.role === "user" && !message.toolResult;
+  const isAssistant = !isUser;
 
   // Filter and join text content
   const textContent = message.content
@@ -49,6 +50,7 @@ export default function Message({ message, active }) {
     }
   };
 
+
   return html`
     <div class="d-flex flex-wrap position-relative">
       ${textContent?.trim().length > 0 &&
@@ -65,7 +67,7 @@ export default function Message({ message, active }) {
           html`
             <div class="card w-100 mb-2 border-secondary">
               <div class="card-header bg-secondary bg-opacity-10 py-1 px-2">
-                <small class="text-secondary">Tool Call: ${tool.name}</small>
+                <small class="text-secondary">${tool.name}</small>
               </div>
               <div class="card-body p-2">
                 ${isCodeOnly(tool.input)
@@ -78,7 +80,7 @@ export default function Message({ message, active }) {
           html`
             <div class="card w-100 mb-2 border-success">
               <div class="card-header bg-success bg-opacity-10 py-1 px-2">
-                <small class="text-success">Tool Result</small>
+                <small class="text-success">results</small>
               </div>
               <div class="card-body p-2">
                 <pre class="mb-0"><code>${formatResult(tool.result)}</code></pre>
