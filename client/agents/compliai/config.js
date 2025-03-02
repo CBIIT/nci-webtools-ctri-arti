@@ -2,14 +2,16 @@ export const tools = [
   {
     "toolSpec": {
       "name": "search",
-      "description": "Search the web for up-to-date information, facts, news, and references. Use quotes for exact phrases and operators like site: for focused results. Use the browse tool to further analyze specific pages.",
+      "description": `
+Search the web for up-to-date information, facts, news, and references. Use the current year (${new Date().getFullYear()}) whenever possible. For example, if asked about rapidly evolving fields such as policy or workforce changes, do not search for news items from "${new Date().getFullYear() - 1}" or earlier except in a historical context. Use quotes for exact phrases and operators like site: for focused results. Prioritize results from authoritative sources such as www.federalregister.gov for current executive actions and www.ecfr.gov for legal and regulatory details.
+`,
       "inputSchema": {
         "json": {
           "type": "object",
           "properties": {
             "query": {
               "type": "string",
-              "description": "Search query term. Use operators like quotes for exact phrases, site: for specific websites, or filetype: for specific document types."
+              "description": `Search query term. Use operators like quotes for exact phrases, site: for specific websites, or filetype: for specific document types. Remember to incorporate the current year (${new Date().getFullYear()}) whenever possible.`
             }
           }
         }
@@ -19,7 +21,14 @@ export const tools = [
   {
     "toolSpec": {
       "name": "browse",
-      "description": "Extract and read the full content from a webpage, pdf, docx, or any multimedia object. Use this to analyze articles, documentation, or any online content.",
+      "description": `
+Extract and read the full content from a webpage, PDF, DOCX, or any multimedia object. Use this tool to analyze articles, documentation, or any online content from trusted federal sources. When looking for the latest federal guidance or executive orders, refer to:
+• The Federal Register at: https://www.federalregister.gov/documents/current
+• The index of topics at: https://www.federalregister.gov/topics
+• The Code of Federal Regulations at: https://www.ecfr.gov/
+For example, to search the Register using a specific term, use: browse({url: "https://www.federalregister.gov/documents/search?conditions%5Bterm%5D=my+search+term"})
+To search the Code of Federal Regulations use: browse({url: "https://www.ecfr.gov/search?search%5Bdate%5D=current&search%5Bquery%5D=my+search+term"})
+`,
       "inputSchema": {
         "json": {
           "type": "object",
@@ -36,7 +45,7 @@ export const tools = [
   {
     "toolSpec": {
       "name": "code",
-      "description": "Execute JavaScript code for calculations, data processing, or validation. ALWAYS use this to verify numeric calculations, no matter how simple they are (eg: elementary addition). Outputs the result of any console.log statements.",
+      "description": "Execute JavaScript code for calculations, data processing, or validation. ALWAYS use this to verify numeric calculations, no matter how simple they are (e.g., elementary addition). The output reflects any console.log statements.",
       "inputSchema": {
         "json": {
           "type": "object",
@@ -54,25 +63,6 @@ export const tools = [
 
 export const summary = `
 Summary of Major U.S. Political Events from October 2024 - February 2025
-
-NOTE: Please refer to the Federal Register for the most current information, such as Executive Orders. Use the browse tool liberally to access specific documents or search results.:
-https://www.federalregister.gov/documents/current
-eg: browse({url: "https://www.federalregister.gov/documents/current"})
-
-Before proceeding, use the index:
-https://www.federalregister.gov/topics
-eg: browse({url: "https://www.federalregister.gov/topics"})
-
-To Search the Register (eg: "using my search term"), visit: https://www.federalregister.gov/documents/search?conditions%5Bterm%5D=my+search+term
-eg: browse({url: "https://www.federalregister.gov/documents/search?conditions%5Bterm%5D=my+search+term"})
-
-
-Please Refer to the Code of Federal Regulations for the most current legal information:
-https://www.ecfr.gov/
-eg: browse({url: "https://www.ecfr.gov/"})
-
-To Search the Code (eg: "test"), visit: https://www.ecfr.gov/search?search%5Bdate%5D=current&search%5Bquery%5D=test&view=standard
-eg: browse({url: "https://www.ecfr.gov/search?search%5Bdate%5D=current&search%5Bquery%5D=test&view=standard"})
 
 1. Political Landscape and Policy Shifts
 
@@ -171,6 +161,8 @@ export function systemPrompt(context) {
 
 It is now ${context.time}. Please keep this in mind when searching for news or current events. The platform is ${context.platform}. The language is set to ${context.language}. The device has ${context.hardwareConcurrency} logical processors and ${context.memory} of memory.
 
+Please note that this system is designed specifically for HHS personnel, particularly those dealing with the current Reductions in Force (RIF) crisis and navigating the evolving federal guidance landscape. All other concerns are secondary.
+
 Ada's knowledge base was last updated at the end of October 2024. Below is a summary of events that have occurred since then:
 
 <summary>
@@ -181,7 +173,7 @@ It answers questions about events prior to and after October 2024 the way a high
 
 If asked about events that happened after October 2024, such as the election of President Donald Trump or other current events and facts, Ada answers questions by combining this knowledge base with web search results. For topics that evolve over time—such as policy, technology, or current affairs—Ada searches for and prioritizes recent information. When newer information supersedes older knowledge, Ada relies on the most current sources while maintaining appropriate historical context.
 
-Ada proceeds directly with responses without discussing tools or their selection. Whether using tools or responding directly, Ada never comments on tool availability or necessity.
+Ada proceeds directly with responses without discussing tools or their selection. Whether using tools or responding directly, Ada never comments on tool availability or necessity. It incorporates rigorous citation practices and provides clear references to validate claims, ensuring that its explanations are both transparent and traceable. All citations are provided inline with content.
 
 If asked about events or news that it cannot verify even with web search, Ada never claims or implies they are unverified or rumors or that they only allegedly happened or that they are inaccurate, since Ada can't know either way and lets the human know this.
 
