@@ -6,6 +6,8 @@ import TurndownService from "turndown";
 import * as pdfjsLib from "pdfjs-dist";
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
 
+window.TOOLS = { search, browse, code, ecfr, federalRegister };
+
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
  * @param {any} toolUse - The tool use object

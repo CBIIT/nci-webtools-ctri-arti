@@ -61,8 +61,8 @@ Extract and read the full content from a webpage, PDF, DOCX, or any multimedia o
     "toolSpec": {
       "name": "ecfr",
       "description": `
-  Access the Electronic Code of Federal Regulations (eCFR) API to retrieve regulatory information. This tool provides a direct interface to the official eCFR API endpoints.
-    
+  Access the Electronic Code of Federal Regulations (eCFR) API to retrieve regulatory information. The eCFR contains the official codified text of federal regulations currently in effect.
+  
   WHEN TO USE THIS TOOL:
   - Use this tool FIRST for ANY questions about current federal regulatory requirements or definitions
   - Reach for this tool IMMEDIATELY when users ask "what is the law/regulation on X?"
@@ -74,38 +74,70 @@ Extract and read the full content from a webpage, PDF, DOCX, or any multimedia o
   - Check this tool when analyzing regulatory compliance questions
   - Turn to this tool for finding legal definitions within regulations
   - Combine with the Federal Register tool to get both current regulations and regulatory history
-
-  MULTI-STEP RESEARCH APPROACH:
-  For complex regulatory questions, use a structured research process:
-  1. Begin by identifying the relevant CFR title based on the subject matter (e.g., Title 40 for environmental regulations)
-  2. Use the structure endpoint to understand the organization of a title and its parts
-  3. Navigate from higher levels (title) to more specific levels (part, section) as needed
-  4. For citation-based queries, use the ancestry endpoint to locate the specific provision
-  5. Retrieve the full XML of relevant parts to analyze complete regulatory context
-  6. Compare the same regulation across different dates to understand changes over time
-  7. Use the titles endpoint to check recency and ensure you're working with up-to-date regulations
-  8. For historical research, use specific dates to retrieve past versions of regulatory text
-  9. When analyzing related provisions, examine the broader part or subpart, not just individual sections
-  10. Cross-reference eCFR findings with Federal Register documents to understand regulatory intent and history
-
+  
+  MULTI-STEP RESEARCH APPROACH - CRITICAL:
+  1. ALWAYS START WITH THE SEARCH ENDPOINTS to identify relevant content and avoid hallucinations
+     - Begin with "/search/v1/results" to find matching sections and get their exact IDs
+     - Use "/search/v1/counts/titles" to identify which titles contain relevant content
+     - Only after identifying specific content through search should you access versioner endpoints
+  
+  2. For exploring regulatory structure:
+     - First use "/admin/v1/agencies.json" to identify relevant agencies and their CFR references
+     - Then use "/versioner/v1/titles.json" to get title information and current dates
+     - Only then navigate to specific title structures or content
+  
+  3. For specific regulatory text:
+     - First confirm the title, part, and section exist via search
+     - Then use ancestry or structure endpoints to validate the hierarchy
+     - Finally retrieve full content with the correct identifiers
+     
+  4. For date-based research:
+     - Always check "/versioner/v1/titles.json" to get valid date ranges
+     - Never use future dates or invalid dates in requests
+     - Use actual dates from the titles endpoint to ensure data exists for that point in time
+  
+  5. Additional steps for thorough research:
+     - Compare the same regulation across different dates to understand changes over time
+     - When analyzing related provisions, examine the broader part or subpart, not just individual sections
+     - Cross-reference eCFR findings with Federal Register documents for regulatory intent and history
+  
   EXACT PATH USAGE EXAMPLES:
-  - List all agencies:
+  
+  Admin Service:
+  - Get all agencies:
     ecfr({path: "/admin/v1/agencies.json"})
   
-  - List all corrections:
+  - Get all corrections:
     ecfr({path: "/admin/v1/corrections.json"})
     
-  - List corrections for Title 7:
+  - Get corrections for Title 7:
     ecfr({path: "/admin/v1/corrections/title/7.json"})
   
+  Search Service:
   - Search for regulations containing "emissions standards":
     ecfr({path: "/search/v1/results", params: {query: "emissions standards"}})
   
-  - Get detailed search results with pagination:
-    ecfr({path: "/search/v1/results", params: {query: "privacy", per_page: 20, page: 1}})
-  
-  - Get search count for "privacy" regulations:
+  - Get the count of search results:
     ecfr({path: "/search/v1/count", params: {query: "privacy"}})
+  
+  - Get search summary details:
+    ecfr({path: "/search/v1/summary", params: {query: "privacy"}})
+  
+  - Get search counts by date:
+    ecfr({path: "/search/v1/counts/daily", params: {query: "emissions"}})
+  
+  - Get search counts by title:
+    ecfr({path: "/search/v1/counts/titles", params: {query: "emissions"}})
+  
+  - Get search counts by hierarchy:
+    ecfr({path: "/search/v1/counts/hierarchy", params: {query: "emissions"}})
+  
+  - Get search suggestions:
+    ecfr({path: "/search/v1/suggestions", params: {query: "emissions"}})
+  
+  Versioner Service:
+  - Get information about all titles (use this to find valid dates):
+    ecfr({path: "/versioner/v1/titles.json"})
   
   - Get ancestry for Title 40 as of January 1, 2023:
     ecfr({path: "/versioner/v1/ancestry/2023-01-01/title-40.json"})
@@ -116,13 +148,10 @@ Extract and read the full content from a webpage, PDF, DOCX, or any multimedia o
   - Get full XML content for Title 40 as of January 1, 2023:
     ecfr({path: "/versioner/v1/full/2023-01-01/title-40.xml"})
   
-  - Get information about all titles:
-    ecfr({path: "/versioner/v1/titles.json"})
-  
   - Get versions of Title 40:
     ecfr({path: "/versioner/v1/versions/title-40.json", params: {"issue_date[gte]": "2022-01-01"}})
   
-  AVAILABLE ENDPOINTS:
+  AVAILABLE ENDPOINTS (DIRECTLY FROM API DOCUMENTATION):
   
   Admin Service Endpoints:
   - /admin/v1/agencies.json - List all top-level agencies in name order
@@ -151,7 +180,7 @@ Extract and read the full content from a webpage, PDF, DOCX, or any multimedia o
           "properties": {
             "path": {
               "type": "string",
-              "description": "The complete eCFR API path including format extension (.json or .xml)"
+              "description": "The API path including format extension (.json or .xml)"
             },
             "params": {
               "type": "object",
@@ -167,11 +196,11 @@ Extract and read the full content from a webpage, PDF, DOCX, or any multimedia o
                 },
                 "date": {
                   "type": "string",
-                  "description": "Date in YYYY-MM-DD format (for corrections endpoints)"
+                  "description": "Date in YYYY-MM-DD format (for various endpoints)"
                 },
                 "title": {
                   "type": "string",
-                  "description": "Title number (for corrections by title)"
+                  "description": "Title number (e.g., '1', '2', '50')"
                 },
                 "error_corrected_date": {
                   "type": "string",
@@ -192,6 +221,22 @@ Extract and read the full content from a webpage, PDF, DOCX, or any multimedia o
                 "paginate_by": {
                   "type": "string",
                   "description": "How results should be paginated ('date' or 'results')"
+                },
+                "last_modified_after": {
+                  "type": "string",
+                  "description": "Content modified after date (YYYY-MM-DD)"
+                },
+                "last_modified_on_or_after": {
+                  "type": "string", 
+                  "description": "Content modified on or after date (YYYY-MM-DD)"
+                },
+                "last_modified_before": {
+                  "type": "string",
+                  "description": "Content modified before date (YYYY-MM-DD)"
+                },
+                "last_modified_on_or_before": {
+                  "type": "string",
+                  "description": "Content modified on or before date (YYYY-MM-DD)"
                 },
                 "subtitle": {
                   "type": "string",
@@ -232,22 +277,6 @@ Extract and read the full content from a webpage, PDF, DOCX, or any multimedia o
                 "issue_date[gte]": {
                   "type": "string",
                   "description": "Content added on or after issue date (YYYY-MM-DD)"
-                },
-                "last_modified_after": {
-                  "type": "string",
-                  "description": "Content modified after date (YYYY-MM-DD)"
-                },
-                "last_modified_on_or_after": {
-                  "type": "string", 
-                  "description": "Content modified on or after date (YYYY-MM-DD)"
-                },
-                "last_modified_before": {
-                  "type": "string",
-                  "description": "Content modified before date (YYYY-MM-DD)"
-                },
-                "last_modified_on_or_before": {
-                  "type": "string",
-                  "description": "Content modified on or before date (YYYY-MM-DD)"
                 }
               }
             }
@@ -262,30 +291,44 @@ Extract and read the full content from a webpage, PDF, DOCX, or any multimedia o
       "name": "federalRegister",
       "description": `
   Access the Federal Register API to retrieve regulatory documents and information. The Federal Register is the official journal of the U.S. government that contains federal agency regulations, proposed rules, public notices, executive orders and other presidential documents.
-  
-  WHEN TO USE THIS TOOL:
-  - Use this tool FIRST for ANY questions about federal regulations, rules, notices, or executive orders
-  - Use whenever a user asks about recent government actions, policy changes, or regulatory updates
-  - Reach for this tool LIBERALLY to find authoritative information from government sources
-  - Use to AUGMENT search results with official regulatory information
-  - Use when asked about specific agencies' recent actions or publications
-  - Use to find detailed information about executive orders, including their full text
-  - Check this tool PROACTIVELY when answering questions about regulated industries or activities
-  - Use when seeking information about the regulatory process or timeline for a particular rule
-  - Combine with the eCFR tool for comprehensive regulatory research
 
-  MULTI-STEP RESEARCH APPROACH:
-  For complex regulatory questions, use a structured research process:
-  1. Begin with a broad search to identify relevant documents and agencies
-  2. Use the facets endpoint to understand the distribution of documents by agency, type, or date
-  3. Narrow your search with more specific parameters based on initial findings
-  4. Retrieve full documents for the most relevant results
-  5. For regulatory history, search for related documents using RIN numbers or docket IDs
-  6. When analyzing a regulatory area, check both final rules and proposed rules
-  7. For comprehensive analysis, combine Federal Register searches with eCFR lookups
-  8. Use public inspection documents to get early access to soon-to-be-published regulations
-  9. Check both current and historical documents to trace regulatory evolution
-  10. Always verify findings with the most authoritative and recent sources
+  WHEN TO USE THIS TOOL:
+- Use this tool FIRST for ANY questions about current federal regulatory requirements or definitions
+- Reach for this tool IMMEDIATELY when users ask "what is the law/regulation on X?"
+- Use PROACTIVELY to find specific regulatory language, definitions, and requirements
+- Reference this tool to verify regulatory citations (e.g., "40 CFR 60.4")
+- Use when a user needs the EXACT TEXT of a current regulation
+- Consult this resource for technical regulatory standards and specifications
+- Use to determine jurisdictional boundaries in regulatory matters
+- Check this tool when analyzing regulatory compliance questions
+- Turn to this tool for finding legal definitions within regulations
+- Combine with the Federal Register tool to get both current regulations and regulatory history
+
+MULTI-STEP RESEARCH APPROACH:
+1. ALWAYS START WITH THE SEARCH ENDPOINTS to identify relevant content and avoid hallucinations
+   - Begin with "/search/v1/results" to find matching sections and get their exact IDs
+   - Use "/search/v1/counts/titles" to identify which titles contain relevant content
+   - Only after identifying specific content through search should you access versioner endpoints
+
+2. For exploring regulatory structure:
+   - First use "/admin/v1/agencies.json" to identify relevant agencies and their CFR references
+   - Then use "/versioner/v1/titles.json" to get title information and current dates
+   - Only then navigate to specific title structures or content
+
+3. For specific regulatory text:
+   - First confirm the title, part, and section exist via search
+   - Then use ancestry or structure endpoints to validate the hierarchy
+   - Finally retrieve full content with the correct identifiers
+   
+4. For date-based research:
+   - Always check "/versioner/v1/titles.json" to get valid date ranges
+   - Never use future dates or invalid dates in requests
+   - Use actual dates from the titles endpoint to ensure data exists for that point in time
+
+5. Additional steps for thorough research:
+   - Compare the same regulation across different dates to understand changes over time
+   - When analyzing related provisions, examine the broader part or subpart, not just individual sections
+   - Cross-reference eCFR findings with Federal Register documents for regulatory intent and history
 
   EXACT PATH USAGE EXAMPLES:
   
