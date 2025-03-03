@@ -130,13 +130,14 @@ export async function ecfr({ path, params = {} }) {
       const errorText = await response.text();
       throw new Error(`eCFR API error (${response.status}): ${errorText}`);
     }
-    
-    // For .json paths, parse as JSON; for .xml paths, return as text
-    if (path.endsWith('.json')) {
-      return response.json();
-    } else {
-      return response.text();
+
+    let results = path.endsWith('.json') ? await response.json() : await response.text();
+    const stringifiedResults = JSON.stringify(results, null, 2);
+    const limit = 10_000;
+    if (stringifiedResults.length > limit) {
+      results = stringifiedResults.slice(0, limit) + "\n... (truncated)";
     }
+    return results;
   } catch (error) {
     console.error("eCFR API error:", error);
     throw error;
@@ -170,13 +171,14 @@ export async function federalRegister({ path, params = {} }) {
       const errorText = await response.text();
       throw new Error(`Federal Register API error (${response.status}): ${errorText}`);
     }
-    
-    // For .json paths, parse as JSON; for .csv paths, return as text
-    if (path.endsWith('.json')) {
-      return response.json();
-    } else {
-      return response.text();
+
+    let results = path.endsWith('.json') ? await response.json() : await response.text();
+    const stringifiedResults = JSON.stringify(results, null, 2);
+    const limit = 10_000;
+    if (stringifiedResults.length > limit) {
+      results = stringifiedResults.slice(0, limit) + "\n... (truncated)";
     }
+    return results;
   } catch (error) {
     console.error("Federal Register API error:", error);
     throw error;
