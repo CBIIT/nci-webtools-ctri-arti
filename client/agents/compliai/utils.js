@@ -12,7 +12,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dis
  * @param {any} tools - The tools object with tool names as keys and functions as values.
  * @returns {Promise<any>} - The tool output
  */
-export async function runTool(toolUse, tools = { search, browse, code }) {
+export async function runTool(toolUse, tools = { search, browse, code, ecfr, federalRegister }) {
   let { toolUseId, name, input } = toolUse;
   try {
     const results = await tools?.[name]?.(input);
@@ -99,6 +99,86 @@ export async function browse({ url }) {
   }
   const mimetype = response.headers.get("content-type");
   return await parseDocument(bytes, mimetype, url);
+}
+
+/**
+ * Interacts with the eCFR API to retrieve regulatory information
+ * @param {Object} input - Parameters for the eCFR API
+ * @param {string} input.path - The complete API path including format extension (.json or .xml)
+ * @param {Object} input.params - Query parameters to include in the request
+ * @returns {Promise<Object|string>} - Response from the eCFR API (JSON object or XML string)
+ */
+export async function ecfr({ path, params = {} }) {
+  const baseUrl = "https://www.ecfr.gov/api";
+  const url = new URL(baseUrl + path);
+  
+  // Add query parameters
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach(v => url.searchParams.append(`${key}[]`, v));
+    } else if (value !== undefined && value !== null) {
+      url.searchParams.append(key, value);
+    }
+  });
+
+  try {
+    const response = await fetch("/api/proxy?" + new URLSearchParams({ url: url.toString() }));
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`eCFR API error (${response.status}): ${errorText}`);
+    }
+    
+    // For .json paths, parse as JSON; for .xml paths, return as text
+    if (path.endsWith('.json')) {
+      return response.json();
+    } else {
+      return response.text();
+    }
+  } catch (error) {
+    console.error("eCFR API error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Interacts with the Federal Register API to retrieve document information
+ * @param {Object} input - Parameters for the Federal Register API
+ * @param {string} input.path - The API path including format extension (.json or .csv)
+ * @param {Object} input.params - Query parameters to include in the request
+ * @returns {Promise<Object|string>} - Response from the Federal Register API
+ */
+export async function federalRegister({ path, params = {} }) {
+  const baseUrl = "https://www.federalregister.gov/api/v1";
+  const url = new URL(baseUrl + path);
+  
+  // Add query parameters
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach(v => url.searchParams.append(`${key}[]`, v));
+    } else if (value !== undefined && value !== null) {
+      url.searchParams.append(key, value);
+    }
+  });
+
+  try {
+    const response = await fetch("/api/proxy?" + new URLSearchParams({ url: url.toString() }));
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Federal Register API error (${response.status}): ${errorText}`);
+    }
+    
+    // For .json paths, parse as JSON; for .csv paths, return as text
+    if (path.endsWith('.json')) {
+      return response.json();
+    } else {
+      return response.text();
+    }
+  } catch (error) {
+    console.error("Federal Register API error:", error);
+    throw error;
+  }
 }
 
 /**
