@@ -6,6 +6,7 @@ export const tools = [
       "name": "search",
       "description": `
 Search the web for up-to-date information, facts, news, and references. Use the current year (${new Date().getFullYear()}) whenever possible. For example, if asked about rapidly evolving fields such as policy or workforce changes, do not search for news items from "${new Date().getFullYear() - 1}" or earlier except in a historical context. Use quotes for exact phrases and operators like site: for focused results. Prioritize results from authoritative sources such as www.federalregister.gov for current executive actions and www.ecfr.gov for legal and regulatory details.
+Always remember to use the browse tool to follow up on relevant search results.
 `,
       "inputSchema": {
         "json": {
@@ -13,7 +14,7 @@ Search the web for up-to-date information, facts, news, and references. Use the 
           "properties": {
             "query": {
               "type": "string",
-              "description": `Search query term. Use operators like quotes for exact phrases, site: for specific websites, or filetype: for specific document types. Remember to incorporate the current year (${new Date().getFullYear()}) whenever possible.`
+              "description": `Search query term. Use operators like quotes for exact phrases, site: for specific websites, or filetype: for specific document types. Remember to incorporate the current year (${new Date().getFullYear()}) to retrieve the latest news.`
             }
           }
         }
@@ -24,12 +25,7 @@ Search the web for up-to-date information, facts, news, and references. Use the 
     "toolSpec": {
       "name": "browse",
       "description": `
-Extract and read the full content from a webpage, PDF, DOCX, or any multimedia object. Use this tool to analyze articles, documentation, or any online content from trusted federal sources. When looking for the latest federal guidance or executive orders, refer to:
-• The Federal Register at: https://www.federalregister.gov/documents/current
-• The index of topics at: https://www.federalregister.gov/topics
-• The Code of Federal Regulations at: https://www.ecfr.gov/
-For example, to search the Register using a specific term, use: browse({url: "https://www.federalregister.gov/documents/search?conditions%5Bterm%5D=my+search+term"})
-To search the Code of Federal Regulations use: browse({url: "https://www.ecfr.gov/search?search%5Bdate%5D=current&search%5Bquery%5D=my+search+term"})
+Extract and read the full content from a webpage, PDF, DOCX, or any multimedia object. Use this tool to analyze articles, documentation, or any online content from trusted federal sources.
 `,
       "inputSchema": {
         "json": {
@@ -57,6 +53,459 @@ To search the Code of Federal Regulations use: browse({url: "https://www.ecfr.go
               "description": "JavaScript code to execute. Include clear comments and error handling."
             }
           }
+        }
+      }
+    }
+  },
+  {
+    "toolSpec": {
+      "name": "ecfr",
+      "description": `
+  Access the Electronic Code of Federal Regulations (eCFR) API to retrieve regulatory information. This tool provides a direct interface to the official eCFR API endpoints.
+    
+  WHEN TO USE THIS TOOL:
+  - Use this tool FIRST for ANY questions about current federal regulatory requirements or definitions
+  - Reach for this tool IMMEDIATELY when users ask "what is the law/regulation on X?"
+  - Use PROACTIVELY to find specific regulatory language, definitions, and requirements
+  - Reference this tool to verify regulatory citations (e.g., "40 CFR 60.4")
+  - Use when a user needs the EXACT TEXT of a current regulation
+  - Consult this resource for technical regulatory standards and specifications
+  - Use to determine jurisdictional boundaries in regulatory matters
+  - Check this tool when analyzing regulatory compliance questions
+  - Turn to this tool for finding legal definitions within regulations
+  - Combine with the Federal Register tool to get both current regulations and regulatory history
+
+  MULTI-STEP RESEARCH APPROACH:
+  For complex regulatory questions, use a structured research process:
+  1. Begin by identifying the relevant CFR title based on the subject matter (e.g., Title 40 for environmental regulations)
+  2. Use the structure endpoint to understand the organization of a title and its parts
+  3. Navigate from higher levels (title) to more specific levels (part, section) as needed
+  4. For citation-based queries, use the ancestry endpoint to locate the specific provision
+  5. Retrieve the full XML of relevant parts to analyze complete regulatory context
+  6. Compare the same regulation across different dates to understand changes over time
+  7. Use the titles endpoint to check recency and ensure you're working with up-to-date regulations
+  8. For historical research, use specific dates to retrieve past versions of regulatory text
+  9. When analyzing related provisions, examine the broader part or subpart, not just individual sections
+  10. Cross-reference eCFR findings with Federal Register documents to understand regulatory intent and history
+
+  EXACT PATH USAGE EXAMPLES:
+  - List all agencies:
+    ecfr({path: "/admin/v1/agencies.json"})
+  
+  - List all corrections:
+    ecfr({path: "/admin/v1/corrections.json"})
+    
+  - List corrections for Title 7:
+    ecfr({path: "/admin/v1/corrections/title/7.json"})
+  
+  - Search for regulations containing "emissions standards":
+    ecfr({path: "/search/v1/results", params: {query: "emissions standards"}})
+  
+  - Get detailed search results with pagination:
+    ecfr({path: "/search/v1/results", params: {query: "privacy", per_page: 20, page: 1}})
+  
+  - Get search count for "privacy" regulations:
+    ecfr({path: "/search/v1/count", params: {query: "privacy"}})
+  
+  - Get ancestry for Title 40 as of January 1, 2023:
+    ecfr({path: "/versioner/v1/ancestry/2023-01-01/title-40.json"})
+  
+  - Get structure of Title 40 as of January 1, 2023:
+    ecfr({path: "/versioner/v1/structure/2023-01-01/title-40.json"})
+  
+  - Get full XML content for Title 40 as of January 1, 2023:
+    ecfr({path: "/versioner/v1/full/2023-01-01/title-40.xml"})
+  
+  - Get information about all titles:
+    ecfr({path: "/versioner/v1/titles.json"})
+  
+  - Get versions of Title 40:
+    ecfr({path: "/versioner/v1/versions/title-40.json", params: {"issue_date[gte]": "2022-01-01"}})
+  
+  AVAILABLE ENDPOINTS:
+  
+  Admin Service Endpoints:
+  - /admin/v1/agencies.json - List all top-level agencies in name order
+  - /admin/v1/corrections.json - List all eCFR corrections
+  - /admin/v1/corrections/title/{title}.json - List all corrections for a specific title
+  
+  Search Service Endpoints:
+  - /search/v1/results - Search results
+  - /search/v1/count - Search result count
+  - /search/v1/summary - Search summary details
+  - /search/v1/counts/daily - Search result counts by date
+  - /search/v1/counts/titles - Search result counts by title
+  - /search/v1/counts/hierarchy - Search result counts by hierarchy
+  - /search/v1/suggestions - Search suggestions
+  
+  Versioner Service Endpoints:
+  - /versioner/v1/ancestry/{date}/title-{title}.json - Get ancestry for a specific title at a point in time
+  - /versioner/v1/structure/{date}/title-{title}.json - Get structure of a specific title at a point in time
+  - /versioner/v1/full/{date}/title-{title}.xml - Get full XML content of a specific title at a point in time
+  - /versioner/v1/titles.json - Get information about all titles
+  - /versioner/v1/versions/title-{title}.json - Get versions of a specific title
+  `,
+      "inputSchema": {
+        "json": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The complete eCFR API path including format extension (.json or .xml)"
+            },
+            "params": {
+              "type": "object",
+              "description": "Query parameters to include in the request",
+              "properties": {
+                "query": {
+                  "type": "string",
+                  "description": "Search term for search endpoints"
+                },
+                "agency_slugs[]": {
+                  "type": "array",
+                  "description": "Agency slugs to filter by (e.g., ['agriculture-department', 'epa'])"
+                },
+                "date": {
+                  "type": "string",
+                  "description": "Date in YYYY-MM-DD format (for corrections endpoints)"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Title number (for corrections by title)"
+                },
+                "error_corrected_date": {
+                  "type": "string",
+                  "description": "Date error was corrected in YYYY-MM-DD format"
+                },
+                "per_page": {
+                  "type": "integer",
+                  "description": "Number of results per page (max 1,000)"
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "Page number for paginated results"
+                },
+                "order": {
+                  "type": "string",
+                  "description": "Order of results (citations, relevance, hierarchy, newest_first, oldest_first, suggestions)"
+                },
+                "paginate_by": {
+                  "type": "string",
+                  "description": "How results should be paginated ('date' or 'results')"
+                },
+                "subtitle": {
+                  "type": "string",
+                  "description": "Subtitle identifier (e.g., 'A', 'B', 'C')"
+                },
+                "chapter": {
+                  "type": "string",
+                  "description": "Chapter identifier (e.g., 'I', 'X', '1')"
+                },
+                "subchapter": {
+                  "type": "string",
+                  "description": "Subchapter identifier (requires chapter parameter)"
+                },
+                "part": {
+                  "type": "string",
+                  "description": "Part identifier (e.g., '100', '200')"
+                },
+                "subpart": {
+                  "type": "string",
+                  "description": "Subpart identifier (requires part parameter)"
+                },
+                "section": {
+                  "type": "string",
+                  "description": "Section identifier (e.g., '100.1', requires part parameter)"
+                },
+                "appendix": {
+                  "type": "string",
+                  "description": "Appendix identifier (requires subtitle, chapter, or part parameter)"
+                },
+                "issue_date[on]": {
+                  "type": "string",
+                  "description": "Content added on specific issue date (YYYY-MM-DD)"
+                },
+                "issue_date[lte]": {
+                  "type": "string",
+                  "description": "Content added on or before issue date (YYYY-MM-DD)"
+                },
+                "issue_date[gte]": {
+                  "type": "string",
+                  "description": "Content added on or after issue date (YYYY-MM-DD)"
+                },
+                "last_modified_after": {
+                  "type": "string",
+                  "description": "Content modified after date (YYYY-MM-DD)"
+                },
+                "last_modified_on_or_after": {
+                  "type": "string", 
+                  "description": "Content modified on or after date (YYYY-MM-DD)"
+                },
+                "last_modified_before": {
+                  "type": "string",
+                  "description": "Content modified before date (YYYY-MM-DD)"
+                },
+                "last_modified_on_or_before": {
+                  "type": "string",
+                  "description": "Content modified on or before date (YYYY-MM-DD)"
+                }
+              }
+            }
+          },
+          "required": ["path"]
+        }
+      }
+    }
+  },
+  {
+    "toolSpec": {
+      "name": "federalRegister",
+      "description": `
+  Access the Federal Register API to retrieve regulatory documents and information. The Federal Register is the official journal of the U.S. government that contains federal agency regulations, proposed rules, public notices, executive orders and other presidential documents.
+  
+  WHEN TO USE THIS TOOL:
+  - Use this tool FIRST for ANY questions about federal regulations, rules, notices, or executive orders
+  - Use whenever a user asks about recent government actions, policy changes, or regulatory updates
+  - Reach for this tool LIBERALLY to find authoritative information from government sources
+  - Use to AUGMENT search results with official regulatory information
+  - Use when asked about specific agencies' recent actions or publications
+  - Use to find detailed information about executive orders, including their full text
+  - Check this tool PROACTIVELY when answering questions about regulated industries or activities
+  - Use when seeking information about the regulatory process or timeline for a particular rule
+  - Combine with the eCFR tool for comprehensive regulatory research
+
+  MULTI-STEP RESEARCH APPROACH:
+  For complex regulatory questions, use a structured research process:
+  1. Begin with a broad search to identify relevant documents and agencies
+  2. Use the facets endpoint to understand the distribution of documents by agency, type, or date
+  3. Narrow your search with more specific parameters based on initial findings
+  4. Retrieve full documents for the most relevant results
+  5. For regulatory history, search for related documents using RIN numbers or docket IDs
+  6. When analyzing a regulatory area, check both final rules and proposed rules
+  7. For comprehensive analysis, combine Federal Register searches with eCFR lookups
+  8. Use public inspection documents to get early access to soon-to-be-published regulations
+  9. Check both current and historical documents to trace regulatory evolution
+  10. Always verify findings with the most authoritative and recent sources
+
+  EXACT PATH USAGE EXAMPLES:
+  
+  Basic Document Retrieval:
+  - Get a specific document by number:
+    federalRegister({path: "/documents/2023-12345.json"})
+  
+  - Get multiple documents by number:
+    federalRegister({path: "/documents/2023-12345,2023-67890.json"})
+  
+  - Search all Federal Register documents:
+    federalRegister({path: "/documents.json", params: {
+      "conditions[term]": "climate change",
+      "conditions[publication_date][gte]": "2023-01-01",
+      "per_page": 20,
+      "page": 1
+    }})
+  
+  Executive Orders:
+  - Find recent executive orders:
+    federalRegister({path: "/documents.json", params: {
+      "conditions[type][]": ["PRESDOCU"],
+      "conditions[presidential_document_type][]": ["executive_order"],
+      "conditions[publication_date][gte]": "2024-01-01",
+      "order": ["newest"],
+      "per_page": 10
+    }})
+  
+  Agency-Specific Information:
+  - Get HHS-specific recent publications:
+    federalRegister({path: "/documents.json", params: {
+      "conditions[agencies][]": ["health-and-human-services-department"],
+      "conditions[publication_date][gte]": "2024-01-01",
+      "order": ["newest"],
+      "per_page": 20
+    }})
+  
+  Document Facets:
+  - Get document counts by agency:
+    federalRegister({path: "/documents/facets/agency", params: {
+      "conditions[publication_date][gte]": "2023-01-01"
+    }})
+  
+  - Get document counts by month:
+    federalRegister({path: "/documents/facets/monthly", params: {
+      "conditions[publication_date][gte]": "2023-01-01"
+    }})
+  
+  Public Inspection Documents:
+  - Get current public inspection documents:
+    federalRegister({path: "/public-inspection-documents/current.json"})
+  
+  - Get a specific public inspection document:
+    federalRegister({path: "/public-inspection-documents/2023-12345.json"})
+  
+  - Search public inspection documents:
+    federalRegister({path: "/public-inspection-documents.json", params: {
+      "conditions[available_on]": "2024-03-01"
+    }})
+  
+  Issue and Agency Information:
+  - Get a specific day's table of contents:
+    federalRegister({path: "/issues/2024-02-15.json"})
+  
+  - Get all agencies:
+    federalRegister({path: "/agencies"})
+  
+  - Get information about a specific agency:
+    federalRegister({path: "/agencies/environmental-protection-agency"})
+  
+  AVAILABLE ENDPOINTS (DIRECTLY FROM API DOCUMENTATION):
+  
+  - /documents/{document_number}.{format} - Fetch a single Federal Register document
+  - /documents/{document_numbers}.{format} - Fetch multiple Federal Register documents
+  - /documents.{format} - Search all Federal Register documents published since 1994
+  - /documents/facets/{facet} - Fetch counts of matching documents grouped by a facet
+    - Available facets: daily, weekly, monthly, quarterly, yearly, agency, topic, section, type, subtype
+  - /issues/{publication_date}.{format} - Fetch document table of contents based on the print edition
+  - /public-inspection-documents/{document_number}.{format} - Fetch a single public inspection document
+  - /public-inspection-documents/{document_numbers}.{format} - Fetch multiple public inspection documents
+  - /public-inspection-documents/current.{format} - Fetch all public inspection documents currently on public inspection
+  - /public-inspection-documents.{format} - Search all public inspection documents currently on public inspection
+  - /agencies - Fetch all agency details
+  - /agencies/{slug} - Fetch a particular agency's details
+  - /images/{identifier} - Fetch available image variants and their metadata for a single image identifier
+  - /suggested_searches - Fetch all suggested searches or limit by FederalRegister.gov section
+  - /suggested_searches/{slug} - Fetch a particular suggested search
+  `,
+      "inputSchema": {
+        "json": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The complete Federal Register API path including format extension (.json or .csv) when applicable"
+            },
+            "params": {
+              "type": "object",
+              "description": "Query parameters to include in the request",
+              "properties": {
+                "fields[]": {
+                  "type": "array",
+                  "description": "Which attributes of the documents to return"
+                },
+                "per_page": {
+                  "type": "integer",
+                  "description": "Number of results per page (max 1,000, default 20)"
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "Page number for paginated results"
+                },
+                "order": {
+                  "type": "array",
+                  "description": "The order of results (relevance, newest, oldest, executive_order_number)"
+                },
+                "conditions[term]": {
+                  "type": "string",
+                  "description": "Full text search term"
+                },
+                "conditions[publication_date][is]": {
+                  "type": "string",
+                  "description": "Exact publication date match (YYYY-MM-DD)"
+                },
+                "conditions[publication_date][year]": {
+                  "type": "string",
+                  "description": "Publication year (YYYY)"
+                },
+                "conditions[publication_date][gte]": {
+                  "type": "string",
+                  "description": "Publication date on or after (YYYY-MM-DD)"
+                },
+                "conditions[publication_date][lte]": {
+                  "type": "string",
+                  "description": "Publication date on or before (YYYY-MM-DD)"
+                },
+                "conditions[effective_date][is]": {
+                  "type": "string",
+                  "description": "Exact effective date match (YYYY-MM-DD)"
+                },
+                "conditions[effective_date][year]": {
+                  "type": "string",
+                  "description": "Effective date year (YYYY)"
+                },
+                "conditions[effective_date][gte]": {
+                  "type": "string",
+                  "description": "Effective date on or after (YYYY-MM-DD)"
+                },
+                "conditions[effective_date][lte]": {
+                  "type": "string",
+                  "description": "Effective date on or before (YYYY-MM-DD)"
+                },
+                "conditions[agencies][]": {
+                  "type": "array",
+                  "description": "Agency slugs (e.g., ['environmental-protection-agency', 'health-and-human-services-department'])"
+                },
+                "conditions[type][]": {
+                  "type": "array",
+                  "description": "Document types: RULE (Final Rule), PRORULE (Proposed Rule), NOTICE (Notice), PRESDOCU (Presidential Document)"
+                },
+                "conditions[presidential_document_type][]": {
+                  "type": "array",
+                  "description": "Types: determination, executive_order, memorandum, notice, proclamation, presidential_order, other"
+                },
+                "conditions[president][]": {
+                  "type": "array",
+                  "description": "President slugs (e.g., ['joe-biden', 'donald-trump'])"
+                },
+                "conditions[docket_id]": {
+                  "type": "string",
+                  "description": "Agency docket number associated with document"
+                },
+                "conditions[regulation_id_number]": {
+                  "type": "string",
+                  "description": "Regulation ID Number (RIN) associated with document"
+                },
+                "conditions[sections][]": {
+                  "type": "array",
+                  "description": "FR section slugs (e.g., ['business-and-industry', 'environment'])"
+                },
+                "conditions[topics][]": {
+                  "type": "array",
+                  "description": "Topic slugs (e.g., ['air-pollution-control', 'endangered-species'])"
+                },
+                "conditions[significant]": {
+                  "type": "string",
+                  "description": "Deemed significant under EO 12866: '0' (not significant) or '1' (significant)"
+                },
+                "conditions[cfr][title]": {
+                  "type": "integer",
+                  "description": "CFR title number"
+                },
+                "conditions[cfr][part]": {
+                  "type": "string",
+                  "description": "CFR part or part range (e.g., '17' or '1-50'); requires the CFR title to be provided"
+                },
+                "conditions[near][location]": {
+                  "type": "string",
+                  "description": "Location search; enter zipcode or City and State"
+                },
+                "conditions[near][within]": {
+                  "type": "integer",
+                  "description": "Location search; maximum distance from location in miles (max 200)"
+                },
+                "conditions[available_on]": {
+                  "type": "string",
+                  "description": "Public Inspection issue date (YYYY-MM-DD) for public inspection documents"
+                },
+                "conditions[special_filing]": {
+                  "type": "string",
+                  "description": "Filing type: '0' (Regular Filing) or '1' (Special Filing)"
+                },
+                "conditions[sections]": {
+                  "type": "string",
+                  "description": "Federal Register slug for the section (for suggested searches endpoint)"
+                }
+              }
+            }
+          },
+          "required": ["path"]
         }
       }
     }
