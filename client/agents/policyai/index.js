@@ -32,7 +32,7 @@ export default function Page() {
   return html`
     <div class="flex-grow-1">
     <div class="text-center my-5" hidden=${() => messages().length > 0}>
-      <h1 class="display-6">Welcome to CompliAI</h1>
+      <h1 class="display-6">Welcome to PolicyAI</h1>
       <p class="fw-light fs-5">To get started, send a message below.</p>
     </div>
     ${() => messages().map((message) => html`<${Message} message=${message} />`)}
