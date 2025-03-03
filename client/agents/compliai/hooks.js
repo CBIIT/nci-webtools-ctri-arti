@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { readStream, runTool, fileToBase64, splitFilename } from "./utils.js";
+import { readStream, runTool, fileToBase64, splitFilename, ecfr, federalRegister } from "./utils.js";
 import { systemPrompt, tools } from "./config.js";
 import { search, browse, code, getClientContext } from "./utils.js";
 
@@ -118,7 +118,7 @@ export function useSubmitMessage() {
                   .filter((c) => c.toolUse)
                   .map((c) => c.toolUse);
                 const toolResults = await Promise.all(
-                  toolUses.map((t) => runTool(t, { search, browse, code }))
+                  toolUses.map((t) => runTool(t, { search, browse, code, ecfr, federalRegister }))
                 );
                 const toolResultsMessage = {
                   role: "user",
