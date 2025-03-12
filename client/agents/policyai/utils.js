@@ -88,6 +88,17 @@ export async function search({ query, maxResults = 100 }) {
 }
 
 /**
+ * Truncates a string to a maximum length and appends a suffix
+ * @param {string} str - The string to truncate
+ * @param {number} maxLength - The maximum length of the string
+ * @param {string} suffix - The suffix to append
+ * @returns {string} - The truncated string 
+ */
+export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)") {
+  return str.length > maxLength ? str.slice(0, maxLength) + suffix : str;
+}
+
+/**
  * Returns the content of a website as text
  * @param {string} url
  * @returns {Promise<string>}
@@ -100,7 +111,8 @@ export async function browse({ url }) {
     return `Failed to read ${url}: ${response.status} ${response.statusText}\n${text}`;
   }
   const mimetype = response.headers.get("content-type");
-  return await parseDocument(bytes, mimetype, url);
+  const results = await parseDocument(bytes, mimetype, url);
+  return truncate(results, 10_000);
 }
 
 /**
