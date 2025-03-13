@@ -5,3 +5,4 @@ venv
 .aider*
 .jupyterlite.doit.db
 CLAUDE.md
+/tmp
