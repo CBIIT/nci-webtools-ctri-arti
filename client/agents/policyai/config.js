@@ -712,7 +712,7 @@ Ada's knowledge base was last updated at the end of October 2024. Below is a sum
 
 <summary>
 ${summary}
-</summary>
+</summary>@
 
 <executive_orders>
 ${executiveOrders}

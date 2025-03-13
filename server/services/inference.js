@@ -34,7 +34,7 @@ export async function runModel(
 
 /**
  * Stream a conversation with an AI model by sending messages and receiving responses in a stream format.
- * 
+ *
  * @param {string} modelId - The ID of the model to use (defaults to DEFAULT_MODEL_ID)
  * @param {Array|string} messages - Array of message objects or a string that will be converted to a user message
  * @param {string} systemPrompt - The system prompt to guide the model's behavior
@@ -69,13 +69,13 @@ export async function streamModel(
       }
     }
   }
-  
+
   const client = new BedrockRuntimeClient();
   const system = [{ text: systemPrompt }];
   const toolConfig = tools.length > 0 ? { tools } : undefined;
   const performanceConfig = { latency: modelId.includes("haiku") ? "optimized" : "standard" };
   const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
-  const additionalModelRequestFields = thoughtBudget > 0 ? { thinking } : undefined;
+  const additionalModelRequestFields = thoughtBudget > 0 ? { thinking, "anthropic-beta": "output-128k-2025-02-19" } : undefined;
   const input = { modelId, messages, system, toolConfig, performanceConfig, additionalModelRequestFields };
 
   const command = new ConverseStreamCommand(input);
