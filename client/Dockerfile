@@ -16,4 +16,4 @@ ENV PROXY=http://server:8080
 
 RUN npm i -g http-server
 
-CMD http-server --port ${PORT} --proxy ${PROXY} --no-dotfiles -a 0.0.0.0 /client
+CMD http-server --port ${PORT} --proxy ${PROXY} --proxy-options.secure false --proxy-options.xfwd true --proxy-options.changeOrigin true -r --no-dotfiles -a 0.0.0.0 /client
