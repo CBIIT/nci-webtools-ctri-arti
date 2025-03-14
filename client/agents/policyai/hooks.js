@@ -5,8 +5,11 @@ import { search, browse, code, getClientContext } from "./utils.js";
 
 export function useSubmitMessage() {
   const [messages, setMessages] = createSignal([]);
+  const [conversation, setConversation] = createSignal({id: null, title: ""});
+  const [conversations, setConversations] = createSignal([]);
   const [activeMessage, setActiveMessage] = createSignal(null);
   const [loading, setLoading] = createSignal(false);
+  const updateConversation = (c) => setConversation((prev) => c ? ({ ...prev, ...c }) : null);
 
   /**
    * Submit a message along with optional files.
@@ -22,6 +25,10 @@ export function useSubmitMessage() {
       role: "user",
       content: [{ text: message }],
     };
+
+    if (!messages().length) {
+      setConversation({id: 1, title: message });
+    }
 
     if (inputFiles && inputFiles.length) {
       for (const file of inputFiles) {
@@ -140,5 +147,5 @@ export function useSubmitMessage() {
     }
   }
 
-  return { messages, activeMessage, loading, submitMessage };
+  return { messages, conversation, updateConversation, conversations, activeMessage, loading, submitMessage };
 }
