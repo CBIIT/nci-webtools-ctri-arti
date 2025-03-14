@@ -12,10 +12,11 @@ export const PROXY_ENDPOINT = "/api/proxy";
 
 export async function proxyMiddleware(req, res) {
   const { headers, method, body, query } = req;
-  const { host } = headers;
+  const host = headers.host.split(":")[0];
   const url = new URL(query.url ?? body?.url ?? "");
 
-  if (!WHITELIST.some((regex) => regex.test(url.hostname))) {
+  // if hostname matches or whitelist has a match, continue
+  if (!WHITELIST.some((regex) => regex.test(url.hostname)) && url.hostname !== host) {
     res.statusCode = 403;
     res.end(`Forbidden: Only the following domain patterns are allowed: ${WHITELIST.map((r) => r.source).join(", ")}`);
     return;
