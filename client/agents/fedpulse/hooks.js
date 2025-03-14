@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 import { readStream, runTool, fileToBase64, splitFilename, ecfr, federalRegister } from "./utils.js";
 import { systemPrompt, tools } from "./config.js";
-import { search, browse, code, getClientContext } from "./utils.js";
+import { search, browse, code, getClientContext, autoscroll } from "./utils.js";
 
 export function useSubmitMessage() {
   const [messages, setMessages] = createSignal([]);
@@ -75,6 +75,7 @@ export function useSubmitMessage() {
 
         // Process streaming chunks from the API
         for await (const chunk of readStream(response)) {
+          autoscroll();
           const values = decoder
             .decode(chunk, { stream: true })
             .trim()

@@ -710,3 +710,39 @@ export function renderUrl(url, options = {}) {
     iframe.src = proxyUrlPattern.replace("%URL%", encodeURIComponent(url));
   });
 }
+
+/**
+ * Automatically scrolls to bottom when user has scrolled past the specified threshold.
+ * @param {number} thresholdPercent - Value between 0-1 representing how close to bottom (0.9 = 90%)
+ * @param {Element|string|null} container - DOM element, CSS selector, or null for window scrolling
+ * @returns {boolean} - Whether the scroll was performed
+ * @example
+ * // Window scrolling (default)
+ * setInterval(() => autoscroll(0.8), 1000);
+ *
+ * // Container element scrolling
+ * autoscroll(0.9, document.getElementById('chat-box'));
+ *
+ * // CSS selector scrolling
+ * autoscroll(0.9, '#message-container');
+ */
+export function autoscroll(thresholdPercent = 0.8, container = null) {
+  if (typeof container === "string") {
+    container = document.querySelector(container);
+  }
+  const isWindowScroll = !(container instanceof Element);
+  const scrollTop = isWindowScroll ? window.scrollY : container.scrollTop;
+  const clientHeight = isWindowScroll ? window.innerHeight : container.clientHeight;
+  const scrollHeight = isWindowScroll ? document.body.scrollHeight : container.scrollHeight;
+  const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+  if (scrollPercentage >= thresholdPercent) {
+    if (isWindowScroll) {
+      window.scrollTo(0, scrollHeight);
+    } else {
+      container.scrollTop = scrollHeight;
+    }
+    return true;
+  }
+
+  return false;
+}
