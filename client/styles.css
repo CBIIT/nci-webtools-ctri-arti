@@ -1,9 +1,6 @@
 :root {
   --bs-primary-rgb: 37, 6, 82;
   --bs-primary-dark-rgb: 13, 38, 72;
-
-  /* --bs-primary-rgb: 30, 63, 106; */
-  /* --bs-primary-dark-rgb: 13, 38, 72; */
 }
 
 .btn {
@@ -51,6 +48,14 @@ a:active, a:hover {
 
 .bg-primary-dark {
   background-color: rgb(var(--bs-primary-dark-rgb)); 
+}
+
+.bg-lighter {
+  background-color: #fdfdfd !important;
+}
+
+.shadow-sm {
+  box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
 }
 
 /*details {
