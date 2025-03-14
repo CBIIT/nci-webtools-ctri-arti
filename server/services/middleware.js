@@ -12,7 +12,7 @@ export const PROXY_ENDPOINT = "/api/proxy";
 
 export async function proxyMiddleware(req, res) {
   const { headers, method, body, query } = req;
-  const host = process.env.DOMAIN_NAME || headers.host;
+  const { host } = headers;
   const url = new URL(query.url ?? body?.url ?? "");
 
   if (!WHITELIST.some((regex) => regex.test(url.hostname))) {
