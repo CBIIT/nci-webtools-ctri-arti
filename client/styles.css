@@ -196,3 +196,13 @@ dl, ol, ul {
 .markdown ul li::marker {
   content: '❊ ';
 }
+
+.list-inline.separator .list-inline-item:not(:last-child)::after {
+  padding-left: 0.5rem;
+  content: '|';
+  opacity: 0.25;
+}
+
+.text-prewrap {
+  white-space: pre-wrap !important;
+}
