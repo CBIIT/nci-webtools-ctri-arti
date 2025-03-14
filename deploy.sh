@@ -17,9 +17,9 @@ popd
 
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-docker build -t $CLIENT_IMAGE -t $CLIENT_IMAGE_LATEST -f client/Dockerfile .
-docker push $CLIENT_IMAGE 
-docker push $CLIENT_IMAGE_LATEST
+# docker build -t $CLIENT_IMAGE -t $CLIENT_IMAGE_LATEST -f client/Dockerfile .
+# docker push $CLIENT_IMAGE 
+# docker push $CLIENT_IMAGE_LATEST
 
 docker build -t $SERVER_IMAGE -t $SERVER_IMAGE_LATEST -f server/Dockerfile .
 docker push $SERVER_IMAGE 

@@ -39,8 +39,8 @@ const config: Config = {
       cpu: 512,
       containers: [
         {
-          image: process.env.CLIENT_IMAGE || `${account}.dkr.ecr.${region}.amazonaws.com/${prefix}:client-latest`,
-          name: "client",
+          image: process.env.SERVER_IMAGE || "httpd" || `${account}.dkr.ecr.${region}.amazonaws.com/${prefix}:server-latest`,
+          name: "server",
           portMappings: [
             {
               containerPort: 80,
@@ -48,14 +48,6 @@ const config: Config = {
           ],
           environment: {
             PORT: "80",
-            PROXY: "http://localhost:8080",
-          }
-        },
-        {
-          image: process.env.SERVER_IMAGE || "httpd" || `${account}.dkr.ecr.${region}.amazonaws.com/${prefix}:server-latest`,
-          name: "backend",
-          environment: {
-            PORT: "8080",
             BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY || "",
           }
         },
