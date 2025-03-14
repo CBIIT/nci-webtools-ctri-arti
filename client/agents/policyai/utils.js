@@ -651,9 +651,14 @@ export function splitFilename(filename) {
 
 export function sanitizeHTML(inputHTML) {
   const doc = new DOMParser().parseFromString(inputHTML, "text/html");
-  doc.querySelectorAll("script, style, meta, link, head, iframe").forEach((el) => el.parentNode.removeChild(el));
-  doc.querySelectorAll("a").forEach((e) => (e.innerText = `[${e.innerText}](${e.href})`));
-  return doc.body.innerText.replace(/\s+/g, " ").trim();
+  doc.querySelectorAll("script, style, meta, link, head, iframe").forEach((el) => el.remove());
+  doc.querySelectorAll("a").forEach((e) => (e.innerText = `[${e.innerText.replace(/\s+/g, " ").trim()}](${e.href})`));
+  return doc.body.innerText
+    .split(/\r?\n/)
+    .map((line) => line.replace(/[ \t]+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
 }
 
 /**
@@ -667,7 +672,7 @@ export function sanitizeHTML(inputHTML) {
  * @returns {Promise<string>} - Resolves with the outerHTML of the rendered document.
  */
 export function renderUrl(url, options = {}) {
-  const { timeout = 30000, waitTime = 250, container = document.body, proxyUrlPattern="/api/proxy?url=%URL%" } = options;
+  const { timeout = 30000, waitTime = 250, container = document.body, proxyUrlPattern = "/api/proxy?url=%URL%" } = options;
   return new Promise((resolve, reject) => {
     const iframeContainer = document.createElement("div");
     iframeContainer.hidden = true;
@@ -702,6 +707,6 @@ export function renderUrl(url, options = {}) {
     iframe.onerror = finish;
     iframe.onload = () => setTimeout(finish, waitTime);
     timeoutId = setTimeout(finish, timeout);
-    iframe.src = proxyUrlPattern.replace('%URL%', encodeURIComponent(url));
+    iframe.src = proxyUrlPattern.replace("%URL%", encodeURIComponent(url));
   });
 }
