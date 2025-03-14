@@ -1,5 +1,5 @@
 /**
- * Schema definition for PolicyAI agent data storage
+ * Schema definition for FedPulse agent data storage
  */
 export const SCHEMA = `
   -- Conversations table

@@ -53,7 +53,7 @@ export default function Page() {
       <div class="row">
         <div class="col d-flex justify-content-start align-items-center">
           <a href="/" class="d-inline-block">
-            <object data="agents/policyai/assets/images/logo.svg" type="image/svg+xml" width="300" class="pe-none mw-100"></object
+            <object data="agents/fedpulse/assets/images/logo.svg" type="image/svg+xml" width="300" class="pe-none mw-100"></object
           ></a>
         </div>
         <div class="col d-none d-md-flex justify-content-center align-items-center">
@@ -80,13 +80,13 @@ export default function Page() {
       <div class="offcanvas-body">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link" href="agents/policyai/">New Conversation</a>
+            <a class="nav-link" href="agents/fedpulse/">New Conversation</a>
           </li>
           ${() =>
             conversations().map(
               (conversation) =>
                 html`<li class="nav-item">
-                  <a class="nav-link" href=${`agents/policyai/?id=${conversation.id}`}>${conversation.title}</a>
+                  <a class="nav-link" href=${`agents/fedpulse/?id=${conversation.id}`}>${conversation.title}</a>
                 </li>`
             )}
         </ul>
