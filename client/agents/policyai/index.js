@@ -94,7 +94,7 @@ export default function Page() {
     </aside>
 
     
-    <main class="container d-flex flex-column flex-grow-1 mb-3">
+    <main class="container d-flex flex-column flex-grow-1 mb-3 position-relative">
       <div class="flex-grow-1 py-3">
         <div class="text-center my-5" hidden=${() => messages().length > 0}>
           <h1 class="display-6">Welcome to FedPulse</h1>
@@ -104,7 +104,7 @@ export default function Page() {
         ${() => activeMessage() && html`<${Message} message=${activeMessage} active=${true} />`}
         <dna-spinner style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" hidden=${() => !loading()} />
       </div>
-      <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded">
+      <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded position-sticky bottom-0">
         <textarea
           class="form-control form-control-sm border-0 bg-transparent shadow-0"
           onKeyDown=${handleKeyDown}
@@ -132,7 +132,7 @@ export default function Page() {
                 <span class="visually-hidden">Enable Reasoning Mode</span>
               </label>
             </div>
-            <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required>
+            <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required hidden>
               <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0" selected>Sonnet</option>
               <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
             </select>
