@@ -1,94 +1,46 @@
 import html from "solid-js/html";
-import { parse as parseMarkdown } from "marked";
-import yaml from "yaml";
-import { parseStreamingJson, playAudio } from "./utils.js";
+import { parse } from "marked";
+import { stringify } from "yaml";
+import { playAudio } from "./utils.js";
 
-export default function Message({ message, active }) {
+export default function Message({ message, messages = [], active = false, defaultClass = "small markdown shadow-sm rounded mb-3 p-2" }) {
   if (!message) return null;
-  const isUser = message.role === "user" && !message.toolResult;
-  const isAssistant = !isUser;
-
-  // Filter and join text content
-  const textContent = message.content
-    .filter((c) => c.text)
-    .map((c) => c.text)
-    .join("\n");
-
-  // Filter tool use content and results
-  const toolCalls = message.content
-    .filter((c) => c.toolUse || c.toolResult)
-    .map((c) => ({
-      ...c.toolUse,
-      result: c.toolResult?.content[0]?.json?.results,
-    }));
-
-  // Helper to check if input is just code
-  const isCodeOnly = (input) => {
-    const keys = Object.keys(input);
-    return keys.length === 1 && keys[0] === "code";
-  };
-
-  // Helper to truncate long strings
-  const truncate = (str, maxLength = 2000) => {
-    if (!str || str.length <= maxLength) return str;
-    return str.slice(0, maxLength) + "\n...";
-  };
-
-  // Helper to format tool result
-  const formatResult = (result) => {
-    if (result === null || result === undefined) return "No result";
-    try {
-      if (typeof result !== "string") result = JSON.stringify(result, null, 2);
-      if (result?.results?.[0]?.url) {
-        result = result.results.map((r) => ({ title: r.title, url: r.url, snippet: r.snippet }));
-      }
-      const json = parseStreamingJson(result);
-      return truncate(yaml.stringify(json).split("\n").slice(0, 80).join("\n"));
-    } catch (error) {
-      console.error(error);
-      return truncate(result.toString());
-    }
-  };
-
+  const getToolResult = (messages, toolUseId) =>
+    messages?.find((m) => m.content[0].toolResult?.toolUseId === toolUseId)?.content[0].toolResult?.content[0]?.json?.results;
 
   return html`
     <div class="d-flex flex-wrap position-relative">
-      ${textContent?.trim().length > 0 &&
-      html`
-        <span
-          class=${["markdown card mb-2 p-2 small", isAssistant ? "bg-light w-100 border-secondary" : "bg-white"].join(" ")}
-          innerHTML=${parseMarkdown(textContent)}></span>
-          ${isAssistant && !active && window.tts && html`<button onClick=${() => playAudio(textContent)} class="position-absolute border-0 p-0 me-1 bg-transparent top-0 end-0">▷</button>`}
-      `}
-      ${toolCalls.map(
-        (tool) => html`
-          ${tool.name &&
-          tool.input &&
-          html`
-            <div class="card w-100 mb-2 border-secondary">
-              <div class="card-header bg-secondary bg-opacity-10 py-1 px-2">
-                <small class="text-secondary">${tool.name}</small>
-              </div>
-              <div class="card-body p-2">
-                ${isCodeOnly(tool.input)
-                  ? html`<pre class="mb-0"><code>${tool.input.code}</code></pre>`
-                  : html`<pre class="mb-0"><code>${formatResult(tool.input, null, 2)}</code></pre>`}
-              </div>
-            </div>
-          `}
-          ${tool.result &&
-          html`
-            <div class="card w-100 mb-2 border-success">
-              <div class="card-header bg-success bg-opacity-10 py-1 px-2">
-                <small class="text-success">results</small>
-              </div>
-              <div class="card-body p-2">
-                <pre class="mb-0"><code>${formatResult(tool.result)}</code></pre>
-              </div>
-            </div>
-          `}
-        `
-      )}
+      ${() =>
+        message.content.map((c) => {
+          if (c.text) {
+            return html`
+              <span
+                class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light" : "w-100"].join(" ")}
+                innerHTML=${parse(c.text)?.trim()}></span>
+              <button
+                onClick=${() => playAudio(c.text)}
+                class="position-absolute border-0 p-0 me-1 bg-transparent top-0 end-0"
+                hidden=${message.role === "user" || active || !window.tts}>
+                ▷
+              </button>
+            `;
+          } else if (c.toolUse) {
+            return html`
+              <span class=${[defaultClass, "w-100 text-prewrap overflow-auto"].join(" ")} style="max-height: 200px">
+                <pre class="mb-0 text-muted">
+                ${[
+                    [c.toolUse.name, stringify(c.toolUse.input)].join(" "),
+                    stringify(getToolResult(messages, c.toolUse.toolUseId))?.replace(/[]/g, " ")?.trim(),
+                  ]
+                    .filter(Boolean)
+                    .join("\n")
+                    .trim()}
+                </pre
+                >
+              </span>
+            `;
+          }
+        })}
     </div>
   `;
 }
