@@ -104,6 +104,10 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  * @returns {Promise<string>}
  */
 export async function browse({ url }) {
+  // sometimes the url is double-proxied, so we need to check for that
+  if (url.includes("/api/proxy?url=")) {
+    url = decodeURIComponent(new URL(url).searchParams.get("url"));
+  }
   const response = await fetch("/api/proxy?" + new URLSearchParams({ url }));
   const bytes = await response.arrayBuffer();
   if (!response.ok) {
