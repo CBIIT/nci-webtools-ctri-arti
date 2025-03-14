@@ -1,14 +1,17 @@
+import { createSignal } from "solid-js";
 import { render } from "solid-js/web";
+import { useSubmitMessage } from "./hooks.js";
 import html from "solid-js/html";
 import Message from "./message.js";
-import { useSubmitMessage } from "./hooks.js";
 import { loadTTS } from "./utils.js";
 
 render(() => html`<${Page} />`, window.app);
 loadTTS().then((tts) => (window.tts = tts)); // Load TTS in background
 
 export default function Page() {
-  const { messages, activeMessage, loading, submitMessage } = useSubmitMessage();
+  const { conversation, updateConversation, conversations, messages, activeMessage, loading, submitMessage } = useSubmitMessage();
+  const [toggles, setToggles] = createSignal({});
+  const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
 
   function handleKeyDown(event) {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -29,54 +32,129 @@ export default function Page() {
     form.inputFiles.value = "";
   }
 
+  const footerLinks = [
+    [
+      { href: "https://datascience.cancer.gov/about/contact", text: "Contact Us" },
+      { href: "https://www.cancer.gov/policies/accessibility", text: "Accessibility" },
+      { href: "https://www.cancer.gov/policies/disclaimer", text: "Disclaimer" },
+      { href: "https://www.cancer.gov/policies/foia", text: "FOIA" },
+      { href: "https://www.hhs.gov/vulnerability-disclosure-policy/", text: "Vulnerability Disclosure" },
+    ],
+    [
+      { href: "http://www.hhs.gov/", text: "U.S. Department of Health and Human Services" },
+      { href: "http://www.nih.gov/", text: "National Institutes of Health" },
+      { href: "https://www.cancer.gov/", text: "National Cancer Institute" },
+      { href: "http://usa.gov/", text: "USA.gov" },
+    ],
+  ];
+
   return html`
-    <div class="flex-grow-1">
-    <div class="text-center my-5" hidden=${() => messages().length > 0}>
-      <h1 class="display-6">Welcome to PolicyAI</h1>
-      <p class="fw-light fs-5">To get started, send a message below.</p>
-    </div>
-    ${() => messages().map((message) => html`<${Message} message=${message} />`)}
-    ${() => activeMessage() && html`<${Message} message=${activeMessage} active=${true} />`}
-    <dna-spinner style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" hidden=${() => !loading()} />
-    </div>
-    <form onSubmit=${handleSubmit} class="card">
-      <textarea
-        class="form-control form-control-sm border-0 bg-transparent shadow-0"
-        onKeyDown=${handleKeyDown}
-        id="message"
-        name="message"
-        placeholder="Enter message (Shift + Enter for new line)"
-        rows="3"
-        autofocus
-        required />
-
-      <div class="d-flex justify-content-between">
-        <input
-          type="file"
-          id="inputFiles"
-          name="inputFiles"
-          class="form-control form-control-sm w-auto bg-transparent border-transparent"
-          accept="image/*,.pdf,.csv,.doc,.docx,.xls,.xlsx,.html,.txt,.md"
-          multiple />
-
-        <div class="input-group w-auto align-items-center">
-          <div class="form-check form-switch mb-0 form-control-sm d-flex align-item-center">
-            <input class="form-check-input cursor-pointer me-1" type="checkbox" role="switch" id="reasoningMode" name="reasoningMode" />
-            <label class="form-check-label text-secondary cursor-pointer" for="reasoningMode">
-              <span class="visually-hidden">Enable Reasoning Mode</span>
-              <svg xmlns="http://www.w3.org/2000/svg" height="16" fill="currentColor" viewBox="0 0 640 512">
-                <path
-                  d="M176 48l0 148.8c0 20.7-5.8 41-16.6 58.7L100 352l225.8 0c.1 .1 .2 .1 .2 .2c-16.6 10.6-26.7 31.6-20 53.3c4 12.9 9.4 25.5 16.4 37.6s15.2 23.1 24.4 33c15.7 16.9 39.6 18.4 57.2 8.7l0 .9c0 6.7 1.5 13.5 4.2 19.7c-9 4.3-19 6.6-29.7 6.6L69.4 512C31.1 512 0 480.9 0 442.6c0-12.8 3.6-25.4 10.3-36.4L118.5 230.4c6.2-10.1 9.5-21.7 9.5-33.5L128 48l-8 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l40 0L288 0l40 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-8 0 0 148.8c0 11.8 3.3 23.5 9.5 33.5L336 241c-4.9 6.4-9.5 13.1-13.6 20.3c-5.2 9.1-9.6 18.4-13.1 27.9l-20.7-33.6c-10.9-17.7-16.6-38-16.6-58.7L272 48l-96 0zM447.3 203.4c-6.8 1.5-11.3 7.8-11.3 14.8l0 17.4c0 7.9-4.9 15-11.7 18.9c-6.8 3.9-15.2 4.5-22 .6l-13.6-7.8c-6.1-3.5-13.7-2.7-18.5 2.4c-7.5 8.1-14.3 17.2-20.1 27.2s-10.3 20.4-13.5 31c-2.1 6.7 1.1 13.7 7.2 17.2l14 8.1c6.5 3.8 10.1 11 10.1 18.6s-3.5 14.8-10.1 18.6l-14 8.1c-6.1 3.5-9.2 10.5-7.2 17.2c3.3 10.6 7.8 21 13.5 31s12.5 19.1 20.1 27.2c4.8 5.1 12.5 5.9 18.5 2.4l13.5-7.8c6.8-3.9 15.2-3.3 22 .6c6.9 3.9 11.7 11 11.7 18.9l0 17.4c0 7 4.5 13.3 11.3 14.8c10.5 2.4 21.5 3.7 32.7 3.7s22.2-1.3 32.7-3.7c6.8-1.5 11.3-7.8 11.3-14.8l0-17.7c0-7.8 4.8-14.8 11.6-18.7c6.7-3.9 15.1-4.5 21.8-.6l13.8 7.9c6.1 3.5 13.7 2.7 18.5-2.4c7.6-8.1 14.3-17.2 20.1-27.2s10.3-20.4 13.5-31c2.1-6.7-1.1-13.7-7.2-17.2l-14.4-8.3c-6.5-3.7-10-10.9-10-18.4s3.5-14.7 10-18.4l14.4-8.3c6.1-3.5 9.2-10.5 7.2-17.2c-3.3-10.6-7.8-21-13.5-31s-12.5-19.1-20.1-27.2c-4.8-5.1-12.5-5.9-18.5-2.4l-13.8 7.9c-6.7 3.9-15.1 3.3-21.8-.6c-6.8-3.9-11.6-10.9-11.6-18.7l0-17.7c0-7-4.5-13.3-11.3-14.8c-10.5-2.4-21.5-3.7-32.7-3.7s-22.2 1.3-32.7 3.7zM480 303.7a48 48 0 1 1 0 96 48 48 0 1 1 0-96z" />
-              </svg>
-            </label>
-          </div>
-          <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required>
-            <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0" selected>Sonnet</option>
-            <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
-          </select>
-          <button class="btn btn-secondary btn-sm" type="submit" style="border-radius: 0 0 var(--bs-border-radius-sm) 0">Send</button>
+    <header class="container-fluid border-bottom py-3">
+      <div class="row">
+        <div class="col d-flex justify-content-start align-items-center">
+          <a href="/" class="d-inline-block">
+            <object data="agents/policyai/assets/images/logo.svg" type="image/svg+xml" width="300" class="pe-none mw-100"></object
+          ></a>
+        </div>
+        <div class="col d-none d-md-flex justify-content-center align-items-center">
+          <input
+            value=${() => conversation()?.title}
+            onChange=${(ev) => updateConversation({ title: ev.target.value })}
+            class="form-control form-control-sm text-center border-0 bg-transparent" />
+        </div>
+        <div class="col d-flex justify-content-end align-items-center">
+          <button class="btn btn-outline-dark" onClick=${toggle("conversations")}>=</button>
         </div>
       </div>
-    </form>
+    </header>
+
+    <aside
+      class=${() => ["offcanvas offcanvas-end", toggles().conversations ? "show" : "hiding"].join(" ")}
+      tabindex="-1"
+      id="conversations-menu"
+      aria-labelledby="conversations-menu-label">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="conversations-menu-label">Conversations</h5>
+        <button type="button" class="btn-close" aria-label="Close" onClick=${toggle("conversations")}></button>
+      </div>
+      <div class="offcanvas-body">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="agents/policyai/">New Conversation</a>
+          </li>
+          ${() =>
+            conversations().map(
+              (conversation) =>
+                html`<li class="nav-item">
+                  <a class="nav-link" href=${`agents/policyai/?id=${conversation.id}`}>${conversation.title}</a>
+                </li>`
+            )}
+        </ul>
+      </div>
+    </aside>
+
+    
+    <main class="container d-flex flex-column flex-grow-1 mb-3">
+      <div class="flex-grow-1 py-3">
+        <div class="text-center my-5" hidden=${() => messages().length > 0}>
+          <h1 class="display-6">Welcome to FedPulse</h1>
+          <p class="fw-light fs-5">To get started, send a message below.</p>
+        </div>
+        ${() => messages().map((message, i, all) => html`<${Message} message=${message} messages=${all} />`)}
+        ${() => activeMessage() && html`<${Message} message=${activeMessage} active=${true} />`}
+        <dna-spinner style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" hidden=${() => !loading()} />
+      </div>
+      <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded">
+        <textarea
+          class="form-control form-control-sm border-0 bg-transparent shadow-0"
+          onKeyDown=${handleKeyDown}
+          id="message"
+          name="message"
+          placeholder="Enter message (Shift + Enter for new line)"
+          rows="3"
+          autofocus
+          required />
+
+        <div class="d-flex justify-content-between">
+          <input
+            type="file"
+            id="inputFiles"
+            name="inputFiles"
+            class="form-control form-control-sm w-auto bg-transparent border-transparent"
+            accept="image/*,.pdf,.csv,.doc,.docx,.xls,.xlsx,.html,.txt,.md"
+            multiple />
+
+          <div class="input-group w-auto align-items-center">
+            <div class="form-check form-switch mb-0 me-1 form-control-sm d-flex align-item-center">
+              <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="reasoningMode" name="reasoningMode" />
+              <label class="form-check-label text-secondary cursor-pointer ps-1" for="reasoningMode" title="Enable Reasoning Mode">
+                ⚙️
+                <span class="visually-hidden">Enable Reasoning Mode</span>
+              </label>
+            </div>
+            <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required>
+              <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0" selected>Sonnet</option>
+              <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
+            </select>
+            <button class="btn btn-dark btn-sm" type="submit" style="border-radius: 0 0 var(--bs-border-radius-sm) 0">Send</button>
+          </div>
+        </div>
+      </form>
+      <small class="text-center text-muted py-1">FedPulse can make mistakes. Please verify responses before taking action.</small>
+    </main>
+
+    <footer class="flex-grow-0 small text-center opacity-75 py-3">
+      ${footerLinks.map(
+        (links) =>
+          html`<ul class="list-inline separator">
+            ${links.map(
+              (link) =>
+                html`<li class="list-inline-item">
+                  <a target="_blank" rel="noopener noreferrer" href=${link.href}>${link.text}</a>
+                </li>`
+            )}
+          </ul>`
+      )}
+    </footer>
   `;
 }
