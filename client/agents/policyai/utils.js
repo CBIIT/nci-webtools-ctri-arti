@@ -92,7 +92,7 @@ export async function search({ query, maxResults = 100 }) {
  * @param {string} str - The string to truncate
  * @param {number} maxLength - The maximum length of the string
  * @param {string} suffix - The suffix to append
- * @returns {string} - The truncated string 
+ * @returns {string} - The truncated string
  */
 export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)") {
   return str.length > maxLength ? str.slice(0, maxLength) + suffix : str;
@@ -129,11 +129,11 @@ export async function browse({ url }) {
 export async function ecfr({ path, params = {} }) {
   const baseUrl = "https://www.ecfr.gov/api";
   const url = new URL(baseUrl + path);
-  
+
   // Add query parameters
   Object.entries(params).forEach(([key, value]) => {
     if (Array.isArray(value)) {
-      value.forEach(v => url.searchParams.append(`${key}[]`, v));
+      value.forEach((v) => url.searchParams.append(`${key}[]`, v));
     } else if (value !== undefined && value !== null) {
       url.searchParams.append(key, value);
     }
@@ -141,13 +141,13 @@ export async function ecfr({ path, params = {} }) {
 
   try {
     const response = await fetch("/api/proxy?" + new URLSearchParams({ url: url.toString() }));
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`eCFR API error (${response.status}): ${errorText}`);
     }
 
-    let results = path.endsWith('.json') ? await response.json() : await response.text();
+    let results = path.endsWith(".json") ? await response.json() : await response.text();
     const stringifiedResults = JSON.stringify(results, null, 2);
     const limit = 10_000;
     if (stringifiedResults.length > limit) {
@@ -170,11 +170,11 @@ export async function ecfr({ path, params = {} }) {
 export async function federalRegister({ path, params = {} }) {
   const baseUrl = "https://www.federalregister.gov/api/v1";
   const url = new URL(baseUrl + path);
-  
+
   // Add query parameters
   Object.entries(params).forEach(([key, value]) => {
     if (Array.isArray(value)) {
-      value.forEach(v => url.searchParams.append(`${key}[]`, v));
+      value.forEach((v) => url.searchParams.append(`${key}[]`, v));
     } else if (value !== undefined && value !== null) {
       url.searchParams.append(key, value);
     }
@@ -182,13 +182,13 @@ export async function federalRegister({ path, params = {} }) {
 
   try {
     const response = await fetch("/api/proxy?" + new URLSearchParams({ url: url.toString() }));
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Federal Register API error (${response.status}): ${errorText}`);
     }
 
-    let results = path.endsWith('.json') ? await response.json() : await response.text();
+    let results = path.endsWith(".json") ? await response.json() : await response.text();
     const stringifiedResults = JSON.stringify(results, null, 2);
     const limit = 10_000;
     if (stringifiedResults.length > limit) {
@@ -642,18 +642,18 @@ export function fileToBase64(file, truncate = false) {
 /**
  * Splits a filename into name and extension
  * @param {string} filename - The filename to split
- * @returns {[string, string]} - The filename and extension 
+ * @returns {[string, string]} - The filename and extension
  */
 export function splitFilename(filename) {
-  const idx = filename.lastIndexOf('.');
-  return idx > 0 ? [filename.slice(0, idx), filename.slice(idx + 1)] : [filename, ''];
+  const idx = filename.lastIndexOf(".");
+  return idx > 0 ? [filename.slice(0, idx), filename.slice(idx + 1)] : [filename, ""];
 }
 
 export function sanitizeHTML(inputHTML) {
-  const doc = new DOMParser().parseFromString(inputHTML, 'text/html');
-  doc.querySelectorAll('script, style, meta, link, head, iframe').forEach(el => el.parentNode.removeChild(el));
-  doc.querySelectorAll('a').forEach(e => e.innerText = `[${e.innerText}](${e.href})`)
-  return doc.body.innerText.replace(/\s+/g, ' ').trim();
+  const doc = new DOMParser().parseFromString(inputHTML, "text/html");
+  doc.querySelectorAll("script, style, meta, link, head, iframe").forEach((el) => el.parentNode.removeChild(el));
+  doc.querySelectorAll("a").forEach((e) => (e.innerText = `[${e.innerText}](${e.href})`));
+  return doc.body.innerText.replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -661,42 +661,33 @@ export function sanitizeHTML(inputHTML) {
  * @param {string} url - The target URL to render.
  * @param {Object} options - Optional settings.
  * @param {number} options.timeout - Maximum time (ms) to wait before returning (default 30000).
- * @param {number} options.waitTime - Extra wait time (ms) after the load event (default 1000).
+ * @param {number} options.waitTime - Extra wait time (ms) after the load event (default 250).
  * @param {HTMLElement} options.container - DOM element to attach the hidden iframe (default: document.body).
+ * @param {string} options.proxyUrlPattern - URL pattern for the proxy endpoint (default: "/api/proxy?url=%URL%").
  * @returns {Promise<string>} - Resolves with the outerHTML of the rendered document.
  */
 export function renderUrl(url, options = {}) {
-  const {
-    timeout = 30000,
-    waitTime = 250,
-    container = document.body,
-  } = options;
-  
+  const { timeout = 30000, waitTime = 250, container = document.body, proxyUrlPattern="/api/proxy?url=%URL%" } = options;
   return new Promise((resolve, reject) => {
-    // Create a container for the iframe and hide it.
-    const iframeContainer = document.createElement('div');
-    // iframeContainer.style.display = 'none';
+    const iframeContainer = document.createElement("div");
+    iframeContainer.hidden = true;
+    iframeContainer.style.display = "none";
     container.appendChild(iframeContainer);
 
-    // Create the iframe with a minimal sandbox for security.
-    const iframe = document.createElement('iframe');
-    iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms');
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms");
+    iframe.style.width = "100%";
+    iframe.style.height = "100%";
     iframeContainer.appendChild(iframe);
 
     let timeoutId;
     let isResolved = false;
 
-    // Cleanup function removes the iframe from the DOM.
     const cleanup = () => {
-      if (iframeContainer.parentNode) {
-        iframeContainer.parentNode.removeChild(iframeContainer);
-      }
+      iframeContainer.parentNode?.removeChild(iframeContainer);
       if (timeoutId) clearTimeout(timeoutId);
     };
 
-    // Finish function tries to extract and return the outerHTML.
     const finish = () => {
       if (isResolved) return;
       isResolved = true;
@@ -708,23 +699,9 @@ export function renderUrl(url, options = {}) {
       }
       cleanup();
     };
-
-    // Handle successful load event.
-    iframe.onload = () => {
-      // Allow an extra waitTime for any late-running scripts.
-      setTimeout(finish, waitTime);
-    };
-
-    // If there's an error loading the iframe, we still try to get the content.
-    iframe.onerror = () => {
-      finish();
-    };
-
-    // Fallback timeout in case the load event never fires.
+    iframe.onerror = finish;
+    iframe.onload = () => setTimeout(finish, waitTime);
     timeoutId = setTimeout(finish, timeout);
-
-    // Construct the proxy URL (assuming your proxy endpoint is /api/proxy).
-    const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
-    iframe.src = proxyUrl;
+    iframe.src = proxyUrlPattern.replace('%URL%', encodeURIComponent(url));
   });
 }
