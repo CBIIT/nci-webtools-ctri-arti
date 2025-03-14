@@ -114,7 +114,7 @@ export async function browse({ url }) {
   const results = await parseDocument(bytes, mimetype, url);
   if (results.trim().length < 1000) {
     const html = await renderUrl(url);
-    return truncate(sanitizeHTML(html), 10_000);
+    return truncate(sanitizeHTML(html), 100_000);
   }
   return truncate(results, 10_000);
 }
