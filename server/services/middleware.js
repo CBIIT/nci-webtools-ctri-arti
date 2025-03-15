@@ -9,7 +9,7 @@ export const WHITELIST = [
   /\.rfa\.org/i,
 ];
 
-export const PROXY_ENDPOINT = "/api/proxy/";
+export const PROXY_ENDPOINT = "/api/proxy";
 
 /**
  * proxyMiddleware - Proxies the request, fetching the remote content and rewriting it.
@@ -66,10 +66,9 @@ export async function proxyMiddleware(req, res, next) {
   }
 
   // Unwrap double proxied URLs
-  while (url.pathname.includes(PROXY_ENDPOINT)) {
-    const parsedUrl = url.pathname.replace(PROXY_ENDPOINT, "");
+  while (url.pathname.startsWith(PROXY_ENDPOINT)) {
     try {
-      url = new URL(parsedUrl);
+      url = new URL(decodeURIComponent(url.pathname.slice(PROXY_ENDPOINT.length).replace(/^\/+/, "")));
     } catch (error) {
       break; // Exit if we can't parse further
     }
