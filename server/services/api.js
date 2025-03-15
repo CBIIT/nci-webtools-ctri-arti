@@ -16,9 +16,7 @@ api.use(json({ limit: fieldSize }));
 api.get("/ping", (req, res) => {
   res.json(true);
 });
-
-api.all("/proxy", proxyMiddleware);
-
+api.all("/proxy/*url", proxyMiddleware);
 api.get("/search", async (req, res) => {
   // const { q, offset, time, vqd } = req.query;
   res.json(await search(req.query)); 
