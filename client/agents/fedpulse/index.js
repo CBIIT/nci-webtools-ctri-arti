@@ -52,7 +52,7 @@ export default function Page() {
     <header class="container-fluid border-bottom py-3">
       <div class="row">
         <div class="col d-flex justify-content-start align-items-center">
-          <a href="/" class="d-inline-block">
+          <a href="/" class="d-inline-flex">
             <object data="agents/fedpulse/assets/images/logo.svg" type="image/svg+xml" width="300" class="pe-none mw-100"></object
           ></a>
         </div>
@@ -96,7 +96,7 @@ export default function Page() {
     
     <main class="container d-flex flex-column flex-grow-1 mb-3 position-relative">
       <div class="flex-grow-1 py-3">
-        <div class="text-center my-5" hidden=${() => messages().length > 0}>
+        <div class="text-center my-5 font-serif" hidden=${() => messages().length > 0}>
           <h1 class="display-6">Welcome to FedPulse</h1>
           <p class="fw-light fs-5">To get started, send a message below.</p>
         </div>
