@@ -15,7 +15,7 @@ export default function Message({ message, messages = [], active = false, defaul
           if (c.text) {
             return html`
               <span
-                class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light" : "w-100"].join(" ")}
+                class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light" : "w-100 font-serif bg-white"].join(" ")}
                 innerHTML=${parse(c.text)?.trim()}></span>
               <button
                 onClick=${() => playAudio(c.text)}
@@ -26,7 +26,7 @@ export default function Message({ message, messages = [], active = false, defaul
             `;
           } else if (c.toolUse) {
             return html`
-              <span class=${[defaultClass, "w-100 text-prewrap overflow-auto"].join(" ")} style="max-height: 200px">
+              <span class=${[defaultClass, "w-100 text-prewrap overflow-auto bg-white"].join(" ")} style="max-height: 200px">
                 <pre class="mb-0 text-muted">
                 ${[
                     [c.toolUse.name, stringify(c.toolUse.input)].join(" "),
