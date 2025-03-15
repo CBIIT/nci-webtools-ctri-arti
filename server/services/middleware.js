@@ -13,7 +13,12 @@ export const PROXY_ENDPOINT = "/api/proxy";
 export async function proxyMiddleware(req, res) {
   const { headers, method, body, query } = req;
   const host = headers.host.split(":")[0];
-  const url = new URL(query.url ?? body?.url ?? "");
+
+  // unwrap double proxied URLs
+  let url = new URL(query.url ?? body?.url ?? "");
+  while (url.pathname.includes(PROXY_ENDPOINT) && url.searchParams.has("url")) {
+    url = new URL(decodeURIComponent(url.searchParams.get("url")));
+  }
 
   // if hostname matches or whitelist has a match, continue
   if (!WHITELIST.some((regex) => regex.test(url.hostname)) && url.hostname !== host) {

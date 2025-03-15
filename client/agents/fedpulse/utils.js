@@ -54,13 +54,16 @@ export async function* readStream(response) {
  * @returns {Promise<object|string>} - JSON or text response
  */
 async function fetchProxy(url, requestInit = {}) {
-  const response = await fetch("/api/proxy?" + new URLSearchParams({ url }), requestInit);
-
-  if (!response.ok) {
-    throw new Error(`Proxy fetch failed: ${response.status} ${response.statusText}`);
+  while (url.includes("/api/proxy?url=")) {
+    url = decodeURIComponent(new URL(url).searchParams.get("url"));
   }
-
-  return response.json().catch(() => response.text());
+  return await retry(3, 1000, async () => {
+    const response = await fetch("/api/proxy?" + new URLSearchParams({ url }), requestInit);
+    if (!response.ok) {
+      throw new Error(`Proxy fetch failed: ${response.status} ${response.statusText}`);
+    }
+    return response;
+  });
 }
 
 /**
@@ -76,7 +79,7 @@ export async function search({ query, maxResults = 100 }) {
   let data;
 
   do {
-    data = await fetchProxy("https://find.search.gov/search?" + new URLSearchParams({ ...params, page: page++ }));
+    data = await fetchProxy("https://find.search.gov/search?" + new URLSearchParams({ ...params, page: page++ })).then((r) => r.json());
     if (data?.results?.length) {
       allResults.push(...data.results);
     } else {
@@ -104,11 +107,7 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  * @returns {Promise<string>}
  */
 export async function browse({ url }) {
-  // sometimes the url is double-proxied, so we need to check for that
-  if (url.includes("/api/proxy?url=")) {
-    url = decodeURIComponent(new URL(url).searchParams.get("url"));
-  }
-  const response = await fetch("/api/proxy?" + new URLSearchParams({ url }));
+  const response = await fetchProxy(url);
   const bytes = await response.arrayBuffer();
   if (!response.ok) {
     const text = new TextDecoder("utf-8").decode(bytes);
