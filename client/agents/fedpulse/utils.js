@@ -54,16 +54,15 @@ export async function* readStream(response) {
  * @returns {Promise<object|string>} - JSON or text response
  */
 async function fetchProxy(url, requestInit = {}) {
-  while (url.includes("/api/proxy?url=")) {
-    url = decodeURIComponent(new URL(url).searchParams.get("url"));
-  }
-  return await retry(3, 1000, async () => {
-    const response = await fetch("/api/proxy?" + new URLSearchParams({ url }), requestInit);
-    if (!response.ok) {
-      throw new Error(`Proxy fetch failed: ${response.status} ${response.statusText}`);
+  try {
+    const proxyEndpoint = "/api/proxy";
+    while (new URL(url).pathname.startsWith(proxyEndpoint)) {
+      url = decodeURIComponent(new URL(url).pathname.slice(proxyEndpoint.length).replace(/^\/+/, ""));
     }
-    return response;
-  });
+    return await retry(3, 100, () => fetch(proxyEndpoint + "/" + encodeURIComponent(url), requestInit));
+  } catch (error) {
+    throw new Error(`Invalid proxy URL: ${url}`);
+  }
 }
 
 /**
@@ -109,17 +108,16 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
 export async function browse({ url }) {
   const response = await fetchProxy(url);
   const bytes = await response.arrayBuffer();
+  const text = new TextDecoder("utf-8").decode(bytes);
   if (!response.ok) {
-    const text = new TextDecoder("utf-8").decode(bytes);
     return `Failed to read ${url}: ${response.status} ${response.statusText}\n${text}`;
   }
   const mimetype = response.headers.get("content-type");
-  const results = await parseDocument(bytes, mimetype, url);
-  if (results.trim().length < 1000) {
-    const html = await renderUrl(url);
+  if (mimetype.includes("text/html")) {
+    const html = await renderHtml(text);
     return truncate(sanitizeHTML(html), 100_000);
   }
-  return truncate(results, 10_000);
+  return await parseDocument(bytes, mimetype, url);
 }
 
 /**
@@ -663,57 +661,71 @@ export function sanitizeHTML(inputHTML) {
     .replace(/\n{2,}/g, "\n")
     .trim();
 }
-
-/**
- * renderUrl - Loads a URL through the proxy and returns the rendered outerHTML.
- * @param {string} url - The target URL to render.
- * @param {Object} options - Optional settings.
- * @param {number} options.timeout - Maximum time (ms) to wait before returning (default 30000).
- * @param {number} options.waitTime - Extra wait time (ms) after the load event (default 250).
- * @param {HTMLElement} options.container - DOM element to attach the hidden iframe (default: document.body).
- * @param {string} options.proxyUrlPattern - URL pattern for the proxy endpoint (default: "/api/proxy?url=%URL%").
- * @returns {Promise<string>} - Resolves with the outerHTML of the rendered document.
- */
-export function renderUrl(url, options = {}) {
-  const { timeout = 30000, waitTime = 250, container = document.body, proxyUrlPattern = "/api/proxy?url=%URL%" } = options;
-  return new Promise((resolve, reject) => {
-    const iframeContainer = document.createElement("div");
-    iframeContainer.hidden = true;
-    iframeContainer.style.display = "none";
-    container.appendChild(iframeContainer);
-
+export function renderHtml(html, { timeout = 30000, waitTime = 250, container = document.body } = {}) {
+  return new Promise((resolve) => {
     const iframe = document.createElement("iframe");
     iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms");
-    iframe.style.width = "100%";
-    iframe.style.height = "100%";
-    iframeContainer.appendChild(iframe);
-
-    let timeoutId;
-    let isResolved = false;
+    iframe.style.cssText = "width:100%; height:100%; display:none;";
+    container.appendChild(iframe);
 
     const cleanup = () => {
-      iframeContainer.parentNode?.removeChild(iframeContainer);
-      if (timeoutId) clearTimeout(timeoutId);
+      try {
+        container.removeChild(iframe);
+      } catch {}
     };
 
-    const finish = () => {
-      if (isResolved) return;
-      isResolved = true;
+    const getHtml = () => {
       try {
         const doc = iframe.contentDocument || iframe.contentWindow.document;
         resolve(doc.documentElement.outerHTML);
-      } catch (error) {
-        reject(error);
+      } catch {
+        resolve(""); // Return empty string instead of rejecting
+      } finally {
+        cleanup();
       }
+    };
+
+    const timeoutId = setTimeout(getHtml, timeout);
+
+    // Silence console errors by catching them in event handlers
+    iframe.onload = () => {
+      setTimeout(() => {
+        clearTimeout(timeoutId);
+        getHtml();
+      }, waitTime);
+    };
+
+    iframe.onerror = () => {
+      clearTimeout(timeoutId);
+      resolve(""); // Return empty string instead of rejecting
       cleanup();
     };
-    iframe.onerror = finish;
-    iframe.onload = () => setTimeout(finish, waitTime);
-    timeoutId = setTimeout(finish, timeout);
-    iframe.src = proxyUrlPattern.replace("%URL%", encodeURIComponent(url));
+
+    // Prevent errors from bubbling to console
+    window.addEventListener(
+      "error",
+      (e) => {
+        if (e.target === iframe || iframe.contentWindow === e.target.contentWindow) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      },
+      true
+    );
+
+    try {
+      iframe.src = "about:blank";
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(html);
+      doc.close();
+    } catch {
+      clearTimeout(timeoutId);
+      resolve(""); // Return empty string instead of rejecting
+      cleanup();
+    }
   });
 }
-
 /**
  * Automatically scrolls to bottom when user has scrolled past the specified threshold.
  * @param {number} thresholdPercent - Value between 0-1 representing how close to bottom (0.9 = 90%)
