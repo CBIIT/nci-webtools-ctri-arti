@@ -59,6 +59,9 @@ export async function streamModel(
 
   // process messages to ensure they are in the correct format
   for (const message of messages) {
+    if (!message.content.filter(Boolean).length) {
+      message.content.push({ text: "_" });
+    }
     for (const content of message.content.filter(Boolean)) {
       if (content.text?.trim().length === 0) {
         content.text = "_"; // prevent empty text content
