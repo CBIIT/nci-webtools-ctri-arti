@@ -20,16 +20,19 @@ export default function Page() {
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     const form = event.target;
     const message = form.message.value;
     const inputFiles = form.inputFiles.files;
     const reasoningMode = form.reasoningMode.checked;
     const model = form.model.value;
-    submitMessage({ message, inputFiles, reasoningMode, model });
-    form.message.value = "";
-    form.inputFiles.value = "";
+    const reset = () => {
+      form.message.value = "";
+      form.inputFiles.value = "";
+    };
+    await submitMessage({ message, inputFiles, reasoningMode, model, reset });
+    
   }
 
   const footerLinks = [
@@ -121,7 +124,7 @@ export default function Page() {
             id="inputFiles"
             name="inputFiles"
             class="form-control form-control-sm w-auto bg-transparent border-transparent"
-            accept="image/*,.pdf,.csv,.doc,.docx,.xls,.xlsx,.html,.txt,.md"
+            accept="image/*,text/*,.pdf,.xls,.xlsx"
             multiple />
 
           <div class="input-group w-auto align-items-center">
