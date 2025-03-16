@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
-import { readStream, runTool, fileToBase64, splitFilename, ecfr, federalRegister } from "./utils.js";
-import { systemPrompt, tools } from "./config.js";
-import { search, browse, code, getClientContext, autoscroll } from "./utils.js";
+import { readStream, runTool, fileToBase64, splitFilename, ecfr, federalRegister, readFile, detectFileType } from "./utils.js";
+import { systemPrompt, tools } from "./config.base.js";
+import { getClientContext, autoscroll } from "./utils.js";
 
 export function useSubmitMessage() {
   const [messages, setMessages] = createSignal([]);
@@ -19,7 +19,7 @@ export function useSubmitMessage() {
    * @param {boolean} params.reasoningMode - Whether reasoning mode is enabled.
    * @param {string} params.model - The model to use.
    */
-  async function submitMessage({ message, inputFiles, reasoningMode, model }) {
+  async function submitMessage({ message, inputFiles, reasoningMode, model, reset = () => {} }) {
     // Build the user message payload
     const userMessage = {
       role: "user",
@@ -36,15 +36,23 @@ export function useSubmitMessage() {
         const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
         // (Optionally validate file type here)
         let [name, format] = splitFilename(file.name);
+        const originalFormat = format;
         // Sanitize filename (adhering to any restrictions)
         name = name.replace(/[^a-zA-Z0-9\s\[\]\(\)\-]/g, "_").replace(/\s{2,}/g, " ");
         const bytes = await fileToBase64(file, true);
         const contentType = imageTypes.includes(format) ? "image" : "document";
+        const fileType = detectFileType(await readFile(file, "arrayBuffer"));
+        const isText = fileType === "TEXT";
+        if (!documentTypes.concat(imageTypes).includes(format)) format = "txt";
+        const localFile = `file:${name}.${originalFormat}`;
+        localStorage.setItem(localFile, isText ? await readFile(file) : bytes);
         userMessage.content.push({
           [contentType]: { name, format, source: { bytes } },
         });
       }
     }
+
+    reset?.();
 
     // Update the state with the user message
     setMessages((prev) => [...prev, userMessage]);
@@ -75,7 +83,6 @@ export function useSubmitMessage() {
 
         // Process streaming chunks from the API
         for await (const chunk of readStream(response)) {
-          autoscroll();
           const values = decoder
             .decode(chunk, { stream: true })
             .trim()
@@ -126,7 +133,7 @@ export function useSubmitMessage() {
                   .filter((c) => c.toolUse)
                   .map((c) => c.toolUse);
                 const toolResults = await Promise.all(
-                  toolUses.map((t) => runTool(t, { search, browse, code, ecfr, federalRegister }))
+                  toolUses.map((t) => runTool(t))
                 );
                 const toolResultsMessage = {
                   role: "user",
@@ -137,6 +144,7 @@ export function useSubmitMessage() {
                 isComplete = true;
               }
             }
+            autoscroll();
           }
         }
       }
