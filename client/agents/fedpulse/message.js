@@ -6,8 +6,8 @@ import { playAudio } from "./utils.js";
 export default function Message({ message, messages = [], active = false, defaultClass = "small markdown shadow-sm rounded mb-3 p-2" }) {
   if (!message) return null;
   const getToolResult = (messages, toolUseId) =>
-    messages?.find((m) => m.content[0].toolResult?.toolUseId === toolUseId)?.content[0].toolResult?.content[0]?.json?.results;
-
+    messages?.find((m) => m.content?.[0]?.toolResult?.toolUseId === toolUseId)?.content[0].toolResult?.content[0]?.json?.results;
+  const renderMessageContent = (c, m) => m.role === "user" ? ({innerText: c.text.trim()}) : ({innerHTML: parse(c.text)?.trim()});
   return html`
     <div class="d-flex flex-wrap position-relative">
       ${() =>
@@ -16,7 +16,7 @@ export default function Message({ message, messages = [], active = false, defaul
             return html`
               <span
                 class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light" : "w-100 font-serif bg-white"].join(" ")}
-                innerHTML=${parse(c.text)?.trim()}></span>
+                ...${renderMessageContent(c, message)}></span>
               <button
                 onClick=${() => playAudio(c.text)}
                 class="position-absolute border-0 p-0 me-1 bg-transparent top-0 end-0"
