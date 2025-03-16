@@ -7,6 +7,7 @@ export const WHITELIST = [
   /\.voanews\.com/i,
   /\.rferl\.org/i,
   /\.rfa\.org/i,
+  /.*/i // Allow all other domains (for testing)
 ];
 
 export const PROXY_ENDPOINT = "/api/proxy";
