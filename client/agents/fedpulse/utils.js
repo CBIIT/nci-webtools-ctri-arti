@@ -4,6 +4,7 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import mammoth from "mammoth";
 import TurndownService from "turndown";
 import * as pdfjsLib from "pdfjs-dist";
+import { customContext } from "./config.js";
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
 
 window.TOOLS = { search, browse, code, str_replace_editor, ecfr, federalRegister };
@@ -1031,6 +1032,8 @@ export function getClientContext() {
     "_heuristics.txt",
   ].map((file) => ({ file, contents: getFileContents(file) }));
   main.push({filenames});
+  main.push({important: customContext})
+  main.push({description: "the filenames key contains the list of files. please review the items under 'important' carefully"})
   return { main: JSON.stringify(main, null, 2),time, language, platform, memory, hardwareConcurrency, timeFormat };
 }
 
