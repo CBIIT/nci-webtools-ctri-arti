@@ -6,3 +6,4 @@ venv
 .jupyterlite.doit.db
 CLAUDE.md
 /tmp
+*.pem
