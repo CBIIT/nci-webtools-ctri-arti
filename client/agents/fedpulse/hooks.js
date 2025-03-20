@@ -62,7 +62,7 @@ export function useSubmitMessage() {
       setLoading(true);
 
       while (!isComplete) {
-        const response = await fetch("/api/model/stream", {
+        const response = await fetch("/api/model/run", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -71,6 +71,7 @@ export function useSubmitMessage() {
             thoughtBudget: reasoningMode ? 4000 : 0,
             messages: messages(),
             tools,
+            stream: true,
           }),
         });
 
