@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node --env-file .env server.js",
     "start:dev": "node --env-file .env --watch-path=. server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "cert": "openssl req -x509 -newkey rsa:2048 -nodes -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost' -keyout key.tmp -out cert.tmp && cat key.tmp cert.tmp > key.pem && rm key.tmp cert.tmp"
   },
   "author": "",
   "license": "ISC",
