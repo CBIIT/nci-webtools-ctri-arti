@@ -5,34 +5,6 @@ import { parseDocument } from "./parsers.js";
 export const DEFAULT_MODEL_ID = process.env.DEFAULT_MODEL_ID;
 
 /**
- * Run a model with the given messages.
- * @param {string} modelId
- * @param {Messages} messages
- * @returns
- */
-export async function runModel(
-  modelId = DEFAULT_MODEL_ID,
-  messages = [],
-  systemPrompt = "You are a helpful assistant.",
-  toolConfig = undefined
-) {
-  if (!messages || messages?.length === 0) {
-    return null;
-  }
-
-  if (typeof messages === "string") {
-    messages = [{ role: "user", content: [{ text: messages }] }];
-  }
-
-  const client = new BedrockRuntimeClient();
-  const system = [{ text: systemPrompt }];
-  const input = { modelId, messages, system, toolConfig };
-  const command = new ConverseCommand(input);
-  const response = await client.send(command);
-  return response;
-}
-
-/**
  * Stream a conversation with an AI model by sending messages and receiving responses in a stream format.
  *
  * @param {string} modelId - The ID of the model to use (defaults to DEFAULT_MODEL_ID)
@@ -40,14 +12,15 @@ export async function runModel(
  * @param {string} systemPrompt - The system prompt to guide the model's behavior
  * @param {number} thoughtBudget - Token budget for the model's thinking process (0 disables thinking feature)
  * @param {Array} tools - Array of tools the model can use during the conversation
- * @returns {Promise<import("@aws-sdk/client-bedrock-runtime").ConverseStreamCommandOutput>} A promise that resolves to a stream of model responses
+ * @returns {Promise<import("@aws-sdk/client-bedrock-runtime").ConverseStreamCommandOutput|import("@aws-sdk/client-bedrock-runtime").ConverseCommandOutput>} A promise that resolves to a stream of model responses
  */
-export async function streamModel(
+export async function runModel(
   modelId = DEFAULT_MODEL_ID,
   messages = [],
   systemPrompt = "You are proactive, curious, and decisive. You communicate warmly with thoughtful examples, keeping responses concise yet insightful. You show genuine interest while focusing precisely on what people need.",
   thoughtBudget = 0,
-  tools = []
+  tools = [],
+  stream = false
 ) {
   if (!messages || messages?.length === 0) {
     return null;
@@ -81,7 +54,7 @@ export async function streamModel(
   const additionalModelRequestFields = thoughtBudget > 0 ? { thinking, "anthropic-beta": "output-128k-2025-02-19" } : undefined;
   const input = { modelId, messages, system, toolConfig, performanceConfig, additionalModelRequestFields };
 
-  const command = new ConverseStreamCommand(input);
+  const command = stream ? new ConverseStreamCommand(input) : new ConverseCommand(input);
   const response = await client.send(command);
   return response;
 }
