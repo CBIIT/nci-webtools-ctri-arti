@@ -1,14 +1,7 @@
 import { Readable } from "stream";
 import { JSDOM } from "jsdom";
 
-export const WHITELIST = [
-  /\.gov$/i, 
-  /\.mil$/i, 
-  /\.voanews\.com/i,
-  /\.rferl\.org/i,
-  /\.rfa\.org/i,
-  /.*/i // Allow all other domains (for testing)
-];
+export const WHITELIST = [/.*/i];
 
 export const PROXY_ENDPOINT = "/api/proxy";
 
