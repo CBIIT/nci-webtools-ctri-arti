@@ -1,7 +1,7 @@
 import { KokoroTTS, TextSplitterStream } from "kokoro-js";
 import { Readability } from "@mozilla/readability";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { pipeline, matmul } from "@huggingface/transformers";
+import { pipeline, matmul, AutoModel, AutoTokenizer, Tensor } from "@huggingface/transformers";
 import mammoth from "mammoth";
 import TurndownService from "turndown";
 import * as pdfjsLib from "pdfjs-dist";
@@ -12,14 +12,15 @@ window.TOOLS = { search, browse, code, str_replace_editor, ecfr, federalRegister
 window.PIPELINE_OPTIONS = navigator.gpu ? { dtype: "fp32", device: "webgpu" } : { dtype: "q8", device: "wasm" };
 window.MODELS = [
   // { task: "feature-extraction", model: "Alibaba-NLP/gte-modernbert-base", options: PIPELINE_OPTIONS},
-  { task: "feature-extraction", model: "Xenova/all-MiniLM-L6-v2"},
+  // { task: "feature-extraction", model: "Xenova/all-MiniLM-L6-v2"},
+  // { task: "feature-extraction", model: "minishlab/potion-base-8M", PIPELINE_OPTIONS},
   {
     task: "kokoro-tts",
     model: "onnx-community/Kokoro-82M-v1.0-ONNX",
     options: PIPELINE_OPTIONS,
   },
 ];
-setTimeout(() => loadPipelines(window.MODELS).then(p => window.pipelines = p), 100);
+setTimeout(() => loadPipelines(window.MODELS).then((p) => (window.pipelines = p)), 100);
 
 /**
  * Preloads the required models for the tools
@@ -125,25 +126,80 @@ export async function search({ query, maxResults = 100 }) {
  * @param {string} model - Model name
  * @returns {Promise<{embeddings: number[][], similarities?: number[][]}>} - Embeddings and similarity scores
  */
-export async function getEmbeddings(texts = [], query = "", model = "Xenova/all-MiniLM-L6-v2") {
-  // Supported options: "fp32", "fp16", "q8", "q4", "q4f16"
-  const extractFeatures = await pipeline("feature-extraction", model);
-  const embeddings = await extractFeatures(texts, { pooling: "cls", normalize: true });
-
-  // if we have a query, then compute the similarity scores and include them in the output
+export async function getEmbeddings(texts = [], query = "", model = "minishlab/potion-base-8M") {
   if (query) {
-    const queryEmbedding = await extractFeatures([query], { pooling: "cls", normalize: true });
-    const similarities = (await matmul(queryEmbedding, embeddings.transpose(1, 0))).mul(100);
+    const embeddings = await embed([query].concat(texts), model, { raw: true });
+    const similarities = (await matmul(embeddings.slice([0, 1]), embeddings.slice([1, null]).transpose(1, 0))).mul(100);
     return { embeddings: embeddings.tolist(), similarities: similarities.tolist() };
   }
+  return { embeddings: await embed(texts, model) };
+}
 
-  return { embeddings: embeddings.tolist() };
+/**
+ * Creates text embeddings using Model2Vec
+ * @example await embed(['hello', 'world'])
+ *
+ * @param {string[]} texts - Array of texts to embed
+ * @param {string} [model_name='minishlab/potion-base-8M'] - Model name
+ * @param {Object} [options] - Additional options
+ * @param {string} [options.model_type='model2vec'] - Model type
+ * @param {string} [options.model_revision='main'] - Model revision
+ * @param {string} [options.tokenizer_revision='main'] - Tokenizer revision
+ * @param {string} [options.dtype='fp32'] - Data type
+ * @param {string} [options.device='wasm' | 'webgpu'] - Device (defaults to 'webgpu' if available, otherwise 'wasm')
+ * @returns {Promise<number[][]>} - Text embeddings
+ */
+export async function embed(texts, model_name = "minishlab/potion-base-8M", options = {}) {
+  const { 
+    model_type = "model2vec",
+    model_revision = "main", 
+    tokenizer_revision = "main", 
+    device = navigator?.gpu ? "webgpu" : undefined, // use webgpu if available
+    dtype = "fp32",
+    raw = false,
+  } = options;
+
+  // Load model and tokenizer
+  const model = await AutoModel.from_pretrained(model_name, {
+    config: { model_type },
+    revision: model_revision,
+    device,
+    dtype,
+  });
+
+  const tokenizer = await AutoTokenizer.from_pretrained(model_name, {
+    revision: tokenizer_revision,
+  });
+
+  // Tokenize inputs
+  const { input_ids } = await tokenizer(texts, {
+    add_special_tokens: false,
+    return_tensor: false,
+  });
+
+  // Calculate offsets
+  const offsets = [0];
+  for (let i = 0; i < input_ids.length - 1; i++) {
+    offsets.push(offsets[i] + input_ids[i].length);
+  }
+
+  // Flatten input IDs
+  const flattened_input_ids = input_ids.flat();
+
+  // Create tensors and get embeddings
+  const model_inputs = {
+    input_ids: new Tensor("int64", flattened_input_ids, [flattened_input_ids.length]),
+    offsets: new Tensor("int64", offsets, [offsets.length]),
+  };
+
+  const { embeddings } = await model(model_inputs);
+  return raw ? embeddings : embeddings.tolist();
 }
 
 /**
  * Queries a document with a given query and returns the results
- * @param {string} document 
- * @param {string} query 
+ * @param {string} document
+ * @param {string} query
  * @returns {Promise<Array>} - Array of search results
  */
 export async function queryDocument(document, query) {
@@ -153,7 +209,6 @@ export async function queryDocument(document, query) {
     keepSeparator: true,
   });
   const texts = await textSplitter.splitText(document);
-  
   const { embeddings, similarities } = await getEmbeddings(texts, query);
   const results = texts.map((text, i) => ({
     text,
@@ -189,12 +244,10 @@ Document: ${document}`;
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ model, messages }),
-  })
+  });
   const results = await response.json();
   return results?.output?.message?.content?.[0]?.text || truncate(document);
 }
-
-window.queryDocumentWithModel = queryDocumentWithModel;
 
 /**
  * Truncates a string to a maximum length and appends a suffix
@@ -230,6 +283,8 @@ export async function browse({ url, topic }) {
     return results;
   }
   return await queryDocumentWithModel(results, topic);
+  // const sections = await queryDocument(results, topic);
+  // return sections.map(s => ({ text: s.text, similarity: s.similarity })).slice(0, 20);
 }
 
 /**
