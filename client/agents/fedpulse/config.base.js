@@ -30,7 +30,7 @@ export const tools = [
             },
             topic: {
               type: "string",
-              description: "Brief description of the content or topic being analyzed. Please provide a concise and specific summary of the content to be extracted. For example, do not use 'summary of content'. Instead, be more specific and use terms and concepts likely to be found in the content.",
+              description: "Brief description of the content or topic being analyzed. Please provide a concise and specific summary of the content to be extracted. For example, do not use 'summary of content'. Instead, be more specific and use terms and concepts likely to be found in the content. Start with a 'table of contents' query and work towards more specific queries/terms that address the main request.",
             }
           },
           required: ["url", "topic"],
