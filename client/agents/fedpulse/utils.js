@@ -1,6 +1,7 @@
 import { KokoroTTS, TextSplitterStream } from "kokoro-js";
 import { Readability } from "@mozilla/readability";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { pipeline, matmul } from "@huggingface/transformers";
 import mammoth from "mammoth";
 import TurndownService from "turndown";
 import * as pdfjsLib from "pdfjs-dist";
@@ -8,6 +9,33 @@ import { customContext } from "./config.js";
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
 
 window.TOOLS = { search, browse, code, str_replace_editor, ecfr, federalRegister };
+window.PIPELINE_OPTIONS = navigator.gpu ? { dtype: "fp32", device: "webgpu" } : { dtype: "q8", device: "wasm" };
+window.MODELS = [
+  // { task: "feature-extraction", model: "Alibaba-NLP/gte-modernbert-base", options: PIPELINE_OPTIONS},
+  { task: "feature-extraction", model: "Xenova/all-MiniLM-L6-v2"},
+  {
+    task: "kokoro-tts",
+    model: "onnx-community/Kokoro-82M-v1.0-ONNX",
+    options: PIPELINE_OPTIONS,
+  },
+];
+setTimeout(() => loadPipelines(window.MODELS).then(p => window.pipelines = p), 100);
+
+/**
+ * Preloads the required models for the tools
+ */
+async function loadPipelines(pipelines) {
+  return Promise.all(
+    pipelines.map((p) => {
+      switch (p.task) {
+        case "kokoro-tts":
+          return KokoroTTS.from_pretrained(p.model, p.options);
+        default:
+          return pipeline(p.task, p.model, p.options || {});
+      }
+    })
+  );
+}
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
@@ -91,6 +119,84 @@ export async function search({ query, maxResults = 100 }) {
 }
 
 /**
+ * Gets embeddings for a list of texts and computes similarity scores with a query
+ * @param {string[]} texts - List of texts
+ * @param {string} query - Query text
+ * @param {string} model - Model name
+ * @returns {Promise<{embeddings: number[][], similarities?: number[][]}>} - Embeddings and similarity scores
+ */
+export async function getEmbeddings(texts = [], query = "", model = "Xenova/all-MiniLM-L6-v2") {
+  // Supported options: "fp32", "fp16", "q8", "q4", "q4f16"
+  const extractFeatures = await pipeline("feature-extraction", model);
+  const embeddings = await extractFeatures(texts, { pooling: "cls", normalize: true });
+
+  // if we have a query, then compute the similarity scores and include them in the output
+  if (query) {
+    const queryEmbedding = await extractFeatures([query], { pooling: "cls", normalize: true });
+    const similarities = (await matmul(queryEmbedding, embeddings.transpose(1, 0))).mul(100);
+    return { embeddings: embeddings.tolist(), similarities: similarities.tolist() };
+  }
+
+  return { embeddings: embeddings.tolist() };
+}
+
+/**
+ * Queries a document with a given query and returns the results
+ * @param {string} document 
+ * @param {string} query 
+ * @returns {Promise<Array>} - Array of search results
+ */
+export async function queryDocument(document, query) {
+  const textSplitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 1000,
+    chunkOverlap: 200,
+    keepSeparator: true,
+  });
+  const texts = await textSplitter.splitText(document);
+  
+  const { embeddings, similarities } = await getEmbeddings(texts, query);
+  const results = texts.map((text, i) => ({
+    text,
+    embedding: embeddings[i],
+    similarity: similarities ? similarities[0][i] : null,
+  }));
+  return results.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
+}
+
+export async function queryDocumentWithModel(document, topic, model = "us.anthropic.claude-3-5-haiku-20241022-v1:0") {
+  document = truncate(document, 750_000); // limit document size to 750k characters (upper limit of the model)
+  const prompt = `Please analyze the document below and extract the exact passages that most precisely address the topic. If there are no matches (eg: the topic is too generic), simply provide a summary of the entire document, with a table of contents. Follow these instructions in order:
+
+1. FIRST, create a structured table of contents (TOC) for the document, including:
+    - Main section titles and subtopics
+    - Page numbers or section markers if available
+    - Key themes or concepts covered in each section
+    
+2. SECOND, extract exact passages from the document that specifically address the topic/query, following these guidelines:
+    - Use ONLY information contained in the document
+    - Extract exact quotes, maintaining original wording and formatting
+    - For each extracted passage, include the section/location where it appears
+    - Explain briefly why this passage specifically answers the topic/query
+    - Maintain all citations or references from the original text
+
+3. If no passages directly address the topic/query, identify the most relevant related information
+
+Topic/Query: "${topic}"
+
+Document: ${document}`;
+  const messages = [{ role: "user", content: [{ text: prompt }] }];
+  const response = await fetch("/api/model/run", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ model, messages }),
+  })
+  const results = await response.json();
+  return results?.output?.message?.content?.[0]?.text || truncate(document);
+}
+
+window.queryDocumentWithModel = queryDocumentWithModel;
+
+/**
  * Truncates a string to a maximum length and appends a suffix
  * @param {string} str - The string to truncate
  * @param {number} maxLength - The maximum length of the string
@@ -106,20 +212,26 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  * @param {string} url
  * @returns {Promise<string>}
  */
-export async function browse({ url }) {
+export async function browse({ url, topic }) {
   const response = await fetchProxy(url);
   const bytes = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(bytes);
+  let results;
   if (!response.ok) {
     return `Failed to read ${url}: ${response.status} ${response.statusText}\n${text}`;
   }
   const mimetype = response.headers.get("content-type");
   if (mimetype.includes("text/html")) {
     const html = await renderHtml(text);
-    return truncate(sanitizeHTML(html), 100_000);
+    results = sanitizeHTML(html);
   }
-  return await parseDocument(bytes, mimetype, url);
+  results = await parseDocument(bytes, mimetype, url);
+  if (results.length < 100_000) {
+    return results;
+  }
+  return await queryDocumentWithModel(results, topic);
 }
+
 /**
  * str_replace_editor function with improved newline handling
  *
@@ -139,40 +251,40 @@ function str_replace_editor(params, storage = localStorage) {
   const { command, path } = params;
   if (!path) return "Error: File path is required";
   if (!command) return "Error: Command is required";
-  
+
   // Define storage keys for file content and history
   const fileKey = `file:${path}`;
   const historyKey = `history:${path}`;
-  
+
   // Normalize any string with newlines to use consistent LF format
   const normalizeNewlines = (text) => {
-    if (typeof text !== 'string') return '';
-    return text.replace(/\r\n/g, '\n');
+    if (typeof text !== "string") return "";
+    return text.replace(/\r\n/g, "\n");
   };
-  
+
   try {
     switch (command) {
-      case 'view': {
+      case "view": {
         // Get file content, error if not found
         const content = storage.getItem(fileKey);
         if (content === null) {
           return `File not found: ${path}`;
         }
-        
+
         // Split into lines and apply view range if provided
-        const lines = normalizeNewlines(content).split('\n');
+        const lines = normalizeNewlines(content).split("\n");
         const [start, end] = params.view_range || [1, lines.length];
         const startLine = Math.max(1, start);
         const endLine = end === -1 ? lines.length : Math.min(end, lines.length);
-        
+
         // Format and return the requested lines
         return lines
           .slice(startLine - 1, endLine)
           .map((line, idx) => `${startLine + idx}: ${line}`)
-          .join('\n');
+          .join("\n");
       }
-      
-      case 'str_replace': {
+
+      case "str_replace": {
         // Validate required parameters
         const { old_str, new_str } = params;
         if (old_str === undefined) {
@@ -181,23 +293,23 @@ function str_replace_editor(params, storage = localStorage) {
         if (new_str === undefined) {
           return "Error: new_str parameter is required for str_replace";
         }
-        
+
         // Normalize the search string and check for empty value
         const normalizedOldStr = normalizeNewlines(old_str);
         if (normalizedOldStr === "") {
           // in this case, simply put this string at the beginning of the file
           // return "Error: old_str parameter cannot be empty for str_replace";
         }
-        
+
         // Get file content, error if not found
         const content = storage.getItem(fileKey);
         if (content === null) {
           return `File not found: ${path}`;
         }
-        
+
         // Normalize file content
         const normalizedContent = normalizeNewlines(content);
-        
+
         // Check for exactly one occurrence of the old string
         let count = 0;
         let position = 0;
@@ -208,28 +320,28 @@ function str_replace_editor(params, storage = localStorage) {
           if (normalizedOldStr === "") break;
           position += normalizedOldStr.length;
         }
-        
+
         if (count === 0) {
-          return 'The specified text was not found in the file.';
+          return "The specified text was not found in the file.";
         }
-        
+
         if (count > 1) {
           return `Found ${count} occurrences of the text. The replacement must match exactly one location.`;
         }
-        
+
         // Save backup before modifying
         storage.setItem(historyKey, content);
-        
+
         // Replace the text with new_str (preserving newline format in new_str)
         const newContent = normalizedContent.replace(normalizedOldStr, normalizeNewlines(new_str));
         storage.setItem(fileKey, newContent);
-        
-        return 'Successfully replaced text at exactly one location.';
+
+        return "Successfully replaced text at exactly one location.";
       }
-      
-      case 'create': {
+
+      case "create": {
         // Create the file with the provided content or empty string
-        const fileContent = params.file_text !== undefined ? normalizeNewlines(params.file_text) : '';
+        const fileContent = params.file_text !== undefined ? normalizeNewlines(params.file_text) : "";
         const overwritten = storage.getItem(fileKey) !== null;
         storage.setItem(fileKey, fileContent);
         if (overwritten) {
@@ -238,8 +350,8 @@ function str_replace_editor(params, storage = localStorage) {
           return `Successfully created file: ${path}`;
         }
       }
-      
-      case 'insert': {
+
+      case "insert": {
         // Validate required parameters
         const { insert_line, new_str } = params;
         if (new_str === undefined) {
@@ -248,50 +360,50 @@ function str_replace_editor(params, storage = localStorage) {
         if (insert_line === undefined) {
           return "Error: insert_line parameter is required for insert";
         }
-        
+
         // Get file content, error if not found
         const content = storage.getItem(fileKey);
         if (content === null) {
           return `File not found: ${path}`;
         }
-        
+
         // Save backup before modifying
         storage.setItem(historyKey, content);
-        
+
         // Split content into lines and normalize
-        const lines = normalizeNewlines(content).split('\n');
-        
+        const lines = normalizeNewlines(content).split("\n");
+
         // Ensure insert_line is within valid range
         const insertLineIndex = Math.min(Math.max(0, insert_line), lines.length);
-        
+
         // Process the new content to insert
         const normalizedNewStr = normalizeNewlines(new_str);
-        const linesToInsert = normalizedNewStr.split('\n');
-        
+        const linesToInsert = normalizedNewStr.split("\n");
+
         // Insert the new lines at the specified position
         lines.splice(insertLineIndex, 0, ...linesToInsert);
-        
+
         // Join lines and save the modified content
-        const newContent = lines.join('\n');
+        const newContent = lines.join("\n");
         storage.setItem(fileKey, newContent);
-        
+
         return `Successfully inserted text after line ${insertLineIndex}.`;
       }
-      
-      case 'undo_edit': {
+
+      case "undo_edit": {
         // Check if there's a history entry for this file
         const previousContent = storage.getItem(historyKey);
         if (previousContent === null) {
           return `No previous edit found for file: ${path}`;
         }
-        
+
         // Restore the previous content
         storage.setItem(fileKey, previousContent);
         storage.removeItem(historyKey);
-        
+
         return `Successfully reverted last edit for file: ${path}`;
       }
-      
+
       default:
         return `Error: Unknown command: ${command}`;
     }
@@ -299,8 +411,6 @@ function str_replace_editor(params, storage = localStorage) {
     return `Error processing command ${command}: ${error.message}`;
   }
 }
-
-
 
 /**
  * Interacts with the eCFR API to retrieve regulatory information
@@ -385,7 +495,7 @@ export async function federalRegister({ path, params = {} }) {
 }
 /**
  * Enhanced code execution function with HTML template, module support, full DOM state capture, and console output
- * 
+ *
  * This updated version:
  *  - Retrieves the HTML template.
  *  - Processes each module from localStorage.
@@ -396,7 +506,7 @@ export async function federalRegister({ path, params = {} }) {
  *  - Uses a slight delay to ensure all DOM manipulations are complete before capturing.
  *  - Returns structured data with console output and the full rendered DOM.
  *  - Supports both visible (new window) and invisible (hidden iframe) execution modes.
- * 
+ *
  * @param {Object} params - The parameters for code execution
  * @param {string} params.source - JavaScript code to execute
  * @param {string} [params.html] - Path to an HTML template in localStorage
@@ -413,7 +523,7 @@ export async function code({ source, html, modules = [], timeout = 5000, visible
   // Retrieve HTML template content from localStorage or use default.
   let htmlContent = "";
   if (html) {
-    const templateKey = html.startsWith('file:') ? html : `file:${html}`;
+    const templateKey = html.startsWith("file:") ? html : `file:${html}`;
     htmlContent = localStorage.getItem(templateKey);
     console.log("[DEBUG] Retrieved HTML template for key:", templateKey);
     if (!htmlContent) {
@@ -512,7 +622,7 @@ export async function code({ source, html, modules = [], timeout = 5000, visible
   if (modules && modules.length > 0) {
     for (const moduleName of modules) {
       console.log("[DEBUG] Processing module:", moduleName);
-      const moduleKey = moduleName.startsWith('file:') ? moduleName : `file:${moduleName}`;
+      const moduleKey = moduleName.startsWith("file:") ? moduleName : `file:${moduleName}`;
       const moduleCode = localStorage.getItem(moduleKey);
       if (!moduleCode) {
         console.warn(`[DEBUG] Module not found: ${moduleKey}`);
@@ -538,7 +648,7 @@ export async function code({ source, html, modules = [], timeout = 5000, visible
     }
   }
   combinedCode += "// Main Source\n" + processedSource;
-  
+
   // Append an automatic call to report completion with DOM innerHTML
   combinedCode += `
 // Automatically report completion after all rendering is complete
@@ -719,105 +829,105 @@ window.addEventListener('unhandledrejection', function(event) {
   if (visible) {
     return new Promise((resolve) => {
       console.log("[DEBUG] Visible execution mode: Opening new window...");
-      const win = window.open('', '_blank', 'width=800,height=600');
+      const win = window.open("", "_blank", "width=800,height=600");
       if (!win) {
         console.error("[DEBUG] Failed to open new window.");
         return resolve("Error: Could not open a new window. Please check your pop-up blocker settings.");
       }
-      
+
       let output = "";
       let domContent = "";
       const messageHandler = (event) => {
         console.log("[DEBUG] Message received from window:", event.data);
         if (event.data?.instanceId === instanceId) {
-          if (event.data.type === 'CONSOLE') {
+          if (event.data.type === "CONSOLE") {
             output += `[${event.data.method}] ${event.data.formatted}\n`;
-          } else if (event.data.type === 'SANDBOX_COMPLETE') {
+          } else if (event.data.type === "SANDBOX_COMPLETE") {
             console.log("[DEBUG] Received SANDBOX_COMPLETE message with rendered DOM state");
             domContent = event.data.renderedDOM || "";
             cleanup();
             resolve({
               output: event.data.output || output,
-              renderedDOM: domContent
+              renderedDOM: domContent,
             });
-          } else if (event.data.type === 'SANDBOX_ERROR') {
+          } else if (event.data.type === "SANDBOX_ERROR") {
             console.error("[DEBUG] Received SANDBOX_ERROR message:", event.data);
             domContent = event.data.renderedDOM || "";
             cleanup();
             resolve({
-              error: event.data.error, 
+              error: event.data.error,
               output: output,
-              renderedDOM: domContent
+              renderedDOM: domContent,
             });
           }
         }
       };
-      window.addEventListener('message', messageHandler);
+      window.addEventListener("message", messageHandler);
       const tid = setTimeout(() => {
         console.warn("[DEBUG] Execution timed out");
-        
-        if (!win.closed) { 
+
+        if (!win.closed) {
           // Try to capture final DOM state before closing
           try {
             domContent = win.document.documentElement.outerHTML;
           } catch (e) {
             console.error("[DEBUG] Could not capture DOM on timeout:", e);
           }
-          win.close(); 
+          win.close();
         }
         cleanup();
         resolve({
           error: `Timeout after ${timeout}ms`,
           output: output,
-          renderedDOM: domContent
+          renderedDOM: domContent,
         });
       }, timeout);
       const cleanup = () => {
         clearTimeout(tid);
-        window.removeEventListener('message', messageHandler);
+        window.removeEventListener("message", messageHandler);
       };
-      
+
       console.log("[DEBUG] Writing HTML content to new window.");
       win.document.open();
       win.document.write(htmlContent);
-      
+
       console.log("[DEBUG] Injecting communication script into new window.");
-      const comScriptEl = win.document.createElement('script');
+      const comScriptEl = win.document.createElement("script");
       comScriptEl.textContent = comScript;
       win.document.head.appendChild(comScriptEl);
-      
+
       console.log("[DEBUG] Injecting utility script for DOM and console reporting");
-      const utilScriptEl = win.document.createElement('script');
+      const utilScriptEl = win.document.createElement("script");
       utilScriptEl.textContent = utilityScript;
       win.document.head.appendChild(utilScriptEl);
-      
+
       console.log("[DEBUG] Injecting combined module script into new window.");
-      const moduleScriptEl = win.document.createElement('script');
-      moduleScriptEl.setAttribute('type', 'module');
+      const moduleScriptEl = win.document.createElement("script");
+      moduleScriptEl.setAttribute("type", "module");
       moduleScriptEl.textContent = combinedCode;
       console.log("[DEBUG] Combined module script content:\n", combinedCode);
       win.document.body.appendChild(moduleScriptEl);
-      
+
       win.document.close();
-      win.document.title = html ? `Code: ${html}` : 'Code Execution';
+      win.document.title = html ? `Code: ${html}` : "Code Execution";
       console.log("[DEBUG] New window setup complete with title:", win.document.title);
     });
   } else {
     console.log("[DEBUG] Invisible execution mode: Creating hidden iframe...");
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.left = '-9999px';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "absolute";
+    iframe.style.left = "-9999px";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
     document.body.appendChild(iframe);
-    
-    await new Promise(resolve => {
+
+    await new Promise((resolve) => {
       iframe.onload = resolve;
-      iframe.src = 'about:blank';
+      iframe.src = "about:blank";
     });
     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
     console.log("[DEBUG] Iframe loaded. Writing HTML content to iframe.");
-    
+
     return new Promise((resolve) => {
       const tid = setTimeout(() => {
         console.warn("[DEBUG] Iframe execution timed out");
@@ -832,61 +942,63 @@ window.addEventListener('unhandledrejection', function(event) {
         resolve({
           error: `Timeout after ${timeout}ms`,
           output: output,
-          renderedDOM: domContent
+          renderedDOM: domContent,
         });
       }, timeout);
-      
+
       let output = "";
       let domContent = "";
       const messageHandler = (event) => {
         console.log("[DEBUG] Message received from iframe:", event.data);
         if (event.data?.instanceId === instanceId) {
-          if (event.data.type === 'CONSOLE') {
+          if (event.data.type === "CONSOLE") {
             output += `[${event.data.method}] ${event.data.formatted}\n`;
-          } else if (event.data.type === 'SANDBOX_COMPLETE') {
+          } else if (event.data.type === "SANDBOX_COMPLETE") {
             console.log("[DEBUG] Iframe SANDBOX_COMPLETE received with rendered DOM state");
             domContent = event.data.renderedDOM || "";
             cleanup();
             resolve({
               output: event.data.output || output,
-              renderedDOM: domContent
+              renderedDOM: domContent,
             });
-          } else if (event.data.type === 'SANDBOX_ERROR') {
+          } else if (event.data.type === "SANDBOX_ERROR") {
             console.error("[DEBUG] Iframe SANDBOX_ERROR received:", event.data);
             domContent = event.data.renderedDOM || "";
             cleanup();
             resolve({
               error: event.data.error,
               output: output,
-              renderedDOM: domContent
+              renderedDOM: domContent,
             });
           }
         }
       };
-      window.addEventListener('message', messageHandler);
+      window.addEventListener("message", messageHandler);
       const cleanup = () => {
         clearTimeout(tid);
-        window.removeEventListener('message', messageHandler);
-        if (iframe.parentNode) { iframe.parentNode.removeChild(iframe); }
+        window.removeEventListener("message", messageHandler);
+        if (iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe);
+        }
       };
-      
+
       try {
         console.log("[DEBUG] Writing HTML to iframe document.");
         iframeDoc.open();
         iframeDoc.write(htmlContent);
         console.log("[DEBUG] Injecting communication script into iframe.");
-        const comScriptEl = iframeDoc.createElement('script');
+        const comScriptEl = iframeDoc.createElement("script");
         comScriptEl.textContent = comScript;
         iframeDoc.head.appendChild(comScriptEl);
-        
+
         console.log("[DEBUG] Injecting utility script for DOM and console reporting");
-        const utilScriptEl = iframeDoc.createElement('script');
+        const utilScriptEl = iframeDoc.createElement("script");
         utilScriptEl.textContent = utilityScript;
         iframeDoc.head.appendChild(utilScriptEl);
-        
+
         console.log("[DEBUG] Injecting combined module script into iframe.");
-        const moduleScriptEl = iframeDoc.createElement('script');
-        moduleScriptEl.setAttribute('type', 'module');
+        const moduleScriptEl = iframeDoc.createElement("script");
+        moduleScriptEl.setAttribute("type", "module");
         moduleScriptEl.textContent = combinedCode;
         console.log("[DEBUG] Iframe combined module script content:\n", combinedCode);
         iframeDoc.body.appendChild(moduleScriptEl);
@@ -898,14 +1010,12 @@ window.addEventListener('unhandledrejection', function(event) {
         resolve({
           error: `Error: ${err.message || String(err)}`,
           output: output,
-          renderedDOM: ""
+          renderedDOM: "",
         });
       }
     });
   }
 }
-
-
 
 /**
  * Returns the text content of a document
@@ -1022,19 +1132,19 @@ export function getClientContext() {
   const time = timeFormatter.format(now);
   const memory = deviceMemory >= 8 ? "greater than 8 GB" : `approximately ${deviceMemory} GB`;
   const getFileContents = (file) => localStorage.getItem("file:" + file) || localStorage.setItem("file:" + file, "") || "";
-  const filenames = new Array(localStorage.length).fill(0).map((_, i) => localStorage.key(i)).filter(e => e.startsWith('file:')).map(e => e.replace('file:', ''));
-  const main = [
-    "_profile.txt",
-    "_memory.txt",
-    "_workspace.txt",
-    "_knowledge.txt",
-    "_plan.txt",
-    "_heuristics.txt",
-  ].map((file) => ({ file, contents: getFileContents(file) }));
-  main.push({filenames});
-  main.push({important: customContext})
-  main.push({description: "the filenames key contains the list of files. please review the items under 'important' carefully"})
-  return { main: JSON.stringify(main, null, 2),time, language, platform, memory, hardwareConcurrency, timeFormat };
+  const filenames = new Array(localStorage.length)
+    .fill(0)
+    .map((_, i) => localStorage.key(i))
+    .filter((e) => e.startsWith("file:"))
+    .map((e) => e.replace("file:", ""));
+  const main = ["_profile.txt", "_memory.txt", "_workspace.txt", "_knowledge.txt", "_plan.txt", "_heuristics.txt"].map((file) => ({
+    file,
+    contents: getFileContents(file),
+  }));
+  main.push({ filenames });
+  main.push({ important: customContext });
+  main.push({ description: "the filenames key contains the list of files. please review the items under 'important' carefully" });
+  return { main: JSON.stringify(main, null, 2), time, language, platform, memory, hardwareConcurrency, timeFormat };
 }
 
 /**
@@ -1291,7 +1401,6 @@ export function parseStreamingJson(incompleteJson) {
     return incompleteJson;
   }
 }
-
 
 /**
  * Reads a file as text, arrayBuffer, or dataURL

@@ -28,7 +28,12 @@ export const tools = [
               type: "string",
               description: "Full webpage URL (including http:// or https://).",
             },
+            topic: {
+              type: "string",
+              description: "Brief description of the content or topic being analyzed. Please provide a concise and specific summary of the content to be extracted. For example, do not use 'summary of content'. Instead, be more specific and use terms and concepts likely to be found in the content.",
+            }
           },
+          required: ["url", "topic"],
         },
       },
     },
