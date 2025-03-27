@@ -90,28 +90,48 @@ async function fetchProxy(url, requestInit = {}) {
   }
 }
 
+async function searchGov(query, maxResults = 20) {
+  let govResults = [];
+  let params = { affiliate: "usagov_all_gov", format: "json", query };
+  let page = 1;
+  let data;
+
+  do {
+    data = await retry(3, 1000, await fetchProxy("https://find.search.gov/search?" + new URLSearchParams({ ...params, page: page++ })).then((r) => r.json()));
+    if (data?.results?.length) {
+      govResults.push(...data.results);
+    } else {
+      break;
+    }
+  } while (govResults.length < Math.min(data.total, maxResults));
+
+  return govResults.slice(0, maxResults);
+}
+
+
 /**
  * Searches usa.gov for the given query
  * @param {string} query - The search term
  * @param {number} maxResults - Maximum results to return (default 100)
  * @returns {Promise<Array>} - Array of search results
  */
-export async function search({ query, maxResults = 100 }) {
-  const allResults = [];
-  const params = { affiliate: "usagov_all_gov", format: "json", query };
-  let page = 1;
-  let data;
-
-  do {
-    data = await fetchProxy("https://find.search.gov/search?" + new URLSearchParams({ ...params, page: page++ })).then((r) => r.json());
-    if (data?.results?.length) {
-      allResults.push(...data.results);
-    } else {
-      break;
-    }
-  } while (allResults.length < Math.min(data.total, maxResults));
-
-  return allResults.slice(0, maxResults);
+export async function search({ query, maxResults = 20 }) {
+  const response = await fetch("/api/search?" + new URLSearchParams({ q: query })).then((r) => r.json());
+  const extract = r => ({
+    url: r.url,
+    title: r.title,
+    description: r.description,
+    extra_snippets: r.extra_snippets,
+    age: r.age,
+    page_age: r.page_age,
+    article: r.article,
+  });
+  const results = {
+    web: response.web?.web?.results?.map(extract),
+    news: response.news?.results?.map(extract),
+  }
+  console.log("Search results:", results);
+  return results;
 }
 
 /**
@@ -282,7 +302,7 @@ export async function queryDocument(document, query) {
 
 export async function queryDocumentWithModel(document, topic, model = "us.anthropic.claude-3-5-haiku-20241022-v1:0") {
   document = truncate(document, 750_000); // limit document size to 750k characters (upper limit of the model)
-  const prompt = `Please analyze the document below and extract the exact passages that most precisely address the topic. If there are no matches (eg: the topic is too generic), simply provide a summary of the entire document, with a table of contents. Follow these instructions in order:
+  const prompt = `Please analyze the document below and extract the exact passages that most precisely address the topic. If there are no matches (eg: the topic is too generic), simply provide a comprehensive summary of the entire document, including a table of contents and index. Follow these instructions in order:
 
 1. FIRST, create a structured table of contents (TOC) for the document, including:
     - Main section titles and subtopics
@@ -321,13 +341,22 @@ Document: ${document}`;
 export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)") {
   return str.length > maxLength ? str.slice(0, maxLength) + suffix : str;
 }
-
+window.browse = browse;
 /**
  * Returns the content of a website as text
  * @param {string} url
  * @returns {Promise<string>}
  */
 export async function browse({ url, topic }) {
+  // if the document is a plain html file, use the api
+  const isBinaryDoc = url.includes('.pdf') || url.includes('.doc') || url.includes('.docx');
+  if (!isBinaryDoc) {
+    const id = crypto.randomUUID();
+    const html = await fetch('/api/browse?' + new URLSearchParams({ url, id })).then(r => r.text());
+    const results = await renderHtml(html);
+    return sanitizeHTML(results);
+  }
+  // otherwise, use the fetchProxy
   const response = await fetchProxy(url);
   const bytes = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(bytes);
@@ -341,7 +370,7 @@ export async function browse({ url, topic }) {
     results = sanitizeHTML(html);
   }
   results = await parseDocument(bytes, mimetype, url);
-  if (results.length < 100_000) {
+  if (results.length < 10_000) {
     return results;
   }
   return await queryDocumentWithModel(results, topic);
