@@ -68,7 +68,7 @@ export function useSubmitMessage() {
           body: JSON.stringify({
             model,
             system: systemPrompt(getClientContext()),
-            thoughtBudget: reasoningMode ? 4000 : 0,
+            thoughtBudget: reasoningMode ? 64_000 : 0,
             messages: messages(),
             tools,
             stream: true,
@@ -104,10 +104,29 @@ export function useSubmitMessage() {
               const { delta, contentBlockIndex } = contentBlockDelta;
               const { text, toolUse, reasoningContent } = delta;
               if (reasoningContent) {
-                if (!assistantMessage.content[contentBlockIndex]?.reasoningContent?.text) {
-                  assistantMessage.content[contentBlockIndex] = { reasoningContent: { text: "" } };
+                if (!assistantMessage.content[contentBlockIndex]?.reasoningContent) {
+                  assistantMessage.content[contentBlockIndex] = {
+                    reasoningContent: {
+                      reasoningText: {
+                        text: "",
+                        signature: "",
+                      },
+                      redactedContent: undefined
+                  } };
                 }
-                assistantMessage.content[contentBlockIndex].reasoningContent.text += reasoningContent.text;
+                if (reasoningContent.text) {
+                  assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText.text += reasoningContent.text;
+                }
+                else if (reasoningContent.signature) {
+                  assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText.signature += reasoningContent.signature
+                }
+                else if (reasoningContent.redactedContent) {
+                  if (!assistantMessage.content[contentBlockIndex].reasoningContent.redactedContent) {
+                    assistantMessage.content[contentBlockIndex].reasoningContent.redactedContent = "";
+                  }
+                  assistantMessage.content[contentBlockIndex].reasoningContent.redactedContent += reasoningContent.redactedContent;
+                  delete assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText;
+                }
               } else if (text) {
                 if (!assistantMessage.content[contentBlockIndex]?.text) {
                   assistantMessage.content[contentBlockIndex] = { text: "" };
