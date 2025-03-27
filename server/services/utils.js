@@ -3,7 +3,6 @@ import { inspect } from "util";
 export const log = (value) => console.log(inspect(value, { depth: null, colors: true, compact: false, breakLength: 120 }));
 
 async function braveRequest(url, opts = {}, apiKey = process.env.BRAVE_SEARCH_API_KEY) {
-  console.log(url, opts, apiKey);
   const response = await fetch(url, {
     headers: {
       "Accept": "application/json",
