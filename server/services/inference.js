@@ -49,7 +49,7 @@ export async function runModel(
   const client = new BedrockRuntimeClient();
   const system = [{ text: systemPrompt }];
   const toolConfig = tools.length > 0 ? { tools } : undefined;
-  const inferenceConfig = { maxTokens: 128_000 };
+  const inferenceConfig = thoughtBudget > 0 ? { maxTokens: 128_000 } : undefined;
   const performanceConfig = { latency: modelId.includes("haiku") ? "optimized" : "standard" };
   const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
   const additionalModelRequestFields = thoughtBudget > 0 ? { thinking } : undefined;
