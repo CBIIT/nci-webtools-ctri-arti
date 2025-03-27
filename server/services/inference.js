@@ -49,10 +49,11 @@ export async function runModel(
   const client = new BedrockRuntimeClient();
   const system = [{ text: systemPrompt }];
   const toolConfig = tools.length > 0 ? { tools } : undefined;
+  const inferenceConfig = { maxTokens: 128_000 };
   const performanceConfig = { latency: modelId.includes("haiku") ? "optimized" : "standard" };
   const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
-  const additionalModelRequestFields = thoughtBudget > 0 ? { thinking, "anthropic-beta": "output-128k-2025-02-19" } : undefined;
-  const input = { modelId, messages, system, toolConfig, performanceConfig, additionalModelRequestFields };
+  const additionalModelRequestFields = thoughtBudget > 0 ? { thinking } : undefined;
+  const input = { modelId, messages, system, toolConfig, inferenceConfig, performanceConfig, additionalModelRequestFields };
 
   const command = stream ? new ConverseStreamCommand(input) : new ConverseCommand(input);
   const response = await client.send(command);
