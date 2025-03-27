@@ -8,6 +8,7 @@ export default function Message({ message, messages = [], active = false, defaul
   const getToolResult = (messages, toolUseId) =>
     messages?.find((m) => m.content?.[0]?.toolResult?.toolUseId === toolUseId)?.content[0].toolResult?.content[0]?.json?.results;
   const renderMessageContent = (c, m) => m.role === "user" ? ({innerText: c.text.trim()}) : ({innerHTML: parse(c.text)?.trim()});
+
   return html`
     <div class="d-flex flex-wrap position-relative">
       ${() =>
@@ -24,10 +25,20 @@ export default function Message({ message, messages = [], active = false, defaul
                 ▷
               </button>
             `;
-          } else if (c.toolUse) {
+          } 
+
+          else if (c.reasoningContent?.reasoningText?.text) {
             return html`
-              <span class=${[defaultClass, "w-100 text-prewrap overflow-auto bg-white"].join(" ")} style="max-height: 200px">
-                <pre class="mb-0 text-muted">
+              <span class=${[defaultClass, "w-100overflow-auto bg-white"].join(" ")} style="max-height: 200px">
+                <pre class="mb-0 text-prewrap text-muted">Internal Thoughts: ${c.reasoningContent.reasoningText.text}</pre>
+              </span>
+            `;
+          }
+          
+          else if (c.toolUse) {
+            return html`
+              <span class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
+                <pre class="mb-0 text-prewrap text-muted">
                 ${[
                     [c.toolUse.name, stringify(c.toolUse.input)].join(" "),
                     stringify(getToolResult(messages, c.toolUse.toolUseId))?.replace(/[]/g, " ")?.trim(),
@@ -35,8 +46,7 @@ export default function Message({ message, messages = [], active = false, defaul
                     .filter(Boolean)
                     .join("\n")
                     .trim()}
-                </pre
-                >
+                </pre>
               </span>
             `;
           }
