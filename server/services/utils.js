@@ -3,6 +3,7 @@ import { inspect } from "util";
 export const log = (value) => console.log(inspect(value, { depth: null, colors: true, compact: false, breakLength: 120 }));
 
 async function braveRequest(url, opts = {}, apiKey = process.env.BRAVE_SEARCH_API_KEY) {
+  console.log(url, opts, apiKey);
   const response = await fetch(url, {
     headers: {
       "Accept": "application/json",
@@ -26,27 +27,21 @@ export async function braveSearch(opts, apiKey = process.env.BRAVE_SEARCH_API_KE
       delete opts[key];
     }
   }
-  Object.assign(opts, {
-    summary: false,
-    extra_snippets: false,
-  });
 
-  const newsUrl = `https://api.search.brave.com/res/v1/news/search?${new URLSearchParams(opts)}`;
-  const news = await braveRequest(newsUrl);
-
-  const searchUrl = `https://api.search.brave.com/res/v1/web/search?${new URLSearchParams(opts)}`;
-  const search = await braveRequest(searchUrl);
-
-  if (search.summarizer) {
-    const opts = { key: search.summarizer.key };
+  // don't parallelize requests to avoid rate limiting
+  const results = {};
+  for await (const key of ["web", "news"]) {
+    const url = `https://api.search.brave.com/res/v1/${key}/search?${new URLSearchParams(opts)}`;
+    results[key] = await braveRequest(url, {}, apiKey);
+  }
+  
+  if (results.web.summarizer) {
+    const opts =  results.web.summarizer;
     const summarizerUrl = `https://api.search.brave.com/res/v1/summarizer/search?${new URLSearchParams(opts)}`;
-    data.summary = await braveRequest(summarizerUrl);
+    results.summary = await braveRequest(summarizerUrl, {}, apiKey);
   }
 
-  return {
-    news,
-    search,
-  };
+  return results;
 }
 
 /**
