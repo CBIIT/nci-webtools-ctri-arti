@@ -255,26 +255,31 @@ export async function queryDocument(document, query) {
 }
 
 export async function queryDocumentWithModel(document, topic, model = "us.anthropic.claude-3-5-haiku-20241022-v1:0") {
-  document = truncate(document, 750_000); // limit document size to 750k characters (upper limit of the model)
-  const prompt = `Please analyze the document below and extract the exact passages that most precisely address the topic. If there are no matches (eg: the topic is too generic), simply provide a comprehensive summary of the entire document, including a table of contents and index. Follow these instructions in order:
+  document = truncate(document, 500_000);
+  const prompt = `Answer this question about the document: "${topic}"
 
-1. FIRST, create a structured table of contents (TOC) for the document, including:
-    - Main section titles and subtopics
-    - Page numbers or section markers if available
-    - Key themes or concepts covered in each section
-    
-2. SECOND, extract exact passages from the document that specifically address the topic/query, following these guidelines:
-    - Use ONLY information contained in the document
-    - Extract exact quotes, maintaining original wording and formatting
-    - For each extracted passage, include the section/location where it appears
-    - Explain briefly why this passage specifically answers the topic/query
-    - Maintain all citations or references from the original text
+CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text.
 
-3. If no passages directly address the topic/query, identify the most relevant related information
+Your response MUST:
+1. Include EXACT quotes from the document with precise location references (page/section/paragraph) BEFORE any analysis or explanation
+2. Use quotation marks for ALL extracted text
+3. Never paraphrase or summarize when direct quotes are available
+4. Clearly indicate when information requested is not in the document
+5. Never attempt to fill gaps with general knowledge or assumptions
 
-Topic/Query: "${topic}"
+If the document doesn't contain information relevant to the question:
+- State this explicitly: "The document does not contain information about [topic]"
+- Do not provide alternative information or guesses
+- Do not use external knowledge
+
+VERIFICATION STEPS (perform these before finalizing your answer):
+- Double-check that every statement is backed by an exact quote
+- Verify all quotes match the original text word-for-word
+- Confirm all location references are accurate
+- Ensure no information is presented that isn't directly from the document
 
 Document: ${document}`;
+
   const messages = [{ role: "user", content: [{ text: prompt }] }];
   const response = await fetch("/api/model/run", {
     method: "POST",
@@ -307,8 +312,12 @@ export async function browse({ url, topic }) {
   if (!isBinaryDoc) {
     const id = crypto.randomUUID();
     const html = await fetch('/api/browse?' + new URLSearchParams({ url, id })).then(r => r.text());
-    const results = await renderHtml(html);
-    return sanitizeHTML(results);
+    const results = sanitizeHTML(html);
+    if (results.length < 10_000) {
+      return results;
+    } else {
+      return await queryDocumentWithModel(results, topic);
+    }
   }
   // otherwise, use the fetchProxy
   const response = await fetchProxy(url);
