@@ -4,10 +4,12 @@ import multer from "multer";
 import { runModel, processDocuments } from "./inference.js";
 import { proxyMiddleware } from "./middleware.js";
 import { braveSearch as search } from "./utils.js";
+import { getSession, cleanupSessions, resetBrowser } from "./browser.js";
 
 const api = Router();
 const fieldSize = process.env.UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb
 const upload = multer({ limits: { fieldSize } });
+setInterval(cleanupSessions, 60 * 60 * 1000);
 
 api.use(cors());
 api.use(json({ limit: fieldSize }));
@@ -20,6 +22,47 @@ api.all("/proxy/*url", proxyMiddleware);
 
 api.get("/search", async (req, res) => {
   res.json(await search(req.query));
+});
+
+api.all("/browse", async (req, res) => {
+  const { url, id } = { ...req.query, ...req.body };
+
+  if (!url) {
+    return res.status(400).json({ error: "URL is required" });
+  }
+
+  if (!id) {
+    return await proxyMiddleware(req, res);
+  }
+
+  const session = await getSession(id);
+
+  await session.page.goto(url, {
+    waitUntil: "networkidle2",
+    timeout: 60000,
+  });
+
+  const html = await session.page.content();
+  return res.end(html);
+});
+
+api.all("/browse/run", async (req, res) => {
+  const { code, id } = { ...req.query, ...req.body };
+
+  if (!code || !id) {
+    return res.status(400).json({ error: "Code and id are required" });
+  }
+
+  const session = await getSession(id);
+  const result = await session.page.evaluate(code);
+
+  return res.json({ result });
+});
+
+// todo: implement authorization for this endpoint
+api.get("/browse/cleanup", async (req, res) => {
+  await resetBrowser();
+  return res.json({ message: "Browser and sessions reset successfully" });
 });
 
 api.all("/model/run", async (req, res) => {
