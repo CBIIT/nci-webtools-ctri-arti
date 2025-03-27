@@ -30,8 +30,7 @@ export const tools = [
             },
             topic: {
               type: "string",
-              description:
-                "Brief description of the content or topic being analyzed. Please provide a concise and specific summary of the content to be extracted. For example, do not use 'summary of content'. Instead, be more specific and use terms and concepts likely to be found in the content. Start with a 'table of contents' query and work towards more specific queries/terms that address the main request.",
+              description: "The specific question or information need about the document. Ask clear, focused questions that the document might answer. Start with basic structural questions (e.g., 'What are the main sections of this document?') before asking about specific content. Phrase questions precisely using terminology likely found in the document. For best results, ask one specific question per query rather than multiple questions or vague requests."
             },
           },
           required: ["url", "topic"],
