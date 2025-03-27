@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node --env-file .env server.js",
     "start:dev": "node --env-file .env --watch-path=. server.js",
+    "start:prod": "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99 && npm start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "cert": "openssl req -x509 -newkey rsa:2048 -nodes -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost' -keyout key.tmp -out cert.tmp && cat key.tmp cert.tmp > key.pem && rm key.tmp cert.tmp"
   },
