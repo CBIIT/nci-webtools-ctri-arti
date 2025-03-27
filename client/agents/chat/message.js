@@ -1,7 +1,6 @@
 import html from "solid-js/html";
 import { parse } from "marked";
 import { stringify } from "yaml";
-import { playAudio } from "./utils.js";
 
 export default function Message({ message, messages = [], active = false, defaultClass = "small markdown shadow-sm rounded mb-3 p-2" }) {
   if (!message) return null;
@@ -18,12 +17,6 @@ export default function Message({ message, messages = [], active = false, defaul
               <span
                 class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light" : "w-100 font-serif bg-white"].join(" ")}
                 ...${renderMessageContent(c, message)}></span>
-              <button
-                onClick=${() => playAudio(c.text)}
-                class="position-absolute border-0 p-0 me-1 bg-transparent top-0 end-0"
-                hidden=${message.role === "user" || active || !window.tts}>
-                ▷
-              </button>
             `;
           } 
 

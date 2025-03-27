@@ -3,11 +3,8 @@ import { render } from "solid-js/web";
 import { useSubmitMessage } from "./hooks.js";
 import html from "solid-js/html";
 import Message from "./message.js";
-import { loadTTS } from "./utils.js";
 
 render(() => html`<${Page} />`, window.app);
-loadTTS().then((tts) => (window.tts = tts)); // Load TTS in background
-const registration = await navigator?.serviceWorker?.register("/proxy-sw.js", { scope: "/proxy/" });
 
 export default function Page() {
   const { conversation, updateConversation, conversations, messages, activeMessage, loading, submitMessage } = useSubmitMessage();

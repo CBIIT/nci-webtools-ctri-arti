@@ -1,37 +1,11 @@
-import { KokoroTTS, TextSplitterStream } from "kokoro-js";
 import { Readability } from "@mozilla/readability";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { pipeline, matmul, AutoModel, AutoTokenizer, Tensor } from "@huggingface/transformers";
+import {  matmul, AutoModel, AutoTokenizer, Tensor } from "@huggingface/transformers";
 import mammoth from "mammoth";
 import TurndownService from "turndown";
 import * as pdfjsLib from "pdfjs-dist";
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
-
-window.TOOLS = { search, browse, code, str_replace_editor };
-window.PIPELINE_OPTIONS = navigator.gpu ? { dtype: "fp32", device: "webgpu" } : { dtype: "q8", device: "wasm" };
-window.MODELS = [
-  { task: "model2vec", model: "minishlab/potion-base-8M", options: PIPELINE_OPTIONS },
-  { task: "kokoro-tts", model: "onnx-community/Kokoro-82M-v1.0-ONNX", options: PIPELINE_OPTIONS },
-];
-setTimeout(() => loadPipelines(window.MODELS).then((p) => (window.pipelines = p)), 100);
-
-/**
- * Preloads the required models for the tools
- */
-async function loadPipelines(pipelines) {
-  return Promise.all(
-    pipelines.map((p) => {
-      switch (p.task) {
-        case "model2vec":
-          return createEmbedder(p.model, p.options);
-        case "kokoro-tts":
-          return KokoroTTS.from_pretrained(p.model, p.options);
-        default:
-          return pipeline(p.task, p.model, p.options || {});
-      }
-    })
-  );
-}
+window.TOOLS = { search, browse, code, editor };
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
@@ -90,32 +64,13 @@ async function fetchProxy(url, requestInit = {}) {
   }
 }
 
-async function searchGov(query, maxResults = 20) {
-  let govResults = [];
-  let params = { affiliate: "usagov_all_gov", format: "json", query };
-  let page = 1;
-  let data;
-
-  do {
-    data = await retry(3, 1000, await fetchProxy("https://find.search.gov/search?" + new URLSearchParams({ ...params, page: page++ })).then((r) => r.json()));
-    if (data?.results?.length) {
-      govResults.push(...data.results);
-    } else {
-      break;
-    }
-  } while (govResults.length < Math.min(data.total, maxResults));
-
-  return govResults.slice(0, maxResults);
-}
-
-
 /**
- * Searches usa.gov for the given query
+ * Searches for the given query
  * @param {string} query - The search term
  * @param {number} maxResults - Maximum results to return (default 100)
  * @returns {Promise<Array>} - Array of search results
  */
-export async function search({ query, maxResults = 20 }) {
+export async function search({ query }) {
   const response = await fetch("/api/search?" + new URLSearchParams({ q: query })).then((r) => r.json());
   const extract = r => ({
     url: r.url,
@@ -130,7 +85,6 @@ export async function search({ query, maxResults = 20 }) {
     web: response.web?.web?.results?.map(extract),
     news: response.news?.results?.map(extract),
   }
-  console.log("Search results:", results);
   return results;
 }
 
@@ -150,7 +104,7 @@ export async function search({ query, maxResults = 20 }) {
  * @param {string} [options.device="wasm" | "webgpu"] - Device (defaults to "webgpu" if available, otherwise "wasm")
  * @returns {Promise<(texts: string[]) => Promise<number[][]>>} - Function that generates embeddings
  */
-async function createEmbedder(model_name = "minishlab/potion-base-8M", options = {}) {
+export async function createEmbedder(model_name = "minishlab/potion-base-8M", options = {}) {
   const {
     model_type = "model2vec",
     model_revision = "main",
@@ -341,7 +295,7 @@ Document: ${document}`;
 export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)") {
   return str.length > maxLength ? str.slice(0, maxLength) + suffix : str;
 }
-window.browse = browse;
+
 /**
  * Returns the content of a website as text
  * @param {string} url
@@ -379,7 +333,7 @@ export async function browse({ url, topic }) {
 }
 
 /**
- * str_replace_editor function with improved newline handling
+ * editor function with newline handling
  *
  * @param {Object} params - The tool parameters
  * @param {string} params.command - Command type (view, str_replace, create, insert, undo_edit)
@@ -392,7 +346,7 @@ export async function browse({ url, topic }) {
  * @param {Object} [storage] - Storage interface with getItem, setItem methods
  * @returns {string} - Result message
  */
-function str_replace_editor(params, storage = localStorage) {
+function editor(params, storage = localStorage) {
   // Validate the required parameters for all commands
   const { command, path } = params;
   if (!path) return "Error: File path is required";
@@ -1209,91 +1163,6 @@ export function getClientContext() {
   main.push({ filenames });
   main.push({ description: "the filenames key contains the list of files. please review the items under 'important' carefully" });
   return { main: JSON.stringify(main, null, 2), time, language, platform, memory, hardwareConcurrency, timeFormat };
-}
-
-/**
- * Plays audio from text using the TTS model
- * @param {string} text - The text to convert to audio
- * @param {string} voice - The voice to use for TTS
- * @param {string} cancelKey - The key to cancel audio playback
- * @returns {boolean} - True if successful, false if an error occurred
- */
-export async function playAudio(text, voice = "af_heart", cancelKey = "Escape") {
-  const tts = await loadTTS();
-  if (!tts) return false;
-  if (!text) return true; // TTS loaded, nothing to play - success
-  const splitter = new TextSplitterStream();
-  const audioStream = tts.stream(splitter, { voice });
-  const textSplitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 300,
-    chunkOverlap: 0,
-    keepSeparator: true,
-  });
-  const textChunks = await textSplitter.splitText(text.replace(/\n/g, ".").replace(/\.+/g, "."));
-  for (const chunk of textChunks) {
-    splitter.push(chunk);
-  }
-  splitter.close();
-
-  let shouldStop = false;
-  let currentAudio = null;
-
-  function handleKeydown(e) {
-    if (e.key === cancelKey) {
-      shouldStop = true;
-      currentAudio?.pause();
-    }
-  }
-
-  document.addEventListener("keydown", handleKeydown);
-
-  try {
-    // Process each audio chunk from the stream.
-    for await (const { audio } of audioStream) {
-      if (shouldStop) break;
-
-      const url = URL.createObjectURL(audio.toBlob());
-
-      // Play the current audio chunk and wait until it ends.
-      await new Promise((resolve, reject) => {
-        const audioEl = new Audio(url);
-        currentAudio = audioEl;
-        audioEl.play().catch(reject);
-        audioEl.onended = () => {
-          audioEl.remove();
-          URL.revokeObjectURL(url);
-          resolve();
-        };
-        audioEl.onerror = (err) => {
-          URL.revokeObjectURL(url);
-          reject(err);
-        };
-      });
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Audio playback error:", error);
-    return false;
-  } finally {
-    document.removeEventListener("keydown", handleKeydown);
-  }
-}
-
-/**
- * Loads the TTS model
- * @param {string} modelId - The model ID to load
- * @param {object} modelOptions - The model options
- * @returns {Promise<KokoroTTS>} - The loaded TTS model
- */
-export async function loadTTS(modelId = "onnx-community/Kokoro-82M-v1.0-ONNX", modelOptions = { dtype: "fp32", device: "webgpu" }) {
-  if (!navigator.gpu) {
-    window.TTS_LOADED = false;
-    return false;
-  }
-  const tts = await KokoroTTS.from_pretrained(modelId, modelOptions);
-  window.TTS_LOADED = true;
-  return tts;
 }
 
 /**

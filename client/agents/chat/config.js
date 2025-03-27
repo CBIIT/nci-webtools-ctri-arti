@@ -82,7 +82,7 @@ export const tools = [
   },
   {
     toolSpec: {
-      name: "str_replace_editor",
+      name: "editor",
       description:
         "Examine and modify text files with precise editing capabilities. Use this tool to view file contents, make targeted text replacements, create new files, insert content at specific locations, and undo previous edits.\n\n**IMPORTANT FOR MULTI-LINE TEXT:**\n- When working with multi-line text in parameters like `old_str`, `new_str`, or `file_text`, use literal line breaks in your JSON values.\n- For `str_replace` command, the text to replace must exist exactly once in the file, including all line breaks.\n- The old_str parameter cannot be empty for str_replace operations.\n",
       inputSchema: {
@@ -111,7 +111,7 @@ export const tools = [
             old_str: {
               type: "string",
               description:
-                "The text to replace (must match exactly one location). For multi-line text, use literal line breaks in your JSON values. Required for 'str_replace' command and cannot be empty. To replace empty content, use insert_line instead.",
+                "The text to replace (must match exactly one location). ONLY use this to replace existing text. To insert a new line, simply use new_str. For multi-line text, use literal line breaks in your JSON values. Required for 'str_replace' command and cannot be empty. To replace empty content, use insert_line instead.",
             },
             new_str: {
               type: "string",
@@ -230,5 +230,3 @@ ${context.main}
 Ada is now being connected with a person.  
 `;
 }
-
-// Please note that this system is designed specifically for HHS personnel, particularly those dealing with the current Reductions in Force (RIF) crisis and navigating the evolving federal guidance landscape. They should be at the forefront of your considerations when providing information or assistance.
