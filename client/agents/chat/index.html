@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base href="../../" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Research Optimizer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "@duckdb/duckdb-wasm": "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/+esm",  
+          "@langchain/textsplitters": "https://cdn.jsdelivr.net/npm/@langchain/textsplitters@0.1.0/+esm",
+          "@mozilla/readability": "https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/+esm",
+          "@huggingface/transformers": "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.0/+esm",
+          "idb": "https://cdn.jsdelivr.net/npm/idb@8.0.2/+esm",
+          "kokoro-js": "https://cdn.jsdelivr.net/npm/kokoro-js@1.2.0/+esm",
+          "mammoth": "https://cdn.jsdelivr.net/npm/mammoth@1.9.0/+esm",
+          "marked": "https://cdn.jsdelivr.net/npm/marked@15.0.6/+esm",
+          "pdfjs-dist": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/+esm",
+          "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/dist/solid.min.js",
+          "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/html/dist/html.min.js",
+          "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/store/dist/store.min.js",
+          "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/web/dist/web.min.js",
+          "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+          "turndown": "https://cdn.jsdelivr.net/npm/turndown@7.2.0/+esm",
+          "unpdf": "https://cdn.jsdelivr.net/npm/unpdf@0.12.1/+esm",
+          "yaml": "https://cdn.jsdelivr.net/npm/yaml@2.5.1/+esm"
+        }
+      }
+    </script>
+    <script src="/components/dna-spinner.js" type="module"></script>
+  </head>
+  <body class="vh-100 bg-lighter">
+    <div class="h-100 d-flex flex-column" id="app"></div>
+    <script type="module" src="agents/chat/index.js"></script>
+  </body>
+</html>
