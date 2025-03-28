@@ -32,7 +32,6 @@ export default function Page() {
       form.inputFiles.value = "";
     };
     await submitMessage({ message, inputFiles, reasoningMode, model, reset });
-    
   }
 
   const footerLinks = [
@@ -96,7 +95,6 @@ export default function Page() {
       </div>
     </aside>
 
-    
     <main class="container d-flex flex-column flex-grow-1 mb-3 position-relative">
       <div class="flex-grow-1 py-3">
         <div class="text-center my-5 font-serif" hidden=${() => messages().length > 0}>

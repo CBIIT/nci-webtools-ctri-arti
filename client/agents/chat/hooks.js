@@ -5,11 +5,11 @@ import { getClientContext, autoscroll } from "./utils.js";
 
 export function useSubmitMessage() {
   const [messages, setMessages] = createSignal([]);
-  const [conversation, setConversation] = createSignal({id: null, title: ""});
+  const [conversation, setConversation] = createSignal({ id: null, title: "" });
   const [conversations, setConversations] = createSignal([]);
   const [activeMessage, setActiveMessage] = createSignal(null);
   const [loading, setLoading] = createSignal(false);
-  const updateConversation = (c) => setConversation((prev) => c ? ({ ...prev, ...c }) : null);
+  const updateConversation = (c) => setConversation((prev) => (c ? { ...prev, ...c } : null));
 
   /**
    * Submit a message along with optional files.
@@ -27,7 +27,7 @@ export function useSubmitMessage() {
     };
 
     if (!messages().length) {
-      setConversation({id: 1, title: message });
+      setConversation({ id: 1, title: message });
     }
 
     if (inputFiles && inputFiles.length) {
@@ -67,10 +67,10 @@ export function useSubmitMessage() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             model,
-            system: systemPrompt(getClientContext()),
-            thoughtBudget: reasoningMode ? 64_000 : 0,
-            messages: messages(),
             tools,
+            system: systemPrompt(getClientContext()),
+            messages: messages(),
+            thoughtBudget: reasoningMode ? 64_000 : 0,
             stream: true,
           }),
         });
@@ -101,8 +101,8 @@ export function useSubmitMessage() {
               assistantMessage.content.push({ toolUse });
               setActiveMessage(structuredClone(assistantMessage));
             } else if (contentBlockDelta) {
-              const { delta, contentBlockIndex } = contentBlockDelta;
-              const { text, toolUse, reasoningContent } = delta;
+              const { contentBlockIndex, delta } = contentBlockDelta;
+              const { reasoningContent, text, toolUse, } = delta;
               if (reasoningContent) {
                 if (!assistantMessage.content[contentBlockIndex]?.reasoningContent) {
                   assistantMessage.content[contentBlockIndex] = {
@@ -111,19 +111,16 @@ export function useSubmitMessage() {
                         text: "",
                         signature: "",
                       },
-                      redactedContent: undefined
-                  } };
+                      redactedContent: "",
+                    },
+                  };
                 }
                 if (reasoningContent.text) {
                   assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText.text += reasoningContent.text;
-                }
-                else if (reasoningContent.signature) {
-                  assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText.signature += reasoningContent.signature
-                }
-                else if (reasoningContent.redactedContent) {
-                  if (!assistantMessage.content[contentBlockIndex].reasoningContent.redactedContent) {
-                    assistantMessage.content[contentBlockIndex].reasoningContent.redactedContent = "";
-                  }
+                } else if (reasoningContent.signature) {
+                  assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText.signature += reasoningContent.signature;
+                  delete assistantMessage.content[contentBlockIndex].redactedContent;
+                } else if (reasoningContent.redactedContent) {
                   assistantMessage.content[contentBlockIndex].reasoningContent.redactedContent += reasoningContent.redactedContent;
                   delete assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText;
                 }
@@ -144,17 +141,11 @@ export function useSubmitMessage() {
                 setActiveMessage(structuredClone(assistantMessage));
               }
             } else if (stopReason) {
-              // Finalize the message
               setActiveMessage(null);
               setMessages((prev) => [...prev, structuredClone(assistantMessage)]);
               if (stopReason === "tool_use") {
-                setLoading(true);
-                const toolUses = assistantMessage.content
-                  .filter((c) => c.toolUse)
-                  .map((c) => c.toolUse);
-                const toolResults = await Promise.all(
-                  toolUses.map((t) => runTool(t))
-                );
+                const toolUses = assistantMessage.content.filter((c) => c.toolUse).map((c) => c.toolUse);
+                const toolResults = await Promise.all(toolUses.map((t) => runTool(t)));
                 const toolResultsMessage = {
                   role: "user",
                   content: toolResults.map((r) => ({ toolResult: r })),
