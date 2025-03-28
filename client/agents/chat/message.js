@@ -7,6 +7,7 @@ export default function Message({ message, messages = [], active = false, defaul
   const getToolResult = (messages, toolUseId) =>
     messages?.find((m) => m.content?.[0]?.toolResult?.toolUseId === toolUseId)?.content[0].toolResult?.content[0]?.json?.results;
   const renderMessageContent = (c, m) => m.role === "user" ? ({innerText: c.text.trim()}) : ({innerHTML: parse(c.text)?.trim()});
+  const debug = false;
 
   return html`
     <div class="d-flex flex-wrap position-relative">
@@ -22,7 +23,7 @@ export default function Message({ message, messages = [], active = false, defaul
 
           else if (c.reasoningContent?.reasoningText?.text) {
             return html`
-              <span class=${[defaultClass, "w-100overflow-auto bg-white"].join(" ")} style="max-height: 200px">
+              <span class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px" hidden=${!debug}>
                 <pre class="mb-0 text-prewrap text-muted">Internal Thoughts: ${c.reasoningContent.reasoningText.text}</pre>
               </span>
             `;
