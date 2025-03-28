@@ -46,7 +46,7 @@ export default function App() {
   return html`
     <>
 
-    <h1 class="h3 mb-3 d-flex justify-content-between text-primary">
+    <h1 class="h3 my-3 d-flex justify-content-between text-primary">
       ${(selectedWorkspace >= 0 &&
         html`<input
           value=${workspaces?.[selectedWorkspace]?.title}
@@ -75,11 +75,6 @@ export default function App() {
             Return to Workspace Selection
           </button>
         `}
-        ${selectedWorkspace == -1 &&
-        html`<button class="btn btn-sm btn-outline-dark" onClick=${addWorkspace}>
-          <i class="bi bi-plus-lg me-1"></i>
-          Add Workspace
-        </button>`}
       </div>
     </h1>
 
@@ -89,38 +84,66 @@ export default function App() {
         ${workspaces.map(
           (workspace, index) =>
             html`<div class="col-md-3">
-              <div
-                class="card cursor-pointer shadow-hover mb-4"
-                style="border-left: 4px solid steelblue"
-                onClick=${() => setSelectedWorkspace(index)}>
-                <div class="card-body">
-                  <div class="card-title">
-                    <h2 class="h6 text-center text-primary">${workspace?.title}</h2>
-                  </div>
-                  <div class="card-text text-center">
-                    <div class="small text-muted">${pluralizeCount(workspace?.results?.length || 0, "Document")}</div>
-                    <div class="small text-muted">
-                      ${pluralizeCount(
-                        (
-                          workspace?.results
-                            ?.map((result) => result?.results?.usage?.totalTokens || 0)
-                            .reduce((a, b) => a + b, 0) / 1e3
-                        ).toPrecision(2),
-                        "Kilotoken"
-                      )}
-                      <span class="ms-1"
-                        >(${(
-                          workspace?.results
-                            ?.map((result) => result?.results?.usage?.totalTokens || 0)
-                            .reduce((a, b) => a + b, 0) / 1e4
-                        ).toPrecision(2)}%)</span
-                      >
+              <div class="h-100 py-2">
+                <div
+                  class="card cursor-pointer shadow-hover h-100"
+                  style="border-left: 4px solid steelblue"
+                  onClick=${() => setSelectedWorkspace(index)}>
+                  <div class="card-body">
+                    <div class="card-title">
+                      <h2 class="h6 text-center text-primary">${workspace?.title}</h2>
+                    </div>
+                    <div class="card-text text-center">
+                      <div class="small text-muted">${pluralizeCount(workspace?.results?.length || 0, "Document")}</div>
+                      <div class="small text-muted">
+                        ${pluralizeCount(
+                          (
+                            workspace?.results?.map((result) => result?.results?.usage?.totalTokens || 0).reduce((a, b) => a + b, 0) / 1e3
+                          ).toPrecision(2),
+                          "Kilotoken"
+                        )}
+                        <span class="ms-1"
+                          >(${(
+                            workspace?.results?.map((result) => result?.results?.usage?.totalTokens || 0).reduce((a, b) => a + b, 0) / 1e4
+                          ).toPrecision(2)}%)</span
+                        >
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>`
         )}
+        <div class="col-md-3">
+          <div class="h-100 py-2">
+            <div class="card cursor-pointer shadow-hover h-100" style="border-left: 4px solid steelblue" onClick=${addWorkspace}>
+              <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="card-title">
+                  <h2 class="h6 text-center text-primary">+ Add Workspace</h2>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h1 class="h3 my-3 d-flex justify-content-between text-primary">Developer Tools</h1>
+      <div class="row">
+        <div class="col-md-3">
+          <a
+            href="/agents/chat"
+            class="card cursor-pointer shadow-hover mb-4 text-decoration-none"
+            style="border-left: 4px solid steelblue;">
+            <div class="card-body">
+              <div class="card-title">
+                <h2 class="h6 text-center text-primary">Chat</h2>
+              </div>
+              <div class="card-text text-center">
+                <div class="small text-muted fw-normal">Intelligent Assistance</div>
+              </div>
+            </div>
+          </a>
+        </div>
       </div>
     `}
 
@@ -132,10 +155,7 @@ export default function App() {
         selectedWorkspace=${selectedWorkspace}
         setSelectedWorkspace=${setSelectedWorkspace} />`}
       ${selectedWorkspace >= 0 &&
-      html`<${Results}
-        selectedWorkspace=${selectedWorkspace}
-        workspaces=${workspaces}
-        setWorkspaces=${setWorkspaces} />`}
+      html`<${Results} selectedWorkspace=${selectedWorkspace} workspaces=${workspaces} setWorkspaces=${setWorkspaces} />`}
     </div>
   `;
 }
