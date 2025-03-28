@@ -139,7 +139,7 @@ export default function Page() {
           </div>
         </div>
       </form>
-      <small class="text-center text-muted py-1">FedPulse can make mistakes. Please verify responses before taking action.</small>
+      <small class="text-center text-muted py-1">Research Optimizer can make mistakes. Please double-check facts.</small>
     </main>
 
     <footer class="flex-grow-0 small text-center opacity-75 py-3">
