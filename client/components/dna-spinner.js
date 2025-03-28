@@ -57,7 +57,7 @@ export class DNASpinnerComponent extends HTMLElement {
     this.resizeObserver.observe(this);
 
     // Make a deep copy of the default config.
-    this.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    this.config = structuredClone(DEFAULT_CONFIG);
     // Override defaults with any attributes provided.
     this.applyAttributes();
 
