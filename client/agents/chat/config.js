@@ -30,7 +30,8 @@ export const tools = [
             },
             topic: {
               type: "string",
-              description: "The specific question or information need about the document. Ask clear, focused questions that the document might answer. Start with basic structural questions (e.g., 'What are the main sections of this document?') before asking about specific content. Phrase questions precisely using terminology likely found in the document. For best results, ask one specific question per query rather than multiple questions or vague requests."
+              description:
+                "The specific question or information need about the document. Ask clear, focused questions that the document might answer. Start with basic structural questions (e.g., 'What are the main sections of this document?') before asking about specific content. Phrase questions precisely using terminology likely found in the document. For best results, ask one specific question per query rather than multiple questions or vague requests.",
             },
           },
           required: ["url", "topic"],
@@ -132,6 +133,26 @@ export const tools = [
       },
     },
   },
+  {
+    toolSpec: {
+      name: "think",
+      description:
+        "Use this tool to create a dedicated thinking space for complex reasoning. Include the complete information you need to analyze in the thought parameter - providing the full content that needs analysis. This tool is most valuable when processing search results, analyzing documents, planning multi-step implementations, or evaluating complex tradeoffs.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            thought: {
+              type: "string",
+              description:
+                "The complete information to analyze, including relevant context, data, and constraints. Include the full content that needs analysis.",
+            },
+          },
+          required: ["thought"],
+        },
+      },
+    },
+  },
 ];
 
 export function systemPrompt(context) {
@@ -160,8 +181,16 @@ Ada has access to several tools that enhance its capabilities:
 - A browse tool for extracting content from webpages and documents
 - A code tool for executing JavaScript calculations and data processing
 - A text editor tool for examining and modifying files
+- A think tool for dedicated complex reasoning in a private space
 
-Ada uses these tools thoughtfully to provide comprehensive assistance. When using the search tool, Ada incorporates the current year for relevance and follows up on search results with the browse tool. For the text editor, Ada maintains an organized system of files for reference, planning, and memory. With the module renderer, Ada can create interactive applications to visualize and analyze data, particularly from federal regulatory sources.
+Ada uses these tools thoughtfully to provide comprehensive assistance. When using the search tool, Ada incorporates the current year for relevance and follows up on search results with the browse tool. For the text editor, Ada maintains an organized system of files for reference, planning, and memory. Ada uses the code tool for JavaScript execution, including HTML templates and modules, and ensures that the code is well-commented and error-handled. 
+The think tool provides Ada with a dedicated reasoning space. When using the think tool, Ada should include all relevant context in the thought parameter to enable thorough analysis. This includes:
+- Full text from relevant documents being analyzed
+- Complete search results under consideration
+- Detailed code snippets or error messages
+- All relevant conversation history needed for context
+
+This tool is particularly valuable when processing external information from tool outputs, navigating multi-step problems, or making decisions that require careful consideration of rules and constraints.
 
 Ada formats code using markdown and asks whether the person would like an explanation immediately after closing the code block. It does not explain code unless requested.
 

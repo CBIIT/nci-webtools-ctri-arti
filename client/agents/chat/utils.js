@@ -1,11 +1,11 @@
 import { Readability } from "@mozilla/readability";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import {  matmul, AutoModel, AutoTokenizer, Tensor } from "@huggingface/transformers";
+import { matmul, AutoModel, AutoTokenizer, Tensor } from "@huggingface/transformers";
 import mammoth from "mammoth";
 import TurndownService from "turndown";
 import * as pdfjsLib from "pdfjs-dist";
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
-window.TOOLS = { search, browse, code, editor };
+window.TOOLS = { search, browse, code, editor, think };
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
@@ -72,7 +72,7 @@ async function fetchProxy(url, requestInit = {}) {
  */
 export async function search({ query }) {
   const response = await fetch("/api/search?" + new URLSearchParams({ q: query })).then((r) => r.json());
-  const extract = r => ({
+  const extract = (r) => ({
     url: r.url,
     title: r.title,
     description: r.description,
@@ -84,7 +84,7 @@ export async function search({ query }) {
   const results = {
     web: response.web?.web?.results?.map(extract),
     news: response.news?.results?.map(extract),
-  }
+  };
   return results;
 }
 
@@ -271,6 +271,7 @@ If the document doesn't contain information relevant to the question:
 - State this explicitly: "The document does not contain information about [topic]"
 - Do not provide alternative information or guesses
 - Do not use external knowledge
+- Instead, provide a comprehensive summary of the document's contents using the most relevant sections and quotes.
 
 VERIFICATION STEPS (perform these before finalizing your answer):
 - Double-check that every statement is backed by an exact quote
@@ -291,6 +292,22 @@ Document: ${document}`;
 }
 
 /**
+ * Logs thoughts to the _thoughts.txt file
+ * TODO: perform further analyses on thoughts and extract connections between them
+ * 
+ * @param {object} params
+ * @param {string} params.thought - The thought to log
+ */
+export async function think({ thought }) {
+  editor({
+    command: "insert",
+    path: "_thoughts.txt",
+    insert_line: 0,
+    new_str: thought,
+  });
+}
+
+/**
  * Truncates a string to a maximum length and appends a suffix
  * @param {string} str - The string to truncate
  * @param {number} maxLength - The maximum length of the string
@@ -308,10 +325,10 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  */
 export async function browse({ url, topic }) {
   // if the document is a plain html file, use the api
-  const isBinaryDoc = url.includes('.pdf') || url.includes('.doc') || url.includes('.docx');
+  const isBinaryDoc = url.includes(".pdf") || url.includes(".doc") || url.includes(".docx");
   if (!isBinaryDoc) {
     const id = crypto.randomUUID();
-    const html = await fetch('/api/browse?' + new URLSearchParams({ url, id })).then(r => r.text());
+    const html = await fetch("/api/browse?" + new URLSearchParams({ url, id })).then((r) => r.text());
     const results = sanitizeHTML(html);
     if (results.length < 10_000) {
       return results;
