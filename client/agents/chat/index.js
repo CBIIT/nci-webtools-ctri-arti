@@ -125,7 +125,7 @@ export default function Page() {
 
           <div class="input-group w-auto align-items-center">
             <div class="form-check form-switch mb-0 me-1 form-control-sm d-flex align-item-center">
-              <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="reasoningMode" name="reasoningMode" />
+              <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="reasoningMode" name="reasoningMode" checked />
               <label class="form-check-label text-secondary cursor-pointer ps-1" for="reasoningMode" title="Enable Reasoning Mode">
                 ⚙️
                 <span class="visually-hidden">Enable Reasoning Mode</span>
