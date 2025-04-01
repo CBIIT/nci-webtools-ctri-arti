@@ -2,7 +2,7 @@ import { Router, json } from "express";
 import multer from "multer";
 import { runModel, processDocuments } from "./inference.js";
 import { proxyMiddleware } from "./middleware.js";
-import { braveSearch, govSearch } from "./utils.js";
+import { search, renderHtml } from "./utils.js";
 import { getSession, cleanupSessions, resetBrowser } from "./browser.js";
 
 const api = Router();
@@ -20,29 +20,16 @@ api.all("/proxy/*url", proxyMiddleware);
 api.all("/proxy", proxyMiddleware);
 
 api.get("/search", async (req, res) => {
-  const results = await braveSearch(req.query);
-  results.gov = await govSearch(req.query);
-  res.json(results);
+  res.json(await search(req.query));
 });
 
 api.all("/browse", async (req, res) => {
   const { url, id } = { ...req.query, ...req.body };
-
   if (!url) {
     return res.status(400).json({ error: "URL is required" });
   }
-
-  const documentExtensions = [".pdf", ".docx", ".xlsx", ".pptx"];
-  const isDocument = documentExtensions.some((ext) => url.includes(ext));
-
-  if (!id || isDocument) {
-    return await proxyMiddleware(req, res);
-  }
-
-  const session = await getSession(id);
-  await session.page.goto(url, { waitUntil: "networkidle2", timeout: 20000 });
-  const html = await session.page.content();
-  return res.end(html || "");
+  const html = await renderHtml(url, id);
+  return html ? res.end(html) : proxyMiddleware(req, res);
 });
 
 api.all("/browse/run", async (req, res) => {
