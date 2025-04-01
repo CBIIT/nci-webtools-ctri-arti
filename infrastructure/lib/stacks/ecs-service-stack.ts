@@ -1,18 +1,13 @@
 import {
   StackProps,
   Stack,
-  Duration,
-  aws_certificatemanager as cm,
   aws_ec2 as ec2,
-  aws_ecr as ecr,
   aws_ecs as ecs,
   aws_iam as iam,
   aws_logs as logs,
-  aws_route53 as route53,
   aws_elasticloadbalancingv2 as elbv2,
-  aws_secretsmanager as sm,
+  aws_ssm as ssm,
 } from "aws-cdk-lib";
-import { ApplicationLoadBalancedFargateService, ApplicationLoadBalancedServiceRecordType } from "aws-cdk-lib/aws-ecs-patterns";
 import { Construct } from "constructs";
 import { prefix, tier } from "../../config";
 
@@ -37,7 +32,7 @@ export interface EcsServiceStackProps extends StackProps {
         containerPort: number;
       }[];
       environment?: Record<string, string>;
-      secrets?: Record<string, [string, string]>;
+      secrets?: Record<string, string>;
       mountPoints?: [
         {
           sourceVolume: string;
@@ -125,24 +120,27 @@ export class EcsServiceStack extends Stack {
     
     for (let i = 0; i < props.taskDefinition.containers.length; i++) {
       const containerProps = props.taskDefinition.containers[i];
-      const parseSecrets = (secretsObj: Record<string, [string, string]> | undefined) => {
-        if (!secretsObj) return undefined;
-        const secrets: Record<string, ecs.Secret> = {};
-        for (const key in secretsObj) {
-          const [secretName, field] = secretsObj[key];
-          const secret = sm.Secret.fromSecretNameV2(this, `container-${i}-secret-${key}`, secretName);
-          const ecsSecret = ecs.Secret.fromSecretsManager(secret, field);
-          secrets[key] = ecsSecret;
+
+      const secrets: Record<string, ecs.Secret> = {};
+      if (containerProps.secrets) {
+        for (const paramKey in containerProps.secrets) {
+          const parameterLabel = paramKey.toLowerCase().replace(/_/g, "-");
+          const parameterName = `${prefix}/${containerProps.name}/${parameterLabel}`;
+          const stringValue = containerProps.secrets[paramKey];
+          const param = new ssm.StringParameter(this, `secret-${containerProps.name}-${parameterLabel}`, {
+            parameterName,
+            stringValue,
+          });
+          secrets[paramKey] = ecs.Secret.fromSsmParameter(param);
         }
-        return secrets;
-      };
+      }
 
       const container = taskDefinition.addContainer(`container-${i}`, {
         image: ecs.ContainerImage.fromRegistry(containerProps.image),
         containerName: containerProps.name,
         portMappings: containerProps.portMappings ?? [],
         environment: containerProps.environment ?? {},
-        secrets: parseSecrets(containerProps.secrets) ?? {},
+        secrets: secrets ?? {},
         logging: new ecs.AwsLogDriver({
           logGroup,
           streamPrefix: "ecs",
