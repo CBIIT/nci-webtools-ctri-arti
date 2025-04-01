@@ -35,8 +35,8 @@ const config: Config = {
     maxCapacity: 4,
     targetCapacityPercent: 70,
     taskDefinition: {
-      memoryLimitMiB: 4096,
-      cpu: 2048,
+      memoryLimitMiB: 2048,
+      cpu: 1024,
       containers: [
         {
           image: process.env.SERVER_IMAGE || "httpd" || `${account}.dkr.ecr.${region}.amazonaws.com/${prefix}:server-latest`,
