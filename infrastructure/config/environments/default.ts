@@ -52,6 +52,7 @@ const config: Config = {
           secrets: {
             BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY || "",
             DATA_GOV_API_KEY: process.env.DATA_GOV_API_KEY || "",
+            CONGRESS_GOV_API_KEY: process.env.CONGRESS_GOV_API_KEY || "",
             OAUTH_CLIENT_ID: process.env.OAUTH_CLIENT_ID || "",
             OAUTH_CLIENT_SECRET: process.env.OAUTH_CLIENT_SECRET || "",
             OAUTH_DISCOVERY_URL: process.env.OAUTH_DISCOVERY_URL || "",
