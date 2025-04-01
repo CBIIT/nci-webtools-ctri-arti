@@ -1,5 +1,4 @@
 import { Router, json } from "express";
-import cors from "cors";
 import multer from "multer";
 import { runModel, processDocuments } from "./inference.js";
 import { proxyMiddleware } from "./middleware.js";
@@ -11,7 +10,6 @@ const fieldSize = process.env.UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb
 const upload = multer({ limits: { fieldSize } });
 setInterval(cleanupSessions, 60 * 60 * 1000);
 
-api.use(cors());
 api.use(json({ limit: fieldSize }));
 
 api.get("/ping", (req, res) => {
