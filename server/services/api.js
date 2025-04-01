@@ -31,19 +31,17 @@ api.all("/browse", async (req, res) => {
     return res.status(400).json({ error: "URL is required" });
   }
 
-  if (!id) {
+  const documentExtensions = [".pdf", ".docx", ".xlsx", ".pptx"];
+  const isDocument = documentExtensions.some((ext) => url.includes(ext));
+
+  if (!id || isDocument) {
     return await proxyMiddleware(req, res);
   }
 
   const session = await getSession(id);
-
-  await session.page.goto(url, {
-    waitUntil: "networkidle2",
-    timeout: 60000,
-  });
-
+  await session.page.goto(url, { waitUntil: "networkidle2", timeout: 20000 });
   const html = await session.page.content();
-  return res.end(html);
+  return res.end(html || "");
 });
 
 api.all("/browse/run", async (req, res) => {
