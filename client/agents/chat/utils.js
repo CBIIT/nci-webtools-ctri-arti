@@ -84,6 +84,7 @@ export async function search({ query }) {
   const results = {
     web: response.web?.web?.results?.map(extract),
     news: response.news?.results?.map(extract),
+    gov: response.gov?.results,
   };
   return results;
 }
@@ -294,7 +295,7 @@ Document: ${document}`;
 /**
  * Logs thoughts to the _thoughts.txt file
  * TODO: perform further analyses on thoughts and extract connections between them
- * 
+ *
  * @param {object} params
  * @param {string} params.thought - The thought to log
  */
