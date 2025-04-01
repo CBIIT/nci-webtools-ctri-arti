@@ -2,8 +2,22 @@ import puppeteer from "puppeteer";
 
 // Browser state
 let browser = null;
+
+/**
+ * @type {Map<string, { page: puppeteer.Page, lastActivity: number }>}
+ */
 const sessions = new Map();
 
+/**
+ * Retrieves or creates a Puppeteer session for a given session ID.
+ * If the session ID does not exist, a new session is created.
+ * The session is stored in a Map for later retrieval.
+ * The browser instance is launched if it is not already running.
+ * The session is updated with the current timestamp to track activity.
+ * 
+ * @param {string} sessionId 
+ * @returns {Promise<{ page: puppeteer.Page, lastActivity: number }>} The session object containing the Puppeteer page and last activity timestamp.
+ */
 export async function getSession(sessionId) {
   if (!browser) {
     browser = await puppeteer.launch({
