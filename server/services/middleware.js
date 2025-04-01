@@ -51,7 +51,7 @@ export async function proxyMiddleware(req, res, next) {
     // remove problematic headers
     const cleanHeaders = { ...headers };
     ["host", "connection", "content-length"].forEach((h) => delete cleanHeaders[h]);
-    const response = await fetch(url.toString(), {
+    const response = await fetch(getAuthorizedUrl(url), {
       method,
       headers: cleanHeaders,
       body,
@@ -68,4 +68,18 @@ export async function proxyMiddleware(req, res, next) {
     console.error("Proxy error:", error);
     res.status(500).send(`Proxy error: ${error.message}`);
   }
+}
+
+function getAuthorizedUrl(url, env = process.env) {
+  const DATA_GOV_HOSTS = ["api.govinfo.gov"];
+  const CONGRESS_GOV_HOSTS = ["api.congress.gov"];
+
+  if (env.DATA_GOV_API_KEY && DATA_GOV_HOSTS.some((host) => url.hostname.includes(host))) {
+    url.searchParams.append("api_key", env.DATA_GOV_API_KEY);
+  }
+  if (env.CONGRESS_GOV_API_KEY && CONGRESS_GOV_HOSTS.some((host) => url.hostname.includes(host))) {
+    url.searchParams.append("api_key", env.CONGRESS_GOV_API_KEY);
+  }
+  
+  return url.toString();
 }

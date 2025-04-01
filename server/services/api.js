@@ -17,6 +17,7 @@ api.get("/ping", (req, res) => {
 });
 
 api.all("/proxy/*url", proxyMiddleware);
+api.all("/proxy", proxyMiddleware);
 
 api.get("/search", async (req, res) => {
   const results = await braveSearch(req.query);
