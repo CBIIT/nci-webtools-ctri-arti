@@ -24,21 +24,6 @@ services:
         ignore:
           - ./server/node_modules
         
-  client:
-    build:
-      context: .
-      dockerfile: client/Dockerfile
-    ports:
-      - "9000:9000"
-    environment:
-      - PORT=9000
-      - PROXY=http://server:8080
-    develop:
-      watch:
-      - action: sync
-        path: ./client
-        target: /client
-        
   postgres:
     image: pgvector/pgvector:pg16 
     ports:
