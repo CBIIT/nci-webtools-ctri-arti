@@ -70,7 +70,7 @@ export async function proxyMiddleware(req, res, next) {
   }
 }
 
-function getAuthorizedUrl(url, env = process.env) {
+export function getAuthorizedUrl(url, env = process.env) {
   const key = {
     "api.govinfo.gov": env.DATA_GOV_API_KEY,
     "api.congress.gov": env.CONGRESS_GOV_API_KEY,
