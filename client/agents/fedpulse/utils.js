@@ -333,7 +333,7 @@ export async function browse({ url, topic }) {
     const id = crypto.randomUUID();
     const html = await fetch("/api/browse?" + new URLSearchParams({ url, id })).then((r) => r.text());
     const results = sanitizeHTML(html);
-    if (results.length < 10_000) {
+    if (results.length < 10_000 || !topic) {
       return results;
     } else {
       return await queryDocumentWithModel(results, topic);
