@@ -3,7 +3,7 @@ import cors from "cors";
 import multer from "multer";
 import { runModel, processDocuments } from "./inference.js";
 import { proxyMiddleware } from "./middleware.js";
-import { braveSearch as search } from "./utils.js";
+import { braveSearch, govSearch } from "./utils.js";
 import { getSession, cleanupSessions, resetBrowser } from "./browser.js";
 
 const api = Router();
@@ -21,7 +21,9 @@ api.get("/ping", (req, res) => {
 api.all("/proxy/*url", proxyMiddleware);
 
 api.get("/search", async (req, res) => {
-  res.json(await search(req.query));
+  const results = await braveSearch(req.query);
+  results.gov = await govSearch(req.query);
+  res.json(results);
 });
 
 api.all("/browse", async (req, res) => {
