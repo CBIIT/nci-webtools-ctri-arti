@@ -1,5 +1,20 @@
-import mammoth from "mammoth";
-import * as unpdf from "unpdf";
+import { convertToHtml as loadDocx } from "mammoth";
+import { getDocument as loadPdf } from "pdfjs-dist/legacy/build/pdf.mjs";
+
+/**
+ * Retrieves and parses a document from a URL
+ * @param {string} url 
+ * @returns {Promise<string>} extracted text
+ */
+export async function parseUrl(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch URL: ${response.statusText}`);
+  }
+  const buffer = await response.arrayBuffer();
+  const contentType = response.headers.get("Content-Type");
+  return parseDocument(buffer, contentType);
+}
 
 /**
  * Returns the text content of a document
@@ -24,17 +39,24 @@ export async function parseDocument(buffer, mimetype) {
  * @returns {Promise<string>} extracted text
  */
 export async function parseDocx(buffer) {
-  const rawText = await mammoth.extractRawText({ buffer });
-  return rawText.value || "No text found in DOCX";
+  const contents = await loadDocx({ buffer });
+  return contents?.value || "No text found in DOCX";
 }
 
 /**
  * Extracts text from a PDF buffer
- * @param {Buffer} buffer
+ * @param {ArrayBuffer} buffer
  * @returns {Promise<string>} extracted text
  */
-export async function parsePdf(buffer) {
-  const pdf = await unpdf.getDocumentProxy(new Uint8Array(buffer));
-  const results = await unpdf.extractText(pdf, { mergePages: true });
-  return results.text.trim() || "No text found in PDF";
+async function parsePdf(buffer) {
+  const pdf = await loadPdf(buffer).promise;
+  const pagesText = [];
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+    const page = await pdf.getPage(pageNumber);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map((item) => item.str).join(" ");
+    pagesText.push(`Page ${pageNumber}: ${pageText}`);
+  }
+  const content = pagesText.join("\n\n")?.trim();
+  return content || "No text found in PDF";
 }
