@@ -1,42 +1,13 @@
-import { KokoroTTS, TextSplitterStream } from "kokoro-js";
 import { Readability } from "@mozilla/readability";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { pipeline, matmul, AutoModel, AutoTokenizer, Tensor } from "@huggingface/transformers";
+import { matmul, AutoModel, AutoTokenizer, Tensor } from "@huggingface/transformers";
 import mammoth from "mammoth";
 import TurndownService from "turndown";
 import * as pdfjsLib from "pdfjs-dist";
-import { customContext } from "./config.js";
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+window.TOOLS = { search, browse, code, editor, think };
 
-window.TOOLS = { search, browse, code, str_replace_editor, ecfr, federalRegister };
-window.PIPELINE_OPTIONS = navigator.gpu ? { dtype: "fp32", device: "webgpu" } : { dtype: "q8", device: "wasm" };
-window.MODELS = [
-  // { task: "feature-extraction", model: "Alibaba-NLP/gte-modernbert-base", options: PIPELINE_OPTIONS},
-  // { task: "feature-extraction", model: "Xenova/all-MiniLM-L6-v2"},
-  // { task: "feature-extraction", model: "minishlab/potion-base-8M", PIPELINE_OPTIONS},
-  {
-    task: "kokoro-tts",
-    model: "onnx-community/Kokoro-82M-v1.0-ONNX",
-    options: PIPELINE_OPTIONS,
-  },
-];
-setTimeout(() => loadPipelines(window.MODELS).then((p) => (window.pipelines = p)), 100);
-
-/**
- * Preloads the required models for the tools
- */
-async function loadPipelines(pipelines) {
-  return Promise.all(
-    pipelines.map((p) => {
-      switch (p.task) {
-        case "kokoro-tts":
-          return KokoroTTS.from_pretrained(p.model, p.options);
-        default:
-          return pipeline(p.task, p.model, p.options || {});
-      }
-    })
-  );
-}
+import { customContext } from "./config.custom.js";
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
@@ -96,34 +67,34 @@ async function fetchProxy(url, requestInit = {}) {
 }
 
 /**
- * Searches usa.gov for the given query
+ * Searches for the given query
  * @param {string} query - The search term
  * @param {number} maxResults - Maximum results to return (default 100)
  * @returns {Promise<Array>} - Array of search results
  */
-export async function search({ query, maxResults = 100 }) {
-  const allResults = [];
-  const params = { affiliate: "usagov_all_gov", format: "json", query };
-  let page = 1;
-  let data;
-
-  do {
-    data = await fetchProxy("https://find.search.gov/search?" + new URLSearchParams({ ...params, page: page++ })).then((r) => r.json());
-    if (data?.results?.length) {
-      allResults.push(...data.results);
-    } else {
-      break;
-    }
-  } while (allResults.length < Math.min(data.total, maxResults));
-
-  return allResults.slice(0, maxResults);
+export async function search({ query }) {
+  const response = await fetch("/api/search?" + new URLSearchParams({ q: query })).then((r) => r.json());
+  const extract = (r) => ({
+    url: r.url,
+    title: r.title,
+    description: r.description,
+    extra_snippets: r.extra_snippets,
+    age: r.age,
+    page_age: r.page_age,
+    article: r.article,
+  });
+  const results = {
+    web: response.web?.web?.results?.map(extract),
+    news: response.news?.results?.map(extract),
+    gov: response.gov?.results,
+  };
+  return results;
 }
-
 
 /**
  * Creates an embedder function with cached model and tokenizer
- * 
- * @example 
+ *
+ * @example
  * const embed = await createEmbedder("minishlab/potion-base-8M");
  * const embeddings = await embed(["hello", "world"]);
  *
@@ -136,13 +107,13 @@ export async function search({ query, maxResults = 100 }) {
  * @param {string} [options.device="wasm" | "webgpu"] - Device (defaults to "webgpu" if available, otherwise "wasm")
  * @returns {Promise<(texts: string[]) => Promise<number[][]>>} - Function that generates embeddings
  */
-async function createEmbedder(model_name = "minishlab/potion-base-8M", options = {}) {
-  const { 
+export async function createEmbedder(model_name = "minishlab/potion-base-8M", options = {}) {
+  const {
     model_type = "model2vec",
-    model_revision = "main", 
-    tokenizer_revision = "main", 
+    model_revision = "main",
+    tokenizer_revision = "main",
     device = navigator?.gpu ? "webgpu" : undefined, // use webgpu if available
-    dtype = "fp32", 
+    dtype = "fp32",
   } = options;
 
   // Load model and tokenizer once
@@ -156,7 +127,7 @@ async function createEmbedder(model_name = "minishlab/potion-base-8M", options =
   const tokenizer = await AutoTokenizer.from_pretrained(model_name, {
     revision: tokenizer_revision,
   });
-  
+
   /**
    * Generate embeddings for the provided texts
    * @param {string[]} texts - Array of texts to embed
@@ -218,10 +189,10 @@ export async function getEmbeddings(texts = [], query = "", model = "minishlab/p
  * @returns {Promise<number[][]>} - Text embeddings
  */
 export async function embed(texts, model_name = "minishlab/potion-base-8M", options = {}) {
-  const { 
+  const {
     model_type = "model2vec",
-    model_revision = "main", 
-    tokenizer_revision = "main", 
+    model_revision = "main",
+    tokenizer_revision = "main",
     device = navigator?.gpu ? "webgpu" : undefined, // use webgpu if available
     dtype = "fp32",
     raw = false,
@@ -287,26 +258,32 @@ export async function queryDocument(document, query) {
 }
 
 export async function queryDocumentWithModel(document, topic, model = "us.anthropic.claude-3-5-haiku-20241022-v1:0") {
-  document = truncate(document, 750_000); // limit document size to 750k characters (upper limit of the model)
-  const prompt = `Please analyze the document below and extract the exact passages that most precisely address the topic. If there are no matches (eg: the topic is too generic), simply provide a summary of the entire document, with a table of contents. Follow these instructions in order:
+  document = truncate(document, 500_000);
+  const prompt = `Answer this question about the document: "${topic}"
 
-1. FIRST, create a structured table of contents (TOC) for the document, including:
-    - Main section titles and subtopics
-    - Page numbers or section markers if available
-    - Key themes or concepts covered in each section
-    
-2. SECOND, extract exact passages from the document that specifically address the topic/query, following these guidelines:
-    - Use ONLY information contained in the document
-    - Extract exact quotes, maintaining original wording and formatting
-    - For each extracted passage, include the section/location where it appears
-    - Explain briefly why this passage specifically answers the topic/query
-    - Maintain all citations or references from the original text
+CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text.
 
-3. If no passages directly address the topic/query, identify the most relevant related information
+Your response MUST:
+1. Include EXACT quotes from the document with precise location references (page/section/paragraph) BEFORE any analysis or explanation
+2. Use quotation marks for ALL extracted text
+3. Never paraphrase or summarize when direct quotes are available
+4. Clearly indicate when information requested is not in the document
+5. Never attempt to fill gaps with general knowledge or assumptions
 
-Topic/Query: "${topic}"
+If the document doesn't contain information relevant to the question:
+- State this explicitly: "The document does not contain information about [topic]"
+- Do not provide alternative information or guesses
+- Do not use external knowledge
+- Instead, provide a comprehensive summary of the document's contents using the most relevant sections and quotes.
+
+VERIFICATION STEPS (perform these before finalizing your answer):
+- Double-check that every statement is backed by an exact quote
+- Verify all quotes match the original text word-for-word
+- Confirm all location references are accurate
+- Ensure no information is presented that isn't directly from the document
 
 Document: ${document}`;
+
   const messages = [{ role: "user", content: [{ text: prompt }] }];
   const response = await fetch("/api/model/run", {
     method: "POST",
@@ -315,6 +292,22 @@ Document: ${document}`;
   });
   const results = await response.json();
   return results?.output?.message?.content?.[0]?.text || truncate(document);
+}
+
+/**
+ * Logs thoughts to the _thoughts.txt file
+ * TODO: perform further analyses on thoughts and extract connections between them
+ *
+ * @param {object} params
+ * @param {string} params.thought - The thought to log
+ */
+export async function think({ thought }) {
+  editor({
+    command: "insert",
+    path: "_thoughts.txt",
+    insert_line: 0,
+    new_str: thought,
+  });
 }
 
 /**
@@ -334,6 +327,19 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  * @returns {Promise<string>}
  */
 export async function browse({ url, topic }) {
+  // if the document is a plain html file, use the api
+  const isBinaryDoc = url.includes(".pdf") || url.includes(".doc") || url.includes(".docx");
+  if (!isBinaryDoc) {
+    const id = crypto.randomUUID();
+    const html = await fetch("/api/browse?" + new URLSearchParams({ url, id })).then((r) => r.text());
+    const results = sanitizeHTML(html);
+    if (results.length < 10_000) {
+      return results;
+    } else {
+      return await queryDocumentWithModel(results, topic);
+    }
+  }
+  // otherwise, use the fetchProxy
   const response = await fetchProxy(url);
   const bytes = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(bytes);
@@ -347,7 +353,7 @@ export async function browse({ url, topic }) {
     results = sanitizeHTML(html);
   }
   results = await parseDocument(bytes, mimetype, url);
-  if (results.length < 100_000) {
+  if (results.length < 10_000) {
     return results;
   }
   return await queryDocumentWithModel(results, topic);
@@ -356,7 +362,7 @@ export async function browse({ url, topic }) {
 }
 
 /**
- * str_replace_editor function with improved newline handling
+ * editor function with newline handling
  *
  * @param {Object} params - The tool parameters
  * @param {string} params.command - Command type (view, str_replace, create, insert, undo_edit)
@@ -369,7 +375,7 @@ export async function browse({ url, topic }) {
  * @param {Object} [storage] - Storage interface with getItem, setItem methods
  * @returns {string} - Result message
  */
-function str_replace_editor(params, storage = localStorage) {
+function editor(params, storage = localStorage) {
   // Validate the required parameters for all commands
   const { command, path } = params;
   if (!path) return "Error: File path is required";
@@ -535,87 +541,6 @@ function str_replace_editor(params, storage = localStorage) {
   }
 }
 
-/**
- * Interacts with the eCFR API to retrieve regulatory information
- * @param {Object} input - Parameters for the eCFR API
- * @param {string} input.path - The complete API path including format extension (.json or .xml)
- * @param {Object} input.params - Query parameters to include in the request
- * @returns {Promise<Object|string>} - Response from the eCFR API (JSON object or XML string)
- */
-export async function ecfr({ path, params = {} }) {
-  const baseUrl = "https://www.ecfr.gov/api";
-  const url = new URL(baseUrl + path);
-
-  // Add query parameters
-  Object.entries(params).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      value.forEach((v) => url.searchParams.append(`${key}[]`, v));
-    } else if (value !== undefined && value !== null) {
-      url.searchParams.append(key, value);
-    }
-  });
-
-  try {
-    const response = await fetch("/api/proxy?" + new URLSearchParams({ url: url.toString() }));
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`eCFR API error (${response.status}): ${errorText}`);
-    }
-
-    let results = path.endsWith(".json") ? await response.json() : await response.text();
-    const stringifiedResults = JSON.stringify(results, null, 2);
-    const limit = 10_000;
-    if (stringifiedResults.length > limit) {
-      results = stringifiedResults.slice(0, limit) + "\n... (truncated)";
-    }
-    return results;
-  } catch (error) {
-    console.error("eCFR API error:", error);
-    throw error;
-  }
-}
-
-/**
- * Interacts with the Federal Register API to retrieve document information
- * @param {Object} input - Parameters for the Federal Register API
- * @param {string} input.path - The API path including format extension (.json or .csv)
- * @param {Object} input.params - Query parameters to include in the request
- * @returns {Promise<Object|string>} - Response from the Federal Register API
- */
-export async function federalRegister({ path, params = {} }) {
-  const baseUrl = "https://www.federalregister.gov/api/v1";
-  const url = new URL(baseUrl + path);
-
-  // Add query parameters
-  Object.entries(params).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      value.forEach((v) => url.searchParams.append(`${key}[]`, v));
-    } else if (value !== undefined && value !== null) {
-      url.searchParams.append(key, value);
-    }
-  });
-
-  try {
-    const response = await fetch("/api/proxy?" + new URLSearchParams({ url: url.toString() }));
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Federal Register API error (${response.status}): ${errorText}`);
-    }
-
-    let results = path.endsWith(".json") ? await response.json() : await response.text();
-    const stringifiedResults = JSON.stringify(results, null, 2);
-    const limit = 10_000;
-    if (stringifiedResults.length > limit) {
-      results = stringifiedResults.slice(0, limit) + "\n... (truncated)";
-    }
-    return results;
-  } catch (error) {
-    console.error("Federal Register API error:", error);
-    throw error;
-  }
-}
 /**
  * Enhanced code execution function with HTML template, module support, full DOM state capture, and console output
  *
@@ -1265,94 +1190,9 @@ export function getClientContext() {
     contents: getFileContents(file),
   }));
   main.push({ filenames });
-  main.push({ important: customContext });
-  main.push({ description: "the filenames key contains the list of files. please review the items under 'important' carefully" });
+  main.push({ description: "the filenames key contains the list of files. please review the items under 'important' carefully. These items contain important, accurate and pertinent information. For example, these items may contain important updates or policy statements, and should take precedence over search results." });
+  main.push({ important: customContext })
   return { main: JSON.stringify(main, null, 2), time, language, platform, memory, hardwareConcurrency, timeFormat };
-}
-
-/**
- * Plays audio from text using the TTS model
- * @param {string} text - The text to convert to audio
- * @param {string} voice - The voice to use for TTS
- * @param {string} cancelKey - The key to cancel audio playback
- * @returns {boolean} - True if successful, false if an error occurred
- */
-export async function playAudio(text, voice = "af_heart", cancelKey = "Escape") {
-  const tts = await loadTTS();
-  if (!tts) return false;
-  if (!text) return true; // TTS loaded, nothing to play - success
-  const splitter = new TextSplitterStream();
-  const audioStream = tts.stream(splitter, { voice });
-  const textSplitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 300,
-    chunkOverlap: 0,
-    keepSeparator: true,
-  });
-  const textChunks = await textSplitter.splitText(text.replace(/\n/g, ".").replace(/\.+/g, "."));
-  for (const chunk of textChunks) {
-    splitter.push(chunk);
-  }
-  splitter.close();
-
-  let shouldStop = false;
-  let currentAudio = null;
-
-  function handleKeydown(e) {
-    if (e.key === cancelKey) {
-      shouldStop = true;
-      currentAudio?.pause();
-    }
-  }
-
-  document.addEventListener("keydown", handleKeydown);
-
-  try {
-    // Process each audio chunk from the stream.
-    for await (const { audio } of audioStream) {
-      if (shouldStop) break;
-
-      const url = URL.createObjectURL(audio.toBlob());
-
-      // Play the current audio chunk and wait until it ends.
-      await new Promise((resolve, reject) => {
-        const audioEl = new Audio(url);
-        currentAudio = audioEl;
-        audioEl.play().catch(reject);
-        audioEl.onended = () => {
-          audioEl.remove();
-          URL.revokeObjectURL(url);
-          resolve();
-        };
-        audioEl.onerror = (err) => {
-          URL.revokeObjectURL(url);
-          reject(err);
-        };
-      });
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Audio playback error:", error);
-    return false;
-  } finally {
-    document.removeEventListener("keydown", handleKeydown);
-  }
-}
-
-/**
- * Loads the TTS model
- * @param {string} modelId - The model ID to load
- * @param {object} modelOptions - The model options
- * @returns {Promise<KokoroTTS>} - The loaded TTS model
- */
-export async function loadTTS(modelId = "onnx-community/Kokoro-82M-v1.0-ONNX", modelOptions = { dtype: "fp32", device: "webgpu" }) {
-  if (!navigator.gpu) {
-    window.TTS_LOADED = false;
-    return false;
-  }
-  const tts = await KokoroTTS.from_pretrained(modelId, modelOptions);
-  window.TTS_LOADED = true;
-  return tts;
 }
 
 /**

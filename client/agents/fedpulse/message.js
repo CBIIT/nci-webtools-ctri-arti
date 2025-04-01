@@ -1,13 +1,13 @@
 import html from "solid-js/html";
 import { parse } from "marked";
 import { stringify } from "yaml";
-import { playAudio } from "./utils.js";
 
 export default function Message({ message, messages = [], active = false, defaultClass = "small markdown shadow-sm rounded mb-3 p-2" }) {
   if (!message) return null;
   const getToolResult = (messages, toolUseId) =>
     messages?.find((m) => m.content?.[0]?.toolResult?.toolUseId === toolUseId)?.content[0].toolResult?.content[0]?.json?.results;
   const renderMessageContent = (c, m) => m.role === "user" ? ({innerText: c.text.trim()}) : ({innerHTML: parse(c.text)?.trim()});
+  const debug = false;
 
   return html`
     <div class="d-flex flex-wrap position-relative">
@@ -18,19 +18,13 @@ export default function Message({ message, messages = [], active = false, defaul
               <span
                 class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light" : "w-100 font-serif bg-white"].join(" ")}
                 ...${renderMessageContent(c, message)}></span>
-              <button
-                onClick=${() => playAudio(c.text)}
-                class="position-absolute border-0 p-0 me-1 bg-transparent top-0 end-0"
-                hidden=${message.role === "user" || active || !window.tts}>
-                ▷
-              </button>
             `;
           } 
 
           else if (c.reasoningContent?.reasoningText?.text) {
             return html`
-              <span class=${[defaultClass, "w-100overflow-auto bg-white"].join(" ")} style="max-height: 200px">
-                <pre class="mb-0 text-prewrap text-muted">Internal Thoughts: ${c.reasoningContent.reasoningText.text}</pre>
+              <span class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px" hidden=${!debug}>
+                <pre class="mb-0 text-prewrap text-muted">${c.reasoningContent.reasoningText.text}</pre>
               </span>
             `;
           }

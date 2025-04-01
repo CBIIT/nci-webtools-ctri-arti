@@ -3,10 +3,8 @@ import { render } from "solid-js/web";
 import { useSubmitMessage } from "./hooks.js";
 import html from "solid-js/html";
 import Message from "./message.js";
-import { loadTTS } from "./utils.js";
 
 render(() => html`<${Page} />`, window.app);
-loadTTS().then((tts) => (window.tts = tts)); // Load TTS in background
 
 export default function Page() {
   const { conversation, updateConversation, conversations, messages, activeMessage, loading, submitMessage } = useSubmitMessage();
@@ -55,7 +53,7 @@ export default function Page() {
       <div class="row">
         <div class="col d-flex justify-content-start align-items-center">
           <a href="/" class="d-inline-flex">
-            <object data="agents/fedpulse/assets/images/logo.svg" type="image/svg+xml" height="50" class="pe-none mw-100"></object
+            <object data="agents/chat/assets/images/logo.svg" type="image/svg+xml" height="50" class="pe-none mw-100"></object
           ></a>
         </div>
         <div class="col d-none d-md-flex justify-content-center align-items-center">
@@ -82,13 +80,13 @@ export default function Page() {
       <div class="offcanvas-body">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link" href="agents/fedpulse/">New Conversation</a>
+            <a class="nav-link" href="agents/chat/">New Conversation</a>
           </li>
           ${() =>
             conversations().map(
               (conversation) =>
                 html`<li class="nav-item">
-                  <a class="nav-link" href=${`agents/fedpulse/?id=${conversation.id}`}>${conversation.title}</a>
+                  <a class="nav-link" href=${`agents/chat/?id=${conversation.id}`}>${conversation.title}</a>
                 </li>`
             )}
         </ul>
@@ -141,7 +139,7 @@ export default function Page() {
           </div>
         </div>
       </form>
-      <small class="text-center text-muted py-1">FedPulse can make mistakes. Please verify responses before taking action.</small>
+      <small class="text-center text-muted py-1">FedPulse can make mistakes. Please double-check facts.</small>
     </main>
 
     <footer class="flex-grow-0 small text-center opacity-75 py-3">
