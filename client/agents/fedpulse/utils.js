@@ -327,38 +327,32 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  * @returns {Promise<string>}
  */
 export async function browse({ url, topic }) {
-  // if the document is a plain html file, use the api
-  const isBinaryDoc = url.includes(".pdf") || url.includes(".doc") || url.includes(".docx");
-  if (!isBinaryDoc) {
-    const id = crypto.randomUUID();
-    const html = await fetch("/api/browse?" + new URLSearchParams({ url, id })).then((r) => r.text());
-    const results = sanitizeHTML(html);
-    if (results.length < 10_000 || !topic) {
-      return results;
-    } else {
-      return await queryDocumentWithModel(results, topic);
-    }
-  }
-  // otherwise, use the fetchProxy
-  const response = await fetchProxy(url);
+  window.id ||= Math.random().toString(36).slice(2);
+  const response = await fetch("/api/browse?" + new URLSearchParams({ url, id }));
   const bytes = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(bytes);
   let results;
   if (!response.ok) {
     return `Failed to read ${url}: ${response.status} ${response.statusText}\n${text}`;
   }
-  const mimetype = response.headers.get("content-type");
+  
+  const mimetype = response.headers.get("content-type") || "text/html";
   if (mimetype.includes("text/html")) {
     const html = await renderHtml(text);
     results = sanitizeHTML(html);
+  } else {
+    results = await parseDocument(bytes, mimetype, url);
   }
-  results = await parseDocument(bytes, mimetype, url);
-  if (results.length < 10_000) {
-    return results;
-  }
-  return await queryDocumentWithModel(results, topic);
+
+  const html = await renderHtml(text);
+  results = sanitizeHTML(html);
+
   // const sections = await queryDocument(results, topic);
   // return sections.map(s => ({ text: s.text, similarity: s.similarity })).slice(0, 20);
+
+  return results.length > 32_000
+    ? await queryDocumentWithModel(results, topic)
+    : results;
 }
 
 /**
