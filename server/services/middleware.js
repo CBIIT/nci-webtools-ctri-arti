@@ -71,15 +71,10 @@ export async function proxyMiddleware(req, res, next) {
 }
 
 function getAuthorizedUrl(url, env = process.env) {
-  const DATA_GOV_HOSTS = ["api.govinfo.gov"];
-  const CONGRESS_GOV_HOSTS = ["api.congress.gov"];
-
-  if (env.DATA_GOV_API_KEY && DATA_GOV_HOSTS.some((host) => url.hostname.includes(host))) {
-    url.searchParams.append("api_key", env.DATA_GOV_API_KEY);
-  }
-  if (env.CONGRESS_GOV_API_KEY && CONGRESS_GOV_HOSTS.some((host) => url.hostname.includes(host))) {
-    url.searchParams.append("api_key", env.CONGRESS_GOV_API_KEY);
-  }
-  
+  const key = {
+    "api.govinfo.gov": env.DATA_GOV_API_KEY,
+    "api.congress.gov": env.CONGRESS_GOV_API_KEY,
+  }[url.hostname];
+  key && url.searchParams.append("api_key", key);
   return url.toString();
 }
