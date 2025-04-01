@@ -125,7 +125,7 @@ export class EcsServiceStack extends Stack {
       if (containerProps.secrets) {
         for (const paramKey in containerProps.secrets) {
           const parameterLabel = paramKey.toLowerCase().replace(/_/g, "-");
-          const parameterName = `${prefix}/${containerProps.name}/${parameterLabel}`;
+          const parameterName = `/${prefix}/${containerProps.name}/${parameterLabel}`;
           const stringValue = containerProps.secrets[paramKey];
           const param = new ssm.StringParameter(this, `secret-${containerProps.name}-${parameterLabel}`, {
             parameterName,
