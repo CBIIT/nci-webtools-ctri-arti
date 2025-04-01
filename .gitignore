@@ -1,9 +1,6 @@
-cdk.context.json
-.env
 node_modules
 venv
-.aider*
-.jupyterlite.doit.db
-CLAUDE.md
-/tmp
 *.pem
+*.env
+**/*/cdk.context.json
+/postgres
