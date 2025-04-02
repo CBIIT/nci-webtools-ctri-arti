@@ -269,6 +269,7 @@ Your response MUST:
 3. Never paraphrase or summarize when direct quotes are available
 4. Clearly indicate when information requested is not in the document
 5. Never attempt to fill gaps with general knowledge or assumptions
+6. Always APA-style references for factual claims (Example: According to Smith (2025, para. 3), "direct quote" [URL]). Clearly mark which information comes directly from sources.
 
 If the document doesn't contain information relevant to the question:
 - State this explicitly: "The document does not contain information about [topic]"
@@ -337,19 +338,15 @@ export async function browse({ url, topic }) {
   }
   
   const mimetype = response.headers.get("content-type") || "text/html";
+  // const sections = await queryDocument(results, topic);
+  // const similar = sections.map(s => ({ text: s.text, similarity: s.similarity })).slice(0, 20);
+
   if (mimetype.includes("text/html")) {
     const html = await renderHtml(text);
     results = sanitizeHTML(html);
   } else {
     results = await parseDocument(bytes, mimetype, url);
   }
-
-  const html = await renderHtml(text);
-  results = sanitizeHTML(html);
-
-  // const sections = await queryDocument(results, topic);
-  // return sections.map(s => ({ text: s.text, similarity: s.similarity })).slice(0, 20);
-
   return results.length > 32_000
     ? await queryDocumentWithModel(results, topic)
     : results;
@@ -1065,15 +1062,19 @@ window.addEventListener('unhandledrejection', function(event) {
  * @param {string} mimetype
  * @returns {Promise<string>}
  */
-export async function parseDocument(buffer) {
-  const filetype = detectFileType(buffer);
+export async function parseDocument(buffer, filetype) {
   switch (filetype) {
-    case "PDF":
+    case "application/pdf":
       return await parsePdf(buffer);
-    case "DOCX":
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
       return await parseDocx(buffer);
+    default:
+      const text = new TextDecoder("utf-8").decode(buffer);
+      if (text.length > 1000 && text.match(/<[^>]+>/g)?.length > 10) {
+        return toMarkdown(text);
+      }
+      return text;
   }
-  return toMarkdown(new TextDecoder("utf-8").decode(buffer));
 }
 
 /**

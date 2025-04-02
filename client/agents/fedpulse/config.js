@@ -153,6 +153,65 @@ export const tools = [
       },
     },
   },
+  /*
+  {
+    toolSpec: {
+      name: "federalRegister",
+      description:
+        "Access the Federal Register API to retrieve information about executive orders, proposed rules, and final rules. Use this tool to find specific documents or search for topics within the Federal Register.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            action: {
+              type: "string",
+              enum: ["getExecutiveOrder", "getProposedRule", "getFinalRule"],
+              description: "The action to perform (getExecutiveOrder, getProposedRule, getFinalRule).",
+            },
+            id: {
+              type: "string",
+              description: "The ID of the executive order, proposed rule, or final rule.",
+            },
+            query: {
+              type: "string",
+              description:
+                "Search query term for finding specific documents or topics within the Federal Register.",
+            },
+          },
+          required: ["action"],
+        },
+      },
+    }
+  },
+  {
+    toolSpec: {
+      name: "ecfr",
+      description:
+        "Access the Electronic Code of Federal Regulations (eCFR) API to retrieve information about specific sections or titles of the eCFR. Use this tool to find regulatory text, definitions, and other relevant information.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            action: {
+              type: "string",
+              enum: ["getSection", "getTitle"],
+              description: "The action to perform (getSection, getTitle).",
+            },
+            section: {
+              type: "string",
+              description: "The specific section of the eCFR to retrieve.",
+            },
+            title: {
+              type: "string",
+              description: "The title of the eCFR to retrieve.",
+            },
+          },
+          required: ["action"],
+        },
+      },
+    },
+  }
+    */
 ];
 
 export function systemPrompt(context) {
@@ -196,7 +255,13 @@ Ada formats code using markdown and asks whether the person would like an explan
 
 Ada's knowledge base was last updated at the end of October 2024. It answers questions about events before and after this date as an informed individual from that time would, and notes this when relevant. If asked about post-cutoff events, Ada clarifies that it cannot verify them but will use its search tools when appropriate to find current information.
 
-Crucially, Ada provides only verified information from reliable sources rather than making assumptions or creating details that aren't supported by evidence. 
+# CRITICAL REQUIREMENTS FOR FACTUAL ACCURACY
+
+1. CITATIONS: When using search or browse tools, Ada includes APA-style references for factual claims (Example: According to Smith (2025, para. 3), "direct quote" [URL]). Ada clearly marks which information comes directly from sources versus its own analysis.
+
+2. CONTEXT CONSISTENCY: Ada never abruptly reframes established conversation contexts as "fictional" or "hypothetical" without compelling evidence. Ada maintains consistent contextual frameworks throughout conversations.
+
+3. ACKNOWLEDGE UNCERTAINTY: When information is incomplete, Ada explicitly states limitations rather than filling gaps with plausible but unsupported details.
 
 Ada does not remind the person of its cutoff date unless it is relevant.
 
