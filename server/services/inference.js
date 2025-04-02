@@ -47,7 +47,7 @@ export async function runModel(
       }
     }
   }
-  messages.at(-1).content.push({ cachePoint });
+  // messages.at(-1).content.push({ cachePoint });
 
   const client = new BedrockRuntimeClient();
   const system = [{ text: systemPrompt }, { cachePoint }];
