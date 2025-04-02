@@ -31,6 +31,8 @@ export async function runModel(
   }
 
   // process messages to ensure they are in the correct format
+  const cachePoint = { type: "default" };
+
   for (const message of messages) {
     if (!message.content.filter(Boolean).length) {
       message.content.push({ text: "_" });
@@ -45,10 +47,11 @@ export async function runModel(
       }
     }
   }
+  messages.at(-1).content.push({ cachePoint });
 
   const client = new BedrockRuntimeClient();
-  const system = [{ text: systemPrompt }];
-  const toolConfig = tools.length > 0 ? { tools } : undefined;
+  const system = [{ text: systemPrompt }, { cachePoint }];
+  const toolConfig = tools.length > 0 ? { tools: tools.concat([{ cachePoint }]) } : undefined;
   const inferenceConfig = thoughtBudget > 0 ? { maxTokens: 128_000 } : undefined;
   const performanceConfig = { latency: modelId.includes("haiku") ? "optimized" : "standard" };
   const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
