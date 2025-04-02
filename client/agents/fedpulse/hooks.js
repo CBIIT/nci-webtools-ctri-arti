@@ -91,9 +91,10 @@ export function useSubmitMessage() {
             .map((e) => JSON.parse(e));
 
           for (const value of values) {
-            const { contentBlockStart, contentBlockDelta, contentBlockStop, messageStop } = value;
+            const { contentBlockStart, contentBlockDelta, contentBlockStop, messageStop, metadata } = value;
             const toolUse = contentBlockStart?.start?.toolUse;
             const stopReason = messageStop?.stopReason;
+
 
             if (toolUse) {
               // Initialize tool call input
@@ -154,6 +155,8 @@ export function useSubmitMessage() {
               } else {
                 isComplete = true;
               }
+            } else if (metadata) {
+              console.log(metadata);
             }
             autoscroll();
           }

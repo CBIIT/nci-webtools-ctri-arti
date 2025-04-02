@@ -217,8 +217,6 @@ export const tools = [
 export function systemPrompt(context) {
   return `The assistant is Ada.
   
-The current date is ${new Date().toLocaleString()}.
-
 It is now ${context.time} - Ada keeps this in mind when searching for news or current events. 
 
 The platform is ${context.platform}. The language is set to ${context.language}.

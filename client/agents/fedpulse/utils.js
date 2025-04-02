@@ -1155,6 +1155,34 @@ async function parsePdf(arrayBuffer) {
   return pagesText.join("\n");
 }
 
+function getNaturalDateTime(date = new Date()) {
+  const userLocale = navigator.language || 'en-US';
+  
+  const dateFormatter = new Intl.DateTimeFormat(userLocale, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
+  const formattedDate = dateFormatter.format(date);
+  
+  const hours = date.getHours();
+  
+  let timeOfDay;
+  if (hours >= 0 && hours < 6) {
+    timeOfDay = "night";        // 12:00 AM - 5:59 AM
+  } else if (hours >= 6 && hours < 12) {
+    timeOfDay = "morning";      // 6:00 AM - 11:59 AM
+  } else if (hours >= 12 && hours < 18) {
+    timeOfDay = "afternoon";    // 12:00 PM - 5:59 PM
+  } else {
+    timeOfDay = "evening";      // 6:00 PM - 11:59 PM
+  }
+  
+  return `${formattedDate}, ${timeOfDay}`;
+}
+
 /**
  * Returns the client environment information
  * @returns {any} - The client environment information
@@ -1163,16 +1191,7 @@ export function getClientContext() {
   const now = new Date();
   const { language, platform, deviceMemory, hardwareConcurrency } = navigator;
   const timeFormat = Intl.DateTimeFormat().resolvedOptions();
-  const timeFormatter = new Intl.DateTimeFormat(language, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    timeZoneName: "long",
-    hour12: true,
-  });
-  const time = timeFormatter.format(now);
+  const time = getNaturalDateTime(now);
   const memory = deviceMemory >= 8 ? "greater than 8 GB" : `approximately ${deviceMemory} GB`;
   const getFileContents = (file) => localStorage.getItem("file:" + file) || localStorage.setItem("file:" + file, "") || "";
   const filenames = new Array(localStorage.length)
