@@ -257,7 +257,9 @@ export async function queryDocument(document, query) {
 
 export async function queryDocumentWithModel(document, topic, model = "us.anthropic.claude-3-5-haiku-20241022-v1:0") {
   document = truncate(document, 500_000);
-  const prompt = `Answer this question about the document: "${topic}"
+  const system = `You are a research assistant. You will be given a document and a question. 
+
+Your task is to answer the question using only the information in the document. You must not add any information that is not in the document, and you must provide exact quotes with attributions. 
 
 CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text.
 
@@ -267,6 +269,7 @@ Your response MUST:
 3. Never paraphrase or summarize when direct quotes are available
 4. Clearly indicate when information requested is not in the document
 5. Never attempt to fill gaps with general knowledge or assumptions
+6. Always APA-style references for factual claims (Example: According to Smith (2025, para. 3), "direct quote" [URL]). Clearly mark which information comes directly from sources.
 
 If the document doesn't contain information relevant to the question:
 - State this explicitly: "The document does not contain information about [topic]"
@@ -280,13 +283,15 @@ VERIFICATION STEPS (perform these before finalizing your answer):
 - Confirm all location references are accurate
 - Ensure no information is presented that isn't directly from the document
 
-Document: ${document}`;
+The document is as follows: ${document}`;
+
+  const prompt = `Answer this question about the document: "${topic}"`;
 
   const messages = [{ role: "user", content: [{ text: prompt }] }];
   const response = await fetch("/api/model/run", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ model, messages }),
+    body: JSON.stringify({ model, messages, system }),
   });
   const results = await response.json();
   return results?.output?.message?.content?.[0]?.text || truncate(document);
@@ -325,38 +330,28 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  * @returns {Promise<string>}
  */
 export async function browse({ url, topic }) {
-  // if the document is a plain html file, use the api
-  const isBinaryDoc = url.includes(".pdf") || url.includes(".doc") || url.includes(".docx");
-  if (!isBinaryDoc) {
-    const id = crypto.randomUUID();
-    const html = await fetch("/api/browse?" + new URLSearchParams({ url, id })).then((r) => r.text());
-    const results = sanitizeHTML(html);
-    if (results.length < 10_000) {
-      return results;
-    } else {
-      return await queryDocumentWithModel(results, topic);
-    }
-  }
-  // otherwise, use the fetchProxy
-  const response = await fetchProxy(url);
+  window.id ||= Math.random().toString(36).slice(2);
+  const response = await fetch("/api/browse?" + new URLSearchParams({ url, id }));
   const bytes = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(bytes);
   let results;
   if (!response.ok) {
     return `Failed to read ${url}: ${response.status} ${response.statusText}\n${text}`;
   }
-  const mimetype = response.headers.get("content-type");
+  
+  const mimetype = response.headers.get("content-type") || "text/html";
+  // const sections = await queryDocument(results, topic);
+  // const similar = sections.map(s => ({ text: s.text, similarity: s.similarity })).slice(0, 20);
+
   if (mimetype.includes("text/html")) {
     const html = await renderHtml(text);
     results = sanitizeHTML(html);
+  } else {
+    results = await parseDocument(bytes, mimetype, url);
   }
-  results = await parseDocument(bytes, mimetype, url);
-  if (results.length < 10_000) {
-    return results;
-  }
-  return await queryDocumentWithModel(results, topic);
-  // const sections = await queryDocument(results, topic);
-  // return sections.map(s => ({ text: s.text, similarity: s.similarity })).slice(0, 20);
+  return results.length > 32_000
+    ? await queryDocumentWithModel(results, topic)
+    : results;
 }
 
 /**
@@ -1158,6 +1153,35 @@ async function parsePdf(arrayBuffer) {
   return pagesText.join("\n");
 }
 
+
+function getNaturalDateTime(date = new Date()) {
+  const userLocale = navigator.language || 'en-US';
+  
+  const dateFormatter = new Intl.DateTimeFormat(userLocale, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
+  const formattedDate = dateFormatter.format(date);
+  
+  const hours = date.getHours();
+  
+  let timeOfDay;
+  if (hours >= 0 && hours < 6) {
+    timeOfDay = "night";        // 12:00 AM - 5:59 AM
+  } else if (hours >= 6 && hours < 12) {
+    timeOfDay = "morning";      // 6:00 AM - 11:59 AM
+  } else if (hours >= 12 && hours < 18) {
+    timeOfDay = "afternoon";    // 12:00 PM - 5:59 PM
+  } else {
+    timeOfDay = "evening";      // 6:00 PM - 11:59 PM
+  }
+  
+  return `${formattedDate} (${timeOfDay})`;
+}
+
 /**
  * Returns the client environment information
  * @returns {any} - The client environment information
@@ -1166,16 +1190,7 @@ export function getClientContext() {
   const now = new Date();
   const { language, platform, deviceMemory, hardwareConcurrency } = navigator;
   const timeFormat = Intl.DateTimeFormat().resolvedOptions();
-  const timeFormatter = new Intl.DateTimeFormat(language, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    timeZoneName: "long",
-    hour12: true,
-  });
-  const time = timeFormatter.format(now);
+  const time = getNaturalDateTime(now);
   const memory = deviceMemory >= 8 ? "greater than 8 GB" : `approximately ${deviceMemory} GB`;
   const getFileContents = (file) => localStorage.getItem("file:" + file) || localStorage.setItem("file:" + file, "") || "";
   const filenames = new Array(localStorage.length)

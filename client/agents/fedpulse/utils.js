@@ -259,7 +259,9 @@ export async function queryDocument(document, query) {
 
 export async function queryDocumentWithModel(document, topic, model = "us.anthropic.claude-3-5-haiku-20241022-v1:0") {
   document = truncate(document, 500_000);
-  const prompt = `Answer this question about the document: "${topic}"
+  const system = `You are a research assistant. You will be given a document and a question. 
+
+Your task is to answer the question using only the information in the document. You must not add any information that is not in the document, and you must provide exact quotes with attributions. 
 
 CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text.
 
@@ -283,13 +285,15 @@ VERIFICATION STEPS (perform these before finalizing your answer):
 - Confirm all location references are accurate
 - Ensure no information is presented that isn't directly from the document
 
-Document: ${document}`;
+The document is as follows: ${document}`;
+
+  const prompt = `Answer this question about the document: "${topic}"`;
 
   const messages = [{ role: "user", content: [{ text: prompt }] }];
   const response = await fetch("/api/model/run", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ model, messages }),
+    body: JSON.stringify({ model, messages, system }),
   });
   const results = await response.json();
   return results?.output?.message?.content?.[0]?.text || truncate(document);
