@@ -30,9 +30,9 @@ export async function runModel(
     messages = [{ role: "user", content: [{ text: messages }] }];
   }
 
-  // process messages to ensure they are in the correct format
   const cachePoint = { type: "default" };
 
+  // process messages to ensure they are in the correct format
   for (const message of messages) {
     if (!message.content.filter(Boolean).length) {
       message.content.push({ text: "_" });
@@ -47,16 +47,15 @@ export async function runModel(
       }
     }
   }
-  // messages.at(-1).content.push({ cachePoint });
+  messages.at(-1).content.push({ cachePoint });
 
   const client = new BedrockRuntimeClient();
   const system = [{ text: systemPrompt }, { cachePoint }];
   const toolConfig = tools.length > 0 ? { tools: tools.concat([{ cachePoint }]) } : undefined;
   const inferenceConfig = thoughtBudget > 0 ? { maxTokens: 128_000 } : undefined;
-  const performanceConfig = { latency: modelId.includes("haiku") ? "optimized" : "standard" };
   const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
   const additionalModelRequestFields = thoughtBudget > 0 ? { thinking } : undefined;
-  const input = { modelId, messages, system, toolConfig, inferenceConfig, performanceConfig, additionalModelRequestFields };
+  const input = { modelId, messages, system, toolConfig, inferenceConfig, additionalModelRequestFields };
 
   const command = stream ? new ConverseStreamCommand(input) : new ConverseCommand(input);
   const response = await client.send(command);
