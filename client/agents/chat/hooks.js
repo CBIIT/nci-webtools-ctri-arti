@@ -70,8 +70,8 @@ export function useSubmitMessage() {
             tools,
             system: systemPrompt(getClientContext()),
             messages: messages(),
-            thoughtBudget: reasoningMode ? 64_000 : 0,
-            stream: true,
+            thoughtBudget: reasoningMode ? 24_000 : 0,
+            stream: true, 
           }),
         });
 
