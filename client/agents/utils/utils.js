@@ -1,4 +1,4 @@
-import { parseDocument } from "../utils/parsers.js";
+import { parseDocument } from "./parsers.js";
 
 window.TOOLS = { search, browse, code, editor, think };
 

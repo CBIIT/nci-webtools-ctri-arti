@@ -1,8 +1,9 @@
 import { createSignal } from "solid-js";
 import { render } from "solid-js/web";
-import { useSubmitMessage } from "./hooks.js";
 import html from "solid-js/html";
-import Message from "./message.js";
+
+import { useSubmitMessage } from "../hooks.js";
+import Message from "../message.js";
 
 render(() => html`<${Page} />`, window.app);
 
@@ -53,7 +54,7 @@ export default function Page() {
       <div class="row">
         <div class="col d-flex justify-content-start align-items-center">
           <a href="/" class="d-inline-flex">
-            <object data="agents/chat/assets/images/logo.svg" type="image/svg+xml" height="50" class="pe-none mw-100"></object
+            <object data="agents/assets/images/logo.svg" type="image/svg+xml" height="50" class="pe-none mw-100"></object
           ></a>
         </div>
         <div class="col d-none d-md-flex justify-content-center align-items-center">

@@ -1,8 +1,7 @@
 import { createSignal } from "solid-js";
-import { readStream, runTool } from "./utils.js";
-import { detectFileType, fileToBase64, splitFilename, readFile } from "../utils/parsers.js";
+import { readStream, runTool, getClientContext, autoscroll } from "./utils/utils.js";
+import { detectFileType, fileToBase64, splitFilename, readFile } from "./utils/parsers.js";
 import { systemPrompt, tools } from "./config.js";
-import { getClientContext, autoscroll } from "./utils.js";
 
 export function useSubmitMessage() {
   const [messages, setMessages] = createSignal([]);
