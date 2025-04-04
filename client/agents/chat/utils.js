@@ -1,6 +1,7 @@
 import { Readability } from "@mozilla/readability";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { matmul, AutoModel, AutoTokenizer, Tensor } from "@huggingface/transformers";
+import dompurify from "dompurify";
 import mammoth from "mammoth";
 import TurndownService from "turndown";
 import * as pdfjsLib from "pdfjs-dist";
@@ -338,20 +339,18 @@ export async function browse({ url, topic }) {
   if (!response.ok) {
     return `Failed to read ${url}: ${response.status} ${response.statusText}\n${text}`;
   }
-  
+
   const mimetype = response.headers.get("content-type") || "text/html";
-  // const sections = await queryDocument(results, topic);
-  // const similar = sections.map(s => ({ text: s.text, similarity: s.similarity })).slice(0, 20);
+  const sections = await queryDocument(results, topic);
+  const similar = sections.map((s) => ({ text: s.text, similarity: s.similarity })).slice(0, 20);
+  console.log("[DEBUG] Similarity results:", similar);
 
   if (mimetype.includes("text/html")) {
-    const html = await renderHtml(text);
-    results = sanitizeHTML(html);
+    results = new TurndownService().turndown(dompurify.sanitize(text));
   } else {
     results = await parseDocument(bytes, mimetype, url);
   }
-  return results.length > 32_000
-    ? await queryDocumentWithModel(results, topic)
-    : results;
+  return results.length > 32_000 ? await queryDocumentWithModel(results, topic) : results;
 }
 
 /**
@@ -535,527 +534,94 @@ function editor(params, storage = localStorage) {
 }
 
 /**
- * Enhanced code execution function with HTML template, module support, full DOM state capture, and console output
- *
- * This updated version:
- *  - Retrieves the HTML template.
- *  - Processes each module from localStorage.
- *  - Processes the main source code similarly.
- *  - Combines the processed module codes and the processed main source code.
- *  - CAPTURES ALL CONSOLE OUTPUT (log, warn, error, info, debug).
- *  - Captures and returns the COMPLETE RENDERED DOM STATE after execution finishes.
- *  - Uses a slight delay to ensure all DOM manipulations are complete before capturing.
- *  - Returns structured data with console output and the full rendered DOM.
- *  - Supports both visible (new window) and invisible (hidden iframe) execution modes.
- *
- * @param {Object} params - The parameters for code execution
- * @param {string} params.source - JavaScript code to execute
- * @param {string} [params.html] - Path to an HTML template in localStorage
- * @param {Array<string>} [params.modules] - List of module filenames to load from localStorage
- * @param {number} [params.timeout=5000] - Execution timeout in milliseconds
- * @param {boolean} [params.visible=false] - Whether to show in a new window
- * @returns {Promise<Object>} - Object containing { output, renderedDOM, error? }
+ * JavaScript executor with ES module & import map support
+ * @param {*} params
+ * @param {string} params.source - Code to execute as ES module
+ * @param {Object} [params.importMap={}] - Optional import map
+ * @param {number} [params.timeout=5000] - Timeout in milliseconds
+ * @returns {Promise<{html: string, logs: {type: string, content: any}[]}>}>}
  */
-export async function code({ source, html, modules = [], timeout = 5000, visible = false }) {
-  // Generate unique ID for this execution
-  const instanceId = `code_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  console.log("[DEBUG] Generated instanceId:", instanceId);
+export async function code({ source, importMap = {}, timeout = 5000 }) {
+  return new Promise((resolve) => {
+    // Setup
+    const logs = [];
+    const log = (type, ...args) => logs.push({ type, content: args });
+    const iframe = document.createElement("iframe");
+    iframe.sandbox = "allow-scripts allow-same-origin";
+    iframe.style.display = "none";
 
-  // Retrieve HTML template content from localStorage or use default.
-  let htmlContent = "";
-  if (html) {
-    const templateKey = html.startsWith("file:") ? html : `file:${html}`;
-    htmlContent = localStorage.getItem(templateKey);
-    console.log("[DEBUG] Retrieved HTML template for key:", templateKey);
-    if (!htmlContent) {
-      console.error("[DEBUG] HTML template not found");
-      return `Error: Template not found: ${templateKey}`;
-    }
-  } else {
-    htmlContent = `<!DOCTYPE html>
-<html>
-<head>
-  <title>Code Execution</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .output { background: #f5f5f5; padding: 10px; border-left: 4px solid #333; margin-top: 20px; }
-    .error { color: #c00; }
-  </style>
-</head>
-<body>
-  <div id="app"></div>
-  <div id="output" class="output"></div>
-</body>
-</html>`;
-    console.log("[DEBUG] Using default HTML template");
-  }
-  console.log("[DEBUG] Final HTML content:\n", htmlContent);
-
-  // Helper to process code:
-  //  - Removes relative import statements.
-  //  - For modules (non-"source"), also strips out "export" keywords.
-  function processCode(code, label = "source") {
-    console.log(`[DEBUG] Starting processCode for ${label}`);
-    const lines = code.split("\n");
-    let inImport = false;
-    let importBuffer = "";
-    const result = [];
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      if (!inImport) {
-        if (line.trim().startsWith("import")) {
-          console.log(`[DEBUG] Found import start in ${label}:`, line);
-          inImport = true;
-          importBuffer = line;
-          if (line.includes(";")) {
-            if (importBuffer.match(/['"](?:\.{1,2}\/[^'"]+)['"]/)) {
-              console.log(`[DEBUG] Removing relative import in ${label}:`, importBuffer);
-              inImport = false;
-              importBuffer = "";
-              continue;
-            } else {
-              console.log(`[DEBUG] Keeping non-relative import in ${label}:`, importBuffer);
-              result.push(importBuffer);
-              inImport = false;
-              importBuffer = "";
-              continue;
-            }
-          }
-        } else {
-          result.push(line);
-        }
-      } else {
-        importBuffer += "\n" + line;
-        if (line.includes(";")) {
-          if (importBuffer.match(/['"](?:\.{1,2}\/[^'"]+)['"]/)) {
-            console.log(`[DEBUG] Removing relative multi-line import in ${label}:`, importBuffer);
-            inImport = false;
-            importBuffer = "";
-            continue;
-          } else {
-            console.log(`[DEBUG] Keeping non-relative multi-line import in ${label}:`, importBuffer);
-            result.push(importBuffer);
-            inImport = false;
-            importBuffer = "";
-          }
-        }
+    // Handle messages from iframe
+    const onMessage = (e) => {
+      if (e.source !== iframe.contentWindow) return;
+      if (e.data.type === "log") log(e.data.level, ...e.data.args);
+      if (e.data.type === "done") {
+        clearTimeout(timer);
+        const html = iframe.contentDocument?.documentElement?.querySelector('#root')?.innerHTML || "";
+        cleanup();
+        resolve({ html, logs });
       }
-    }
-    if (inImport && importBuffer) {
-      if (!importBuffer.match(/['"](?:\.{1,2}\/[^'"]+)['"]/)) {
-        console.log(`[DEBUG] Keeping incomplete non-relative import in ${label}:`, importBuffer);
-        result.push(importBuffer);
-      } else {
-        console.log(`[DEBUG] Removing incomplete relative import in ${label}:`, importBuffer);
-      }
-    }
-    let processed = result.join("\n");
-    if (label !== "source") {
-      processed = processed.replace(/\bexport\s+/g, "");
-      console.log(`[DEBUG] Removed export keywords in ${label}`);
-    }
-    console.log(`[DEBUG] Finished processCode for ${label}`);
-    return processed;
-  }
+    };
 
-  // Process module files
-  const moduleContents = [];
-  if (modules && modules.length > 0) {
-    for (const moduleName of modules) {
-      console.log("[DEBUG] Processing module:", moduleName);
-      const moduleKey = moduleName.startsWith("file:") ? moduleName : `file:${moduleName}`;
-      const moduleCode = localStorage.getItem(moduleKey);
-      if (!moduleCode) {
-        console.warn(`[DEBUG] Module not found: ${moduleKey}`);
-        continue;
-      }
-      console.log("[DEBUG] Original module code for", moduleName, ":\n", moduleCode);
-      const processedModule = processCode(moduleCode, moduleName);
-      console.log("[DEBUG] Processed module code for", moduleName, ":\n", processedModule);
-      moduleContents.push({ name: moduleName, code: processedModule });
-    }
-  }
-  console.log("[DEBUG] Final moduleContents:", moduleContents);
+    // Set timeout and cleanup
+    const cleanup = () => {
+      window.removeEventListener("message", onMessage);
+      iframe.parentNode?.removeChild(iframe);
+    };
 
-  // Process the main source code (removing relative import lines)
-  const processedSource = processCode(source, "source");
-  console.log("[DEBUG] Processed main source code:\n", processedSource);
+    const timer = setTimeout(() => {
+      log("warn", `Execution timed out after ${timeout}ms`);
+      cleanup();
+      resolve({ html: "", logs });
+    }, timeout);
 
-  // Combine the processed modules and main source into one module script.
-  let combinedCode = "";
-  if (moduleContents.length > 0) {
-    for (const mod of moduleContents) {
-      combinedCode += `// Inlined module: ${mod.name}\n` + mod.code + "\n\n";
-    }
-  }
-  combinedCode += "// Main Source\n" + processedSource;
+    window.addEventListener("message", onMessage);
 
-  // Append an automatic call to report completion with DOM innerHTML
-  combinedCode += `
-// Automatically report completion after all rendering is complete
-setTimeout(() => { 
-  if (typeof _reportComplete === 'function') { 
-    _reportComplete(window._getConsoleOutput ? window._getConsoleOutput() : ''); 
-    console.log('Final DOM state captured and reported.'); 
-  } 
-}, 100);`;
-
-  console.log("[DEBUG] Combined module and main source code:\n", combinedCode);
-
-  // Add a utility script to easily access both the DOM and console output
-  const utilityScript = `
-// Add utility to print both DOM state and console output
-window.reportCompleteStatus = function() {
-  const output = window._getConsoleOutput ? window._getConsoleOutput() : '';
-  const domState = document.documentElement.outerHTML;
-  
-  console.log('=== EXECUTION COMPLETE ===');
-  console.log('Console output length:', output.length);
-  console.log('DOM state length:', domState.length);
-  
-  if (typeof _reportComplete === 'function') {
-    _reportComplete(output);
-  }
-  
-  return {
-    output: output,
-    domState: domState
-  };
-};`;
-
-  // Communication script (plain script) for capturing console output, DOM content, and errors.
-  const comScript = `
-// Setup communication
-window._SANDBOX_ID = "${instanceId}";
-console.log("[DEBUG] Communication script loaded with instanceId:", "${instanceId}");
-
-function _reportToParent(type, data) {
-  if (window.opener && !window.opener.closed) {
-    window.opener.postMessage({ type, instanceId: "${instanceId}", ...data }, '*');
-  } else if (window.parent && window.parent !== window) {
-    window.parent.postMessage({ type, instanceId: "${instanceId}", ...data }, '*');
-  }
-}
-
-function _reportComplete(output) {
-  console.log("[DEBUG] _reportComplete called to capture final application state");
-  
-  // Force any pending DOM updates to complete
-  setTimeout(() => {
-    // Capture the completely rendered DOM state
-    const fullDomContent = document.documentElement.innerText;
-    
-    console.log("[DEBUG] Captured full rendered DOM state");
-    
-    // Send to opener if available; otherwise, to parent if it's a framed context.
-    if (window.opener && !window.opener.closed) {
-      window.opener.postMessage({ 
-        type: 'SANDBOX_COMPLETE', 
-        instanceId: "${instanceId}", 
-        output, 
-        renderedDOM: fullDomContent
-      }, '*');
-    } else if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ 
-        type: 'SANDBOX_COMPLETE', 
-        instanceId: "${instanceId}", 
-        output, 
-        renderedDOM: fullDomContent
-      }, '*');
-    }
-  }, 10); // Small delay to ensure all DOM updates are complete
-}
-
-function _reportError(error) {
-  const errorMsg = error.message || String(error);
-  console.error("[DEBUG] _reportError called:", errorMsg);
-  
-  // Capture the rendered DOM state at the time of error
-  const renderedDOM = document.documentElement.outerHTML;
-  
-  if (window.opener && !window.opener.closed) {
-    window.opener.postMessage({ 
-      type: 'SANDBOX_ERROR', 
-      instanceId: "${instanceId}", 
-      error: errorMsg,
-      renderedDOM
-    }, '*');
-  } else if (window.parent && window.parent !== window) {
-    window.parent.postMessage({ 
-      type: 'SANDBOX_ERROR', 
-      instanceId: "${instanceId}", 
-      error: errorMsg,
-      renderedDOM
-    }, '*');
-  }
-}
-
-(function() {
-  // Console output capture
-  let output = "";
-  const originalConsole = { 
-    log: console.log, 
-    warn: console.warn, 
-    error: console.error, 
-    info: console.info, 
-    debug: console.debug 
-  };
-  
-  // Override all console methods to capture output
-  Object.keys(originalConsole).forEach(method => {
-    console[method] = function(...args) {
-      // Format the arguments
-      const formatted = args.map(arg => {
-        if (arg === null) return 'null';
-        if (arg === undefined) return 'undefined';
-        if (typeof arg === 'object') {
+    // Set up console capture and error handling
+    const initScript = () => {
+      ['log','warn','error','info','debug'].forEach(level => {
+        const orig = console[level];
+        console[level] = (...args) => {
           try {
-            return JSON.stringify(arg, null, 2);
-          } catch (e) {
-            return String(arg);
-          }
-        }
-        return String(arg);
-      }).join(' ');
-      
-      // Add formatted output to our log accumulator
-      output += '[' + method + '] ' + formatted + '\\n';
-      
-      // Update the visual output element if it exists
-      const outputEl = document.getElementById('output');
-      if (outputEl) {
-        const line = document.createElement('div');
-        line.className = method === 'error' ? 'error' : '';
-        line.textContent = '[' + method + '] ' + formatted;
-        outputEl.appendChild(line);
-      }
-      
-      // Real-time reporting for visible windows
-      _reportToParent('CONSOLE', { 
-        method, 
-        args: args.map(arg => {
-          try {
-            return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
-          } catch (e) {
-            return String(arg);
-          }
-        }),
-        formatted 
+            window.parent.postMessage({
+              type: 'log', 
+              level,
+              args: args.map(a => {
+                try { return typeof a === 'object' ? JSON.stringify(a) : String(a); }
+                catch { return String(a); }
+              })
+            }, '*');
+          } catch {}
+          orig.apply(console, args);
+        };
       });
       
-      // Also call the original console method
-      originalConsole[method].apply(console, args);
-    };
+      // Capture errors
+      window.addEventListener('error', e => {
+        console.error(`${e.message} [line ${e.lineno}]`);
+        e.preventDefault();
+      });
+    }
+
+    // Generate HTML with console capture and error handling
+    const html = [
+      `<!DOCTYPE html><html>`,
+      `<head><script type="importmap">${JSON.stringify(importMap)}</script><script>(${initScript.toString()})()</script></head>`,
+      `<body><div id="root"></div><script type="module">${source}; window.parent.postMessage({type: 'done'}, '*');</script></body>`,
+      `</html>`,
+    ].join("");
+
+    try {
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument;
+      doc.open();
+      doc.write(html);
+      doc.close();
+    } catch (e) {
+      log("error", `Setup error: ${e.message}`);
+      cleanup();
+      resolve({ html: "", logs });
+    }
   });
-  
-  // Function to retrieve all accumulated console output
-  window._getConsoleOutput = function() { 
-    return output; 
-  };
-})();
-
-window.addEventListener('error', function(event) {
-  console.error('Uncaught error:', event.error || event.message);
-  _reportError(event.error || event.message);
-});
-
-window.addEventListener('unhandledrejection', function(event) {
-  console.error('Unhandled promise rejection:', event.reason);
-  _reportError(event.reason);
-});`;
-
-  console.log("[DEBUG] Communication script defined.");
-
-  // Execution: use visible window (window.open) or hidden iframe.
-  if (visible) {
-    return new Promise((resolve) => {
-      console.log("[DEBUG] Visible execution mode: Opening new window...");
-      const win = window.open("", "_blank", "width=800,height=600");
-      if (!win) {
-        console.error("[DEBUG] Failed to open new window.");
-        return resolve("Error: Could not open a new window. Please check your pop-up blocker settings.");
-      }
-
-      let output = "";
-      let domContent = "";
-      const messageHandler = (event) => {
-        console.log("[DEBUG] Message received from window:", event.data);
-        if (event.data?.instanceId === instanceId) {
-          if (event.data.type === "CONSOLE") {
-            output += `[${event.data.method}] ${event.data.formatted}\n`;
-          } else if (event.data.type === "SANDBOX_COMPLETE") {
-            console.log("[DEBUG] Received SANDBOX_COMPLETE message with rendered DOM state");
-            domContent = event.data.renderedDOM || "";
-            cleanup();
-            resolve({
-              output: event.data.output || output,
-              renderedDOM: domContent,
-            });
-          } else if (event.data.type === "SANDBOX_ERROR") {
-            console.error("[DEBUG] Received SANDBOX_ERROR message:", event.data);
-            domContent = event.data.renderedDOM || "";
-            cleanup();
-            resolve({
-              error: event.data.error,
-              output: output,
-              renderedDOM: domContent,
-            });
-          }
-        }
-      };
-      window.addEventListener("message", messageHandler);
-      const tid = setTimeout(() => {
-        console.warn("[DEBUG] Execution timed out");
-
-        if (!win.closed) {
-          // Try to capture final DOM state before closing
-          try {
-            domContent = win.document.documentElement.outerHTML;
-          } catch (e) {
-            console.error("[DEBUG] Could not capture DOM on timeout:", e);
-          }
-          win.close();
-        }
-        cleanup();
-        resolve({
-          error: `Timeout after ${timeout}ms`,
-          output: output,
-          renderedDOM: domContent,
-        });
-      }, timeout);
-      const cleanup = () => {
-        clearTimeout(tid);
-        window.removeEventListener("message", messageHandler);
-      };
-
-      console.log("[DEBUG] Writing HTML content to new window.");
-      win.document.open();
-      win.document.write(htmlContent);
-
-      console.log("[DEBUG] Injecting communication script into new window.");
-      const comScriptEl = win.document.createElement("script");
-      comScriptEl.textContent = comScript;
-      win.document.head.appendChild(comScriptEl);
-
-      console.log("[DEBUG] Injecting utility script for DOM and console reporting");
-      const utilScriptEl = win.document.createElement("script");
-      utilScriptEl.textContent = utilityScript;
-      win.document.head.appendChild(utilScriptEl);
-
-      console.log("[DEBUG] Injecting combined module script into new window.");
-      const moduleScriptEl = win.document.createElement("script");
-      moduleScriptEl.setAttribute("type", "module");
-      moduleScriptEl.textContent = combinedCode;
-      console.log("[DEBUG] Combined module script content:\n", combinedCode);
-      win.document.body.appendChild(moduleScriptEl);
-
-      win.document.close();
-      win.document.title = html ? `Code: ${html}` : "Code Execution";
-      console.log("[DEBUG] New window setup complete with title:", win.document.title);
-    });
-  } else {
-    console.log("[DEBUG] Invisible execution mode: Creating hidden iframe...");
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "absolute";
-    iframe.style.left = "-9999px";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    document.body.appendChild(iframe);
-
-    await new Promise((resolve) => {
-      iframe.onload = resolve;
-      iframe.src = "about:blank";
-    });
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-    console.log("[DEBUG] Iframe loaded. Writing HTML content to iframe.");
-
-    return new Promise((resolve) => {
-      const tid = setTimeout(() => {
-        console.warn("[DEBUG] Iframe execution timed out");
-        // Try to capture final DOM state before cleanup
-        let domContent = "";
-        try {
-          domContent = iframe.contentDocument.documentElement.outerHTML;
-        } catch (e) {
-          console.error("[DEBUG] Could not capture iframe DOM on timeout:", e);
-        }
-        cleanup();
-        resolve({
-          error: `Timeout after ${timeout}ms`,
-          output: output,
-          renderedDOM: domContent,
-        });
-      }, timeout);
-
-      let output = "";
-      let domContent = "";
-      const messageHandler = (event) => {
-        console.log("[DEBUG] Message received from iframe:", event.data);
-        if (event.data?.instanceId === instanceId) {
-          if (event.data.type === "CONSOLE") {
-            output += `[${event.data.method}] ${event.data.formatted}\n`;
-          } else if (event.data.type === "SANDBOX_COMPLETE") {
-            console.log("[DEBUG] Iframe SANDBOX_COMPLETE received with rendered DOM state");
-            domContent = event.data.renderedDOM || "";
-            cleanup();
-            resolve({
-              output: event.data.output || output,
-              renderedDOM: domContent,
-            });
-          } else if (event.data.type === "SANDBOX_ERROR") {
-            console.error("[DEBUG] Iframe SANDBOX_ERROR received:", event.data);
-            domContent = event.data.renderedDOM || "";
-            cleanup();
-            resolve({
-              error: event.data.error,
-              output: output,
-              renderedDOM: domContent,
-            });
-          }
-        }
-      };
-      window.addEventListener("message", messageHandler);
-      const cleanup = () => {
-        clearTimeout(tid);
-        window.removeEventListener("message", messageHandler);
-        if (iframe.parentNode) {
-          iframe.parentNode.removeChild(iframe);
-        }
-      };
-
-      try {
-        console.log("[DEBUG] Writing HTML to iframe document.");
-        iframeDoc.open();
-        iframeDoc.write(htmlContent);
-        console.log("[DEBUG] Injecting communication script into iframe.");
-        const comScriptEl = iframeDoc.createElement("script");
-        comScriptEl.textContent = comScript;
-        iframeDoc.head.appendChild(comScriptEl);
-
-        console.log("[DEBUG] Injecting utility script for DOM and console reporting");
-        const utilScriptEl = iframeDoc.createElement("script");
-        utilScriptEl.textContent = utilityScript;
-        iframeDoc.head.appendChild(utilScriptEl);
-
-        console.log("[DEBUG] Injecting combined module script into iframe.");
-        const moduleScriptEl = iframeDoc.createElement("script");
-        moduleScriptEl.setAttribute("type", "module");
-        moduleScriptEl.textContent = combinedCode;
-        console.log("[DEBUG] Iframe combined module script content:\n", combinedCode);
-        iframeDoc.body.appendChild(moduleScriptEl);
-        iframeDoc.close();
-        console.log("[DEBUG] Iframe document closed.");
-      } catch (err) {
-        console.error("[DEBUG] Error writing to iframe:", err);
-        cleanup();
-        resolve({
-          error: `Error: ${err.message || String(err)}`,
-          output: output,
-          renderedDOM: "",
-        });
-      }
-    });
-  }
 }
 
 /**
@@ -1153,32 +719,31 @@ async function parsePdf(arrayBuffer) {
   return pagesText.join("\n");
 }
 
-
 function getNaturalDateTime(date = new Date()) {
-  const userLocale = navigator.language || 'en-US';
-  
+  const userLocale = navigator.language || "en-US";
+
   const dateFormatter = new Intl.DateTimeFormat(userLocale, {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
-  
+
   const formattedDate = dateFormatter.format(date);
-  
+
   const hours = date.getHours();
-  
+
   let timeOfDay;
   if (hours >= 0 && hours < 6) {
-    timeOfDay = "night";        // 12:00 AM - 5:59 AM
+    timeOfDay = "night"; // 12:00 AM - 5:59 AM
   } else if (hours >= 6 && hours < 12) {
-    timeOfDay = "morning";      // 6:00 AM - 11:59 AM
+    timeOfDay = "morning"; // 6:00 AM - 11:59 AM
   } else if (hours >= 12 && hours < 18) {
-    timeOfDay = "afternoon";    // 12:00 PM - 5:59 PM
+    timeOfDay = "afternoon"; // 12:00 PM - 5:59 PM
   } else {
-    timeOfDay = "evening";      // 6:00 PM - 11:59 PM
+    timeOfDay = "evening"; // 6:00 PM - 11:59 PM
   }
-  
+
   return `${formattedDate} (${timeOfDay})`;
 }
 
@@ -1421,63 +986,6 @@ export async function fileToBase64(file, truncate = false) {
 export function splitFilename(filename) {
   const idx = filename.lastIndexOf(".");
   return idx > 0 ? [filename.slice(0, idx), filename.slice(idx + 1)] : [filename, ""];
-}
-
-export function sanitizeHTML(inputHTML) {
-  const doc = new DOMParser().parseFromString(inputHTML, "text/html");
-  const normalize = (text) => text.replace(/\s+/g, " ").trim();
-  doc.querySelectorAll("script, style, meta, link, head, iframe").forEach((el) => el.remove());
-  doc.querySelectorAll("a").forEach((e) => (e.innerText = `[${normalize(e.innerText) || e.href}](${e.href})`));
-  doc.querySelectorAll("img").forEach((e) => (e.outerHTML = `![${normalize(e.alt) || e.src}](${e.src})`));
-  doc.querySelectorAll("ul li").forEach((e) => (e.innerText = `- ${normalize(e.innerText)}`));
-  doc.querySelectorAll("ol li").forEach((e, i) => (e.innerText = `${i + 1}. ${normalize(e.innerText)}`));
-  doc.querySelectorAll("hr").forEach((e) => (e.outerHTML = "---"));
-  doc.querySelectorAll("blockquote").forEach((e) => {
-    e.innerText = e.innerText
-      .split(/\r?\n/)
-      .map((line) => `> ${normalize(line)}`)
-      .join("\n");
-  });
-  doc.querySelectorAll("code").forEach((e) => (e.innerText = "`" + normalize(e.innerText) + "`"));
-  doc.querySelectorAll("pre").forEach((e) => (e.innerText = "```\n" + e.innerText + "\n```"));
-  doc.querySelectorAll("strong, b").forEach((e) => (e.innerText = `**${normalize(e.innerText)}**`));
-  doc.querySelectorAll("em, i").forEach((e) => (e.innerText = `*${normalize(e.innerText)}*`));
-  doc.querySelectorAll("h1,h2,h3,h4,h5,h6").forEach((e) => {
-    const level = parseInt(e.tagName.substring(1), 10);
-    e.innerText = `${"#".repeat(level)} ${normalize(e.innerText)}`;
-  });
-  doc.querySelectorAll("table").forEach((table) => {
-    let rows = [];
-    table.querySelectorAll("tr").forEach((tr) => {
-      let cells = Array.from(tr.querySelectorAll("th, td")).map((cell) => {
-        // Remove a leading pipe if it exists (added earlier)
-        let cellText = normalize(cell.innerText);
-        if (cellText.startsWith("|")) {
-          cellText = cellText.substring(1).trim();
-        }
-        return cellText;
-      });
-      if (cells.length > 0) {
-        rows.push(`| ${cells.join(" | ")} |`);
-      }
-    });
-    // If there's a header (i.e. a <th> in the table), add a divider after the first row.
-    if (rows.length > 0 && table.querySelector("th")) {
-      // Determine number of columns based on the first row
-      let headerCells = table.querySelectorAll("tr:first-child th, tr:first-child td");
-      let numColumns = headerCells.length;
-      let divider = `| ${Array(numColumns).fill("---").join(" | ")} |`;
-      rows.splice(1, 0, divider);
-    }
-    const markdownTable = rows.join("\n");
-    table.parentNode.replaceChild(doc.createTextNode(markdownTable), table);
-  });
-  return doc.body.innerText
-    .split(/\r?\n/)
-    .map(normalize)
-    .join("\n")
-    .replace(/\n{2,}/g, "\n")
-    .trim();
 }
 
 export function renderHtml(html, { timeout = 30000, waitTime = 250, container = document.body } = {}) {
