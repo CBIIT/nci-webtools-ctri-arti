@@ -1,3 +1,5 @@
+import TurndownService from "turndown";
+import dompurify from "dompurify";
 import { parseDocument } from "./parsers.js";
 
 window.TOOLS = { search, browse, code, editor, think };
