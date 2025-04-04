@@ -7,7 +7,7 @@ export default function Message({ message, messages = [], active = false, defaul
   const getToolResult = (messages, toolUseId) =>
     messages?.find((m) => m.content?.[0]?.toolResult?.toolUseId === toolUseId)?.content[0].toolResult?.content[0]?.json?.results;
   const renderMessageContent = (c, m) => m.role === "user" ? ({innerText: c.text.trim()}) : ({innerHTML: parse(c.text)?.trim()});
-  const debug = false;
+  const debug = location.hostname === "localhost";
 
   return html`
     <div class="d-flex flex-wrap position-relative">
