@@ -1,5 +1,6 @@
 import { createSignal } from "solid-js";
-import { readStream, runTool, fileToBase64, splitFilename, readFile, detectFileType } from "./utils.js";
+import { readStream, runTool } from "./utils.js";
+import { detectFileType, fileToBase64, splitFilename, readFile } from "../utils/parsers.js";
 import { systemPrompt, tools } from "./config.js";
 import { getClientContext, autoscroll } from "./utils.js";
 
@@ -20,7 +21,6 @@ export function useSubmitMessage() {
    * @param {string} params.model - The model to use.
    */
   async function submitMessage({ message, inputFiles, reasoningMode, model, reset = () => {} }) {
-    // Build the user message payload
     const userMessage = {
       role: "user",
       content: [{ text: message }],
@@ -71,7 +71,7 @@ export function useSubmitMessage() {
             system: systemPrompt(getClientContext()),
             messages: messages(),
             thoughtBudget: reasoningMode ? 24_000 : 0,
-            stream: true, 
+            stream: true,
           }),
         });
 
@@ -102,7 +102,7 @@ export function useSubmitMessage() {
               setActiveMessage(structuredClone(assistantMessage));
             } else if (contentBlockDelta) {
               const { contentBlockIndex, delta } = contentBlockDelta;
-              const { reasoningContent, text, toolUse, } = delta;
+              const { reasoningContent, text, toolUse } = delta;
               if (reasoningContent) {
                 if (!assistantMessage.content[contentBlockIndex]?.reasoningContent) {
                   assistantMessage.content[contentBlockIndex] = {

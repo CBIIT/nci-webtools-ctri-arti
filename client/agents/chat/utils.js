@@ -1,11 +1,5 @@
-import { Readability } from "@mozilla/readability";
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { matmul, AutoModel, AutoTokenizer, Tensor } from "@huggingface/transformers";
-import dompurify from "dompurify";
-import mammoth from "mammoth";
-import TurndownService from "turndown";
-import * as pdfjsLib from "pdfjs-dist";
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+import { parseDocument } from "../utils/parsers.js";
+
 window.TOOLS = { search, browse, code, editor, think };
 
 /**
@@ -48,24 +42,6 @@ export async function* readStream(response) {
 }
 
 /**
- * Fetches content through a proxy
- * @param {string} url - The URL to fetch
- * @param {object} requestInit - Fetch options
- * @returns {Promise<object|string>} - JSON or text response
- */
-async function fetchProxy(url, requestInit = {}) {
-  try {
-    const proxyEndpoint = "/api/proxy";
-    while (new URL(url).pathname.startsWith(proxyEndpoint)) {
-      url = decodeURIComponent(new URL(url).pathname.slice(proxyEndpoint.length).replace(/^\/+/, ""));
-    }
-    return await retry(3, 100, () => fetch(proxyEndpoint + "/" + encodeURIComponent(url), requestInit));
-  } catch (error) {
-    throw new Error(`Invalid proxy URL: ${url}`);
-  }
-}
-
-/**
  * Searches for the given query
  * @param {string} query - The search term
  * @param {number} maxResults - Maximum results to return (default 100)
@@ -88,172 +64,6 @@ export async function search({ query }) {
     gov: response.gov?.results,
   };
   return results;
-}
-
-/**
- * Creates an embedder function with cached model and tokenizer
- *
- * @example
- * const embed = await createEmbedder("minishlab/potion-base-8M");
- * const embeddings = await embed(["hello", "world"]);
- *
- * @param {string} [model_name="minishlab/potion-base-8M"] - Model name
- * @param {Object} [options] - Additional options
- * @param {string} [options.model_type="model2vec"] - Model type
- * @param {string} [options.model_revision="main"] - Model revision
- * @param {string} [options.tokenizer_revision="main"] - Tokenizer revision
- * @param {string} [options.dtype="fp32"] - Data type
- * @param {string} [options.device="wasm" | "webgpu"] - Device (defaults to "webgpu" if available, otherwise "wasm")
- * @returns {Promise<(texts: string[]) => Promise<number[][]>>} - Function that generates embeddings
- */
-export async function createEmbedder(model_name = "minishlab/potion-base-8M", options = {}) {
-  const {
-    model_type = "model2vec",
-    model_revision = "main",
-    tokenizer_revision = "main",
-    device = navigator?.gpu ? "webgpu" : undefined, // use webgpu if available
-    dtype = "fp32",
-  } = options;
-
-  // Load model and tokenizer once
-  const model = await AutoModel.from_pretrained(model_name, {
-    config: { model_type },
-    revision: model_revision,
-    device,
-    dtype,
-  });
-
-  const tokenizer = await AutoTokenizer.from_pretrained(model_name, {
-    revision: tokenizer_revision,
-  });
-
-  /**
-   * Generate embeddings for the provided texts
-   * @param {string[]} texts - Array of texts to embed
-   * @returns {Promise<number[][]>} - Text embeddings
-   */
-  return async function embed(texts, tokenizer_options = {}) {
-    // Tokenize inputs
-    const { input_ids } = await tokenizer(texts, {
-      add_special_tokens: false,
-      return_tensor: false,
-    });
-
-    // Calculate offsets
-    const offsets = [0];
-    for (let i = 0; i < input_ids.length - 1; i++) {
-      offsets.push(offsets[i] + input_ids[i].length);
-    }
-
-    // Create tensors and get embeddings from flattened input ids and offsets
-    const flattened_input_ids = input_ids.flat();
-    const model_inputs = {
-      input_ids: new Tensor("int64", flattened_input_ids, [flattened_input_ids.length]),
-      offsets: new Tensor("int64", offsets, [offsets.length]),
-    };
-
-    const { embeddings } = await model(model_inputs);
-    return embeddings.tolist();
-  };
-}
-
-/**
- * Gets embeddings for a list of texts and computes similarity scores with a query
- * @param {string[]} texts - List of texts
- * @param {string} query - Query text
- * @param {string} model - Model name
- * @returns {Promise<{embeddings: number[][], similarities?: number[][]}>} - Embeddings and similarity scores
- */
-export async function getEmbeddings(texts = [], query = "", model = "minishlab/potion-base-8M") {
-  if (query) {
-    const embeddings = await embed([query].concat(texts), model, { raw: true });
-    const similarities = (await matmul(embeddings.slice([0, 1]), embeddings.slice([1, null]).transpose(1, 0))).mul(100);
-    return { embeddings: embeddings.tolist(), similarities: similarities.tolist() };
-  }
-  return { embeddings: await embed(texts, model) };
-}
-
-/**
- * Creates text embeddings using Model2Vec
- * @example await embed(['hello', 'world'])
- *
- * @param {string[]} texts - Array of texts to embed
- * @param {string} [model_name='minishlab/potion-base-8M'] - Model name
- * @param {Object} [options] - Additional options
- * @param {string} [options.model_type='model2vec'] - Model type
- * @param {string} [options.model_revision='main'] - Model revision
- * @param {string} [options.tokenizer_revision='main'] - Tokenizer revision
- * @param {string} [options.dtype='fp32'] - Data type
- * @param {string} [options.device='wasm' | 'webgpu'] - Device (defaults to 'webgpu' if available, otherwise 'wasm')
- * @returns {Promise<number[][]>} - Text embeddings
- */
-export async function embed(texts, model_name = "minishlab/potion-base-8M", options = {}) {
-  const {
-    model_type = "model2vec",
-    model_revision = "main",
-    tokenizer_revision = "main",
-    device = navigator?.gpu ? "webgpu" : undefined, // use webgpu if available
-    dtype = "fp32",
-    raw = false,
-  } = options;
-
-  // Load model and tokenizer
-  const model = await AutoModel.from_pretrained(model_name, {
-    config: { model_type },
-    revision: model_revision,
-    device,
-    dtype,
-  });
-
-  const tokenizer = await AutoTokenizer.from_pretrained(model_name, {
-    revision: tokenizer_revision,
-  });
-
-  // Tokenize inputs
-  const { input_ids } = await tokenizer(texts, {
-    add_special_tokens: false,
-    return_tensor: false,
-  });
-
-  // Calculate offsets
-  const offsets = [0];
-  for (let i = 0; i < input_ids.length - 1; i++) {
-    offsets.push(offsets[i] + input_ids[i].length);
-  }
-
-  // Flatten input IDs
-  const flattened_input_ids = input_ids.flat();
-
-  // Create tensors and get embeddings
-  const model_inputs = {
-    input_ids: new Tensor("int64", flattened_input_ids, [flattened_input_ids.length]),
-    offsets: new Tensor("int64", offsets, [offsets.length]),
-  };
-
-  const { embeddings } = await model(model_inputs);
-  return raw ? embeddings : embeddings.tolist();
-}
-
-/**
- * Queries a document with a given query and returns the results
- * @param {string} document
- * @param {string} query
- * @returns {Promise<Array>} - Array of search results
- */
-export async function queryDocument(document, query) {
-  const textSplitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 1000,
-    chunkOverlap: 200,
-    keepSeparator: true,
-  });
-  const texts = await textSplitter.splitText(document);
-  const { embeddings, similarities } = await getEmbeddings(texts, query);
-  const results = texts.map((text, i) => ({
-    text,
-    embedding: embeddings[i],
-    similarity: similarities ? similarities[0][i] : null,
-  }));
-  return results.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
 }
 
 export async function queryDocumentWithModel(document, topic, model = "us.anthropic.claude-3-5-haiku-20241022-v1:0") {
@@ -341,9 +151,6 @@ export async function browse({ url, topic }) {
   }
 
   const mimetype = response.headers.get("content-type") || "text/html";
-  const sections = await queryDocument(results, topic);
-  const similar = sections.map((s) => ({ text: s.text, similarity: s.similarity })).slice(0, 20);
-  console.log("[DEBUG] Similarity results:", similar);
 
   if (mimetype.includes("text/html")) {
     results = new TurndownService().turndown(dompurify.sanitize(text));
@@ -556,7 +363,7 @@ export async function code({ source, importMap = {}, timeout = 5000 }) {
       if (e.data.type === "log") log(e.data.level, ...e.data.args);
       if (e.data.type === "done") {
         clearTimeout(timer);
-        const html = iframe.contentDocument?.documentElement?.querySelector('#root')?.innerHTML || "";
+        const html = iframe.contentDocument?.documentElement?.querySelector("#root")?.innerHTML || "";
         cleanup();
         resolve({ html, logs });
       }
@@ -578,29 +385,35 @@ export async function code({ source, importMap = {}, timeout = 5000 }) {
 
     // Set up console capture and error handling
     const initScript = () => {
-      ['log','warn','error','info','debug'].forEach(level => {
+      ["log", "warn", "error", "info", "debug"].forEach((level) => {
         const orig = console[level];
         console[level] = (...args) => {
           try {
-            window.parent.postMessage({
-              type: 'log', 
-              level,
-              args: args.map(a => {
-                try { return typeof a === 'object' ? JSON.stringify(a) : String(a); }
-                catch { return String(a); }
-              })
-            }, '*');
+            window.parent.postMessage(
+              {
+                type: "log",
+                level,
+                args: args.map((a) => {
+                  try {
+                    return typeof a === "object" ? JSON.stringify(a) : String(a);
+                  } catch {
+                    return String(a);
+                  }
+                }),
+              },
+              "*"
+            );
           } catch {}
           orig.apply(console, args);
         };
       });
-      
+
       // Capture errors
-      window.addEventListener('error', e => {
+      window.addEventListener("error", (e) => {
         console.error(`${e.message} [line ${e.lineno}]`);
         e.preventDefault();
       });
-    }
+    };
 
     // Generate HTML with console capture and error handling
     const html = [
@@ -625,129 +438,6 @@ export async function code({ source, importMap = {}, timeout = 5000 }) {
 }
 
 /**
- * Returns the text content of a document
- * @param {ArrayBuffer} buffer
- * @param {string} mimetype
- * @returns {Promise<string>}
- */
-export async function parseDocument(buffer) {
-  const filetype = detectFileType(buffer);
-  switch (filetype) {
-    case "PDF":
-      return await parsePdf(buffer);
-    case "DOCX":
-      return await parseDocx(buffer);
-  }
-  return toMarkdown(new TextDecoder("utf-8").decode(buffer));
-}
-
-/**
- * Converts HTML to Markdown
- * @param {string} htmlString - The HTML content
- * @returns {string} - The markdown content
- */
-export function toMarkdown(htmlString) {
-  const turndownService = new TurndownService();
-
-  // Remove style and script tags
-  turndownService.addRule("remove", {
-    filter: ["style", "script"],
-    replacement: () => "",
-  });
-
-  // Parse HTML into a DOM
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlString, "text/html");
-
-  // Process links - make same-domain links relative
-  const links = doc.querySelectorAll("a");
-  links.forEach((link) => {
-    const href = link.getAttribute("href");
-    if (!href) return; // Skip links without href
-
-    try {
-      const url = new URL(href, window.location.origin);
-      if (url.hostname === location.hostname) {
-        link.setAttribute("href", href.replace(/^https?:\/\/[^/]+/, ""));
-      }
-    } catch (error) {
-      // Invalid URL, leave it as is
-    }
-  });
-
-  // Extract content using Readability
-  try {
-    const article = new Readability(doc).parse();
-    if (!article) {
-      throw new Error("Could not extract article content.");
-    }
-
-    // Convert to markdown
-    return turndownService.turndown(article.content);
-  } catch (error) {
-    // If Readability fails, try to convert the body content instead
-    const body = doc.body ? doc.body.innerHTML : htmlString;
-    return turndownService.turndown(body);
-  }
-}
-
-/**
- * Extracts text from a DOCX buffer
- * @param {Buffer} buffer
- * @returns {Promise<string>} extracted text
- */
-export async function parseDocx(arrayBuffer) {
-  const rawText = await mammoth.extractRawText({ arrayBuffer });
-  return rawText.value || "No text found in DOCX";
-}
-
-/**
- * Extracts text from a PDF buffer
- * @param {Buffer} arrayBuffer
- * @returns {Promise<string>} extracted text
- */
-async function parsePdf(arrayBuffer) {
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const numPages = pdf.numPages;
-  const pagesText = [];
-  for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
-    const page = await pdf.getPage(pageNumber);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items.map((item) => item.str).join(" ");
-    pagesText.push(pageText);
-  }
-  return pagesText.join("\n");
-}
-
-function getNaturalDateTime(date = new Date()) {
-  const userLocale = navigator.language || "en-US";
-
-  const dateFormatter = new Intl.DateTimeFormat(userLocale, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  const formattedDate = dateFormatter.format(date);
-
-  const hours = date.getHours();
-
-  let timeOfDay;
-  if (hours >= 0 && hours < 6) {
-    timeOfDay = "night"; // 12:00 AM - 5:59 AM
-  } else if (hours >= 6 && hours < 12) {
-    timeOfDay = "morning"; // 6:00 AM - 11:59 AM
-  } else if (hours >= 12 && hours < 18) {
-    timeOfDay = "afternoon"; // 12:00 PM - 5:59 PM
-  } else {
-    timeOfDay = "evening"; // 6:00 PM - 11:59 PM
-  }
-
-  return `${formattedDate} (${timeOfDay})`;
-}
-
-/**
  * Returns the client environment information
  * @returns {any} - The client environment information
  */
@@ -755,7 +445,7 @@ export function getClientContext() {
   const now = new Date();
   const { language, platform, deviceMemory, hardwareConcurrency } = navigator;
   const timeFormat = Intl.DateTimeFormat().resolvedOptions();
-  const time = getNaturalDateTime(now);
+  const time = new Date().toDateString();
   const memory = deviceMemory >= 8 ? "greater than 8 GB" : `approximately ${deviceMemory} GB`;
   const getFileContents = (file) => localStorage.getItem("file:" + file) || localStorage.setItem("file:" + file, "") || "";
   const filenames = new Array(localStorage.length)
@@ -770,70 +460,6 @@ export function getClientContext() {
   main.push({ filenames });
   main.push({ description: "the filenames key contains the list of files. please review the items under 'important' carefully" });
   return { main: JSON.stringify(main, null, 2), time, language, platform, memory, hardwareConcurrency, timeFormat };
-}
-
-/**
- * Detects if a file is TEXT, BINARY, PDF, ZIP, or DOCX
- * @param {ArrayBuffer} buffer - The file buffer to analyze
- * @returns {string} - 'TEXT', 'BINARY', 'PDF', 'ZIP', or 'DOCX'
- */
-export function detectFileType(buffer) {
-  const bytes = new Uint8Array(buffer);
-  const fileStart = bytesToString(bytes, 0, 50);
-
-  if (fileStart.startsWith("%PDF-")) {
-    return "PDF";
-  }
-
-  if (fileStart.startsWith("PK\x03\x04")) {
-    // Look for Content_Types.xml to identify DOCX
-    const searchArea = bytesToString(bytes, 0, Math.min(bytes.length, 10000));
-    if (searchArea.includes("[Content_Types].xml")) {
-      return "DOCX";
-    } else {
-      return "ZIP";
-    }
-  }
-
-  return isTextFile(bytes) ? "TEXT" : "BINARY";
-}
-
-/**
- * Helper function to convert a byte array to a string
- * @param {Uint8Array} bytes - The byte array
- * @param {number} start - Starting index
- * @param {number} length - How many bytes to convert
- * @returns {string} - The resulting string
- */
-function bytesToString(bytes, start, length) {
-  const end = Math.min(start + length, bytes.length);
-  return String.fromCharCode.apply(null, bytes.slice(start, end));
-}
-
-/**
- * Determines if content is likely a text file
- * @param {Uint8Array} bytes - The byte array to analyze
- * @returns {boolean} - True if likely a text file, false if likely binary
- */
-function isTextFile(bytes) {
-  const MAX_SAMPLE_SIZE = 1000;
-  const sampleSize = Math.min(bytes.length, MAX_SAMPLE_SIZE);
-  let binaryCount = 0;
-
-  for (let i = 0; i < sampleSize; i++) {
-    const byte = bytes[i];
-    // Skip common text file control characters (CR, LF, TAB)
-    if (byte === 0x0d || byte === 0x0a || byte === 0x09) {
-      continue;
-    }
-    // Count null bytes and control characters as binary indicators
-    if (byte === 0x00 || (byte < 0x20 && byte !== 0x09)) {
-      binaryCount++;
-    }
-  }
-
-  // If more than 10% of the sample contains binary data, consider it binary
-  return binaryCount <= sampleSize * 0.1;
 }
 
 /**
@@ -869,189 +495,6 @@ export async function retry(maxAttempts, initialDelay, fn) {
   }
 
   throw new Error(`Failed after ${maxAttempts} attempts. Last error: ${lastError.message}`);
-}
-
-export function parseStreamingJson(incompleteJson) {
-  // Handle empty input
-  if (!incompleteJson || incompleteJson.trim() === "") {
-    return null;
-  }
-
-  try {
-    return JSON.parse(incompleteJson);
-  } catch (e) {
-    // Continue with auto-completion logic
-  }
-
-  let str = incompleteJson;
-  let inString = false;
-  let escaped = false;
-  const closingStack = [];
-
-  // Process each character to track structure using a stack
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i];
-
-    // Handle escape sequences within strings
-    if (char === "\\" && inString) {
-      escaped = !escaped;
-    } else if (char === '"' && !escaped) {
-      inString = !inString;
-      escaped = false;
-    } else {
-      escaped = false;
-    }
-
-    // When not in a string, track opening and closing tokens
-    if (!inString) {
-      if (char === "{") {
-        closingStack.push("}");
-      } else if (char === "[") {
-        closingStack.push("]");
-      } else if (char === "}" || char === "]") {
-        // If the closing token matches the expected one, pop from the stack
-        if (closingStack.length && closingStack[closingStack.length - 1] === char) {
-          closingStack.pop();
-        }
-      }
-    }
-  }
-
-  // If we ended inside a string, close it
-  if (inString) {
-    str += '"';
-  }
-
-  // Append any missing closing characters in the correct order
-  while (closingStack.length) {
-    str += closingStack.pop();
-  }
-
-  // Fix incomplete key-value pairs at the end (e.g., {"key": )
-  str = str.replace(/("([^"\\]*(\\.[^"\\]*)*)"\s*:\s*)$/g, "$1null");
-
-  // Remove any trailing commas at the end or before closing braces/brackets
-  str = str.replace(/,\s*$/g, "");
-  str = str.replace(/,\s*([\]}])/g, "$1");
-
-  // Try to parse the fixed JSON string
-  try {
-    return JSON.parse(str);
-  } catch (e) {
-    return incompleteJson;
-  }
-}
-
-/**
- * Reads a file as text, arrayBuffer, or dataURL
- * @param {File} file - The file to read
- * @param {"text"|"dataURL"|"arrayBuffer"} [type] - The type of data to read
- * @returns {Promise<string|ArrayBuffer|string>} - The file content
- * @throws {Error} - Throws an error if the file read fails
- */
-export function readFile(file, type = "text") {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = (error) => reject(error);
-    reader.onload = () => resolve(reader.result);
-    if (type === "dataURL") {
-      reader.readAsDataURL(file);
-    } else if (type === "arrayBuffer") {
-      reader.readAsArrayBuffer(file);
-    } else {
-      reader.readAsText(file);
-    }
-  });
-}
-
-/**
- * Converts a file to base64
- * @param {File} file - The file to convert
- * @param {boolean} truncate - Whether to truncate the base64 string prefix
- * @returns {Promise<string>} - The base64 string
- */
-export async function fileToBase64(file, truncate = false) {
-  let dataURL = await readFile(file, "dataURL");
-  if (truncate) {
-    dataURL = dataURL.split(",")[1];
-  }
-  return dataURL;
-}
-
-/**
- * Splits a filename into name and extension
- * @param {string} filename - The filename to split
- * @returns {[string, string]} - The filename and extension
- */
-export function splitFilename(filename) {
-  const idx = filename.lastIndexOf(".");
-  return idx > 0 ? [filename.slice(0, idx), filename.slice(idx + 1)] : [filename, ""];
-}
-
-export function renderHtml(html, { timeout = 30000, waitTime = 250, container = document.body } = {}) {
-  return new Promise((resolve) => {
-    const iframe = document.createElement("iframe");
-    iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms");
-    iframe.style.cssText = "width:100%; height:100%; display:none;";
-    container.appendChild(iframe);
-
-    const cleanup = () => {
-      try {
-        container.removeChild(iframe);
-      } catch {}
-    };
-
-    const getHtml = () => {
-      try {
-        const doc = iframe.contentDocument || iframe.contentWindow.document;
-        resolve(doc.documentElement.outerHTML);
-      } catch {
-        resolve(""); // Return empty string instead of rejecting
-      } finally {
-        cleanup();
-      }
-    };
-
-    const timeoutId = setTimeout(getHtml, timeout);
-
-    // Silence console errors by catching them in event handlers
-    iframe.onload = () => {
-      setTimeout(() => {
-        clearTimeout(timeoutId);
-        getHtml();
-      }, waitTime);
-    };
-
-    iframe.onerror = () => {
-      clearTimeout(timeoutId);
-      resolve(""); // Return empty string instead of rejecting
-      cleanup();
-    };
-
-    // Prevent errors from bubbling to console
-    window.addEventListener(
-      "error",
-      (e) => {
-        if (e.target === iframe || iframe.contentWindow === e.target.contentWindow) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      },
-      true
-    );
-
-    try {
-      iframe.src = "about:blank";
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      doc.open();
-      doc.write(html);
-      doc.close();
-    } catch {
-      clearTimeout(timeoutId);
-      resolve(""); // Return empty string instead of rejecting
-      cleanup();
-    }
-  });
 }
 
 /**
