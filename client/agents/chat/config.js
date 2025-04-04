@@ -43,7 +43,44 @@ export const tools = [
     toolSpec: {
       name: "code",
       description:
-        'Execute JavaScript code with support for HTML templates and JavaScript modules. Use this tool for calculations, data processing, visualization, or building interactive regulatory data applications.\n\nHTML templates and modules should be referred to by their filenames (stored in localStorage).\n\nExample:\n```javascript\ncode({\n  source: "document.getElementById(\'app\').innerHTML = \'<h1>Hello World</h1>\';",\n  html: "my-template.html",\n  modules: ["chart.js", "data-utils.js"],\n  visible: true\n});\n```',
+        `Execute self-contained JavaScript code with ES module and import map support in a sandboxed environment. When asked to import external libaries, perform some research on these libraries using the search and browse tools before using them. The primary cdn is jsdelivr.net, and we prefer +esm modules. This environment does not have access to the filesystem, so source code must be entirely self-contained. The function creates an isolated iframe to safely run code, captures console output, and returns both the resulting HTML and logs.  This tool is useful for implementing and verifying ANY AND ALL mathematical and statistical calculations, as well as for running JavaScript code that does not require filesystem access. It is also useful for testing and debugging JavaScript code snippets, including HTML templates and modules. The template comes with an implicit <div id='root'></div> element which can be used to show output. Remember that this is running in the top scope, so return statements are not supported unless they're in a function. Also note that we don't have node.js imports, and that this is a browser environment.
+
+The following example demonstrates how to use the code tool to run a simple SolidJS component.
+
+importMap (more imports are shown than are actually needed in order to demonstrate how to import them):
+{
+  "imports": {
+    "@huggingface/transformers": "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.0/+esm",
+    "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/dist/solid.min.js",
+    "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/html/dist/html.min.js",
+    "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/store/dist/store.min.js",
+    "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1.9.4/web/dist/web.min.js",
+    "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+    "turndown": "https://cdn.jsdelivr.net/npm/turndown@7.2.0/+esm"
+  }
+}
+source: 
+import { createSignal } from "solid-js";
+import { render } from "solid-js/web";
+import html from "solid-js/html";
+
+render(() => html\`<\${Counter} />\`, window.root);
+
+/*
+Expressions need to always be a wrapped in a getter function or they won't be reactive. The following will not update when the first or last values change because the values are not being accessed inside an effect that the template creates internally, therefore dependencies will not be tracked:
+html\`<h1>Hello \${first() + " " + last()}</h1>\`;
+
+The following will update as expected when first or last change because the template will read from the getter within an effect 
+and dependencies will be tracked:
+html\`<h1>Hello \${() => first() + " " + last()}</h1>\`;
+*/
+function Counter() {
+  const [count, setCount] = createSignal(0);
+  setInterval(() => setCount(count() + 1), 1000);
+  // note that we have simplified \${() => count()} to \${count} since it is already a function
+  return html\`<button onClick=\${() => setCount(count() + 1)}+</button>\${count}\`
+}
+      `,
       inputSchema: {
         json: {
           type: "object",
@@ -51,28 +88,17 @@ export const tools = [
             source: {
               type: "string",
               description:
-                "JavaScript code to execute. Include clear comments and error handling. Remember that only console.log output is visible in the response. Always log out the innerHTML of elements to validate HTML changes.",
+                "JavaScript code to execute as an ES module. This is the main code that will run in the sandboxed environment. Include comments for clarity and proper error handling for robust execution.",
             },
-            html: {
-              type: "string",
+            importMap: {
+              type: "object",
               description:
-                "Path to an HTML template stored in localStorage (optional). Provide only the filename (e.g., 'my-template.html' or 'dashboard.html'), not the actual HTML content. Templates can contain custom styling and structure.",
-            },
-            modules: {
-              type: "array",
-              items: {
-                type: "string",
-              },
-              description:
-                "Array of module filenames to load from localStorage (optional). Provide only the filenames (e.g., ['utils.js', 'chart.js']), not the actual JavaScript code. Modules can contain reusable functions and components.",
+                'Optional import map for ES modules. Allows mapping import specifiers to specific URLs or paths, enabling the use of package names in import statements. For example: {"imports": {"solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1.9.5/dist/solid.js"}}',
+              default: { imports: {} },
             },
             timeout: {
               type: "number",
               description: "Execution timeout in milliseconds (default: 5000).",
-            },
-            visible: {
-              type: "boolean",
-              description: "Whether to make the execution iframe visible (default: false).",
             },
           },
           required: ["source"],
@@ -154,7 +180,6 @@ export const tools = [
     },
   },
 ];
-
 
 export function systemPrompt(context) {
   return `The assistant is Ada.
