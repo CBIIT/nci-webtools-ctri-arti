@@ -31,7 +31,7 @@ export const tools = [
             topic: {
               type: "string",
               description:
-                "The specific question or information need about the document. Ask clear, focused questions that the document might answer. Start with basic structural questions (e.g., 'What are the main sections of this document?') before asking about specific content. Phrase questions precisely using terminology likely found in the document. For best results, ask one specific question per query rather than multiple questions or vague requests.",
+                "The specific question or information need about the document. Ask clear, focused questions that the document might answer. Start with basic structural questions (e.g., 'What are the main sections of this document?') before asking about specific content. Phrase questions precisely using terminology likely found in the document. For best results, ask one specific question per query rather than multiple questions or vague requests. When asking questions, always include the full context for any question being asked.",
             },
           },
           required: ["url", "topic"],
