@@ -19,7 +19,7 @@ export function useSubmitMessage() {
    * @param {boolean} params.reasoningMode - Whether reasoning mode is enabled.
    * @param {string} params.model - The model to use.
    */
-  async function submitMessage({ message, inputFiles, reasoningMode, model, reset = () => {} }) {
+  async function submitMessage({ message, inputFiles, reasoningMode, model, context = {}, reset = () => {} }) {
     const userMessage = {
       role: "user",
       content: [{ text: message }],
@@ -67,7 +67,7 @@ export function useSubmitMessage() {
           body: JSON.stringify({
             model,
             tools,
-            system: systemPrompt(getClientContext()),
+            system: systemPrompt(getClientContext(context)),
             messages: messages(),
             thoughtBudget: reasoningMode ? 24_000 : 0,
             stream: true,
