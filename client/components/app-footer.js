@@ -3,32 +3,29 @@ template.innerHTML = `
 <footer class="flex-grow-0">
   <div class="bg-primary-dark text-light py-4">
     <div class="container">
-      <div class="mb-4">
-        <a
-          href="https://datascience.cancer.gov/about/organization/informatics-and-data-science-program-ids/ids"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-light h4 mb-1"
-          >Clinical &amp; Translational Research Informatics Branch</a
-        >
-        <div class="h6">
-          at the
-          <a class="text-light" target="_blank" rel="noopener noreferrer" href="https://www.cancer.gov/">National Cancer Institute</a>
+      <div class="d-flex flex-wrap justify-content-between">
+        <div class="mb-4">
+          <a
+            href="https://datascience.cancer.gov/about/organization/informatics-and-data-science-program-ids/ids"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-light h4 mb-1"
+            >Clinical &amp; Translational Research Informatics Branch</a
+          >
+          <div class="h6">
+            at the
+            <a class="text-light" target="_blank" rel="noopener noreferrer" href="https://www.cancer.gov/">National Cancer Institute</a>
+          </div>
+        </div>
+        <div class="text-start text-lg-end mb-4">
+          <div class="text-light h4 mb-1">Contact Us</div>
+          <a class="text-light" target="_blank" rel="noopener noreferrer" href="https://datascience.cancer.gov/about/contact">General Support</a>
         </div>
       </div>
+
       <div class="row">
-        <div class="col-lg-4 mb-4">
-          <div class="h5 mb-1 font-weight-light">CONTACT INFORMATION</div>
-          <ul class="list-unstyled mb-0">
-            <li>
-              <a class="text-light" target="_blank" rel="noopener noreferrer" href="https://datascience.cancer.gov/about/contact"
-                >Contact Us</a
-              >
-            </li>
-          </ul>
-        </div>
-        <div class="col-lg-4 mb-4">
-          <div class="h5 mb-1 font-weight-light">POLICIES</div>
+        <div class="col-lg-6 mb-4 ">
+          <div class="h6 mb-1">POLICIES</div>
           <ul class="list-unstyled mb-0">
             <li>
               <a class="text-light" target="_blank" rel="noopener noreferrer" href="https://www.cancer.gov/policies/accessibility"
@@ -54,9 +51,9 @@ template.innerHTML = `
             </li>
           </ul>
         </div>
-        <div class="col-lg-4 mb-4">
-          <div class="h5 mb-1 font-weight-light">MORE INFORMATION</div>
-          <ul class="list-unstyled mb-0">
+        <div class="col-lg-6 mb-4">
+          <div class="h6 mb-1 text-start text-lg-end">MORE INFORMATION</div>
+          <ul class="list-unstyled text-start text-lg-end mb-0">
             <li>
               <a class="text-light" target="_blank" rel="noopener noreferrer" href="http://www.hhs.gov/"
                 >U.S. Department of Health and Human Services</a
@@ -79,7 +76,6 @@ template.innerHTML = `
         </div>
       </div>
     </div>
-    <div class="text-center">NIH ... Turning Discovery Into Health ®</div>
   </div>
 </footer>
 `;
