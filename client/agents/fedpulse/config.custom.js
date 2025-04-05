@@ -1,4 +1,4 @@
-import { browse } from "./utils.js";
+import { browse } from "../utils/utils.js";
 
 export const summary = `
 Summary of Major U.S. Political Events from October 2024 - February 2025
@@ -146,7 +146,7 @@ Federal employees are offered options such as early retirement, voluntary separa
 
 export const currentExecutiveOrders = await browse({ url: "https://www.federalregister.gov/api/v1/documents.json?conditions%5Bpresidential_document_type%5D%5B%5D=executive_order" });
 
-export const customContext = {
+export const context = {
   summary,
   currentExecutiveOrders
 }
