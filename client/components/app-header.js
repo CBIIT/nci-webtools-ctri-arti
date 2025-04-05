@@ -61,7 +61,7 @@ export class AppHeader extends HTMLElement {
     return `
       <header class="flex-grow-0">
         <div class="container py-3">
-          <a href="/" class="d-inline-block">
+          <a href="/" title="Home" class="d-inline-block">
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="${this.svgHeight}" width="${this.svgWidth}" viewBox="${this.viewBox}">
               <!-- Edit the viewBox above (x, y, width, height) to adjust for different logo text. Normally width is sufficient (note: the minimum viewBox width is 340 units) -->
               <style>
