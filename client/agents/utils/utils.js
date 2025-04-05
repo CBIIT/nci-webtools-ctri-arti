@@ -69,6 +69,7 @@ export async function search({ query }) {
 }
 
 export async function queryDocumentWithModel(document, topic, model = "us.anthropic.claude-3-5-haiku-20241022-v1:0") {
+  if (!topic) return document;
   document = truncate(document, 500_000);
   const system = `You are a research assistant. You will be given a document and a question. 
 
@@ -441,7 +442,7 @@ export async function code({ source, importMap = {}, timeout = 5000 }) {
  * Returns the client environment information
  * @returns {any} - The client environment information
  */
-export function getClientContext() {
+export function getClientContext(important = {}) {
   const now = new Date();
   const { language, platform, deviceMemory, hardwareConcurrency } = navigator;
   const timeFormat = Intl.DateTimeFormat().resolvedOptions();
@@ -457,8 +458,12 @@ export function getClientContext() {
     file,
     contents: getFileContents(file),
   }));
+  main.push({ description: 'The filenames key contains the list of files. ' });
   main.push({ filenames });
-  main.push({ description: "the filenames key contains the list of files. please review the items under 'important' carefully" });
+  if (Object.keys(important).length) {
+    main.push({ additionalInstructions: "Please review the items under 'important' carefully" });
+    main.push({ important });
+  }
   return { main: JSON.stringify(main, null, 2), time, language, platform, memory, hardwareConcurrency, timeFormat };
 }
 
