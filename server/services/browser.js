@@ -22,7 +22,8 @@ export async function getSession(sessionId) {
   if (!browser) {
     browser = await puppeteer.launch({
       headless: false,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--no-zygote"],
+      protocolTimeout: 240_000,
     });
     browser.on("disconnected", () => {
       console.log("Browser was disconnected");
