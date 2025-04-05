@@ -91,6 +91,7 @@ a:active, a:hover {
   position: absolute;
   min-width: 100%;
   min-height: 100%;
+  max-width: 100%;
   width: auto;
   height: auto;
   opacity: 0.1;
