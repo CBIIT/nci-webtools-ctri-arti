@@ -2,6 +2,7 @@
   --bs-primary-rgb: 37, 6, 82;
   --bs-primary-dark-rgb: 13, 38, 72;
   --bs-secondary-rgb: 83, 90, 95;
+  --bs-danger-rgb: 187, 14, 61;
 }
 
 .btn {
