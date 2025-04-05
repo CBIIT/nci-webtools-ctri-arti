@@ -118,7 +118,7 @@ export default function Page() {
           </div>
         </div>
       </form>
-      <small class="text-center text-muted py-1">Research Optimizer can make mistakes. Please double-check facts.</small>
+      <small class="text-center text-muted py-1">Research Optimizer can make mistakes. Please double-check statements.</small>
     </main>
   `;
 }
