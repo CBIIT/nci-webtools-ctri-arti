@@ -72,23 +72,25 @@ export async function queryDocumentWithModel(document, topic, model = "us.anthro
   document = truncate(document, 500_000);
   const system = `You are a research assistant. You will be given a document and a question. 
 
-Your task is to answer the question using only the information in the document. You must not add any information that is not in the document, and you must provide exact quotes with attributions. 
+Your task is to answer the question using only the information in the document. You must not add any information that is not in the document, and you must provide exact quotes and urls with attributions.
 
 CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text.
 
 Your response MUST:
-1. Include EXACT quotes from the document with precise location references (page/section/paragraph) BEFORE any analysis or explanation
-2. Use quotation marks for ALL extracted text
-3. Never paraphrase or summarize when direct quotes are available
-4. Clearly indicate when information requested is not in the document
-5. Never attempt to fill gaps with general knowledge or assumptions
-6. Always APA-style references for factual claims (Example: According to Smith (2025, para. 3), "direct quote" [URL]). Clearly mark which information comes directly from sources.
+1. Include EXACT inline markdown url references for any navigational entities referenced in the document. Examples include: navbars, links, buttons, forms, etc.
+2. Include EXACT quotes and url references from the document with precise location references (page/section/paragraph) BEFORE any analysis or explanation
+3. Use quotation marks for ALL extracted text and urls
+4. Never paraphrase or summarize when direct quotes are available
+5. Clearly indicate when information requested is not in the document
+6. Never attempt to fill gaps with general knowledge or assumptions
+7. Always use APA-style references for factual claims (Example: According to Smith (2025, para. 3), "direct quote" [URL]). Clearly mark which information comes directly from sources.
+8. Always include exact urls from the document in the response
 
 If the document doesn't contain information relevant to the question:
 - State this explicitly: "The document does not contain information about [topic]"
 - Do not provide alternative information or guesses
 - Do not use external knowledge
-- Instead, provide a comprehensive summary of the document's contents using the most relevant sections and quotes.
+- Instead, provide a comprehensive summary of the document's contents using the most relevant sections and quotes
 
 VERIFICATION STEPS (perform these before finalizing your answer):
 - Double-check that every statement is backed by an exact quote
@@ -96,7 +98,9 @@ VERIFICATION STEPS (perform these before finalizing your answer):
 - Confirm all location references are accurate
 - Ensure no information is presented that isn't directly from the document
 
-The document is as follows: ${document}`;
+The document is as follows: 
+
+<document>${document}</document>`;
 
   const prompt = `Answer this question about the document: "${topic}"`;
 
@@ -147,19 +151,13 @@ export async function browse({ url, topic }) {
   const response = await fetch("/api/browse?" + new URLSearchParams({ url, id }));
   const bytes = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(bytes);
-  let results;
   if (!response.ok) {
     return `Failed to read ${url}: ${response.status} ${response.statusText}\n${text}`;
   }
 
   const mimetype = response.headers.get("content-type") || "text/html";
-
-  if (mimetype.includes("text/html")) {
-    results = new TurndownService().turndown(dompurify.sanitize(text));
-  } else {
-    results = await parseDocument(bytes, mimetype, url);
-  }
-  return results.length > 32_000 ? await queryDocumentWithModel(results, topic) : results;
+  const results = await parseDocument(bytes, mimetype, url);
+  return await queryDocumentWithModel(results, topic);
 }
 
 /**
@@ -421,7 +419,7 @@ export async function code({ source, importMap = {}, timeout = 5000 }) {
     const html = [
       `<!DOCTYPE html><html>`,
       `<head><script type="importmap">${JSON.stringify(importMap)}</script><script>(${initScript.toString()})()</script></head>`,
-      `<body><div id="root"></div><script type="module">${source}; window.parent.postMessage({type: 'done'}, '*');</script></body>`,
+      `<body><div id="root"></div><script type="module">${source}; setTimeout(() => window.parent.postMessage({type: 'done'}, '*'), 0);</script></body>`,
       `</html>`,
     ].join("");
 
