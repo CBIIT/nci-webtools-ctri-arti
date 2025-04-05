@@ -1,6 +1,6 @@
 const template = document.createElement("template");
 template.innerHTML = `
-<footer class="bg-transparent text-secondary pt-3">
+<footer class="bg-transparent text-secondary pt-3 opacity-75">
   <div class="container">
     <div class="row">
       <div class="col-lg-9 col-md-10 mb-3">
