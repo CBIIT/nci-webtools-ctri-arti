@@ -32,42 +32,20 @@ export default function Page() {
     };
     await submitMessage({ message, inputFiles, reasoningMode, model, reset });
   }
-
-  const footerLinks = [
-    [
-      { href: "https://datascience.cancer.gov/about/contact", text: "Contact Us" },
-      { href: "https://www.cancer.gov/policies/accessibility", text: "Accessibility" },
-      { href: "https://www.cancer.gov/policies/disclaimer", text: "Disclaimer" },
-      { href: "https://www.cancer.gov/policies/foia", text: "FOIA" },
-      { href: "https://www.hhs.gov/vulnerability-disclosure-policy/", text: "Vulnerability Disclosure" },
-    ],
-    [
-      { href: "http://www.hhs.gov/", text: "U.S. Department of Health and Human Services" },
-      { href: "http://www.nih.gov/", text: "National Institutes of Health" },
-      { href: "https://www.cancer.gov/", text: "National Cancer Institute" },
-      { href: "http://usa.gov/", text: "USA.gov" },
-    ],
-  ];
-
   return html`
-    <header class="container-fluid border-bottom py-3">
+    <div class="container">
       <div class="row">
-        <div class="col d-flex justify-content-start align-items-center">
-          <a href="/" class="d-inline-flex">
-            <object data="/images/logo.svg" type="image/svg+xml" height="50" class="pe-none mw-100"></object
-          ></a>
-        </div>
-        <div class="col d-none d-md-flex justify-content-center align-items-center">
+        <div class="col">
           <input
             value=${() => conversation()?.title}
             onChange=${(ev) => updateConversation({ title: ev.target.value })}
-            class="form-control form-control-sm text-center border-0 bg-transparent" />
+            class="form-control form-control-sm border-0 bg-transparent fw-light fs-5" />
         </div>
         <div class="col d-flex justify-content-end align-items-center">
           <button class="btn btn-outline-dark" onClick=${toggle("conversations")}>=</button>
         </div>
       </div>
-    </header>
+    </div>
 
     <aside
       class=${() => ["offcanvas offcanvas-end", toggles().conversations ? "show" : "hiding"].join(" ")}
@@ -142,19 +120,5 @@ export default function Page() {
       </form>
       <small class="text-center text-muted py-1">Research Optimizer can make mistakes. Please double-check facts.</small>
     </main>
-
-    <footer class="flex-grow-0 small text-center opacity-75 py-3">
-      ${footerLinks.map(
-        (links) =>
-          html`<ul class="list-inline separator">
-            ${links.map(
-              (link) =>
-                html`<li class="list-inline-item">
-                  <a target="_blank" rel="noopener noreferrer" href=${link.href}>${link.text}</a>
-                </li>`
-            )}
-          </ul>`
-      )}
-    </footer>
   `;
 }

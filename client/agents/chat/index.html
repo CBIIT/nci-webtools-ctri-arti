@@ -30,10 +30,14 @@
         }
       }
     </script>
+    <script src="/components/app-header.js" type="module"></script>
+    <script src="/components/app-footer.js" type="module"></script>
     <script src="/components/dna-spinner.js" type="module"></script>
   </head>
-  <body class="vh-100 bg-lighter">
-    <div class="h-100 d-flex flex-column" id="app"></div>
+  <body class="vh-100 d-flex flex-column bg-lighter">
+    <app-header class="flex-grow-0"></app-header>
+    <div class="d-flex flex-column flex-grow-1" id="app"></div>
+    <app-footer class="flex-grow-0"></app-footer>
     <script type="module" src="agents/chat/index.js"></script>
   </body>
 </html>
