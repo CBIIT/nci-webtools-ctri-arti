@@ -21,7 +21,7 @@
         <div class="col-md-6">
             <label for="inputText" class="form-label">Text To Translate</label>
             <input type="file" id="fileInput" class="form-control form-control-sm" accept=".txt, .docx, .pdf" />
-            <textarea class="form-control form-control-sm mb-2" id="inputText" rows="8" placeholder="Enter text to translate" required></textarea>
+            <textarea class="form-control form-control-sm mb-2" id="inputText" rows="8" placeholder="Enter text to translate or choose a file above" required></textarea>
             
             <label for="sourceLanguage" class="form-label mt-2">Select Source Language</label>
             <select class="form-select form-select-sm mb-2" name="sourceLanguage" data-options="translate-languages" value="en">
@@ -55,7 +55,6 @@
           "imports": {
             "dompurify": "https://cdn.jsdelivr.net/npm/dompurify@3.2.5/+esm",
             "mammoth": "https://cdn.jsdelivr.net/npm/mammoth@1.9.0/+esm",
-            "marked": "https://cdn.jsdelivr.net/npm/marked@15.0.6/+esm",
             "pdfjs-dist": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/+esm",
             "turndown": "https://cdn.jsdelivr.net/npm/turndown@7.2.0/+esm"
           }
