@@ -105,7 +105,7 @@ export class EcsServiceStack extends Stack {
     )
 
     taskRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName("TranslateReadOnly")
+      iam.ManagedPolicy.fromAwsManagedPolicyName("TranslateFullAccess")
     )
 
     const logGroup = new logs.LogGroup(this, "log-group", {
