@@ -104,6 +104,10 @@ export class EcsServiceStack extends Stack {
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonBedrockFullAccess")
     )
 
+    taskRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName("TranslateReadOnly")
+    )
+
     const logGroup = new logs.LogGroup(this, "log-group", {
       logGroupName: prefix,
       retention: logs.RetentionDays.ONE_MONTH,
