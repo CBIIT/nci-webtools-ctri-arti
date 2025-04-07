@@ -19,31 +19,81 @@
 
       <form id="translateForm" class="row">
         <div class="col-md-6">
-            <label for="inputText" class="form-label mt-2">Text To Translate</label>
-            <textarea class="form-control" id="inputText" rows="10" placeholder="Enter text to translate"></textarea>
+            <label for="inputText" class="form-label">Text To Translate</label>
+            <input type="file" id="fileInput" class="form-control form-control-sm" accept=".txt, .docx, .pdf" />
+            <textarea class="form-control form-control-sm mb-2" id="inputText" rows="8" placeholder="Enter text to translate"></textarea>
+            
             <label for="sourceLanguage" class="form-label mt-2">Select Source Language</label>
-            <select class="form-select" name="sourceLanguage" data-options="translate-languages" value="en">
+            <select class="form-select form-select-sm mb-2" name="sourceLanguage" data-options="translate-languages" value="en">
                 <option value="" disabled selected>Select a source language</option>
             </select>
 
-            <button class="btn btn-primary mt-2" id="translateButton" type="submit">Translate</button>
+            <div class="text-end mb-2">
+                <button class="btn btn-sm btn-outline-dark me-1" id="clearButton" type="reset">Clear</button>
+                <button class="btn btn-sm btn-outline-dark" id="translateButton" type="submit">Translate</button>
+
+            </div>
         </div>
         <div class="col-md-6">
-            <label for="translationResult" class="form-label mt-2">Translated Text</label>
-            <textarea class="form-control" id="translationResult" rows="10" placeholder="Submit text to view translation results" readonly></textarea>
+            <label for="translationResult" class="form-label">Translated Text</label>
+            <textarea class="form-control form-control-sm" id="translationResult" rows="10" placeholder="Submit text to view translation results" readonly></textarea>
             
             <label for="targetLanguage" class="form-label mt-2">Select Target Language</label>
-            <select class="form-select" name="targetLanguage" data-options="translate-languages" value="es">
+            <select class="form-select form-select-sm" name="targetLanguage" data-options="translate-languages" value="es">
                 <option value="" disabled selected>Select a target language</option>
             </select>
 
+            <div class="text-start">
+
+            <button class="btn btn-sm btn-outline-dark mt-2" id="downloadButton" type="button">Download</button>
+            </div>
         </div>
       </form>
     </main>
     <app-footer></app-footer>
+    <script type="importmap">
+        {
+          "imports": {
+            "dompurify": "https://cdn.jsdelivr.net/npm/dompurify@3.2.5/+esm",
+            "mammoth": "https://cdn.jsdelivr.net/npm/mammoth@1.9.0/+esm",
+            "marked": "https://cdn.jsdelivr.net/npm/marked@15.0.6/+esm",
+            "pdfjs-dist": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/+esm",
+            "turndown": "https://cdn.jsdelivr.net/npm/turndown@7.2.0/+esm"
+          }
+        }
+      </script>
     <script type="module">
+        import { parseDocument } from '../agents/utils/parsers.js';
+        console.log(parseDocument);
         translateForm.onsubmit = handleSubmit;
         await populateOptions();
+        fileInput.addEventListener('change', handleFileSelect);
+        downloadButton.addEventListener('click', handleDownload);
+
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const bytes = e.target.result;
+                    inputText.value = await parseDocument(bytes, file.type, file.name);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        async function handleDownload() {
+            const text = translationResult.value;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'translated_text.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
 
         async function populateOptions(querySelector = '[data-options="translate-languages"]') {
             const elements = document.querySelectorAll(querySelector);
