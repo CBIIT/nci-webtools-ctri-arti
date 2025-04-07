@@ -4,6 +4,7 @@ import { runModel, processDocuments } from "./inference.js";
 import { proxyMiddleware } from "./middleware.js";
 import { search, renderHtml } from "./utils.js";
 import { getSession, cleanupSessions, resetBrowser } from "./browser.js";
+import { translate, getLanguages } from "./translate.js";
 
 const api = Router();
 const fieldSize = process.env.UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb
@@ -21,6 +22,18 @@ api.all("/proxy", proxyMiddleware);
 
 api.get("/search", async (req, res) => {
   res.json(await search(req.query));
+});
+
+api.all("/translate", async (req, res) => {
+  const { text, sourceLanguage, targetLanguage, settings } = { ...req.query, ...req.body };
+  if (!text) {
+    return res.status(400).json({ error: "text is required" });
+  }
+  res.json(await translate(text, sourceLanguage, targetLanguage, settings));
+});
+
+api.all("/translate/languages", async (req, res) => {
+  res.json(await getLanguages());
 });
 
 api.all("/browse", async (req, res) => {
