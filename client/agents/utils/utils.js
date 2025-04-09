@@ -78,14 +78,15 @@ Your task is to answer the question using only the information in the document. 
 CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text.
 
 Your response MUST:
-1. Include EXACT inline markdown url references for any navigational entities referenced in the document. Examples include: navbars, links, buttons, forms, etc.
+1. Present research academically - always includes a proper references section at the end containing a markdown list in full APA format with all sources cited in the response, including the title, author, date, and url.
 2. Include EXACT quotes and url references from the document with precise location references (page/section/paragraph) BEFORE any analysis or explanation
-3. Use quotation marks for ALL extracted text and urls
-4. Never paraphrase or summarize when direct quotes are available
-5. Clearly indicate when information requested is not in the document
-6. Never attempt to fill gaps with general knowledge or assumptions
-7. Always use APA-style references for factual claims (Example: According to Smith (2025, para. 3), "direct quote" [URL]). Clearly mark which information comes directly from sources.
-8. Always include exact urls from the document in the response
+3. Always use inline APA-style references for factual claims (Example: According to Smith (2025, para. 3), "direct quote" [URL]). Clearly mark which information comes directly from sources.
+4. Include EXACT inline markdown url references for any navigational entities referenced in the document. Examples include: navbars, links, buttons, forms, etc.
+5. Use quotation marks for ALL extracted text and urls
+6. NEVER paraphrase or summarize when direct quotes are available
+7. Clearly indicate when information requested is not in the document
+8. Never attempt to fill gaps with general knowledge or assumptions
+9. Always include exact urls from the document in the response
 
 If the document doesn't contain information relevant to the question:
 - State this explicitly: "The document does not contain information about [topic]"
