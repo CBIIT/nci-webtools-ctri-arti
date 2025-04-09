@@ -12,155 +12,160 @@
     <script src="/components/app-footer.js" type="module"></script>
   </head>
   <body class="d-flex flex-column vh-100">
-
     <app-header subtitle="Research Optimizer"></app-header>
 
     <main class="container flex-grow-1 py-3">
-
       <form id="translateForm" class="row">
         <div class="col-md-6">
-            <label for="inputText" class="form-label">Text To Translate</label>
-            <input type="file" id="fileInput" class="form-control form-control-sm" accept=".txt, .docx, .pdf" />
-            <textarea class="form-control form-control-sm mb-2" id="inputText" rows="8" placeholder="Enter text to translate or choose a file above" required></textarea>
-            
-            <label for="sourceLanguage" class="form-label mt-2">Select Source Language</label>
-            <select class="form-select form-select-sm mb-2" name="sourceLanguage" data-options="translate-languages" value="en">
-                <option value="" disabled selected>Select a source language</option>
-            </select>
+          <label for="inputText" class="form-label">Text To Translate</label>
+          <input type="file" id="fileInput" class="form-control form-control-sm" accept=".txt, .docx, .pdf" />
+          <textarea
+            class="form-control form-control-sm mb-2"
+            id="inputText"
+            rows="8"
+            placeholder="Enter text to translate or choose a file above"
+            required></textarea>
 
-            <div class="text-end mb-2">
-                <button class="btn btn-sm btn-outline-dark me-1" id="clearButton" type="reset">Clear</button>
-                <button class="btn btn-sm btn-outline-dark" id="translateButton" type="submit">Translate</button>
-            </div>
+          <label for="sourceLanguage" class="form-label mt-2">Select Source Language</label>
+          <select class="form-select form-select-sm mb-2" name="sourceLanguage" data-options="translate-languages" value="en">
+            <option value="" disabled selected>Select a source language</option>
+          </select>
+
+          <div class="text-end mb-2">
+            <button class="btn btn-sm btn-outline-dark me-1" id="clearButton" type="reset">Clear</button>
+            <button class="btn btn-sm btn-outline-dark" id="translateButton" type="submit">Translate</button>
+          </div>
         </div>
         <div class="col-md-6">
-            <label for="translationResult" class="form-label">Translated Text</label>
-            <textarea class="form-control form-control-sm" id="translationResult" rows="10" placeholder="Submit text to view translation results" readonly></textarea>
-            
-            <label for="targetLanguage" class="form-label mt-2">Select Target Language</label>
-            <select class="form-select form-select-sm" name="targetLanguage" data-options="translate-languages" value="es">
-                <option value="" disabled selected>Select a target language</option>
-            </select>
+          <label for="translationResult" class="form-label">Translated Text</label>
+          <textarea
+            class="form-control form-control-sm"
+            id="translationResult"
+            rows="10"
+            placeholder="Submit text to view translation results"
+            readonly></textarea>
 
-            <div class="text-start">
+          <label for="targetLanguage" class="form-label mt-2">Select Target Language</label>
+          <select class="form-select form-select-sm" name="targetLanguage" data-options="translate-languages" value="es">
+            <option value="" disabled selected>Select a target language</option>
+          </select>
 
+          <div class="text-start">
             <button class="btn btn-sm btn-outline-dark mt-2" id="downloadButton" type="button">Download</button>
-            </div>
+          </div>
         </div>
       </form>
     </main>
     <app-footer></app-footer>
     <script type="importmap">
-        {
-          "imports": {
-            "dompurify": "https://cdn.jsdelivr.net/npm/dompurify@3.2.5/+esm",
-            "mammoth": "https://cdn.jsdelivr.net/npm/mammoth@1.9.0/+esm",
-            "pdfjs-dist": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/+esm",
-            "turndown": "https://cdn.jsdelivr.net/npm/turndown@7.2.0/+esm"
-          }
+      {
+        "imports": {
+          "dompurify": "https://cdn.jsdelivr.net/npm/dompurify@3.2.5/+esm",
+          "mammoth": "https://cdn.jsdelivr.net/npm/mammoth@1.9.0/+esm",
+          "pdfjs-dist": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/+esm",
+          "turndown": "https://cdn.jsdelivr.net/npm/turndown@7.2.0/+esm"
         }
-      </script>
+      }
+    </script>
     <script type="module">
-        import { parseDocument } from '../agents/utils/parsers.js';
-        console.log(parseDocument);
-        translateForm.onsubmit = handleSubmit;
-        translateForm.onreset = handleReset;
-        await populateOptions();
-        fileInput.addEventListener('change', handleFileSelect);
-        downloadButton.addEventListener('click', handleDownload);
+      import { parseDocument } from "../agents/utils/parsers.js";
+      console.log(parseDocument);
+      translateForm.onsubmit = handleSubmit;
+      translateForm.onreset = handleReset;
+      await populateOptions();
+      fileInput.addEventListener("change", handleFileSelect);
+      downloadButton.addEventListener("click", handleDownload);
 
-        async function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    const bytes = e.target.result;
-                    inputText.value = await parseDocument(bytes, file.type, file.name);
-                };
-                reader.readAsArrayBuffer(file);
+      async function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = async function (e) {
+            const bytes = e.target.result;
+            inputText.value = await parseDocument(bytes, file.type, file.name);
+          };
+          reader.readAsArrayBuffer(file);
+        }
+      }
+
+      async function handleDownload() {
+        const text = translationResult.value;
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "translated_text.txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      async function populateOptions(querySelector = '[data-options="translate-languages"]') {
+        const elements = document.querySelectorAll(querySelector);
+
+        const languages = await getLanguages();
+
+        // Clear existing options
+        elements.forEach((element) => {
+          element.innerHTML = "";
+        });
+        elements.forEach((element) => {
+          const initialValue = element.getAttribute("value");
+          languages.forEach((language) => {
+            const option = document.createElement("option");
+            option.value = language.LanguageCode;
+            option.textContent = language.LanguageName;
+            if (language.LanguageCode === initialValue) {
+              option.selected = true;
             }
+            element.appendChild(option);
+          });
+        });
+      }
+
+      async function handleReset(event) {
+        event.preventDefault();
+        const form = event.target;
+        form.reset();
+        form.sourceLanguage.value = "en";
+        form.targetLanguage.value = "es";
+      }
+
+      async function getLanguages() {
+        const response = await fetch("/api/translate/languages");
+        return await response.json();
+      }
+
+      async function handleSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        const text = form.inputText.value;
+        const sourceLanguage = "en";
+        const targetLanguage = "es";
+
+        translationResult.innerHTML = "";
+
+        // Call the translation API
+        try {
+          const response = await fetch("/api/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ text, sourceLanguage, targetLanguage }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+
+          const data = await response.json();
+          translationResult.innerHTML = data;
+        } catch (error) {
+          translationResult.innerHTML = error.message || "An error occurred while translating the text.";
         }
-
-        async function handleDownload() {
-            const text = translationResult.value;
-            const blob = new Blob([text], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'translated_text.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        async function populateOptions(querySelector = '[data-options="translate-languages"]') {
-            const elements = document.querySelectorAll(querySelector);
-
-            const languages = await getLanguages();
-
-            // Clear existing options
-            elements.forEach((element) => {
-                element.innerHTML = '';
-            });
-            elements.forEach((element) => {
-                const initialValue = element.getAttribute('value');
-                languages.forEach((language) => {
-                    const option = document.createElement('option');
-                    option.value = language.LanguageCode;
-                    option.textContent = language.LanguageName;
-                    if (language.LanguageCode === initialValue) {
-                        option.selected = true;
-                    }
-                    element.appendChild(option);
-                });
-            });
-        }
-
-        async function handleReset(event) {
-            event.preventDefault();
-            const form = event.target;
-            form.reset();
-            form.sourceLanguage.value = 'en';
-            form.targetLanguage.value = 'es';
-        }
-
-        async function getLanguages() {
-            const response = await fetch('/api/translate/languages');
-            return await response.json();   
-        }
-
-        async function handleSubmit(event) {
-            event.preventDefault();
-            const form = event.target;
-            const text = form.inputText.value;
-            const sourceLanguage = 'en';
-            const targetLanguage = 'es';
-
-
-            translationResult.innerHTML = '';
-
-            // Call the translation API
-            try {
-                const response = await fetch('/api/translate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ text, sourceLanguage, targetLanguage })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const data = await response.json();
-                translationResult.innerHTML = data;
-            } catch (error) {
-                translationResult.innerHTML = error.message || 'An error occurred while translating the text.';
-            }
-        }
-
+      }
     </script>
   </body>
 </html>
