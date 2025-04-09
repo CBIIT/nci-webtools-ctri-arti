@@ -27,7 +27,7 @@
             required></textarea>
 
           <label for="sourceLanguage" class="form-label mt-2">Select Source Language</label>
-          <select class="form-select form-select-sm mb-2" name="sourceLanguage" data-options="translate-languages" value="en">
+          <select class="form-select form-select-sm mb-2" id="sourceLanguage" name="sourceLanguage" data-options="translate-languages" value="en">
             <option value="" disabled selected>Select a source language</option>
           </select>
 
@@ -46,7 +46,7 @@
             readonly></textarea>
 
           <label for="targetLanguage" class="form-label mt-2">Select Target Language</label>
-          <select class="form-select form-select-sm" name="targetLanguage" data-options="translate-languages" value="es">
+          <select class="form-select form-select-sm" id="targetLanguage" name="targetLanguage" data-options="translate-languages" value="es">
             <option value="" disabled selected>Select a target language</option>
           </select>
 
@@ -141,8 +141,8 @@
         event.preventDefault();
         const form = event.target;
         const text = form.inputText.value;
-        const sourceLanguage = "en";
-        const targetLanguage = "es";
+        const sourceLanguage = form.sourceLanguage.value || "en";
+        const targetLanguage = form.targetLanguage.value || "es";
 
         translationResult.innerHTML = "";
 
