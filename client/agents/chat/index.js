@@ -4,6 +4,7 @@ import html from "solid-js/html";
 
 import { useSubmitMessage } from "../hooks.js";
 import Message from "../message.js";
+import DNASpinner from "../components/dna-spinner.js";
 
 render(() => html`<${Page} />`, window.app);
 
@@ -80,10 +81,10 @@ export default function Page() {
         </div>
         ${() => messages().map((message, i, all) => html`<${Message} message=${message} messages=${all} />`)}
         ${() => activeMessage() && html`<${Message} message=${activeMessage} active=${true} />`}
-        <dna-spinner style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" hidden=${() => !loading()} />
+        ${() => loading() && html`<${DNASpinner} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" />`}
       </div>
       <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded position-sticky bottom-0">
-        <textarea
+      <textarea
           class="form-control form-control-sm border-0 bg-transparent shadow-0"
           onKeyDown=${handleKeyDown}
           id="message"
