@@ -16,14 +16,20 @@ export default function Message({
   const debug = location.hostname === "localhost";
 
   return html`
-    <div class="d-flex flex-wrap position-relative">
+    <div class="d-flex flex-wrap position-relative hover-visible-parent">
       ${() =>
         message.content.map((c) => {
           if (c.text) {
             return html`
-              <span
-                class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light text-prewrap" : "w-100 bg-white"].join(" ")}
-                ...${renderMessageContent(c, message)}></span>
+              <span class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light text-prewrap" : "w-100 bg-white"].join(" ")}>
+                <button
+                  class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
+                  onClick=${() => downloadText("results.txt", c.text)}
+                  hidden=${message.role === "user"}>
+                  💾
+                </button>
+                <span ...${renderMessageContent(c, message)}></span>
+              </span>
             `;
           } else if (c.reasoningContent?.reasoningText?.text) {
             return html`
@@ -54,9 +60,9 @@ export default function Message({
                     ${result?.height > 0 &&
                     html`<iframe srcdoc=${result?.html} height=${result?.height + 20 || "auto"} style="width: 100%; border: none;"></iframe>
                       <button
-                        class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 border-0"
+                        class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
                         onClick=${() => downloadText("results.html", result?.html)}>
-                        Download</button
+                        💾</button
                       >}`}
                     <pre class="mb-0">${result?.logs?.map((log) => [`[${log.type}]`].concat(log.content).join(" ")).join("\n")}</pre>
                   </span>
@@ -74,38 +80,41 @@ export default function Message({
                   <details open="open" class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")}>
                     <summary>File: ${input?.path}</summary>
                     ${input?.file_text &&
-                    html` <button
-                        class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 border-0"
+                    html`<button
+                        class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
                         onClick=${() => downloadText(input?.path, input.file_text)}>
-                        Download
+                        💾
                       </button>
                       <div class="small text-prewrap">${input?.file_text}</div>`}
                     ${input?.old_str && html`<div class="small text-prewrap"><strong>Replacing: </strong>${input?.old_str}</div>`}
                     ${input?.new_str &&
                     html`<button
-                        class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 border-0"
+                        class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
                         onClick=${() => downloadText(input?.path, input.new_str)}>
-                        Download
+                        💾
                       </button>
                       <div class="small text-prewrap"><strong> With: </strong>${input?.new_str}</div>`}
                     <div class="small text-prewrap">
                       <button
-                        class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 border-0"
+                        class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
                         onClick=${() => downloadText(input.path, result.replace(/^\s*\d+\s*\:\s*/g, ""))}
                         hidden=${() => input?.command !== "view"}>
-                        Download
+                        💾
                       </button>
                       ${result}
                     </div>
                   </details>
                 `;
               default:
+                const defaultResults = [[name, stringify(input)].join(" "), stringify(result)?.trim()].filter(Boolean).join("\n").trim();
                 return html`
                   <span class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
-                    <pre class="mb-0 text-prewrap text-muted">
-                    ${[[name, stringify(input)].join(" "), stringify(result)?.trim()].filter(Boolean).join("\n").trim()}
-                    </pre
-                    >
+                    <button
+                      class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
+                      onClick=${() => downloadText("results.txt", defaultResults)}>
+                      💾
+                    </button>
+                    <pre class="mb-0 text-prewrap text-muted">${defaultResults}</pre>
                   </span>
                 `;
             }

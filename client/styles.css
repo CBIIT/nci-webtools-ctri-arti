@@ -209,3 +209,11 @@ dl, ol, ul {
 .text-prewrap {
   white-space: pre-wrap !important;
 }
+
+.hover-visible-parent .hover-visible {
+  visibility: hidden;
+}
+
+.hover-visible-parent:hover .hover-visible {
+  visibility: visible;
+}
