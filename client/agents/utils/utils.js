@@ -355,7 +355,9 @@ export async function code({ source, importMap = {}, timeout = 5000 }) {
     const log = (type, ...args) => logs.push({ type, content: args });
     const iframe = document.createElement("iframe");
     iframe.sandbox = "allow-scripts allow-same-origin";
-    iframe.style.display = "none";
+    // move iframe to left (invisible, but rendered)
+    iframe.style.position = "absolute";
+    iframe.style.left = "-9999px";
 
     // Handle messages from iframe
     const onMessage = (e) => {
@@ -363,9 +365,10 @@ export async function code({ source, importMap = {}, timeout = 5000 }) {
       if (e.data.type === "log") log(e.data.level, ...e.data.args);
       if (e.data.type === "done") {
         clearTimeout(timer);
-        const html = iframe.contentDocument?.documentElement?.querySelector("#root")?.innerHTML || "";
+        const { outerHTML: html } = iframe.contentDocument?.documentElement || {};
+        const { height } = e.data;
         cleanup();
-        resolve({ html, logs });
+        resolve({ html, height, logs });
       }
     };
 
@@ -419,7 +422,7 @@ export async function code({ source, importMap = {}, timeout = 5000 }) {
     const html = [
       `<!DOCTYPE html><html>`,
       `<head><script type="importmap">${JSON.stringify(importMap)}</script><script>(${initScript.toString()})()</script></head>`,
-      `<body><div id="root"></div><script type="module">${source}; setTimeout(() => window.parent.postMessage({type: 'done'}, '*'), 0);</script></body>`,
+      `<body><div id="root"></div><script type="module">${source}; window.parent.postMessage({type: 'done', height: document.body.scrollHeight}, '*')</script></body>`,
       `</html>`,
     ].join("");
 
@@ -457,7 +460,7 @@ export function getClientContext(important = {}) {
     file,
     contents: getFileContents(file),
   }));
-  main.push({ description: 'The filenames key contains the list of files. ' });
+  main.push({ description: "The filenames key contains the list of files. " });
   main.push({ filenames });
   if (Object.keys(important).length) {
     main.push({ additionalInstructions: "Please review the items under 'important' carefully" });
