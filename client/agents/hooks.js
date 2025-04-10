@@ -44,7 +44,16 @@ export function useSubmitMessage() {
         const isText = fileType === "TEXT";
         if (!documentTypes.concat(imageTypes).includes(format)) format = "txt";
         const localFile = `file:${name}.${originalFormat}`;
-        localStorage.setItem(localFile, isText ? await readFile(file) : bytes);
+        try {
+          localStorage.setItem(localFile, isText ? await readFile(file) : bytes);
+        } catch (error) {
+          console.error("Error saving file to local storage:", error);
+        }
+        const byteLengthLimit = 1024 * 1024 * 5; // 5MB
+        if (file.size > byteLengthLimit) {
+          console.warn(`File ${file.name} exceeds the 5MB limit and will not be sent.`);
+          continue;
+        }
         userMessage.content.push({
           [contentType]: { name, format, source: { bytes } },
         });
