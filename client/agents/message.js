@@ -3,7 +3,12 @@ import { parse } from "marked";
 import { stringify } from "yaml";
 import { downloadText } from "./utils/utils.js";
 
-export default function Message({ message, messages = [], active = false, defaultClass = "small markdown shadow-sm rounded mb-3 p-2" }) {
+export default function Message({
+  message,
+  messages = [],
+  active = false,
+  defaultClass = "small markdown shadow-sm rounded mb-3 p-2 position-relative",
+}) {
   if (!message) return null;
   const getToolResult = (messages, toolUseId) =>
     messages?.find((m) => m.content?.[0]?.toolResult?.toolUseId === toolUseId)?.content[0].toolResult?.content[0]?.json?.results;
@@ -48,8 +53,11 @@ export default function Message({ message, messages = [], active = false, defaul
                     </details>
                     ${result?.height > 0 &&
                     html`<iframe srcdoc=${result?.html} height=${result?.height + 20 || "auto"} style="width: 100%; border: none;"></iframe>
-                    <button class="btn btn-sm btn-outline-secondary" onClick=${() => downloadText("results.html", result?.html)}>Download</button>
-                    `}
+                      <button
+                        class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 border-0"
+                        onClick=${() => downloadText("results.html", result?.html)}>
+                        Download</button
+                      >}`}
                     <pre class="mb-0">${result?.logs?.map((log) => [`[${log.type}]`].concat(log.content).join(" ")).join("\n")}</pre>
                   </span>
                 `;
@@ -65,10 +73,30 @@ export default function Message({ message, messages = [], active = false, defaul
                 return html`
                   <details open="open" class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")}>
                     <summary>File: ${input?.path}</summary>
-                    ${input?.file_text && html`<div class="small text-prewrap">${input?.file_text}</div>`}
+                    ${input?.file_text &&
+                    html` <button
+                        class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 border-0"
+                        onClick=${() => downloadText(input?.path, input.file_text)}>
+                        Download
+                      </button>
+                      <div class="small text-prewrap">${input?.file_text}</div>`}
                     ${input?.old_str && html`<div class="small text-prewrap"><strong>Replacing: </strong>${input?.old_str}</div>`}
-                    ${input?.new_str && html`<div class="small text-prewrap"><strong>With: </strong>${input?.new_str}</div>`}
-                    <div class="small text-prewrap">${result}</div>
+                    ${input?.new_str &&
+                    html`<button
+                        class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 border-0"
+                        onClick=${() => downloadText(input?.path, input.new_str)}>
+                        Download
+                      </button>
+                      <div class="small text-prewrap"><strong> With: </strong>${input?.new_str}</div>`}
+                    <div class="small text-prewrap">
+                      <button
+                        class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 border-0"
+                        onClick=${() => downloadText(input.path, result.replace(/^\s*\d+\s*\:\s*/g, ""))}
+                        hidden=${() => input?.command !== "view"}>
+                        Download
+                      </button>
+                      ${result}
+                    </div>
                   </details>
                 `;
               default:
