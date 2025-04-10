@@ -6,7 +6,7 @@ export default function Message({ message, messages = [], active = false, defaul
   if (!message) return null;
   const getToolResult = (messages, toolUseId) =>
     messages?.find((m) => m.content?.[0]?.toolResult?.toolUseId === toolUseId)?.content[0].toolResult?.content[0]?.json?.results;
-  const renderMessageContent = (c, m) => m.role === "user" ? ({innerText: c.text.trim()}) : ({innerHTML: parse(c.text)?.trim()});
+  const renderMessageContent = (c, m) => (m.role === "user" ? { innerText: c.text.trim() } : { innerHTML: parse(c.text)?.trim() });
   const debug = location.hostname === "localhost";
 
   return html`
@@ -19,30 +19,65 @@ export default function Message({ message, messages = [], active = false, defaul
                 class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light" : "w-100 font-serif bg-white"].join(" ")}
                 ...${renderMessageContent(c, message)}></span>
             `;
-          } 
+          } else if (c.reasoningContent?.reasoningText?.text) {
+            return html`
+              <details class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
+                <summary>Reasoning...</summary>
+                ${c.reasoningContent.reasoningText.text}
+              </details>
+            `;
+          } else if (c.toolUse) {
+            const { name, input, toolUseId } = c.toolUse;
+            const result = getToolResult(messages, toolUseId);
 
-          else if (c.reasoningContent?.reasoningText?.text) {
-            return html`
-              <span class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px" hidden=${!debug}>
-                <pre class="mb-0 text-prewrap text-muted">${c.reasoningContent.reasoningText.text}</pre>
-              </span>
-            `;
-          }
-          
-          else if (c.toolUse) {
-            return html`
-              <span class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
-                <pre class="mb-0 text-prewrap text-muted">
-                ${[
-                    [c.toolUse.name, stringify(c.toolUse.input)].join(" "),
-                    stringify(getToolResult(messages, c.toolUse.toolUseId))?.replace(/[]/g, " ")?.trim(),
-                  ]
-                    .filter(Boolean)
-                    .join("\n")
-                    .trim()}
-                </pre>
-              </span>
-            `;
+            switch (c.toolUse.name) {
+              case "think":
+                return html`
+                  <details class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
+                    <summary class>Reasoning...</summary>
+                    ${c.toolUse.input?.thought}
+                  </details>
+                `;
+              case "code":
+                return html`
+                  <span class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")}>
+                    <details class=${["markdown text-prewrap text-muted"].join(" ")}>
+                      <summary>Writing Code...</summary>
+                      <pre class="small mb-0">${input?.source}</pre>
+                    </details>
+                    ${result?.height > 0 &&
+                    html`<iframe srcdoc=${result?.html} height=${result?.height + 40} style="width: 100%; border: none;"></iframe>`}
+                    <pre class="mb-0">${result?.logs?.map((log) => [`[${log.type}]`].concat(log.content).join(" ")).join("\n")}</pre>
+                  </span>
+                `;
+              case "browse":
+                return html`
+                  <details class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")}>
+                    <summary>Browsing <a target="_blank" rel="noopener noreferrer" href=${input.url}>${input.url}</a></summary>
+                    <small class="fw-semibold">${input?.topic}</small>
+                    <div class="small" innerHTML=${parse(result || "")}></div>
+                  </details>
+                `;
+              case "editor":
+                return html`
+                  <details open="open" class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")}>
+                    <summary>File: ${input?.path}</summary>
+                    ${input?.file_text && html`<div class="small text-prewrap">${input?.file_text}</div>`}
+                    ${input?.old_str && html`<div class="small text-prewrap"><strong>Replacing: </strong>${input?.old_str}</div>`}
+                    ${input?.new_str && html`<div class="small text-prewrap"><strong>With: </strong>${input?.new_str}</div>`}
+                    <div class="small text-prewrap">${result}</div>
+                  </details>
+                `;
+              default:
+                return html`
+                  <span class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
+                    <pre class="mb-0 text-prewrap text-muted">
+                    ${[[name, stringify(input)].join(" "), stringify(result)?.trim()].filter(Boolean).join("\n").trim()}
+                    </pre
+                    >
+                  </span>
+                `;
+            }
           }
         })}
     </div>
