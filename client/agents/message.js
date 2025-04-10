@@ -16,14 +16,14 @@ export default function Message({ message, messages = [], active = false, defaul
           if (c.text) {
             return html`
               <span
-                class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light" : "w-100 font-serif bg-white"].join(" ")}
+                class=${[defaultClass, "mb-3", message.role === "user" ? "bg-light text-prewrap" : "w-100 bg-white"].join(" ")}
                 ...${renderMessageContent(c, message)}></span>
             `;
           } else if (c.reasoningContent?.reasoningText?.text) {
             return html`
               <details class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
                 <summary>Reasoning...</summary>
-                <div  class="text-prewrap">${c.reasoningContent.reasoningText.text}></div>
+                <div class="text-prewrap">${c.reasoningContent.reasoningText.text}</div>
               </details>
             `;
           } else if (c.toolUse) {
