@@ -23,7 +23,7 @@ export default function Message({ message, messages = [], active = false, defaul
             return html`
               <details class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
                 <summary>Reasoning...</summary>
-                ${c.reasoningContent.reasoningText.text}
+                <div  class="text-prewrap">${c.reasoningContent.reasoningText.text}></div>
               </details>
             `;
           } else if (c.toolUse) {
@@ -34,8 +34,8 @@ export default function Message({ message, messages = [], active = false, defaul
               case "think":
                 return html`
                   <details class=${[defaultClass, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
-                    <summary class>Reasoning...</summary>
-                    ${c.toolUse.input?.thought}
+                    <summary>Reasoning...</summary>
+                    <div class="text-prewrap">${c.toolUse.input?.thought}</div>
                   </details>
                 `;
               case "code":
