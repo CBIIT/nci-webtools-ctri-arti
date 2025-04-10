@@ -1,6 +1,7 @@
 import html from "solid-js/html";
 import { parse } from "marked";
 import { stringify } from "yaml";
+import { downloadText } from "./utils/utils.js";
 
 export default function Message({ message, messages = [], active = false, defaultClass = "small markdown shadow-sm rounded mb-3 p-2" }) {
   if (!message) return null;
@@ -46,7 +47,9 @@ export default function Message({ message, messages = [], active = false, defaul
                       <pre class="small mb-0">${input?.source}</pre>
                     </details>
                     ${result?.height > 0 &&
-                    html`<iframe srcdoc=${result?.html} height=${result?.height + 40} style="width: 100%; border: none;"></iframe>`}
+                    html`<iframe srcdoc=${result?.html} height=${result?.height + 20 || "auto"} style="width: 100%; border: none;"></iframe>
+                    <button class="btn btn-sm btn-outline-secondary" onClick=${() => downloadText("results.html", result?.html)}>Download</button>
+                    `}
                     <pre class="mb-0">${result?.logs?.map((log) => [`[${log.type}]`].concat(log.content).join(" ")).join("\n")}</pre>
                   </span>
                 `;
