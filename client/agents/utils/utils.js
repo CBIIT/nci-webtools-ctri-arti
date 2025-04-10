@@ -89,7 +89,7 @@ Your response MUST:
 9. Always include exact urls from the document in the response
 
 If the document doesn't contain information relevant to the question:
-- State this explicitly: "The document does not contain information about [topic]"
+- State this explicitly: "The document does not contain information about [topic]" and suggest avoiding this source in the future and using a different document or source.
 - Do not provide alternative information or guesses
 - Do not use external knowledge
 - Instead, provide a comprehensive summary of the document's contents using the most relevant sections and quotes
