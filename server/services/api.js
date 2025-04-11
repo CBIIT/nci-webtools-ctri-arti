@@ -26,8 +26,8 @@ api.get("/login", (req, res, next) => {
   const failureRedirect = req.baseUrl + req.path;
   const successRedirect = req.query.destination || "/";
   const options = { failureRedirect };
-  const callback = (err, user) => {
-    (err && next(err)) || req.login(user, () => res.redirect(successRedirect));
+  const callback = (error, user, info, status) => {
+    (error && next({error, info, status})) || req.login(user, () => res.redirect(successRedirect));
   };
   passport.authenticate("default", options, callback)(req, res, next);
 });
