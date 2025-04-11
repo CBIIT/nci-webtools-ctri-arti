@@ -36,17 +36,12 @@ api.get("/logout", (req, res) => {
 });
 
 api.get("/session", (req, res) => {
-  const { session } = req;
-  if (session.passport?.user) {
-    res.json({
-      authenticated: true,
-      expires: session.expires,
-      user: req.user,
-    });
-  } else {
-    res.json({ authenticated: false });
-  }
-});
+  res.json({
+    authenticated: Boolean(req.user),
+    expires: req.session?.expires,
+    user: req.user,
+  });
+}); 
 
 // Proxy endpoint
 api.all("/proxy/*url", authMiddleware, proxyMiddleware);
