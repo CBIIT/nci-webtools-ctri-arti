@@ -15,6 +15,7 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.785.0",
+    "@aws-sdk/client-rds-data": "^3.787.0",
     "@aws-sdk/client-translate": "^3.782.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
