@@ -5,7 +5,7 @@ import express from "express";
 import session from "express-session";
 import passport from "passport";
 import { Strategy } from "openid-client/passport";
-import { discovery, fetchUserInfo } from "openid-client";
+import { discovery } from "openid-client";
 import api from "./services/api.js";
 
 const {
@@ -24,7 +24,7 @@ const app = express();
 const scope = OAUTH_CLIENT_SCOPES || "openid profile email";
 const config = await discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET);
 const strategyOptions = { callbackURL: OAUTH_CALLBACK_URL, config, scope };
-const verify = async (tokenset, done) => done(null, await tokenset.claims());
+const verify = async (tokenset, done) => done(null, {email: (await tokenset.claims()).email});
 passport.use("default", new Strategy(strategyOptions, verify));
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
@@ -34,7 +34,7 @@ app.use(express.static(CLIENT_FOLDER, { setHeaders }));
 app.use(
   session({
     secret: SESSION_SECRET,
-    resave: true,
+    resave: false,
     saveUninitialized: true,
     cookie: { secure: true },
     proxy: true,
