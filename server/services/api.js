@@ -25,7 +25,7 @@ api.get("/ping", (req, res) => {
 api.get("/login", (req, res, next) => {
   const failureRedirect = req.baseUrl + req.path;
   const successRedirect = req.query.destination || "/";
-  const options = { failureRedirect, successRedirect };
+  const options = { failureRedirect };
   const callback = (err, user) => {
     (err && next(err)) || req.login(user, () => res.redirect(successRedirect));
   };
