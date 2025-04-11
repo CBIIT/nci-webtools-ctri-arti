@@ -1,5 +1,4 @@
 import { inspect } from "util";
-import { getSession } from "./browser.js";
 
 export const log = (value) => console.log(inspect(value, { depth: null, colors: true, compact: false, breakLength: 120 }));
 
@@ -124,11 +123,10 @@ export async function retry(maxAttempts, initialDelay, fn) {
  * Renders HTML content from a URL. If the content type is not HTML, it returns false.
  * 
  * @param {string} url - The URL to fetch and render.
- * @param {string} id - The session ID for the Puppeteer session.
  * @param {number} timeout - Timeout in milliseconds (default: 10000)
  * @return {Promise<string|undefined>} - Returns the rendered HTML content or undefined if not HTML.
  */
-export async function renderHtml(url, id, timeout = 10000) {
+export async function renderHtml(url, page, timeout = 10000) {
   const contentType = await fetch(url, { method: "HEAD" })
     .then((response) => response.headers.get("content-type"))
     .catch(() => null);
@@ -141,9 +139,8 @@ export async function renderHtml(url, id, timeout = 10000) {
   let html = await response.text();
 
   if (needsRendering(html)) {
-    const session = await getSession(id);
-    await session.page.goto(url, { waitUntil: "networkidle2", timeout });
-    html = await session.page.content();
+    await page.goto(url, { waitUntil: "networkidle2", timeout });
+    html = await page.content();
   }
 
   return html;
