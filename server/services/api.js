@@ -1,17 +1,57 @@
 import { Router, json } from "express";
 import multer from "multer";
+import passport from "passport";
 import { runModel, processDocuments } from "./inference.js";
 import { proxyMiddleware } from "./middleware.js";
 import { search, renderHtml } from "./utils.js";
 import { getSession, cleanupSessions, resetBrowser } from "./browser.js";
 import { translate, getLanguages } from "./translate.js";
+const { UPLOAD_FIELD_SIZE } = process.env;
 
 const api = Router();
-const fieldSize = process.env.UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb
+const fieldSize = UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb
 const upload = multer({ limits: { fieldSize } });
-setInterval(cleanupSessions, 60 * 60 * 1000);
+setInterval(cleanupSessions, 60 * 1000);
 
 api.use(json({ limit: fieldSize }));
+
+api.get("/login", (request, response, next) => {
+  const options = { failureRedirect: request.baseUrl + request.path };
+  const callback = () => response.redirect(request.query.destination || "/");
+  passport.authenticate("default", options, callback)(request, response, next);
+});
+
+api.get("/logout", (request, response) => {
+  request.logout(() => response.redirect("/"));
+});
+
+api.get("/session", (request, response) => {
+  const { session } = request;
+  if (session.passport?.user) {
+    response.json({
+      authenticated: true,
+      expires: session.expires,
+      user: request.user,
+    });
+  } else {
+    response.json({ authenticated: false });
+  }
+});
+
+api.post("/session", (request, response) => {
+  const { session } = request;
+  if (session.passport?.user) {
+    session.touch();
+    session.expires = session.cookie.expires;
+    response.json({
+      authenticated: true,
+      expires: session.expires,
+      user: request.user,
+    });
+  } else {
+    response.json({ authenticated: false });
+  }
+});
 
 api.get("/ping", (req, res) => {
   res.json(true);
