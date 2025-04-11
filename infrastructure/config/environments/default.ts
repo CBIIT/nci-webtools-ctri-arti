@@ -14,12 +14,16 @@ const config: Config = {
     account,
     region,
   },
-  // rds: {
-  //   vpc,
-  //   instanceIdentifier: `${prefix}-database`,
-  //   instanceType: "t4g.micro",
-  //   allocatedStorage: 20,
-  // },
+  rds: {
+    vpc,
+    subnets,
+    clusterIdentifier: `${prefix}-database`,
+    databaseName: "postgres",
+    minCapacity: 0,
+    maxCapacity: 1,
+    secondsUntilAutoPause: 300,
+    backupRetentionPeriod: 7,
+  },
   ecr: {
     repositoryName: prefix,
   },
@@ -50,15 +54,20 @@ const config: Config = {
             PORT: "80",
           },
           secrets: {
-            BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY || "",
-            DATA_GOV_API_KEY: process.env.DATA_GOV_API_KEY || "",
-            CONGRESS_GOV_API_KEY: process.env.CONGRESS_GOV_API_KEY || "",
             SESSION_SECRET: process.env.SESSION_SECRET || "",
             OAUTH_CLIENT_ID: process.env.OAUTH_CLIENT_ID || "",
             OAUTH_CLIENT_SECRET: process.env.OAUTH_CLIENT_SECRET || "",
             OAUTH_CALLBACK_URL: process.env.OAUTH_CALLBACK_URL || "",
             OAUTH_DISCOVERY_URL: process.env.OAUTH_DISCOVERY_URL || "",
             OAUTH_LOGOUT_URL: process.env.OAUTH_LOGOUT_URL || "",
+
+            DATABASE: process.env.DATABASE || "",
+            DATABASE_ARN: process.env.DATABASE_ARN || "",
+            DATABASE_SECRET_ARN: process.env.DATABASE_SECRET_ARN || "",
+
+            BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY || "",
+            DATA_GOV_API_KEY: process.env.DATA_GOV_API_KEY || "",
+            CONGRESS_GOV_API_KEY: process.env.CONGRESS_GOV_API_KEY || "",
           }
         },
       ],
