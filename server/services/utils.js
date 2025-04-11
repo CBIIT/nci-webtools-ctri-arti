@@ -86,13 +86,13 @@ export async function search(opts) {
 
 /**
  * Retries a function with exponential backoff
+ * @param {Function} fn - Async function to retry
  * @param {number} maxAttempts - Maximum number of retry attempts
  * @param {number} initialDelay - Initial delay in milliseconds
- * @param {Function} fn - Async function to retry
  * @returns {Promise<any>} - Result of the function execution
  * @throws {Error} - Throws the last error encountered after all retries are exhausted
  */
-export async function retry(maxAttempts, initialDelay, fn) {
+export async function retry(fn, maxAttempts = 3, initialDelay = 0) { 
   let lastError;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -116,7 +116,7 @@ export async function retry(maxAttempts, initialDelay, fn) {
     }
   }
 
-  throw new Error(`Failed after ${maxAttempts} attempts. Last error: ${lastError.message}`);
+  throw new Error(`Failed after ${maxAttempts} attempts. Last error: ${lastError?.message}`);
 }
 
 /**
