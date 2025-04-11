@@ -90,6 +90,9 @@ export class EcsServiceStack extends Stack {
     executionRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonElasticFileSystemClientFullAccess")
     );
+    executionRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonRDSDataFullAccess")
+    );
 
     const taskRole = new iam.Role(this, "ecs-task-role", {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
