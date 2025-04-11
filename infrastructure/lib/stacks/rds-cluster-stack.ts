@@ -1,70 +1,46 @@
-import { StackProps, Stack, aws_rds as rds, aws_ec2 as ec2, aws_secretsmanager as secretsmanager } from "aws-cdk-lib";
-import { ClusterInstance } from "aws-cdk-lib/aws-rds";
+import { Stack, StackProps, Duration, aws_rds as rds, aws_ec2 as ec2 } from "aws-cdk-lib";
 import { Construct } from "constructs";
-import { prefix } from "../../config";
 
-export interface RdsInstanceStackProps extends StackProps {
+export interface RdsClusterStackProps extends StackProps {
   vpc: string;
-  instanceIdentifier: string;
-  instanceType?: string;
-  allocatedStorage?: number;
+  subnets: string[];
+  clusterIdentifier: string;
+  databaseName: string;
+  minCapacity?: number;
+  maxCapacity?: number;
+  secondsUntilAutoPause?: number;
+  backupRetentionPeriod?: number;
 }
 
 export const defaultProps = {
-  instanceType: "t4g.micro",
-  allocatedStorage: 20,
+  databaseName: "postgres",
+  minCapacity: 0,
+  maxCapacity: 1,
+  secondsUntilAutoPause: 300,
+  backupRetentionPeriod: 7,
 };
 
-export class RdsInstanceStack extends Stack {
-  constructor(scope: Construct, id: string, props: RdsInstanceStackProps) {
+export class RdsClusterStack extends Stack {
+  constructor(scope: Construct, id: string, props: RdsClusterStackProps) {
     super(scope, id, props);
-    const instanceProps = {
-      ...defaultProps,
-      ...props,
-    };
-
-    // use Postgres for pgvector
-    const vpc = ec2.Vpc.fromLookup(this, "rds-instance-vpc", { vpcName: instanceProps.vpc });
-
-    const rdsInstanceSecret = new secretsmanager.Secret(this, "rds-instance-secret", {
-      secretName: `${prefix}-database-credentials`,
-      generateSecretString: {
-        secretStringTemplate: JSON.stringify({
-          username: "admin",
-        }),
-        excludePunctuation: true,
-        includeSpace: false,
-        generateStringKey: "password",
+    const stackProps = { ...defaultProps, ...props };
+    const cluster = new rds.DatabaseCluster(this, "rds-cluster", {
+      vpc: ec2.Vpc.fromLookup(this, "rds-cluster-vpc", { vpcName: stackProps.vpc }),
+      engine: rds.DatabaseClusterEngine.auroraPostgres({
+        version: rds.AuroraPostgresEngineVersion.VER_16_6,
+      }),
+      credentials: rds.Credentials.fromGeneratedSecret("admin"),
+      clusterIdentifier: stackProps.clusterIdentifier,
+      writer: rds.ClusterInstance.serverlessV2("writer", {
+        instanceIdentifier: stackProps.clusterIdentifier,
+      }),
+      defaultDatabaseName: stackProps.databaseName,
+      enableDataApi: true,
+      serverlessV2MaxCapacity: stackProps.maxCapacity,
+      serverlessV2MinCapacity: stackProps.minCapacity,
+      backup: {
+        retention: Duration.days(stackProps.backupRetentionPeriod),
       },
     });
-
-    // const rdsCluster = new rds.DatabaseCluster(this, "rds-cluster", {
-    //   vpc,
-    //   clusterIdentifier: instanceProps.clusterIdentifier,
-    //   engine: rds.DatabaseClusterEngine.auroraPostgres({
-    //     version: rds.AuroraPostgresEngineVersion.VER_16_3,
-    //   }),
-    //   credentials: rds.Credentials.fromSecret(rdsClusterSecret),
-    //   serverlessV2MaxCapacity: 1,
-    //   serverlessV2MinCapacity: 0.5,
-    //   writer: ClusterInstance.serverlessV2("writer"),
-      
-    //   port: 5432,
-    // });
-
-    const databaseInstance = new rds.DatabaseInstance(this, "rds-instance", {
-      vpc,
-      instanceIdentifier: instanceProps.instanceIdentifier,
-      credentials: rds.Credentials.fromSecret(rdsInstanceSecret),
-      engine: rds.DatabaseInstanceEngine.POSTGRES,
-      instanceType: new ec2.InstanceType(instanceProps.instanceType),
-      allocatedStorage: instanceProps.allocatedStorage,
-    });
-
-
-    databaseInstance.connections.allowDefaultPortFrom(
-      ec2.Peer.ipv4(vpc.vpcCidrBlock),
-      "allow postgres access from the VPC"
-    );
   }
 }
