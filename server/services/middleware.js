@@ -1,8 +1,26 @@
 import { Readable } from "stream";
 import puppeteer from "puppeteer";
+import { formatObject } from "./logger.js";
 
 export const WHITELIST = [/.*/i];
 export const PROXY_ENDPOINT = "/api/proxy";
+
+export function logRequests(formatter = (request) => [request.path, { ...request.query, ...request.body }]) {
+  return (request, response, next) => {
+    const { logger } = request.app.locals;
+    request.startTime = new Date().getTime();
+    logger.info(formatter(request));
+    next();
+  };
+}
+
+export function logErrors(formatter = (e) => ({ error: e.message })) {
+  return (error, request, response, next) => {
+    const { logger } = request.app.locals;
+    logger.error(formatObject(error));
+    response.status(400).json(formatter(error));
+  };
+}
 
 /**
  * Returns 401 if the user is not authenticated
