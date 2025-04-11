@@ -25,7 +25,7 @@ api.get("/ping", (req, res) => {
 api.get("/login", (req, res, next) => {
   const failureRedirect = req.baseUrl + req.path;
   const successRedirect = req.query.destination || "/";
-  const options = { failureRedirect };
+  const options = { failureRedirect, session: false };
   const callback = (error, user, info, status) =>
     error ? next({ error, info, status }) : req.login(user, () => res.redirect(successRedirect));
   passport.authenticate("default", options, callback)(req, res, next);
@@ -73,7 +73,7 @@ api.all("/browse", authMiddleware, browserMiddleware, async (req, res) => {
     return res.status(400).json({ error: "URL is required" });
   }
   const page = await browser.newPage();
-  const html = await renderHtml(url, page, 1000);
+  const html = await renderHtml(url, page, 10000);
   await page.close();
 
   return html ? res.end(html) : proxyMiddleware(req, res);
