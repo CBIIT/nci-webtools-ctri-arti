@@ -2,69 +2,64 @@ import { Router, json } from "express";
 import multer from "multer";
 import passport from "passport";
 import { runModel, processDocuments } from "./inference.js";
-import { proxyMiddleware } from "./middleware.js";
+import { authMiddleware, browserMiddleware, proxyMiddleware } from "./middleware.js";
 import { search, renderHtml } from "./utils.js";
-import { getSession, cleanupSessions, resetBrowser } from "./browser.js";
 import { translate, getLanguages } from "./translate.js";
 const { UPLOAD_FIELD_SIZE } = process.env;
 
 const api = Router();
+
+// Specify maximum upload size
 const fieldSize = UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb
 const upload = multer({ limits: { fieldSize } });
-setInterval(cleanupSessions, 60 * 1000);
-
 api.use(json({ limit: fieldSize }));
 
-api.get("/login", (request, response, next) => {
-  const options = { failureRedirect: request.baseUrl + request.path };
-  const callback = () => response.redirect(request.query.destination || "/");
-  passport.authenticate("default", options, callback)(request, response, next);
-});
-
-api.get("/logout", (request, response) => {
-  request.logout(() => response.redirect("/"));
-});
-
-api.get("/session", (request, response) => {
-  const { session } = request;
-  if (session.passport?.user) {
-    response.json({
-      authenticated: true,
-      expires: session.expires,
-      user: request.user,
-    });
-  } else {
-    response.json({ authenticated: false });
-  }
-});
-
-api.post("/session", (request, response) => {
-  const { session } = request;
-  if (session.passport?.user) {
-    session.touch();
-    session.expires = session.cookie.expires;
-    response.json({
-      authenticated: true,
-      expires: session.expires,
-      user: request.user,
-    });
-  } else {
-    response.json({ authenticated: false });
-  }
-});
-
+// Health check endpoint
 api.get("/ping", (req, res) => {
   res.json(true);
 });
 
-api.all("/proxy/*url", proxyMiddleware);
-api.all("/proxy", proxyMiddleware);
+// Authentication (log in, then redirect)
+api.get("/login", (req, res, next) => {
+  const options = { failureRedirect: req.baseUrl + req.path };
+  const callback = (err, user) => {
+    err && next(err);
+    req.login(user, (err) => {
+      err && next(err);
+      res.redirect(req.query.destination || "/");
+    });
+  };
+  passport.authenticate("default", options, callback)(req, res, next);
+});
 
-api.get("/search", async (req, res) => {
+api.get("/logout", (req, res) => {
+  req.logout(() => res.redirect("/"));
+});
+
+api.get("/session", (req, res) => {
+  const { session } = req;
+  if (session.passport?.user) {
+    res.json({
+      authenticated: true,
+      expires: session.expires,
+      user: req.user,
+    });
+  } else {
+    res.json({ authenticated: false });
+  }
+});
+
+// Proxy endpoint
+api.all("/proxy/*url", authMiddleware, proxyMiddleware);
+api.all("/proxy", authMiddleware, proxyMiddleware);
+
+// Search endpoint
+api.get("/search", authMiddleware, async (req, res) => {
   res.json(await search(req.query));
 });
 
-api.all("/translate", async (req, res) => {
+// Translate endpoints
+api.all("/translate", authMiddleware, async (req, res) => {
   const { text, sourceLanguage, targetLanguage, settings } = { ...req.query, ...req.body };
   if (!text) {
     return res.status(400).json({ error: "text is required" });
@@ -72,39 +67,26 @@ api.all("/translate", async (req, res) => {
   res.json(await translate(text, sourceLanguage, targetLanguage, settings));
 });
 
-api.all("/translate/languages", async (req, res) => {
+api.all("/translate/languages", authMiddleware, async (req, res) => {
   res.json(await getLanguages());
 });
 
-api.all("/browse", async (req, res) => {
-  const { url, id } = { ...req.query, ...req.body };
+// Browsing endpoint
+api.all("/browse", authMiddleware, browserMiddleware, async (req, res) => {
+  const { browser } = req.app.locals;
+  const { url } = { ...req.query, ...req.body };
   if (!url) {
     return res.status(400).json({ error: "URL is required" });
   }
-  const html = await renderHtml(url, id);
+  const page = await browser.newPage();
+  const html = await renderHtml(url, page, 1000);
+  await page.close();
+
   return html ? res.end(html) : proxyMiddleware(req, res);
 });
 
-api.all("/browse/run", async (req, res) => {
-  const { code, id } = { ...req.query, ...req.body };
-
-  if (!code || !id) {
-    return res.status(400).json({ error: "Code and id are required" });
-  }
-
-  const session = await getSession(id);
-  const result = await session.page.evaluate(code);
-
-  return res.json({ result });
-});
-
-// todo: implement authorization for this endpoint
-api.get("/browse/cleanup", async (req, res) => {
-  await resetBrowser();
-  return res.json({ message: "Browser and sessions reset successfully" });
-});
-
-api.all("/model/run", async (req, res) => {
+// Model inference endpoint
+api.all("/model/run", authMiddleware, async (req, res) => {
   const useQuery = req.method === "GET";
   const useBody = req.method === "POST";
   if (!useQuery && !useBody) {
@@ -127,7 +109,8 @@ api.all("/model/run", async (req, res) => {
   }
 });
 
-api.post("/submit", upload.any(), async (req, res) => {
+// Deprecated: Model inference endpoint
+api.post("/submit", authMiddleware, upload.any(), async (req, res) => {
   const { model, prompt, ids } = req.body;
   const results = await processDocuments(model, prompt, req.files);
   const mappedResults = ids.split(",").map((id, index) => ({ id, ...results[index] }));
