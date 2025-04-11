@@ -53,8 +53,10 @@ const config: Config = {
             BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY || "",
             DATA_GOV_API_KEY: process.env.DATA_GOV_API_KEY || "",
             CONGRESS_GOV_API_KEY: process.env.CONGRESS_GOV_API_KEY || "",
+            SESSION_SECRET: process.env.SESSION_SECRET || "",
             OAUTH_CLIENT_ID: process.env.OAUTH_CLIENT_ID || "",
             OAUTH_CLIENT_SECRET: process.env.OAUTH_CLIENT_SECRET || "",
+            OAUTH_CALLBACK_URL: process.env.OAUTH_CALLBACK_URL || "",
             OAUTH_DISCOVERY_URL: process.env.OAUTH_DISCOVERY_URL || "",
             OAUTH_LOGOUT_URL: process.env.OAUTH_LOGOUT_URL || "",
           }
