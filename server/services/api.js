@@ -2,7 +2,7 @@ import { Router, json } from "express";
 import multer from "multer";
 import passport from "passport";
 import { runModel, processDocuments } from "./inference.js";
-import { authMiddleware, browserMiddleware, proxyMiddleware } from "./middleware.js";
+import { authMiddleware, browserMiddleware, proxyMiddleware, logRequests, logErrors } from "./middleware.js";
 import { search, renderHtml } from "./utils.js";
 import { translate, getLanguages } from "./translate.js";
 const { UPLOAD_FIELD_SIZE } = process.env;
@@ -14,6 +14,8 @@ const fieldSize = UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb
 const upload = multer({ limits: { fieldSize } });
 api.use(json({ limit: fieldSize }));
 
+api.use(logRequests());
+
 // Health check endpoint
 api.get("/ping", (req, res) => {
   res.json(true);
@@ -21,13 +23,11 @@ api.get("/ping", (req, res) => {
 
 // Authentication (log in, then redirect)
 api.get("/login", (req, res, next) => {
-  const options = { failureRedirect: req.baseUrl + req.path };
+  const failureRedirect = req.baseUrl + req.path;
+  const successRedirect = req.query.destination || "/";
+  const options = { failureRedirect, successRedirect };
   const callback = (err, user) => {
-    err && next(err);
-    req.login(user, (err) => {
-      err && next(err);
-      res.redirect(req.query.destination || "/");
-    });
+    (err && next(err)) || req.login(user, () => res.redirect(successRedirect));
   };
   passport.authenticate("default", options, callback)(req, res, next);
 });
@@ -116,5 +116,7 @@ api.post("/submit", authMiddleware, upload.any(), async (req, res) => {
   const mappedResults = ids.split(",").map((id, index) => ({ id, ...results[index] }));
   res.json(mappedResults);
 });
+
+api.use(logErrors());
 
 export default api;
