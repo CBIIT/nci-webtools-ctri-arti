@@ -5,6 +5,7 @@ import { runModel, processDocuments } from "./inference.js";
 import { authMiddleware, browserMiddleware, proxyMiddleware, logRequests, logErrors } from "./middleware.js";
 import { search, renderHtml } from "./utils.js";
 import { translate, getLanguages } from "./translate.js";
+import { query } from "./database.js";
 const { UPLOAD_FIELD_SIZE } = process.env;
 
 const api = Router();
@@ -17,8 +18,10 @@ api.use(json({ limit: fieldSize }));
 api.use(logRequests());
 
 // Health check endpoint
-api.get("/ping", (req, res) => {
-  res.json(true);
+api.get("/ping", async (req, res) => {
+  res.json({
+    db: await query("SELECT 'ok' AS health"),
+  });
 });
 
 // Authentication (log in, then redirect)
