@@ -1,7 +1,42 @@
 import { Readable } from "stream";
+import puppeteer from "puppeteer";
 
 export const WHITELIST = [/.*/i];
 export const PROXY_ENDPOINT = "/api/proxy";
+
+/**
+ * Returns 401 if the user is not authenticated
+ * @param {Express.Request} req
+ * @param {Express.Response} res
+ * @param {Function} next
+ */
+export async function authMiddleware(req, res, next) {
+    // todo: switch over when keys are verified
+  const authDisabled = true;
+  if (!authDisabled && !req.user) {
+    return res.status(401).end("Unauthorized");
+  }
+  next();
+}
+
+/**
+ * Initializes a Puppeteer browser instance under app.locals
+ * @param {Express.Request} req
+ * @param {Express.Response} res
+ * @param {Function} next
+ */
+export async function browserMiddleware(req, res, next) {
+  const { locals } = req.app;
+  if (!locals.browser) {
+    locals.browser = await puppeteer.launch({
+      headless: false,
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--no-zygote"],
+      protocolTimeout: 240_000,
+    });
+    locals.browser.on("disconnected", () => (locals.browser = null));
+  }
+  next();
+}
 
 /**
  * Proxy Middleware that handles requests to external URLs.
