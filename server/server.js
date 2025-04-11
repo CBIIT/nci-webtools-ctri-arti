@@ -6,6 +6,7 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy } from "openid-client/passport";
 import { discovery } from "openid-client";
+import { createLogger } from "./services/logger.js";
 import api from "./services/api.js";
 
 const {
@@ -18,8 +19,10 @@ const {
   OAUTH_CLIENT_SECRET,
   OAUTH_CLIENT_SCOPES,
   OAUTH_CALLBACK_URL,
+  LOG_LEVEL,
 } = process.env;
 const app = express();
+app.locals.logger = createLogger("research-optimizer", LOG_LEVEL || "info");
 
 const scope = OAUTH_CLIENT_SCOPES || "openid profile email";
 const config = await discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET);
@@ -49,4 +52,4 @@ const options = {
   key: readFile(HTTPS_PEM),
   cert: readFile(HTTPS_PEM),
 };
-lib.createServer(options, app).listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+lib.createServer(options, app).listen(PORT, () => app.locals.logger.info(`Server is running on port ${PORT}`));
