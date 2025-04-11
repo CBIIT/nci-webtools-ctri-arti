@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Aurora PostgreSQL Serverless v2 Database with Secrets Manager'
+
+Parameters:
+  DBClusterIdentifier:
+    Type: String
+    Default: database-1
+    Description: The identifier for the DB cluster
+    
+  DatabaseName:
+    Type: String
+    Default: postgres
+    Description: The name of the initial database to be created
+
+  MasterUsername:
+    Type: String
+    Default: postgres
+    Description: The master username for the database
+    NoEcho: true
+  
+  EngineVersion:
+    Type: String
+    Default: '16.8'
+    Description: The PostgreSQL engine version
+    
+  MinCapacity:
+    Type: Number
+    Default: 0
+    Description: The minimum capacity units (0 for auto-pause capability)
+    
+  MaxCapacity:
+    Type: Number
+    Default: 1
+    Description: The maximum capacity units
+    
+  SecondsUntilAutoPause:
+    Type: Number
+    Default: 300
+    Description: Seconds of inactivity before the cluster is paused
+
+  BackupRetentionPeriod:
+    Type: Number
+    Default: 7
+    Description: The number of days to retain backups
+    
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The ID of the VPC where the load balancer and security group will be created.
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: The IDs of the subnets for the load balancer. You must specify subnets from at least two Availability Zones.
+    
+  SecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group ID for the DB cluster
+  
+Resources:
+  # Create a secret in AWS Secrets Manager for database credentials
+  DBSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: !Ref DBClusterIdentifier
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username": "${MasterUsername}"}'
+        GenerateStringKey: "password"
+        PasswordLength: 16
+        ExcludeCharacters: '"@/\'
+
+  DBSecretTargetAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DBSecret
+      TargetId: !Ref DBCluster
+      TargetType: AWS::RDS::DBCluster
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub 'Subnet group for ${DBClusterIdentifier}'
+      DBSubnetGroupName: !Sub 'subnet-group-${DBClusterIdentifier}'
+      SubnetIds: !Ref SubnetIds
+
+  DBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      DBClusterIdentifier: !Ref DBClusterIdentifier
+      Engine: aurora-postgresql
+      EngineVersion: !Ref EngineVersion
+      DatabaseName: !Ref DatabaseName
+      MasterUsername: !Sub '{{resolve:secretsmanager:${DBSecret}:SecretString:username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DBSecret}:SecretString:password}}'
+      MasterUserSecret: 
+        SecretArn: !Ref DBSecret
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VpcSecurityGroupIds: 
+        - !Ref SecurityGroupId
+      StorageEncrypted: true
+      EnableHttpEndpoint: true
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: !Ref MinCapacity
+        MaxCapacity: !Ref MaxCapacity
+        SecondsUntilAutoPause: !Ref SecondsUntilAutoPause
+      DeletionProtection: true
+
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora-postgresql
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceIdentifier: !Ref DBClusterIdentifier
+      DBInstanceClass: db.serverless
+      AutoMinorVersionUpgrade: true
+
+Outputs:
+  DBClusterEndpoint:
+    Description: The endpoint for the Aurora DB cluster
+    Value: !GetAtt DBCluster.Endpoint.Address
+    
+  DBClusterPort:
+    Description: The port for the Aurora DB cluster
+    Value: !GetAtt DBCluster.Endpoint.Port
+    
+  DBClusterReadEndpoint:
+    Description: The read endpoint for the Aurora DB cluster
+    Value: !GetAtt DBCluster.ReadEndpoint.Address
+    
+  DBClusterArn:
+    Description: The ARN of the Aurora DB cluster
+    Value: !GetAtt DBCluster.DBClusterArn
+
+  DBSecretArn:
+    Description: The ARN of the Secrets Manager secret
+    Value: !Ref DBSecret
