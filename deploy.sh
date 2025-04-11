@@ -13,6 +13,7 @@ export SERVER_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:server-latest
 pushd infrastructure
 npm install
 cdk deploy $PREFIX-ecr-repository --require-approval never
+# cdk deploy $PREFIX-rds-cluster --require-approval never
 popd
 
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
