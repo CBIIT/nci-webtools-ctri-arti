@@ -5,7 +5,7 @@ import { formatObject } from "./logger.js";
 export const WHITELIST = [/.*/i];
 export const PROXY_ENDPOINT = "/api/proxy";
 
-export function logRequests(formatter = (request) => [request.path, { ...request.query, ...request.body }]) {
+export function logRequests(formatter = (request) => [request.path]) {
   return (request, response, next) => {
     const { logger } = request.app.locals;
     request.startTime = new Date().getTime();
