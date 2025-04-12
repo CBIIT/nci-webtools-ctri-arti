@@ -93,11 +93,10 @@ export class EcsServiceStack extends Stack {
     });
 
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonElasticFileSystemClientFullAccess"));
-
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonBedrockFullAccess"));
-
+    taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonPollyReadOnlyAccess"));
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonRDSDataFullAccess"));
-
+    taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("SecretsManagerReadWrite"));
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("TranslateFullAccess"));
 
     const logGroup = new logs.LogGroup(this, "log-group", {
