@@ -52,6 +52,7 @@ const config: Config = {
           ],
           environment: {
             PORT: "80",
+            VERSION: process.env.GITHUB_SHA || "latest",
           },
           secrets: {
             SESSION_SECRET: process.env.SESSION_SECRET || "",

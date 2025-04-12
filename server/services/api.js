@@ -6,7 +6,7 @@ import { authMiddleware, browserMiddleware, proxyMiddleware, logRequests, logErr
 import { search, renderHtml } from "./utils.js";
 import { translate, getLanguages } from "./translate.js";
 import { query } from "./database.js";
-const { UPLOAD_FIELD_SIZE } = process.env;
+const { UPLOAD_FIELD_SIZE, VERSION } = process.env;
 
 const api = Router();
 
@@ -18,8 +18,9 @@ api.use(json({ limit: fieldSize }));
 api.use(logRequests());
 
 // Health check endpoint
-api.get("/ping", async (req, res) => {
+api.get("/status", async (req, res) => {
   res.json({
+    version: VERSION,
     database: await query("SELECT 'ok' AS health").then(r => r[0]),
   });
 });
