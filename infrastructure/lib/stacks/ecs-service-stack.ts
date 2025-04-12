@@ -84,32 +84,21 @@ export class EcsServiceStack extends Stack {
     });
 
     // grant permissions to the task execution role
-    executionRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy")
-    );
-    executionRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonElasticFileSystemClientFullAccess")
-    );
-    executionRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonRDSDataFullAccess")
-    );
+    executionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+    executionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonElasticFileSystemClientFullAccess"));
 
     const taskRole = new iam.Role(this, "ecs-task-role", {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
       roleName: `power-user-${prefix}-task-role`.slice(0, 64),
     });
 
-    taskRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonElasticFileSystemClientFullAccess")
-    );
+    taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonElasticFileSystemClientFullAccess"));
 
-    taskRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonBedrockFullAccess")
-    )
+    taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonBedrockFullAccess"));
 
-    taskRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName("TranslateFullAccess")
-    )
+    taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonRDSDataFullAccess"));
+
+    taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("TranslateFullAccess"));
 
     const logGroup = new logs.LogGroup(this, "log-group", {
       logGroupName: prefix,
@@ -124,7 +113,7 @@ export class EcsServiceStack extends Stack {
       cpu: props.taskDefinition.cpu,
       volumes: props.taskDefinition.volumes ?? [],
     });
-    
+
     for (let i = 0; i < props.taskDefinition.containers.length; i++) {
       const containerProps = props.taskDefinition.containers[i];
 
@@ -151,7 +140,7 @@ export class EcsServiceStack extends Stack {
         logging: new ecs.AwsLogDriver({
           logGroup,
           streamPrefix: "ecs",
-        })
+        }),
       });
 
       // add mount points
@@ -205,7 +194,5 @@ export class EcsServiceStack extends Stack {
     scaling.scaleOnMemoryUtilization("memory-scaling", {
       targetUtilizationPercent: props.targetCapacityPercent,
     });
-
-
   }
 }
