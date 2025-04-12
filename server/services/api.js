@@ -20,7 +20,7 @@ api.use(logRequests());
 // Health check endpoint
 api.get("/ping", async (req, res) => {
   res.json({
-    db: await query("SELECT 'ok' AS health"),
+    database: await query("SELECT 'ok' AS health").then(r => r[0]),
   });
 });
 
