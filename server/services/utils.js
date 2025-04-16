@@ -5,7 +5,7 @@ export const log = (value) => console.log(inspect(value, { depth: null, colors: 
 async function fetchJson(url, opts = {}) {
   const response = await fetch(url, {
     headers: {
-      "Accept": "application/json",
+      Accept: "application/json",
       ...opts.headers,
     },
     ...opts,
@@ -31,18 +31,17 @@ export async function braveSearch(opts, apiKey = process.env.BRAVE_SEARCH_API_KE
   const results = {};
   for await (const key of ["web", "news"]) {
     const url = `https://api.search.brave.com/res/v1/${key}/search?${new URLSearchParams(opts)}`;
-    results[key] = await fetchJson(url, {headers: {"X-Subscription-Token": apiKey}});
+    results[key] = await fetchJson(url, { headers: { "X-Subscription-Token": apiKey } });
   }
 
   if (results.web.summarizer) {
     const opts = results.web.summarizer;
     const summarizerUrl = `https://api.search.brave.com/res/v1/summarizer/search?${new URLSearchParams(opts)}`;
-    results.summary = await fetchJson(summarizerUrl,  {headers: {"X-Subscription-Token": apiKey}});
+    results.summary = await fetchJson(summarizerUrl, { headers: { "X-Subscription-Token": apiKey } });
   }
 
   return results;
 }
-
 
 export async function govSearch(opts, key = process.env.DATA_GOV_API_KEY) {
   const url = "https://api.govinfo.gov/search?" + new URLSearchParams({ api_key: key });
@@ -92,7 +91,7 @@ export async function search(opts) {
  * @returns {Promise<any>} - Result of the function execution
  * @throws {Error} - Throws the last error encountered after all retries are exhausted
  */
-export async function retry(fn, maxAttempts = 3, initialDelay = 0) { 
+export async function retry(fn, maxAttempts = 3, initialDelay = 0) {
   let lastError;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -121,12 +120,12 @@ export async function retry(fn, maxAttempts = 3, initialDelay = 0) {
 
 /**
  * Renders HTML content from a URL. If the content type is not HTML, it returns false.
- * 
+ *
  * @param {string} url - The URL to fetch and render.
  * @param {number} timeout - Timeout in milliseconds (default: 10000)
  * @return {Promise<string|undefined>} - Returns the rendered HTML content or undefined if not HTML.
  */
-export async function renderHtml(url, page, timeout = 10000) {
+export async function renderHtml(url, page, timeout = 1000) {
   const contentType = await fetch(url, { method: "HEAD" })
     .then((response) => response.headers.get("content-type"))
     .catch(() => null);
@@ -138,12 +137,14 @@ export async function renderHtml(url, page, timeout = 10000) {
   const response = await fetch(url);
   let html = await response.text();
 
-  if (needsRendering(html)) {
-    await page.goto(url, { waitUntil: "networkidle2", timeout });
-    html = await page.content();
+  try {
+    if (needsRendering(html)) {
+      await page.goto(url, { waitUntil: "networkidle2", timeout });
+      html = await page.content();
+    }
+  } finally {
+    return html;
   }
-
-  return html;
 }
 
 /**
