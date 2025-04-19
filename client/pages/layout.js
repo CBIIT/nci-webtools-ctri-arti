@@ -9,7 +9,7 @@ import routes from "./routes.js";
 export default function Layout({ children }) {
   return html`
     <${Header}  /> 
-    <${Nav} routes=${[]} />
+    <${Nav} routes=${routes} />
     <main class="d-flex flex-column flex-grow-1">${children}</main>
     <${Footer} />
   `;
