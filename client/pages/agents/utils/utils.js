@@ -552,3 +552,17 @@ export function autoscroll(thresholdPercent = 0.8, container = null) {
 
   return false;
 }
+
+export function downloadText(filename, text) {
+  const blob = new Blob([text], { type: "text/plain" });
+  downloadBlob(filename, blob);
+}
+
+export function downloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

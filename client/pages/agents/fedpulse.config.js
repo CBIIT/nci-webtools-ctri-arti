@@ -1,4 +1,4 @@
-import { browse } from "../utils/utils.js";
+import { browse } from "./utils/utils.js";
 
 export const summary = `
 Summary of Major U.S. Political Events from October 2024 - February 2025
