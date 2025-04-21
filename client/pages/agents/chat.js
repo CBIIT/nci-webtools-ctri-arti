@@ -80,7 +80,7 @@ export default function Page() {
         ${() => loading() && html`<${DNASpinner} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" />`}
       </div>
       <div class="small text-end">
-        <a href="/agents/chat" target="_self">Start a new conversation</a>
+        <a href="/agents/chat" target="_blank">Start a new conversation</a>
       </div>
       <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded position-sticky bottom-0">
       <textarea
@@ -105,7 +105,7 @@ export default function Page() {
           <div class="input-group w-auto align-items-center">
             <div class="form-check form-switch form form-check-reverse form-control-sm">
               <input class="form-check-input" type="checkbox" id="reasoningMode" name="reasoningMode">
-              <label class="form-check-label" for="reasoningMode">Think longer before responding</label>
+              <label class="form-check-label text-secondary" for="reasoningMode">Think longer before responding</label>
             </div>
             <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required hidden>
               <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0" selected>Sonnet</option>

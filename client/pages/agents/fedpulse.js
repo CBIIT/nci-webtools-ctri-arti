@@ -81,7 +81,7 @@ export default function Page() {
         ${() => loading() && html`<${DNASpinner} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" />`}
       </div>
       <div class="small text-end">
-        <a href="/agents/fedpulse" target="_self">Start a new conversation</a>
+        <a href="/agents/fedpulse" target="_blank">Start a new conversation</a>
       </div>
       <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded position-sticky bottom-0">
         <textarea
