@@ -6,6 +6,7 @@ import { authMiddleware, browserMiddleware, proxyMiddleware, logRequests, logErr
 import { search, renderHtml } from "./utils.js";
 import { translate, getLanguages } from "./translate.js";
 import { query } from "./database.js";
+import { sendEmail } from "./email.js";
 const { UPLOAD_FIELD_SIZE, VERSION } = process.env;
 
 const api = Router();
@@ -67,6 +68,23 @@ api.all("/translate", authMiddleware, async (req, res) => {
 
 api.all("/translate/languages", authMiddleware, async (req, res) => {
   res.json(await getLanguages());
+});
+
+api.post("/feedback", authMiddleware, async (req, res) => {
+  const { feedback, context } = req.body;
+  const { EMAIL_RECIPIENT } = process.env;
+  await sendEmail({
+    from: req.user?.email || "noreply@nih.gov",
+    to: EMAIL_RECIPIENT,
+    subject: "Feedback from Research Optimizer",
+    text: feedback,
+    attachments: [
+      {
+        filename: "context.json",
+        content: JSON.stringify(context, null, 2),
+      }
+    ],
+  });
 });
 
 // Browsing endpoint
