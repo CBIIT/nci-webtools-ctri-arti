@@ -80,6 +80,9 @@ export default function Page() {
         ${() => activeMessage() && html`<${Message} message=${activeMessage} active=${true} />`}
         ${() => loading() && html`<${DNASpinner} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" />`}
       </div>
+      <div class="small text-end">
+        <a href="/agents/fedpulse" target="_self">Start a new conversation</a>
+      </div>
       <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded position-sticky bottom-0">
         <textarea
           class="form-control form-control-sm border-0 bg-transparent shadow-0"
@@ -116,7 +119,7 @@ export default function Page() {
           </div>
         </div>
       </form>
-      <small class="text-center text-muted py-1">Research Optimizer can make mistakes. Please double-check statements.</small>
+      <small class="text-center text-muted py-1">To maintain privacy, we never retain your data on our systems. Please double-check statements, as Research Optimizer can make mistakes.</small>
     </main>
   `;
 }
