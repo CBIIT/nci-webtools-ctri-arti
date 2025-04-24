@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "dev": "npx http-server --port 3000 --proxy http://localhost:8080"
+  },
   "devDependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
     "@huggingface/transformers": "^3.5.0",
