@@ -26,15 +26,7 @@ api.get("/status", async (req, res) => {
   });
 });
 
-// Authentication (log in, then redirect)
-api.get("/login", (req, res, next) => {
-  const failureRedirect = OAUTH_CALLBACK_URL;
-  const successRedirect = req.query.destination || "/";
-  const options = { failureRedirect, session: false };
-  const callback = (error, user, info, status) =>
-    error ? next({ error, info, status }) : req.login(user, () => res.redirect(successRedirect));
-  passport.authenticate("default", options, callback)(req, res, next);
-});
+api.get("/login", passport.authenticate("default", { failureRedirect: OAUTH_CALLBACK_URL, successRedirect: "/"}));
 
 api.get("/logout", (req, res) => {
   req.logout(() => res.redirect("/"));
