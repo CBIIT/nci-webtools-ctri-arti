@@ -116,7 +116,7 @@ export default function Page() {
           </div>
         </div>
       </form>
-      <small class="text-center text-muted py-1">To maintain your privacy, <span title="Your conversations are stored locally on your personal device, and are not accessible from any other device or context, including ours.">we never retain your data on our systems</span>. Please double-check statements, as Research Optimizer can make mistakes.</small>
+      <small class="text-center text-muted py-1"><span title="Your conversations are stored only on your personal device.">To maintain your privacy, we never retain your data on our systems.</span> Please double-check statements, as Research Optimizer can make mistakes.</small>
     </main>
   `;
 }
