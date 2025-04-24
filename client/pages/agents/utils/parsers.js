@@ -12,16 +12,15 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dis
  */
 export async function parseDocument(buffer, mimetype = null) {
   const filetype = detectFileType(buffer);
+  const text = new TextDecoder("utf-8").decode(buffer);
   switch (filetype) {
     case "PDF":
       return await parsePdf(buffer);
     case "DOCX":
       return await parseDocx(buffer);
+    case "HTML":
+      return new TurndownService().turndown(dompurify.sanitize(text, {FORBID_TAGS: ['style', 'script']}));
     default:
-      const text = new TextDecoder("utf-8").decode(buffer);
-      if (mimetype?.includes("html")) {
-        return new TurndownService().turndown(dompurify.sanitize(text))
-      }
       return text;
   }
 }
@@ -192,6 +191,11 @@ export function detectFileType(buffer) {
     } else {
       return "ZIP";
     }
+  }
+
+  // look for <html> tags to identify HTML
+  if (fileStart.toLowerCase().includes("<html")) {
+    return "HTML";
   }
 
   return isTextFile(bytes) ? "TEXT" : "BINARY";
