@@ -84,7 +84,7 @@ export async function queryDocumentWithModel(document, topic, model = "us.anthro
   document = truncate(document, 500_000);
   const system = `You are a research assistant. You will be given a document and a question. 
 
-Your task is to answer the question using only the information in the document and provide results in markdown format. You must not add any information that is not in the document, and you must provide exact quotes and urls with attributions.
+Your task is to answer the question using only the information in the document and provide a fully-verifiable, academic report in markdown format. You must not add any information that is not in the document, and you must provide exact quotes and urls with attributions.
 
 CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text. ALWAYS include links (eg: markdown - [An Example  Link](http://example.com), html - <a href="http://example.com">an example link</a>, etc) from the document AS-IS.
 
@@ -165,7 +165,7 @@ export async function browse({ url, topic }) {
   const bytes = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(bytes);
   if (!response.ok) {
-    return `Failed to read ${url}: ${response.status} ${response.statusText}\n${text}`;
+    return `Failed to read ${url}: ${response.status} ${response.statusText}`;
   }
 
   const mimetype = response.headers.get("content-type") || "text/html";
