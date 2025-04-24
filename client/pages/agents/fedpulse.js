@@ -73,8 +73,8 @@ export default function Page() {
     <main class="container d-flex flex-column flex-grow-1 mb-3 position-relative">
       <div class="flex-grow-1 py-3">
         <div class="text-center my-5 font-serif" hidden=${() => messages().length > 0}>
-          <h1 class="display-6">Welcome to FedPulse</h1>
-          <p class="fw-light fs-5">To get started, send a message below.</p>
+          <h1 class="text-gradient fw-bold font-title mb-2">Welcome to FedPulse</h1>
+          <div class="text-secondary fw-semibold">How can we help you today?</div>
         </div>
         ${() => messages().map((message, i, all) => html`<${Message} message=${message} messages=${all} />`)}
         ${() => activeMessage() && html`<${Message} message=${activeMessage} active=${true} />`}
@@ -104,10 +104,10 @@ export default function Page() {
             multiple />
 
           <div class="input-group w-auto align-items-center">
-            <div class="form-check form-switch form form-check-reverse form-control-sm">
+            <div class="form-check form-switch form form-check-reverse form-control-sm"  title="Think longer before responding">
               <input class="form-check-input" type="checkbox"  id="reasoningMode" name="reasoningMode" >
-              <label class="form-check-label" for="reasoningMode">Think longer before responding</label>
-            </div>
+              <label class="form-check-label text-secondary" for="reasoningMode" title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">Extended Reasoning Mode</label>
+              </div>
             <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required hidden>
               <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0" selected>Sonnet</option>
               <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
@@ -116,7 +116,7 @@ export default function Page() {
           </div>
         </div>
       </form>
-      <small class="text-center text-muted py-1">To maintain privacy, we never retain your data on our systems. Please double-check statements, as Research Optimizer can make mistakes.</small>
+      <small class="text-center text-muted py-1">To maintain your privacy, <span title="Your conversations are stored locally on your personal device, and are not accessible from any other device or context, including ours.">we never retain your data on our systems</span>. Please double-check statements, as Research Optimizer can make mistakes.</small>
     </main>
   `;
 }
