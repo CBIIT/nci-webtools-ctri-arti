@@ -83,7 +83,7 @@ export default function Page() {
         <a href="/agents/chat" target="_blank">Start a new conversation</a>
       </div>
       <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded position-sticky bottom-0">
-      <textarea
+        <textarea
           class="form-control form-control-sm border-0 bg-transparent shadow-0"
           onKeyDown=${handleKeyDown}
           id="message"
@@ -102,10 +102,15 @@ export default function Page() {
             accept="image/*,text/*,.pdf,.xls,.xlsx"
             multiple />
 
-            <div class="input-group w-auto align-items-center">
+          <div class="input-group w-auto align-items-center">
             <div class="form-check form-switch form form-check-reverse form-control-sm">
-              <input class="form-check-input" type="checkbox"  id="reasoningMode" name="reasoningMode">
-              <label class="form-check-label text-secondary" for="reasoningMode" title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">Extended Reasoning Mode</label>
+              <input class="form-check-input" type="checkbox" id="reasoningMode" name="reasoningMode" />
+              <label
+                class="form-check-label text-secondary"
+                for="reasoningMode"
+                title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">
+                Extended Reasoning Mode
+              </label>
             </div>
             <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required hidden>
               <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0" selected>Sonnet</option>
@@ -115,7 +120,12 @@ export default function Page() {
           </div>
         </div>
       </form>
-      <small class="text-center text-muted py-1"><span title="Your conversations are stored only on your personal device.">To maintain your privacy, we never retain your data on our systems.</span> Please double-check statements, as Research Optimizer can make mistakes.</small>
+      <small class="text-center text-muted py-1">
+        <span title="Your conversations are stored only on your personal device.">
+          To maintain your privacy, we never retain your data on our systems.
+        </span>
+        Please double-check statements, as Research Optimizer can make mistakes.
+      </small>
     </main>
   `;
 }
