@@ -7,7 +7,7 @@ import { search, renderHtml } from "./utils.js";
 import { translate, getLanguages } from "./translate.js";
 import { query } from "./database.js";
 import { sendEmail } from "./email.js";
-const { UPLOAD_FIELD_SIZE, VERSION } = process.env;
+const { UPLOAD_FIELD_SIZE, VERSION, OAUTH_CALLBACK_URL } = process.env;
 
 const api = Router();
 
@@ -28,7 +28,7 @@ api.get("/status", async (req, res) => {
 
 // Authentication (log in, then redirect)
 api.get("/login", (req, res, next) => {
-  const failureRedirect = req.baseUrl + req.path;
+  const failureRedirect = OAUTH_CALLBACK_URL;
   const successRedirect = req.query.destination || "/";
   const options = { failureRedirect, session: false };
   const callback = (error, user, info, status) =>
