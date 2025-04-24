@@ -84,15 +84,15 @@ export async function queryDocumentWithModel(document, topic, model = "us.anthro
   document = truncate(document, 500_000);
   const system = `You are a research assistant. You will be given a document and a question. 
 
-Your task is to answer the question using only the information in the document. You must not add any information that is not in the document, and you must provide exact quotes and urls with attributions.
+Your task is to answer the question using only the information in the document and provide results in markdown format. You must not add any information that is not in the document, and you must provide exact quotes and urls with attributions.
 
-CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text.
+CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text. ALWAYS include links (eg: markdown - [An Example  Link](http://example.com), html - <a href="http://example.com">an example link</a>, etc) from the document AS-IS.
 
 Your response MUST:
 1. Present research academically - always includes a proper references section at the end containing a markdown list in full APA format with all sources cited in the response, including the title, author, date, and url.
-2. Include EXACT quotes and url references from the document with precise location references (page/section/paragraph) BEFORE any analysis or explanation
+2. Include EXACT quotes and url references from the document with precise location references (page/section/paragraph) BEFORE any analysis or explanation. If any text is associated with a URL (eg: if it is a link), INCLUDE THE URL AS-IS AS A MARKDOWN LINK.
 3. Always use inline APA-style references for factual claims (Example: According to Smith (2025, para. 3), "direct quote" [URL]). Clearly mark which information comes directly from sources.
-4. Include EXACT inline markdown url references for any navigational entities referenced in the document. Examples include: navbars, links, buttons, forms, etc.
+4. Always include EXACT inline markdown url references as-is for any navigational entities referenced in the document, including links to other documents, websites, or sections within the document.
 5. Use quotation marks for ALL extracted text and urls
 6. NEVER paraphrase or summarize when direct quotes are available
 7. Clearly indicate when information requested is not in the document
@@ -161,7 +161,7 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  */
 export async function browse({ url, topic }) {
   window.id ||= Math.random().toString(36).slice(2);
-  const response = await fetch("/api/browse?" + new URLSearchParams({ url, id }));
+  const response = await fetch("/api/proxy?" + new URLSearchParams({ url }));
   const bytes = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(bytes);
   if (!response.ok) {
