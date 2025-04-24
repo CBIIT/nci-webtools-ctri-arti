@@ -102,16 +102,16 @@ export default function Page() {
             accept="image/*,text/*,.pdf,.xls,.xlsx"
             multiple />
 
-          <div class="input-group w-auto align-items-center">
+            <div class="input-group w-auto align-items-center">
             <div class="form-check form-switch form form-check-reverse form-control-sm">
-              <input class="form-check-input" type="checkbox" id="reasoningMode" name="reasoningMode">
+              <input class="form-check-input" type="checkbox"  id="reasoningMode" name="reasoningMode">
               <label class="form-check-label text-secondary" for="reasoningMode" title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">Extended Reasoning Mode</label>
             </div>
             <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required hidden>
               <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0" selected>Sonnet</option>
               <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
             </select>
-            <button class="btn btn-dark btn-sm" type="submit" style="border-radius: 0 0 var(--bs-border-radius-sm) 0">Send</button>
+            <button class="btn btn-dark btn-sm ms-2" type="submit" style="border-radius: 0 0 var(--bs-border-radius-sm) 0">Send</button>
           </div>
         </div>
       </form>
