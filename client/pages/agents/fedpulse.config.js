@@ -1,150 +1,162 @@
 import { browse } from "./utils/utils.js";
+import { jsonToXml } from "./utils/xml.js";
 
 export const summary = `
-Summary of Major U.S. Political Events from October 2024 - February 2025
+# Comprehensive Political Report: September 2024 - April 2025
 
-1. Political Landscape and Policy Shifts
+## 1. The 2024 Election and Presidential Transition
 
-Election Outcome and Congressional Majorities:
-Donald Trump won the November 2024 election, marking his second non-consecutive term.
-Republicans now hold majorities in both the Senate and House, enabling expedited policy changes.
+### Presidential Election Results
+Donald Trump won the November 2024 election, securing his second non-consecutive term as President of the United States. The final Electoral College count was 312 electoral votes for Trump and 226 for Democratic candidate Vice President Kamala Harris. Trump's victory included wins in all seven major battleground states, and he showed improved performance in traditionally Democratic strongholds compared to 2020.
 
-Executive Actions:
-A government-wide hiring freeze was implemented on Day 1.
-The administration reinstated Schedule F, altering employment protections for certain federal positions.
+The election followed a tumultuous campaign season marked by several unprecedented events:
+- President Biden withdrew from the race in July 2024 following his June debate performance against Trump
+- Vice President Harris became the Democratic nominee
+- Trump survived an assassination attempt in July 2024 that grazed his ear
+- Prosecutors reported foiling a second assassination attempt in September 2024
+- Trump was convicted on 34 felony counts in May 2024 but received an unconditional discharge sentence in January 2025
 
-Legislative Proposals:
-Congressional proposals include modifications to federal payroll, pension contributions, and health benefit subsidies.
-Proposed legislation aims to restructure and consolidate agency functions.
+### Congressional Results
+Republicans gained control of both chambers of Congress:
+- The Senate flipped to Republican control
+- Republicans maintained their majority in the House of Representatives
+- Some state legislatures also flipped, including the Michigan House to Republican control and the Minnesota House to a tie
 
+### Cabinet and Administration
+President Trump assembled his cabinet and administration with key appointments including:
+- J.D. Vance as Vice President
+- Russell Vought as Director of the Office of Management and Budget
+- Elon Musk as special advisor leading the Department of Government Efficiency (DOGE)
+- Scott Bessent as Treasury Secretary
+- Linda McMahon as Education Secretary
+- Marco Rubio as Secretary of State
+- Michael Waltz as National Security Advisor
+- Mehmet Oz as Administrator of the Centers for Medicare and Medicaid Services
 
-2. Reductions in Force (RIFs)
+## 2. The First 100 Days: Executive Actions and Policy Shifts
 
-Implementation of Workforce Cuts:
-Federal employees received notifications offering a “deferred resignation” option as the first phase of workforce reductions.
-Agencies are required to develop reorganization plans that identify positions for elimination based on criteria such as tenure and performance.
+### January 2025: Day One Executive Orders
+President Trump moved quickly on his first day in office (January 20, 2025), signing several significant executive orders:
 
-Scope and Affected Agencies:
-Agencies handling non-critical functions are seeing larger reductions, while those related to national security and law enforcement are largely exempt.
+- **Establishing the Department of Government Efficiency (DOGE)**: Reorganized and renamed the United States Digital Service as the United States DOGE Service, establishing it within the Executive Office of the President to implement cost-cutting measures across government
+- **Federal Hiring Freeze**: Implemented an immediate government-wide hiring freeze
+- **Return to Office**: Ended widespread remote work arrangements, requiring federal employees to return to full-time office attendance
+- **Immigration Actions**: Declared a national emergency at the U.S.-Mexico border and deployed troops to the region
+- **Schedule F Reinstatement**: Reinstated an order from Trump's first term aimed at reclassifying federal workers with fewer job protections
 
-Employee Support Measures:
-Affected employees may be eligible for early retirement, voluntary separation incentives, and career transition assistance.
-Established procedures mandate a 60-day notice before involuntary separations are finalized.
+### February 2025: Workforce Transformation
+- **DOGE Workforce Optimization** (February 11): Directed federal agencies to significantly reduce workforce size and limit hiring to essential positions
+- **"Fork in the Road"** (February 22): The Office of Personnel Management sent an email to over 2 million federal employees offering a "deferred resignation" option, allowing them to resign but keep pay and benefits through September
+- **DOGE Expansion** (February 26): Signed an order expanding DOGE's power by requiring a centralized system for federal spending on contracts, grants, and loans
+- **Federal Property Liquidation**: Directed the General Services Administration to identify and offload "unneeded" government real estate within 60 days
+- **Government Credit Card Freeze**: Implemented a 30-day freeze on all government-issued credit cards except for critical services
 
-3. HHS Restructuring and Workforce Changes (March 2025)
-HHS Reduction in Force Framework
-HHS RIF Procedures: HHS has established procedures for workforce reductions as outlined in HHS Instruction 351-1.
-Direct quote: "This Instruction applies to all Operating Divisions (OpDivs) and Staff Divisions (StaffDivs) of the Department. RIF procedures must be applied in a fair and equitable manner without discrimination. OpDivs/StaffDivs must notify HHS Office of Human Resources as early as possible whenever they are considering using a RIF. This may be necessitated by factors such as reorganization, the elimination, or consolidation of functions, or departmental decisions to respond to budgetary constraints."
-Source: https://www.hhs.gov/about/agencies/asa/ohr/hr-library/351-1/index.html
-Federal Workforce Reduction Options
-Voluntary Separation Programs
-Voluntary Early Retirement Authority (VERA): Available to eligible employees meeting age and service requirements.
+### March 2025: Institutional Reforms
+- **Education Department Dissolution** (March 20): Signed an Executive Order directing the Education Secretary to facilitate closure of the Department of Education
+- **Federal Union Restrictions** (March 28): Ended collective bargaining rights for wide swaths of federal employees across approximately 20 agencies, citing national security concerns
+- **Data Sharing** (Late March): Ordered elimination of "information silos" between agencies to enhance government efficiency
 
-Source: https://www.opm.gov/policy-data-oversight/workforce-restructuring/voluntary-early-retirement-authority/
-Voluntary Separation Incentive Payments (VSIP): Provides financial incentives for voluntary resignation.
+### April 2025: Policy Implementation
+- **Tariffs Implementation** (April 2): Signed an executive order imposing tariffs on imports from multiple countries—10% on all imports from China and 25% on imports from Mexico and Canada
+- **Schedule Policy/Career** (April 18): Announced a new civil service classification that would make approximately 50,000 federal positions (2% of workforce) easier to terminate by reclassifying them as "at will" employees
+- **Education Executive Orders** (April 23): Signed seven executive orders addressing:
+  - College accreditation reform
+  - Enforcement of foreign gift disclosures for universities
+  - Creation of a White House initiative for Historically Black Colleges and Universities
+  - Integration of artificial intelligence in K-12 education
+  - School discipline guidelines (revoking Obama-era racial equity policies)
+  - Workforce development and apprenticeships
+  - Restrictions on diversity, equity, and inclusion (DEI) programs
 
-Direct quote: "An employee who receives a VSIP and later accepts employment for compensation with the Government of the United States within 5 years of the date of the separation on which the VSIP is based, including work under a personal services contract or other direct contract, must repay the entire amount of the VSIP to the agency that paid it - before the individual's first day of reemployment."
-Source: https://www.opm.gov/policy-data-oversight/workforce-restructuring/voluntary-separation-incentive-payments/
-Reduction in Force Procedures
-OPM RIF Guidance: Outlines the standard process for conducting reductions in force.
-Direct quote: "When an agency must abolish positions, the RIF regulations determine whether an employee keeps his or her present position, or whether the employee has a right to a different position."
-Source: https://www.opm.gov/policy-data-oversight/workforce-restructuring/reductions-in-force/
+## 3. DOGE and Federal Workforce Transformation
 
-Current HHS Planning Documents
+### DOGE Structure and Leadership
+- Led by Elon Musk as special advisor
+- Amy Gleason serving as acting DOGE Administrator
+- Each federal agency required to establish a DOGE team of at least four employees including a lead, engineer, human resources specialist, and attorney
+- DOGE teams embedded across federal agencies to identify cost-cutting opportunities
 
-FY 2025 Budget in Brief: Outlines current departmental priorities and resource allocation plans.
-Source: https://www.hhs.gov/about/budget/fy2025/index.html
+### Workforce Reduction Statistics
+- As of April 21, 2025, federal workforce reductions included:
+  - 58,206 confirmed layoffs
+  - Approximately 76,100 employees accepting buyouts
+  - At least 145,420 additional planned reductions
+  - Total reductions affecting at least 12% of the 2.4 million civilian federal workforce
+- In March 2025 alone, Challenger, Gray & Christmas reported that DOGE actions resulted in 216,670 job cuts
+- An April 9 appeals court ruling allowed the administration to fire probationary employees
 
-FY 2025 Annual Performance Plan: Details strategic objectives and performance goals for the department.
-Source: https://www.hhs.gov/sites/default/files/fy2025-performance-plan.pdf
+### Agency Impacts
+- **Consumer Financial Protection Bureau**: RIFs issued for approximately 1,500 personnel (88% of workforce) on April 17, though temporarily blocked by a federal judge
+- **AmeriCorps**: 85% of 500 full-time federal workers placed on administrative leave
+- **USAID**: Over 90% of funding cut, with the majority of employees either placed on administrative leave or separated
+- **Department of Education**: Initiated reduction in force impacting 50% of the department's workforce in March
+- **Health and Human Services**: Announced plans to cut 10,000 jobs, including staff at the CDC and FDA
+- **National Institutes of Health**: Lost over 1,100 staffers according to internal communications
+- **Voice of America**: All employees initially cut, though some were reinstated following court orders
 
-Contingency Staffing Plan: Addresses essential operations during potential disruptions.
-Source: https://www.hhs.gov/about/budget/fy-2025-hhs-contingency-staffing-plan/index.html
+### Legal Challenges
+- Multiple lawsuits have challenged DOGE's authority and actions
+- A federal judge temporarily blocked CFPB layoffs on April 18
+- Court rulings have reinstated some employees at Voice of America and other agencies
+- New restrictions were placed on DOGE's ability to access Social Security Administration systems
+- A federal judge temporarily blocked Trump's executive order on birthright citizenship
 
-4. Department of Government Efficiency (DOGE)
+## 4. Economic and Foreign Policy
 
-Establishment and Mandate:
-DOGE was established by executive order on February 11, 2025, to review agency operations and coordinate workforce reductions.
-Its mandate includes identifying duplicative or non-essential programs and consolidating functions where feasible.
-DOGE reports directly to the White House.
+### Trade and Tariffs
+- April 2, 2025: Trump signed an executive order imposing "reciprocal tariffs" on multiple trading partners
+- Tariffs included 10% on all imports from China and 25% on imports from Mexico and Canada
+- By April 8, Customs and Border Protection reported collecting over $4.8 billion in tariffs on Chinese imports, $2 billion on Mexican imports, and $861 million on Canadian imports
+- Trading partners including the European Union announced retaliatory measures
+- Several cabinet members, including Elon Musk, reportedly urged Trump to reconsider the aggressive tariff strategy
+- On April 9, Trump announced a modified approach with tariffs reduced to 10% for most nations for 90 days, while increasing China tariffs to 125%
 
-Leadership and Structure:
-Elon Musk has been appointed as a special advisor to DOGE, providing private-sector expertise in cost reduction and operational efficiency.
-Amy Gleason serves as the acting DOGE Administrator, overseeing day-to-day operations.
+### Budget and Economic Impacts
+- Financial markets initially responded positively to the political shift but experienced turbulence following tariff announcements and federal workforce cuts
+- Treasury yields and borrowing costs increased
+- The Yale Budget Lab projected that tariffs could cause 740,000 job losses across the U.S. by the end of 2025
+- Concerns grew about the impact of workforce reductions on government services, particularly at agencies like the Social Security Administration
 
-Initial Actions:
-DOGE is enforcing the hiring freeze and reviewing agency reorganization plans.
-Non-critical contracts and programs (e.g., the 18F tech innovation team) have been canceled or restructured.
+## 5. Social and Domestic Policies
 
+### Education Policy
+- Trump declared intentions to close the Department of Education, though this requires congressional approval
+- Education functions would be redistributed to states, the Department of Commerce (education data), Department of Justice (civil rights), and potentially Treasury (student aid)
+- The April 23 executive orders signaled an emphasis on traditional academic standards and a move away from diversity initiatives
+- During the signing, Trump made controversial remarks about getting out of the "diversity, equity, and inclusion cult" and "that jungle"
+- New guidance on school discipline revoked Obama-Biden era policies on racial disparities
 
-5. Dissolution of the Department of Education and USAID
+### Immigration Enforcement
+- Deployed troops to the southern border under a national emergency declaration
+- Attempted to end birthright citizenship for children of non-citizens, though this was temporarily blocked by a federal judge
+- DOGE reportedly began using personal data across agencies to identify undocumented immigrants in housing and the workforce
+- Lawsuits were filed by 22 states, D.C., and San Francisco against the birthright citizenship order
 
-Department of Education (ED):
+### Diversity, Equity, and Inclusion
+- Day one executive order rescinded federal support for DEI programs
+- DOGE specifically targeted employees working on diversity, equity, and inclusion for early job cuts
+- April executive orders further restricted DEI programs in education
+- Accreditors were directed to remove "DEI-based standards" from their criteria
 
-Closure Process:
-A 90-day review was initiated to outline steps for dismantling the department.
-The process requires legislative action for formal termination.
+## 6. Political Landscape and Special Elections
 
-Reassignment of Functions:
+### Early 2025 Special Elections
+- Democrats showed stronger-than-expected performance in special elections held in early 2025
+- Wisconsin Supreme Court election (April 1): Democrat-backed candidate Susan Crawford defeated Republican-backed Brad Schimel by 10 points, despite Trump carrying the state in November
+- Florida special congressional elections (April 1):
+  - Republican Randy Fine won Florida's 6th congressional district with 56.7%, but Democrats improved their margin by 19 points compared to 2024
+  - Democrats made gains in Florida's 1st district as well, flipping Escambia County despite overall Republican victory
 
-K-12 Programs: Expected to be reassigned to state governments or potentially to the Department of Health and Human Services.
-Education Data and Research: Functions to be transferred to the Department of Commerce.
+### Political Positioning
+- Democrats appeared motivated by opposition to DOGE and Trump administration policies
+- Several lawsuits were filed against Trump administration policies across multiple states
+- Anti-administration protests occurred nationwide, including "Hands Off!" rallies on April 5, 2025
+- Republicans consolidated power in Washington with the trifecta of House, Senate, and White House control
+- Planning began for 2026 midterm elections, with Democrats targeting 35 Republican-held House seats
 
-Civil Rights Enforcement in Schools: Proposed to shift to the Department of Justice.
-Federal Student Aid: Under review for reassignment to the Treasury or reorganization as an independent entity.
-Impact on Workforce:
+`
 
-Approximately 3,900 employees face reassignment or separation as the department's functions are redistributed.
-
-
-U.S. Agency for International Development (USAID):
-
-Funding and Workforce Reduction:
-Over 90% of USAID's funding has been cut, leading to significant workforce reductions.
-The majority of employees have been placed on administrative leave or are being separated.
-
-Reassignment or Termination of Functions:
-Many ongoing contracts and projects have been terminated.
-Essential functions, including aspects of disaster relief and global health programs, are being transferred to other agencies (e.g., the State Department or the U.S. Development Finance Corporation).
-
-6. Elimination of the 1102 Contracting Series:
-
-DOGE Implementation:
-The Department of Government Efficiency (DOGE) has eliminated the GS-1102 job series (Contracting Officers/Contract Specialists) across federal agencies.
-This change was implemented through the February 14th executive order "Implementing the President's Department of Government Efficiency Workforce Optimization Initiative" and reinforced by the February 25th order "Commencing the Reduction of the Federal Bureaucracy."
-
-Rationale:
-Move toward a centralized procurement model to eliminate redundant positions across agencies
-Initiative to automate routine procurement activities previously handled by 1102 personnel
-Structural reorganization to redistribute contracting functions to other job classifications
-
-Impact:
-Thousands of federal contracting professionals across agencies have received RIF notices
-Current 1102 employees are being offered reassignment to other positions, voluntary separation incentives, or face RIF procedures
-Procurement functions are being reorganized under a new model that eliminates traditional contracting specialist roles
-
-Agency Response:
-Agencies like HHS are implementing revised procurement structures that consolidate contracting functions
-Current contracting staff must choose between reassignment options or separation from federal service
-Previous protections for specialized acquisition workforce positions have been rescinded
-
-6. Economic and Social Trends Affecting Federal Employees
-
-Market and Economic Developments:
-Financial markets initially responded positively to the political shift, though subsequent federal spending cuts and workforce changes have led to market adjustments.
-Increases in Treasury yields and borrowing costs have been noted following policy shifts.
-
-Adjustments to Compensation:
-Proposals include freezing federal pay raises.
-Increases in employee contributions to pensions and modifications to health benefit subsidies are being considered.
-
-Workplace Policy Changes:
-The requirement for full-time office attendance has been reinstated, ending the widespread remote work arrangements.
-
-Support for Transitioning Employees:
-Federal employees are offered options such as early retirement, voluntary separation incentives, and career transition assistance programs to support those affected by RIFs.`
-
-export const currentExecutiveOrders = await browse({ url: "https://www.federalregister.gov/api/v1/documents.json?conditions%5Bpresidential_document_type%5D%5B%5D=executive_order" });
+export const currentExecutiveOrders = jsonToXml(JSON.parse(await browse({ url: "https://www.federalregister.gov/api/v1/documents.json?conditions%5Bpresidential_document_type%5D%5B%5D=executive_order" })));
 
 export const context = {
   summary,
