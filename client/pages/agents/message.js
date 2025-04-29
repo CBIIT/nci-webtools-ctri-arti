@@ -64,7 +64,7 @@ export default function Message({
                         onClick=${() => downloadText("results.html", result?.html)}>
                         💾</button
                       >}`}
-                    <pre class="mb-0">${result?.logs?.map((log) => [`[${log.type}]`].concat(log.content).join(" ")).join("\n")}</pre>
+                    <pre class="mb-0">${result?.logs?.join?.("\n") || result?.logs}</pre>
                   </span>
                 `;
               case "browse":
