@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solid.JS App</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1.9.5/dist/solid.js",
+          "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1.9.5/html/dist/html.js",
+          "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1.9.5/store/dist/store.js",
+          "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1.9.5/web/dist/web.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { render } from "solid-js/web";
+      import {
+        createSignal,
+        createMemo,
+        createEffect,
+        createContext,
+        useContext,
+        onCleanup,
+        For,
+        Show,
+        ErrorBoundary,
+        Suspense,
+        createResource,
+      } from "solid-js";
+      import { createStore, produce, reconcile } from "solid-js/store";
+      import html from "solid-js/html";
+
+      const ThemeCtx = createContext();
+
+      const ThemeProvider = (p) => {
+        const [mode, setMode] = createSignal("light");
+        const toggle = () => setMode((m) => (m === "light" ? "dark" : "light"));
+
+        createEffect(() => {
+          const dark = mode() === "dark";
+          const colors = { light: "#eee", dark: "#222" };
+          document.body.style.color = dark ? colors.light : colors.dark;
+          document.body.style.backgroundColor = dark ? colors.dark : colors.light;
+        });
+
+        return html`<${ThemeCtx.Provider} value=${{ mode, toggle }}>${() => p.children}<//>`;
+      };
+
+      const ThemeSwitch = () => {
+        const theme = useContext(ThemeCtx);
+        return html`<button onClick=${theme.toggle}>${() => (theme.mode() === "light" ? "🌙" : "☀️")}</button>`;
+      };
+
+      const HashRouter = (p) => {
+        window.location.hash ||= "#/";
+        const get = () => window.location.hash.slice(1) || "/";
+        const [path, setPath] = createSignal(get());
+        const onHash = () => setPath(get());
+        window.addEventListener("hashchange", onHash);
+        onCleanup(() => window.removeEventListener("hashchange", onHash));
+
+        const Layout = p.root || ((p) => html`<div>${p.children}</div>`);
+        const Active = createMemo(() => p.children.find((r) => r.path === path() || r.path === "/*")?.component);
+
+        return html`<${Layout}>${Active}<//>`;
+      };
+      const A = (p) => html`<a href=${() => "#" + p.href}>${p.children}</a>`;
+      const Nav = (p) => html`<nav><${For} each=${p.routes}> ${(r) => html`<${A} href=${r.path}>${r.title}<//> | `} <//></nav>`;
+
+      const [todos, setTodos] = createStore([]);
+
+      const fetchTodos = async () => {
+        await new Promise((r) => setTimeout(r, 10));
+        return [
+          { id: 1, text: "Buy milk", completed: false },
+          { id: 2, text: "Walk dog", completed: true },
+        ];
+      };
+
+      const [remoteTodos, { refetch }] = createResource(fetchTodos);
+
+      /*  When the resource resolves, merge it into the store (reconcile)  */
+      createEffect(() => {
+        const data = remoteTodos();
+        data && setTodos(reconcile(data, { key: "id" }));
+      });
+
+      /*  derived data & side-effects  */
+      const left = createMemo(() => todos.filter((t) => !t.completed).length);
+
+      createEffect(() => (document.title = `${left()} task(s) left`));
+
+      /*  actions using store helpers  */
+      const addTodo = (text) => setTodos(produce((d) => d.push({ id: Date.now(), text, completed: false })));
+
+      const toggleTodo = (id) =>
+        setTodos(
+          produce((d) => {
+            const t = d.find((t) => t.id === id);
+            if (t) t.completed = !t.completed;
+          })
+        );
+
+      const removeTodo = (id) =>
+        setTodos(
+          produce((d) =>
+            d.splice(
+              d.findIndex((t) => t.id === id),
+              1
+            )
+          )
+        );
+
+      const Todos = () => {
+        let input;
+
+        const onSubmit = (e) => {
+          e?.preventDefault?.();
+          const v = input.value.trim();
+          v && addTodo(v);
+          input.value = "";
+        };
+
+        const onReset = async (e, callback) => {
+          await refetch();
+          callback?.();
+        };
+
+        const ErrorComponent = () => {
+          throw new Error("Simulated error");
+          return null;
+        };
+
+        return html`
+          <section>
+            <h1>Todos</h1>
+            <p data-testid="remaining-count">${() => left()} remaining</p>
+
+            <form onSubmit=${onSubmit} onReset=${(e) => onReset(e)}>
+              <input placeholder="New todo" ref=${(el) => (input = el)} required />
+              <button type="submit">Add</button>
+              <button type="reset">Reset</button>
+            </form>
+            <${ErrorBoundary}
+              fallback=${(err, reset) =>
+                html`<p data-testid="error">Error: ${err.message}</p>
+                  <button data-testid="clear-error" onClick=${(e) => onReset(e, reset)}>Clear</button>`}>
+              <${Suspense} fallback=${html`<p>Loading...</p>`}>
+                <table>
+                  <${For} each=${todos}>
+                    ${(t) => html`
+                      ${t.text === "error" && html`<${ErrorComponent} />`}
+                      <tr>
+                        <td>
+                          <label>
+                            <input type="checkbox" checked=${() => t.completed} onChange=${() => toggleTodo(t.id)} />
+                            ${t.text}
+                          </label>
+                        </td>
+                        <td>
+                          <button onClick=${() => removeTodo(t.id)}>x</button>
+                        </td>
+                      </tr>
+                    `}
+                  <//>
+                </table>
+              <//>
+            <//>
+          </section>
+        `;
+      };
+
+      const Home = () => html`<section><h1>Home</h1></section>`;
+      const NotFound = () => html`<section><h1>404</h1></section>`;
+
+      const routes = [
+        { path: "/", title: "Home", component: Home },
+        { path: "/todos", title: "Todos", component: Todos },
+        { path: "/*", component: NotFound },
+      ];
+
+      const Layout = (p) => html`
+        <header>
+          <h1>Solid Micro-Showcase <${ThemeSwitch} /></h1>
+          <${Nav} routes=${routes.filter((r) => r.title)} />
+        </header>
+        <main>${p.children}</main>
+      `;
+
+      const App = () => html`
+        <${ThemeProvider}>
+          <${HashRouter} root=${Layout}>${routes}<//>
+        <//>
+      `;
+
+      const assert = (condition, message) => {
+        if (!condition) {
+          throw new Error(message || "Assertion failed");
+        }
+      }
+
+      async function runTests(tests, setup = async () => {}, teardown = async () => {}) {
+        let passed = 0,
+          failed = 0;
+        for (let i = 0; i < tests.length; i++) {
+          const testFn = tests[i];
+          const testName = testFn.name || `Test #${i + 1}`;
+          let error = null,
+            setupContext;
+          try {
+            setupContext = {};
+            await setup(setupContext);
+            await testFn(setupContext);
+            console.debug(`PASS: ${testName}`);
+            passed++;
+          } catch (e) {
+            error = e;
+            console.error(`FAIL: ${testName}\n   Error: ${error.message}\n   Stack: ${error.stack?.split("\n").slice(1).join("\n   ")}`);
+            failed++;
+          } finally {
+            try {
+              await teardown(setupContext);
+            } catch (teardownError) {
+              console.error(`Teardown FAIL for ${testName}: ${teardownError}`);
+              if (!error) {
+                failed++;
+                if (passed > 0) passed--;
+              }
+            }
+          }
+        }
+        console.debug(`Results: ${passed} passed, ${failed} failed`);
+      }
+
+      const wait = (ms = 10) => new Promise((resolve) => setTimeout(resolve, ms));
+      async function waitFor(conditionFn, timeout = 100, interval = 10) {
+        const startTime = Date.now();
+        while (Date.now() - startTime < timeout) {
+          const result = conditionFn();
+          if (result) return result;
+          await wait(interval);
+        }
+        throw new Error(`waitFor condition not met within ${timeout}ms`);
+      }
+      const setLocationHash = async (hash) => {
+        if (!hash.startsWith("#")) hash = "#" + hash;
+        if (window.location.hash !== hash) {
+          window.location.hash = hash;
+        }
+        await wait(0); // Allow router/effects to react
+      };
+      const trigger = async (selector, eventType = "click", value = null) => {
+        const el = selector instanceof Element ? selector : document.querySelector(selector);
+        if (!el) {
+          throw new Error(`Element "${selector}" not found for trigger`);
+        }
+        if ((eventType === "input" || eventType === "change") && value !== null) {
+          el.value = value;
+        }
+        el.dispatchEvent(new Event(eventType, { bubbles: true, cancelable: true }));
+        await wait(0); // Allow event queue to process
+      };
+
+      const testSetup = async (context = {}) => {
+        document.getElementById("app").innerHTML = "";
+        context.dispose = render(App, document.getElementById("app"));
+        await setLocationHash("/");
+        await wait(0);
+      };
+
+      const testTeardown = async (context = {}) => {
+        context.dispose?.();
+        document.getElementById("app").innerHTML = "";
+        await setLocationHash("/");
+      };
+
+      async function testRouting() {
+        await setLocationHash("/");
+        assert(document.querySelector("main h1")?.textContent.includes("Home"), "Home component not rendered under /");
+        await document.querySelector('nav a[href="#/todos"]')?.click(); // Simulate click
+        await wait(20);
+        assert(document.querySelector("section h1")?.textContent.includes("Todos"), "Todos component not rendered under /todos");
+        await setLocationHash("/nonexistent");
+        assert(document.querySelector("main h1")?.textContent.includes("404"), "404 component not rendered under /nonexistent");
+      }
+
+      async function testThemeSwitching() {
+        const body = document.body;
+        const colors = { light: "rgb(238, 238, 238)", dark: "rgb(34, 34, 34)" };
+        const themeButton = await waitFor(() => body.querySelector("header h1 button"));
+        assert(themeButton?.textContent.includes("🌙"), "Initial icon not: 🌙");
+        assert(body.style.backgroundColor === colors.light, `Initial background not: ${colors.light}`);
+
+        await themeButton?.click();
+        await waitFor(() => body.style.backgroundColor === colors.dark);
+        assert(themeButton?.textContent.includes("☀️"), "Dark mode icon not: ☀️");
+        assert(body.style.color === colors.light, `Dark mode text color not: ${colors.light}`);
+
+        await themeButton?.click();
+        await waitFor(() => body.style.backgroundColor === colors.light);
+        assert(themeButton?.textContent.includes("🌙"), "Light mode icon not: 🌙");
+        assert(body.style.color === colors.dark, `Light mode text color not: ${colors.dark}`);
+      }
+
+      async function testTodos() {
+        const todoFormSelector = "section form";
+        const todoInputSelector = "section form input";
+        const remainingCountSelector = "[data-testid='remaining-count']";
+
+        await setLocationHash("/todos");
+        const table = await waitFor(() => document.querySelector("table"));
+        const remainingCount = await waitFor(() => document.querySelector(remainingCountSelector));
+        assert(table.querySelectorAll("tr").length === 2, "Initial todos not loaded");
+        assert(remainingCount?.textContent.includes("1"), "Initial count not: 1");
+
+        const text = "test item";
+        await trigger("form input", "input", text);
+        await trigger("form", "submit");
+
+        const item = await waitFor(() => table.querySelector("tr:nth-child(3)"));
+        assert(item.textContent.includes(text), "New todo not added");
+        assert(remainingCount?.textContent.includes("2"), "Remaining count not: 2");
+        item.querySelector("input[type='checkbox']")?.click();
+        assert(remainingCount?.textContent.includes("1"), "Remaining count not: 1");
+
+        await item.querySelector("button")?.click();
+        assert(!table.textContent.includes(text), "Todo not removed");
+      }
+
+      async function testErrors() {
+        const todoFormSelector = "section form";
+        const todoInputSelector = "section form input";
+        const errorSelector = "[data-testid='error']";
+        const clearErrorSelector = "[data-testid='clear-error']";
+
+        await setLocationHash("/todos");
+        await trigger(todoInputSelector, "input", "error");
+        await trigger(todoFormSelector, "submit");
+
+        const error = await waitFor(() => document.querySelector(errorSelector));
+        const clearError = document.querySelector(clearErrorSelector);
+        assert(error && error.textContent.includes("Error: Simulated error"), "Error not shown");
+        clearError?.click();
+
+        const table = await waitFor(() => document.querySelector("table"));
+        assert(table?.querySelectorAll("tr").length === 2, "Table not reset after error");
+      }
+
+      const allTests = [testRouting, testThemeSwitching, testTodos, testErrors];
+      await runTests(allTests, testSetup, testTeardown);
+      await render(() => html`<${App} />`, document.getElementById("app"));
+    </script>
+  </body>
+</html>
