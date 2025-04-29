@@ -353,104 +353,80 @@ function editor(params, storage = localStorage) {
   }
 }
 
-/**
- * JavaScript executor with ES module & import map support
- * @param {*} params
- * @param {string} params.source - Code to execute as ES module
- * @param {Object} [params.importMap={}] - Optional import map
- * @param {number} [params.timeout=5000] - Timeout in milliseconds
- * @returns {Promise<{html: string, logs: {type: string, content: any}[]}>}>}
- */
-export async function code({ source, importMap = {}, timeout = 5000 }) {
-  return new Promise((resolve) => {
-    // Setup
-    const logs = [];
-    const log = (type, ...args) => logs.push({ type, content: args });
-    const iframe = document.createElement("iframe");
-    iframe.sandbox = "allow-scripts allow-same-origin";
-    // move iframe to left (invisible, but rendered)
-    iframe.style.position = "absolute";
-    iframe.style.left = "-9999px";
+export async function code({ language, source, timeout = 5_000 }) {
+  const bridge = `
+    (()=>{const p=globalThis.parent?.postMessage?.bind(globalThis.parent)
+                 ?? globalThis.postMessage?.bind(globalThis)
+                 ??(()=>{}),s=m=>p({type:"log",msg:m});
+      ["log","warn","error","info","debug"].forEach(k=>{
+        const o=console[k];console[k]=(...a)=>(s(a.join(" ")),o(...a));});
+      globalThis.onerror=(m,_u,l)=>(s(\`\${m} [line \${l}]\`),true);
+    })();
+  `;
 
-    // Handle messages from iframe
-    const onMessage = (e) => {
-      if (e.source !== iframe.contentWindow) return;
-      if (e.data.type === "log") log(e.data.level, ...e.data.args);
-      if (e.data.type === "done") {
-        clearTimeout(timer);
-        const { outerHTML: html } = iframe.contentDocument?.documentElement || {};
-        const { height } = e.data;
-        cleanup();
-        resolve({ html, height, logs });
-      }
-    };
+  if (language === "javascript") {
+    return await new Promise((res) => {
+      const logs = [];
 
-    // Set timeout and cleanup
-    const cleanup = () => {
-      window.removeEventListener("message", onMessage);
-      iframe.parentNode?.removeChild(iframe);
-    };
+      // wrap user code so we know when it’s done
+      const workerCode = [bridge, source, 'self.postMessage({type:"done"})'].join(";");
+      const worker = new Worker(URL.createObjectURL(new Blob([workerCode], { type: "text/javascript" })), { type: "module" });
+      const kill = setTimeout(() => (worker.terminate(), res({ logs })), timeout);
 
-    const timer = setTimeout(() => {
-      log("warn", `Execution timed out after ${timeout}ms`);
-      cleanup();
-      resolve({ html: "", logs });
-    }, timeout);
+      worker.onmessage = (e) => {
+        if (e.data?.type === "log") logs.push(e.data.msg);
+        if (e.data?.type === "done") {
+          clearTimeout(kill);
+          worker.terminate();
+          res({ logs });
+        }
+      };
+      worker.onerror = (e) => logs.push(e.message);
+    });
+  }
 
-    window.addEventListener("message", onMessage);
+  if (language === "html") {
+    return await new Promise((res) => {
+      const logs = [];
+      const frame = Object.assign(document.createElement("iframe"), { style: "position:absolute; left: -9999px;" });
+      const listener = (e) => e.source === frame.contentWindow && e.data?.type === "log" && logs.push(e.data.msg);
 
-    // Set up console capture and error handling
-    const initScript = () => {
-      ["log", "warn", "error", "info", "debug"].forEach((level) => {
-        const orig = console[level];
-        console[level] = (...args) => {
-          try {
-            window.parent.postMessage(
-              {
-                type: "log",
-                level,
-                args: args.map((a) => {
-                  try {
-                    return typeof a === "object" ? JSON.stringify(a) : String(a);
-                  } catch {
-                    return String(a);
-                  }
-                }),
-              },
-              "*"
-            );
-          } catch {}
-          orig.apply(console, args);
-        };
-      });
+      window.addEventListener("message", listener);
+      document.body.appendChild(frame);
 
-      // Capture errors
-      window.addEventListener("error", (e) => {
-        console.error(`${e.message} [line ${e.lineno}]`);
-        e.preventDefault();
-      });
-    };
+      const doc = new DOMParser().parseFromString(source, "text/html");
+      const bridgeScript = document.createElement("script");
+      bridgeScript.text = bridge;
+      doc.head.prepend(bridgeScript);
+      const html = doc.documentElement.outerHTML;
 
-    // Generate HTML with console capture and error handling
-    const html = [
-      `<!DOCTYPE html><html>`,
-      `<head><script type="importmap">${JSON.stringify(importMap)}</script><script>(${initScript.toString()})()</script></head>`,
-      `<body><div id="root"></div><script type="module">${source}; window.parent.postMessage({type: 'done', height: document.body.scrollHeight}, '*')</script></body>`,
-      `</html>`,
-    ].join("");
+      const cleanup = () => {
+        clearTimeout(kill);
+        window.removeEventListener("message", listener);
+        const iframeDocument = frame.contentDocument || frame.contentWindow.document;
+        const { body, documentElement } = iframeDocument;
+        const height = Math.max(
+          body.scrollHeight,
+          body.offsetHeight,
+          documentElement.clientHeight,
+          documentElement.scrollHeight,
+          documentElement.offsetHeight
+        );
+        frame.remove();
+        res({ html, logs, height });
+      };
 
-    try {
-      document.body.appendChild(iframe);
-      const doc = iframe.contentDocument;
-      doc.open();
-      doc.write(html);
-      doc.close();
-    } catch (e) {
-      log("error", `Setup error: ${e.message}`);
-      cleanup();
-      resolve({ html: "", logs });
-    }
-  });
+      frame.onload = () => setTimeout(cleanup, 10); // resolve as soon as scripts run
+      const kill = setTimeout(cleanup, timeout); // fallback
+      frame.srcdoc = html;
+    });
+  }
+
+  if (language === "python") {
+    return { logs: await runPython(source) };
+  }
+
+  return { logs: ["Unsupported language"] };
 }
 
 /**
