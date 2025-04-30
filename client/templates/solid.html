@@ -56,20 +56,13 @@
         return html`<button onClick=${theme.toggle}>${() => (theme.mode() === "light" ? "🌙" : "☀️")}</button>`;
       };
 
-      const HashRouter = (p) => {
-        window.location.hash ||= "#/";
-        const get = () => window.location.hash.slice(1) || "/";
-        const [path, setPath] = createSignal(get());
-        const onHash = () => setPath(get());
-        window.addEventListener("hashchange", onHash);
-        onCleanup(() => window.removeEventListener("hashchange", onHash));
-
+      const [path, setPath] = createSignal("/");
+      const Router = (p) => {
         const Layout = p.root || ((p) => html`<div>${p.children}</div>`);
         const Active = createMemo(() => p.children.find((r) => r.path === path() || r.path === "/*")?.component);
-
         return html`<${Layout}>${Active}<//>`;
       };
-      const A = (p) => html`<a href=${() => "#" + p.href}>${p.children}</a>`;
+      const A = (p) => html`<a href=${p.href} onClick=${e => {e.preventDefault(); setPath(p.href);}}>${p.children}</a>`;
       const Nav = (p) => html`<nav><${For} each=${p.routes}> ${(r) => html`<${A} href=${r.path}>${r.title}<//> | `} <//></nav>`;
 
       const [todos, setTodos] = createStore([]);
@@ -194,7 +187,7 @@
 
       const App = () => html`
         <${ThemeProvider}>
-          <${HashRouter} root=${Layout}>${routes}<//>
+          <${Router} root=${Layout}>${routes}<//>
         <//>
       `;
 
@@ -247,13 +240,6 @@
         }
         throw new Error(`waitFor condition not met within ${timeout}ms`);
       }
-      const setLocationHash = async (hash) => {
-        if (!hash.startsWith("#")) hash = "#" + hash;
-        if (window.location.hash !== hash) {
-          window.location.hash = hash;
-        }
-        await wait(0); // Allow router/effects to react
-      };
       const trigger = async (selector, eventType = "click", value = null) => {
         const el = selector instanceof Element ? selector : document.querySelector(selector);
         if (!el) {
@@ -269,23 +255,23 @@
       const testSetup = async (context = {}) => {
         document.getElementById("app").innerHTML = "";
         context.dispose = render(App, document.getElementById("app"));
-        await setLocationHash("/");
+        await setPath("/");
         await wait(0);
       };
 
       const testTeardown = async (context = {}) => {
         context.dispose?.();
         document.getElementById("app").innerHTML = "";
-        await setLocationHash("/");
+        await setPath("/");
       };
 
       async function testRouting() {
-        await setLocationHash("/");
+        await setPath("/");
         assert(document.querySelector("main h1")?.textContent.includes("Home"), "Home component not rendered under /");
-        await document.querySelector('nav a[href="#/todos"]')?.click(); // Simulate click
+        await document.querySelector('nav a[href="/todos"]')?.click(); // Simulate click
         await wait(20);
         assert(document.querySelector("section h1")?.textContent.includes("Todos"), "Todos component not rendered under /todos");
-        await setLocationHash("/nonexistent");
+        await setPath("/nonexistent");
         assert(document.querySelector("main h1")?.textContent.includes("404"), "404 component not rendered under /nonexistent");
       }
 
@@ -312,7 +298,7 @@
         const todoInputSelector = "section form input";
         const remainingCountSelector = "[data-testid='remaining-count']";
 
-        await setLocationHash("/todos");
+        await setPath("/todos");
         const table = await waitFor(() => document.querySelector("table"));
         const remainingCount = await waitFor(() => document.querySelector(remainingCountSelector));
         assert(table.querySelectorAll("tr").length === 2, "Initial todos not loaded");
@@ -338,7 +324,7 @@
         const errorSelector = "[data-testid='error']";
         const clearErrorSelector = "[data-testid='clear-error']";
 
-        await setLocationHash("/todos");
+        await setPath("/todos");
         await trigger(todoInputSelector, "input", "error");
         await trigger(todoFormSelector, "submit");
 
