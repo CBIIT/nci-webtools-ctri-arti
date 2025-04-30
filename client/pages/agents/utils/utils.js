@@ -389,12 +389,22 @@ export async function code({ language, source, timeout = 5_000 }) {
     return await new Promise((res) => {
       const logs = [];
       const frame = Object.assign(document.createElement("iframe"), { style: "position:absolute; left: -9999px;" });
-      const listener = (e) => e.source === frame.contentWindow && e.data?.type === "log" && logs.push(e.data.msg);
-
+      const listener = (e) => {
+        if (e.source !== frame.contentWindow) return;
+        console.log(e.data);
+        e.data?.type === "log" && logs.push(e.data.msg);
+        e.data?.type === "done" && cleanup();
+      }
       window.addEventListener("message", listener);
       document.body.appendChild(frame);
 
       const doc = new DOMParser().parseFromString(source, "text/html");
+      const script = Array
+        .from(doc.querySelectorAll("script:not([src])"))
+        .find((s) => ["", "text/javascript", "module"].includes(s.type));
+      if (script) {
+        script.innerHTML += `;parent.postMessage({type: "done"});`;
+      }
       const bridgeScript = document.createElement("script");
       bridgeScript.text = bridge;
       doc.head.prepend(bridgeScript);
@@ -416,7 +426,6 @@ export async function code({ language, source, timeout = 5_000 }) {
         res({ html, logs, height });
       };
 
-      frame.onload = () => setTimeout(cleanup, 10); // resolve as soon as scripts run
       const kill = setTimeout(cleanup, timeout); // fallback
       frame.srcdoc = html;
     });
