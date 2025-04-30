@@ -29,10 +29,17 @@ export async function runTool(toolUse, tools = window.TOOLS) {
  * @returns {Promise<any>} - The result of the executed Python code
  */
 export async function runPython(code) {
-  window.pyodide ||= await loadPyodide();
+  const logs = [];
+  const log = (msg) => logs.push(msg);
+  window.pyodide ||= await loadPyodide({
+    stdout: log,
+    stderr: log,
+  });
   const pyodide = window.pyodide;
+  await pyodide.loadPackagesFromImports(code);
   const result = await pyodide.runPythonAsync(code);
-  return result;
+  if (result) logs.push(result);
+  return logs;
 }
 
 /**
@@ -353,6 +360,7 @@ function editor(params, storage = localStorage) {
   }
 }
 
+window.code = code;
 export async function code({ language, source, timeout = 5_000 }) {
   const bridge = `
     (()=>{const p=globalThis.parent?.postMessage?.bind(globalThis.parent)
@@ -394,14 +402,12 @@ export async function code({ language, source, timeout = 5_000 }) {
         console.log(e.data);
         e.data?.type === "log" && logs.push(e.data.msg);
         e.data?.type === "done" && cleanup();
-      }
+      };
       window.addEventListener("message", listener);
       document.body.appendChild(frame);
 
       const doc = new DOMParser().parseFromString(source, "text/html");
-      const script = Array
-        .from(doc.querySelectorAll("script:not([src])"))
-        .find((s) => ["", "text/javascript", "module"].includes(s.type));
+      const script = Array.from(doc.querySelectorAll("script:not([src])")).find((s) => ["", "text/javascript", "module"].includes(s.type));
       if (script) {
         script.innerHTML += `;parent.postMessage({type: "done"});`;
       }
