@@ -1,15 +1,18 @@
 import { Router, json } from "express";
 import multer from "multer";
-import passport from "passport";
+import * as client from "openid-client";
 import { runModel, processDocuments } from "./inference.js";
 import { authMiddleware, browserMiddleware, proxyMiddleware, logRequests, logErrors } from "./middleware.js";
 import { search, renderHtml } from "./utils.js";
 import { translate, getLanguages } from "./translate.js";
 import { query } from "./database.js";
 import { sendEmail } from "./email.js";
-const { UPLOAD_FIELD_SIZE, VERSION, OAUTH_CALLBACK_URL } = process.env;
+
+const { UPLOAD_FIELD_SIZE, VERSION, OAUTH_CALLBACK_URL, OAUTH_DISCOVERY_URL, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET } = process.env;
 
 const api = Router();
+
+const oidcConfig = await client.discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET);
 
 // Specify maximum upload size
 const fieldSize = UPLOAD_FIELD_SIZE || 1024 * 1024 * 1024; // 1gb
@@ -22,23 +25,67 @@ api.use(logRequests());
 api.get("/status", async (req, res) => {
   res.json({
     version: VERSION,
-    database: await query("SELECT 'ok' AS health").then(r => r[0]),
+    database: await query("SELECT 'ok' AS health").then((r) => r[0]),
   });
 });
 
-api.get("/login", passport.authenticate("default", { failureRedirect: "/", successRedirect: "/", prompt: "login" }));
+api.get("/login", async (req, res, next) => {
+  try {
+    const sess = req.session;
+
+    // Initially, we need to build the authorization URL and redirect the user to the authorization server.
+    if (!req.query.code) {
+      sess.oidc = {
+        codeVerifier: client.randomPKCECodeVerifier(),
+        state: client.randomState(),
+        nonce: client.randomNonce(),
+      };
+
+      const codeChallenge = await client.calculatePKCECodeChallenge(sess.oidc.codeVerifier);
+
+      const authUrl = client.buildAuthorizationUrl(oidcConfig, {
+        response_type: "code",
+        redirect_uri: OAUTH_CALLBACK_URL,
+        scope: "openid profile email",
+        state: sess.oidc.state,
+        nonce: sess.oidc.nonce,
+        code_challenge: codeChallenge,
+        code_challenge_method: "S256",
+        prompt: "login",
+      });
+
+      return res.redirect(authUrl.toString());
+    }
+
+    // After we receive the authorization code, we need to exchange it for an access token.
+    const redirectUrl = new URL(req.originalUrl, `${req.protocol}://${req.get("host")}`);
+    const checks = {
+      expectedState: sess.oidc.state,
+      expectedNonce: sess.oidc.nonce,
+      pkceCodeVerifier: sess.oidc.codeVerifier,
+    };
+    const tokenSet = await client.authorizationCodeGrant(oidcConfig, redirectUrl, checks);
+
+    // Fetch user info using the access token and store it in the session
+    const userinfo = await client.fetchUserInfo(oidcConfig, tokenSet.access_token, tokenSet.claims().sub);
+    sess.user = { tokenSet, userinfo };
+    return res.redirect("/");
+  } catch (err) {
+    return next(err);
+  }
+});
 
 api.get("/logout", (req, res) => {
-  req.logout(() => res.redirect("/"));
+  req.session.destroy(() => res.redirect("/"));
 });
 
 api.get("/session", (req, res) => {
   res.json({
-    authenticated: Boolean(req.user),
+    authenticated: Boolean(req.session?.user),
     expires: req.session?.expires,
-    user: req.user,
+    user: req.session?.user,
   });
-}); 
+});
 
 // Proxy endpoint
 api.all("/proxy/*url", authMiddleware, proxyMiddleware);
@@ -74,23 +121,9 @@ api.post("/feedback", authMiddleware, async (req, res) => {
       {
         filename: "context.json",
         content: JSON.stringify(context, null, 2),
-      }
+      },
     ],
   });
-});
-
-// Browsing endpoint
-api.all("/browse", authMiddleware, browserMiddleware, async (req, res) => {
-  const { browser } = req.app.locals;
-  const { url } = { ...req.query, ...req.body };
-  if (!url) {
-    return res.status(400).json({ error: "URL is required" });
-  }
-  const page = await browser.newPage();
-  const html = await renderHtml(url, page, 10000);
-  await page.close();
-
-  return html ? res.end(html) : proxyMiddleware(req, res);
 });
 
 // Model inference endpoint

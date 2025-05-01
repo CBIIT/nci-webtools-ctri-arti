@@ -3,26 +3,13 @@ import https from "https";
 import { readFileSync } from "fs";
 import express from "express";
 import session from "express-session";
-import passport from "passport";
-import { Strategy } from "openid-client/passport";
-import { discovery, fetchUserInfo } from "openid-client";
 import { createLogger } from "./services/logger.js";
 import api from "./services/api.js";
 
-const {
-  PORT = 8080,
-  CLIENT_FOLDER = "../client",
-  HTTPS_PEM,
-  SESSION_SECRET,
-  OAUTH_DISCOVERY_URL,
-  OAUTH_CLIENT_ID,
-  OAUTH_CLIENT_SECRET,
-  OAUTH_CLIENT_SCOPES,
-  OAUTH_CALLBACK_URL,
-  LOG_LEVEL = "info",
-} = process.env;
+const { PORT = 8080, CLIENT_FOLDER = "../client", HTTPS_PEM, SESSION_SECRET, LOG_LEVEL = "info" } = process.env;
 
 const app = express();
+app.set("trust proxy", true);
 app.locals.logger = createLogger("research-optimizer", LOG_LEVEL);
 
 // set up session
@@ -35,17 +22,6 @@ app.use(
     proxy: true,
   })
 );
-
-// set up passport
-const scope = OAUTH_CLIENT_SCOPES || "openid email";
-const config = await discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET);
-const strategyOptions = { callbackURL: OAUTH_CALLBACK_URL, config, scope };
-const verify = async (tokens, done) => done(null, await fetchUserInfo(config, tokens.access_token, (await tokens.claims()).sub));
-passport.use("default", new Strategy(strategyOptions, verify));
-passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((user, done) => done(null, user));
-app.use(passport.session());
-
 // import api
 app.use("/api", api);
 
