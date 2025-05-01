@@ -18,7 +18,7 @@ app.use(
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: true },
+    // cookie: { secure: true },
     proxy: true,
   })
 );
