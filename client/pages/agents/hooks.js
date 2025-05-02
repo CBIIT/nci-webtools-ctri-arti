@@ -1,13 +1,13 @@
 import { createSignal } from "solid-js";
+import { fileToBase64, splitFilename } from "./utils/parsers.js";
 import { readStream, runTool, getClientContext, autoscroll } from "./utils/utils.js";
-import { detectFileType, fileToBase64, splitFilename, readFile } from "./utils/parsers.js";
 import { systemPrompt, tools } from "./config.js";
 
 export function useSubmitMessage() {
   const [messages, setMessages] = createSignal([]);
   const [conversation, setConversation] = createSignal({ id: null, title: "" });
   const [conversations, setConversations] = createSignal([]);
-  const [activeMessage, setActiveMessage] = createSignal(null);
+  const [assistantMessage, setAssistantMessage] = createSignal({ role: "assistant", content: [] }, { equals: false });
   const [loading, setLoading] = createSignal(false);
   const updateConversation = (c) => setConversation((prev) => (c ? { ...prev, ...c } : null));
 
@@ -31,25 +31,14 @@ export function useSubmitMessage() {
 
     if (inputFiles && inputFiles.length) {
       for (const file of inputFiles) {
+        const byteLengthLimit = 1024 * 1024 * 5; // 5MB
         const imageTypes = ["png", "jpeg", "gif", "webp"];
         const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
-        // (Optionally validate file type here)
         let [name, format] = splitFilename(file.name);
-        const originalFormat = format;
-        // Sanitize filename (adhering to any restrictions)
         name = name.replace(/[^a-zA-Z0-9\s\[\]\(\)\-]/g, "_").replace(/\s{2,}/g, " ");
         const bytes = await fileToBase64(file, true);
         const contentType = imageTypes.includes(format) ? "image" : "document";
-        const fileType = detectFileType(await readFile(file, "arrayBuffer"));
-        const isText = fileType === "TEXT";
         if (!documentTypes.concat(imageTypes).includes(format)) format = "txt";
-        const localFile = `file:${name}.${originalFormat}`;
-        try {
-          localStorage.setItem(localFile, isText ? await readFile(file) : bytes);
-        } catch (error) {
-          console.error("Error saving file to local storage:", error);
-        }
-        const byteLengthLimit = 1024 * 1024 * 5; // 5MB
         if (file.size > byteLengthLimit) {
           console.warn(`File ${file.name} exceeds the 5MB limit and will not be sent.`);
           continue;
@@ -78,7 +67,7 @@ export function useSubmitMessage() {
             tools,
             system: systemPrompt(getClientContext(context)),
             messages: messages(),
-            thoughtBudget: reasoningMode ? 24_000 : 0,
+            thoughtBudget: reasoningMode ? 32_000 : 0,
             stream: true,
           }),
         });
@@ -88,7 +77,7 @@ export function useSubmitMessage() {
         }
 
         const decoder = new TextDecoder();
-        let assistantMessage = { role: "assistant", content: [] };
+        // let assistantMessage = { role: "assistant", content: [] };
 
         // Process streaming chunks from the API
         for await (const chunk of readStream(response)) {
@@ -104,55 +93,65 @@ export function useSubmitMessage() {
             const stopReason = messageStop?.stopReason;
 
             if (toolUse) {
-              // Initialize tool call input
-              toolUse.input = "";
-              assistantMessage.content.push({ toolUse });
-              setActiveMessage(structuredClone(assistantMessage));
+              setAssistantMessage((assistantMessage) => {
+                // Initialize tool call input
+                toolUse.input = "";
+                assistantMessage ||= { role: "assistant", content: [] };
+                assistantMessage.content.push({ toolUse });
+                return assistantMessage;
+              });
             } else if (contentBlockDelta) {
-              const { contentBlockIndex, delta } = contentBlockDelta;
-              const { reasoningContent, text, toolUse } = delta;
-              if (reasoningContent) {
-                if (!assistantMessage.content[contentBlockIndex]?.reasoningContent) {
-                  assistantMessage.content[contentBlockIndex] = {
-                    reasoningContent: {
-                      reasoningText: {
-                        text: "",
-                        signature: "",
+              setAssistantMessage((assistantMessage) => {
+                const { contentBlockIndex, delta } = contentBlockDelta;
+                const { reasoningContent, text, toolUse } = delta;
+                assistantMessage ||= { role: "assistant", content: [] };
+
+                if (reasoningContent) {
+                  if (!assistantMessage.content[contentBlockIndex]?.reasoningContent) {
+                    assistantMessage.content[contentBlockIndex] = {
+                      reasoningContent: {
+                        reasoningText: {
+                          text: "",
+                          signature: "",
+                        },
+                        redactedContent: "",
                       },
-                      redactedContent: "",
-                    },
-                  };
+                    };
+                  }
+                  if (reasoningContent.text) {
+                    assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText.text += reasoningContent.text;
+                  } else if (reasoningContent.signature) {
+                    assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText.signature += reasoningContent.signature;
+                    delete assistantMessage.content[contentBlockIndex].redactedContent;
+                  } else if (reasoningContent.redactedContent) {
+                    assistantMessage.content[contentBlockIndex].reasoningContent.redactedContent += reasoningContent.redactedContent;
+                    delete assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText;
+                  }
+                } else if (text) {
+                  if (!assistantMessage.content[contentBlockIndex]?.text) {
+                    assistantMessage.content[contentBlockIndex] = { text: "" };
+                  }
+                  assistantMessage.content[contentBlockIndex].text += text;
+                } else if (toolUse) {
+                  assistantMessage.content[contentBlockIndex].toolUse.input += toolUse.input;
                 }
-                if (reasoningContent.text) {
-                  assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText.text += reasoningContent.text;
-                } else if (reasoningContent.signature) {
-                  assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText.signature += reasoningContent.signature;
-                  delete assistantMessage.content[contentBlockIndex].redactedContent;
-                } else if (reasoningContent.redactedContent) {
-                  assistantMessage.content[contentBlockIndex].reasoningContent.redactedContent += reasoningContent.redactedContent;
-                  delete assistantMessage.content[contentBlockIndex].reasoningContent.reasoningText;
-                }
-              } else if (text) {
-                if (!assistantMessage.content[contentBlockIndex]?.text) {
-                  assistantMessage.content[contentBlockIndex] = { text: "" };
-                }
-                assistantMessage.content[contentBlockIndex].text += text;
-              } else if (toolUse) {
-                assistantMessage.content[contentBlockIndex].toolUse.input += toolUse.input;
-              }
-              setActiveMessage(structuredClone(assistantMessage));
+                return assistantMessage;
+              });
             } else if (contentBlockStop) {
-              const { contentBlockIndex } = contentBlockStop;
-              const { toolUse } = assistantMessage.content[contentBlockIndex];
-              if (toolUse) {
-                toolUse.input = JSON.parse(toolUse.input);
-                setActiveMessage(structuredClone(assistantMessage));
-              }
+              setAssistantMessage((assistantMessage) => {
+                const { contentBlockIndex } = contentBlockStop;
+                const { toolUse } = assistantMessage.content[contentBlockIndex];
+                if (toolUse) {
+                  toolUse.input = JSON.parse(toolUse.input);
+                }
+                return assistantMessage;
+              });
             } else if (stopReason) {
-              setActiveMessage(null);
-              setMessages((prev) => [...prev, structuredClone(assistantMessage)]);
+              setMessages((prev) => [...prev, assistantMessage()]);
               if (stopReason === "tool_use") {
-                const toolUses = assistantMessage.content.filter((c) => c.toolUse).map((c) => c.toolUse);
+                const toolUses = assistantMessage()
+                  .content.filter((c) => c.toolUse)
+                  .map((c) => c.toolUse);
                 const toolResults = await Promise.all(toolUses.map((t) => runTool(t)));
                 const toolResultsMessage = {
                   role: "user",
@@ -162,6 +161,7 @@ export function useSubmitMessage() {
               } else {
                 isComplete = true;
               }
+              setAssistantMessage(null);
             }
             autoscroll();
           }
@@ -175,5 +175,5 @@ export function useSubmitMessage() {
     }
   }
 
-  return { messages, conversation, updateConversation, conversations, activeMessage, loading, submitMessage };
+  return { messages, conversation, updateConversation, conversations, activeMessage: assistantMessage, loading, submitMessage };
 }
