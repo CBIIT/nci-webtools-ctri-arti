@@ -3,6 +3,8 @@ import { createLogger as createWinstonLogger, format, transports } from "winston
 import pick from "lodash/pick.js";
 import isEmpty from "lodash/isEmpty.js";
 
+const logger = createLogger("research-optimizer", process.env.LOG_LEVEL);
+
 export function formatObject(object) {
   if (object instanceof Error) {
     const errorObject = pick(object, ["code", "message", "stack", "stdout", "stderr"]);
@@ -28,3 +30,5 @@ export function createLogger(name, level = "info") {
     exitOnError: false,
   });
 }
+
+export default logger;
