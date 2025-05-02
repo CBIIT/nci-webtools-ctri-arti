@@ -62,6 +62,12 @@ const config: Config = {
             OAUTH_DISCOVERY_URL: process.env.OAUTH_DISCOVERY_URL || "",
             OAUTH_LOGOUT_URL: process.env.OAUTH_LOGOUT_URL || "",
 
+            PGHOST: [prefix, "host"],
+            PGPORT: [prefix, "port"],
+            PGDATABASE: [prefix, "dbname"],
+            PGUSER: [prefix, "username"],
+            PGPASSWORD: [prefix, "password"],
+            
             DATABASE: process.env.DATABASE || "",
             DATABASE_ARN: process.env.DATABASE_ARN || "",
             DATABASE_SECRET_ARN: process.env.DATABASE_SECRET_ARN || "",

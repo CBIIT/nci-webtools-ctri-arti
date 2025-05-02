@@ -7,6 +7,7 @@ import {
   aws_logs as logs,
   aws_elasticloadbalancingv2 as elbv2,
   aws_ssm as ssm,
+  aws_secretsmanager as secretsmanager,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { prefix, tier } from "../../config";
@@ -32,7 +33,7 @@ export interface EcsServiceStackProps extends StackProps {
         containerPort: number;
       }[];
       environment?: Record<string, string>;
-      secrets?: Record<string, string>;
+      secrets?: Record<string, string|string[]>;
       mountPoints?: [
         {
           sourceVolume: string;
@@ -120,13 +121,17 @@ export class EcsServiceStack extends Stack {
       if (containerProps.secrets) {
         for (const paramKey in containerProps.secrets) {
           const parameterLabel = paramKey.toLowerCase().replace(/_/g, "-");
-          const parameterName = `/${prefix}/${containerProps.name}/${parameterLabel}`;
           const stringValue = containerProps.secrets[paramKey];
-          const param = new ssm.StringParameter(this, `secret-${containerProps.name}-${parameterLabel}`, {
-            parameterName,
-            stringValue,
-          });
-          secrets[paramKey] = ecs.Secret.fromSsmParameter(param);
+
+          if (Array.isArray(stringValue)) {
+            const [secretName, field] = stringValue;
+            const secret = secretsmanager.Secret.fromSecretNameV2(this, `secret-${containerProps.name}-${parameterLabel}`, secretName);
+            secrets[paramKey] = ecs.Secret.fromSecretsManager(secret, field);
+          } else {
+            const parameterName = `/${prefix}/${containerProps.name}/${parameterLabel}`;
+            const secret = new ssm.StringParameter(this, `secret-${containerProps.name}-${parameterLabel}`, { parameterName, stringValue });
+            secrets[paramKey] = ecs.Secret.fromSsmParameter(secret);
+          }
         }
       }
 
