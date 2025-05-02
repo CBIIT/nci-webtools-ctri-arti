@@ -18,3 +18,19 @@ export async function sendEmail(params, env = process.env) {
 
   return await transporter.sendMail(params);
 }
+
+export async function sendFeedback({from, feedback, context}, env = process.env) {
+  const { EMAIL_RECIPIENT } = env;
+  return await sendEmail({
+    from: from || EMAIL_RECIPIENT,
+    to: EMAIL_RECIPIENT,
+    subject: "Feedback from Research Optimizer",
+    text: feedback,
+    attachments: [
+      {
+        filename: "context.json",
+        content: JSON.stringify(context, null, 2),
+      },
+    ],
+  });
+}
