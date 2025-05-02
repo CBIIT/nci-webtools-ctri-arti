@@ -3,22 +3,31 @@ import https from "https";
 import { readFileSync } from "fs";
 import express from "express";
 import session from "express-session";
-import { createLogger } from "./services/logger.js";
+import SequelizeStore from "connect-session-sequelize";
+import logger from "./services/logger.js";
+import db from "./services/database.js";
 import api from "./services/api.js";
 
-const { PORT = 8080 } = process.env;
+const { PORT = 8080, SESSION_MAX_AGE = 60 * 60 * 1000 } = process.env;
+const SessionStore = SequelizeStore(session.Store);
 
 const app = createApp(process.env);
-createServer(app, process.env).listen(PORT, () => app.locals.logger.info(`Server is running on port ${PORT}`));
+createServer(app, process.env).listen(PORT, () => logger.info(`Server is running on port ${PORT}`));
 
 export function createApp(env = process.env) {
-  const { CLIENT_FOLDER = "../client", SESSION_SECRET, LOG_LEVEL = "info" } = env;
-
-  // create express app with logger, session, api
+  const { CLIENT_FOLDER = "../client", SESSION_SECRET } = env;
   const app = express();
-  app.locals.logger = createLogger("research-optimizer", LOG_LEVEL);
-  app.set("trust proxy", true);
-  app.use(session({ secret: SESSION_SECRET, resave: false, saveUninitialized: true }));
+  const store = new SessionStore({ db });
+  store.sync({ force: true });
+  app.use(
+    session({
+      cookie: { maxAge: SESSION_MAX_AGE },
+      resave: false,
+      saveUninitialized: true,
+      secret: SESSION_SECRET,
+      store,
+    })
+  );
   app.use("/api", api);
 
   // serve uncached static files, with 404 fallback for index.html
