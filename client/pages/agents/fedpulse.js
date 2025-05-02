@@ -76,8 +76,8 @@ export default function Page() {
           <h1 class="text-gradient fw-bold font-title mb-2">Welcome to FedPulse</h1>
           <div class="text-secondary fw-semibold">How can we help you today?</div>
         </div>
-        ${() => messages().map((message, i, all) => html`<${Message} message=${message} messages=${all} />`)}
-        ${() => activeMessage() && html`<${Message} message=${activeMessage} active=${true} />`}
+        ${() => messages().map((message, i, all) => html`<${Message} message=${message} messages=${all} class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />`)}
+        ${() => activeMessage() && html`<${Message} message=${activeMessage} class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />`}
         ${() => loading() && html`<${DNASpinner} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" />`}
       </div>
       <div class="small text-end">

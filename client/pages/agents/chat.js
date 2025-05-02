@@ -72,11 +72,11 @@ export default function Page() {
     <main class="container d-flex flex-column flex-grow-1 mb-3 position-relative">
       <div class="flex-grow-1 py-3">
         <div class="text-center my-5 font-serif" hidden=${() => messages().length > 0}>
-          <h1 class="text-gradient fw-bold font-title mb-2">Welcome to Research Optimizer</h1>
+          <h1 class="text-gradient fw-bold font-title mb-2">Welcome</h1>
           <div class="text-secondary fw-semibold">How can we help you today?</div>
         </div>
-        ${() => messages().map((message, i, all) => html`<${Message} message=${message} messages=${all} />`)}
-        ${() => activeMessage() && html`<${Message} message=${activeMessage} active=${true} />`}
+        ${() => messages().map((message, i, all) => html`<${Message} message=${message} messages=${all} class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />`)}
+        ${() => activeMessage() && html`<${Message} message=${activeMessage} class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />`}
         ${() => loading() && html`<${DNASpinner} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" />`}
       </div>
       <div class="small text-end">
@@ -104,13 +104,8 @@ export default function Page() {
 
           <div class="input-group w-auto align-items-center">
             <div class="form-check form-switch form form-check-reverse form-control-sm">
-              <input class="form-check-input" type="checkbox" id="reasoningMode" name="reasoningMode" />
-              <label
-                class="form-check-label text-secondary"
-                for="reasoningMode"
-                title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">
-                Extended Reasoning Mode
-              </label>
+              <input class="form-check-input" type="checkbox"  id="reasoningMode" name="reasoningMode">
+              <label class="form-check-label text-secondary" for="reasoningMode" title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">Extended Reasoning Mode</label>
             </div>
             <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required hidden>
               <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0" selected>Sonnet</option>
@@ -120,12 +115,7 @@ export default function Page() {
           </div>
         </div>
       </form>
-      <small class="text-center text-muted py-1">
-        <span title="Your conversations are stored only on your personal device.">
-          To maintain your privacy, we never retain your data on our systems.
-        </span>
-        Please double-check statements, as Research Optimizer can make mistakes.
-      </small>
+      <small class="text-center text-muted py-1"><span title="Your conversations are stored only on your personal device.">To maintain your privacy, we never retain your data on our systems.</span> Please double-check statements, as Research Optimizer can make mistakes.</small>
     </main>
   `;
 }

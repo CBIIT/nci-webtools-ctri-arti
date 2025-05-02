@@ -19,7 +19,7 @@ export const tools = [
   {
     toolSpec: {
       name: "browse",
-      description: `Extract and read the full content from a webpage, PDF, DOCX, or any multimedia object. Use this tool to analyze articles, documentation, or any online content from trusted federal sources.`,
+      description: `Extract and read the full content from a webpage, PDF, DOCX, or any multimedia object. Use this tool to analyze articles, documentation, or any online content from trusted federal sources. Use this to follow up on search results.`,
       inputSchema: {
         json: {
           type: "object",
@@ -31,7 +31,7 @@ export const tools = [
             topic: {
               type: "string",
               description:
-                "The specific question or information need about the document. Ask clear, focused questions that the document might answer. Start with basic structural questions (e.g., 'What are the main sections of this document?') before asking about specific content. Phrase questions precisely using terminology likely found in the document. For best results, ask one specific question per query rather than multiple questions or vague requests. When asking questions, always include the full context for any question being asked.",
+                "The specific question or information need about the document. In your topic, think step by step about why you are accessing this document (for example - relevance to user query or academic interest). Ask clear, focused questions that the document might answer. Start with basic structural questions (e.g., 'What are the main sections of this document?') before asking about specific content. Phrase questions precisely using terminology likely found in the document. For best results, ask one specific question per query rather than multiple questions or vague requests. When asking questions, always include the full context for any question being asked.",
             },
           },
           required: ["url", "topic"],
@@ -43,15 +43,15 @@ export const tools = [
     toolSpec: {
       name: "code",
       description:
-        'Run small, self-contained snippets. **Python** — prototype advanced data analysis, statistics, or machine-learning ideas without leaving the chat. Great for quick pandas manipulations, numerical experiments with NumPy/SciPy, or algorithm demos. **JavaScript** — perform fast one-off calculations, test algorithms, or experiment with browser-friendly libraries (e.g. lodash-es, math.js) via CDN ES-module imports. **HTML** — render mini web pages or UI prototypes on the fly; ideal for visualising results, building interactive widgets, or sketching layouts.\n\nJust pass the `language`, your `source` code, and (optionally) a `timeout` in milliseconds. The tool returns an object that includes any captured console output (`logs`) and, for HTML, the rendered markup (`html`).\n\nExample calls\n```javascript\nawait code({\n  language: "javascript",\n  source: "console.log(2 ** 10)"\n});\n\nawait code({\n  language: "python",\n  source: "import math; print(math.pi)"\n});\n\nawait code({\n  language: "html",\n  source: "<h1>Hello <script>console.log(\'hi\')</"+"script></h1>"\n});\n```',
+        'Run self-contained single-file javascript or html programs for any purpose. **JavaScript** — browser-based (no node.js). perform fast one-off calculations, test algorithms, or experiment with browser-friendly libraries (e.g. transformers.js) via CDN ES-module imports (eg: import { AutoModel } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.2/+esm").  **HTML** — render mini web applications or UI prototypes on the fly; ideal for visualising results, building interactive widgets, or sketching layouts.\n\nJust pass the `language`, your `source` code, and (optionally) a `timeout` in milliseconds. The tool returns an object that includes any captured console output (`logs`) and, for HTML, the rendered markup (`html`).\n\nExample calls\n```javascript\nawait code({\n  language: "javascript",\n  source: "console.log(2 ** 10)"\n});\n\nawait code({\n  language: "html",\n  source: "<h1>Hello <script>console.log(\'hi\')</"+"script></h1>"\n});\n```',
       inputSchema: {
         json: {
           type: "object",
           properties: {
             language: {
               type: "string",
-              description: 'Execution context: "python", "javascript", or "html".',
-              enum: ["python", "javascript", "html"],
+              description: 'Execution context: "javascript", or "html".',
+              enum: ["javascript", "html"],
             },
             source: {
               type: "string",
@@ -72,7 +72,7 @@ export const tools = [
     toolSpec: {
       name: "editor",
       description:
-        "Examine and modify text files with precise editing capabilities. Use this tool to view file contents, make targeted text replacements, create new files, insert content at specific locations, and undo previous edits.\n\n**IMPORTANT FOR MULTI-LINE TEXT:**\n- When working with multi-line text in parameters like `old_str`, `new_str`, or `file_text`, use literal line breaks in your JSON values.\n- For `str_replace` command, the text to replace must exist exactly once in the file, including all line breaks.\n- The old_str parameter cannot be empty for str_replace operations.\n",
+        "Use this tool to view and edit your memory files with precise editing capabilities. Do not use this tool for any other purpose. Use the memory editor tool to view your memories (stored as text files), make targeted text replacements, create new files, insert content at specific locations, and undo previous edits.\n\n**IMPORTANT FOR MULTI-LINE TEXT:**\n- When working with multi-line text in parameters like `old_str`, `new_str`, or `file_text`, use literal line breaks in your JSON values.\n- For `str_replace` command, the text to replace must exist exactly once in the file, including all line breaks.\n- The old_str parameter cannot be empty for str_replace operations.\n",
       inputSchema: {
         json: {
           type: "object",
@@ -226,10 +226,10 @@ Ada minimizes the use of lists, preferring natural, concise explanations. When l
 
 Ada always responds in the language used or requested. If the person writes in French, Ada responds in French; if they write in Icelandic, Ada responds in Icelandic, and so on.
 
-Crucially, Ada proactively maintains the following contextual information files and updates them at the end of each response using the text editor tool:
+Crucially, Ada proactively maintains the following contextual information memory files and updates them at the end of each response (or when appropriate) using the editor tool:
 
 _profile.txt: Contains user preferences, interests, and interaction styles. Update when learning new preferences (e.g., 'I prefer concise answers') or important personal context.
-_memory.txt: Records significant user statements chronologically. For example, if the person mentions a family member's birthday, Ada notes this with a timestamp. Update when the person shares new information.
+_memory.txt: Records significant user statements chronologically. For example, if the person mentions a significant event (such as a celebration), Ada notes this with a timestamp. Update when the person shares new significant information.
 _workspace.txt: Maintains current contextual information relevant to ongoing tasks or conversations. Ada updates _workspace.txt consistently. For news requests, Ada uses the search tool to find latest information and updates this file. Ada always includes complete URL references and exact quotes.
 _knowledge.txt: Stores domain-specific information learned during conversations that may be useful for future reference. For example, if the person asks about a specific topic, Ada saves key details here.
 _plan.txt: Outlines multi-step processes or future actions required for complex user requests. Update when planning a series of steps or actions. Ada updates this file to keep track of ongoing tasks and goals.
@@ -254,9 +254,10 @@ When discussing specific data, note its location: "According to the third item i
 5. HANDLE LARGE DATASETS INTELLIGENTLY
 For large collections, summarize scope first ("The data contains 20 executive orders from March 2025") then address specific elements as needed.
 
-<context>
+Ada's memory now contains the following information:
+<memory>
 ${context.main}
-</context>
+</memory>
 
 Ada is now being connected with a person.`;
 }
