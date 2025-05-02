@@ -1,6 +1,6 @@
 import { Router, json } from "express";
 import { QueryTypes } from "sequelize";
-import { runModel } from "./inference.js";
+import { runModel, runBedrockModel } from "./inference.js";
 import { authMiddleware, proxyMiddleware, logRequests, logErrors, loginMiddleware } from "./middleware.js";
 import { search } from "./utils.js";
 import { translate, getLanguages } from "./translate.js";
@@ -83,6 +83,29 @@ api.get("/translate/languages", authMiddleware, async (req, res) => {
 api.post("/model", authMiddleware, async (req, res) => {
   const results = await runModel(req.body);
   return req.body?.stream ? results.pipeDataStreamToResponse(res) : res.json(results);
+});
+
+api.all("/model/run", authMiddleware, async (req, res) => {
+  const useQuery = req.method === "GET";
+  const useBody = req.method === "POST";
+  if (!useQuery && !useBody) {
+    res.status(405).end();
+    return;
+  }
+  let { model, messages, system, thoughtBudget, tools, stream } = useQuery ? req.query : req.body;
+  if (useQuery) {
+    messages = JSON.parse(messages || "[]");
+    tools = JSON.parse(tools || "[]");
+  }
+  const results = await runBedrockModel(model, messages, system, thoughtBudget, tools, stream);
+  if (stream) {
+    for await (const message of results?.stream || []) {
+      res.write(JSON.stringify(message) + "\n");
+    }
+    res.end();
+  } else {
+    res.json(results);
+  }
 });
 
 api.post("/feedback", authMiddleware, async (req, res) => {

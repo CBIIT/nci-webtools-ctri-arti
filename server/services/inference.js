@@ -73,7 +73,7 @@ export async function runModel(params) {
  * @param {Array} tools - Array of tools the model can use during the conversation
  * @returns {Promise<import("@aws-sdk/client-bedrock-runtime").ConverseStreamCommandOutput|import("@aws-sdk/client-bedrock-runtime").ConverseCommandOutput>} A promise that resolves to a stream of model responses
  */
-export async function runModelOld(
+export async function runBedrockModel(
   modelId = DEFAULT_MODEL_ID,
   messages = [],
   systemPrompt = "You are proactive, curious, and decisive. You communicate warmly with thoughtful examples, keeping responses concise yet insightful. You show genuine interest while focusing precisely on what people need.",
