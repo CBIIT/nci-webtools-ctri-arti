@@ -35,11 +35,12 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
 
-  # Local Auth Server (Optional, but please avoid using unapproved 3rd party providers for security reasons)
+  # Local Auth Server (Optional)
   # Before running this, ensure that you've created a key.pem file in the server directory (eg: run `npm run cert`)
   # Manual Steps: Create a Realm with a Client (with Client authentication enabled), then generate a client secret and set it in the .env file
   # Using the port below, the discovery url will be: https://localhost:8443/realms/${realm-name}/.well-known/openid-configuration
   keycloak:
+    profiles: [auth]
     image: quay.io/keycloak/keycloak:26.1
     command: start
     ports:
