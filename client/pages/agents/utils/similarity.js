@@ -1,5 +1,22 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { matmul, AutoModel, AutoTokenizer, Tensor } from "@huggingface/transformers";
+import { matmul, AutoModel, AutoModelForCausalLM, AutoTokenizer, Tensor } from "@huggingface/transformers";
+
+
+export async function inference(modelName = "onnx-community/Qwen3-0.6B-ONNX", messages, tools = [], outputTokens = 512) {
+  const model = await AutoModelForCausalLM.from_pretrained(modelName, {  device: "webgpu" });
+  const tokenizer = await AutoTokenizer.from_pretrained(modelName);
+  const text = tokenizer.apply_chat_template(messages, {
+    add_generation_prompt: true,
+    tokenize: false,
+    tools,
+  });
+  const inputs = await tokenizer(text);
+  const outputs = await model.generate(...inputs, {max_new_tokens: outputTokens})
+
+  const promptLength = inputs.input_ids.dims.at(-1);
+  const generatedTokens = outputs.slice(null, [promptLength, null]);
+  return tokenizer.decode(generatedTokens, { skip_special_tokens: true });
+}
 
 /**
  * Creates an embedder function with cached model and tokenizer
