@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Session Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 15px; }
+        pre { background-color: #f0f0f0; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; word-wrap: break-word; }
+        #expires-display { font-weight: bold; margin-bottom: 15px; }
+        button, a { margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Simple Session Test</h1>
+
+    <a href="/api/login?destination=/test.html">Login</a>
+    <a href="/api/logout?destination=/test.html">Logout</a>
+    <button onclick="getSession()">Refresh Info</button>
+
+    <div id="expires-display">Expires in: Calculating...</div>
+    <pre id="session-display">Loading session data...</pre>
+
+    <script>
+        const expiresDisplay = document.getElementById("expires-display");
+        const sessionDisplay = document.getElementById("session-display");
+        let sessionTimerInterval = null;
+        let currentSessionData = null; // Store the session data
+
+        // Function to update the countdown timer
+        function updateTimer() {
+            if (currentSessionData && currentSessionData.expires) {
+                try {
+                    const expiresDate = new Date(currentSessionData.expires);
+                    if (isNaN(expiresDate.getTime())) {
+                        expiresDisplay.textContent = 'Expires in: Invalid Date';
+                        if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+                        return;
+                    }
+
+                    const remainingMs = expiresDate.getTime() - Date.now();
+
+                    if (remainingMs <= 0) {
+                        expiresDisplay.textContent = 'Expires in: Expired';
+                        if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+                    } else {
+                        expiresDisplay.textContent = `Expires in: ${(remainingMs / 1000).toFixed(1)} seconds`;
+                    }
+                } catch (e) {
+                    console.error("Timer Error:", e);
+                    expiresDisplay.textContent = 'Expires in: Error';
+                     if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+                }
+            } else {
+                expiresDisplay.textContent = 'Expires in: N/A';
+                if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+            }
+        }
+
+        // Function to fetch session data and update the display
+        async function getSession() {
+            if (sessionTimerInterval) {
+                clearInterval(sessionTimerInterval); // Clear previous timer before fetch
+                sessionTimerInterval = null;
+            }
+            expiresDisplay.textContent = 'Expires in: Fetching...'; // Indicate loading
+            sessionDisplay.textContent = 'Fetching...';
+
+            try {
+                // Basic cache-busting query parameter
+                const response = await fetch(`/api/session?t=${Date.now()}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+
+                currentSessionData = await response.json(); // Store the fetched data
+
+                // Display the raw session data
+                sessionDisplay.textContent = JSON.stringify(currentSessionData, null, 2);
+
+                // Start the timer immediately after getting data
+                updateTimer(); // Run once right away
+                if (currentSessionData && currentSessionData.expires && new Date(currentSessionData.expires).getTime() > Date.now()) {
+                   sessionTimerInterval = setInterval(updateTimer, 100); // Update every 100ms
+                }
+
+
+            } catch (error) {
+                console.error("Failed to fetch session:", error);
+                expiresDisplay.textContent = `Expires in: Error (${error.message})`;
+                sessionDisplay.textContent = `Error fetching session: ${error.message}`;
+                currentSessionData = null; // Clear data on error
+            }
+        }
+
+        // Initial fetch when the page loads
+        getSession();
+    </script>
+</body>
+</html>
