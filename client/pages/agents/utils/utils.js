@@ -1,7 +1,12 @@
+import { createMemo } from "solid-js";
 import { loadPyodide } from "pyodide";
 import { parseDocument } from "./parsers.js";
+import { inference } from "./similarity.js";
+import { jsonToXml } from "./xml.js";
+window.inference = inference;
 
-window.TOOLS = { search, browse, code, editor, think };
+export const TOOLS = { search, browse, code, editor, think };
+window.TOOLS = TOOLS;
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
@@ -168,7 +173,7 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  */
 export async function browse({ url, topic }) {
   window.id ||= Math.random().toString(36).slice(2);
-  const response = await fetch("/api/proxy?" + new URLSearchParams({ url }));
+  const response = await fetch("/api/browse/" + url);
   const bytes = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(bytes);
   if (!response.ok) {
@@ -466,11 +471,13 @@ export function getClientContext(important = {}) {
   }));
   main.push({ description: "The filenames key contains the list of files. " });
   main.push({ filenames });
-  if (Object.keys(important).length) {
+  if (Object.keys(important).length > 0) {
     main.push({ additionalInstructions: "Please review the items under 'important' carefully" });
     main.push({ important });
   }
-  return { main: JSON.stringify(main, null, 2), time, language, platform, memory, hardwareConcurrency, timeFormat };
+  console.log(main);
+  window.jsonToXml = jsonToXml;
+  return { main: JSON.stringify(main), time, language, platform, memory, hardwareConcurrency, timeFormat };
 }
 
 /**
@@ -556,4 +563,24 @@ export function downloadBlob(filename, blob) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export function convertToAccessorOptions(options) {
+  // Resolve the options object if it's passed as an accessor
+  const resolvedOptions = typeof options === "function" ? options() : options;
+
+  // Create a new object where each property is wrapped in createMemo
+  return Object.entries(resolvedOptions).reduce(
+    (reactiveOptions, [key, value]) => {
+      // Use createMemo to make each property access reactive
+      reactiveOptions[key] = createMemo(() => {
+        // If the original options object was itself reactive,
+        // accessing it here ensures dependencies are tracked.
+        const currentOptions = typeof options === "function" ? options() : options;
+        return currentOptions[key]; // Return the current value for this key
+      });
+      return reactiveOptions;
+    },
+    {} // Start with an empty object
+  );
 }
