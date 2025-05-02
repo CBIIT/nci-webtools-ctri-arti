@@ -1,6 +1,6 @@
 import { TranslateClient, TranslateTextCommand, paginateListLanguages } from "@aws-sdk/client-translate"; // ES Modules import
 
-export async function translate(text, sourceLanguage = "en", targetLanguage = "es", settings = {}) {
+export async function translate({text, sourceLanguage = "en", targetLanguage = "es", settings = {}}) {
   const client = new TranslateClient();
   const input = {
     Text: text,
