@@ -3,23 +3,7 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 RUN dnf -y update \
     && dnf -y install curl-minimal \
     && curl -fsSL https://rpm.nodesource.com/setup_22.x | bash \
-    && dnf -y install \
-    alsa-lib \
-    gtk3-devel \
-    libnotify-devel \
-    libX11 \
-    libXcomposite \
-    libXcursor \
-    libXdamage \
-    libXext \
-    libXi \
-    libXScrnSaver \
-    libXtst \
-    mesa-libGL \
-    nodejs \
-    nss \
-    xorg-x11-server-Xvfb \
-    xorg-x11-utils \
+    && dnf -y install nodejs \
     && dnf clean all
 
 RUN mkdir -p /server
@@ -47,4 +31,4 @@ ENV AWS_MAX_ATTEMPTS=20
 
 EXPOSE 80
 
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "start"]
