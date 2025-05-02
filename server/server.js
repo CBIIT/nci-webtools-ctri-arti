@@ -17,6 +17,7 @@ createServer(app, process.env).listen(PORT, () => logger.info(`Server is running
 export function createApp(env = process.env) {
   const { CLIENT_FOLDER = "../client", SESSION_SECRET } = env;
   const app = express();
+  app.set("trust proxy", true);
   const store = new SessionStore({ db });
   store.sync({ force: true });
   app.use(
