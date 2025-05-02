@@ -1,8 +1,22 @@
 import { Sequelize, DataTypes } from "sequelize";
 import logger from "./logger.js";
+const { 
+  PGHOST,
+  PGPORT,
+  PGDATABASE,
+  PGUSER,
+  PGPASSWORD,
+} = process.env; 
 
-// use implicit connection parameters (eg: PGHOST)
-const db = new Sequelize({ dialect: "postgres", logging: m => logger.info(m) }); 
+const db = new Sequelize({ 
+  dialect: "postgres", 
+  logging: m => logger.info(m),
+  host: PGHOST,
+  port: +PGPORT,
+  database: PGDATABASE,
+  username: PGUSER,
+  password: PGPASSWORD,
+}); 
 
 export const User = db.define("User", {
   email: DataTypes.STRING,
