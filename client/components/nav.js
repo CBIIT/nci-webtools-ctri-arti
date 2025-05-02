@@ -72,7 +72,7 @@ export default function Nav({ routes }) {
               )}
           </ul>
           <div class="navbar-nav">
-            ${() => session()?.authenticated 
+            ${() => session()?.user 
                 ? html`<a href="/api/logout" target="_self" class="nav-link text-decoration-none">Logout</a>`
                 : html`<a href="/api/login" target="_self" class="nav-link text-decoration-none">Login</a>`}
           </div>
