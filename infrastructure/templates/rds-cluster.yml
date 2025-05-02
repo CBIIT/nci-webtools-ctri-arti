@@ -54,12 +54,13 @@ Parameters:
   SecurityGroupId:
     Type: AWS::EC2::SecurityGroup::Id
     Description: Security group ID for the DB cluster
-  
+
 Resources:
   # Create a secret in AWS Secrets Manager for database credentials
   DBSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
+      Name: !Ref DBClusterIdentifier
       Description: !Ref DBClusterIdentifier
       GenerateSecretString:
         SecretStringTemplate: !Sub '{"username": "${MasterUsername}"}'
