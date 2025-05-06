@@ -5,7 +5,7 @@ import { authMiddleware, proxyMiddleware, logRequests, logErrors, loginMiddlewar
 import { search } from "./utils.js";
 import { translate, getLanguages } from "./translate.js";
 import { sendFeedback } from "./email.js";
-import db, { User } from "./database.js";
+import db, { User, Model } from "./database.js";
 
 const { VERSION } = process.env;
 const api = Router();
