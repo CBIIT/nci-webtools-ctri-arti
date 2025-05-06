@@ -1,37 +1,15 @@
-# NCI Research Optimizer
+# Research Optimizer
 
-## Commands
-- Server: `npm run start` or `npm run start:dev` (watch mode)
-- Client: Serve static files from client directory
+Research Optimizer provides tools to query, transform, and analyze biomedical and regulatory information. Supporting the Clinical & Translational Research Informatics Branch (CTRIB) mission, we streamline workflows and make insights accessible for clinical, research, and regulatory work.
 
-## Code Structure
-- Server: Express.js backend with AWS Bedrock API integration
-- Client: Static HTML/JS frontend using SolidJS (buildless), Bootstrap CSS, Web components using standard JS modules
-
-## API Usage Examples
-
-### model/run
-
-```js
-const endpoint = "http://localhost:8080/api/model/run";
-const model = "anthropic.claude-3-5-sonnet-20240620-v1:0";
-const messages = [
-  {
-    role: "user",
-    content: [{ text: "Please provide the answer to everything." }],
-  },
-];
-// you may also pass in a string to the 'messages' parameter
-// const messages = "Please provide the answer to everything."
-
-const response = await fetch(endpoint, {
-  method: "post",
-  headers: { "content-type": "application/json" },
-  body: JSON.stringify({ model, messages }),
-});
-const results = await response.json();
-console.log(results, results.output.message);
-```
-
-You can also make GET requests directly in your browser. 
-http://localhost:8080/api/model/run?messages=Return+42
+## Getting Started
+1. Clone repository: `git clone https://github.com/CBIIT/nci-webtools-ctri-research-optimizer`
+2. Open repo folder: `cd nci-webtools-ctri-research-optimizer`
+3. Navigate to server folder: `cd server`
+4. Create `.env` file from .env.example: `cp .env.example .env`
+5. Create `key.pem` certificate: `npm run cert`
+6. Configure `server/.env` to use ssl. Set PORT=443 and HTTPS_PEM=key.pem
+7. (Optional) Configure `server/.env` with values from AWS Parameter Store (research-optimizer OAUTH and API_KEY parameters)
+8. Start server+database: `docker compose up --build`
+9. Go to https://localhost
+10. (Optional) Use `w` to enable Watch mode and rebuild on changes
