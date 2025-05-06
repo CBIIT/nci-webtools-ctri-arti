@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+import forge from "node-forge";
 import { inspect } from "util";
 
 export const log = (value) => console.log(inspect(value, { depth: null, colors: true, compact: false, breakLength: 120 }));
@@ -116,4 +119,59 @@ export async function retry(fn, maxAttempts = 3, initialDelay = 0) {
   }
 
   throw new Error(`Failed after ${maxAttempts} attempts. Last error: ${lastError?.message}`);
+}
+
+/**
+ * Creates a self-signed certificate and private key
+ * @param {any} opts - Options for certificate generation
+ * @returns {{key: string, cert: string}}
+ */
+export function createCertificate(
+  opts = {}
+) {
+  const pki = forge.pki;
+  const {
+    attrs: customAttrs = {},
+    keySize = 2048,
+    days = 365,
+    altNames,
+  } = opts;
+
+  // Attributes & Key Pair
+  const defaultAttrs = { C: "US", ST: "State", L: "City", O: "Organization", CN: "localhost" };
+  const finalAttrsMap = { ...defaultAttrs, ...customAttrs };
+  const subject = Object.entries(finalAttrsMap).map(([shortName, value]) => ({ shortName, value }));
+  const keys = pki.rsa.generateKeyPair({ bits: keySize });
+
+  // Certificate Setup
+  const cert = pki.createCertificate();
+  cert.publicKey = keys.publicKey;
+  cert.serialNumber = "01" + forge.util.bytesToHex(forge.random.getBytesSync(19)); // Ensures positive hex serial
+  const now = new Date();
+  cert.validity.notBefore = new Date(now.getTime()); // Use new Date instance
+  cert.validity.notAfter = new Date(now.getTime());
+  cert.validity.notAfter.setFullYear(now.getFullYear() + days);
+
+  cert.setSubject(subject);
+  cert.setIssuer(subject); // Self-signed
+
+  // Extensions (Basic + SAN)
+  const cnValue = finalAttrsMap.CN;
+  const sanToAdd = altNames && altNames.length > 0
+    ? altNames
+    : (cnValue === "localhost"
+      ? [{ type: 2, value: "localhost" }, { type: 7, ip: "127.0.0.1" }]
+      : []);
+
+  cert.setExtensions([
+    { name: "basicConstraints", cA: true },
+    { name: "keyUsage", keyCertSign: true, digitalSignature: true, nonRepudiation: true, keyEncipherment: true },
+    ...(sanToAdd.length > 0 ? [{ name: "subjectAltName", altNames: sanToAdd }] : []),
+  ]);
+
+  // Sign & PEM Output
+  cert.sign(keys.privateKey, forge.md.sha256.create());
+  const privateKeyPem = pki.privateKeyToPem(keys.privateKey);
+  const certPem = pki.certificateToPem(cert);
+  return { key: privateKeyPem, cert: certPem };
 }
