@@ -4,9 +4,9 @@ services:
       context: .
       dockerfile: server/Dockerfile
     ports:
-      - "8080:8080"
+      - "443:443"
     environment:
-      - PORT=8080
+      - PORT=443
       - PGHOST=postgres
     env_file:
       - ./server/.env
@@ -17,6 +17,11 @@ services:
         target: /server
         ignore:
           - ./server/node_modules
+      - action: sync
+        path: ./client
+        target: /client
+        ignore:
+          - ./client/node_modules
       - action: rebuild
         path: server/package.json
         ignore:
