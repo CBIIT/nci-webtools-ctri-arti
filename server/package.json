@@ -14,6 +14,7 @@
   "description": "",
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.8",
+    "@ai-sdk/google": "^1.2.16",
     "@aws-sdk/client-bedrock-runtime": "^3.799.0",
     "@aws-sdk/client-translate": "^3.799.0",
     "@aws-sdk/credential-providers": "^3.799.0",
