@@ -1,9 +1,9 @@
 import http from "http";
 import https from "https";
-import { readFileSync } from "fs";
 import express from "express";
 import session from "express-session";
 import SequelizeStore from "connect-session-sequelize";
+import { createCertificate } from "./services/utils.js";
 import logger from "./services/logger.js";
 import db from "./services/database.js";
 import api from "./services/api.js";
@@ -40,9 +40,12 @@ export function createApp(env = process.env) {
 }
 
 export function createServer(app, env = process.env) {
-  const { HTTPS_PEM } = env;
-  const lib = HTTPS_PEM ? https : http;
-  const cert = HTTPS_PEM ? readFileSync(HTTPS_PEM) : undefined;
-  const options = { requestTimeout: 0, key: cert, cert };
+  const { PORT, HTTPS_KEY, HTTPS_CERT } = env;
+  const useHttps = +PORT === 443;
+  const lib = useHttps ? https : http;
+  const options = { requestTimeout: 0, key: HTTPS_KEY, cert: HTTPS_CERT };
+  if (useHttps && !(options.key && options.cert)) {
+    Object.assign(options, createCertificate());
+  }
   return lib.createServer(options, app);
 }
