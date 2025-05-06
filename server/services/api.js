@@ -15,6 +15,7 @@ api.use(logRequests());
 api.get("/status", async (req, res) => {
   res.json({
     version: VERSION,
+    uptime: process.uptime(),
     database: await db.query("SELECT 'ok' AS health", { plain: true, type: QueryTypes.SELECT }),
   });
 });
