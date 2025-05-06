@@ -41,7 +41,7 @@ export function createApp(env = process.env) {
 
 export function createServer(app, env = process.env) {
   const { PORT, HTTPS_KEY, HTTPS_CERT } = env;
-  const useHttps = +PORT === 443;
+  const useHttps = +PORT === 443 || HTTPS_KEY || HTTPS_CERT;
   const lib = useHttps ? https : http;
   const options = { requestTimeout: 0, key: HTTPS_KEY, cert: HTTPS_CERT };
   if (useHttps && !(options.key && options.cert)) {
