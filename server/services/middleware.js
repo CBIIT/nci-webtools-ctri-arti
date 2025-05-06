@@ -3,7 +3,7 @@ import * as client from "openid-client";
 import logger, { formatObject } from "./logger.js";
 const { OAUTH_CALLBACK_URL, OAUTH_DISCOVERY_URL, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET } = process.env;
 export const WHITELIST = [/.*/i];
-export const oidcConfig = await client.discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET);
+export const oidcConfig = OAUTH_CLIENT_ID ? await client.discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET) : null;
 
 /**
  * Logs requests
