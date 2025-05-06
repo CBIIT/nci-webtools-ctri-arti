@@ -83,7 +83,16 @@ api.get("/translate/languages", authMiddleware, async (req, res) => {
 
 api.post("/model", authMiddleware, async (req, res) => {
   const results = await runModel(req.body);
-  return req.body?.stream ? results.pipeDataStreamToResponse(res) : res.json(results);
+  const opts = { sendReasoning: true, sendSources: true };
+  return req.body?.stream ? results.pipeDataStreamToResponse(res, opts) : res.json(results);
+});
+
+api.get("/model/list", authMiddleware, async (req, res) => {
+  const results = await Model.findAll({
+    attributes: ["label", "value"],
+    // where: {provider: "bedrock"},
+  });
+  res.json(results);
 });
 
 api.all("/model/run", authMiddleware, async (req, res) => {
