@@ -1,22 +1,16 @@
 import { Sequelize, DataTypes } from "sequelize";
 import logger from "./logger.js";
-const { 
-  PGHOST,
-  PGPORT,
-  PGDATABASE,
-  PGUSER,
-  PGPASSWORD,
-} = process.env; 
+const { PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD } = process.env;
 
 const db = new Sequelize({
-  dialect: "postgres", 
-  logging: m => logger.info(m),
+  dialect: "postgres",
+  logging: (m) => logger.info(m),
   host: PGHOST,
   port: +PGPORT,
   database: PGDATABASE,
   username: PGUSER,
   password: PGPASSWORD,
-}); 
+});
 
 export const User = db.define("User", {
   email: DataTypes.STRING,
@@ -66,29 +60,88 @@ User.hasMany(Usage, { foreignKey: "userId" });
 Model.hasMany(Usage, { foreignKey: "modelId" });
 await db.sync({ alter: true });
 
-if (!await Role.count()) {
-  await Role.bulkCreate([
-    { name: "admin", policy: [{ actions: "*", resources: "*" }] },
-    { name: "pro", policy: [{ actions: "invoke:unlimited", resources: "*" }] },
-    { name: "user", policy: null },
-  ]);
-}
+await Role.bulkCreate(
+  [
+    { id: 1, name: "admin", policy: [{ actions: "*", resources: "*" }] },
+    { id: 2, name: "pro", policy: [{ actions: "invoke:unlimited", resources: "*" }] },
+    { id: 3, name: "user", policy: null },
+  ],
+  { updateOnDuplicate: ["name", "policy"] }
+);
 
-if (!await Provider.count()) {
-  await Provider.bulkCreate([
-    { name: "bedrock" },
-    { name: "google" },
-  ]);
-}
+await Provider.bulkCreate(
+  [
+    { name: "bedrock", apiKey: null },
+    { name: "google", apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY },
+  ],
+  { updateOnDuplicate: ["name", "apiKey"] }
+);
 
-
-if (!await Model.count()) {
-  await Model.bulkCreate([
-    { provider: "bedrock", label: "Sonnet 3.7", value: "us.anthropic.claude-3-7-sonnet-20250219-v1:0", cost1kInput: 0.003, cost1kOutput: 0.015, isReasoner: true, maxContext: 200_000, maxOutput: 64_000, maxReasoning: 60_000 },
-    { provider: "bedrock", label: "Haiku 3.5", value: "us.anthropic.claude-3-5-haiku-20241022-v1:0", cost1kInput: 0.0008, cost1kOutput: 0.004, isReasoner: false, maxContext: 200_000, maxOutput: 8192, maxReasoning: 0 },
-    { provider: "google", label: "Gemini 2.5 Pro", value: "gemini-2.5-pro-preview-03-25", cost1kInput: 0.0025, cost1kOutput: 0.015, isReasoner: true, maxContext: 1_048_576, maxOutput: 65_536, maxReasoning: 1_000_000 },
-    { provider: "google", label: "Gemini 2.5 Flash", value: "gemini-2.5-flash-preview-04-17", cost1kInput: 0.00015, cost1kOutput: 0.0035, isReasoner: true, maxContext: 1_048_576, maxOutput: 65_536, maxReasoning: 1_000_000 },
-  ]);
-}
+// TODO: fetch models from providers
+await Model.bulkCreate(
+  [
+    {
+      id: 1,
+      provider: "bedrock",
+      label: "Sonnet 3.7",
+      value: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+      cost1kInput: 0.003,
+      cost1kOutput: 0.015,
+      isReasoner: true,
+      maxContext: 200_000,
+      maxOutput: 64_000,
+      maxReasoning: 60_000,
+    },
+    {
+      id: 2,
+      provider: "bedrock",
+      label: "Haiku 3.5",
+      value: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+      cost1kInput: 0.0008,
+      cost1kOutput: 0.004,
+      isReasoner: false,
+      maxContext: 200_000,
+      maxOutput: 8192,
+      maxReasoning: 0,
+    },
+    {
+      id: 3,
+      provider: "google",
+      label: "Gemini 2.5 Pro",
+      value: "gemini-2.5-pro-preview-03-25",
+      cost1kInput: 0.0025,
+      cost1kOutput: 0.015,
+      isReasoner: true,
+      maxContext: 1_048_576,
+      maxOutput: 65_536,
+      maxReasoning: 1_000_000,
+    },
+    {
+      id: 4,
+      provider: "google",
+      label: "Gemini 2.5 Flash",
+      value: "gemini-2.5-flash-preview-04-17",
+      cost1kInput: 0.00015,
+      cost1kOutput: 0.0035,
+      isReasoner: true,
+      maxContext: 1_048_576,
+      maxOutput: 65_536,
+      maxReasoning: 1_000_000,
+    },
+  ],
+  {
+    updateOnDuplicate: [
+      "provider",
+      "label",
+      "value",
+      "cost1kInput",
+      "cost1kOutput",
+      "isReasoner",
+      "maxContext",
+      "maxOutput",
+      "maxReasoning",
+    ],
+  }
+);
 
 export default db;
