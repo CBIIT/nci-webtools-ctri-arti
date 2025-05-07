@@ -20,10 +20,11 @@ export async function sendEmail(params, env = process.env) {
 }
 
 export async function sendFeedback({from, feedback, context}, env = process.env) {
-  const { EMAIL_RECIPIENT } = env;
+  const { EMAIL_ADMIN } = env;
   return await sendEmail({
-    from: from || EMAIL_RECIPIENT,
-    to: EMAIL_RECIPIENT,
+    from: from || EMAIL_ADMIN,
+    to: EMAIL_ADMIN,
+      
     subject: "Feedback from Research Optimizer",
     text: feedback,
     attachments: [
