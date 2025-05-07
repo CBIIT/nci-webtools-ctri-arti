@@ -1,5 +1,5 @@
 import html from "solid-js/html";
-import { For } from "solid-js";
+import { For, Show, createSignal } from "solid-js";
 import { parse } from "marked";
 import { stringify } from "yaml";
 import { downloadText } from "./utils/utils.js";
@@ -14,6 +14,10 @@ export default function Message(p = {
   messages: [],
   class: "small markdown shadow-sm rounded mb-3 p-2 position-relative",
 }) {
+  const [feedbackOpen, setFeedbackOpen] = createSignal(false);
+  const [feedback, setFeedback] = createSignal(true);
+  const [comment, setComment] = createSignal("");
+
   if (!p.message) return null;
   const getToolResult = (messages, toolUseId) => {
     console.log(messages,  toolUseId, messages?.find((m) => m.content?.[0]?.toolResult?.toolUseId === toolUseId));
@@ -24,18 +28,72 @@ export default function Message(p = {
 
   if (!p.message || !p.message.content || !p.message.content.length) return null;
 
+  function openFeedback(feedback, comment) {
+    setFeedbackOpen(true);
+    setFeedback(feedback);
+    setComment(comment);
+  }
+
+  async function submitFeedback(e) {
+    let feedback = e.target.feedback.value;
+    let comment = e.target.comment.value;
+    console.log("feedback", feedback, comment);
+    const success = await fetch("/api/feedback", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        feedback: [feedback, '\ncomment:', comment, '\noriginal message:', p.message.content?.[0]?.text].filter(Boolean).join('\n'),
+        context: p.messages,
+      })
+    }).then(e => e.json());
+  };
+
   return html`
-    <div class="d-flex flex-wrap position-relative hover-visible-parent">
+    <${Show} when=${feedbackOpen}>
+      <dialog open=${feedbackOpen} class="z-3 border-0 shadow-sm">
+        <form method="dialog" onSubmit=${submitFeedback}>
+          <div class="mb-3">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="feedback" id="feedback-positive" value="positive" checked=${() => feedback() === "positive"} onChange=${e => setFeedback(e.target.value)}>
+              <label class="form-check-label" for="feedback-positive">👍</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="feedback" id="feedback-negative" value="negative" checked=${() => feedback() === "negative"} onChange=${e => setFeedback(e.target.value)}>
+              <label class="form-check-label" for="feedback-negative">👎</label>
+            </div>
+          </div>
+          <textarea name="comment" placeholder="Comment..." rows="3" class="form-control form-control-sm mb-3" value=${comment()}  onChange=${e => setComment(e.target.value)}></textarea>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </dialog>
+    <//>
+
+    <div class="d-flex flex-wrap position-relative ">
       <${For} each=${p.message.content}>${(c) => {
         if (c.text) {
           return html`
-            <span class=${() => [p.class, "mb-3", p.message.role === "user" ? "bg-light text-prewrap" : "w-100 bg-white"].join(" ")}>
-              <button
-                class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
-                onClick=${() => downloadText("results.txt", c.text)}
-                hidden=${p.message.role === "user"}>
-                💾
-              </button>
+            <span class=${() => [p.class, "mb-3 hover-visible-parent", p.message.role === "user" ? "bg-light text-prewrap" : "w-100 bg-white"].join(" ")}>
+              <${Show} when=${() => p.message.role !== "user"}>
+                <div class="hover-visible position-absolute top-0 end-0 opacity-50">
+                  <button
+                    class="btn btn-sm btn-outline-light border-0 hover-visible"
+                    onClick=${(e) => openFeedback(true)}>
+                    👍
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-light border-0 hover-visible"
+                    onClick=${(e) => openFeedback(false)}>
+                    👎
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-light border-0 hover-visible"
+                    onClick=${() => downloadText("results.txt", c.text)}>
+                    💾
+                  </button>
+                </div>
+              <//>
               <span ...${renderMessageContent(c, p.message)}></span>
             </span>
           `;
