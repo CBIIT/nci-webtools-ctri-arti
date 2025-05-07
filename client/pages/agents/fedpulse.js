@@ -80,8 +80,14 @@ export default function Page() {
         ${() => activeMessage() && html`<${Message} message=${activeMessage} class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />`}
         ${() => loading() && html`<${DNASpinner} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" />`}
       </div>
-      <div class="small text-end">
-        <a href="/agents/fedpulse" target="_blank">Start a new conversation</a>
+      <div class="small d-flex justify-content-between">
+        <div class="d-flex align-items-center">
+            Export as 
+            <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadCsv("conversation.csv", messages().map(m => ({role: m.role, content: m.content?.map(c => c.text).filter(Boolean).join('\n') })))}>csv</button> 
+            or 
+            <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadJson("conversation.json", messages())}>json</button>
+        </div>
+        <a href="/agents/chat" target="_blank">Start a new conversation</a>
       </div>
       <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded position-sticky bottom-0">
         <textarea
