@@ -2,7 +2,7 @@ import { generateText, streamText, smoothStream, jsonSchema } from "ai";
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { createAzure } from "@ai-sdk/azure";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { BedrockRuntimeClient, ConverseCommand, ConverseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
@@ -14,10 +14,8 @@ export const DEFAULT_MODEL_ID = process.env.DEFAULT_MODEL_ID;
 
 async function getOptions(modelId, { thoughtBudget = 0 }) {
   const record = await Model.findOne({ where: { value: modelId }, include: Provider });
-  console.log("Model record", record);
   if (!record) throw new Error("Invalid model ID");
   const { name, apiKey } = record.Provider;
-  console.log(record, name, apiKey);
   const providers = {
     bedrock: (modelId) => createAmazonBedrock({ credentialProvider: fromNodeProviderChain() })(modelId),
     azure: (modelId) => createAzure({ apiKey })(modelId),
@@ -25,19 +23,41 @@ async function getOptions(modelId, { thoughtBudget = 0 }) {
     openai: (modelId) => createOpenAI({ apiKey })(modelId),
     openrouter: (modelId) => createOpenRouter({ apiKey })(modelId),
   };
+  const processMessage = {
+    bedrock: (message) => {
+      if (!Array.isArray(message.content)) return message;
+      for (const chunk of message.content.filter(c => c.mimeType)) {
+        let [type, subtype] = chunk.mimeType.split("/");
+        if (type === "text") subtype = "txt";
+        if (type === "application") {
+          subtype = {
+            "vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+            "msword": "doc",
+            "vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+            "vnd.ms-excel": "xls",
+          }[subtype] || subtype;
+        }
+        chunk.mimeType = `${type}/${subtype}`;
+      }
+      return message;
+    }
+  }[name] || ((message) => message);
 
   thoughtBudget = Math.min(+thoughtBudget, record.maxReasoning || 0);
-  const providerOptions = thoughtBudget > 0 ? {
-    google: { thinkingConfig: { thinkingBudget: thoughtBudget } },
-    bedrock: { reasoning_config: { type: "enabled", budget_tokens: +thoughtBudget } },
-  } : undefined;
+  const providerOptions =
+    thoughtBudget > 0
+      ? {
+          google: { thinkingConfig: { thinkingBudget: thoughtBudget } },
+          bedrock: { reasoning_config: { type: "enabled", budget_tokens: +thoughtBudget } },
+        }
+      : undefined;
   for (let key in providerOptions) {
     if (name !== key) {
       delete providerOptions[key];
     }
   }
   const model = providers[name]?.(modelId);
-  return { ...record, model, providerOptions };
+  return { ...record, model, providerOptions, processMessage };
 }
 
 /**
@@ -59,13 +79,18 @@ export async function runModel(params) {
     stream = false,
   } = params;
   if (!messages || messages?.length === 0 || !params.model) return null;
-  const { model, maxOutput, providerOptions } = await getOptions(params.model, { thoughtBudget });
+  const { model, maxOutput, providerOptions, processMessage } = await getOptions(params.model, { thoughtBudget });
+
+  // add system prompt to messages (so that we can enable prompt caching on the message)
+  messages.unshift({ role: "system", content: system });
+  messages = messages.map(processMessage);
+
   for (const key in tools) {
     let tool = tools[key];
     tool.parameters = jsonSchema(tool.parameters);
   }
+
   const input = {
-    system,
     model,
     messages,
     tools,
@@ -77,7 +102,7 @@ export async function runModel(params) {
     experimental_transform: smoothStream({
       delayInMs: 10,
       chunking: "word",
-    })
+    }),
   };
   return stream ? streamText(input) : generateText(input);
 }
