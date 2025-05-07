@@ -4,6 +4,7 @@ import Home from "./home.js";
 const Tools = () => import("./tools/index.js");
 const Agents = () => import("./agents/index.js");
 const Chat = () => import("./agents/chat.js");
+const Chat2 = () => import("./agents/chat2.js");
 const FedPulse = () => import("./agents/fedpulse.js");
 const Translate = () => import("./tools/translate.js");
 const ConsentCrafter = () => import("./tools/consent-crafter.js");
@@ -53,7 +54,12 @@ const routes = [
         title: "Chat",
         component: lazy(Chat),
       },
-      
+      {
+        path: "chat2",
+        title: "Chat (New)",
+        component: lazy(Chat2),
+        hidden: true,
+      },
       {
         path: "translate",
         title: "Translate",
