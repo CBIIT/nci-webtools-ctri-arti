@@ -14,9 +14,8 @@ export default function Message(p = {
   messages: [],
   class: "small markdown shadow-sm rounded mb-3 p-2 position-relative",
 }) {
-  const [feedbackOpen, setFeedbackOpen] = createSignal(false);
-  const [feedback, setFeedback] = createSignal(true);
-  const [comment, setComment] = createSignal("");
+  const [dialog, setDialog] = createSignal(null);
+  const messageIndex = (p.messages || []).indexOf(p.message);
 
   if (!p.message) return null;
   const getToolResult = (messages, toolUseId) => {
@@ -29,15 +28,18 @@ export default function Message(p = {
   if (!p.message || !p.message.content || !p.message.content.length) return null;
 
   function openFeedback(feedback, comment) {
-    setFeedbackOpen(true);
-    setFeedback(feedback);
-    setComment(comment);
+    let d = dialog();
+    let f = d.querySelector("form");
+    f.feedback.value = feedback ? "Positive Feedback" : "Negative Feedback";
+    f.comment.value = comment || "";
+    d.showModal();
   }
 
   async function submitFeedback(e) {
+    e.preventDefault();
+    await dialog()?.close();
     let feedback = e.target.feedback.value;
     let comment = e.target.comment.value;
-    console.log("feedback", feedback, comment);
     const success = await fetch("/api/feedback", {
       method: "POST",
       headers: {
@@ -51,32 +53,32 @@ export default function Message(p = {
   };
 
   return html`
-    <${Show} when=${feedbackOpen}>
-      <dialog open=${feedbackOpen} class="z-3 border-0 shadow-sm">
-        <form method="dialog" onSubmit=${submitFeedback}>
-          <div class="mb-3">
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="feedback" id="feedback-positive" value="positive" checked=${() => feedback() === "positive"} onChange=${e => setFeedback(e.target.value)}>
-              <label class="form-check-label" for="feedback-positive">👍</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="feedback" id="feedback-negative" value="negative" checked=${() => feedback() === "negative"} onChange=${e => setFeedback(e.target.value)}>
-              <label class="form-check-label" for="feedback-negative">👎</label>
-            </div>
+    <dialog ref=${el => setDialog(el)} class="z-3 border-0 shadow-sm rounded-3" style="width: 400px; max-width: 100vw; max-height: 100vh; overflow: auto;">
+      <form onSubmit=${submitFeedback}>
+        <p class="fw-semibold">Submit Feedback</p>
+        <div class="mb-2">
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="feedback" id=${`feedback-positive-${messageIndex}`} value="Positive Feedback">
+            <label class="form-check-label" for=${`feedback-positive-${messageIndex}`}>👍</label>
           </div>
-          <textarea name="comment" placeholder="Comment..." rows="3" class="form-control form-control-sm mb-3" value=${comment()}  onChange=${e => setComment(e.target.value)}></textarea>
-          <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
-      </dialog>
-    <//>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="feedback" id=${`feedback-negative-${messageIndex}`} value="Negative Feedback">
+            <label class="form-check-label" for=${`feedback-negative-${messageIndex}`}>👎</label>
+          </div>
+        </div>
+        <textarea name="comment" placeholder="Comment..." rows="3" class="form-control form-control-sm mb-2"></textarea>
+        <button type="reset" class="btn btn-secondary me-2" onClick=${() => dialog()?.close()}>Cancel</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </dialog>
 
     <div class="d-flex flex-wrap position-relative ">
       <${For} each=${p.message.content}>${(c) => {
         if (c.text) {
           return html`
-            <span class=${() => [p.class, "mb-3 hover-visible-parent", p.message.role === "user" ? "bg-light text-prewrap" : "w-100 bg-white"].join(" ")}>
+            <span class=${() => [p.class, "mb-3 hover-visible-parent-always", p.message.role === "user" ? "bg-light text-prewrap" : "w-100 bg-white"].join(" ")}>
               <${Show} when=${() => p.message.role !== "user"}>
-                <div class="hover-visible position-absolute top-0 end-0 opacity-50">
+                <div class="hover-visible-always position-absolute top-0 end-0 opacity-50">
                   <button
                     class="btn btn-sm btn-outline-light border-0 hover-visible"
                     onClick=${(e) => openFeedback(true)}>
