@@ -67,6 +67,12 @@ const config: Config = {
             PGUSER: [prefix, "username"],
             PGPASSWORD: [prefix, "password"],
 
+            EMAIL_ADMIN: process.env.EMAIL_ADMIN || "",
+            SMTP_HOST: process.env.SMTP_HOST || "",
+            SMTP_PORT: process.env.SMTP_PORT || "",
+            SMTP_USER: process.env.SMTP_USER || "",
+            SMTP_PASSWORD: process.env.SMTP_PASSWORD || "",
+            
             BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY || "",
             DATA_GOV_API_KEY: process.env.DATA_GOV_API_KEY || "",
             CONGRESS_GOV_API_KEY: process.env.CONGRESS_GOV_API_KEY || "",
