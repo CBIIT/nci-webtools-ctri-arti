@@ -127,7 +127,7 @@ export class EcsServiceStack extends Stack {
             const [secretName, field] = stringValue;
             const secret = secretsmanager.Secret.fromSecretNameV2(this, `secret-${containerProps.name}-${parameterLabel}`, secretName);
             secrets[paramKey] = ecs.Secret.fromSecretsManager(secret, field);
-          } else {
+          } else if (stringValue.length > 0) {
             const parameterName = `/${prefix}/${containerProps.name}/${parameterLabel}`;
             const secret = new ssm.StringParameter(this, `secret-${containerProps.name}-${parameterLabel}`, { parameterName, stringValue });
             secrets[paramKey] = ecs.Secret.fromSsmParameter(secret);
