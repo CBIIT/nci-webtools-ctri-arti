@@ -60,17 +60,12 @@ const config: Config = {
             OAUTH_CLIENT_SECRET: process.env.OAUTH_CLIENT_SECRET || "",
             OAUTH_CALLBACK_URL: process.env.OAUTH_CALLBACK_URL || "",
             OAUTH_DISCOVERY_URL: process.env.OAUTH_DISCOVERY_URL || "",
-            OAUTH_LOGOUT_URL: process.env.OAUTH_LOGOUT_URL || "",
 
             PGHOST: [prefix, "host"],
             PGPORT: [prefix, "port"],
             PGDATABASE: [prefix, "dbname"],
             PGUSER: [prefix, "username"],
             PGPASSWORD: [prefix, "password"],
-            
-            DATABASE: process.env.DATABASE || "",
-            DATABASE_ARN: process.env.DATABASE_ARN || "",
-            DATABASE_SECRET_ARN: process.env.DATABASE_SECRET_ARN || "",
 
             BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY || "",
             DATA_GOV_API_KEY: process.env.DATA_GOV_API_KEY || "",
