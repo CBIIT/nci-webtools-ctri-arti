@@ -10,3 +10,4 @@ Research Optimizer provides tools to query, transform, and analyze biomedical an
 5. Start server+postgres services: `docker compose up --build`
 6. (Optional) Use `w` to enable Watch mode and rebuild on changes
 7. Go to https://localhost to use application (ignore invalid cert authority errors when using self-signed certs)
+8. To reset your local database (eg: for schema errors), delete the `postgres` folder
