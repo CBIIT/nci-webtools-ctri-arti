@@ -54,10 +54,10 @@ export const Usage = db.define("Usage", {
 });
 
 await db.sync({ alter: true });
-Role.hasMany(User, { foreignKey: "roleId" });
-Provider.hasMany(Model, { foreignKey: "provider" });
-User.hasMany(Usage, { foreignKey: "userId" });
-Model.hasMany(Usage, { foreignKey: "modelId" });
+Role.belongsTo(User, { foreignKey: "roleId" });
+Model.belongsTo(Provider, { foreignKey: "providerId" });
+Usage.belongsTo(User, { foreignKey: "userId" });
+Usage.belongsTo(Model, { foreignKey: "modelId" });
 await db.sync({ alter: true });
 
 await Role.bulkCreate(
@@ -84,7 +84,7 @@ await Model.bulkCreate(
   [
     {
       id: 1,
-      provider: 1,
+      providerId: 1,
       label: "Sonnet 3.7",
       value: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
       cost1kInput: 0.003,
@@ -96,7 +96,7 @@ await Model.bulkCreate(
     },
     {
       id: 2,
-      provider: 1,
+      providerId: 1,
       label: "Haiku 3.5",
       value: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
       cost1kInput: 0.0008,
@@ -108,7 +108,7 @@ await Model.bulkCreate(
     },
     {
       id: 3,
-      provider: 2,
+      providerId: 2,
       label: "Gemini 2.5 Pro",
       value: "gemini-2.5-pro-preview-05-06",
       cost1kInput: 0.0025,
@@ -120,7 +120,7 @@ await Model.bulkCreate(
     },
     {
       id: 4,
-      provider: 2,
+      providerId: 2,
       label: "Gemini 2.5 Flash",
       value: "gemini-2.5-flash-preview-04-17",
       cost1kInput: 0.00015,
@@ -133,7 +133,7 @@ await Model.bulkCreate(
   ],
   {
     updateOnDuplicate: [
-      "provider",
+      "providerId",
       "label",
       "value",
       "cost1kInput",
@@ -143,6 +143,7 @@ await Model.bulkCreate(
       "maxOutput",
       "maxReasoning",
     ],
+
   }
 );
 
