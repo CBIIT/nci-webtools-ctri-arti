@@ -551,8 +551,26 @@ export function autoscroll(thresholdPercent = 0.8, container = null) {
   return false;
 }
 
+export function toCsv(data = [], headers = null) {
+  headers ||= Object.keys(data?.[0] || {});
+  const serialize = value => value.includes(',') ? `"${value}"` : value;
+  const rows = data.map(row => headers.map(field => row[field]));
+  const csv = [headers].concat(rows).map(row => row.map(serialize).join(','));
+  return csv.join('\n');
+}
+
 export function downloadText(filename, text) {
   const blob = new Blob([text], { type: "text/plain" });
+  downloadBlob(filename, blob);
+}
+
+export function downloadJson(filename, json) {
+  const blob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
+  downloadBlob(filename, blob);
+}
+
+export function downloadCsv(filename, csv) {
+  const blob = new Blob([toCsv(csv)], { type: "text/csv" });
   downloadBlob(filename, blob);
 }
 
