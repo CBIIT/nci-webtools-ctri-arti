@@ -25,10 +25,12 @@ export function useSubmitAiMessage() {
     for (const file of inputFiles || []) {
       const byteLengthLimit = 1024 * 1024 * 5; // 5MB file limit
       if (file.size > byteLengthLimit) return;
-      const mimeType = file.type;
-      const data = await fileToBase64(file);
-      const type = mimeType.includes("image/") ? "image" : "data";
-      const content = {mimeType, [type]: data};
+      let mimeType = file.type;
+      const data = await fileToBase64(file, true);
+      const isImage = mimeType.startsWith("image/");
+      const type = isImage ? "image" : "file";
+      const dataKey = isImage ? "image" : "data";
+      const content = { type, mimeType, [dataKey]: data };
       userMessage.content.push(content);
     }
 
@@ -99,13 +101,13 @@ export function useSubmitAiMessage() {
             console.log(type, typeMap[type], value);
             if (type === types.start_step) {
               step ++;
-              m.content[step] = {}
+              // m.content[step] = {}
             }
 
             if (type === types.text) {
-              setAssistantMessage(m => {
-                // m.content[step]
-              })
+              // setAssistantMessage(m => {
+              //   // m.content[step]
+              // })
             }
 
           }
