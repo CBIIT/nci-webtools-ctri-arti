@@ -8,7 +8,7 @@ const {
   PGPASSWORD,
 } = process.env; 
 
-const db = new Sequelize({ 
+const db = new Sequelize({
   dialect: "postgres", 
   logging: m => logger.info(m),
   host: PGHOST,
@@ -33,7 +33,11 @@ export const Role = db.define("Role", {
   name: DataTypes.STRING,
   policy: DataTypes.JSON,
 });
-Role.hasMany(User, { foreignKey: "roleId" });
+
+export const Provider = db.define("Provider", {
+  name: { type: DataTypes.STRING, primaryKey: true },
+  apiKey: DataTypes.STRING,
+});
 
 export const Model = db.define("Model", {
   provider: DataTypes.STRING,
@@ -55,9 +59,11 @@ export const Usage = db.define("Usage", {
   outputTokens: DataTypes.FLOAT,
 });
 
+await db.sync({ alter: true });
+Role.hasMany(User, { foreignKey: "roleId" });
+Provider.hasMany(Model, { foreignKey: "provider" });
 User.hasMany(Usage, { foreignKey: "userId" });
 Model.hasMany(Usage, { foreignKey: "modelId" });
-
 await db.sync({ alter: true });
 
 if (!await Role.count()) {
@@ -67,6 +73,14 @@ if (!await Role.count()) {
     { name: "user", policy: null },
   ]);
 }
+
+if (!await Provider.count()) {
+  await Provider.bulkCreate([
+    { name: "bedrock" },
+    { name: "google" },
+  ]);
+}
+
 
 if (!await Model.count()) {
   await Model.bulkCreate([
