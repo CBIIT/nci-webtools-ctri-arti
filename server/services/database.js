@@ -29,12 +29,12 @@ export const Role = db.define("Role", {
 });
 
 export const Provider = db.define("Provider", {
-  name: { type: DataTypes.STRING, primaryKey: true },
+  name: DataTypes.STRING,
   apiKey: DataTypes.STRING,
 });
 
 export const Model = db.define("Model", {
-  provider: DataTypes.STRING,
+  providerId: DataTypes.INTEGER,
   label: DataTypes.STRING,
   value: DataTypes.STRING,
   isReasoner: DataTypes.BOOLEAN,
@@ -71,18 +71,20 @@ await Role.bulkCreate(
 
 await Provider.bulkCreate(
   [
-    { name: "bedrock", apiKey: null },
-    { name: "google", apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY },
+    { id: 1, name: "bedrock", apiKey: null }, // uses IAM role
+    { id: 2, name: "google", apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY },
+    { id: 3, name: "azure", apiKey: process.env.AZURE_API_KEY },
+    { id: 4, name: "openai", apiKey: process.env.OPENAI_API_KEY },
+    { id: 5, name: "openrouter", apiKey: process.env.OPENROUTER_API_KEY },
   ],
-  { updateOnDuplicate: ["name", "apiKey"] }
+  { updateOnDuplicate: ["name"] } // don't overwrite apiKey
 );
 
-// TODO: fetch models from providers
 await Model.bulkCreate(
   [
     {
       id: 1,
-      provider: "bedrock",
+      provider: 1,
       label: "Sonnet 3.7",
       value: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
       cost1kInput: 0.003,
@@ -94,7 +96,7 @@ await Model.bulkCreate(
     },
     {
       id: 2,
-      provider: "bedrock",
+      provider: 1,
       label: "Haiku 3.5",
       value: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
       cost1kInput: 0.0008,
@@ -106,9 +108,9 @@ await Model.bulkCreate(
     },
     {
       id: 3,
-      provider: "google",
+      provider: 2,
       label: "Gemini 2.5 Pro",
-      value: "gemini-2.5-pro-preview-03-25",
+      value: "gemini-2.5-pro-preview-05-06",
       cost1kInput: 0.0025,
       cost1kOutput: 0.015,
       isReasoner: true,
@@ -118,7 +120,7 @@ await Model.bulkCreate(
     },
     {
       id: 4,
-      provider: "google",
+      provider: 2,
       label: "Gemini 2.5 Flash",
       value: "gemini-2.5-flash-preview-04-17",
       cost1kInput: 0.00015,
