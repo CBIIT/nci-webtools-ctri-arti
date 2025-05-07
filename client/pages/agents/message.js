@@ -118,7 +118,7 @@ export default function Message(p = {
               `;
             case "code":
               return html`
-                <span class=${[p.p.class, "w-100 overflow-auto bg-white"].join(" ")}>
+                <span class=${[p.class, "w-100 overflow-auto bg-white"].join(" ")}>
                   <details class=${["markdown text-prewrap text-muted"].join(" ")}>
                     <summary>Writing Code...</summary>
                     <pre class="small mb-0">${input?.source}</pre>
