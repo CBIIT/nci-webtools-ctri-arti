@@ -1,27 +1,42 @@
 import { generateText, streamText, smoothStream, jsonSchema } from "ai";
-import { google } from "@ai-sdk/google";
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
+import { createAzure } from "@ai-sdk/azure";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { BedrockRuntimeClient, ConverseCommand, ConverseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
 import { parseDocument } from "./parsers.js";
-import { Model } from "./database.js";
+import { Model, Provider } from "./database.js";
 
 /** Default Bedrock Model ID */
 export const DEFAULT_MODEL_ID = process.env.DEFAULT_MODEL_ID;
 
 async function getOptions(modelId, { thoughtBudget = 0 }) {
-  const record = await Model.findOne({ where: { value: modelId } });
+  const record = await Model.findOne({ where: { value: modelId }, include: Provider });
+  console.log("Model record", record);
   if (!record) throw new Error("Invalid model ID");
-  thoughtBudget = Math.min(+thoughtBudget, record.maxReasoning || 0);
+  const { name, apiKey } = record.Provider;
+  console.log(record, name, apiKey);
   const providers = {
-    google: (modelId) => google(modelId),
-    bedrock: (modelId) => createAmazonBedrock({ credentialProvider: fromNodeProviderChain() })(modelId)
-  }
+    bedrock: (modelId) => createAmazonBedrock({ credentialProvider: fromNodeProviderChain() })(modelId),
+    azure: (modelId) => createAzure({ apiKey })(modelId),
+    google: (modelId) => createGoogleGenerativeAI({ apiKey })(modelId),
+    openai: (modelId) => createOpenAI({ apiKey })(modelId),
+    openrouter: (modelId) => createOpenRouter({ apiKey })(modelId),
+  };
+
+  thoughtBudget = Math.min(+thoughtBudget, record.maxReasoning || 0);
   const providerOptions = thoughtBudget > 0 ? {
     google: { thinkingConfig: { thinkingBudget: thoughtBudget } },
     bedrock: { reasoning_config: { type: "enabled", budget_tokens: +thoughtBudget } },
   } : undefined;
-  const model = providers[record.provider]?.(modelId);
+  for (let key in providerOptions) {
+    if (name !== key) {
+      delete providerOptions[key];
+    }
+  }
+  const model = providers[name]?.(modelId);
   return { ...record, model, providerOptions };
 }
 
