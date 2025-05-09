@@ -1,12 +1,47 @@
-import { For, Show, createSignal, createResource } from "solid-js";
+import { createSignal, For, Show, Switch, Match } from "solid-js";
 import html from "solid-js/html";
-import { useSubmitAiMessage } from "./hooks.js";
+import { parse } from "marked";
+import { useSubmitMessage } from "./hooks.js";
 import DNASpinner from "/components/dna.js";
+import { downloadCsv, downloadJson } from "./utils/utils.js";
 
-console.log("Chat2 page loaded");
+function Message(p) {
+  const [visible, setVisible] = createSignal({});
+  const toggleVisible = (key) => setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  return () =>
+    html`<${For} each=${p.message?.content}>
+      ${(c, i) => {
+        const reasoning = c.reasoningContent?.reasoningText?.text || c.toolUse?.input?.thought || c.toolUse?.name === "think";
+
+        return html`<${Switch}>
+          <${Match} when=${c.text}>
+            <div class="mb-3 p-2" classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }} innerHTML=${parse(c.text || "")}></div>
+          <//>
+          <${Match} when=${reasoning}>
+            <details
+              class="w-100 overflow-auto p-2 rounded"
+              classList=${() => ({'shadow-sm': visible()[i()]})}
+              style="max-height: 200px"
+              onClick=${(e) => (e.preventDefault(), toggleVisible(i())) }
+              open=${() => visible()[i()]}>
+              <summary class="px-1">Reasoning...</summary>
+              <div class="text-prewrap">${reasoning}</div>
+            </details>
+          <//>
+          <${Match} when=${c.toolUse}>
+            <pre>${JSON.stringify(c?.toolUse, null, 2)}</pre>
+          <//>
+          <${Match} when=${c.toolResult}>
+            <pre>${JSON.stringify(c?.toolResult, null, 2)}</pre>
+          <//>
+        <//>`;
+      }}
+    <//>`;
+}
+
 export default function Page() {
-  const { messages, loading, submitMessage } = useSubmitAiMessage();
-  const [models] = createResource(() => fetch("/api/model/list").then((r) => r.json()));
+  const { conversation, updateConversation, conversations, messages, activeMessage, loading, submitMessage } = useSubmitMessage();
   const [toggles, setToggles] = createSignal({});
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -24,38 +59,87 @@ export default function Page() {
     const inputFiles = form.inputFiles.files;
     const reasoningMode = form.reasoningMode.checked;
     const model = form.model.value;
-    const system = "You use very few words. You use the think tool to think before responding.";
-    const tools = {
-      think:{
-        description: "Think: Use the tool to think about something. It will not obtain new information or change the database, but just append the thought to the log. Use it when complex reasoning or some cache memory is needed.",
-        parameters: {
-          type: "object",
-          properties: {
-            thought: {
-              type: "string",
-              description: "A thought to think about.",
-            },
-          },
-          required: ["thought"],
-        },
-      },
+    const reset = () => {
+      form.message.value = "";
+      form.inputFiles.value = "";
     };
-    await submitMessage({ system, tools, message, inputFiles, reasoningMode, model });
-    form.message.value = "";
-    setTimeout(() => (form.inputFiles.value = ""), 100);
+    await submitMessage({ message, inputFiles, reasoningMode, model, reset });
   }
 
   return html`
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <input
+            value=${() => conversation()?.title}
+            onChange=${(ev) => updateConversation({ title: ev.target.value })}
+            class="form-control form-control-sm border-0 bg-transparent fw-light fs-5" />
+        </div>
+        <div class="col d-flex justify-content-end align-items-center">
+          <button class="btn btn-outline-dark" onClick=${toggle("conversations")}>=</button>
+        </div>
+      </div>
+    </div>
+
+    <aside
+      class=${() => ["offcanvas offcanvas-end", toggles().conversations ? "show" : "hiding"].join(" ")}
+      tabindex="-1"
+      id="conversations-menu"
+      aria-labelledby="conversations-menu-label">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="conversations-menu-label">Conversations</h5>
+        <button type="button" class="btn-close" aria-label="Close" onClick=${toggle("conversations")}></button>
+      </div>
+      <div class="offcanvas-body">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="agents/chat/">New Conversation</a>
+          </li>
+          ${() =>
+            conversations().map(
+              (conversation) =>
+                html`<li class="nav-item">
+                  <a class="nav-link" href=${`agents/chat/?id=${conversation.id}`}>${conversation.title}</a>
+                </li>`
+            )}
+        </ul>
+      </div>
+    </aside>
+
     <main class="container d-flex flex-column flex-grow-1 mb-3 position-relative">
       <div class="flex-grow-1 py-3">
         <div class="text-center my-5 font-serif" hidden=${() => messages().length > 0}>
           <h1 class="text-gradient fw-bold font-title mb-2">Welcome</h1>
           <div class="text-secondary fw-semibold">How can we help you today?</div>
         </div>
-        <${For} each=${messages}>${(message) => html`<pre>${JSON.stringify(message, null, 2)}</pre>`}<//>
+        <${For} each=${messages}
+          >${(message, i, all) =>
+            html`<${Message} message=${message} class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />`}
+        <//>
+        <${Message} message=${activeMessage} class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />
         <${Show} when=${loading}><${DNASpinner} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" /><//>
       </div>
-      <div class="small text-end">
+      <div class="small d-flex justify-content-between">
+        <div class="d-flex align-items-center">
+          Export as
+          <button
+            class="btn btn-sm p-0 btn-link mx-1"
+            onClick=${() =>
+              downloadCsv(
+                "conversation.csv",
+                messages().map((m) => ({
+                  role: m.role,
+                  content: m.content
+                    ?.map((c) => c.text)
+                    .filter(Boolean)
+                    .join("\n"),
+                }))
+              )}>
+            csv
+          </button>
+          or
+          <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadJson("conversation.json", messages())}>json</button>
+        </div>
         <a href="/agents/chat" target="_blank">Start a new conversation</a>
       </div>
       <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded position-sticky bottom-0">
@@ -75,7 +159,7 @@ export default function Page() {
             id="inputFiles"
             name="inputFiles"
             class="form-control form-control-sm w-auto bg-transparent border-transparent"
-            accept="text/*,image/jpeg,image/png,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx"
+            accept="image/*,text/*,.pdf,.xls,.xlsx"
             multiple />
 
           <div class="input-group w-auto align-items-center">
@@ -88,8 +172,9 @@ export default function Page() {
                 >Extended Reasoning Mode</label
               >
             </div>
-            <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required>
-              <${For} each=${models}>${(m) => html`<option value=${m.value}>${m.label}</option>`}<//>
+            <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required hidden>
+              <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0" selected>Sonnet</option>
+              <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
             </select>
             <button class="btn btn-dark btn-sm ms-2" type="submit" style="border-radius: 0 0 var(--bs-border-radius-sm) 0">Send</button>
           </div>
