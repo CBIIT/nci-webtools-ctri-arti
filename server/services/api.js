@@ -1,6 +1,6 @@
 import { Router, json } from "express";
 import { QueryTypes } from "sequelize";
-import { runModel, runBedrockModel } from "./inference.js";
+import { runModel } from "./inference.js";
 import { authMiddleware, proxyMiddleware, logRequests, logErrors, loginMiddleware } from "./middleware.js";
 import { search } from "./utils.js";
 import { translate, getLanguages } from "./translate.js";
@@ -83,14 +83,18 @@ api.get("/translate/languages", authMiddleware, async (req, res) => {
 
 api.post("/model", authMiddleware, async (req, res) => {
   const results = await runModel(req.body);
-  const opts = { sendReasoning: true, sendSources: true };
-  return req.body?.stream ? results.pipeDataStreamToResponse(res, opts) : res.json(results);
+  if (!results?.stream) return res.json(results);
+  for await (const message of results.stream) {
+    // await new Promise((resolve) => setTimeout(resolve, 200)); // simulate delay
+    res.write(JSON.stringify(message) + "\n");
+  }
+  res.end();
 });
 
 api.get("/model/list", authMiddleware, async (req, res) => {
   const results = await Model.findAll({
-    attributes: ["label", "value"],
-    // where: {provider: "bedrock"},
+    attributes: ["label", "value", "isReasoner", "maxContext", "maxOutput", "maxReasoning"],
+    where: { providerId: 1 },
   });
   res.json(results);
 });
