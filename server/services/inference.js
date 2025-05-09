@@ -1,110 +1,12 @@
-import { generateText, streamText, smoothStream, jsonSchema } from "ai";
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
-import { createAzure } from "@ai-sdk/azure";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createOpenAI } from "@ai-sdk/openai";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
-import { BedrockRuntimeClient, ConverseCommand, ConverseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
-import { parseDocument } from "./parsers.js";
+import bedrock from "./providers/bedrock.js";
+import gemini from "./providers/gemini.js";
 import { Model, Provider } from "./database.js";
 
-/** Default Bedrock Model ID */
-export const DEFAULT_MODEL_ID = process.env.DEFAULT_MODEL_ID;
-
-async function getOptions(modelId, { thoughtBudget = 0 }) {
-  const record = await Model.findOne({ where: { value: modelId }, include: Provider });
-  if (!record) throw new Error("Invalid model ID");
-  const { name, apiKey } = record.Provider;
-  const providers = {
-    bedrock: (modelId) => createAmazonBedrock({ credentialProvider: fromNodeProviderChain() })(modelId),
-    azure: (modelId) => createAzure({ apiKey })(modelId),
-    google: (modelId) => createGoogleGenerativeAI({ apiKey })(modelId),
-    openai: (modelId) => createOpenAI({ apiKey })(modelId),
-    openrouter: (modelId) => createOpenRouter({ apiKey })(modelId),
-  };
-  const processMessage = {
-    bedrock: (message) => {
-      if (!Array.isArray(message.content)) return message;
-      for (const chunk of message.content.filter(c => c.mimeType)) {
-        let [type, subtype] = chunk.mimeType.split("/");
-        if (type === "text") subtype = "txt";
-        if (type === "application") {
-          subtype = {
-            "vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-            "msword": "doc",
-            "vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
-            "vnd.ms-excel": "xls",
-          }[subtype] || subtype;
-        }
-        chunk.mimeType = `${type}/${subtype}`;
-      }
-      return message;
-    }
-  }[name] || ((message) => message);
-
-  thoughtBudget = Math.min(+thoughtBudget, record.maxReasoning || 0);
-  const providerOptions =
-    thoughtBudget > 0
-      ? {
-          google: { thinkingConfig: { thinkingBudget: thoughtBudget } },
-          bedrock: { reasoning_config: { type: "enabled", budget_tokens: +thoughtBudget } },
-        }
-      : undefined;
-  for (let key in providerOptions) {
-    if (name !== key) {
-      delete providerOptions[key];
-    }
-  }
-  const model = providers[name]?.(modelId);
-  return { ...record, model, providerOptions, processMessage };
-}
-
-/**
- * Stream a conversation with an AI model by sending messages and receiving responses in a stream format.
- *
- * @param {string} modelId - The ID of the model to use (defaults to DEFAULT_MODEL_ID)
- * @param {Array|string} messages - Array of message objects or a string that will be converted to a user message
- * @param {string} systemPrompt - The system prompt to guide the model's behavior
- * @param {number} thoughtBudget - Token budget for the model's thinking process (0 disables thinking feature)
- * @param {Array} tools - Array of tools the model can use during the conversation
- * @param {boolean} stream - Whether to stream the response or not
- */
-export async function runModel(params) {
-  let {
-    messages = [],
-    system = "You are honest, proactive, curious, and decisive. You communicate warmly with thoughtful examples, keeping responses concise yet insightful and grounded in facts provided by tools. You show genuine interest while focusing precisely on what people need. You never make up information, and you are not afraid to say you don't know something. You are an honest and helpful assistant.",
-    thoughtBudget = 0,
-    tools = [],
-    stream = false,
-  } = params;
-  if (!messages || messages?.length === 0 || !params.model) return null;
-  const { model, maxOutput, providerOptions, processMessage } = await getOptions(params.model, { thoughtBudget });
-
-  // add system prompt to messages (so that we can enable prompt caching on the message)
-  messages.unshift({ role: "system", content: system });
-  messages = messages.map(processMessage);
-
-  for (const key in tools) {
-    let tool = tools[key];
-    tool.parameters = jsonSchema(tool.parameters);
-  }
-
-  const input = {
-    model,
-    messages,
-    tools,
-    maxTokens: maxOutput,
-    maxRetries: 1e2,
-    providerOptions,
-    onError: console.error,
-    toolCallStreaming: true,
-    experimental_transform: smoothStream({
-      delayInMs: 10,
-      chunking: "word",
-    }),
-  };
-  return stream ? streamText(input) : generateText(input);
+export async function getModelProvider(value) {
+  const providers = { bedrock, gemini };
+  const model = await Model.findOne({ where: { value }, include: Provider });
+  const provider = new providers[model?.Provider?.name];
+  return { model, provider };
 }
 
 /**
@@ -117,24 +19,10 @@ export async function runModel(params) {
  * @param {Array} tools - Array of tools the model can use during the conversation
  * @returns {Promise<import("@aws-sdk/client-bedrock-runtime").ConverseStreamCommandOutput|import("@aws-sdk/client-bedrock-runtime").ConverseCommandOutput>} A promise that resolves to a stream of model responses
  */
-export async function runBedrockModel(
-  modelId = DEFAULT_MODEL_ID,
-  messages = [],
-  systemPrompt = "You are proactive, curious, and decisive. You communicate warmly with thoughtful examples, keeping responses concise yet insightful. You show genuine interest while focusing precisely on what people need.",
-  thoughtBudget = 0,
-  tools = [],
-  stream = false
-) {
-  if (!messages || messages?.length === 0) {
+export async function runModel({ model, messages, system: systemPrompt, tools = [], thoughtBudget = 0, stream = false }) {
+  if (!model || !messages || messages?.length === 0) {
     return null;
   }
-
-  if (typeof messages === "string") {
-    messages = [{ role: "user", content: [{ text: messages }] }];
-  }
-
-  const cachePoint = { type: "default" };
-
   // process messages to ensure they are in the correct format
   for (const message of messages) {
     if (!message.content.filter(Boolean).length) {
@@ -150,52 +38,16 @@ export async function runBedrockModel(
       }
     }
   }
+  const cachePoint = { type: "default" };
   // cachePoints are not fully supported yet
   // messages.at(-1).content.push({ cachePoint });
-
-  const client = new BedrockRuntimeClient();
-  const system = [{ text: systemPrompt }, { cachePoint }];
+  const { provider } = await getModelProvider(model);
+  const system = systemPrompt ? [{ text: systemPrompt }, { cachePoint }] : undefined;
   const toolConfig = tools.length > 0 ? { tools: tools.concat([{ cachePoint }]) } : undefined;
   const inferenceConfig = thoughtBudget > 0 ? { maxTokens: 128_000 } : undefined;
   const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
   const additionalModelRequestFields = thoughtBudget > 0 ? { thinking } : undefined;
-  const input = { modelId, messages, system, toolConfig, inferenceConfig, additionalModelRequestFields };
-
-  const command = stream ? new ConverseStreamCommand(input) : new ConverseCommand(input);
-  const response = await client.send(command);
-  return response;
-}
-
-/**
- * Run a model with the given prompt and document.
- * @param {string} modelId
- * @param {string} prompt
- * @param {{originalname: string, buffer: Buffer, mimetype: string}} document
- * @returns {Promise<any>}
- */
-export async function processDocument(modelId, prompt, document = null) {
-  const startTime = Date.now();
-  try {
-    const text = document ? await parseDocument(document.buffer, document.mimetype) : "";
-    const userMessage = prompt + "\n" + text;
-    const messages = [{ role: "user", content: [{ text: userMessage }] }];
-    const results = await runModel(modelId, messages);
-    const endTime = Date.now();
-    const duration = endTime - startTime;
-    return { document: document.originalname, modelId, prompt, text, results, startTime, endTime, duration };
-  } catch (error) {
-    console.error(error);
-    return { document: document.originalname, modelId, prompt, error: error.message, startTime };
-  }
-}
-
-/**
- * Run a model with the given prompt and documents.
- * @param {string} modelId
- * @param {string} prompt
- * @param {{originalname: string, buffer: Buffer, mimetype: string}[]} documents
- * @returns {Promise<any[]>}
- */
-export async function processDocuments(modelId, prompt, documents) {
-  return await Promise.all(documents.map(async (document) => await processDocument(modelId, prompt, document)));
+  const input = { modelId: model, messages, system, toolConfig, inferenceConfig, additionalModelRequestFields };
+  const response = stream ? provider.converseStream(input) : provider.converse(input);
+  return await response;
 }
