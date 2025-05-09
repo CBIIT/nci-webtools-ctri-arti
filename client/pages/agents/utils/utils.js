@@ -130,7 +130,7 @@ The document is as follows:
   const prompt = `Answer this question about the document: "${topic}"`;
 
   const messages = [{ role: "user", content: [{ text: prompt }] }];
-  const response = await fetch("/api/model/run", {
+  const response = await fetch("/api/model", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ model, messages, system }),
