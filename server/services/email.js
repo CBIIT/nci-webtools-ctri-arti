@@ -2,29 +2,26 @@ import { createTransport } from "nodemailer";
 
 export async function sendEmail(params, env = process.env) {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD } = env;
-
-  const transporter = createTransport({
+  const config = {
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: +SMTP_PORT === 465,
-    auth:
-      SMTP_USER && SMTP_PASSWORD
-        ? {
-            user: SMTP_USER,
-            pass: SMTP_PASSWORD,
-          }
-        : undefined,
-  });
-
+  };
+  if (SMTP_USER && SMTP_PASSWORD) {
+    config.auth = {
+      user: SMTP_USER,
+      pass: SMTP_PASSWORD,
+    };
+  }
+  const transporter = createTransport(config);
   return await transporter.sendMail(params);
 }
 
-export async function sendFeedback({from, feedback, context}, env = process.env) {
-  const { EMAIL_ADMIN } = env;
+export async function sendFeedback({feedback, context}, env = process.env) {
+  const { EMAIL_ADMIN, EMAIL_SENDER } = env;
   return await sendEmail({
-    from: from || EMAIL_ADMIN,
+    from: EMAIL_SENDER || EMAIL_ADMIN,
     to: EMAIL_ADMIN,
-      
     subject: "Feedback from Research Optimizer",
     text: feedback,
     attachments: [
