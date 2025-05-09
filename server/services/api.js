@@ -85,7 +85,6 @@ api.post("/model", authMiddleware, async (req, res) => {
   const results = await runModel(req.body);
   if (!results?.stream) return res.json(results);
   for await (const message of results.stream) {
-    // await new Promise((resolve) => setTimeout(resolve, 200)); // simulate delay
     res.write(JSON.stringify(message) + "\n");
   }
   res.end();
@@ -97,29 +96,6 @@ api.get("/model/list", authMiddleware, async (req, res) => {
     where: { providerId: 1 },
   });
   res.json(results);
-});
-
-api.all("/model/run", authMiddleware, async (req, res) => {
-  const useQuery = req.method === "GET";
-  const useBody = req.method === "POST";
-  if (!useQuery && !useBody) {
-    res.status(405).end();
-    return;
-  }
-  let { model, messages, system, thoughtBudget, tools, stream } = useQuery ? req.query : req.body;
-  if (useQuery) {
-    messages = JSON.parse(messages || "[]");
-    tools = JSON.parse(tools || "[]");
-  }
-  const results = await runBedrockModel(model, messages, system, thoughtBudget, tools, stream);
-  if (stream) {
-    for await (const message of results?.stream || []) {
-      res.write(JSON.stringify(message) + "\n");
-    }
-    res.end();
-  } else {
-    res.json(results);
-  }
 });
 
 api.post("/feedback", authMiddleware, async (req, res) => {
