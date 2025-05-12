@@ -36,7 +36,7 @@ export function useSubmitMessage() {
         const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
         let [name, format] = splitFilename(file.name);
         name = name.replace(/[^a-zA-Z0-9\s\[\]\(\)\-]/g, "_").replace(/\s{2,}/g, " ");
-        const bytes = await readFile(file, "dataURL");
+        const bytes = await fileToBase64(file, true);
         const contentType = imageTypes.includes(format) ? "image" : "document";
         if (!documentTypes.concat(imageTypes).includes(format)) format = "txt";
         if (file.size > byteLengthLimit) {
