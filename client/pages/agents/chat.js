@@ -107,6 +107,7 @@ export default function Page() {
             name="inputFiles"
             class="form-control form-control-sm w-auto bg-transparent border-transparent"
             accept="image/*,text/*,.pdf,.xls,.xlsx"
+            title="Attach documents (5mb limit)"
             multiple />
 
           <div class="input-group w-auto align-items-center">
