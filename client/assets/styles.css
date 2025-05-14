@@ -17,13 +17,9 @@
     url("/assets/fonts/Montserrat-regular.svg#Montserrat") format("svg");
 }
 
-@media (min-width: 1440px) {
+@media (min-width: 1600px) {
   .container {
     max-width: 1440px;
-  }
-  .outerPadding {
-    padding-left: 52px;
-    padding-right: 52px;
   }
 }
 
@@ -50,7 +46,7 @@
   font-weight: 500;
 }
 
-.btn-primary {
+.btn-primary {  
   --bs-btn-bg: rgb(var(--bs-primary-rgb));
   --bs-btn-hover-bg: rgb(var(--bs-primary-dark-rgb));
   --bs-btn-hover-border-color: rgb(var(--bs-primary-dark-rgb));
