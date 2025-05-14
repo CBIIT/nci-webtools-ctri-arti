@@ -1,65 +1,33 @@
 import html from "solid-js/html";
-import { createSignal } from "solid-js";
 
 export default function Header() {
-  const [hidden, setHidden] = createSignal(true);
-  const toggleHidden = () => setHidden(!hidden());
-
+  function handleSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const q = `${form.q.value} site:${window.location.hostname}`;
+    const url = form.action + "?" + new URLSearchParams({ q });
+    open(url, form.target);
+  }
   return html`
-    <header class="flex-grow-0" id="top">
-      <div class="bg-flag-banner">
-        <div class="container outerPadding" style="height: 46px">
-          <div class="row h-100 align-items-center">
-            <div class="col small">
-              <img src="assets/images/icon-flag.svg" alt="U.S. Flag" width="16" class="align-middle" />
-              <span 
-                class="align-middle" 
-                style="
-                  font-family: Open Sans;
-                  font-weight: 400;
-                  font-size: 12px;
-                  padding-left: 14px"
-              >
-                An official website of the United States government
-              </span>
+    <header class="flex-grow-0">
+      <div class="bg-light">
+        <div class="container">
+          <div class="row">
+            <div class="col d-flex align-items-center py-1">
+              <img src="assets/images/icon-flag.svg" alt="U.S. Flag" width="16" class="me-1" />
+              <small>An official website of the United States government</small>
             </div>
           </div>
         </div>
       </div>
-      <div style="padding-top: 35px; padding-bottom: 12px">
-        <div class="container outerPadding d-flex justify-content-between align-items-center flex-wrap">
-          <a href="/" title="Home" class="d-inline-block">
-            <object height="50" data="assets/images/logo.svg" alt="Logo" class="pe-none d-none d-lg-inline-block" />
-          </a>
-          <div class="input-group mt-3 mt-lg-0" style="max-width: 335px; max-height: 35px;">
-            <input 
-              type="text" 
-              class="form-control" 
-              placeholder="" 
-              aria-label="Search" 
-              style="
-                max-width: 254px;
-                border: 1px solid #71767A; 
-                border-right: none; 
-                border-radius: 0px;"
-            />
-            <button 
-              class="btn" 
-              type="button"
-              style="
-                max-width: 82px;
-                background-color: #3a75bd;
-                color: #ffffff;
-                font-family: Open Sans;
-                font-weight: 600;
-                font-size: 16px;
-                border-top-right-radius: 5px;
-                border-bottom-right-radius: 5px;"
-            >
-              Search
-            </button>
-          </div>
-        </div>
+      <div class="container d-flex flex-wrap justify-content-between align-items-center py-3">
+        <a href="/" title="Home" class="d-inline-block">
+          <object height="50" data="assets/images/logo.svg" alt="Logo" class="pe-none d-none d-lg-inline-block" />
+        </a>
+        <form class="input-group w-auto" action="https://www.google.com/search" target="_blank" onSubmit=${handleSubmit}>
+          <input name="q" class="form-control" aria-label="Search" />
+          <button class="btn btn-primary">Search</button>
+        </form>
       </div>
     </header>
   `;
