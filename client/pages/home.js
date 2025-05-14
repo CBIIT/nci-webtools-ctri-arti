@@ -1,5 +1,5 @@
+import { For } from "solid-js";
 import html from "solid-js/html";
-import { A } from "@solidjs/router";
 
 export default function Page() {
   const links = [
@@ -7,101 +7,61 @@ export default function Page() {
       title: "FedPulse",
       description: "Access real-time guidance on federal policies",
       href: "/agents/fedpulse",
-      icon: html`<img
-        src="/assets/images/icon-radar.svg"
-        height="60"
-        alt="FedPulse Icon"
-      />`,
+      icon: html`<img src="/assets/images/icon-radar.svg" height="60" alt="FedPulse Icon" />`,
     },
     {
       title: "Chat",
       description: "Develop with workspace and chat tools",
       href: "/tools/chat",
-      icon: html`<img
-        src="/assets/images/icon-agents.svg"
-        height="60"
-        alt="Chat Icon"
-      />`,
+      icon: html`<img src="/assets/images/icon-agents.svg" height="60" alt="Chat Icon" />`,
     },
     {
       title: "ConsentCrafter",
       description: "Process and translate protocols and consent forms",
       href: "/tools/consentcrafter",
-      icon: html`<img
-        src="/assets/images/icon-pen.svg"
-        height="60"
-        alt="ConsentCrafter Icon"
-      />`,
+      icon: html`<img src="/assets/images/icon-pen.svg" height="60" alt="ConsentCrafter Icon" />`,
     },
     {
       title: "Lay Person Abstract",
       description: "Generate lay person abstracts from protocols",
       href: "/tools/workspaces",
-      icon: html`<img
-        src="/assets/images/icon-books.svg"
-        height="60"
-        alt="Lay Person Abstract Icon"
-      />`,
+      icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="Lay Person Abstract Icon" />`,
     },
   ];
 
   return html`
-    <main style="height: 893px">
-      <div class="container outerPadding">
-        <div class="d-flex">
-          <div
-            class="flex-grow-1"
-            style="flex-basis: 70%; max-width: 70%; padding: 200px 0px 0px 88px;"
-          >
-            <!-- Left content -->
-            <h1 class="home-page-gradient home-page-title">
-              Welcome to Research Optimizer
-            </h1>
-            <div class="home-page-content">
-              The Research Optimizer is a suite of integrated tools designed to
-              address operational and documentation challenges across every
-              stage of the clinical trial lifecycle. By reducing administrative
-              burden, the platform empowers researchers to concentrate on
-              scientific discovery and innovation.
-            </div>
-            <div class="home-page-content">
-              Designed by clinical research professionals for clinical research
-              professionals.
-            </div>
-            <div class="home-page-content">
-              National Cancer Institute – Center for Biomedical Informatics and
-              Information Technology
-            </div>
-            <div class="home-page-login">
-              <a
-                href="/api/login"
-                target="_self"
-                class="nav-link text-decoration-none home-page-login-link"
-              >
-                Login
-              </a>
+    <main>
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8">
+            <div class="py-5">
+              <h1 class="text-gradient display-2 fw-semibold mb-4">Welcome to Research Optimizer</h1>
+              <div class="fs-5 pe-3">
+                <p class="mb-3">
+                  The Research Optimizer is a suite of integrated tools designed to address operational and documentation challenges across
+                  every stage of the clinical trial lifecycle. By reducing administrative burden, the platform empowers researchers to
+                  concentrate on scientific discovery and innovation.
+                </p>
+                <p class="mb-3">Designed by clinical research professionals for clinical research professionals.</p>
+                <p class="mb-3">National Cancer Institute - Center for Biomedical Informatics and Information Technology</p>
+              </div>
+              <a class="btn btn-primary btn-lg rounded-pill text-decoration-none" href="/api/login" target="_self"> Login </a>
             </div>
           </div>
-
-          <div
-            class="d-flex flex-column"
-            style="flex-basis: 30%; max-width: 30%; padding-top: 250px; gap: 40px;"
-          >
-            <!-- Right content -->
-            ${links.map(
-              (link) => html`
-                <div class="d-flex align-items-center">
-                  <a class="" href="${link.href}"> ${link.icon} </a>
-                  <div class="tool-divider"></div>
-                  <div class="d-flex flex-column">
-                    <a class="home-page-tool-title" href="${link.href}"> ${link.title} </a>
-                    <div class="home-page-tool-description">
-                      ${link.description}
+          <div class="col-lg-4">
+            <div class="py-5 d-flex flex-column justify-content-center h-100">
+              <${For} each=${links}
+                >${(link) => html`
+                  <div class="d-flex align-items-center my-3">
+                    <a href="${link.href}" class="p-2">${link.icon}</a>
+                    <div class="border-start p-2">
+                      <a class="text-decoration-none fs-5" href="${link.href}"> ${link.title} </a>
+                      <div class="text-secondary">${link.description}</div>
                     </div>
                   </div>
-                </div>
-              `
-            )}
+                `}
+              <//>
+            </div>
           </div>
         </div>
       </div>
