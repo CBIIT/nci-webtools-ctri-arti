@@ -1,7 +1,8 @@
-import { For } from "solid-js";
+import { For, Show, createResource } from "solid-js";
 import html from "solid-js/html";
 
 export default function Page() {
+  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
   const links = [
     {
       title: "FedPulse",
@@ -43,7 +44,9 @@ export default function Page() {
               </p>
               <p class="mb-3">Designed by clinical research professionals for clinical research professionals.</p>
               <p class="mb-3">National Cancer Institute - Center for Biomedical Informatics and Information Technology</p>
-              <a class="btn btn-primary btn-lg rounded-pill text-decoration-none" href="/api/login" target="_self">Login</a>
+              <${Show} when=${() => !session()?.user}>
+                <a class="btn btn-primary btn-lg rounded-pill text-decoration-none" href="/api/login" target="_self">Login</a>
+              <//>
             </div>
           </div>
         </div>
