@@ -20,9 +20,9 @@ export default function Header() {
           </div>
         </div>
       </div>
-      <div class="container d-flex flex-wrap justify-content-between align-items-center py-3">
+      <div class="container d-none d-lg-flex flex-wrap justify-content-between align-items-center py-3">
         <a href="/" title="Home" class="d-inline-block">
-          <object height="50" data="assets/images/logo.svg" alt="Logo" class="pe-none d-none d-lg-inline-block" />
+          <object height="50" data="assets/images/logo.svg" alt="Logo" class="pe-none" />
         </a>
         <form class="input-group w-auto" action="https://www.google.com/search" target="_blank" onSubmit=${handleSubmit}>
           <input name="q" class="form-control" aria-label="Search" />
