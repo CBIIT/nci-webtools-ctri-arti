@@ -7,8 +7,8 @@ export default function Nav({ routes }) {
   const [visible, setVisible] = createSignal({});
   const toggleVisible = (key) => setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
   return html`
-    <nav class="navbar navbar-expand-lg font-title" style="box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25); padding-bottom: 13px;">
-      <div class="container outerPadding">
+    <nav class="navbar navbar-expand-lg font-title">
+      <div class="container">
         <a href="/" class="navbar-brand d-inline-block d-lg-none" class="mw-60 ">
           <object height="50" data="assets/images/logo.svg" alt="Logo" class="pe-none py-1" />
         </a>
@@ -16,15 +16,15 @@ export default function Nav({ routes }) {
           class="navbar-toggler border-0"
           type="button"
           onClick=${() => toggleVisible("main")}
-          aria-controls="navbarNavDropdown"
+          aria-controls="navbar"
           aria-expanded=${() => visible().main}
           aria-label="Toggle navigation">
           =
         </button>
-        <div class=${() => ["collapse navbar-collapse", visible().main ? "show" : ""].join(" ")} id="navbarNavDropdown">
+        <div id="navbar" class="collapse navbar-collapse" classList=${() => ({ show: visible().main })}>
           <ul class="navbar-nav me-auto">
-            <${For} each=${() => routes.filter((route) => !route.hidden)}
-              >${(route) => html`
+            <${For} each=${() => routes.filter((route) => !route.hidden)}>
+              ${(route) => html`
                 <li class="nav-item" classList=${{ dropdown: route.children }}>
                   <${A}
                     href=${route.path}
@@ -32,13 +32,11 @@ export default function Nav({ routes }) {
                     activeClass="active"
                     class="nav-link text-decoration-none"
                     classList=${{ "dropdown-toggle": route.children }}
-                    onClick=${(ev) => (route.children ? (ev.preventDefault(), toggleVisible(route.path)) : setVisible({}))}
-                    style="padding: 8px 0px 0px 0px; margin-right: 20px; font-family: Poppins; font-weight: 600; font-size: 16.64px; color: #585c65;"
-                  >
+                    onClick=${(ev) => (route.children ? (ev.preventDefault(), toggleVisible(route.path)) : setVisible({}))}>
                     ${route.title}
                   <//>
                   <${Show} when=${route.children}>
-                    <ul class=${() => ["dropdown-menu border-0", visible()[route.path] ? "show" : ""].join(" ")}>
+                    <ul class="dropdown-menu border-0" classList=${() => ({ show: visible()[route.path] })}>
                       <${For} each=${route.children?.filter((c) => !c.hidden)}>
                         ${(child) => html`
                           <li>
@@ -61,30 +59,12 @@ export default function Nav({ routes }) {
           <div class="navbar-nav">
             <${Show}
               when=${() => session()?.user}
-              fallback=${html`
-                <a 
-                  href="/api/login" 
-                  target="_self" 
-                  class="nav-link 
-                  text-decoration-none"
-                  style="
-                    padding: 0px; 
-                    margin-right: 30px; 
-                    color: #007bbd;
-                    text-transform: uppercase;
-                    letter-spacing: 0.03em;
-                    font-family: Poppins; 
-                    font-weight: 600; 
-                    font-size: 14px;"
-                  >
-                    Login
-                </a>
-                `}>
+              fallback=${html`<a href="/api/login" target="_self" class="nav-link text-decoration-none">Login</a>`}>
               <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" onClick=${() => toggleVisible("user")} href="#" role="button">
+                <button class="nav-link dropdown-toggle" onClick=${() => toggleVisible("user")}>
                   ${() => session()?.user?.firstName || "User"}
-                </a>
-                <ul class=${() => ["dropdown-menu bg-transparent text-end end-0 border-0", visible().user ? "show" : ""].join(" ")}>
+                </button>
+                <ul class="dropdown-menu bg-white text-end end-0 border-0" classList=${() => ({ show: visible().user })}>
                   <a href="/api/logout" target="_self" class="nav-link text-decoration-none">Logout</a>
                 </ul>
               </li>
