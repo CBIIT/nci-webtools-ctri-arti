@@ -300,6 +300,80 @@ ul {
   color: rgba(0, 0, 0, 0);
 }
 
+.home-page-gradient {
+  background-image: linear-gradient(90deg, #51a9fe, #2beda9);
+  background-clip: text;
+  color: transparent;
+}
+.home-page-title {
+  font-family: 'Manrope';
+  font-weight: 600;
+  font-size: 75px;
+  letter-spacing: -2px;
+  text-transform: capitalize;
+  max-width: 700px;
+  white-space: pre-wrap;
+}
+.home-page-subtitle {
+  font-family: 'Inter';
+  font-weight: 500;
+  font-size: 34px;
+  line-height: 35px;
+  max-width: 600px;
+  margin-top: 10px;
+}
+.home-page-content {
+  font-family: 'Inter';
+  font-weight: 300;
+  font-size: 18px;
+  line-height: 27px;
+  max-width: 510px;
+  margin-top: 30px;
+}
+
+.home-page-login {
+  width: 100px;
+  height: 35px;
+  border-radius: 60px;
+  border: .5px solid #373737;
+  background-color: #7740a4;
+  margin-top: 35px;
+}
+
+.home-page-login-link {
+  color: #ffffff;
+  font-family: 'Nunito';
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 2%;
+  text-align: center;
+  text-decoration: none;
+}
+
+.tool-divider {
+  height: 66px;
+  width: 3px;
+  background-color: #cecece;
+  margin: 0px 20px;
+}
+
+.home-page-tool-title {
+  font-family: 'Inter';
+  font-weight: 500;
+  font-size: 25px;
+  line-height: 35px;
+  color: #036ac5;
+}
+
+.home-page-tool-description {
+  font-family: 'Inter';
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 18px;
+  line-height: 22px;
+  color: #444444;
+}
+
 .hover-visible-parent .hover-visible {
   visibility: hidden;
 }
