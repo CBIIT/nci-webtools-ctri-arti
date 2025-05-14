@@ -1,5 +1,5 @@
-import html from "solid-js/html";
 import { For } from "solid-js";
+import html from "solid-js/html";
 
 export default function Footer() {
   const footerLinks = [
@@ -99,16 +99,13 @@ export default function Footer() {
         <div class="container">
           <div class="row">
             <${For} each=${footerLinks}>
-              ${(footer) =>
-                html`<div class="col-lg-4" classList=${{ [footer.class]: true }}>
+              ${(footer) => html`<div class="col-lg" classList=${{ [footer.class]: true }}>
                   <h3 class="mb-1 fw-bold">${footer.title}</h3>
                   <ul class="list-unstyled">
-                    ${footer.links.map(
-                      (link) =>
-                        html`<li>
-                          <a class="link-light" href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a>
-                        </li>`
-                    )}
+                    <${For} each=${footer.links}>
+                      ${(link) => html`<li>
+                        <a class="link-light" href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a>
+                      </li>`}
                   </ul>
                 </div>`}
             <//>
@@ -129,12 +126,11 @@ export default function Footer() {
               <div>
                 <h3 class="mb-1 fw-bold">Follow Us</h3>
                 <ul class="list-inline mb-3">
-                  ${socialMediaLinks.map(
-                    (link) =>
-                      html`<li class="list-inline-item">
-                        <a href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a>
-                      </li>`
-                  )}
+                  <${For} each=${socialMediaLinks}>
+                    ${(link) => html`<li class="list-inline-item">
+                      <a class="link-light" target="_blank" rel="noopener noreferrer" href=${link.href}>${link.content}</a>
+                    </li>`}
+                  <//>
                 </ul>
               </div>
             </div>
@@ -142,18 +138,18 @@ export default function Footer() {
               <div class="text-lg-end">
                 <h3 class="mb-1 fw-bold">Contact Us</h3>
                 <ul class="list-inline mb-3">
-                  ${contactUsLinks.map(
-                    (link) =>
-                      html`<li class="list-inline-item">
-                        <a class="link-light" href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a>
-                      </li>`
-                  )}
-                </div>
+                  <${For} each=${contactUsLinks}>
+                    ${(link) => html`<li class="list-inline-item">
+                      <a class="link-light" target="_blank" rel="noopener noreferrer" href=${link.href}>${link.content}</a>
+                    </li>`}
+                  <//>
+                </ul>
                 <ul class="list-unstyled">
-                  ${governmentLinks.map(
-                    (link) =>
-                      html`<li><a class="link-light" href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a></li>`
-                  )}
+                  <${For} each=${governmentLinks}>
+                    ${(link) => html`<li>
+                      <a class="link-light" target="_blank" rel="noopener noreferrer" href=${link.href}>${link.content}</a>
+                    </li>`}
+                  <//>
                 </ul>
               </div>
             </div>
