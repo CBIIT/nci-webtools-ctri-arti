@@ -28,7 +28,8 @@
 }
 
 :root {
-  --bs-primary-rgb: 37, 6, 82;
+  --bs-primary-rgb: 0, 49, 75;
+  --bs-info-rgb: 0, 73, 113;
   --bs-primary-dark-rgb: 13, 38, 72;
   --bs-secondary-rgb: 68, 68, 68;
   --bs-danger-rgb: 187, 14, 61;
@@ -68,6 +69,32 @@
   --bs-btn-disabled-bg: transparent;
   --bs-btn-disabled-border-color: rgb(var(--bs-primary-rgb), 0.5);
   --bs-gradient: none;
+}
+
+.visible-scroll {
+  opacity: 0;
+  pointer-events: none;
+  animation-name: visible-scroll-animation;
+  animation-duration: 1 ms;
+  animation-fill-mode: both;
+  animation-timeline: scroll(root);
+  animation-range-start: 0px;
+  animation-range-end: 10px;
+}
+
+@keyframes visible-scroll-animation {
+  from {
+      opacity: 0;
+      pointer-events: none;
+  }
+  to {
+      opacity: 1;
+      pointer-events: auto;
+  }
+}
+
+.border-bottom-start-0 {
+  border-bottom-left-radius: 0 !important;
 }
 
 /** Bootstrap Theme */
@@ -130,13 +157,6 @@ a:hover {
   justify-content: center;
   align-items: center;
 }
-
-/*details {
-  box-shadow: 0 0 0.5em rgba(0, 0, 0, 0.1);
-  border: 1px solid #eee;
-  padding: 0.5em 0.5em 0;
-  opacity: 0.5;
-}*/
 
 .cursor-pointer {
   cursor: pointer;
@@ -265,12 +285,6 @@ ul {
   content: "❊ ";
 }
 
-.list-inline.separator .list-inline-item:not(:last-child)::after {
-  padding-left: 0.5rem;
-  content: "|";
-  opacity: 0.25;
-}
-
 .text-prewrap {
   white-space: pre-wrap !important;
 }
@@ -298,80 +312,6 @@ ul {
   background-repeat: repeat;
   background-size: 400% 100%;
   color: rgba(0, 0, 0, 0);
-}
-
-.home-page-gradient {
-  background-image: linear-gradient(90deg, #51a9fe, #2beda9);
-  background-clip: text;
-  color: transparent;
-}
-.home-page-title {
-  font-family: 'Manrope';
-  font-weight: 600;
-  font-size: 75px;
-  letter-spacing: -2px;
-  text-transform: capitalize;
-  max-width: 700px;
-  white-space: pre-wrap;
-}
-.home-page-subtitle {
-  font-family: 'Inter';
-  font-weight: 500;
-  font-size: 34px;
-  line-height: 35px;
-  max-width: 600px;
-  margin-top: 10px;
-}
-.home-page-content {
-  font-family: 'Inter';
-  font-weight: 300;
-  font-size: 18px;
-  line-height: 27px;
-  max-width: 510px;
-  margin-top: 30px;
-}
-
-.home-page-login {
-  width: 100px;
-  height: 35px;
-  border-radius: 60px;
-  border: .5px solid #373737;
-  background-color: #7740a4;
-  margin-top: 35px;
-}
-
-.home-page-login-link {
-  color: #ffffff;
-  font-family: 'Nunito';
-  font-weight: 800;
-  font-size: 16px;
-  letter-spacing: 2%;
-  text-align: center;
-  text-decoration: none;
-}
-
-.tool-divider {
-  height: 66px;
-  width: 3px;
-  background-color: #cecece;
-  margin: 0px 20px;
-}
-
-.home-page-tool-title {
-  font-family: 'Inter';
-  font-weight: 500;
-  font-size: 25px;
-  line-height: 35px;
-  color: #036ac5;
-}
-
-.home-page-tool-description {
-  font-family: 'Inter';
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 18px;
-  line-height: 22px;
-  color: #444444;
 }
 
 .hover-visible-parent .hover-visible {
@@ -408,83 +348,6 @@ ul {
 
 .nav-link.active {
   border-bottom-color: var(--bs-gray-600);
-}
-
-.footer-section-header {
-  color: #ffffff;
-  font-family: 'Open Sans';
-  font-weight: 700;
-  font-size: 16px;
-  line-height: 16px;
-}
-.footer-section-list {
-  padding-top: 12px;
-
-  li {
-    color: #ffffff;
-    font-family: 'Open Sans';
-    font-weight: 400;
-    font-size: 16.16px;
-    line-height: 100%;
-    list-style-type: none;
-    margin-bottom: 15px;
-    a {
-      font-weight: 400;
-      color: #ffffff;
-    }
-  }
-}
-.footer-contact-us {
-  color: #ffffff;
-  font-family: 'Open Sans';
-  font-weight: 400;
-  font-size: 16px;
-}
-
-.footer-address-block {
-  text-align: right;
-  color: #ffffff;
-  font-family: 'Open Sans';
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 18px;
-  padding-bottom: 4px
-}
-
-.footer-return-to-top {
-  bottom: 0;
-  box-sizing: border-box;
-  height: 75px;
-  opacity: 1;
-  position: fixed;
-  right: 0;
-  text-transform: uppercase;
-  transition: all .25s ease-in-out;
-  width: 75px;
-  z-index: 10;
-  a {
-    background: #007bbd;
-    border-top-left-radius: 100%;
-    color: #fff;
-    display: block;
-    font-family: 'Open Sans';
-    font-size: 12.16px;
-    font-weight: 700;
-    height: 75px;
-    line-height: 1.2;
-    padding: 35px 6px 0 16px;
-    text-align: center;
-    text-decoration: none;
-    width: 75px;
-  }
-}
-.show {
-  opacity: 1;
-  visibility: visible;
-}
-.hide {
-  opacity: 0;
-  visibility: hidden;
 }
 
 .mw-60 {
