@@ -6,16 +6,124 @@ export default function Footer() {
 
   onMount(() => {
     const handleScroll = () => {
-      setShowButton(window.scrollY > 1); // Show if scrolled down > 100px
+      setShowButton(window.scrollY > 1);
     };
 
     window.addEventListener("scroll", handleScroll);
-    handleScroll(); // Run once on mount
+    handleScroll();
 
     onCleanup(() => {
       window.removeEventListener("scroll", handleScroll);
     });
   });
+  const policyLinks = [
+    {
+      href: "https://www.cancer.gov/policies/accessibility",
+      text: "Accessibility",
+    },
+    {
+      href: "https://www.cancer.gov/policies/foia",
+      text: "FOIA",
+    },
+    {
+      href: "https://www.cancer.gov/policies/privacy-security",
+      text: "Privacy and Security",
+    },
+    {
+      href: "https://www.cancer.gov/policies/disclaimer",
+      text: "Disclaimer",
+    },
+    {
+      href: "https://www.hhs.gov/vulnerability-disclosure-policy/index.html",
+      text: "Vulnerability Disclosure",
+    },
+  ];
+
+  const socialMediaLinks = [
+    {
+      href: "https://www.facebook.com/cancer.gov",
+      icon: html`<img
+        src="/assets/images/footer/Facebook_Logo.svg"
+        height="30"
+        width="30"
+        alt="facebook-logo"
+      />`,
+    },
+    {
+      href: "https://x.com/thenci",
+      icon: html`<img
+        src="/assets/images/footer/X_Logo.svg"
+        height="30"
+        width="30"
+        alt="x-logo"
+      />`,
+    },
+    {
+      href: "https://www.instagram.com/nationalcancerinstitute",
+      icon: html`<img
+        src="/assets/images/footer/Instagram_Logo.svg"
+        height="30"
+        width="30"
+        alt="instagram-logo"
+      />`,
+    },
+    {
+      href: "https://www.youtube.com/NCIgov",
+      icon: html`<img
+        src="/assets/images/footer/Youtube_Logo.svg"
+        height="30"
+        width="30"
+        alt="youtube-logo"
+      />`,
+    },
+    {
+      href: "https://www.linkedin.com/company/nationalcancerinstitute",
+      icon: html`<img
+        src="/assets/images/footer/LinkedIn_Logo.svg"
+        height="30"
+        width="30"
+        alt="linkedin-logo"
+      />`,
+    },
+  ];
+
+  const contactUsLinks = [
+    {
+      href: "https://livehelp.cancer.gov/",
+      text: "Live Chat",
+    },
+    {
+      href: "tel:1-800-4-CANCER",
+      text: "1-800-4-CANCER",
+    },
+    {
+      href: "mailto:+NCIinfo@nih.gov",
+      text: "NCIinfo@nih.gov",
+    },
+    {
+      href: "https://nci.az1.qualtrics.com/jfe/form/SV_aeLLobt6ZeGVn5I",
+      text: "Site Feedback",
+    },
+  ];
+
+  const governmentLinks = [
+    {
+      href: "https://www.hhs.gov/",
+      text: "U.S. Department of Health and Human Services",
+    },
+    {
+      href: "https://www.nih.gov/",
+      text: "National Institutes of Health",
+    },
+    {
+      href: "https://www.cancer.gov/",
+      text: "National Cancer Institute",
+    },
+    {
+      href: "https://usa.gov/",
+      text: "USA.gov",
+    },
+  ];
 
   return html`
     <footer class="bg-transparent text-secondary pt-3">
@@ -44,46 +152,18 @@ export default function Footer() {
           <section>
             <div class="footer-section-header">Policies</div>
             <ul class="list-unstyled footer-section-list">
-              <li>
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://www.cancer.gov/policies/accessibility"
-                  >Accessibility</a
-                >
-              </li>
-              <li>
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://www.cancer.gov/policies/foia"
-                  >FOIA</a
-                >
-              </li>
-              <li>
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://www.cancer.gov/policies/privacy-security"
-                  >Privacy and Security</a
-                >
-              </li>
-              <li>
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://www.cancer.gov/policies/disclaimer"
-                  >Disclaimer</a
-                >
-              </li>
-              <li>
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://www.hhs.gov/vulnerability-disclosure-policy/index.html"
-                  >Vulnerability Disclosure</a
-                >
-              </li>
+              ${policyLinks.map(
+                (link) => html`
+                  <li>
+                    <a
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      href=${link.href}
+                      >${link.text}</a
+                    >
+                  </li>
+                `
+              )}
             </ul>
           </section>
           <section>
@@ -120,26 +200,23 @@ export default function Footer() {
               Contact Us
             </p>
             <div class="d-flex" style="gap: 16px; color: #ffffff;">
-              <a
-                class="footer-contact-us"
-                href="https://livehelp.cancer.gov/"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Live Chat</a
-              >
-              <a class="footer-contact-us" href="tel:1-800-4-CANCER"
-                >1-800-4-CANCER</a
-              >
-              <a class="footer-contact-us" href="mailto:+NCIinfo@nih.gov"
-                >NCIinfo@nih.gov</a
-              >
-              <a
-                class="footer-contact-us"
-                href="https://nci.az1.qualtrics.com/jfe/form/SV_aeLLobt6ZeGVn5I"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Site Feedback</a
-              >
+              ${contactUsLinks.map((link) =>
+                link.href.startsWith("https")
+                  ? html`
+                      <a
+                        class="footer-contact-us"
+                        href=${link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >${link.text}</a
+                      >
+                    `
+                  : html`
+                      <a class="footer-contact-us" href=${link.href}
+                        >${link.text}</a
+                      >
+                    `
+              )}
             </div>
           </div>
         </div>
@@ -154,74 +231,31 @@ export default function Footer() {
               Follow Us
             </p>
             <div class="d-flex" style="gap: 20px;">
-              <a
-                href="https://www.facebook.com/cancer.gov"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <img
-                  src="../assets/images/footer/Facebook_Logo.svg"
-                  alt="facebook-logo"
-                  style="width: 30px; height: 30px;"
-                />
-              </a>
-              <a
-                href="https://x.com/thenci"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <img
-                  src="../assets/images/footer/X_Logo.svg"
-                  alt="x-logo"
-                  style="width: 30px; height: 30px;"
-                />
-              </a>
-              <a
-                href="https://www.instagram.com/nationalcancerinstitute"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <img
-                  src="../assets/images/footer/Instagram_Logo.svg"
-                  alt="instagram-logo"
-                  style="width: 30px; height: 30px;"
-                />
-              </a>
-              <a
-                href="https://www.youtube.com/NCIgov"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <img
-                  src="../assets/images/footer/Youtube_Logo.svg"
-                  alt="youtube-logo"
-                  style="width: 30px; height: 30px;"
-                />
-              </a>
-              <a
-                href="https://www.linkedin.com/company/nationalcancerinstitute"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <img
-                  src="../assets/images/footer/LinkedIn_Logo.svg"
-                  alt="linkedin-logo"
-                  style="width: 30px; height: 30px;"
-                />
-              </a>
+              ${socialMediaLinks.map(
+                (link) => html`mak
+                  <a
+                    href=${link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    ${link.icon}
+                  </a> `
+              )}
             </div>
           </div>
           <address class="d-flex flex-column">
-            <a class="footer-address-block" href="https://www.hhs.gov/"
-              >U.S. Department of Health and Human Services</a
-            >
-            <a class="footer-address-block" href="https://www.nih.gov/"
-              >National Institutes of Health</a
-            >
-            <a class="footer-address-block" href="https://www.cancer.gov/"
-              >National Cancer Institute
-            </a>
-            <a class="footer-address-block" href="https://usa.gov/">USA.gov</a>
+            ${governmentLinks.map(
+              (link) => html`
+                <a
+                  class="footer-address-block"
+                  href=${link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ${link.text}
+                </a>
+              `
+            )}
           </address>
         </div>
       </div>
