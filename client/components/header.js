@@ -6,7 +6,7 @@ export default function Header() {
   const toggleHidden = () => setHidden(!hidden());
 
   return html`
-    <header class="flex-grow-0">
+    <header class="flex-grow-0" id="top">
       <div class="bg-flag-banner">
         <div class="container outerPadding" style="height: 46px">
           <div class="row h-100 align-items-center">
