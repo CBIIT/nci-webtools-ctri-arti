@@ -35,7 +35,7 @@ export default function Page() {
         <div class="row">
           <div class="col-lg-8">
             <div class="py-5">
-              <h1 class="text-gradient display-2 fw-semibold mb-4">Welcome to Research Optimizer</h1>
+              <h1 class="text-gradient display-3 fw-semibold mb-4">Welcome to Research Optimizer</h1>
               <div class="fs-5 pe-3">
                 <p class="mb-3">
                   The Research Optimizer is a suite of integrated tools designed to address operational and documentation challenges across
