@@ -8,8 +8,10 @@ import routes from "./routes.js";
 
 export default function Layout({ children }) {
   return html`
-    <${Header}  /> 
-    <${Nav} routes=${routes} />
+    <div class="shadow mb-4">
+      <${Header} /> 
+      <${Nav} routes=${routes} />
+    </div>
     <main class="d-flex flex-column flex-grow-1">${children}</main>
     <${Footer} />
   `;
