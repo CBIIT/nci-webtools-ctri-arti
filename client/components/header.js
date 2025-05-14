@@ -26,7 +26,7 @@ export default function Header() {
           </div>
         </div>
       </div>
-      <div style="padding-top: 35px">
+      <div style="padding-top: 35px; padding-bottom: 12px">
         <div class="container outerPadding d-flex justify-content-between align-items-center flex-wrap">
           <a href="/" title="Home" class="d-inline-block">
             <object height="50" data="assets/images/logo.svg" alt="Logo" class="pe-none d-none d-lg-inline-block" />

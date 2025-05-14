@@ -7,8 +7,8 @@ export default function Nav({ routes }) {
   const [visible, setVisible] = createSignal({});
   const toggleVisible = (key) => setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
   return html`
-    <nav class="navbar navbar-expand-lg font-title">
-      <div class="container">
+    <nav class="navbar navbar-expand-lg font-title" style="box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25); padding-bottom: 13px;">
+      <div class="container outerPadding">
         <a href="/" class="navbar-brand d-inline-block d-lg-none" class="mw-60 ">
           <object height="50" data="assets/images/logo.svg" alt="Logo" class="pe-none py-1" />
         </a>
@@ -32,7 +32,9 @@ export default function Nav({ routes }) {
                     activeClass="active"
                     class="nav-link text-decoration-none"
                     classList=${{ "dropdown-toggle": route.children }}
-                    onClick=${(ev) => (route.children ? (ev.preventDefault(), toggleVisible(route.path)) : setVisible({}))}>
+                    onClick=${(ev) => (route.children ? (ev.preventDefault(), toggleVisible(route.path)) : setVisible({}))}
+                    style="padding: 8px 0px 0px 0px; margin-right: 20px; font-family: Poppins; font-weight: 600; font-size: 16.64px; color: #585c65;"
+                  >
                     ${route.title}
                   <//>
                   <${Show} when=${route.children}>
@@ -59,7 +61,25 @@ export default function Nav({ routes }) {
           <div class="navbar-nav">
             <${Show}
               when=${() => session()?.user}
-              fallback=${html`<a href="/api/login" target="_self" class="nav-link text-decoration-none">Login</a>`}>
+              fallback=${html`
+                <a 
+                  href="/api/login" 
+                  target="_self" 
+                  class="nav-link 
+                  text-decoration-none"
+                  style="
+                    padding: 0px; 
+                    margin-right: 30px; 
+                    color: #007bbd;
+                    text-transform: uppercase;
+                    letter-spacing: 0.03em;
+                    font-family: Poppins; 
+                    font-weight: 600; 
+                    font-size: 14px;"
+                  >
+                    Login
+                </a>
+                `}>
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" onClick=${() => toggleVisible("user")} href="#" role="button">
                   ${() => session()?.user?.firstName || "User"}
