@@ -1,277 +1,171 @@
-import { onMount, createSignal, onCleanup } from "solid-js";
 import html from "solid-js/html";
+import { For } from "solid-js";
 
 export default function Footer() {
-  const [showButton, setShowButton] = createSignal(false);
-
-  onMount(() => {
-    const handleScroll = () => {
-      setShowButton(window.scrollY > 1);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-
-    onCleanup(() => {
-      window.removeEventListener("scroll", handleScroll);
-    });
-  });
-  const policyLinks = [
+  const footerLinks = [
     {
-      href: "https://www.cancer.gov/policies/accessibility",
-      text: "Accessibility",
+      title: "More Info",
+      class: "text-lg-start mb-3",
+      links: [
+        { href: "mailto:ctribresearchoptimizer@mail.nih.gov", content: "Contact Research Optimizer" },
+        { href: "/about", content: "About Research Optimizer" },
+      ],
     },
     {
-      href: "https://www.cancer.gov/policies/foia",
-      text: "FOIA",
+      title: "System Info",
+      class: "text-lg-center mb-3",
+      links: [
+        { href: "https://github.com/CBIIT/nci-webtools-ctri-research-optimizer/releases", content: "Release Notes" },
+        { href: "https://github.com/CBIIT/nci-webtools-ctri-research-optimizer/releases", content: "Current Version: 1.0.0" },
+      ],
     },
     {
-      href: "https://www.cancer.gov/policies/privacy-security",
-      text: "Privacy and Security",
-    },
-    {
-      href: "https://www.cancer.gov/policies/disclaimer",
-      text: "Disclaimer",
-    },
-    {
-      href: "https://www.hhs.gov/vulnerability-disclosure-policy/index.html",
-      text: "Vulnerability Disclosure",
+      title: "Policies",
+      class: "text-lg-end",
+      links: [
+        { href: "https://www.cancer.gov/policies/accessibility", content: "Accessibility" },
+        { href: "https://www.cancer.gov/policies/foia", content: "FOIA" },
+        { href: "https://www.cancer.gov/policies/privacy-security", content: "Privacy and Security" },
+        { href: "https://www.cancer.gov/policies/disclaimer", content: "Disclaimer" },
+        { href: "https://www.hhs.gov/vulnerability-disclosure-policy/index.html", content: "Vulnerability Disclosure" },
+      ],
     },
   ];
 
   const socialMediaLinks = [
     {
       href: "https://www.facebook.com/cancer.gov",
-      icon: html`<img
-        src="/assets/images/footer/Facebook_Logo.svg"
-        height="30"
-        width="30"
-        alt="facebook-logo"
-      />`,
+      content: html`<img src="/assets/images/footer/Facebook_Logo.svg" height="30" width="30" alt="facebook-logo" />`,
     },
     {
       href: "https://x.com/thenci",
-      icon: html`<img
-        src="/assets/images/footer/X_Logo.svg"
-        height="30"
-        width="30"
-        alt="x-logo"
-      />`,
+      content: html`<img src="/assets/images/footer/X_Logo.svg" height="30" width="30" alt="x-logo" />`,
     },
     {
       href: "https://www.instagram.com/nationalcancerinstitute",
-      icon: html`<img
-        src="/assets/images/footer/Instagram_Logo.svg"
-        height="30"
-        width="30"
-        alt="instagram-logo"
-      />`,
+      content: html`<img src="/assets/images/footer/Instagram_Logo.svg" height="30" width="30" alt="instagram-logo" />`,
     },
     {
       href: "https://www.youtube.com/NCIgov",
-      icon: html`<img
-        src="/assets/images/footer/Youtube_Logo.svg"
-        height="30"
-        width="30"
-        alt="youtube-logo"
-      />`,
+      content: html`<img src="/assets/images/footer/Youtube_Logo.svg" height="30" width="30" alt="youtube-logo" />`,
     },
     {
       href: "https://www.linkedin.com/company/nationalcancerinstitute",
-      icon: html`<img
-        src="/assets/images/footer/LinkedIn_Logo.svg"
-        height="30"
-        width="30"
-        alt="linkedin-logo"
-      />`,
+      content: html`<img src="/assets/images/footer/LinkedIn_Logo.svg" height="30" width="30" alt="linkedin-logo" />`,
     },
   ];
 
   const contactUsLinks = [
     {
       href: "https://livehelp.cancer.gov/",
-      text: "Live Chat",
+      content: "Live Chat",
     },
     {
       href: "tel:1-800-4-CANCER",
-      text: "1-800-4-CANCER",
+      content: "1-800-4-CANCER",
     },
     {
-      href: "mailto:+NCIinfo@nih.gov",
-      text: "NCIinfo@nih.gov",
+      href: "mailto:NCIinfo@nih.gov",
+      content: "NCIinfo@nih.gov",
     },
     {
       href: "https://nci.az1.qualtrics.com/jfe/form/SV_aeLLobt6ZeGVn5I",
-      text: "Site Feedback",
+      content: "Site Feedback",
     },
   ];
 
   const governmentLinks = [
     {
       href: "https://www.hhs.gov/",
-      text: "U.S. Department of Health and Human Services",
+      content: "U.S. Department of Health and Human Services",
     },
     {
       href: "https://www.nih.gov/",
-      text: "National Institutes of Health",
+      content: "National Institutes of Health",
     },
     {
       href: "https://www.cancer.gov/",
-      text: "National Cancer Institute",
+      content: "National Cancer Institute",
     },
     {
       href: "https://usa.gov/",
-      text: "USA.gov",
+      content: "USA.gov",
     },
   ];
 
   return html`
-    <footer class="bg-transparent text-secondary pt-3">
-      <div
-        style="
-          background-color: #1f4571;
-          height: 278px;
-        "
-      >
-        <div
-          class="container d-flex justify-content-center"
-          style="color: #ffffff; gap: 90px; padding-top: 26px;"
-        >
-          <section>
-            <div class="footer-section-header">More Information</div>
-            <ul class="list-unstyled footer-section-list">
-              <li>
-                <a href="mailto:+ctribresearchoptimizer@mail.nih.gov">
-                  Contact Research Optimizer
-                </a>
-              </li>
-
-              <li>About Research Optimizer</li>
-            </ul>
-          </section>
-          <section>
-            <div class="footer-section-header">Policies</div>
-            <ul class="list-unstyled footer-section-list">
-              ${policyLinks.map(
-                (link) => html`
-                  <li>
-                    <a
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      href=${link.href}
-                      >${link.text}</a
-                    >
-                  </li>
-                `
-              )}
-            </ul>
-          </section>
-          <section>
-            <div class="footer-section-header">System Info</div>
-            <ul class="list-unstyled footer-section-list">
-              <li>Release Notes</li>
-              <li>Current Version: 1.0.0</li>
-            </ul>
-          </section>
-        </div>
-      </div>
-      <div
-        style="
-          background-color: #122f4b;
-          height: 217px;
-        "
-      >
-        <div
-          class="container d-flex justify-content-between"
-          style="padding-top: 20px; color: #ffffff; height: 70px;"
-        >
-          <div style="font-family: Poppins;">
-            <p style="font-weight: 700; font-size: 24px;">
-              National Cancer Institute
-            </p>
-            <p style="font-weight: 500; font-size: 18px; margin-top: -5px">
-              at the National Institutes of Health
-            </p>
+    <footer>
+      <div class="bg-info text-light py-3">
+        <div class="container">
+          <div class="row">
+            <${For} each=${footerLinks}>
+              ${(footer) =>
+                html`<div class="col-lg-4" classList=${{ [footer.class]: true }}>
+                  <h3 class="mb-1 fw-bold">${footer.title}</h3>
+                  <ul class="list-unstyled">
+                    ${footer.links.map(
+                      (link) =>
+                        html`<li>
+                          <a class="link-light" href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a>
+                        </li>`
+                    )}
+                  </ul>
+                </div>`}
+            <//>
           </div>
-          <div>
-            <p
-              style="text-align: right; font-family: Poppins; font-weight: 700; font-size: 22px;"
-            >
-              Contact Us
-            </p>
-            <div class="d-flex" style="gap: 16px; color: #ffffff;">
-              ${contactUsLinks.map((link) =>
-                link.href.startsWith("https")
-                  ? html`
-                      <a
-                        class="footer-contact-us"
-                        href=${link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        >${link.text}</a
-                      >
-                    `
-                  : html`
-                      <a class="footer-contact-us" href=${link.href}
-                        >${link.text}</a
-                      >
-                    `
-              )}
+        </div>  
+      </div>
+      <div class="bg-primary text-light py-3">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="mb-3">
+                <h3 class="mb-1"><a class="link-light fw-bold" href="https://www.cancer.gov/" target="_blank" rel="noopener noreferrer">National Cancer Institute</a></h3>
+                <h5>
+                  at the
+                  <a class="ms-1 link-light" href="https://www.nih.gov/" target="_blank" rel="noopener noreferrer">National Institutes of Health</a>
+                </h5>
+              </div>
+              <div>
+                <h3 class="mb-1 fw-bold">Follow Us</h3>
+                <ul class="list-inline mb-3">
+                  ${socialMediaLinks.map(
+                    (link) =>
+                      html`<li class="list-inline-item">
+                        <a href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a>
+                      </li>`
+                  )}
+                </ul>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="text-lg-end">
+                <h3 class="mb-1 fw-bold">Contact Us</h3>
+                <ul class="list-inline mb-3">
+                  ${contactUsLinks.map(
+                    (link) =>
+                      html`<li class="list-inline-item">
+                        <a class="link-light" href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a>
+                      </li>`
+                  )}
+                </div>
+                <ul class="list-unstyled">
+                  ${governmentLinks.map(
+                    (link) =>
+                      html`<li><a class="link-light" href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a></li>`
+                  )}
+                </ul>
+              </div>
             </div>
           </div>
         </div>
-        <div
-          class="container d-flex justify-content-between"
-          style="padding-top: 20px; color: #ffffff;"
-        >
-          <div>
-            <p
-              style="font-weight: 700; font-size: 22px; padding: 0px 0px 14px 0px"
-            >
-              Follow Us
-            </p>
-            <div class="d-flex" style="gap: 20px;">
-              ${socialMediaLinks.map(
-                (link) => html`mak
-                  <a
-                    href=${link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    ${link.icon}
-                  </a> `
-              )}
-            </div>
-          </div>
-          <address class="d-flex flex-column">
-            ${governmentLinks.map(
-              (link) => html`
-                <a
-                  class="footer-address-block"
-                  href=${link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  ${link.text}
-                </a>
-              `
-            )}
-          </address>
-        </div>
       </div>
-      <div
-        class=${() => `footer-return-to-top ${showButton() ? "show" : "hide"}`}
-        aria-label="Back to Top"
-      >
-        <a
-          href="#top"
-          onClick=${(e) => {
-            e.preventDefault();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          ><span>Back to Top</span></a
-        >
-      </div>
+      <button 
+        class="btn btn-secondary btn-sm rounded-start-pill position-fixed end-0 bottom-0 border-bottom-start-0 border-0 visible-scroll ps-4 pt-4 pe-2 pb-2 text-transform-uppercase"
+        onClick=${(e) => scrollTo(0, 0)}>
+        BACK TO <BR />
+        TOP
+      </button>
     </footer>
   `;
 }
