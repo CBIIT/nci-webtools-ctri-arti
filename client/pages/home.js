@@ -53,13 +53,13 @@ export default function Page() {
           <div class="py-3 d-flex flex-column justify-content-center h-100">
             <${For} each=${links}>
               ${(link) => html`
-                <div class="d-flex align-items-center my-3">
-                  <a href="${link.href}" class="p-2">${link.icon}</a>
-                  <div class="border-start p-2">
-                    <a class="text-decoration-none font-title fw-semibold link-primary fs-5" href="${link.href}"> ${link.title} </a>
+                <a class="d-flex align-items-center my-3 text-decoration-none link-primary" href="${link.href}">
+                  <div class="p-2 text-gradient">${link.icon}</div>
+                  <div class="p-2 border-start">
+                    <div class="font-title fs-5">${link.title}</div>
                     <div class="text-primary">${link.description}</div>
                   </div>
-                </div>
+                </a>
               `}
             <//>
           </div>
