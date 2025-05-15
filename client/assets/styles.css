@@ -75,7 +75,7 @@
   animation-fill-mode: both;
   animation-timeline: scroll(root);
   animation-range-start: 0px;
-  animation-range-end: 10px;
+  animation-range-end: 1px;
 }
 
 @keyframes visible-scroll-animation {
@@ -84,7 +84,7 @@
       pointer-events: none;
   }
   to {
-      opacity: 1;
+      opacity: 0.5;
       pointer-events: auto;
   }
 }
