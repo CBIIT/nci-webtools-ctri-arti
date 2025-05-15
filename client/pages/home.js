@@ -35,15 +35,14 @@ export default function Page() {
       <div class="row gx-5">
         <div class="col-lg-8">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
-            <h1 class="text-gradient display-3 fw-semibold mb-4">Welcome to Research Optimizer</h1>
-            <div class="fs-5">
+            <h1 class="text-gradient display-5 font-title fw-bold mb-4">Welcome to Research Optimizer</h1>
+            <div class="fs-5 fw-semibold text-secondary">
               <p class="mb-3">
                 The Research Optimizer is a suite of integrated tools designed to address operational and documentation challenges across
                 every stage of the clinical trial lifecycle. By reducing administrative burden, the platform empowers researchers to
                 concentrate on scientific discovery and innovation.
               </p>
               <p class="mb-3">Designed by clinical research professionals for clinical research professionals.</p>
-              <p class="mb-3">National Cancer Institute - Center for Biomedical Informatics and Information Technology</p>
               <${Show} when=${() => !session()?.user}>
                 <a class="btn btn-primary btn-lg rounded-pill text-decoration-none" href="/api/login" target="_self">Login</a>
               <//>
@@ -57,8 +56,8 @@ export default function Page() {
                 <div class="d-flex align-items-center my-3">
                   <a href="${link.href}" class="p-2">${link.icon}</a>
                   <div class="border-start p-2">
-                    <a class="text-decoration-none fs-5" href="${link.href}"> ${link.title} </a>
-                    <div class="text-secondary">${link.description}</div>
+                    <a class="text-decoration-none font-title fw-semibold link-primary fs-5" href="${link.href}"> ${link.title} </a>
+                    <div class="text-primary">${link.description}</div>
                   </div>
                 </div>
               `}
