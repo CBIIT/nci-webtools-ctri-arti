@@ -32,11 +32,11 @@ export default function Page() {
 
   return html`
     <div class="container h-100 d-flex flex-column justify-content-center">
-      <div class="row">
+      <div class="row gx-5">
         <div class="col-lg-8">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
             <h1 class="text-gradient display-3 fw-semibold mb-4">Welcome to Research Optimizer</h1>
-            <div class="fs-5 pe-3">
+            <div class="fs-5">
               <p class="mb-3">
                 The Research Optimizer is a suite of integrated tools designed to address operational and documentation challenges across
                 every stage of the clinical trial lifecycle. By reducing administrative burden, the platform empowers researchers to
