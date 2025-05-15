@@ -35,23 +35,23 @@ export default function Footer() {
   const socialMediaLinks = [
     {
       href: "https://www.facebook.com/cancer.gov",
-      content: html`<img src="/assets/images/footer/Facebook_Logo.svg" height="30" width="30" alt="facebook-logo" />`,
+      content: html`<img src="/assets/images/footer/icon-facebook.svg" height="30" width="30" alt="facebook-logo" />`,
     },
     {
       href: "https://x.com/thenci",
-      content: html`<img src="/assets/images/footer/X_Logo.svg" height="30" width="30" alt="x-logo" />`,
+      content: html`<img src="/assets/images/footer/icon-x.svg" height="30" width="30" alt="x-logo" />`,
     },
     {
       href: "https://www.instagram.com/nationalcancerinstitute",
-      content: html`<img src="/assets/images/footer/Instagram_Logo.svg" height="30" width="30" alt="instagram-logo" />`,
+      content: html`<img src="/assets/images/footer/icon-instagram.svg" height="30" width="30" alt="instagram-logo" />`,
     },
     {
       href: "https://www.youtube.com/NCIgov",
-      content: html`<img src="/assets/images/footer/Youtube_Logo.svg" height="30" width="30" alt="youtube-logo" />`,
+      content: html`<img src="/assets/images/footer/icon-youtube.svg" height="30" width="30" alt="youtube-logo" />`,
     },
     {
       href: "https://www.linkedin.com/company/nationalcancerinstitute",
-      content: html`<img src="/assets/images/footer/LinkedIn_Logo.svg" height="30" width="30" alt="linkedin-logo" />`,
+      content: html`<img src="/assets/images/footer/icon-linkedin.svg" height="30" width="30" alt="linkedin-logo" />`,
     },
   ];
 
@@ -100,7 +100,7 @@ export default function Footer() {
           <div class="row">
             <${For} each=${footerLinks}>
               ${(footer) => html`<div class="col-lg" classList=${{ [footer.class]: true }}>
-                  <h3 class="mb-1 fw-bold">${footer.title}</h3>
+                  <h3 class="mb-1 font-title">${footer.title}</h3>
                   <ul class="list-unstyled">
                     <${For} each=${footer.links}>
                       ${(link) => html`<li>
@@ -116,15 +116,15 @@ export default function Footer() {
         <div class="container">
           <div class="row">
             <div class="col-lg-6">
-              <div class="mb-3">
-                <h3 class="mb-1"><a class="link-light fw-bold" href="https://www.cancer.gov/" target="_blank" rel="noopener noreferrer">National Cancer Institute</a></h3>
+              <div class="mb-3 font-title">
+                <h3 class="mb-1"><a class="link-light fw-semibold" href="https://www.cancer.gov/" target="_blank" rel="noopener noreferrer">National Cancer Institute</a></h3>
                 <h5>
-                  at the
-                  <a class="ms-1 link-light" href="https://www.nih.gov/" target="_blank" rel="noopener noreferrer">National Institutes of Health</a>
+                  <span class="me-1">at the</span>
+                  <a class="link-light fw-semibold" href="https://www.nih.gov/" target="_blank" rel="noopener noreferrer">National Institutes of Health</a>
                 </h5>
               </div>
               <div>
-                <h3 class="mb-1 fw-bold">Follow Us</h3>
+                <h3 class="mb-1 font-title">Follow Us</h3>
                 <ul class="list-inline mb-3">
                   <${For} each=${socialMediaLinks}>
                     ${(link) => html`<li class="list-inline-item">
@@ -136,7 +136,7 @@ export default function Footer() {
             </div>
             <div class="col-lg-6">
               <div class="text-lg-end">
-                <h3 class="mb-1 fw-bold">Contact Us</h3>
+                <h3 class="mb-1 font-title">Contact Us</h3>
                 <ul class="list-inline mb-3">
                   <${For} each=${contactUsLinks}>
                     ${(link) => html`<li class="list-inline-item">
