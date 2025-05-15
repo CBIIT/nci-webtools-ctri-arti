@@ -3,49 +3,47 @@ import html from "solid-js/html";
 import { stringify } from "yaml";
 import { parse } from "marked";
 import Loader from "/components/dna.js";
-import { useSubmitMessage } from "./hooks.js";
+import { useChat } from "./hooks.js";
 import { downloadCsv, downloadJson } from "./utils/utils.js";
 
-export function Message(p) {
+function Message(p) {
   const [visible, setVisible] = createSignal({});
   const toggleVisible = (key) => setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
-  const getToolResult = (toolUse) => p.messages?.find((m) => m.content?.find(c => c?.toolResult?.toolUseId === toolUse?.toolUseId))?.content[0].toolResult?.content[0]?.json?.results;
-  return () =>
-    html`<${For} each=${p.message?.content}>
-      ${(c, i) => {
-        const reasoning = c.reasoningContent?.reasoningText?.text || c.toolUse?.input?.thought || c.toolUse?.name === "think";
-        return html`<${Switch}>
-          <${Match} when=${c.text}>
-            <div
-              class="mb-3 p-2"
-              classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
-              innerHTML=${parse(c.text || "")}></div>
-          <//>
+  const getToolResult = (toolUse) =>
+    p.messages?.find((m) => m.content?.find((c) => c?.toolResult?.toolUseId === toolUse?.toolUseId))?.content[0].toolResult?.content[0]
+      ?.json?.results;
 
-          <${Match} when=${reasoning || c.toolUse}>
-            <details
-              class="w-100 overflow-auto p-2 rounded"
-              classList=${() => ({ "shadow-sm": visible()[i()] })}
-              style="max-height: 200px"
-              open=${() => visible()[i()]}>
-              <summary class="px-1" onClick=${(e) => (e.preventDefault(), toggleVisible(i()))}>
-                ${reasoning ? "Reasoning..." : c?.toolUse?.name }
-              </summary>
-              <div class="text-prewrap">
-                ${reasoning || html`
-                  ${stringify(c?.toolUse?.input)} 
-                  ${stringify(getToolResult(c.toolUse))}
-                `}
-              </div>
-            </details>
-          <//>
-        <//>`;
-      }}
-    <//>`;
+  return html`<${For} each=${p.message?.content}>
+    ${(c) => {
+      const reasoning = c.reasoningContent?.reasoningText?.text || c.toolUse?.input?.thought || c.toolUse?.name === "think";
+      return () => html`<${Switch}>
+        <${Match} when=${c.text}>
+          <div
+            class="mb-3 p-2"
+            classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
+            innerHTML=${parse(c.text || "")}></div>
+        <//>
+        <${Match} when=${reasoning || c.toolUse}>
+          <details
+            class="w-100 overflow-auto p-2 rounded"
+            classList=${() => ({ "shadow-sm": visible()[i()] })}
+            style="max-height: 200px"
+            open=${() => visible()[i()]}>
+            <summary class="px-1" onClick=${(e) => (e.preventDefault(), toggleVisible(i()))}>
+              ${() => (reasoning ? "Reasoning..." : c?.toolUse?.name)}
+            </summary>
+            <div class="text-prewrap">
+              ${() => reasoning || html` ${stringify(c?.toolUse?.input)} ${stringify(getToolResult(c.toolUse))} `}
+            </div>
+          </details>
+        <//>
+      <//>`;
+    }}<//
+  >`;
 }
 
 export default function Page() {
-  const { conversation, updateConversation, conversations, messages, loading, submitMessage } = useSubmitMessage();
+  const { conversation, updateConversation, conversations, messages, loading, submitMessage } = useChat();
   const [toggles, setToggles] = createSignal({});
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -75,7 +73,7 @@ export default function Page() {
       <div class="row">
         <div class="col">
           <input
-            value=${() => conversation()?.title}
+            value=${() => conversation?.title}
             onChange=${(ev) => updateConversation({ title: ev.target.value })}
             class="form-control form-control-sm border-0 bg-transparent fw-light fs-5" />
         </div>
@@ -110,30 +108,24 @@ export default function Page() {
                 </a>
               </li>`}
           <//>
-          ${() =>
-            conversations().map(
-              (conversation) =>
-                html`<li class="nav-item">
-                  <a class="nav-link" href=${`agents/chat/?id=${conversation.id}`}>${conversation.title}</a>
-                </li>`
-            )}
         </ul>
       </div>
     </aside>
 
     <main class="container d-flex flex-column flex-grow-1 mb-3 position-relative">
-      <div class="flex-grow-1 py-3" classList=${() => ({ "x-mvh-100": messages().length > 0 })}>
-        <div class="text-center my-5 font-serif" hidden=${() => messages().length > 0}>
+      <div class="flex-grow-1 py-3" classList=${() => ({ "x-mvh-100": messages.length > 0 })}>
+        <div class="text-center my-5 font-serif" hidden=${() => messages.length > 0}>
           <h1 class="text-gradient fw-bold font-title mb-2">Welcome</h1>
           <div class="text-secondary fw-semibold">How can we help you today?</div>
         </div>
         <${For} each=${messages}>
-          ${(message, index) =>
-            html`<${Message}
+          ${(message, index) => html`
+            <${Message}
               message=${message}
               index=${index}
               messages=${messages}
-              class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />`}
+              class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />
+          `}
         <//>
         <${Show} when=${loading}><${Loader} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" /><//>
       </div>
@@ -146,7 +138,7 @@ export default function Page() {
               onClick=${() =>
                 downloadCsv(
                   "conversation.csv",
-                  messages().map((m) => ({
+                  messages.map((m) => ({
                     role: m.role,
                     content: m.content
                       ?.map((c) => c.text)
@@ -157,7 +149,7 @@ export default function Page() {
               csv
             </button>
             or
-            <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadJson("conversation.json", messages())}>json</button>
+            <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadJson("conversation.json", messages)}>json</button>
           </div>
           <a href="/agents/chat" target="_blank">Start a new conversation</a>
         </div>
