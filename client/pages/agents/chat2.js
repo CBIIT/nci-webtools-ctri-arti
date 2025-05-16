@@ -4,9 +4,10 @@ import { stringify } from "yaml";
 import { parse } from "marked";
 import Loader from "/components/dna.js";
 import { useChat } from "./hooks.js";
-import { downloadCsv, downloadJson } from "./utils/utils.js";
+import { downloadCsv, downloadJson, downloadText } from "./utils/utils.js";
 
 function Message(p) {
+  const [dialog, setDialog] = createSignal(null);
   const [visible, setVisible] = createSignal({});
   const toggleVisible = (key) => setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
   const getToolResult = (toolUse) =>
@@ -14,70 +15,139 @@ function Message(p) {
       ?.json?.results;
   const getSearchResults = (results) => results?.web && [...results.web, ...results.news];
 
+  function openFeedback(feedback, comment) {
+    let d = dialog();
+    let f = d.querySelector("form");
+    f.feedback.value = feedback ? "Positive Feedback" : "Negative Feedback";
+    f.comment.value = comment || "";
+    d.showModal();
+  }
 
+  async function submitFeedback(e) {
+    e.preventDefault();
+    await dialog()?.close();
+    let feedback = e.target.feedback.value;
+    let comment = e.target.comment.value;
+    const success = await fetch("/api/feedback", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        feedback: [feedback, '\ncomment:', comment, '\noriginal message:', p.message.content?.[0]?.text].filter(Boolean).join('\n'),
+        context: p.messages,
+      })
+    }).then(e => e.json());
+  };
   
-  return html`<${For} each=${p.message?.content}>
-    ${(c) => {
-      const reasoning = c.reasoningContent?.reasoningText?.text || c.toolUse?.input?.thought || c.toolUse?.name === "think";
-      if (c.text !== undefined) { // include empty text
-        return () => html`<div
-          class="mb-3 p-2"
-          classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
-          innerHTML=${parse(c.text || "")}></div>`;
-      }
-      
-      else if (c.toolUse?.name === "search") {
-        return html`<details
-          class="w-100 overflow-auto p-2 rounded mvh-25"
-          classList=${() => ({ "shadow-sm": visible()[p.index] })}
-          open=${() => visible()[p.index]}>
-          <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
-            Search: ${() => c.toolUse?.input?.query}...
-          </summary>
-          <div class="list-group">
-            <${For} each=${() => getSearchResults(getToolResult(c.toolUse))}>
-              ${(result) => html`<a class="list-group-item list-group-item-action border-0" href=${result.url} target="_blank" rel="noopener noreferrer">
-                <span>${result.title}</span>
-                <small class="ms-2 text-muted">${new URL(result.url).hostname}</small>
-                <ul class="small fw-normal">
-                  <${For} each=${result.extra_snippets}>
-                    ${(snippet) => html`<li>${snippet}</li>`}
-                  <//>
-                </ul>
-              </a>`}
-            <//>
+  return html`
+    <dialog ref=${el => setDialog(el)} class="z-3 border-0 shadow-sm rounded-3" style="width: 400px; max-width: 100vw; max-height: 100vh; overflow: auto;">
+      <form onSubmit=${submitFeedback}>
+        <p class="fw-semibold">Submit Feedback</p>
+        <div class="mb-2">
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="feedback" id=${`feedback-positive-${p.index}`} value="Positive Feedback">
+            <label class="form-check-label" for=${`feedback-positive-${p.index}`}>👍</label>
           </div>
-        </details>`;
-      }
-
-      else if (c.toolUse?.name === "browse") {
-        return html`<details
-          class="w-100 overflow-auto p-2 rounded mvh-25"
-          classList=${() => ({ "shadow-sm": visible()[p.index] })}
-          open=${() => visible()[p.index]}>
-          <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
-            Research: ${() => c.toolUse?.input?.url}...
-          </summary>
-          <div class="fw-semibold mb-2 text-muted">${() => c.toolUse?.input?.topic}</div>
-          <div innerHTML=${() => parse(getToolResult(c.toolUse) || "")} />
-        </details>`;
-      }
-
-      else if (reasoning || c.toolUse) {
-        return html`<details
-          class="w-100 overflow-auto p-2 rounded mvh-25"
-          classList=${() => ({ "shadow-sm": visible()[p.index] })}
-          open=${() => visible()[p.index]}>
-          <summary class="px-1" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
-            ${() => (reasoning ? "Reasoning..." : c?.toolUse?.name)}
-          </summary>
-          <div class="text-prewrap">
-            ${() => reasoning || html` ${stringify(c?.toolUse?.input)} ${stringify(getToolResult(c.toolUse))} `}
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="feedback" id=${`feedback-negative-${p.index}`} value="Negative Feedback">
+            <label class="form-check-label" for=${`feedback-negative-${p.index}`}>👎</label>
           </div>
-        </details>`;
-      }
-    }}
-  <//>`;
+        </div>
+        <textarea name="comment" placeholder="Comment..." rows="3" class="form-control form-control-sm mb-2"></textarea>
+        <button type="reset" class="btn btn-secondary me-2" onClick=${() => dialog()?.close()}>Cancel</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </dialog>
+  
+    <${For} each=${p.message?.content}>
+      ${(c) => {
+        const reasoning = c.reasoningContent?.reasoningText?.text || c.toolUse?.input?.thought;
+        const hasReasoning = reasoning || c.toolUse?.name === "think";
+
+        if (c.text !== undefined) { // include empty text
+          return html`
+            <div class="position-relative hover-visible-parent">
+              <div
+                class="p-2"
+                classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
+                innerHTML=${() => parse(c.text || "")}></div>
+              <${Show} when=${() => p.message?.role !== "user"}>
+                <div class="text-end end-0 top-0 opacity-50 position-absolute">
+                  <button
+                    class="btn btn-sm btn-outline-light border-0 hover-visible"
+                    onClick=${(e) => openFeedback(true)}>
+                    👍
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-light border-0 hover-visible"
+                    onClick=${(e) => openFeedback(false)}>
+                    👎
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-light border-0 hover-visible"
+                    onClick=${() => downloadText("results.txt", c.text)}>
+                    💾
+                  </button>
+                </div>
+              <//>
+            </div>
+          `;
+        }
+        
+        else if (c.toolUse?.name === "search") {
+          return html`<details
+            class="w-100 overflow-auto p-2 rounded mvh-25"
+            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            open=${() => visible()[p.index]}>
+            <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+              Searching: ${() => c.toolUse?.input?.query}...
+            </summary>
+            <div class="list-group">
+              <${For} each=${() => getSearchResults(getToolResult(c.toolUse))}>
+                ${(result) => html`<a class="list-group-item list-group-item-action border-0" href=${result.url} target="_blank" rel="noopener noreferrer">
+                  <span>${result.title}</span>
+                  <small class="ms-2 text-muted">${new URL(result.url).hostname}</small>
+                  <ul class="small fw-normal">
+                    <${For} each=${result.extra_snippets}>
+                      ${(snippet) => html`<li>${snippet}</li>`}
+                    <//>
+                  </ul>
+                </a>`}
+              <//>
+            </div>
+          </details>`;
+        }
+
+        else if (c.toolUse?.name === "browse") {
+          return () => html`<details
+            class="w-100 overflow-auto p-2 rounded mvh-25"
+            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            open=${() => visible()[p.index]}>
+            <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+              Researching: ${() => c.toolUse?.input?.url}...
+            </summary>
+            <div class="fw-semibold mb-2 text-muted">${() => c.toolUse?.input?.topic}</div>
+            <div innerHTML=${() => parse(getToolResult(c.toolUse) || "")} />
+          </details>`;
+        }
+
+        else if (hasReasoning || c.toolUse) {
+          console.log("reasoning", reasoning, c.toolUse);
+          return html`<details
+            class="w-100 overflow-auto p-2 rounded mvh-25"
+            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            open=${() => visible()[p.index]}>
+            <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+              ${() => (hasReasoning ? "Reasoning..." : c?.toolUse?.name)}
+            </summary>
+            <div class="text-prewrap">
+              ${() => reasoning || html` ${stringify(c?.toolUse?.input)} ${stringify(getToolResult(c.toolUse))} `}
+            </div>
+          </details>`;
+        }
+      }}
+    <//>`;
 }
 
 export default function Page() {
@@ -120,6 +190,7 @@ export default function Page() {
         </div>
       </div>
     </div>
+
 
     <aside
       class=${() => ["offcanvas offcanvas-start", toggles().conversations ? "show" : "hiding"].join(" ")}
@@ -181,6 +252,7 @@ export default function Page() {
                     content: m.content
                       ?.map((c) => c.text)
                       .filter(Boolean)
+                      .map(e => e.trim())
                       .join("\n"),
                   }))
                 )}>
