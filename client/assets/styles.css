@@ -350,6 +350,10 @@ ul {
   max-width: 60%;
 }
 
+.mvh-25 {
+  max-height: 25vh;
+}
+
 .form-label {
   color: #444;
 }
