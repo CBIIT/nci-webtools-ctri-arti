@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
-import { fileToBase64, readFile, splitFilename } from "./utils/parsers.js";
+import { fileToBase64, splitFilename } from "./utils/parsers.js";
 import { readStream, runTool, getClientContext, autoscroll } from "./utils/utils.js";
 import { systemPrompt, tools } from "./config.js";
 
@@ -50,6 +50,7 @@ export function useChat() {
 
     // Update the state with the user message
     setMessages(messages.length, userMessage);
+    reset?.();
 
     try {
       let isComplete = false;
@@ -92,7 +93,7 @@ export function useChat() {
 
             if (toolUse) {
               toolUse.input = "";
-              const { contentBlockIndex } = contentBlockStart.start;
+              const { contentBlockIndex } = contentBlockStart;
               setMessages(messages.length - 1, "content", contentBlockIndex, { toolUse });
             } else if (contentBlockDelta) {
               const { contentBlockIndex, delta } = contentBlockDelta;
