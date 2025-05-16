@@ -1,4 +1,4 @@
-import { createSignal, For, Show, Switch, Match } from "solid-js";
+import { createSignal, For, Show, Index } from "solid-js";
 import html from "solid-js/html";
 import { stringify } from "yaml";
 import { parse } from "marked";
@@ -12,34 +12,72 @@ function Message(p) {
   const getToolResult = (toolUse) =>
     p.messages?.find((m) => m.content?.find((c) => c?.toolResult?.toolUseId === toolUse?.toolUseId))?.content[0].toolResult?.content[0]
       ?.json?.results;
+  const getSearchResults = (results) => results?.web && [...results.web, ...results.news];
 
+
+  
   return html`<${For} each=${p.message?.content}>
     ${(c) => {
       const reasoning = c.reasoningContent?.reasoningText?.text || c.toolUse?.input?.thought || c.toolUse?.name === "think";
-      return () => html`<${Switch}>
-        <${Match} when=${c.text}>
-          <div
-            class="mb-3 p-2"
-            classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
-            innerHTML=${parse(c.text || "")}></div>
-        <//>
-        <${Match} when=${reasoning || c.toolUse}>
-          <details
-            class="w-100 overflow-auto p-2 rounded"
-            classList=${() => ({ "shadow-sm": visible()[i()] })}
-            style="max-height: 200px"
-            open=${() => visible()[i()]}>
-            <summary class="px-1" onClick=${(e) => (e.preventDefault(), toggleVisible(i()))}>
-              ${() => (reasoning ? "Reasoning..." : c?.toolUse?.name)}
-            </summary>
-            <div class="text-prewrap">
-              ${() => reasoning || html` ${stringify(c?.toolUse?.input)} ${stringify(getToolResult(c.toolUse))} `}
-            </div>
-          </details>
-        <//>
-      <//>`;
-    }}<//
-  >`;
+      if (c.text !== undefined) { // include empty text
+        return () => html`<div
+          class="mb-3 p-2"
+          classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
+          innerHTML=${parse(c.text || "")}></div>`;
+      }
+      
+      else if (c.toolUse?.name === "search") {
+        return html`<details
+          class="w-100 overflow-auto p-2 rounded mvh-25"
+          classList=${() => ({ "shadow-sm": visible()[p.index] })}
+          open=${() => visible()[p.index]}>
+          <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+            Search: ${() => c.toolUse?.input?.query}...
+          </summary>
+          <div class="list-group">
+            <${For} each=${() => getSearchResults(getToolResult(c.toolUse))}>
+              ${(result) => html`<a class="list-group-item list-group-item-action border-0" href=${result.url} target="_blank" rel="noopener noreferrer">
+                <span>${result.title}</span>
+                <small class="ms-2 text-muted">${new URL(result.url).hostname}</small>
+                <ul class="small fw-normal">
+                  <${For} each=${result.extra_snippets}>
+                    ${(snippet) => html`<li>${snippet}</li>`}
+                  <//>
+                </ul>
+              </a>`}
+            <//>
+          </div>
+        </details>`;
+      }
+
+      else if (c.toolUse?.name === "browse") {
+        return html`<details
+          class="w-100 overflow-auto p-2 rounded mvh-25"
+          classList=${() => ({ "shadow-sm": visible()[p.index] })}
+          open=${() => visible()[p.index]}>
+          <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+            Research: ${() => c.toolUse?.input?.url}...
+          </summary>
+          <div class="fw-semibold mb-2 text-muted">${() => c.toolUse?.input?.topic}</div>
+          <div innerHTML=${() => parse(getToolResult(c.toolUse) || "")} />
+        </details>`;
+      }
+
+      else if (reasoning || c.toolUse) {
+        return html`<details
+          class="w-100 overflow-auto p-2 rounded mvh-25"
+          classList=${() => ({ "shadow-sm": visible()[p.index] })}
+          open=${() => visible()[p.index]}>
+          <summary class="px-1" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+            ${() => (reasoning ? "Reasoning..." : c?.toolUse?.name)}
+          </summary>
+          <div class="text-prewrap">
+            ${() => reasoning || html` ${stringify(c?.toolUse?.input)} ${stringify(getToolResult(c.toolUse))} `}
+          </div>
+        </details>`;
+      }
+    }}
+  <//>`;
 }
 
 export default function Page() {
@@ -71,20 +109,20 @@ export default function Page() {
   return html`
     <div class="container">
       <div class="row">
-        <div class="col">
+        <div class="col d-flex align-items-center">
+          <button class="btn btn-sm btn-light d-flex align-items-center" onClick=${toggle("conversations")}>
+            <img src="assets/images/icon-history.svg" alt="Conversations" width="16" />
+          </button>
           <input
             value=${() => conversation?.title}
             onChange=${(ev) => updateConversation({ title: ev.target.value })}
-            class="form-control form-control-sm border-0 bg-transparent fw-light fs-5" />
-        </div>
-        <div class="col d-flex justify-content-end align-items-center">
-          <button class="btn btn-outline-dark" onClick=${toggle("conversations")}>=</button>
+            class="form-control form-control-sm fw-semibold border-0 bg-transparent " />
         </div>
       </div>
     </div>
 
     <aside
-      class=${() => ["offcanvas offcanvas-end", toggles().conversations ? "show" : "hiding"].join(" ")}
+      class=${() => ["offcanvas offcanvas-start", toggles().conversations ? "show" : "hiding"].join(" ")}
       tabindex="-1"
       id="conversations-menu"
       aria-labelledby="conversations-menu-label">
@@ -118,7 +156,7 @@ export default function Page() {
           <h1 class="text-gradient fw-bold font-title mb-2">Welcome</h1>
           <div class="text-secondary fw-semibold">How can we help you today?</div>
         </div>
-        <${For} each=${messages}>
+        <${Index} each=${messages}>
           ${(message, index) => html`
             <${Message}
               message=${message}
@@ -151,7 +189,7 @@ export default function Page() {
             or
             <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadJson("conversation.json", messages)}>json</button>
           </div>
-          <a href="/agents/chat" target="_blank">Start a new conversation</a>
+          <a href="/tools/chat2" target="_blank">Start a new conversation</a>
         </div>
         <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded">
           <textarea
