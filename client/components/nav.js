@@ -65,7 +65,16 @@ export default function Nav({ routes }) {
                   ${() => session()?.user?.firstName || "User"}
                 </button>
                 <ul class="dropdown-menu bg-white text-end end-0 border-0" classList=${() => ({ show: visible().user })}>
-                  <a href="/api/logout" target="_self" class="nav-link text-decoration-none">Logout</a>
+                  <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
+                    <li>
+                      <a href="/users" class="dropdown-item nav-link text-decoration-none" onClick=${() => setVisible({})}>
+                        User Management
+                      </a>
+                    </li>
+                  <//>
+                  <li>
+                    <a href="/api/logout" target="_self" class="dropdown-item nav-link text-decoration-none">Logout</a>
+                  </li>
                 </ul>
               </li>
             <//>
