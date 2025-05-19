@@ -4,7 +4,7 @@ const { PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD } = process.env;
 
 const db = new Sequelize({
   dialect: "postgres",
-  logging: (m) => logger.info(m),
+  logging: (m) => logger.debug(m),
   host: PGHOST,
   port: +PGPORT,
   database: PGDATABASE,
@@ -55,10 +55,12 @@ export const Usage = db.define("Usage", {
 });
 
 await db.sync({ alter: true });
-Role.belongsTo(User, { foreignKey: "roleId" });
+User.belongsTo(Role, { foreignKey: "roleId" });
 Model.belongsTo(Provider, { foreignKey: "providerId" });
 Usage.belongsTo(User, { foreignKey: "userId" });
 Usage.belongsTo(Model, { foreignKey: "modelId" });
+User.hasMany(Usage, { foreignKey: "userId" });
+Model.hasMany(Usage, { foreignKey: "modelId" });
 await db.sync({ alter: true });
 
 await Role.bulkCreate(
