@@ -32,10 +32,10 @@ export default function Page() {
 
   return html`
     <div class="container h-100 d-flex flex-column justify-content-center">
-      <div class="row gx-5 py-5">
+      <div class="row gx-5 p-5 my-5">
         <div class="col-lg-6">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
-            <h1 class="text-gradient display-6 font-title fw-normal mb-4">Welcome to Research Optimizer</h1>
+            <h1 class="text-gradient display-4 font-title fw-normal mb-4">Welcome to <br/> Research Optimizer</h1>
             <div class="fw-semibold text-secondary">
               <p class="mb-3">
                 The Research Optimizer is a suite of integrated tools designed to address operational and documentation challenges across
