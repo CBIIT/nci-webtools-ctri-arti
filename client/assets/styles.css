@@ -357,3 +357,11 @@ ul {
 .form-label {
   color: #444;
 }
+
+.table th {
+  font-weight: 500;
+}
+
+.table th, .table td {
+  vertical-align: middle;
+}
