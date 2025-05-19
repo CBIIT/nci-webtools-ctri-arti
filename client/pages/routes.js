@@ -9,6 +9,9 @@ const FedPulse = () => import("./agents/fedpulse.js");
 const Translate = () => import("./tools/translate.js");
 const ConsentCrafter = () => import("./tools/consent-crafter.js");
 const Workspaces = () => import("./tools/workspaces/index.js");
+const Users = () => import("./users/index.js");
+const UserEdit = () => import("./users/edit.js");
+const UserUsage = () => import("./users/usage.js");
 
 const routes = [
   {
@@ -72,7 +75,24 @@ const routes = [
       }
     ]
   },
-
+  {
+    path: "/users",
+    title: "Users",
+    component: lazy(Users),
+    hidden: true,
+  },
+  {
+    path: "/user/:id",
+    title: "User",
+    component: lazy(UserEdit),
+    hidden: true,
+  },
+  {
+    path: "/user/:id/usage",
+    title: "User Usage",
+    component: lazy(UserUsage),
+    hidden: true,
+  }
 ];
 
 export default routes;
