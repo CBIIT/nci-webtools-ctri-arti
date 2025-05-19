@@ -64,7 +64,7 @@ await db.sync({ alter: true });
 await Role.bulkCreate(
   [
     { id: 1, name: "admin", policy: [{ actions: "*", resources: "*" }] },
-    { id: 2, name: "pro", policy: [{ actions: "invoke:unlimited", resources: "*" }] },
+    { id: 2, name: "developer", policy: [{ actions: "*", resources: "dev" }] },
     { id: 3, name: "user", policy: null },
   ],
   { updateOnDuplicate: ["name", "policy"] }
