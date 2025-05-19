@@ -51,6 +51,7 @@ export const Usage = db.define("Usage", {
   ip: DataTypes.STRING,
   inputTokens: DataTypes.FLOAT,
   outputTokens: DataTypes.FLOAT,
+  cost: DataTypes.FLOAT,
 });
 
 await db.sync({ alter: true });
@@ -72,10 +73,7 @@ await Role.bulkCreate(
 await Provider.bulkCreate(
   [
     { id: 1, name: "bedrock", apiKey: null }, // uses IAM role
-    { id: 2, name: "google", apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY },
-    { id: 3, name: "azure", apiKey: process.env.AZURE_API_KEY },
-    { id: 4, name: "openai", apiKey: process.env.OPENAI_API_KEY },
-    { id: 5, name: "openrouter", apiKey: process.env.OPENROUTER_API_KEY },
+    { id: 2, name: "google", apiKey: process.env.GEMINI_API_KEY },
   ],
   { updateOnDuplicate: ["name"] } // don't overwrite apiKey
 );
