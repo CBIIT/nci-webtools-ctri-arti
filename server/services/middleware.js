@@ -1,13 +1,16 @@
 import { Readable } from "stream";
 import * as client from "openid-client";
 import logger, { formatObject } from "./logger.js";
+import { User, Role } from "./database.js";
 const { OAUTH_CALLBACK_URL, OAUTH_DISCOVERY_URL, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET } = process.env;
 export const WHITELIST = [/.*/i];
-export const oidcConfig = OAUTH_CLIENT_ID ? await client.discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET) : null;
+export const oidcConfig = OAUTH_CLIENT_ID
+  ? await client.discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET)
+  : null;
 
 /**
  * Logs requests
- * @param {function} formatter 
+ * @param {function} formatter
  * @returns (request, response, next) => void
  */
 export function logRequests(formatter = (request) => [request.path]) {
@@ -20,7 +23,7 @@ export function logRequests(formatter = (request) => [request.path]) {
 
 /**
  * Logs errors (should be used as the last middleware)
- * @param {function} formatter 
+ * @param {function} formatter
  * @returns (error, request, response, next) => void
  */
 export function logErrors(formatter = (e) => ({ error: e.message })) {
@@ -91,12 +94,37 @@ export async function loginMiddleware(req, res, next) {
  * @param {Function} next
  */
 export async function authMiddleware(req, res, next) {
-    // todo: switch over when keys are verified
+  // todo: switch over when keys are verified
   const authDisabled = true;
   if (!authDisabled && !req.session.user) {
     return res.status(401).end("Unauthorized");
   }
   next();
+}
+
+/**
+ * Middleware that requires user to have a specific role
+ * @param {string} roleName - Name of the required role (e.g., "admin")
+ * @returns {Function} Middleware function
+ */
+export function requireRole(roleName) {
+  return async (req, res, next) => {
+    try {
+      const id = req.session?.user?.id;
+      if (!id) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const user = await User.findOne({ where: { id }, include: [{ model: Role }] });
+      if (!user || user.Role?.name !== roleName) {
+        return res.status(403).json({ error: `Role '${roleName}' required` });
+      }
+
+      next();
+    } catch (err) {
+      next(err);
+    } 
+  };
 }
 
 /**
@@ -115,7 +143,7 @@ export async function proxyMiddleware(req, res, next) {
   if (!/^https?:\/\//i.test(urlString)) {
     urlString = "https://" + urlString;
   }
-  let url = new URL(urlString)
+  let url = new URL(urlString);
 
   // Only allow requests if the hostname matches or is on the whitelist
   if (!WHITELIST.some((regex) => regex.test(url.hostname)) && url.hostname !== host) {
@@ -147,10 +175,11 @@ export async function proxyMiddleware(req, res, next) {
 }
 
 export function getAuthorizedUrl(url, env = process.env) {
-  const params = {
-    "api.govinfo.gov": {api_key: env.DATA_GOV_API_KEY},
-    "api.congress.gov": {api_key: env.CONGRESS_GOV_API_KEY},
-  }[url.hostname] || {};
+  const params =
+    {
+      "api.govinfo.gov": { api_key: env.DATA_GOV_API_KEY },
+      "api.congress.gov": { api_key: env.CONGRESS_GOV_API_KEY },
+    }[url.hostname] || {};
   for (const key in params) {
     url.searchParams.set(key, params[key]);
   }
@@ -158,7 +187,9 @@ export function getAuthorizedUrl(url, env = process.env) {
 }
 
 export function getAuthorizedHeaders(url, env = process.env) {
-  return {
-    "api.search.brave.com": {"x-subscription-token": env.BRAVE_SEARCH_API_KEY},
-  }[url.hostname] || {};
+  return (
+    {
+      "api.search.brave.com": { "x-subscription-token": env.BRAVE_SEARCH_API_KEY },
+    }[url.hostname] || {}
+  );
 }
