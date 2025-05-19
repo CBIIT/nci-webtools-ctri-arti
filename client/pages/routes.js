@@ -8,6 +8,7 @@ const Chat2 = () => import("./agents/chat2.js");
 const FedPulse = () => import("./agents/fedpulse.js");
 const Translate = () => import("./tools/translate.js");
 const ConsentCrafter = () => import("./tools/consent-crafter.js");
+const LayPersonAbstract = () => import("./tools/lay-person-abstract.js");
 const Workspaces = () => import("./tools/workspaces/index.js");
 const Users = () => import("./users/index.js");
 const UserEdit = () => import("./users/edit.js");
@@ -36,11 +37,14 @@ const routes = [
     path: "/agents/fedpulse",
     title: "FedPulse",
     component: lazy(FedPulse),
+    hidden: true,
+
   },
   {
     path: "/tools/consentcrafter",
     title: "ConsentCrafter",
     component: lazy(ConsentCrafter),
+    hidden: true,
   },
   {
     path: "/tools",
@@ -53,9 +57,24 @@ const routes = [
         hidden: true,
       },
       {
+        path: "fedpulse",
+        title: "FedPulse",
+        component: lazy(FedPulse),
+      },
+      {
         path: "chat",
         title: "Chat",
         component: lazy(Chat),
+      },
+      {
+        path: "consentcrafter",
+        title: "ConsentCrafter",
+        component: lazy(ConsentCrafter),
+      },
+      {
+        path: "laypersonabstract",
+        title: "Lay Person Abstract",
+        component: lazy(LayPersonAbstract),
       },
       {
         path: "chat2",
@@ -67,11 +86,13 @@ const routes = [
         path: "translate",
         title: "Translate",
         component: lazy(Translate),
+        hidden: true,
       },
       {
         path: "workspaces",
         title: "Workspaces",
         component: lazy(Workspaces),
+        hidden: true,
       }
     ]
   },

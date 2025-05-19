@@ -7,7 +7,7 @@ export default function Page() {
     {
       title: "FedPulse",
       description: "Access real-time guidance on federal policies",
-      href: "/agents/fedpulse",
+      href: "/tools/fedpulse",
       icon: html`<img src="/assets/images/icon-radar.svg" height="60" alt="FedPulse Icon" />`,
     },
     {
@@ -25,7 +25,7 @@ export default function Page() {
     {
       title: "Lay Person Abstract",
       description: "Generate lay person abstracts from protocols",
-      href: "/tools/workspaces",
+      href: "/tools/laypersonabstract",
       icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="Lay Person Abstract Icon" />`,
     },
   ];
