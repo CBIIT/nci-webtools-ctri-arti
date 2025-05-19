@@ -32,11 +32,11 @@ export default function Page() {
 
   return html`
     <div class="container h-100 d-flex flex-column justify-content-center">
-      <div class="row gx-5">
-        <div class="col-lg-8">
+      <div class="row gx-5 py-5">
+        <div class="col-lg-6">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
-            <h1 class="text-gradient display-5 font-title fw-bold mb-4">Welcome to Research Optimizer</h1>
-            <div class="fs-5 fw-semibold text-secondary">
+            <h1 class="text-gradient display-6 font-title fw-normal mb-4">Welcome to Research Optimizer</h1>
+            <div class="fw-semibold text-secondary">
               <p class="mb-3">
                 The Research Optimizer is a suite of integrated tools designed to address operational and documentation challenges across
                 every stage of the clinical trial lifecycle. By reducing administrative burden, the platform empowers researchers to
@@ -44,12 +44,12 @@ export default function Page() {
               </p>
               <p class="mb-3">Designed by clinical research professionals for clinical research professionals.</p>
               <${Show} when=${() => !session()?.user}>
-                <a class="btn btn-primary btn-lg rounded-pill text-decoration-none" href="/api/login" target="_self">Login</a>
+                <a class="btn btn-primary rounded-pill text-decoration-none" href="/api/login" target="_self">Login</a>
               <//>
             </div>
           </div>
         </div>
-        <div class="col-lg-4">
+        <div class="col-lg-5 offset-lg-1">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
             <${For} each=${links}>
               ${(link) => html`
