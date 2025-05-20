@@ -1,5 +1,5 @@
 import html from "solid-js/html";
-import { For, Show } from "solid-js";
+import { For, Show, createSignal, onMount, onCleanup } from "solid-js";
 
 /**
  * Privacy Notice Content Structure
@@ -16,14 +16,7 @@ import { For, Show } from "solid-js";
  *  3. Special "text-with-link" objects - for content with embedded hyperlinks, structured as:
  *     {
  *       "type": "text-with-link",
- *       "text": "The full text including link parts",
- *       "links": [
- *         {
- *           "text": "The exact text to be linked",
- *           "href": "https://link-url.com",
- *           "type": "external" | "email" | etc.
- *         }
- *       ]
+ *       "text": "The full text including link parts<a href="">click me</a>",
  *     }
  */
 
@@ -228,10 +221,28 @@ const privacyNoticeContent = [
 ];
 
 export default function PrivacyNotice() {
+  const [isScrolledToBottom, setIsScrolledToBottom] = createSignal(false);
+  
+  let modalBodyRef;
+  onMount(() => {
+    if (modalBodyRef) {
+      const handleScroll = () => {
+        const { scrollTop, scrollHeight, clientHeight } = modalBodyRef;
+        if (!isScrolledToBottom() && Math.ceil(scrollTop + clientHeight) >= scrollHeight - 1) {
+          setIsScrolledToBottom(true);
+          modalBodyRef.removeEventListener('scroll', handleScroll);
+        }
+      };
+      modalBodyRef.addEventListener('scroll', handleScroll);
+      onCleanup(() => {
+        modalBodyRef.removeEventListener('scroll', handleScroll);
+      });
+    }
+  });
   return html`
     <!-- Button trigger modal -->
     <div class="container">
-     <button
+      <button
         type="button"
         class="btn btn-primary"
         data-bs-toggle="modal"
@@ -240,7 +251,7 @@ export default function PrivacyNotice() {
         Launch demo modal
       </button>
     </div>
-   
+
     <!-- Modal -->
     <div
       class="modal fade"
@@ -259,7 +270,10 @@ export default function PrivacyNotice() {
               Welcome to Research Optimizer Development Environment
             </h1>
           </div>
-          <div class="modal-body">
+          <div
+            class="modal-body"
+            ref=${(el) => (modalBodyRef = el)}
+          >
             <${For} each=${privacyNoticeContent}>
               ${(section) => html`
                 <${Show} when=${section.title}>
@@ -315,6 +329,7 @@ export default function PrivacyNotice() {
               type="button"
               class="btn btn-success"
               data-bs-dismiss="modal"
+              disabled=${() => !isScrolledToBottom()}
             >
               I Accept
             </button>
