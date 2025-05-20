@@ -1,5 +1,13 @@
 import html from "solid-js/html";
-import { For, Show, createSignal, onMount, onCleanup } from "solid-js";
+import {
+  For,
+  Show,
+  createSignal,
+  onMount,
+  onCleanup,
+  createResource,
+  createEffect,
+} from "solid-js";
 
 /**
  * Privacy Notice Content Structure
@@ -222,44 +230,79 @@ const privacyNoticeContent = [
 
 export default function PrivacyNotice() {
   const [isScrolledToBottom, setIsScrolledToBottom] = createSignal(false);
-  
-  let modalBodyRef;
-  onMount(() => {
-    if (modalBodyRef) {
-      const handleScroll = () => {
-        const { scrollTop, scrollHeight, clientHeight } = modalBodyRef;
-        if (!isScrolledToBottom() && Math.ceil(scrollTop + clientHeight) >= scrollHeight - 1) {
-          setIsScrolledToBottom(true);
-          modalBodyRef.removeEventListener('scroll', handleScroll);
+  const [modalInstance, setModalInstance] = createSignal(null);
+  const [session] = createResource(() =>
+    fetch("/api/session").then((res) => res.json())
+  );
+
+  const openModal = () => {
+    if (modalInstance()) {
+      modalInstance()?.show();
+    }
+  };
+
+  const closeModal = () => {
+    if (modalInstance()) {
+        const focusedElement = document.activeElement;
+        if (focusedElement) {
+            focusedElement.blur();
         }
-      };
-      modalBodyRef.addEventListener('scroll', handleScroll);
+        modalInstance()?.hide();
+    }
+};
+
+  let modalElement;
+  let modalBodyRef;
+
+  createEffect(() => {
+    if (session()?.user) {
+      openModal();
+    }
+  });
+
+  onMount(() => {
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement, {
+        backdrop: "static", //  prevent modal from closing when clicking outside
+        keyboard: false, // Prevent modal from closing when pressing Esc
+        show: false, // Initialize the modal, but don't show it immediately.
+      });
+
+      setModalInstance(modal);
+
+      if (modalBodyRef) {
+        const handleScroll = () => {
+          const { scrollTop, scrollHeight, clientHeight } = modalBodyRef;
+          if (
+            !isScrolledToBottom() &&
+            Math.ceil(scrollTop + clientHeight) >= scrollHeight - 1
+          ) {
+            setIsScrolledToBottom(true);
+            modalBodyRef.removeEventListener("scroll", handleScroll);
+          }
+        };
+        modalBodyRef.addEventListener("scroll", handleScroll);
+        onCleanup(() => {
+          modalBodyRef.removeEventListener("scroll", handleScroll);
+        });
+      }
+
       onCleanup(() => {
-        modalBodyRef.removeEventListener('scroll', handleScroll);
+        modal?.dispose();
+        setModalInstance(null);
       });
     }
   });
-  return html`
-    <!-- Button trigger modal -->
-    <div class="container">
-      <button
-        type="button"
-        class="btn btn-primary"
-        data-bs-toggle="modal"
-        data-bs-target="#privacyNotice"
-      >
-        Launch demo modal
-      </button>
-    </div>
 
+  return html`
     <!-- Modal -->
     <div
       class="modal fade"
+      ref=${(el) => (modalElement = el)}
       id="privacyNotice"
       tabindex="-1"
       aria-labelledby="Privacy Notice"
       aria-hidden="true"
-      data-bs-backdrop="static"
     >
       <div
         class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"
@@ -270,10 +313,7 @@ export default function PrivacyNotice() {
               Welcome to Research Optimizer Development Environment
             </h1>
           </div>
-          <div
-            class="modal-body"
-            ref=${(el) => (modalBodyRef = el)}
-          >
+          <div class="modal-body" ref=${(el) => (modalBodyRef = el)}>
             <${For} each=${privacyNoticeContent}>
               ${(section) => html`
                 <${Show} when=${section.title}>
@@ -328,7 +368,7 @@ export default function PrivacyNotice() {
             <button
               type="button"
               class="btn btn-success"
-              data-bs-dismiss="modal"
+              onClick=${() => closeModal()}
               disabled=${() => !isScrolledToBottom()}
             >
               I Accept
