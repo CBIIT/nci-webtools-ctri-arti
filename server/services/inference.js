@@ -23,7 +23,9 @@ export async function runModel({ model, messages, system: systemPrompt, tools = 
   if (!model || !messages || messages?.length === 0) {
     return null;
   }
+
   // process messages to ensure they are in the correct format
+  messages = messages.filter(Boolean);
   for (const message of messages) {
     if (!message.content.filter(Boolean).length) {
       message.content.push({ text: "_" });
