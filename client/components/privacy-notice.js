@@ -30,16 +30,6 @@ import {
 
 const privacyNoticeContent = [
   {
-    title: "",
-    type: "text",
-    content: [
-      "TERMS, CONDITIONS, AND DISCLAIMER FOR RESEARCH OPTIMIZER PLATFORM",
-      "Last Updated: March 18, 2025",
-      "",
-      "By accessing or using Research Optimizer, you agree to be bound by these Terms, Conditions, and Disclaimer. Please read this document carefully before proceeding.",
-    ],
-  },
-  {
     title: "PLATFORM OVERVIEW:",
     type: "text",
     content: [
@@ -229,30 +219,27 @@ const privacyNoticeContent = [
 ];
 
 export default function PrivacyNotice() {
-  const [isScrolledToBottom, setIsScrolledToBottom] = createSignal(false);
-  const [modalInstance, setModalInstance] = createSignal(null);
+  const [isScrolledToBottom, setIsScrolledToBottom] = createSignal(false); // user must scroll to bottom to accept
+  const [modalIsOpen, setModalIsOpen] = createSignal(false); // tracks state of modal (importantly closes the background)
   const [session] = createResource(() =>
     fetch("/api/session").then((res) => res.json())
   );
+  let modalBodyRef;
 
   const openModal = () => {
-    if (modalInstance()) {
-      modalInstance()?.show();
-    }
+    setModalIsOpen(true);
   };
 
   const closeModal = () => {
-    if (modalInstance()) {
-        const focusedElement = document.activeElement;
-        if (focusedElement) {
-            focusedElement.blur();
-        }
-        modalInstance()?.hide();
-    }
-};
+    setModalIsOpen(false);
+    setIsScrolledToBottom(false);
+  };
 
-  let modalElement;
-  let modalBodyRef;
+  onMount(() => {
+    if (session()?.user) {
+      openModal();
+    }
+  });
 
   createEffect(() => {
     if (session()?.user) {
@@ -260,64 +247,69 @@ export default function PrivacyNotice() {
     }
   });
 
-  onMount(() => {
-    if (modalElement) {
-      const modal = new bootstrap.Modal(modalElement, {
-        backdrop: "static", //  prevent modal from closing when clicking outside
-        keyboard: false, // Prevent modal from closing when pressing Esc
-        show: false, // Initialize the modal, but don't show it immediately.
-      });
+  //disable body scroll when modal is active
+  createEffect(() => {
+    if (modalIsOpen() && modalBodyRef) {
+      document.body.classList.add("no-scroll");
+    } else {
+      document.body.classList.remove("no-scroll");
+    }
+  });
 
-      setModalInstance(modal);
+  //handles scroll logic for accept button
+  createEffect(() => {
+    if (modalIsOpen()) {
+      const handleScroll = () => {
+        const { scrollTop, scrollHeight, clientHeight } = modalBodyRef;
+        if (Math.ceil(scrollTop + clientHeight) >= scrollHeight - 1) {
+          setIsScrolledToBottom(true);
+        }
+      };
+      modalBodyRef.addEventListener("scroll", handleScroll);
 
-      if (modalBodyRef) {
-        const handleScroll = () => {
-          const { scrollTop, scrollHeight, clientHeight } = modalBodyRef;
-          if (
-            !isScrolledToBottom() &&
-            Math.ceil(scrollTop + clientHeight) >= scrollHeight - 1
-          ) {
-            setIsScrolledToBottom(true);
-            modalBodyRef.removeEventListener("scroll", handleScroll);
-          }
-        };
-        modalBodyRef.addEventListener("scroll", handleScroll);
-        onCleanup(() => {
-          modalBodyRef.removeEventListener("scroll", handleScroll);
-        });
+      const { scrollHeight, clientHeight } = modalBodyRef;
+      if (scrollHeight <= clientHeight) {
+        setIsScrolledToBottom(true);
       }
 
       onCleanup(() => {
-        modal?.dispose();
-        setModalInstance(null);
+        modalBodyRef.removeEventListener("scroll", handleScroll);
       });
     }
   });
 
   return html`
     <!-- Modal -->
-    <div
-      class="modal fade"
-      ref=${(el) => (modalElement = el)}
-      id="privacyNotice"
-      tabindex="-1"
-      aria-labelledby="Privacy Notice"
-      aria-hidden="true"
-    >
+    <${Show} when=${() => modalIsOpen()}>
       <div
-        class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"
+        class="w-100 h-100 bg-black position-absolute bg-opacity-50"
+        style="z-index: 3;"
       >
-        <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-3" id="privacyNoticeLabel">
-              Welcome to Research Optimizer Development Environment
-            </h1>
+        <dialog
+          open
+          class="w-75 h-75 shadow-lg position-absolute top-50 start-50 translate-middle border-0 rounded d-flex flex-column"
+        >
+          <h1 class="font-title display-6 text-center">
+            Welcome to Research Optimizer <br />
+            Development Environment
+          </h1>
+          <div class="text-center mt-5 mb-2">
+            <div class="fw-semibold">
+              TERMS, CONDITIONS, AND DISCLAIMER FOR RESEARCH OPTIMIZER PLATFORM
+            </div>
+            <div>Last Updated: March 18, 2025</div>
           </div>
-          <div class="modal-body" ref=${(el) => (modalBodyRef = el)}>
+          <div
+            class="px-5 pt-3 flex-grow-1 overflow-auto"
+            ref=${(el) => (modalBodyRef = el)}
+          >
+            By accessing or using Research Optimizer, you agree to be bound by
+            these Terms, Conditions, and Disclaimer. Please read this document
+            carefully before proceeding.
             <${For} each=${privacyNoticeContent}>
               ${(section) => html`
                 <${Show} when=${section.title}>
-                  <div class="h6 pt-3">${section.title}</div>
+                  <div class="h6 py-3">${section.title}</div>
                 <//>
 
                 <${Show} when=${section.type === "text"}>
@@ -364,18 +356,17 @@ export default function PrivacyNotice() {
               `}
             <//>
           </div>
-          <div class="modal-footer justify-content-center">
+          <div class="w-100 text-center my-3 pt-4 border-top">
             <button
-              type="button"
-              class="btn btn-success"
+              class="btn btn-secondary"
               onClick=${() => closeModal()}
               disabled=${() => !isScrolledToBottom()}
             >
               I Accept
             </button>
           </div>
-        </div>
+        </dialog>
       </div>
-    </div>
+    <//>
   `;
 }
