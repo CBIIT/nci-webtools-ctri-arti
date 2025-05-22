@@ -27,6 +27,7 @@ export default function Modal(props) {
           <div class="modal-footer">
             <button type="submit" class="btn btn-primary">Continue</button>
           </div>
+        </div>
       </form>
     </dialog>
   `;
