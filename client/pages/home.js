@@ -35,7 +35,8 @@ export default function Page() {
       <div class="row gx-5 p-5 my-5">
         <div class="col-lg-6">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
-            <h1 class="text-gradient display-4 font-title fw-normal mb-4">Welcome to ARTI: <br/> AI for Research & Translational Informatics</h1>
+            <h1 class="text-gradient display-5 font-title fw-normal mb-1">Welcome to ARTI</h1>
+            <h2 class="text-gradient fs-3 font-title fw-normal mb-4">AI Research & Translational Informatics</h2>
             <div class="text-secondary">
               <p class="mb-3">
                 Powering the Research Optimizer platform with intelligent tools that address documentation challenges throughout the clinical trial lifecycle.
