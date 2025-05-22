@@ -83,6 +83,10 @@
   height: 90% !important;
 }
 
+.fs-08 {
+  font-size: 0.80rem !important;
+}
+
 .no-scroll {
   overflow: hidden !important;
   padding-right: var(--bs-gutter-x, 0) !important;
