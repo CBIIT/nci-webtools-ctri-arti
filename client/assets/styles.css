@@ -79,6 +79,11 @@
   animation-range-end: 1px;
 }
 
+.no-scroll {
+  overflow: hidden !important;
+  padding-right: var(--bs-gutter-x, 0) !important;
+}
+
 @keyframes visible-scroll-animation {
   from {
       opacity: 0;
