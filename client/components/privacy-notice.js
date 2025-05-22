@@ -219,12 +219,10 @@ const privacyNoticeContent = [
 ];
 
 export default function PrivacyNotice() {
-  const [isScrolledToBottom, setIsScrolledToBottom] = createSignal(false); // user must scroll to bottom to accept
   const [modalIsOpen, setModalIsOpen] = createSignal(false); // tracks state of modal (importantly closes the background)
   const [session] = createResource(() =>
     fetch("/api/session").then((res) => res.json())
   );
-  let modalBodyRef;
 
   const openModal = () => {
     setModalIsOpen(true);
@@ -232,7 +230,6 @@ export default function PrivacyNotice() {
 
   const closeModal = () => {
     setModalIsOpen(false);
-    setIsScrolledToBottom(false);
   };
 
   onMount(() => {
@@ -249,32 +246,10 @@ export default function PrivacyNotice() {
 
   //disable body scroll when modal is active
   createEffect(() => {
-    if (modalIsOpen() && modalBodyRef) {
+    if (modalIsOpen()) {
       document.body.classList.add("no-scroll");
     } else {
       document.body.classList.remove("no-scroll");
-    }
-  });
-
-  //handles scroll logic for accept button
-  createEffect(() => {
-    if (modalIsOpen()) {
-      const handleScroll = () => {
-        const { scrollTop, scrollHeight, clientHeight } = modalBodyRef;
-        if (Math.ceil(scrollTop + clientHeight) >= scrollHeight - 1) {
-          setIsScrolledToBottom(true);
-        }
-      };
-      modalBodyRef.addEventListener("scroll", handleScroll);
-
-      const { scrollHeight, clientHeight } = modalBodyRef;
-      if (scrollHeight <= clientHeight) {
-        setIsScrolledToBottom(true);
-      }
-
-      onCleanup(() => {
-        modalBodyRef.removeEventListener("scroll", handleScroll);
-      });
     }
   });
 
@@ -287,9 +262,9 @@ export default function PrivacyNotice() {
       >
         <dialog
           open
-          class="w-75 h-90 shadow-lg position-absolute top-50 start-50 translate-middle border-0 rounded d-flex flex-column"
+          class="fs-08 w-75 h-90 shadow-lg position-absolute top-50 start-50 translate-middle border-0 rounded d-flex flex-column"
         >
-          <h1 class="font-title fs-2 text-center">
+          <h1 class="font-title fs-4 text-center">
             Welcome to Research Optimizer <br />
             Development Environment
           </h1>
@@ -301,7 +276,6 @@ export default function PrivacyNotice() {
           </div>
           <div
             class="px-5 pt-3 flex-grow-1 overflow-auto"
-            ref=${(el) => (modalBodyRef = el)}
           >
             By accessing or using Research Optimizer, you agree to be bound by
             these Terms, Conditions, and Disclaimer. Please read this document
@@ -309,7 +283,7 @@ export default function PrivacyNotice() {
             <${For} each=${privacyNoticeContent}>
               ${(section) => html`
                 <${Show} when=${section.title}>
-                  <div class="h6 py-3">${section.title}</div>
+                  <div class="h6 py-2">${section.title}</div>
                 <//>
 
                 <${Show} when=${section.type === "text"}>
@@ -355,15 +329,14 @@ export default function PrivacyNotice() {
                 <//>
               `}
             <//>
-          </div>
-          <div class="w-100 text-center my-3 pt-4 border-top">
-            <button
-              class="btn btn-secondary"
-              onClick=${() => closeModal()}
-              disabled=${() => !isScrolledToBottom()}
-            >
-              I Accept
-            </button>
+            <div class="w-100 text-center my-3 pt-4 border-top">
+              <button
+                class="btn btn-secondary"
+                onClick=${() => closeModal()}
+              >
+                I Accept
+              </button>
+            </div>
           </div>
         </dialog>
       </div>
