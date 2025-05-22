@@ -36,6 +36,7 @@
 
 .gray { fill: #606060; }
 .red { fill: #BB0E3D; }
+.textAnchorBlue { color: #036AC5 }
 
 .btn {
   --bs-btn-font-weight: 500;
