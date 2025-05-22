@@ -293,8 +293,9 @@ export default function Page() {
                   Extended Thinking Mode
                 </label>
               </div>
-              <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required hidden>
-                <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0" selected>Sonnet</option>
+              <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required>
+                <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
+                <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>Sonnet</option>
                 <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
               </select>
               <button class="btn btn-dark btn-sm ms-2" type="submit" style="border-radius: 0 0 var(--bs-border-radius-sm) 0">Send</button>
