@@ -79,6 +79,10 @@
   animation-range-end: 1px;
 }
 
+.h-90 {
+  height: 90% !important;
+}
+
 .no-scroll {
   overflow: hidden !important;
   padding-right: var(--bs-gutter-x, 0) !important;

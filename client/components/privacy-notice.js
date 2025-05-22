@@ -287,13 +287,13 @@ export default function PrivacyNotice() {
       >
         <dialog
           open
-          class="w-75 h-75 shadow-lg position-absolute top-50 start-50 translate-middle border-0 rounded d-flex flex-column"
+          class="w-75 h-90 shadow-lg position-absolute top-50 start-50 translate-middle border-0 rounded d-flex flex-column"
         >
-          <h1 class="font-title display-6 text-center">
+          <h1 class="font-title fs-2 text-center">
             Welcome to Research Optimizer <br />
             Development Environment
           </h1>
-          <div class="text-center mt-5 mb-2">
+          <div class="text-center mt-3 mb-2">
             <div class="fw-semibold">
               TERMS, CONDITIONS, AND DISCLAIMER FOR RESEARCH OPTIMIZER PLATFORM
             </div>
