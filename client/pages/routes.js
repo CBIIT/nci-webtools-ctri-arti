@@ -1,6 +1,7 @@
 import { lazy } from "solid-js";
-
+import html from "solid-js/html";
 import Home from "./home.js";
+import ProtectedRoute from "./protected-routes.js";
 const Tools = () => import("./tools/index.js");
 const Agents = () => import("./agents/index.js");
 const Chat = () => import("./agents/chat.js");
@@ -8,10 +9,16 @@ const Chat2 = () => import("./agents/chat2.js");
 const FedPulse = () => import("./agents/fedpulse.js");
 const Translate = () => import("./tools/translate.js");
 const ConsentCrafter = () => import("./tools/consent-crafter.js");
+const LayPersonAbstract = () => import("./tools/lay-person-abstract.js");
 const Workspaces = () => import("./tools/workspaces/index.js");
 const Users = () => import("./users/index.js");
 const UserEdit = () => import("./users/edit.js");
 const UserUsage = () => import("./users/usage.js");
+
+const LazyFedPulse = lazy(FedPulse);
+const LazyChat = lazy(Chat);
+const LazyConsentCrafter = lazy(ConsentCrafter);
+const LazyLayPersonAbstract = lazy(LayPersonAbstract);
 
 const routes = [
   {
@@ -27,22 +34,6 @@ const routes = [
     hidden: true,
   },
   {
-    path: "/agents/chat",
-    title: "Chat",
-    component: lazy(Chat),
-    hidden: true,
-  },
-  {
-    path: "/agents/fedpulse",
-    title: "FedPulse",
-    component: lazy(FedPulse),
-  },
-  {
-    path: "/tools/consentcrafter",
-    title: "ConsentCrafter",
-    component: lazy(ConsentCrafter),
-  },
-  {
     path: "/tools",
     title: "Tools",
     children: [
@@ -53,9 +44,40 @@ const routes = [
         hidden: true,
       },
       {
+        path: "fedpulse",
+        title: "FedPulse",
+        component: () => html`
+          <${ProtectedRoute}>
+            <${LazyFedPulse} />
+          <//>
+        `,
+      },
+      {
         path: "chat",
         title: "Chat",
-        component: lazy(Chat),
+        component: () => html`
+          <${ProtectedRoute}>
+            <${LazyChat} />
+          <//>
+        `,
+      },
+      {
+        path: "consentcrafter",
+        title: "ConsentCrafter",
+        component: () => html`
+          <${ProtectedRoute}>
+            <${LazyConsentCrafter} />
+          <//>
+        `,
+      },
+      {
+        path: "laypersonabstract",
+        title: "Lay Person Abstract",
+        component: () => html`
+          <${ProtectedRoute}>
+            <${LazyLayPersonAbstract} />
+          <//>
+        `,
       },
       {
         path: "chat2",
@@ -67,11 +89,13 @@ const routes = [
         path: "translate",
         title: "Translate",
         component: lazy(Translate),
+        hidden: true,
       },
       {
         path: "workspaces",
         title: "Workspaces",
         component: lazy(Workspaces),
+        hidden: true,
       }
     ]
   },
