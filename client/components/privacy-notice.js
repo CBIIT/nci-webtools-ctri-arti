@@ -262,20 +262,20 @@ export default function PrivacyNotice() {
       >
         <dialog
           open
-          class="fs-08 w-75 h-90 shadow-lg position-absolute top-50 start-50 translate-middle border-0 rounded d-flex flex-column"
+          class="fs-08 w-50 h-90 shadow-lg position-absolute top-50 start-50 translate-middle border-0 rounded d-flex flex-column"
         >
-          <h1 class="font-title fs-4 text-center">
+          <h1 class="font-title fs-4 mt-2 text-center">
             Welcome to Research Optimizer <br />
             Development Environment
           </h1>
-          <div class="text-center mt-3 mb-2">
+          <div class="text-center mt-3 mb-3">
             <div class="fw-semibold">
               TERMS, CONDITIONS, AND DISCLAIMER FOR RESEARCH OPTIMIZER PLATFORM
             </div>
             <div>Last Updated: March 18, 2025</div>
           </div>
           <div
-            class="px-5 pt-3 flex-grow-1 overflow-auto"
+            class="px-5 my-3 flex-grow-1 overflow-auto"
           >
             By accessing or using Research Optimizer, you agree to be bound by
             these Terms, Conditions, and Disclaimer. Please read this document
@@ -331,7 +331,7 @@ export default function PrivacyNotice() {
             <//>
             <div class="w-100 text-center my-3 pt-4 border-top">
               <button
-                class="btn btn-secondary"
+                class="btn btn-primary"
                 onClick=${() => closeModal()}
               >
                 I Accept
