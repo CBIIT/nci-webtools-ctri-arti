@@ -8,7 +8,8 @@ import { getMarked } from "../utils/utils.js";
  * @param {object} props
  * @param {boolean} props.open - Whether the modal is open or not
  * @param {function} props.setOpen - Function to set the modal open state
- * @param {string} props.title - Title of the modal
+ * @param {string} props.title - Title of the modal (optional)
+ * @param {string} props.footer - Footer of the modal (optional)
  * @param {string} props.url - URL to fetch markdown content from
  * @param {function} props.onSubmit - Function to call when the modal is submitted
  * @param {function} props.children - Content of the modal
@@ -21,12 +22,17 @@ export default function Modal(props) {
     <dialog class="modal border-0 show" open=${props.open} onClose=${(e) => props.setOpen?.(false)} onSubmit=${props.onSubmit}>
       <form method="dialog" class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
-          <div class="modal-header">${props.title}</div>
+          <${Show} when=${props.title}>
+            <div class="modal-header">${props.title}</div>
+          <//>
           <div class="modal-body">
             <${Show} when=${props.url} fallback=${props.children}>
               <div class="markdown small" innerHTML=${innerHTML} />
             <//>
           </div>
+          <${Show} when=${props.footer}>
+            <div class="modal-footer">${props.footer}</div>
+          <//>
         </div>
       </form>
     </dialog>
