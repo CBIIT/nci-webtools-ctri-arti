@@ -379,3 +379,8 @@ ul {
 .table th, .table td {
   vertical-align: middle;
 }
+
+dialog.modal[open] {
+  display: block;
+  background-color: rgba(0, 0, 0, 0.5);
+}
