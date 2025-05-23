@@ -10,8 +10,9 @@ import {
 import Modal from "./modal.js";
 
 export function PrivacyNotice2() {
-  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
-  const [open, setOpen] = createSignal(sessionStorage.getItem("privacyNoticeAccepted") !== "true");
+  const [open, { mutate: setOpen}] = createResource(() => fetch("/api/session")
+    .then((res) => res.json())
+    .then(session => session.user && sessionStorage.getItem("privacyNoticeAccepted") !== "true" || false));
   const onSubmit = (e) => sessionStorage.setItem("privacyNoticeAccepted", "true");
   const title = html`
     <div class="text-center">
@@ -26,13 +27,13 @@ export function PrivacyNotice2() {
       </div>
     </div>
   `;
-  return () => session?.()?.user && html`
+  return html`
     <${Modal} 
-    open=${open} 
-    setOpen=${setOpen}
-    onSubmit=${onSubmit}
-    title=${title}
-    url="/templates/privacy-notice.md" />`;
+      open=${open}
+      setOpen=${setOpen}
+      onSubmit=${onSubmit}
+      title=${title}
+      url="/templates/privacy-notice.md" />`;
 }
 
 /**
