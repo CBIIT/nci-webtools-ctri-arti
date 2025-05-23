@@ -10,9 +10,10 @@ import {
 import Modal from "./modal.js";
 
 export function PrivacyNotice2() {
-  const [open, { mutate: setOpen}] = createResource(() => fetch("/api/session")
-    .then((res) => res.json())
-    .then(session => session.user && sessionStorage.getItem("privacyNoticeAccepted") !== "true" || false));
+  const [open, { mutate: setOpen}] = createResource(async () => {
+    const session = await fetch("/api/session").then(res => res.json());
+    return session.user ? !sessionStorage.getItem("privacyNoticeAccepted") : false;
+  });
   const onSubmit = (e) => sessionStorage.setItem("privacyNoticeAccepted", "true");
   const title = html`
     <div class="text-center">
