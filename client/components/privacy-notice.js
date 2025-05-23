@@ -4,10 +4,36 @@ import {
   Show,
   createSignal,
   onMount,
-  onCleanup,
   createResource,
   createEffect,
 } from "solid-js";
+import Modal from "./modal.js";
+
+export function PrivacyNotice2() {
+  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
+  const [open, setOpen] = createSignal(sessionStorage.getItem("privacyNoticeAccepted") !== "true");
+  const onSubmit = (e) => sessionStorage.setItem("privacyNoticeAccepted", "true");
+  const title = html`
+    <div class="text-center">
+      <h1 class="font-title fs-4 mb-3">
+        Welcome to Research Optimizer Development Environment
+      </h1>
+      <div class="small">
+        <div class="fw-semibold">
+          TERMS, CONDITIONS, AND DISCLAIMER FOR RESEARCH OPTIMIZER PLATFORM
+        </div>
+        <div>Last Updated: March 18, 2025</div>
+      </div>
+    </div>
+  `;
+  return () => session?.()?.user && html`
+    <${Modal} 
+    open=${open} 
+    setOpen=${setOpen}
+    onSubmit=${onSubmit}
+    title=${title}
+    url="/templates/privacy-notice.md" />`;
+}
 
 /**
  * Privacy Notice Content Structure
