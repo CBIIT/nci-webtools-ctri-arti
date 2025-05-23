@@ -1,4 +1,5 @@
 import { loadPyodide } from "pyodide";
+import { marked } from "marked";
 import { parseDocument } from "./parsers.js";
 
 window.TOOLS = { search, browse, code, editor, think };
@@ -551,4 +552,15 @@ export function autoscroll(thresholdPercent = 0.8, container = null) {
   }
 
   return false;
+}
+
+
+export function getMarked() {
+  const renderer = new marked.Renderer();
+  renderer.link = function(href, title, text) {
+    const defaultLink = marked.Renderer.prototype.link.call(this, href, title, text);
+    return defaultLink.replace('<a', '<a target="_blank" rel="noopener noreferrer"');
+  };
+  marked.use({ renderer });
+  return marked;
 }
