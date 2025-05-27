@@ -16,9 +16,9 @@ export default function PrivacyNotice() {
   });
   const onSubmit = (e) => sessionStorage.setItem("privacyNoticeAccepted", "true");
   const title = html`
-    <div class="text-center">
+    <div class="w-100 text-center">
       <h1 class="font-title fs-4 mb-3">
-        Welcome to Research Optimizer Development Environment
+        Welcome to Research Optimizer <br /> Development Environment
       </h1>
       <div class="small">
         <div class="fw-semibold">

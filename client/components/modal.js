@@ -19,7 +19,7 @@ export default function Modal(props) {
   createEffect(() => (document.body.style.overflow = props.open ? "hidden" : "auto"));
   const [innerHTML] = createResource(() => fetch(props.url).then(r => r.text()).then(getMarked().parse));
   return html`
-    <dialog class="modal border-0 show" open=${() => props.open} onClose=${(e) => props.setOpen?.(false)} onSubmit=${(e) => props.onSubmit?.(e)}>
+    <dialog class="modal modal-lg border-0 show" open=${() => props.open} onClose=${(e) => props.setOpen?.(false)} onSubmit=${(e) => props.onSubmit?.(e)}>
       <form method="dialog" class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
           <${Show} when=${props.title}>
