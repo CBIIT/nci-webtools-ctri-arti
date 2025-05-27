@@ -9,7 +9,7 @@ import {
 } from "solid-js";
 import Modal from "./modal.js";
 
-export function PrivacyNotice2() {
+export default function PrivacyNotice() {
   const [open, { mutate: setOpen}] = createResource(async () => {
     const session = await fetch("/api/session").then(res => res.json());
     return session.user ? !sessionStorage.getItem("privacyNoticeAccepted") : false;
@@ -246,7 +246,7 @@ const privacyNoticeContent = [
   },
 ];
 
-export default function PrivacyNotice() {
+export function PrivacyNoticeOriginal() {
   const [modalIsOpen, setModalIsOpen] = createSignal(false); // tracks state of modal (importantly closes the background)
   const [session] = createResource(() =>
     fetch("/api/session").then((res) => res.json())
