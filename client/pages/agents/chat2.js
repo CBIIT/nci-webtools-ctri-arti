@@ -120,7 +120,7 @@ function Message(p) {
         }
 
         else if (c.toolUse?.name === "browse") {
-          return () => html`<details
+          return html`<details
             class="w-100 overflow-auto p-2 rounded mvh-25"
             classList=${() => ({ "shadow-sm": visible()[p.index] })}
             open=${() => visible()[p.index]}>
@@ -129,6 +129,26 @@ function Message(p) {
             </summary>
             <div class="fw-semibold mb-2 text-muted">${() => c.toolUse?.input?.topic}</div>
             <div innerHTML=${() => parse(getToolResult(c.toolUse) || "")} />
+          </details>`;
+        }
+
+        else if (c.toolUse?.name === "editor") {
+          return html`<details
+            class="w-100 overflow-auto p-2 rounded mvh-25"
+            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            open=${() => visible()[p.index]}>
+            <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+              ${() => ({
+                view: "Viewing",
+                str_replace: "Updating",
+                create: "Creating",
+                insert: "Updating",
+                undo_edit: "Undoing Edit",
+              }[c.toolUse?.input?.command])}  
+              File: ${() => c.toolUse?.input?.path}
+            </summary>
+            <div class="text-prewrap">${() => c.toolUse?.input?.new_str}</div>
+            <div class="text-prewrap" innerHTML=${() => parse(getToolResult(c.toolUse) || "")?.trim()} />
           </details>`;
         }
 
@@ -238,7 +258,7 @@ export default function Page() {
         <//>
         <${Show} when=${loading}><${Loader} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" /><//>
       </div>
-      <div class="position-sticky bottom-0">
+      <div class="position-sticky bottom-0 bg-white">
         <div class="small d-flex justify-content-between">
           <div class="d-flex align-items-center">
             Export as
