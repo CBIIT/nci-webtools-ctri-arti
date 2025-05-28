@@ -80,7 +80,7 @@ export const tools = [
             command: {
               type: "string",
               enum: ["view", "str_replace", "create", "insert", "undo_edit"],
-              description: "The operation to perform on the file. Required for all commands.",
+              description: "The operation to perform on the file. Required for all commands. View the file, replace a string, create a new file, insert text at a specific line, or undo the last edit.",
             },
             path: {
               type: "string",
