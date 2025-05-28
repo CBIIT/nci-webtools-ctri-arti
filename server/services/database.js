@@ -91,8 +91,8 @@ await Model.bulkCreate(
       cost1kOutput: 0.075,
       isReasoner: true,
       maxContext: 200_000,
-      maxOutput: 64_000,
-      maxReasoning: 60_000,
+      maxOutput: 32_000,
+      maxReasoning: 30_000,
     },
     {
       id: 2,
