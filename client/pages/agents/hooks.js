@@ -3,6 +3,7 @@ import { createStore } from "solid-js/store";
 import { fileToBase64, splitFilename } from "./utils/parsers.js";
 import { readStream, runTool, getClientContext, autoscroll } from "./utils/utils.js";
 import { systemPrompt, tools } from "./config.js";
+import { jsonToXml } from "./utils/xml.js";
 
 export function useChat() {
   const [messages, setMessages] = createStore([]);
@@ -19,9 +20,14 @@ export function useChat() {
    * @param {string} params.model - The model to use.
    */
   async function submitMessage({ message, inputFiles, reasoningMode, model, context = {}, reset = () => {} }) {
+    const text = jsonToXml({
+      message,
+      timestamp: new Date().toISOString(),
+      context: ['Remember to use tools and reasoning when appropriate. Remember to store important information in memory. Always include references to sources in your responses.'],
+    })
     const userMessage = {
       role: "user",
-      content: [{ text: message }],
+      content: [{ text }],
     };
 
     if (!messages.length) {
@@ -65,7 +71,7 @@ export function useChat() {
             tools,
             system: systemPrompt(getClientContext(context)),
             messages,
-            thoughtBudget: reasoningMode ? 32_000 : 0,
+            thoughtBudget: reasoningMode ? 24_000 : 0,
             stream: true,
           }),
         });
@@ -248,7 +254,7 @@ export function useSubmitMessage() {
             tools,
             system: systemPrompt(getClientContext(context)),
             messages: messages(),
-            thoughtBudget: reasoningMode ? 32_000 : 0,
+            thoughtBudget: reasoningMode ? 24_000 : 0,
             stream: true,
           }),
         });
