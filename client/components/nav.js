@@ -68,7 +68,7 @@ export default function Nav({ routes }) {
                   <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
                     <li>
                       <a href="/users" class="dropdown-item nav-link text-decoration-none" onClick=${() => setVisible({})}>
-                        User Management
+                        Manage Users
                       </a>
                     </li>
                   <//>
