@@ -3,6 +3,10 @@ import html from "solid-js/html";
 import { useParams } from "@solidjs/router";
 import { createResource } from "solid-js";
 
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 function UserEdit() {
   const params = useParams();
   const isNewUser = params.id === "new";
@@ -91,20 +95,6 @@ function UserEdit() {
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="font-title text-gradient fw-bold my-3">${isNewUser ? "Add New User" : "Edit User"}</h1>
-        <div class="d-flex gap-2">
-          ${() => !isNewUser && html`
-            <a 
-              href=${`/user/${params.id}/usage`}
-              class="btn btn-outline-secondary btn-sm text-decoration-none">
-              View Usage
-            </a>
-          `}
-          <a 
-            href="/users"
-            class="btn btn-outline-primary btn-sm text-decoration-none">
-            Back to Users
-          </a>
-        </div>
       </div>
       
       <!-- Error Alert -->
@@ -128,59 +118,37 @@ function UserEdit() {
         <div class="card shadow-sm">
           <div class="card-body">
             <form onSubmit=${handleSubmit}>
-              <div class="row g-3">
+              <div class="row align-items-center mb-2">
+                <!-- Account Type -->
+                <label class="offset-sm-4 col-sm-1_5 align-self-center col-form-label">Account Type</label>
+                <div class="col-sm-2">
+                  <div> 
+                    NIH
+                  </div>
+                </div>
+              </div>
+              <div class="row align-items-center mb-2">
                 <!-- Email -->
-                <div class="col-md-6">
-                  <label for="email" class="form-label">Email</label>
-                  <input 
-                    type="email" 
-                    class="form-control" 
-                    id="email" 
-                    value=${() => user().email || ''} 
-                    onInput=${e => handleInputChange("email", e.target.value)}
-                    required />
+                <label for="email" class="offset-sm-4 col-sm-1_5 align-self-center col-form-label">Email</label>
+                <div class="col-sm-2">
+                  <div>
+                    ${() => user().email || ''} 
+                  </div>
                 </div>
-                
-                <!-- Role -->
-                <div class="col-md-6">
-                  <label for="roleId" class="form-label">Role</label>
-                  <select 
-                    class="form-select" 
-                    id="roleId" 
-                    value=${() => user().roleId || ''}
-                    onChange=${e => handleInputChange("roleId", e.target.value ? parseInt(e.target.value) : null)}>
-                    <option value="">Select Role</option>
-                    ${() => roles()?.map(role => html`
-                      <option value=${role.id}>${role.name}</option>
-                    `)}
-                  </select>
+              </div>
+              <div class="row align-items-center mb-2">
+                <!-- Name -->
+                <label for="name" class="offset-sm-4 col-sm-1_5 align-self-center col-form-label">Name</label>
+                <div class="col-sm-2">
+                  <div> 
+                    ${() => user().firstName + ' ' + user().lastName || ''}
+                  </div>
                 </div>
-                
-                <!-- First Name -->
-                <div class="col-md-6">
-                  <label for="firstName" class="form-label">First Name</label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
-                    id="firstName" 
-                    value=${() => user().firstName || ''}
-                    onInput=${e => handleInputChange("firstName", e.target.value)} />
-                </div>
-                
-                <!-- Last Name -->
-                <div class="col-md-6">
-                  <label for="lastName" class="form-label">Last Name</label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
-                    id="lastName" 
-                    value=${() => user().lastName || ''}
-                    onInput=${e => handleInputChange("lastName", e.target.value)} />
-                </div>
-                
+              </div>
+              <div class="row align-items-center mb-2">
                 <!-- Status -->
-                <div class="col-md-6">
-                  <label for="status" class="form-label">Status</label>
+                <label for="status" class="offset-sm-4 col-sm-1_5 align-self-center col-form-label">Status<span class="text-danger">*</span></label>
+                <div class="col-sm-2">
                   <select 
                     class="form-select" 
                     id="status"
@@ -191,43 +159,26 @@ function UserEdit() {
                     <option value="suspended">Suspended</option>
                   </select>
                 </div>
-                
-                <!-- API Key -->
-                <div class="col-md-6">
-                  ${() => !isNewUser && user().apiKey && html`
-                    <label for="apiKey" class="form-label">API Key</label>
-                    <div class="input-group">
-                      <input 
-                        type="text" 
-                        class="form-control font-monospace" 
-                        id="apiKey" 
-                        value=${() => user().apiKey} 
-                        readonly />
-                      <button 
-                        class="btn btn-outline-secondary" 
-                        type="button"
-                        onClick=${() => copyToClipboard(user().apiKey)}>
-                        Copy
-                      </button>
-                    </div>
-                  `}
-                  
-                  <div class="form-check mt-2">
-                    <input 
-                      class="form-check-input" 
-                      type="checkbox" 
-                      id="generateApiKey"
-                      checked=${generateApiKey}
-                      onChange=${e => setGenerateApiKey(e.target.checked)} />
-                    <label class="form-check-label" for="generateApiKey">
-                      ${() => user().apiKey ? "Regenerate" : "Generate"} API Key
-                    </label>
-                  </div>
+              </div>
+              <div class="row align-items-center mb-2">
+                <!-- Role -->
+                <label for="roleId" class="offset-sm-4 col-sm-1_5 align-self-center col-form-label">Role</label>
+                <div class="col-sm-2">
+                  <select 
+                    class="form-select" 
+                    id="roleId" 
+                    value=${() => user().roleId || ''}
+                    onChange=${e => handleInputChange("roleId", e.target.value ? parseInt(e.target.value) : null)}>
+                    ${() => roles()?.map(role => html`
+                      <option value=${role.id} selected=${() => role.id === user().roleId}>${capitalize(role.name)}</option>
+                    `)}
+                  </select>
                 </div>
-                
-                <!-- Usage Limits -->
-                <div class="col-md-6">
-                  <label for="limit" class="form-label">Usage Limit ($)</label>
+              </div>
+              <div class="row align-items-center mb-2">
+                <!-- Cost Threshold -->
+                <label for="limit" class="offset-sm-4 col-sm-1_5 align-self-center col-form-label">Cost Threshold ($)</label>
+                <div class="col-sm-2">
                   <input 
                     type="number" 
                     step="0.01"
@@ -236,23 +187,10 @@ function UserEdit() {
                     id="limit" 
                     value=${() => user().limit || 0} 
                     onInput=${e => handleInputChange("limit", parseFloat(e.target.value) || 0)} />
-                  <div class="form-text">Maximum spending limit for this user</div>
                 </div>
+              </div>
                 
-                <!-- Remaining Balance -->
-                <div class="col-md-6">
-                  <label for="remaining" class="form-label">Remaining Balance ($)</label>
-                  <input 
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="form-control" 
-                    id="remaining" 
-                    value=${() => user().remaining || 0} 
-                    onInput=${e => handleInputChange("remaining", parseFloat(e.target.value) || 0)} />
-                  <div class="form-text">Current remaining balance</div>
-                </div>
-                
+              <div class="row">
                 <!-- Form Buttons -->
                 <div class="col-12 mt-4">
                   <div class="d-flex gap-2 justify-content-end">
@@ -265,7 +203,7 @@ function UserEdit() {
                       type="submit" 
                       class="btn btn-primary" 
                       disabled=${saving}>
-                      ${() => saving() ? "Saving..." : "Save User"}
+                      ${() => saving() ? "Saving..." : "Save"}
                     </button>
                   </div>
                 </div>

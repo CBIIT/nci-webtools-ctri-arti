@@ -177,7 +177,7 @@ function UsersList() {
               <//>
             </tbody>
           </table>
-          <div class="d-flex justify-content-end mt-3 row">
+          <div class="d-flex justify-content-end my-3 row">
             <label for="rows-select" class="col-sm-auto col-form-label">Rows per page:</label>
             <div class="col-sm-1">
               <select 
