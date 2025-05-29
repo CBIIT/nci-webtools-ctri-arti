@@ -1,31 +1,20 @@
+import { createSignal, For, Show, Index } from "solid-js";
 import html from "solid-js/html";
-import { For, Show, createSignal } from "solid-js";
-import { parse } from "marked";
 import { stringify } from "yaml";
-import { downloadText } from "./utils/utils.js";
+import { parse } from "marked";
+import { downloadText, } from "./utils/utils.js";
+import { getMarked } from "../../utils/utils.js";
 
-/**
- * 
- * @param {{message, messages, defaultClass}} p 
- * @returns 
- */
-export default function Message(p = {
-  message: null,
-  messages: [],
-  class: "small markdown shadow-sm rounded mb-3 p-2 position-relative",
-}) {
+const marked = getMarked();
+
+export default function Message(p) {
   const [dialog, setDialog] = createSignal(null);
-  const messageIndex = (p.messages || []).indexOf(p.message);
-
-  if (!p.message) return null;
-  const getToolResult = (messages, toolUseId) => {
-    console.log(messages,  toolUseId, messages?.find((m) => m.content?.[0]?.toolResult?.toolUseId === toolUseId));
-    return messages?.find((m) => m.content?.[0]?.toolResult?.toolUseId === toolUseId)?.content[0].toolResult?.content[0]?.json?.results;
-  }
-  const renderMessageContent = (c, m) => (m.role === "user" ? { textContent: c.text.trim() } : { innerHTML: parse(c.text)?.trim() });
-  const debug = location.hostname === "localhost";
-
-  if (!p.message || !p.message.content || !p.message.content.length) return null;
+  const [visible, setVisible] = createSignal({});
+  const toggleVisible = (key) => setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
+  const getToolResult = (toolUse) =>
+    p.messages?.find((m) => m.content?.find((c) => c?.toolResult?.toolUseId === toolUse?.toolUseId))?.content[0].toolResult?.content[0]
+      ?.json?.results;
+  const getSearchResults = (results) => results?.web && [...results.web, ...results.news];
 
   function openFeedback(feedback, comment) {
     let d = dialog();
@@ -51,19 +40,19 @@ export default function Message(p = {
       })
     }).then(e => e.json());
   };
-
+  
   return html`
     <dialog ref=${el => setDialog(el)} class="z-3 border-0 shadow-sm rounded-3" style="width: 400px; max-width: 100vw; max-height: 100vh; overflow: auto;">
       <form onSubmit=${submitFeedback}>
         <p class="fw-semibold">Submit Feedback</p>
         <div class="mb-2">
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="feedback" id=${`feedback-positive-${messageIndex}`} value="Positive Feedback">
-            <label class="form-check-label" for=${`feedback-positive-${messageIndex}`}>👍</label>
+            <input class="form-check-input" type="radio" name="feedback" id=${`feedback-positive-${p.index}`} value="Positive Feedback">
+            <label class="form-check-label" for=${`feedback-positive-${p.index}`}>👍</label>
           </div>
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="feedback" id=${`feedback-negative-${messageIndex}`} value="Negative Feedback">
-            <label class="form-check-label" for=${`feedback-negative-${messageIndex}`}>👎</label>
+            <input class="form-check-input" type="radio" name="feedback" id=${`feedback-negative-${p.index}`} value="Negative Feedback">
+            <label class="form-check-label" for=${`feedback-negative-${p.index}`}>👎</label>
           </div>
         </div>
         <textarea name="comment" placeholder="Comment..." rows="3" class="form-control form-control-sm mb-2"></textarea>
@@ -71,14 +60,18 @@ export default function Message(p = {
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
     </dialog>
-
-    <div class="d-flex flex-wrap position-relative ">
-      <${For} each=${p.message.content}>${(c) => {
-        if (c.text) {
+  
+    <${For} each=${p.message?.content}>
+      ${(c) => {
+        if (c.text !== undefined) { // include empty text to start message
           return html`
-            <span class=${() => [p.class, "mb-3 hover-visible-parent-always", p.message.role === "user" ? "bg-light text-prewrap" : "w-100 bg-white"].join(" ")}>
-              <${Show} when=${() => p.message.role !== "user"}>
-                <div class="hover-visible-always position-absolute top-0 end-0 opacity-50">
+            <div class="position-relative hover-visible-parent">
+              <div
+                class="p-2"
+                classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
+                innerHTML=${() => marked.parse(c.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, '')}></div>
+              <${Show} when=${() => p.message?.role !== "user"}>
+                <div class="text-end end-0 top-0 opacity-50 position-absolute">
                   <button
                     class="btn btn-sm btn-outline-light border-0 hover-visible"
                     onClick=${(e) => openFeedback(true)}>
@@ -96,100 +89,112 @@ export default function Message(p = {
                   </button>
                 </div>
               <//>
-              <span ...${renderMessageContent(c, p.message)}></span>
-            </span>
+            </div>
           `;
-        } else if (c.reasoningContent?.reasoningText?.text) {
-          return html`
-            <details class=${[p.class, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
-              <summary>Reasoning...</summary>
-              <div class="text-prewrap">${c.reasoningContent.reasoningText.text}</div>
-            </details>
-          `;
-        } else if (c.toolUse) {
-          const { name, input, toolUseId } = c.toolUse;
-          const result = getToolResult(p.messages, toolUseId);
-
-          switch (c.toolUse.name) {
-            case "think":
-              return html`
-                <details class=${[p.class, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
-                  <summary>Reasoning...</summary>
-                  <div class="text-prewrap">${c.toolUse.input?.thought}</div>
-                </details>
-              `;
-            case "code":
-              return html`
-                <span class=${[p.class, "w-100 overflow-auto bg-white"].join(" ")}>
-                  <details class=${["markdown text-prewrap text-muted"].join(" ")}>
-                    <summary>Writing Code...</summary>
-                    <pre class="small mb-0">${input?.source}</pre>
-                  </details>
-                  ${result?.height > 0 &&
-                  html`<iframe srcdoc=${result?.html} height=${result?.height + 20 || "auto"} style="width: 100%; border: none;"></iframe>
-                    <button
-                      class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
-                      onClick=${() => downloadText("results.html", result?.html)}>
-                      💾</button
-                    >}`}
-                  <pre class="mb-0">${result?.logs?.join?.("\n") || result?.logs}</pre>
-                </span>
-              `;
-            case "browse":
-              return html`
-                <details class=${[p.class, "w-100 overflow-auto bg-white"].join(" ")}>
-                  <summary>Browsing <a target="_blank" rel="noopener noreferrer" href=${input.url}>${input.url}</a></summary>
-                  <small class="fw-semibold">${input?.topic}</small>
-                  <div class="small" innerHTML=${parse(result || "")}></div>
-                </details>
-              `;
-            case "editor":
-              return html`
-                <details open="open" class=${[p.class, "w-100 overflow-auto bg-white"].join(" ")}>
-                  <summary>File: ${input?.path}</summary>
-                  ${input?.file_text &&
-                  html`<button
-                      class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
-                      onClick=${() => downloadText(input?.path, input.file_text)}>
-                      💾
-                    </button>
-                    <div class="small text-prewrap">${input?.file_text}</div>`}
-                  ${input?.new_str &&
-                  html`<button
-                      class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
-                      onClick=${() => downloadText(input?.path, input.new_str)}>
-                      💾
-                    </button>
-                    <div class="small text-prewrap">${input?.new_str}</div>`}
-                  <div class="small text-prewrap">
-                    <button
-                      class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
-                      onClick=${() => downloadText(input.path, result.replace(/^\s*\d+\s*\:\s*/g, ""))}
-                      hidden=${() => input?.command !== "view"}>
-                      💾
-                    </button>
-                    ${result}
-                  </div>
-                </details>
-              `;
-            default:
-              const defaultResults = [[name, stringify(input)].join(" "), stringify(result)?.trim()].filter(Boolean).join("\n").trim();
-              return html`
-                <span class=${[p.class, "w-100 overflow-auto bg-white"].join(" ")} style="max-height: 200px">
-                  <button
-                    class="btn btn-sm btn-outline-light hover-visible  position-absolute top-0 end-0 border-0 opacity-50"
-                    onClick=${() => downloadText("results.txt", defaultResults)}>
-                    💾
-                  </button>
-                  <pre class="mb-0 text-prewrap text-muted">${defaultResults}</pre>
-                </span>
-              `;
-          }
+        }
+        
+        else if (c.toolUse?.name === "search") {
+          return html`<details
+            class="w-100 overflow-auto p-2 rounded mvh-25"
+            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            open=${() => visible()[p.index]}>
+            <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+              Searching: ${() => c.toolUse?.input?.query}...
+            </summary>
+            <div class="list-group">
+              <${For} each=${() => getSearchResults(getToolResult(c.toolUse))}>
+                ${(result) => html`<a class="list-group-item list-group-item-action border-0" href=${result.url} target="_blank" rel="noopener noreferrer">
+                  <span>${result.title}</span>
+                  <small class="ms-2 text-muted">${new URL(result.url).hostname}</small>
+                  <ul class="small fw-normal">
+                    <${For} each=${result.extra_snippets}>
+                      ${(snippet) => html`<li>${snippet}</li>`}
+                    <//>
+                  </ul>
+                </a>`}
+              <//>
+            </div>
+          </details>`;
         }
 
+        else if (c.toolUse?.name === "browse") {
+          return html`<details
+            class="w-100 overflow-auto p-2 rounded mvh-25"
+            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            open=${() => visible()[p.index]}>
+            <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+              Researching: ${() => c.toolUse?.input?.url}...
+            </summary>
+            <div class="fw-semibold mb-2 text-muted">${() => c.toolUse?.input?.topic}</div>
+            <div innerHTML=${() => parse(getToolResult(c.toolUse) || "")} />
+          </details>`;
+        }
 
+        else if (c.toolUse?.name === "code") {
+          return html`<details
+            class="w-100 overflow-auto p-2 rounded hover-visible-parent position-relative"
+            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            open=${() => visible()[p.index]}>
+            <summary class="fw-semibold  px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+              Writing Code...
+            </summary>
+            <${Show} when=${() => getToolResult(c.toolUse)?.html}>
+              <iframe srcdoc=${() => c.toolUse?.input?.source} height=${() => getToolResult(c.toolUse)?.height + 20 || "auto"} style="width: 100%; border: none;"></iframe>
+            <//>
+            <div class="text-end end-0 top-0 opacity-50 position-absolute">
+              <button
+                class="btn btn-sm btn-outline-light border-0 hover-visible"
+                onClick=${() => downloadText('code' + ({
+                    'javascript': '.js',
+                    'html': '.html',
+                  }[c.toolUse?.input?.language] || '.txt'), c.toolUse?.input?.source)}>
+                💾
+              </button>
+            </div>
+            <pre class="small mb-3 text-muted">${() => c.toolUse?.input?.source}</pre>
+            <pre class="small mb-0">${() => getToolResult(c.toolUse)?.logs?.join?.("\n")}</pre>
+          </details>`;
+        }
 
-      }}<//>
-    </div>
-  `;
+        else if (c.toolUse?.name === "editor") {
+          return html`<details
+            class="w-100 overflow-auto p-2 rounded mvh-25"
+            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            open=${() => visible()[p.index]}>
+            <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+              ${() => ({
+                view: "Viewing",
+                str_replace: "Updating",
+                create: "Creating",
+                insert: "Updating",
+                undo_edit: "Undoing Edit",
+              }[c.toolUse?.input?.command])}  
+              File: ${() => c.toolUse?.input?.path}
+            </summary>
+            <div class="text-prewrap">${() => c.toolUse?.input?.new_str}</div>
+            <div class="text-prewrap" innerHTML=${() => parse(getToolResult(c.toolUse) || "")?.trim()} />
+          </details>`;
+        }
+
+        else if (c.reasoningContent || c.toolUse) {
+          
+          return html`<details
+            class="w-100 overflow-auto p-2 rounded mvh-25"
+            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            open=${() => visible()[p.index]}>
+            <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+              ${() => (c.reasoningContent || c.toolUse?.name === "think" ? "Reasoning..." : c?.toolUse?.name)}
+            </summary>
+            <div class="text-prewrap">
+              <${Show} when=${() => c.reasoningContent?.reasoningText?.text}>
+                ${() => c.reasoningContent.reasoningText.text}
+              <//>
+              <${Show} when=${() => c.toolUse}>
+                ${() => html`${stringify(c?.toolUse?.input)} ${stringify(getToolResult(c.toolUse))}`}
+              <//>
+            </div>
+          </details>`;
+        }
+      }}
+    <//>`;
 }
