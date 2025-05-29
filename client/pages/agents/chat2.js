@@ -4,7 +4,10 @@ import { stringify } from "yaml";
 import { parse } from "marked";
 import Loader from "/components/dna.js";
 import { useChat } from "./hooks.js";
-import { downloadCsv, downloadJson, downloadText } from "./utils/utils.js";
+import { downloadCsv, downloadJson, downloadText, } from "./utils/utils.js";
+import { getMarked } from "../../utils/utils.js";
+
+const marked = getMarked();
 
 function Message(p) {
   const [dialog, setDialog] = createSignal(null);
@@ -62,16 +65,13 @@ function Message(p) {
   
     <${For} each=${p.message?.content}>
       ${(c) => {
-        const reasoning = c.reasoningContent?.reasoningText?.text || c.toolUse?.input?.thought;
-        const hasReasoning = reasoning || c.toolUse?.name === "think";
-
         if (c.text !== undefined) { // include empty text to start message
           return html`
             <div class="position-relative hover-visible-parent">
               <div
                 class="p-2"
                 classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
-                innerHTML=${() => parse(c.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, '')}></div>
+                innerHTML=${() => marked.parse(c.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, '')}></div>
               <${Show} when=${() => p.message?.role !== "user"}>
                 <div class="text-end end-0 top-0 opacity-50 position-absolute">
                   <button
@@ -132,6 +132,32 @@ function Message(p) {
           </details>`;
         }
 
+        else if (c.toolUse?.name === "code") {
+          return html`<details
+            class="w-100 overflow-auto p-2 rounded hover-visible-parent position-relative"
+            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            open=${() => visible()[p.index]}>
+            <summary class="fw-semibold  px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
+              Writing Code...
+            </summary>
+            <${Show} when=${() => getToolResult(c.toolUse)?.html}>
+              <iframe srcdoc=${() => c.toolUse?.input?.source} height=${() => getToolResult(c.toolUse)?.height + 20 || "auto"} style="width: 100%; border: none;"></iframe>
+            <//>
+            <div class="text-end end-0 top-0 opacity-50 position-absolute">
+              <button
+                class="btn btn-sm btn-outline-light border-0 hover-visible"
+                onClick=${() => downloadText('code' + ({
+                    'javascript': '.js',
+                    'html': '.html',
+                  }[c.toolUse?.input?.language] || '.txt'), c.toolUse?.input?.source)}>
+                💾
+              </button>
+            </div>
+            <pre class="small mb-3 text-muted">${() => c.toolUse?.input?.source}</pre>
+            <pre class="small mb-0">${() => getToolResult(c.toolUse)?.logs?.join?.("\n")}</pre>
+          </details>`;
+        }
+
         else if (c.toolUse?.name === "editor") {
           return html`<details
             class="w-100 overflow-auto p-2 rounded mvh-25"
@@ -152,17 +178,22 @@ function Message(p) {
           </details>`;
         }
 
-        else if (hasReasoning || c.toolUse) {
-          console.log("reasoning", reasoning, c.toolUse);
+        else if (c.reasoningContent || c.toolUse) {
+          
           return html`<details
             class="w-100 overflow-auto p-2 rounded mvh-25"
             classList=${() => ({ "shadow-sm": visible()[p.index] })}
             open=${() => visible()[p.index]}>
             <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
-              ${() => (hasReasoning ? "Reasoning..." : c?.toolUse?.name)}
+              ${() => (c.reasoningContent || c.toolUse?.name === "think" ? "Reasoning..." : c?.toolUse?.name)}
             </summary>
             <div class="text-prewrap">
-              ${() => reasoning || html` ${stringify(c?.toolUse?.input)} ${stringify(getToolResult(c.toolUse))} `}
+              <${Show} when=${() => c.reasoningContent?.reasoningText?.text}>
+                ${() => c.reasoningContent.reasoningText.text}
+              <//>
+              <${Show} when=${() => c.toolUse}>
+                ${() => html`${stringify(c?.toolUse?.input)} ${stringify(getToolResult(c.toolUse))}`}
+              <//>
             </div>
           </details>`;
         }
