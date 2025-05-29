@@ -65,13 +65,13 @@ function Message(p) {
         const reasoning = c.reasoningContent?.reasoningText?.text || c.toolUse?.input?.thought;
         const hasReasoning = reasoning || c.toolUse?.name === "think";
 
-        if (c.text !== undefined) { // include empty text
+        if (c.text !== undefined) { // include empty text to start message
           return html`
             <div class="position-relative hover-visible-parent">
               <div
                 class="p-2"
                 classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
-                innerHTML=${() => parse(c.text || "")}></div>
+                innerHTML=${() => parse(c.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, '')}></div>
               <${Show} when=${() => p.message?.role !== "user"}>
                 <div class="text-end end-0 top-0 opacity-50 position-absolute">
                   <button
