@@ -14,16 +14,51 @@ function UsersList() {
   const [selectedRole, setSelectedRole] = createSignal("All");
   const [selectedStatus, setSelectedStatus] = createSignal("All");
   
-  const roleNames = createMemo(() => roles()?.map(role => role.name) || []);
-  const statuses = createMemo(() => users()?.map(user => user.status) || []);
+  //Should we show from just the available statuses/roles or all of them?
+  const roleNames = createMemo(() => {
+    const allRoles = users()?.map(user => user.Role?.name).filter(Boolean) || [];
+    return [...new Set(allRoles)];
+  });
+
+  const statuses = createMemo(() => {
+    const allStatuses = users()?.map(user => user.status).filter(Boolean) || [];
+    return [...new Set(allStatuses)];
+  });
   const filteredUsers = createMemo(() => {
   if (!users()) return [];
-  return users().filter(user => {
-    const roleMatch = selectedRole() === "All" || user.Role?.name === selectedRole();
-    const statusMatch = selectedStatus() === "All" || user.status === selectedStatus();
-    return roleMatch && statusMatch;
+    return users().filter(user => {
+      const roleMatch = selectedRole() === "All" || user.Role?.name === selectedRole();
+      const statusMatch = selectedStatus() === "All" || user.status === selectedStatus();
+      return roleMatch && statusMatch;
+    });
   });
-});
+  
+  //Might require a refactor to include Account Type as a sortable field; currently not stored in db
+  const [sortColumn, setSortColumn] = createSignal("lastName");
+  const [sortOrder, setSortOrder] = createSignal("asc");
+  const sortedUsers = createMemo(() => {
+    const users = filteredUsers();
+    const column = sortColumn();
+    const order = sortOrder();
+
+    return [...users].sort((a, b) => {
+      const aValue = (a[column] || a.Role?.name || "").toString().toLowerCase();
+      const bValue = (b[column] || b.Role?.name || "").toString().toLowerCase();
+
+      if (aValue < bValue) return order === "asc" ? -1 : 1;
+      if (aValue > bValue) return order === "asc" ? 1 : -1;
+      return 0;
+    });
+  });
+
+  function toggleSort(column) {
+    if (sortColumn() === column) {
+      setSortOrder(sortOrder() === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortOrder("asc");
+    }
+  }
 
 
   return html`
@@ -82,22 +117,30 @@ function UsersList() {
             </div>
         </div>
 
-          <table class="table table-hover mb-0">
-            <thead>
+          <table class="table table-striped table-hover mb-0 border border-2">
+            <thead class="table-primary">
               <tr>
-                <th>Name</th>
+                <th onClick=${() => toggleSort("lastName")} class="cursor-pointer">
+                  Name ${() => sortColumn() === "lastName" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
                 <th>Account Type</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Role</th>
+                <th onClick=${() => toggleSort("email")} class="cursor-pointer">
+                  Email ${() => sortColumn() === "email" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th onClick=${() => toggleSort("status")} class="cursor-pointer">
+                  Status ${() => sortColumn() === "status" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th onClick=${() => toggleSort("Role.name")} class="cursor-pointer">
+                  Role ${() => sortColumn() === "Role.name" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              <${For} each=${filteredUsers}>
+              <${For} each=${sortedUsers}>
                 ${user => html`
                 <tr>
-                  <td>${user.firstName || ''}${' '}${user.lastName || ''}</td>
+                  <td>${user.lastName || ''}${', '}${user.firstName || ''}</td>
                   <td>NIH</td>
                   <td>${user.email || '-'}</td>
                   <td>
