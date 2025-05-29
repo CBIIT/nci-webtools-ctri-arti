@@ -25,7 +25,7 @@ export function useChat() {
         text: message,
         metadata: {
           timestamp: new Date().toLocaleString(),
-          reminders: 'Use the think tool for complex topics, search and browse for current information, update memory files with key details, and include APA-style source citations.',
+          reminders: 'Search and browse for current information, interleave tool calls with the think tool to perform necessary analysis, update memory files with key details, and include APA-style source citations.',
         }
       }
     });
