@@ -1,13 +1,13 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show, Index } from "solid-js";
 import html from "solid-js/html";
+import Loader from "/components/dna.js";
+import { useChat } from "./hooks.js";
 import { context } from "./fedpulse.config.js";
-import { useSubmitMessage } from "./hooks.js";
+import { downloadCsv, downloadJson, downloadText, } from "./utils/utils.js";
 import Message from "./message.js";
-import DNASpinner from "/components/dna.js";
-import { downloadCsv, downloadJson } from "./utils/utils.js";
 
 export default function Page() {
-  const { conversation, updateConversation, conversations, messages, activeMessage, loading, submitMessage } = useSubmitMessage();
+  const { conversation, updateConversation, conversations, messages, loading, submitMessage } = useChat();
   const [toggles, setToggles] = createSignal({});
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -31,23 +31,25 @@ export default function Page() {
     };
     await submitMessage({ message, inputFiles, reasoningMode, model, context, reset });
   }
+
   return html`
     <div class="container">
       <div class="row">
-        <div class="col">
+        <div class="col d-flex align-items-center">
+          <button class="btn btn-sm btn-light d-flex align-items-center" onClick=${toggle("conversations")}>
+            <img src="assets/images/icon-history.svg" alt="Conversations" width="16" />
+          </button>
           <input
-            value=${() => conversation()?.title}
+            value=${() => conversation?.title}
             onChange=${(ev) => updateConversation({ title: ev.target.value })}
-            class="form-control form-control-sm border-0 bg-transparent fw-light fs-5" />
-        </div>
-        <div class="col d-flex justify-content-end align-items-center">
-          <button class="btn btn-outline-dark" onClick=${toggle("conversations")}>=</button>
+            class="form-control form-control-sm fw-semibold border-0 bg-transparent " />
         </div>
       </div>
     </div>
 
+
     <aside
-      class=${() => ["offcanvas offcanvas-end", toggles().conversations ? "show" : "hiding"].join(" ")}
+      class=${() => ["offcanvas offcanvas-start", toggles().conversations ? "show" : "hiding"].join(" ")}
       tabindex="-1"
       id="conversations-menu"
       aria-labelledby="conversations-menu-label">
@@ -60,72 +62,109 @@ export default function Page() {
           <li class="nav-item">
             <a class="nav-link" href="agents/chat/">New Conversation</a>
           </li>
-          ${() =>
-            conversations().map(
-              (conversation) =>
-                html`<li class="nav-item">
-                  <a class="nav-link" href=${`agents/chat/?id=${conversation.id}`}>${conversation.title}</a>
-                </li>`
-            )}
+          <${For} each=${conversations}>
+            ${(conversation) =>
+              html`<li class="nav-item">
+                <a
+                  class="nav-link"
+                  href=${`agents/chat/?id=${conversation.id}`}
+                  classList=${() => ({ active: conversation.id === conversation()?.id })}>
+                  ${conversation.title}
+                </a>
+              </li>`}
+          <//>
         </ul>
       </div>
     </aside>
 
     <main class="container d-flex flex-column flex-grow-1 mb-3 position-relative">
-      <div class="flex-grow-1 py-3">
-        <div class="text-center my-5 font-serif" hidden=${() => messages().length > 0}>
+      <div class="flex-grow-1 py-3" classList=${() => ({ "x-mvh-100": messages.length > 0 })}>
+        <div class="text-center my-5 font-serif" hidden=${() => messages.length > 0}>
           <h1 class="text-gradient fw-bold font-title mb-2">Welcome to FedPulse</h1>
           <div class="text-secondary fw-semibold">How can we help you today?</div>
         </div>
-        <${For} each=${messages}>${(message, i, all) => html`<${Message} message=${message} messages=${all} class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />`}<//>
-        ${() => activeMessage() && html`<${Message} message=${activeMessage} class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />`}
-        <${Show} when=${loading}><${DNASpinner} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" /><//>
+        <${Index} each=${messages}>
+          ${(message, index) => html`
+            <${Message}
+              message=${message}
+              index=${index}
+              messages=${messages}
+              class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />
+          `}
+        <//>
+        <${Show} when=${loading}><${Loader} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" /><//>
       </div>
-      <div class="small d-flex justify-content-between">
-        <div class="d-flex align-items-center">
-            Export as 
-            <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadCsv("conversation.csv", messages().map(m => ({role: m.role, content: m.content?.map(c => c.text).filter(Boolean).join('\n') })))}>csv</button> 
-            or 
-            <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadJson("conversation.json", messages())}>json</button>
-        </div>
-        <a href="/agents/chat" target="_blank">Start a new conversation</a>
-      </div>
-      <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded position-sticky bottom-0">
-        <textarea
-          class="form-control form-control-sm border-0 bg-transparent shadow-0"
-          onKeyDown=${handleKeyDown}
-          id="message"
-          name="message"
-          placeholder="Enter message (Shift + Enter for new line)"
-          rows="3"
-          autofocus
-          required />
-
-        <div class="d-flex justify-content-between">
-          <input
-            type="file"
-            id="inputFiles"
-            name="inputFiles"
-            class="form-control form-control-sm w-auto bg-transparent border-transparent"
-            accept="image/*,text/*,.pdf,.xls,.xlsx"
-            title="Attach documents (5mb limit)"
-            multiple />
-
-          <div class="input-group w-auto align-items-center">
-            <div class="form-check form-switch form form-check-reverse form-control-sm">
-              <input class="form-check-input" type="checkbox"  id="reasoningMode" name="reasoningMode">
-              <label class="form-check-label text-secondary" for="reasoningMode" title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">Extended Reasoning Mode</label>
-            </div>
-            <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required hidden>
-              <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
-              <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>Sonnet</option>
-              <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
-            </select>
-            <button class="btn btn-dark btn-sm ms-2" type="submit" style="border-radius: 0 0 var(--bs-border-radius-sm) 0">Send</button>
+      <div class="position-sticky bottom-0 bg-white">
+        <div class="small d-flex justify-content-between">
+          <div class="d-flex align-items-center">
+            Export as
+            <button
+              class="btn btn-sm p-0 btn-link mx-1"
+              onClick=${() =>
+                downloadCsv(
+                  "conversation.csv",
+                  messages.map((m) => ({
+                    role: m.role,
+                    content: m.content
+                      ?.map((c) => c.text)
+                      .filter(Boolean)
+                      .map(e => e.trim())
+                      .join("\n"),
+                  }))
+                )}>
+              csv
+            </button>
+            or
+            <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadJson("conversation.json", messages)}>json</button>
           </div>
+          <a href="/tools/chat2" target="_blank">Start a new conversation</a>
         </div>
-      </form>
-      <small class="text-center text-muted py-1"><span title="Your conversations are stored only on your personal device.">To maintain your privacy, we never retain your data on our systems.</span> Please double-check statements, as Research Optimizer can make mistakes.</small>
+        <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded">
+          <textarea
+            class="form-control form-control-sm border-0 bg-transparent shadow-0"
+            onKeyDown=${handleKeyDown}
+            id="message"
+            name="message"
+            placeholder="Enter message (Shift + Enter for new line)"
+            rows="3"
+            autofocus
+            required />
+
+          <div class="d-flex justify-content-between">
+            <input
+              type="file"
+              id="inputFiles"
+              name="inputFiles"
+              class="form-control form-control-sm w-auto bg-transparent border-transparent"
+              accept="image/*,text/*,.pdf,.xls,.xlsx"
+              multiple />
+
+            <div class="input-group w-auto align-items-center">
+              <div class="form-check form-switch form form-check-reverse form-control-sm">
+                <input class="form-check-input" type="checkbox" id="reasoningMode" name="reasoningMode" />
+                <label
+                  class="form-check-label text-secondary"
+                  for="reasoningMode"
+                  title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">
+                  Extended Thinking Mode
+                </label>
+              </div>
+              <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required>
+                <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
+                <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>Sonnet</option>
+                <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
+              </select>
+              <button class="btn btn-dark btn-sm ms-2" type="submit" style="border-radius: 0 0 var(--bs-border-radius-sm) 0">Send</button>
+            </div>
+          </div>
+        </form>
+        <small class="text-center text-muted py-1">
+          <span class="me-1" title="Your conversations are stored only on your personal device.">
+            To maintain your privacy, we never retain your data on our systems.
+          </span>
+          Please double-check statements, as Research Optimizer can make mistakes.
+        </small>
+      </div>
     </main>
   `;
 }
