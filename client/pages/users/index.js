@@ -13,6 +13,10 @@ function UsersList() {
   
   const [selectedRole, setSelectedRole] = createSignal("All");
   const [selectedStatus, setSelectedStatus] = createSignal("All");
+  const [sortColumn, setSortColumn] = createSignal("lastName");
+  const [sortOrder, setSortOrder] = createSignal("asc");
+  const [currentPage, setCurrentPage] = createSignal(1);
+  const [rowsPerPage, setRowsPerPage] = createSignal(20);
   
   //Should we show from just the available statuses/roles or all of them?
   const roleNames = createMemo(() => {
@@ -25,17 +29,16 @@ function UsersList() {
     return [...new Set(allStatuses)];
   });
   const filteredUsers = createMemo(() => {
-  if (!users()) return [];
-    return users().filter(user => {
-      const roleMatch = selectedRole() === "All" || user.Role?.name === selectedRole();
-      const statusMatch = selectedStatus() === "All" || user.status === selectedStatus();
-      return roleMatch && statusMatch;
-    });
+    setCurrentPage(1)
+    if (!users()) return [];
+      return users().filter(user => {
+        const roleMatch = selectedRole() === "All" || user.Role?.name === selectedRole();
+        const statusMatch = selectedStatus() === "All" || user.status === selectedStatus();
+        return roleMatch && statusMatch;
+      });
   });
   
   //Might require a refactor to include Account Type as a sortable field; currently not stored in db
-  const [sortColumn, setSortColumn] = createSignal("lastName");
-  const [sortOrder, setSortOrder] = createSignal("asc");
   const sortedUsers = createMemo(() => {
     const users = filteredUsers();
     const column = sortColumn();
@@ -60,6 +63,12 @@ function UsersList() {
     }
   }
 
+  const paginatedUsers = createMemo(() => {
+    const start = (currentPage() - 1) * rowsPerPage();
+    const end = start + rowsPerPage();
+    return sortedUsers().slice(start, end);
+  });
+  const totalPages = createMemo(() => Math.ceil(sortedUsers().length / rowsPerPage()));
 
   return html`
     <div class="container py-4">
@@ -137,7 +146,7 @@ function UsersList() {
               </tr>
             </thead>
             <tbody>
-              <${For} each=${sortedUsers}>
+              <${For} each=${paginatedUsers}>
                 ${user => html`
                 <tr>
                   <td>${user.lastName || ''}${', '}${user.firstName || ''}</td>
@@ -168,9 +177,65 @@ function UsersList() {
               <//>
             </tbody>
           </table>
+          <div class="d-flex justify-content-end mt-3 row">
+            <label for="rows-select" class="col-sm-auto col-form-label">Rows per page:</label>
+            <div class="col-sm-1">
+              <select 
+                class="form-select" 
+                id="rows-select" 
+                onInput=${e => {
+                  setRowsPerPage(parseInt(e.target.value));
+                  setCurrentPage(1); // reset to first page
+                }}
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+            <nav aria-label="Page navigation example" class="col-sm-auto">
+              <ul class="pagination">
+                <li class=${() => `page-item ${ currentPage() === 1 ? 'disabled' : ''}`}>
+                  <button class="page-link" onClick=${() => currentPage() > 1 && setCurrentPage(currentPage() - 1)}>
+                    <span aria-hidden="true">&laquo;</span>
+                  </button>
+                </li>
+                <${For} each=${() => {
+                  const total = totalPages();
+                  const current = currentPage();
+                  const visibleCount = 5; //limit of 5 pagination buttons
+                  let start = Math.max(1, current - Math.floor(visibleCount / 2));
+                  let end = start + visibleCount - 1;
+                  if (end > total) {
+                    end = total;
+                    start = Math.max(1, end - visibleCount + 1);
+                  }
+                  const pages = [];
+                  for (let i = start; i <= end; i++) {
+                    pages.push(i);
+                  }
+                  return pages;
+                }}>
+                  ${page => html`
+                    <li class=${() => `page-item ${currentPage() === page ? 'active' : ''}`}>
+                      <button class="page-link" onClick=${() => setCurrentPage(page)}>
+                        ${page}
+                      </button>
+                    </li>
+                  `}
+                <//>
+                <li class=${() => `page-item ${ currentPage() === totalPages() ? 'disabled' : ''}`}>
+                  <button class="page-link" onClick=${() => currentPage() < totalPages() && setCurrentPage(currentPage() + 1)}>
+                    <span aria-hidden="true">&raquo;</span>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
       <//>
-      
+
       <!-- No Users Message -->
       <${Show} when=${() => !users.loading && (!users() || users().length === 0)}>
         <div class="alert alert-info">
