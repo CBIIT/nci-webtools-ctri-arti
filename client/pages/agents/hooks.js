@@ -21,10 +21,14 @@ export function useChat() {
    */
   async function submitMessage({ message, inputFiles, reasoningMode, model, context = {}, reset = () => {} }) {
     const text = jsonToXml({
-      message,
-      timestamp: new Date().toISOString(),
-      context: ['Remember to use tools and reasoning when appropriate. Remember to store important information in memory. Always include references to sources in your responses.'],
-    })
+      message: {
+        text: message,
+        metadata: {
+          timestamp: new Date().toLocaleString(),
+          reminders: 'Use the think tool for complex topics, search and browse for current information, update memory files with key details, and include APA-style source citations.',
+        }
+      }
+    });
     const userMessage = {
       role: "user",
       content: [{ text }],
@@ -71,7 +75,7 @@ export function useChat() {
             tools,
             system: systemPrompt(getClientContext(context)),
             messages,
-            thoughtBudget: reasoningMode ? 24_000 : 0,
+            thoughtBudget: reasoningMode ? 8000 : 0,
             stream: true,
           }),
         });
@@ -254,7 +258,7 @@ export function useSubmitMessage() {
             tools,
             system: systemPrompt(getClientContext(context)),
             messages: messages(),
-            thoughtBudget: reasoningMode ? 24_000 : 0,
+            thoughtBudget: reasoningMode ? 8000 : 0,
             stream: true,
           }),
         });
