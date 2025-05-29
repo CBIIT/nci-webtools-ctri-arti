@@ -44,9 +44,10 @@ export async function runModel({ model, messages, system: systemPrompt, tools = 
   // cachePoints are not fully supported yet
   // messages.at(-1).content.push({ cachePoint });
   const { model: { maxOutput }, provider } = await getModelProvider(model);
+  const maxTokens = Math.min(maxOutput, thoughtBudget + 2000);
   const system = systemPrompt ? [{ text: systemPrompt }, { cachePoint }] : undefined;
   const toolConfig = tools.length > 0 ? { tools: tools.concat([{ cachePoint }]) } : undefined;
-  const inferenceConfig = thoughtBudget > 0 ? { maxTokens: maxOutput } : undefined;
+  const inferenceConfig = thoughtBudget > 0 ? { maxTokens } : undefined;
   const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
   const additionalModelRequestFields = thoughtBudget > 0 ? { thinking } : undefined;
   const input = { modelId: model, messages, system, toolConfig, inferenceConfig, additionalModelRequestFields };
