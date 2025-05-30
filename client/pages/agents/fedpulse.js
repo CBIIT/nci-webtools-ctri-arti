@@ -60,7 +60,7 @@ export default function Page() {
       <div class="offcanvas-body">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link" href="agents/chat/">New Conversation</a>
+            <a class="nav-link" href="agents/fedpulse/" target="_blank">New Conversation</a>
           </li>
           <${For} each=${conversations}>
             ${(conversation) =>
@@ -117,7 +117,7 @@ export default function Page() {
             or
             <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadJson("conversation.json", messages)}>json</button>
           </div>
-          <a href="/tools/chat2" target="_blank">Start a new conversation</a>
+          <a href="/tools/fedpulse" target="_blank">Start a new conversation</a>
         </div>
         <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded">
           <textarea
@@ -158,12 +158,12 @@ export default function Page() {
             </div>
           </div>
         </form>
-        <small class="text-center text-muted py-1">
+        <div class="text-center text-muted small py-1">
           <span class="me-1" title="Your conversations are stored only on your personal device.">
             To maintain your privacy, we never retain your data on our systems.
           </span>
           Please double-check statements, as Research Optimizer can make mistakes.
-        </small>
+        </div>
       </div>
     </main>
   `;
