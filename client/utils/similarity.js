@@ -3,9 +3,9 @@ import { matmul, AutoModel, AutoModelForCausalLM, AutoTokenizer, Tensor } from "
 
 window.inference = inference;
 
-export async function inference(model = "onnx-community/Qwen3-0.6B-ONNX", messages, tools = [], max_new_tokens = 32768) {
-  const model = await AutoModelForCausalLM.from_pretrained(model, { subfolder: "onnx", device: "webgpu" });
-  const tokenizer = await AutoTokenizer.from_pretrained(model, { subfolder: "" });
+export async function inference(model_name = "onnx-community/Qwen3-0.6B-ONNX", messages, tools = [], max_new_tokens = 32768) {
+  const model = await AutoModelForCausalLM.from_pretrained(model_name, { subfolder: "onnx", device: "webgpu" });
+  const tokenizer = await AutoTokenizer.from_pretrained(model_name, { subfolder: "" });
   const text = tokenizer.apply_chat_template(messages, {
     add_generation_prompt: true,
     tokenize: false,
