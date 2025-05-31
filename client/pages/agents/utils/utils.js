@@ -465,7 +465,7 @@ export function getClientContext(important = {}) {
     .map((_, i) => localStorage.key(i))
     .filter((e) => e.startsWith("file:"))
     .map((e) => e.replace("file:", ""));
-  const main = ["_profile.txt", "_memory.txt", "_workspace.txt", "_knowledge.txt", "_plan.txt", "_heuristics.txt"].map((file) => ({
+  const main = ["_profile.txt", "_memory.txt", "_insights.txt", "_workspace.txt", "_knowledge.txt", "_patterns.txt"].map((file) => ({
     file,
     contents: getFileContents(file),
   }));
