@@ -5,7 +5,7 @@ import { Model, Provider } from "./database.js";
 export async function getModelProvider(value) {
   const providers = { bedrock, gemini };
   const model = await Model.findOne({ where: { value }, include: Provider });
-  const provider = new providers[model?.Provider?.name];
+  const provider = new providers[model?.Provider?.name]();
   return { model, provider };
 }
 
@@ -30,20 +30,41 @@ export async function runModel({ model, messages, system: systemPrompt, tools = 
     if (!message.content.filter(Boolean).length) {
       message.content.push({ text: "_" });
     }
-    for (const content of message.content.filter(Boolean)) {
+    for (const content of message.content) {
+      if (!content) continue;
+      // prevent empty text content
       if (content.text?.trim().length === 0) {
-        content.text = "_"; // prevent empty text content
+        content.text = "_";
       }
+      // transform base64 encoded bytes to Uint8Array
       const source = content.document?.source || content.image?.source;
       if (source?.bytes && typeof source.bytes === "string") {
         source.bytes = Uint8Array.from(Buffer.from(source.bytes, "base64"));
+      }
+      // ensure tool call inputs are in the correct format
+      if (content.toolUse) {
+        const toolUseId = content.toolUse.toolUseId;
+        if (typeof content.toolUse.input === "string") {
+          content.toolUse.input = { text: content.toolUse.input };
+        }
+        // if tool results don't exist, interleave an empty result
+        if (!messages.find((m) => m.content.find((c) => c.toolResult?.toolUseId === toolUseId))) {
+          const toolResultsIndex = messages.indexOf(message) + 1;
+          const content = [{ json: { results: {} } }];
+          const toolResult = { toolUseId, content };
+          const toolResultsMessage = { role: "user", content: [{ toolResult }] };
+          messages.splice(toolResultsIndex, 0, toolResultsMessage);
+        }
       }
     }
   }
   const cachePoint = { type: "default" };
   // cachePoints are not fully supported yet
   // messages.at(-1).content.push({ cachePoint });
-  const { model: { maxOutput }, provider } = await getModelProvider(model);
+  const {
+    model: { maxOutput },
+    provider,
+  } = await getModelProvider(model);
   const maxTokens = Math.min(maxOutput, thoughtBudget + 2000);
   const system = systemPrompt ? [{ text: systemPrompt }, { cachePoint }] : undefined;
   const toolConfig = tools.length > 0 ? { tools: tools.concat([{ cachePoint }]) } : undefined;
