@@ -25,9 +25,10 @@ export function useChat() {
         text: message,
         metadata: {
           timestamp: new Date().toLocaleString(),
-          reminders: 'Search and browse for current information, interleave tool calls with the think tool to perform necessary analysis, update memory files with key details, and include APA-style source citations.',
-        }
-      }
+          reminders:
+            "Search and browse for current information if needed, interleave tool calls with the think tool to perform necessary analysis, only update memory and heuristics files when given important details, specs, or insights (eg: never record greetings), and include APA-style source citations with full URLs.",
+        },
+      },
     });
     const userMessage = {
       role: "user",
@@ -164,7 +165,14 @@ export function useChat() {
             } else if (contentBlockStop) {
               const { contentBlockIndex } = contentBlockStop;
               const { toolUse } = messages.at(-1).content[contentBlockIndex];
-              if (toolUse) setMessages(messages.length - 1, "content", contentBlockIndex, "toolUse", "input", (prev) => JSON.parse(prev));
+              const parse = (input) => {
+                try {
+                  return JSON.parse(input);
+                } catch (e) {
+                  return { error: e.message, input };
+                }
+              };
+              if (toolUse) setMessages(messages.length - 1, "content", contentBlockIndex, "toolUse", "input", (prev) => parse(prev));
             } else if (stopReason) {
               if (stopReason === "tool_use") {
                 const toolUses = messages
