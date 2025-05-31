@@ -67,7 +67,7 @@ export default function Message(p) {
           return html`
             <div class="position-relative hover-visible-parent">
               <div
-                class="p-2"
+                class="p-2 markdown"
                 classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
                 innerHTML=${() => marked.parse(c.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, '')}></div>
               <${Show} when=${() => p.message?.role !== "user"}>
@@ -126,7 +126,7 @@ export default function Message(p) {
               Researching: ${() => c.toolUse?.input?.url}...
             </summary>
             <div class="fw-semibold mb-2 text-muted">${() => c.toolUse?.input?.topic}</div>
-            <div innerHTML=${() => parse(getToolResult(c.toolUse) || "")} />
+            <div class="markdown" innerHTML=${() => parse(getToolResult(c.toolUse) || "")} />
           </details>`;
         }
 
@@ -153,6 +153,7 @@ export default function Message(p) {
             </div>
             <${Show} when=${() => getToolResult(c.toolUse)?.logs?.length}>
               <pre class="small mb-3 text-muted">${() => c.toolUse?.input?.source}</pre>
+              <hr />
               <pre class="small mb-0">${() => getToolResult(c.toolUse)?.logs?.join?.("\n")}</pre>
             <//>
           </details>`;
