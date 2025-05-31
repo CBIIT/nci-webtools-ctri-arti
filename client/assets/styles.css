@@ -375,6 +375,10 @@ ul {
   max-height: 25vh;
 }
 
+.mvh-100 {
+  max-height: 100vh;
+}
+
 .form-label {
   color: #444;
 }

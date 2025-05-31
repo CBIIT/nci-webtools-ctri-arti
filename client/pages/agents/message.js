@@ -139,7 +139,7 @@ export default function Message(p) {
               Writing Code...
             </summary>
             <${Show} when=${() => getToolResult(c.toolUse)?.html}>
-              <iframe srcdoc=${() => c.toolUse?.input?.source} height=${() => getToolResult(c.toolUse)?.height + 20 || "auto"} style="width: 100%; border: none;"></iframe>
+              <iframe srcdoc=${() => c.toolUse?.input?.source} height=${() => getToolResult(c.toolUse)?.height + 20 || "auto"} class="border-0 w-100 mvh-100"></iframe>
             <//>
             <div class="text-end end-0 top-0 opacity-50 position-absolute">
               <button
@@ -151,8 +151,10 @@ export default function Message(p) {
                 💾
               </button>
             </div>
-            <pre class="small mb-3 text-muted">${() => c.toolUse?.input?.source}</pre>
-            <pre class="small mb-0">${() => getToolResult(c.toolUse)?.logs?.join?.("\n")}</pre>
+            <${Show} when=${() => getToolResult(c.toolUse)?.logs?.length}>
+              <pre class="small mb-3 text-muted">${() => c.toolUse?.input?.source}</pre>
+              <pre class="small mb-0">${() => getToolResult(c.toolUse)?.logs?.join?.("\n")}</pre>
+            <//>
           </details>`;
         }
 
