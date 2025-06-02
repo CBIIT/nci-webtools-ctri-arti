@@ -20,7 +20,7 @@ function UsersList() {
   
   //Should we show from just the available statuses/roles or all of them?
   const roleNames = createMemo(() => {
-    const allRoles = users()?.map(user => user.Role?.name).filter(Boolean) || [];
+    const allRoles = roles()?.map(role => role.name).filter(Boolean) || [];
     return [...new Set(allRoles)];
   });
 
