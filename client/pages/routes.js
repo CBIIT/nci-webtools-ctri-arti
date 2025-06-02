@@ -10,109 +10,6 @@ const Users = () => import("./users/index.js");
 const UserEdit = () => import("./users/edit.js");
 const UserUsage = () => import("./users/usage.js");
 
-/* * 
- * Old imports for reference:
-const Tools = () => import("./tools/index.js");
-const Agents = () => import("./agents/index.js");
-const Translate = () => import("./tools/translate.js");
-const Workspaces = () => import("./tools/workspaces/index.js");
-
- * Old routes for references:
- 
-const routes = [
-  {
-    path: "",
-    title: "Home",
-    component: Home,
-    hidden: false,
-  },
-  {
-    path: "/agents/policyai",
-    title: "PolicyAI",
-    component: lazy(FedPulse),
-    hidden: true,
-  },
-  {
-    path: "/tools",
-    title: "Tools",
-    children: [
-      {
-        path: "",
-        title: "Tools",
-        component: lazy(Tools),
-        hidden: true,
-      },
-      {
-        path: "fedpulse",
-        title: "FedPulse",
-        component: () => html`
-          <${ProtectedRoute}>
-            <${LazyFedPulse} />
-          <//>
-        `,
-      },
-      {
-        path: "chat",
-        title: "Chat",
-        component: () => html`
-          <${ProtectedRoute}>
-            <${LazyChat} />
-          <//>
-        `,
-      },
-      {
-        path: "consentcrafter",
-        title: "ConsentCrafter",
-        component: () => html`
-          <${ProtectedRoute}>
-            <${LazyConsentCrafter} />
-          <//>
-        `,
-      },
-      {
-        path: "laypersonabstract",
-        title: "Lay Person Abstract",
-        component: () => html`
-          <${ProtectedRoute}>
-            <${LazyLayPersonAbstract} />
-          <//>
-        `,
-      },
-      {
-        path: "translate",
-        title: "Translate",
-        component: lazy(Translate),
-        hidden: true,
-      },
-      {
-        path: "workspaces",
-        title: "Workspaces",
-        component: lazy(Workspaces),
-        hidden: true,
-      }
-    ]
-  },
-  {
-    path: "/users",
-    title: "Users",
-    component: lazy(Users),
-    hidden: true,
-  },
-  {
-    path: "/user/:id",
-    title: "User",
-    component: lazy(UserEdit),
-    hidden: true,
-  },
-  {
-    path: "/user/:id/usage",
-    title: "User Usage",
-    component: lazy(UserUsage),
-    hidden: true,
-  }
-];
-
-*/
 const baseRoutes = [
   {
     path: "",
@@ -220,7 +117,6 @@ function processRoutes(routes) {
   });
 }
 
-// Create the final routes wisth protection applied
 const routes = processRoutes(baseRoutes);
 
 export default routes;
