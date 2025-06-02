@@ -200,7 +200,7 @@ api.get("/admin/users/:id/usage", requireRole("admin"), async (req, res) => {
 
 // Get all roles (admin only)
 api.get("/admin/roles", requireRole("admin"), async (req, res) => {
-  const roles = await Role.findAll();
+  const roles = await Role.findAll({ order: [["order"]], });// Order by the 'order' field 
   res.json(roles);
 });
 

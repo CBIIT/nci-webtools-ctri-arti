@@ -26,6 +26,7 @@ export const User = db.define("User", {
 export const Role = db.define("Role", {
   name: DataTypes.STRING,
   policy: DataTypes.JSON,
+  order: DataTypes.INTEGER
 });
 
 export const Provider = db.define("Provider", {
@@ -65,11 +66,11 @@ await db.sync({ alter: true });
 
 await Role.bulkCreate(
   [
-    { id: 1, name: "admin", policy: [{ actions: "*", resources: "*" }] },
-    { id: 2, name: "developer", policy: [{ actions: "*", resources: "dev" }] },
-    { id: 3, name: "user", policy: null },
+    { id: 1, name: "admin", policy: [{ actions: "*", resources: "*" }], order: 2 },
+    { id: 2, name: "developer", policy: [{ actions: "*", resources: "dev" }], order: 1 },
+    { id: 3, name: "user", policy: null, order: 0 },
   ],
-  { updateOnDuplicate: ["name", "policy"] }
+  { updateOnDuplicate: ["name", "policy", "order"] }
 );
 
 await Provider.bulkCreate(
