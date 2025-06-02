@@ -1,5 +1,6 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
 import html from "solid-js/html";
+import { openInternalLinkInNewTab } from "../pages/agents/utils/utils.js";
 
 export default function Footer() {
   const footerLinks = [
@@ -8,7 +9,7 @@ export default function Footer() {
       class: "text-lg-start mb-3",
       links: [
         { href: "mailto:ctribresearchoptimizer@mail.nih.gov", content: "Contact Research Optimizer" },
-        { href: "/about", content: "About Research Optimizer" },
+        { href: "/about", content: "About Research Optimizer", internal: true },
       ],
     },
     {
@@ -103,9 +104,20 @@ export default function Footer() {
                   <h3 class="mb-1 font-title">${footer.title}</h3>
                   <ul class="list-unstyled">
                     <${For} each=${footer.links}>
-                      ${(link) => html`<li>
-                        <a class="link-light" href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a>
-                      </li>`}
+                      ${(link) => 
+                        html`
+                          <${Show} 
+                          fallback=${html`
+                             <li>
+                              <a class="link-light" href=${link.href} onClick=${(e) => openInternalLinkInNewTab(e)}>${link.content}</a>
+                            </li>`}
+                          when=${!link.internal}>
+                            <li>
+                              <a class="link-light" href=${link.href} target="_blank" rel="noopener noreferrer">${link.content}</a>
+                            </li>
+                          <//>
+                        `
+                      }
                   </ul>
                 </div>`}
             <//>

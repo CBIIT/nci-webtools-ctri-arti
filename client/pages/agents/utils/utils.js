@@ -602,3 +602,23 @@ export function convertToAccessorOptions(options) {
     {} // Start with an empty object
   );
 }
+
+/**
+ * Opens a new chat window and copies sessionStorage items to it
+ * @param {Event} e - The click event that triggered the new chat
+ * @param {string} e.target.href - The URL to open in the new window
+ * @returns {void}
+ */
+export function openInternalLinkInNewTab(e) {
+  e.preventDefault();
+  const newWindow = window.open(e.target.href, '_blank'); // takes url from href of anchor tag
+  
+  newWindow.addEventListener('load', function() {
+      // Copy all sessionStorage items
+      for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          const value = sessionStorage.getItem(key);
+          newWindow.sessionStorage.setItem(key, value);
+      }
+  });
+}
