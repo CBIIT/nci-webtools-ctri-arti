@@ -29,5 +29,8 @@ export default function PrivacyNotice() {
       setOpen=${setOpen}
       onSubmit=${onSubmit}
       title=${title}
-      url="/templates/privacy-notice.md" />`;
+      url="/templates/privacy-notice.md"
+      dialogClass=${{"modal-xl" : true}}
+      bodyClass=${{"px-5" : true}}
+    />`;
 }

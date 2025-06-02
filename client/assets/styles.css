@@ -271,6 +271,7 @@ ul {
 .markdown h5,
 .markdown h6 {
   margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
   font-weight: 500;
 }
 
@@ -298,9 +299,6 @@ ul {
   font-size: 0.7rem;
 }
 
-.markdown ul li::marker {
-  content: "❊ ";
-}
 
 .text-prewrap {
   white-space: pre-wrap !important;

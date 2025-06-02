@@ -13,6 +13,8 @@ import { getMarked } from "../utils/utils.js";
  * @param {string} props.url - URL to fetch markdown content from
  * @param {function} props.onSubmit - Function to call when the modal is submitted
  * @param {function} props.children - Content of the modal
+ * @param {function} props.dialogClass - Style class for the modal body (optional)
+ * @param {function} props.bodyClass - Style class for the modal body (optional)
  * @returns 
  */
 export default function Modal(props) {
@@ -20,12 +22,12 @@ export default function Modal(props) {
   const [innerHTML] = createResource(() => fetch(props.url).then(r => r.text()).then(getMarked().parse));
   return html`
     <dialog class="modal modal-lg border-0 show" open=${() => props.open} onClose=${(e) => props.setOpen?.(false)} onSubmit=${(e) => props.onSubmit?.(e)}>
-      <form method="dialog" class="modal-dialog modal-dialog-scrollable">
+      <form method="dialog" class="modal-dialog modal-dialog-scrollable" classList=${() => props.dialogClass || ""}>
         <div class="modal-content">
           <${Show} when=${props.title}>
             <div class="modal-header">${props.title}</div>
           <//>
-          <div class="modal-body">
+          <div class="modal-body" classList=${() => props.bodyClass || ""}>
             <${Show} when=${props.url} fallback=${props.children}>
               <div class="markdown small" innerHTML=${innerHTML} />
             <//>
