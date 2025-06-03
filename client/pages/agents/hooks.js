@@ -53,7 +53,7 @@ export function useChat() {
           console.warn(`File ${file.name} exceeds the 5MB limit and will not be sent.`);
           continue;
         }
-        userMessage.content.push({
+        userMessage.content.unshift({
           [contentType]: { name, format, source: { bytes } },
         });
       }
