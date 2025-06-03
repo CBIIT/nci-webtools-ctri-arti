@@ -1,6 +1,8 @@
 import html from "solid-js/html";
 import { createSignal, createResource } from "solid-js";
 import { parseDocument } from "/utils/parsers.js";
+import * as docx from "docx";
+import yaml from "yaml";
 
 export default function Page() {
   const [inputText, setInputText] = createSignal("");
@@ -19,16 +21,96 @@ export default function Page() {
       setOutputText("");
       input.value = "";
       await handleSubmit(null);
+      await handleDownload();
     };
     reader.readAsArrayBuffer(file);
   }
 
+  function generateDocument(output) {
+    console.log("Generating document with output:", output);
+    return new docx.Document({
+      sections: [
+        {
+          properties: {},
+          children: [
+            new docx.Paragraph({
+              children: [
+                new docx.TextRun(`Project Title: ${output.study_title || "N/A"} (${output.nct_number || "N/A"})\n`),
+                new docx.TextRun(`Principal Investigators: ${output.investigator_names || "N/A"}\n`),
+              ],
+            }),
+            new docx.Paragraph({
+              children: [
+                new docx.TextRun(`What is the goal of this study?\n`),
+                new docx.TextRun(output.simple_summary || "N/A"),
+              ],
+            }),
+            new docx.Paragraph({
+              children: [
+                new docx.TextRun(`Who can be in this study?\n`),
+                new docx.TextRun(output.who_can_participate || "N/A"),
+              ],
+            }),
+            new docx.Paragraph({
+              children: [
+                new docx.TextRun(`What will happen during this study?\n`),
+                new docx.TextRun(output.procedures || "N/A"),
+              ],
+            }),
+            new docx.Paragraph({
+              children: [
+                new docx.TextRun(`How long will I be in this study?\n`),
+                new docx.TextRun((output.timeline || "N/A") + "\n"),
+                new docx.TextRun((output.visits_required ||  "N/A") + "\n"),
+              ],
+            }),
+            new docx.Paragraph({
+              children: [
+                new docx.TextRun(`What are some risks of this study?\n`),
+                new docx.TextRun(output.potential_risks || "N/A"),
+              ],
+            }),
+            new docx.Paragraph({
+              children: [
+                new docx.TextRun(`What are the benefits of this study?\n`),
+                new docx.TextRun(output.potential_benefits || "N/A"),
+                new docx.TextRun(output.potential_benefits_others || "N/A"),
+              ],
+            }),
+            new docx.Paragraph({
+              children: [
+                new docx.TextRun(`Do I have to be in this study?\n`),
+                new docx.TextRun(output.voluntariness || "N/A"),
+                new docx.TextRun(output.alternatives || "N/A"),
+                new docx.TextRun(output.withdrawal || "N/A"),
+              ],
+            }),
+            new docx.Paragraph({
+              children: [
+                new docx.TextRun(`Will I be paid or have costs in this study?\n`),
+                new docx.TextRun(output.costs_and_compensation || "N/A"),
+              ],
+            }),
+            new docx.Paragraph({
+              children: [
+                new docx.TextRun(`Please review more details on the next pages.\n`),
+                new docx.TextRun(`If you have questions or want to join the study, contact ${output.contact_name || "N/A"}\n`),
+                new docx.TextRun(`Email: ${output.contact_email || "N/A"} | Phone: ${output.contact_phone || "N/A"}\n`),
+              ],
+            }),
+          ]
+        }
+      ]
+    });
+  }
+
   async function handleDownload() {
-    const blob = new Blob([outputText()], { type: "text/plain" });
+    const blob = await docx.Packer.toBlob(generateDocument(yaml.parse(outputText())));
+    // const blob = new Blob([outputText()], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "output.txt";
+    a.download = "output.docx";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -40,6 +122,11 @@ export default function Page() {
     setOutputText("");
   }
 
+  /**
+   * Runs an AI model with the given parameters and returns the output text.
+   * @param {any} params 
+   * @returns {Promise<string>} The output text from the model
+   */
   async function runModel(params) {
     const response = await fetch("/api/model", {
       method: "POST",
@@ -54,8 +141,7 @@ export default function Page() {
     }
 
     const data = await response.json();
-    const output = data?.output?.message?.content?.[0]?.text || "No output received";
-    return output;
+    return data?.output?.message?.content?.[0]?.text || "";
   }
 
   async function handleSubmit(event) {
@@ -63,13 +149,15 @@ export default function Page() {
     setOutputText("Processing...");
     try {
       const params = { 
-        model: "us.anthropic.claude-sonnet-4-20250514-v1:0", //  "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+        // model: "us.anthropic.claude-sonnet-4-20250514-v1:0", //  "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+        model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         messages: [{ role: "user", content: [{ text: 'Please process the <protocol> in the system prompt' }] }],
         system: systemPrompt.replace('{{protocol}}', inputText()),
         stream: false 
       }
       const output = await runModel(params);
-      setOutputText(output);
+      const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || output;
+      setOutputText(yaml.stringify(yaml.parse(jsonOutput)));
     } catch (error) {
       console.error(error);
       setOutputText("An error occurred while processing the text.");
@@ -78,7 +166,6 @@ export default function Page() {
   return html`
     <form id="form" onSubmit=${handleSubmit} onReset=${handleReset} class="container">
       <h1 class="fw-bold text-gradient my-3">Lay Person's Abstractor</h1>
-
       <div class="row align-items-stretch">
         <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
           <label for="inputText" class="form-label">Source Document</label>
