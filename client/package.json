@@ -7,6 +7,7 @@
     "@huggingface/transformers": "^3.5.0",
     "@langchain/textsplitters": "^0.1.0",
     "@solidjs/router": "^0.15.3",
+    "docx-templates": "^4.14.1",
     "dompurify": "^3.2.5",
     "idb": "^8.0.2",
     "mammoth": "^1.9.0",
