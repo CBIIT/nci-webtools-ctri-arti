@@ -1,7 +1,7 @@
 import html from "solid-js/html";
 import { createSignal, createResource } from "solid-js";
 import { parseDocument } from "/utils/parsers.js";
-import * as docx from "docx";
+import { createReport } from "docx-templates";
 import yaml from "yaml";
 
 export default function Page() {
@@ -26,91 +26,21 @@ export default function Page() {
     reader.readAsArrayBuffer(file);
   }
 
-  function generateDocument(output) {
-    console.log("Generating document with output:", output);
-    return new docx.Document({
-      sections: [
-        {
-          properties: {},
-          children: [
-            new docx.Paragraph({
-              children: [
-                new docx.TextRun(`Project Title: ${output.study_title || "N/A"} (${output.nct_number || "N/A"})\n`),
-                new docx.TextRun(`Principal Investigators: ${output.investigator_names || "N/A"}\n`),
-              ],
-            }),
-            new docx.Paragraph({
-              children: [
-                new docx.TextRun(`What is the goal of this study?\n`),
-                new docx.TextRun(output.simple_summary || "N/A"),
-              ],
-            }),
-            new docx.Paragraph({
-              children: [
-                new docx.TextRun(`Who can be in this study?\n`),
-                new docx.TextRun(output.who_can_participate || "N/A"),
-              ],
-            }),
-            new docx.Paragraph({
-              children: [
-                new docx.TextRun(`What will happen during this study?\n`),
-                new docx.TextRun(output.procedures || "N/A"),
-              ],
-            }),
-            new docx.Paragraph({
-              children: [
-                new docx.TextRun(`How long will I be in this study?\n`),
-                new docx.TextRun((output.timeline || "N/A") + "\n"),
-                new docx.TextRun((output.visits_required ||  "N/A") + "\n"),
-              ],
-            }),
-            new docx.Paragraph({
-              children: [
-                new docx.TextRun(`What are some risks of this study?\n`),
-                new docx.TextRun(output.potential_risks || "N/A"),
-              ],
-            }),
-            new docx.Paragraph({
-              children: [
-                new docx.TextRun(`What are the benefits of this study?\n`),
-                new docx.TextRun(output.potential_benefits || "N/A"),
-                new docx.TextRun(output.potential_benefits_others || "N/A"),
-              ],
-            }),
-            new docx.Paragraph({
-              children: [
-                new docx.TextRun(`Do I have to be in this study?\n`),
-                new docx.TextRun(output.voluntariness || "N/A"),
-                new docx.TextRun(output.alternatives || "N/A"),
-                new docx.TextRun(output.withdrawal || "N/A"),
-              ],
-            }),
-            new docx.Paragraph({
-              children: [
-                new docx.TextRun(`Will I be paid or have costs in this study?\n`),
-                new docx.TextRun(output.costs_and_compensation || "N/A"),
-              ],
-            }),
-            new docx.Paragraph({
-              children: [
-                new docx.TextRun(`Please review more details on the next pages.\n`),
-                new docx.TextRun(`If you have questions or want to join the study, contact ${output.contact_name || "N/A"}\n`),
-                new docx.TextRun(`Email: ${output.contact_email || "N/A"} | Phone: ${output.contact_phone || "N/A"}\n`),
-              ],
-            }),
-          ]
-        }
-      ]
-    });
-  }
-
   async function handleDownload() {
-    const blob = await docx.Packer.toBlob(generateDocument(yaml.parse(outputText())));
-    // const blob = new Blob([outputText()], { type: "text/plain" });
+    const templateUrl = "/templates/lay-person-abstract.docx";
+    const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    const filename = "output.docx";
+    const cmdDelimiter = ['{{', '}}'];
+
+    const template = await fetch(templateUrl).then(res => res.arrayBuffer());
+    const data = yaml.parse(outputText());
+    const buffer = await createReport({ template, data, cmdDelimiter });
+    const blob = new Blob([buffer], { type });
+    
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "output.docx";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -149,14 +79,14 @@ export default function Page() {
     setOutputText("Processing...");
     try {
       const params = { 
-        // model: "us.anthropic.claude-sonnet-4-20250514-v1:0", //  "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+        model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
+        // model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         messages: [{ role: "user", content: [{ text: 'Please process the <protocol> in the system prompt' }] }],
         system: systemPrompt.replace('{{protocol}}', inputText()),
         stream: false 
       }
       const output = await runModel(params);
-      const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || output;
+      const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || "{}";
       setOutputText(yaml.stringify(yaml.parse(jsonOutput)));
     } catch (error) {
       console.error(error);
