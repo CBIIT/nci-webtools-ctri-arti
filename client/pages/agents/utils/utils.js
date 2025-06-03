@@ -182,7 +182,7 @@ export async function browse({ url, topic }) {
 
   const mimetype = response.headers.get("content-type") || "text/html";
   const results = await parseDocument(bytes, mimetype, url);
-  return await queryDocumentWithModel(results, topic);
+  return await queryDocumentWithModel(`<url>${url}</url>\n<text>${results}</text>`, topic);
 }
 
 /**
