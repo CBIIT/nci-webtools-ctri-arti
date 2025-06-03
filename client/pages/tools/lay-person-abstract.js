@@ -119,7 +119,8 @@ export default function Page() {
             rows="10"
             placeholder="Submit text to view output"
             value=${outputText}
-            readonly />
+            onChange=${(e) => setOutputText(e.target.value)}
+          />
         </div>
       </div>
 
