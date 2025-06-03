@@ -1,5 +1,9 @@
+# All docx files should be treated as binary
+*.docx binary
+
 # Set default behavior to automatically normalize line endings
 * text=auto
 
 # Explicitly declare files that should always use LF line endings
 *.* text eol=lf
+
