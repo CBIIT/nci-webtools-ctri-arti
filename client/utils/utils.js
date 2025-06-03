@@ -554,7 +554,6 @@ export function autoscroll(thresholdPercent = 0.8, container = null) {
   return false;
 }
 
-
 export function getMarked() {
   const renderer = new marked.Renderer();
   renderer.link = function(href, title, text) {
@@ -563,4 +562,20 @@ export function getMarked() {
   };
   marked.use({ renderer });
   return marked;
+}
+
+/**
+ * Capitalizes the first letter of each word in a string while converting the rest to lowercase.
+ * Words are separated by spaces.
+ * 
+ * @param {String} str - The string to capitalize
+ * @returns {String} The string with each word capitalized
+ * @example
+ * capitalize("hello world") // returns "Hello World"
+ * capitalize("SUPER USER") // returns "Super User"
+ */
+export function capitalize(str) {
+  return str.split(' ').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  ).join(' ');
 }

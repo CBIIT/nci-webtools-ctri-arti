@@ -1,10 +1,8 @@
 import { createSignal, createEffect, createMemo, For, Show } from "solid-js";
 import { createResource } from "solid-js";
 import html from "solid-js/html";
+import { capitalize } from "../../utils/utils.js";
 
-function capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
 
 
 function UsersList() {
@@ -18,7 +16,6 @@ function UsersList() {
   const [currentPage, setCurrentPage] = createSignal(1);
   const [rowsPerPage, setRowsPerPage] = createSignal(20);
   
-  //Should we show from just the available statuses/roles or all of them?
   const roleNames = createMemo(() => {
     const allRoles = roles()?.map(role => role.name).filter(Boolean) || [];
     return [...new Set(allRoles)];
@@ -156,7 +153,7 @@ function UsersList() {
                     <span class=${() => 
                       `badge text-capitalize ${
                         user.status === "active" ? "text-bg-success" : 
-                        user.status === "pending" ? "text-bg-warning" : 
+                        user.status === "inactive" ? "text-bg-warning" : 
                         "text-bg-danger"
                       }`
                     }>

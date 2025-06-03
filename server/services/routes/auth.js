@@ -9,7 +9,7 @@ api.get("/login", loginMiddleware, async (req, res) => {
   const { session } = req;
   const { email, first_name: firstName, last_name: lastName } = session.userinfo;
   if (!email) return res.redirect("/?error=missing_email");
-  session.user = (await User.findOne({ where: { email } })) || (await User.create({ email, firstName, lastName, status: "pending" }));
+  session.user = (await User.findOne({ where: { email } })) || (await User.create({ email, firstName, lastName, status: "active", roleId: 3  }));
   res.redirect(session.destination || "/");
 });
 

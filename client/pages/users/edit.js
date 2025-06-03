@@ -2,10 +2,7 @@ import { createSignal, Show } from "solid-js";
 import html from "solid-js/html";
 import { useParams } from "@solidjs/router";
 import { createResource } from "solid-js";
-
-function capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
+import { capitalize } from "../../utils/utils.js";
 
 function UserEdit() {
   const params = useParams();
@@ -15,8 +12,8 @@ function UserEdit() {
     email: "",
     firstName: "",
     lastName: "",
-    status: "pending",
-    roleId: null,
+    status: "active",
+    roleId: 3,
     limit: 0,
     remaining: 0
   });
@@ -154,9 +151,8 @@ function UserEdit() {
                     id="status"
                     value=${() => user().status || 'pending'}
                     onChange=${e => handleInputChange("status", e.target.value)}>
-                    <option value="pending">Pending</option>
                     <option value="active">Active</option>
-                    <option value="suspended">Suspended</option>
+                    <option value="inactive">Inactive</option>
                   </select>
                 </div>
               </div>
