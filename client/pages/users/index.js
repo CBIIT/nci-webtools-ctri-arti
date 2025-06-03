@@ -21,10 +21,14 @@ function UsersList() {
     return [...new Set(allRoles)];
   });
 
+  //TODO: come back and change this to an endpoint of some sort instead of hard coding values in case we want to add more statuses
+  /*
   const statuses = createMemo(() => {
     const allStatuses = users()?.map(user => user.status).filter(Boolean) || [];
     return [...new Set(allStatuses)];
-  });
+  });*/
+  const statuses = ['active', 'inactive']; //hard coding for now because the above iteration doesn't show *all possible* filters
+
   const filteredUsers = createMemo(() => {
     setCurrentPage(1)
     if (!users()) return [];
@@ -116,7 +120,7 @@ function UsersList() {
                 onInput=${e => setSelectedStatus(e.target.value)}
                 >
                   <option selected> All </option>
-                  <${For} each=${() => statuses()}>
+                  <${For} each=${statuses}>
                     ${status => html`<option value=${status}>${capitalize(status)}</option>`}
                   <//>
               </select>
