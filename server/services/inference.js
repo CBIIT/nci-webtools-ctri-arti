@@ -58,9 +58,14 @@ export async function runModel({ model, messages, system: systemPrompt, tools = 
       }
     }
   }
+  // try to add a cache point to the largest message in the second half of the conversation (usually stays the same)
   const cachePoint = { type: "default" };
-  // cachePoints are not fully supported yet
-  // messages.at(-1).content.push({ cachePoint });
+  const largestMessage = messages.slice(Math.floor(messages.length / 2)).reduce((acc, curr) => JSON.stringify(acc).length > JSON.stringify(curr).length ? acc : curr, messages[0]);
+  const largestMessageLength = JSON.stringify(largestMessage).length;
+  if (largestMessageLength > 6000) {
+    // console.log('Adding cache point to largest message', largestMessage);
+    largestMessage.content.push({ cachePoint });
+  }
   const {
     model: { maxOutput },
     provider,
