@@ -179,10 +179,9 @@ export async function browse({ url, topic }) {
   if (!response.ok) {
     return `Failed to read ${url}: ${response.status} ${response.statusText}`;
   }
-
   const mimetype = response.headers.get("content-type") || "text/html";
   const results = await parseDocument(bytes, mimetype, url);
-  return await queryDocumentWithModel(results, topic);
+  return !topic ? results : await queryDocumentWithModel(`<url>${url}</url>\n<text>${results}</text>`, topic);
 }
 
 /**
