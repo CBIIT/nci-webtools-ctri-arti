@@ -129,7 +129,7 @@ export default function Page() {
             class="form-control form-control-sm rounded-top-0 flex-grow-1"
             id="inputText"
             name="inputText"
-            rows="8"
+            rows="28"
             placeholder="Enter protocol or choose a file above"
             value=${inputText}
             onChange=${(e) => setInputText(e.target.value)}
@@ -141,10 +141,10 @@ export default function Page() {
             class="form-control form-control-sm flex-grow-1"
             id="outputText"
             name="outputText"
-            rows="10"
+            rows="30"
             placeholder="Submit text to view output"
             value=${outputText}
-            onChange=${(e) => setOutputText(e.target.value)}
+            readonly
           />
         </div>
       </div>
