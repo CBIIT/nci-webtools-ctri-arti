@@ -184,6 +184,10 @@ a:hover {
   margin-bottom: 0;
 }
 
+.form-label-user {
+  color: #356AAD;
+}
+
 .background-object {
   position: absolute;
   min-width: 100%;

@@ -9,7 +9,7 @@ import routes from "./routes.js";
 
 export default function Layout({ children }) {
   return html`
-    <div class="shadow mb-4">
+    <div class="shadow">
       <${Header} /> 
       <${Nav} routes=${routes} />
     </div>

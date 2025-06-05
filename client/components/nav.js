@@ -1,7 +1,6 @@
 import html from "solid-js/html";
 import { A } from "@solidjs/router";
 import { createSignal, createResource, For, Show } from "solid-js";
-import routes from "../pages/routes.js";
 
 export default function Nav({ routes }) {
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
@@ -81,6 +80,14 @@ export default function Nav({ routes }) {
                           </div>
                         `}
                       <//>
+                      <div class="">
+                        <${A}
+                          href=${() => `/user/profile/${session()?.user?.id}`}
+                          class="dropdown-item nav-link text-decoration-none text-light"
+                          onClick=${() => setVisible({})}>
+                          User Profile
+                        <//>
+                      </div>
                       <div class="">
                         <a href="/api/logout" target="_self" class="dropdown-item nav-link text-decoration-none text-light">Logout</a>
                       </div>

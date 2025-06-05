@@ -60,6 +60,13 @@ const baseRoutes = [
     allowedRoles: [ 1 ],
   },
   {
+    path: "/user/profile/:id",
+    title: "User",
+    component: UserEdit,
+    hidden: true,
+    protected: true,
+  },
+  {
     path: "/user/:id",
     title: "User",
     component: UserEdit,
