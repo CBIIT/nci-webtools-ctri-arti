@@ -67,10 +67,17 @@ export default function Nav({ routes }) {
                 <div class="dropdown-menu border-0 rounded-0 bg-info p-4" classList=${() => ({ show: visible().user })}>
                   <div class="container">
                     <div class="d-flex flex-row gap-4 px-2">
+                      <div>
+                        <${A}
+                          href=${() => `/user/profile/${session()?.user?.id}`}
+                          class="dropdown-item nav-link text-decoration-none text-light"
+                          onClick=${() => setVisible({})}>
+                          User Profile
+                        <//>
+                      </div>
                       <${For} each=${() => routes.filter((r) => r.loginNavbar && r.loginNavbarTitle && r.allowedRoles?.includes(session()?.user?.roleId))}>
-
                         ${(route) => html`
-                          <div class="">
+                          <div>
                             <${A}
                               href=${route.path}
                               class="dropdown-item nav-link text-decoration-none text-light"
@@ -80,15 +87,7 @@ export default function Nav({ routes }) {
                           </div>
                         `}
                       <//>
-                      <div class="">
-                        <${A}
-                          href=${() => `/user/profile/${session()?.user?.id}`}
-                          class="dropdown-item nav-link text-decoration-none text-light"
-                          onClick=${() => setVisible({})}>
-                          User Profile
-                        <//>
-                      </div>
-                      <div class="">
+                      <div>
                         <a href="/api/logout" target="_self" class="dropdown-item nav-link text-decoration-none text-light">Logout</a>
                       </div>
                     </div>
