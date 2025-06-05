@@ -365,6 +365,21 @@ ul {
   border-bottom-color: var(--bs-gray-600);
 }
 
+.navbar-nav > li.login {
+    position: static;
+}
+.navbar-nav > li.login > div.dropdown-menu.show {
+    display: flex; 
+    width: 100%; 
+    text-align: center; 
+    left: 0; 
+    right: 0;
+}
+
+.navbar-nav > li.login .dropdown-item:hover {
+    background-color: rgba(0, 0, 0, 0.1);   
+}
+
 .mw-60 {
   max-width: 60%;
 }

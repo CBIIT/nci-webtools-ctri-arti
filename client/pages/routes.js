@@ -55,6 +55,9 @@ const baseRoutes = [
     component: Users,
     hidden: true,
     protected: true,
+    loginNavbar: true,
+    loginNavbarTitle: 'Manage Users',
+    allowedRoles: [ 1 ],
   },
   {
     path: "/user/:id",

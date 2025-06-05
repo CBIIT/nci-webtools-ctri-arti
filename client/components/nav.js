@@ -1,6 +1,7 @@
 import html from "solid-js/html";
 import { A } from "@solidjs/router";
 import { createSignal, createResource, For, Show } from "solid-js";
+import routes from "../pages/routes.js";
 
 export default function Nav({ routes }) {
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
@@ -60,22 +61,32 @@ export default function Nav({ routes }) {
             <${Show}
               when=${() => session()?.user}
               fallback=${html`<a href="/api/login" target="_self" class="nav-link text-decoration-none">Login</a>`}>
-              <li class="nav-item dropdown">
-                <button class="nav-link dropdown-toggle" onClick=${() => toggleVisible("user")}>
+              <li class="nav-item dropdown login" classList=${() => ({ "bg-info": visible().user })}>
+                <button class="nav-link dropdown-toggle" onClick=${() => toggleVisible("user")} classList=${() => ({ "text-light": visible().user })}>
                   ${() => session()?.user?.firstName || "User"}
                 </button>
-                <ul class="dropdown-menu bg-white text-end end-0 border-0" classList=${() => ({ show: visible().user })}>
-                  <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
-                    <li>
-                      <a href="/users" class="dropdown-item nav-link text-decoration-none" onClick=${() => setVisible({})}>
-                        Manage Users
-                      </a>
-                    </li>
-                  <//>
-                  <li>
-                    <a href="/api/logout" target="_self" class="dropdown-item nav-link text-decoration-none">Logout</a>
-                  </li>
-                </ul>
+                <div class="dropdown-menu border-0 rounded-0 bg-info p-4" classList=${() => ({ show: visible().user })}>
+                  <div class="container">
+                    <div class="d-flex flex-row gap-4 px-2">
+                      <${For} each=${() => routes.filter((r) => r.loginNavbar && r.loginNavbarTitle && r.allowedRoles?.includes(session()?.user?.roleId))}>
+
+                        ${(route) => html`
+                          <div class="">
+                            <${A}
+                              href=${route.path}
+                              class="dropdown-item nav-link text-decoration-none text-light"
+                              onClick=${() => setVisible({})}>
+                              ${route.loginNavbarTitle || route.title}
+                            <//>
+                          </div>
+                        `}
+                      <//>
+                      <div class="">
+                        <a href="/api/logout" target="_self" class="dropdown-item nav-link text-decoration-none text-light">Logout</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </li>
             <//>
           </div>
