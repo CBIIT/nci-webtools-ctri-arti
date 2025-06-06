@@ -416,6 +416,38 @@ ul {
   --bs-table-bg: rgb(8, 58, 80);
   --bs-table-color-type: #fff;
 }
+.users-table tbody>tr:nth-of-type(odd) {
+  --bs-table-striped-bg: #fff;
+}
+
+.users-table tbody>tr:nth-of-type(even) {
+  --bs-table-bg: rgb(227, 238, 249);
+}
+
+.users-table tbody>tr:not(:last-child)>td {
+  border-color: rgb(8, 58, 80);
+}
+.users-table tbody>tr:last-child>td {
+  border:none
+}
+
+.users-table .btn {
+  border-width: 2px;
+  --bs-btn-bg: rgb(197, 234, 242);
+  --bs-btn-color: rgb(21, 96, 113);
+  --bs-btn-border-color: rgb(132, 180, 190);
+  --bs-btn-hover-bg: rgb(172, 217, 227);
+  --bs-btn-hover-color: rgb(21, 96, 113);
+  --bs-btn-hover-border-color: rgb(132, 180, 190);
+
+}
+
+.table-pagination {
+  border-top: solid 2px rgb(8, 58, 80);
+}
+.table-pagination select {
+  border: none;
+}
 
 dialog.modal[open] {
   display: block;

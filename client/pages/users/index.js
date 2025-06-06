@@ -234,7 +234,7 @@ function UsersList() {
           <table class="table table-striped table-hover mb-0">
             <thead>
               <tr>
-                <th onClick=${() => toggleSort("lastName")} class="cursor-pointer">
+                <th onClick=${() => toggleSort("lastName")} class="cursor-pointer ps-4">
                   Name ${() => sortColumn() === "lastName" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
                 </th>
                 <th>Account Type</th>
@@ -247,14 +247,14 @@ function UsersList() {
                 <th onClick=${() => toggleSort("Role.name")} class="cursor-pointer">
                   Role ${() => sortColumn() === "Role.name" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
                 </th>
-                <th>Action</th>
+                <th class="text-center">Action</th>
               </tr>
             </thead>
             <tbody>
               <${For} each=${paginatedUsers} fallback=${html`<tr><td colspan="6" class="text-center">No users match current filters.</td></tr>`}>
                 ${user => html`
                 <tr>
-                  <td>${user.lastName || ''}${user.lastName && user.firstName ? ', ' : ''}${user.firstName || ''}</td>
+                  <td class="ps-4">${user.lastName || ''}${user.lastName && user.firstName ? ', ' : ''}${user.firstName || ''}</td>
                   <td>NIH</td>
                   <td>${user.email || '-'}</td>
                   <td>
@@ -269,10 +269,10 @@ function UsersList() {
                     </span>
                   </td>
                   <td class="text-capitalize">${() => user.Role?.name || "No Role"}</td>
-                  <td>
+                  <td class="align-items-center">
                     <a
                       href=${`/user/${user.id}`}
-                      class="btn btn-outline-primary text-decoration-none">
+                      class="btn btn-outline-primary btn-block text-decoration-none w-100 p-0 ">
                       Edit
                     </a>
                   </td>
@@ -281,9 +281,9 @@ function UsersList() {
               <//>
             </tbody>
           </table>
-          <div class="d-flex justify-content-end align-items-center my-3 gap-3">
+          <div class="table-pagination d-flex justify-content-end align-items-center gap-3">
             <div class="d-flex align-items-center">
-              <label for=${`rows-select-${idSuffix}`} class="col-form-label me-2">Rows per page:</label>
+              <label for=${`rows-select-${idSuffix}`} class="col-form-label me-2 small">Rows per page:</label>
               <div>
                 <select 
                   class="form-select form-select-sm" 
@@ -296,8 +296,8 @@ function UsersList() {
                 </select>
               </div>
             </div>
-            <div class="text-muted px-2">${() => displayedRowsText()}</div>
-            <nav aria-label="Page navigation">
+            <div class="text-muted px-1 small">${() => displayedRowsText()}</div>
+            <nav aria-label="Page navigation" class="me-4 ms-3">
               <ul class="pagination pagination-sm mb-0">
                 <li 
                   classList=${() => ({ 
@@ -320,7 +320,6 @@ function UsersList() {
                         <button class="page-link" onClick=${() => goToPage(page)}>${page}</button>
                       </li>` 
                     : html`<li class="page-item disabled"><span class="page-link">...</span></li>` 
-                    /* For ellipsis, classList is static, no function needed if it never changes */
                   }
                 <//>
                 <li 
