@@ -408,6 +408,15 @@ ul {
   vertical-align: middle;
 }
 
+.users-table {
+  border: 1px solid rgb(8, 58, 80) !important;
+}
+
+.users-table thead {
+  --bs-table-bg: rgb(8, 58, 80);
+  --bs-table-color-type: #fff;
+}
+
 dialog.modal[open] {
   display: block;
   background-color: rgba(0, 0, 0, 0.5);

@@ -575,6 +575,10 @@ export function getMarked() {
  * capitalize("SUPER USER") // returns "Super User"
  */
 export function capitalize(str) {
+  if (!str){
+    console.error('Capitalize function received undefined string');
+    return "";
+  };
   return str.split(' ').map(word => 
     word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
   ).join(' ');
