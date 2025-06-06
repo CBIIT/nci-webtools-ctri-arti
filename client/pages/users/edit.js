@@ -89,16 +89,21 @@ function UserEdit() {
   }
 
   return html`
-    <div class="position-relative">
-      <img src="assets/images/users/profile_banner.png" alt="Profile Management Banner" class="img-fluid object-fit-cover w-100" style="height:153px;" />
-      <div class="position-absolute" style="left: 36% !important; top: 40% !important;">
-          <h1 class="font-title text-white text-end fw-bold display-5" >${isProfileRoute ? "User Profile" : "Edit User"}</h1>
-      </div>
-      <div class="position-absolute" style="left: 25% !important; top: 55% !important;">
-          <img src="assets/images/users/profile_icon.svg" alt="Profile Icon" style="filter:drop-shadow(10px 13px 9px rgba(0, 0, 0, 0.35));"/>
-      </div>
-    </div>
-    <div class="container pb-4">
+    <img src="assets/images/users/profile_banner.png" alt="Profile Management Banner" class="img-fluid object-fit-cover w-100" style="height:153px;" />
+    <div class="container position-relative pb-4">
+      <img
+        class="position-absolute"
+        src="assets/images/users/profile_icon.svg"
+        alt="Profile Icon"
+        style="
+          width: 150px;
+          top: -55px;  /* Pulls icon up: -(icon_height / 2) to center on container's top edge */
+          left: 26.5%; /* (offset-sm-4 width) + (col-sm-2 width / 2) relative to container */
+          transform: translateX(-50%); /* Center the icon at the 'left' point */
+          filter: drop-shadow(10px 13px 9px rgba(0, 0, 0, 0.35));
+          z-index: 10; /* Ensure it's above other content */
+        "
+      />
       <!-- Success Banner -->
       <${Show} when=${showSuccess}>
         <div class="alert alert-success alert-dismissible fade show position-absolute top-0 start-50 translate-middle-x mt-3" role="alert">
@@ -123,14 +128,17 @@ function UserEdit() {
       <//>
       
       <!-- User Form -->
+       <div class="row position-relative mb-5" style="margin-top:-80px">
+          <h1 class="offset-sm-4 col-auto font-title text-white fw-bold display-5" >${isProfileRoute ? "User Profile" : "Edit User"}</h1>
+      </div>
       <div class="row mt-4 mb-5">
-        <h1 class="offset-sm-4 col-sm-1_5 fs-3">${() => user().email || ''} </h1>
+        <h1 class="offset-sm-4 col-auto fs-3">${() => user().email || ''} </h1>
       </div>
       <${Show} when=${() => !roles.loading && !userData.loading}>
         <form onSubmit=${handleSubmit} class="mb-5">
           <div class="row align-items-center mb-2">
             <!-- Account Type -->
-            <label class="offset-sm-4 col-sm-1_5 align-self-center col-form-label form-label-user fw-semibold">Account Type</label>
+            <label class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Account Type</label>
             <div class="col-sm-2">
               <div> 
                 NIH
@@ -139,7 +147,7 @@ function UserEdit() {
           </div>
           <div class="row align-items-center mb-2">
             <!-- Email -->
-            <label for="email" class="offset-sm-4 col-sm-1_5 align-self-center col-form-label form-label-user fw-semibold">Email</label>
+            <label for="email" class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Email</label>
             <div class="col-sm-2">
               <div>
                 ${() => user().email || ''} 
@@ -148,7 +156,7 @@ function UserEdit() {
           </div>
           <div class="row align-items-center mb-2">
             <!-- Name -->
-            <label for="name" class="offset-sm-4 col-sm-1_5 align-self-center col-form-label form-label-user fw-semibold">Name</label>
+            <label for="name" class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Name</label>
             <div class="col-sm-2">
               <div> 
                 ${() => user().firstName + ' ' + user().lastName || ''}
@@ -157,7 +165,7 @@ function UserEdit() {
           </div>
           <div class="row align-items-center mb-2">
             <!-- Status -->
-            <label for="status" class="offset-sm-4 col-sm-1_5 align-self-center col-form-label form-label-user fw-semibold">Status<span class="text-danger">*</span></label>
+            <label for="status" class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Status<span class="text-danger">*</span></label>
             <div class="col-sm-2">
               <${Show} when=${!isProfileRoute} fallback=${
                 html`
@@ -179,7 +187,7 @@ function UserEdit() {
           </div>
           <div class="row align-items-center mb-2">
             <!-- Role -->
-            <label for="roleId" class="offset-sm-4 col-sm-1_5 align-self-center col-form-label form-label-user fw-semibold">Role</label>
+            <label for="roleId" class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Role</label>
             <div class="col-sm-2">
               <${Show} when=${!isProfileRoute} fallback=${
                 html`
@@ -201,19 +209,19 @@ function UserEdit() {
             </div>
           </div>
           <div class="row align-items-center mb-2">
-            <!-- Cost Threshold -->
-            <label for="limit" class="offset-sm-4 col-sm-1_5 align-self-center col-form-label form-label-user fw-semibold">Cost Threshold ($)</label>
+            <!-- Weekly Cost Limit -->
+            <label for="limit" class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Weekly Cost Limit ($)</label>
             <div class="col-sm-2">
-            <${Show} when=${!isProfileRoute} fallback=${
+            <${Show} when=${() => !isProfileRoute && !(user().roleId === 1)} fallback=${
                 html`
                   <div> 
-                    ${() => user().limit}
+                    ${() => user().roleId === 1 ? "No Limit" : user().limit }
                   </div>
                 `
               }>
                 <input 
                   type="number" 
-                  step="0.01"
+                  step="1"
                   min="0"
                   class="form-control" 
                   id="limit" 

@@ -70,7 +70,7 @@ export default function Nav({ routes }) {
                       <div>
                         <${A}
                           href=${() => `/user/profile/${session()?.user?.id}`}
-                          class="dropdown-item nav-link text-decoration-none text-light"
+                          class="dropdown-item nav-link text-decoration-none text-light border-transparent"
                           onClick=${() => setVisible({})}>
                           User Profile
                         <//>
@@ -80,7 +80,7 @@ export default function Nav({ routes }) {
                           <div>
                             <${A}
                               href=${route.path}
-                              class="dropdown-item nav-link text-decoration-none text-light"
+                              class="dropdown-item nav-link text-decoration-none text-light border-transparent"
                               onClick=${() => setVisible({})}>
                               ${route.loginNavbarTitle || route.title}
                             <//>
@@ -88,7 +88,7 @@ export default function Nav({ routes }) {
                         `}
                       <//>
                       <div>
-                        <a href="/api/logout" target="_self" class="dropdown-item nav-link text-decoration-none text-light">Logout</a>
+                        <a href="/api/logout" target="_self" class="dropdown-item nav-link text-decoration-none text-light border-transparent">Logout</a>
                       </div>
                     </div>
                   </div>
