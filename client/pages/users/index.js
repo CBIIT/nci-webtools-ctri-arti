@@ -177,7 +177,7 @@ function UsersList() {
   return html`
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="font-title fs-1 fw-bold mt-4">Manage Users</h1>
+        <h1 class="font-title fs-1 fw-bold mt-4 table-header-color">Manage Users</h1>
       </div>
       
       <!-- Error Alert -->
