@@ -4,64 +4,56 @@ import { parseDocument } from "/utils/parsers.js";
 import { createReport } from "docx-templates";
 import yaml from "yaml";
 
-const defaultOutput = {
-  "study_title": "",
-  "nct_number": "",
-  "simple_summary": "",
-  "purpose": "",
-  "who_can_participate": [],
-  "who_cannot_participate": [],
-  "investigator_names": [],
-  "procedures": [],
-  "timeline": "",
-  "visits_required": "",
-  "potential_benefits": [],
-  "potential_benefits_others": [],
-  "potential_risks": [],
-  "expanded_risks": "",
-  "alternatives": [],
-  "costs_and_compensation": "",
-  "contact_name": "",
-  "contact_email": "",
-  "contact_phone": "",
-  "voluntariness": "",
-  "withdrawal": "",
-  "other_questions": []
+
+async function readFile(file, type = "text") {
+  const reader = new FileReader();
+  return new Promise((resolve, reject) => {
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = (e) => reject(e);
+    if (type === "arrayBuffer") reader.readAsArrayBuffer(file);
+    else if (type === "dataURL") reader.readAsDataURL(file);
+    else reader.readAsText(file);
+  });
 }
 
 export default function Page() {
   const [inputText, setInputText] = createSignal("");
   const [outputText, setOutputText] = createSignal("");
+  const [systemPrompt, setSystemPrompt] = createSignal(defaultSystemPrompt);
+  const [outputTemplate, setOutputTemplate] = createSignal();
 
   async function handleFileSelect(event) {
     const input = event.target;
+    const name = input.name;
     const file = input.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async function (e) {
-      const bytes = e.target.result;
+    const bytes = await readFile(file, "arrayBuffer");
+    input.value = "";
+
+    if (name === "outputTemplateFile") {
+      setOutputTemplate(bytes);
+    } else if (name === "inputTextFile") {
       setInputText("Reading file...");
+      setOutputText("");
       const text = await parseDocument(bytes, file.type, file.name);
       setInputText(text);
       setOutputText("");
-      input.value = "";
       await handleSubmit(null);
       await handleDownload();
-    };
-    reader.readAsArrayBuffer(file);
+    }
   }
 
   async function handleDownload() {
-    const templateUrl = "/templates/lay-person-abstract.docx";
+    const templateUrl = "/templates/lay-person-abstract-template.docx";
     const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     const filename = "output.docx";
-    const cmdDelimiter = ['{{', '}}'];
+    const cmdDelimiter = ["{{", "}}"];
 
-    const template = await fetch(templateUrl).then(res => res.arrayBuffer());
+    const template = outputTemplate() || await fetch(templateUrl).then((res) => res.arrayBuffer());
     const data = yaml.parse(outputText());
     const buffer = await createReport({ template, data, cmdDelimiter });
     const blob = new Blob([buffer], { type });
-    
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -73,13 +65,16 @@ export default function Page() {
   }
 
   async function handleReset(event) {
+    event?.preventDefault();
     setInputText("");
     setOutputText("");
+    setOutputTemplate(null);
+    setSystemPrompt(defaultSystemPrompt);
   }
 
   /**
    * Runs an AI model with the given parameters and returns the output text.
-   * @param {any} params 
+   * @param {any} params
    * @returns {Promise<string>} The output text from the model
    */
   async function runModel(params) {
@@ -103,16 +98,16 @@ export default function Page() {
     event?.preventDefault();
     setOutputText("Processing...");
     try {
-      const params = { 
+      const params = {
         model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
         // model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        messages: [{ role: "user", content: [{ text: 'Please process the <protocol> in the system prompt' }] }],
-        system: systemPrompt.replace('{{protocol}}', inputText()),
-        stream: false 
-      }
+        messages: [{ role: "user", content: [{ text: "Please process the document in the system prompt." }] }],
+        system: systemPrompt().replace("{{document}}", inputText()),
+        stream: false,
+      };
       const output = await runModel(params);
       const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || "{}";
-      setOutputText(yaml.stringify({...defaultOutput, ...yaml.parse(jsonOutput)}));
+      setOutputText(yaml.stringify({ ...defaultOutput, ...yaml.parse(jsonOutput) }));
     } catch (error) {
       console.error(error);
       setOutputText("An error occurred while processing the text.");
@@ -120,16 +115,22 @@ export default function Page() {
   }
   return html`
     <form id="form" onSubmit=${handleSubmit} onReset=${handleReset} class="container">
-      <h1 class="fw-bold text-gradient my-3">Lay Person's Abstractor</h1>
+      <h1 class="fw-bold text-gradient my-3">Lay-Person Abstract</h1>
       <div class="row align-items-stretch">
         <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
           <label for="inputText" class="form-label">Source Document</label>
-          <input type="file" id="fileInput" class="form-control form-control-sm border-bottom-0 rounded-bottom-0" accept=".txt, .docx, .pdf" onChange=${handleFileSelect} />
+          <input
+            type="file"
+            id="inputTextFile"
+            name="inputTextFile"
+            class="form-control form-control-sm border-bottom-0 rounded-bottom-0"
+            accept=".txt, .docx, .pdf"
+            onChange=${handleFileSelect} />
           <textarea
             class="form-control form-control-sm rounded-top-0 flex-grow-1"
             id="inputText"
             name="inputText"
-            rows="28"
+            rows="6"
             placeholder="Enter protocol or choose a file above"
             value=${inputText}
             onChange=${(e) => setInputText(e.target.value)}
@@ -141,17 +142,45 @@ export default function Page() {
             class="form-control form-control-sm flex-grow-1"
             id="outputText"
             name="outputText"
-            rows="30"
+            rows="6"
             placeholder="Submit text to view output"
             value=${outputText}
-            readonly
-          />
+            readonly />
         </div>
       </div>
 
       <div class="row">
-        <div class="col mb-2 text-end">
-          <button class="btn btn-sm btn-outline-danger me-1" id="clearButton" type="reset">Clear</button>
+        <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
+          <details class="small text-secondary mt-2">
+            <summary>Advanced Options</summary>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
+              <a href="/templates/lay-person-abstract-template.docx" download="lay-person-abstract-template.docx" class="small">Download Example</a>
+            </div>
+            <input
+              type="file"
+              id="outputTemplateFile"
+              name="outputTemplateFile"
+              class="form-control form-control-sm mb-2"
+              accept=".txt, .docx, .pdf"
+              onChange=${handleFileSelect} />
+
+            <label for="systemPrompt" class="form-label">System Prompt</label>
+            <textarea
+              class="form-control form-control-sm rounded-top-0 flex-grow-1"
+              id="systemPrompt"
+              name="systemPrompt"
+              rows="6"
+              placeholder="Enter system prompt"
+              value=${systemPrompt}
+              onChange=${(e) => setSystemPrompt(e.target.value)}
+              required />
+            <small>Use <strong>{{document}}</strong> as a placeholder for the source document.</small>
+          </details>
+        </div>
+        <div class="col-md-6 mb-2  flex-grow-1  text-end">
+          <button class="btn btn-sm btn-outline-danger me-1" id="clearButton" type="reset">Reset</button>
           <button class="btn btn-sm btn-outline-primary me-1" id="submitButton" type="submit">Submit</button>
           <button class="btn btn-sm btn-outline-dark" id="downloadButton" type="button" onClick=${handleDownload}>Download</button>
         </div>
@@ -160,8 +189,32 @@ export default function Page() {
   `;
 }
 
-export const systemPrompt = `
-# Clinical Trial Protocol Translator
+export const defaultOutput = {
+  study_title: "",
+  nct_number: "",
+  simple_summary: "",
+  purpose: "",
+  who_can_participate: [],
+  who_cannot_participate: [],
+  investigator_names: [],
+  procedures: [],
+  timeline: "",
+  visits_required: "",
+  potential_benefits: [],
+  potential_benefits_others: [],
+  potential_risks: [],
+  expanded_risks: "",
+  alternatives: [],
+  costs_and_compensation: "",
+  contact_name: "",
+  contact_email: "",
+  contact_phone: "",
+  voluntariness: "",
+  withdrawal: "",
+  other_questions: [],
+}
+
+export const defaultSystemPrompt = `# Clinical Trial Protocol Translator
 
 ## ROLE
 You are a compassionate patient advocate at the National Cancer Institute who specializes in translating complex medical research into accessible information for potential clinical trial participants.
@@ -172,7 +225,7 @@ Extract key information from clinical trial protocols and translate it into clea
 ## INPUT
 The clinical trial protocol is provided below:
 \`\`\`
-<protocol>{{protocol}}</protocol>
+<protocol>{{document}}</protocol>
 \`\`\`
 
 ## OUTPUT SPECIFICATION
@@ -291,8 +344,8 @@ Section 8.3 "Risks and Benefits": "Potential risks include fatigue, headache, an
 
 ### Reading Level
 - Write at 6th-grade level using common words
-- Keep sentences to 5-10 words (fewer is better)  
-- Replace medical jargon: "malignant neoplastic cells" → "cancer cells that have spread"
+- Keep sentences or phrases to 3-7 words (fewer is better)
+- Replace medical jargon: "malignant neoplastic cells" -> "cancer cells that have spread"
 
 ### Voice and Tone
 - **Direct address**: Use "you" instead of "participants" or "patients"
@@ -358,65 +411,3 @@ Develop 5 questions specific to the protocol that address common concerns beyond
 - Concerns about getting too much of something (scans, blood draws, etc.)
 
 Tailor questions and answers to the specific protocol and provide clear, reassuring responses.`;
-
-
-export const systemPrompt1 = `## ROLE You are a compassionate patient advocate at the National Cancer Institute who specializes in translating complex medical research into accessible information. Your goal is to help potential clinical trial participants understand what participation would involve using as simply and briefly as possible.  
-## TASK Extract key information from the provided clinical trial protocol and present it in clear, simple, jargon-free language that anyone can understand, regardless of their medical knowledge.  
-The protocol is as follows:
-<protocol>{{protocol}}</protocol>
-## OUTPUT FORMAT Return a structured JSON response containing the following information (if available in the protocol):
-\`\`\`json 
-{   
-"study_title": "Simplified yet descriptive title of the study. Do not structure it as a question.", 
-"nct_number":"NCT Number exactly as written",  
-"simple_summary": "1-2 sentence overview of what the study is investigating",   
-"purpose": "Why the research is being conducted, in plain language explained simply",   
-"who_can_participate": "Brief listing of the main inclusion criteria in everyday language explained simply.",     
-"who_cannot_participate": "Brief description of the main exclusion criteria in everyday language explained simply",   
-"investigator_names":"Comma delimited list of investigator names",
-"procedures": "List of main procedures you will undergo.  Start the list with "You will"",     
-"timeline": "How long your participation will last.  Start the list with "You will"",     
-"visits_required": "Number and frequency of clinic visits",   
-"potential_benefits": "Possible benefits to you for participating",
-"potential_benefits_others: "Possible benefits to others for participating",   
-"potential_risks": "Main risks explained simply",   
-"expanded_risks":"An expansive and comprehensive explanation of risks in paragraph form, explianed simply",
-"alternatives": "Alternatives to participation, explained simply",   
-"costs_and_compensation": "What costs you'll be responsible for and any compensation provided, including reimbursements",   
-"contact_name",
-"contact_email",
-"contact_phone",
-"voluntariness":"Your participation is voluntary, explained simply",
-"withdrawal": "You can withdraw whenever you like, explained simply",
-"other_questions":"Develop 5 questions a potential study participant ask that is not related to the study purpose, inclusion or exclusion criteria, how long the study will take, or what will happen.  Provide the answers.  Examples can include more information about getting too much radiation, why are there so many tests and procedures, what about all this blood I'm providing and anemia, why so many scans, will I get too much radiation, how will this study affect my condition.  Tailor the questions and answers to the specifics of the protocol. Provide answers to those questions."
-}  \`\`\`  
-## GUIDELINES 
-- Extract only information explicitly stated in the protocol
-- Translate all medical terminology into simple, everyday language at a 6th grade reading level
-- Prioritize the use common words a 6th grader can understand: For example: Replace "malignant neoplastic cells" with "cancer cells that have spread"
-- Address readers directly: Use "your body" instead of "the patient's body"
-- Use active voice: "Doctors test new treatments" instead of "New treatments are tested"
-- Keep sentences and phrases extremely short and consise: Aim for 5-10 words per sentence or phrase.  Fewer is better.
-- Maintain a warm, supportive tone throughout 
-- If certain information is not in the protocol, omit that field rather than guessing
-- Prioritize safety information and time commitments that impact daily life 
-- Focus on what matters most: Cover what patients need to know for decisions
-- Include approximate timeframes when available (e.g., "about 2 hours" rather than "varies") 
-- Use bulleted lists for sequential procedures 
-- Present side effects by frequency and severity in plain language
-- Structure your response using the exact field names provided 
-
-## EXAMPLES OF ADDRESSING READERS DIRECTLY:
-- Instead of: "Participants will undergo three blood draws"
-Use: "You will have your blood drawn three times"
-- Instead of: "The study medication may cause headaches"
-Use: "You may experience headaches from the study medication"
-- Instead of: "Participants have the right to withdraw"
-Use: "You have the right to leave the study at any time"
-
-##EXAMPLES OF ACTIVE VOICE:
-- Instead of: "The report will be submitted by the researcher." Use: We will submit the report.
-- Instead of: "The data is being analyzed by our team." Use: "Our team is analyzing the data."
-- Instead of: "The medication will be administered." Use: "The study team will administer the medication.
-
-`
