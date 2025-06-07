@@ -1,8 +1,11 @@
-import { loadPyodide } from "pyodide";
 import { marked } from "marked";
+import { loadPyodide } from "pyodide";
+import { createMemo } from "solid-js";
 import { parseDocument } from "./parsers.js";
+import { jsonToXml } from "./xml.js";
 
-window.TOOLS = { search, browse, code, editor, think };
+export const TOOLS = { search, browse, code, editor, think };
+window.TOOLS = TOOLS;
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
@@ -30,10 +33,17 @@ export async function runTool(toolUse, tools = window.TOOLS) {
  * @returns {Promise<any>} - The result of the executed Python code
  */
 export async function runPython(code) {
-  window.pyodide ||= await loadPyodide();
+  const logs = [];
+  const log = (msg) => logs.push(msg);
+  window.pyodide ||= await loadPyodide({
+    stdout: log,
+    stderr: log,
+  });
   const pyodide = window.pyodide;
+  await pyodide.loadPackagesFromImports(code);
   const result = await pyodide.runPythonAsync(code);
-  return result;
+  if (result) logs.push(result);
+  return logs;
 }
 
 /**
@@ -85,15 +95,15 @@ export async function queryDocumentWithModel(document, topic, model = "us.anthro
   document = truncate(document, 500_000);
   const system = `You are a research assistant. You will be given a document and a question. 
 
-Your task is to answer the question using only the information in the document. You must not add any information that is not in the document, and you must provide exact quotes and urls with attributions.
+Your task is to answer the question using only the information in the document and provide a fully-verifiable, academic report in markdown format. You must not add any information that is not in the document, and you must provide exact quotes and urls with attributions.
 
-CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text.
+CRITICAL INSTRUCTION: You must ONLY use information explicitly stated in the document. NEVER add information, inferences, or assumptions not directly present in the text. ALWAYS include links (eg: markdown - [An Example  Link](http://example.com), html - <a href="http://example.com">an example link</a>, etc) from the document AS-IS.
 
 Your response MUST:
 1. Present research academically - always includes a proper references section at the end containing a markdown list in full APA format with all sources cited in the response, including the title, author, date, and url.
-2. Include EXACT quotes and url references from the document with precise location references (page/section/paragraph) BEFORE any analysis or explanation
+2. Include EXACT quotes and url references from the document with precise location references (page/section/paragraph) BEFORE any analysis or explanation. If any text is associated with a URL (eg: if it is a link), INCLUDE THE URL AS-IS AS A MARKDOWN LINK.
 3. Always use inline APA-style references for factual claims (Example: According to Smith (2025, para. 3), "direct quote" [URL]). Clearly mark which information comes directly from sources.
-4. Include EXACT inline markdown url references for any navigational entities referenced in the document. Examples include: navbars, links, buttons, forms, etc.
+4. Always include EXACT inline markdown url references as-is for any navigational entities referenced in the document, including links to other documents, websites, or sections within the document.
 5. Use quotation marks for ALL extracted text and urls
 6. NEVER paraphrase or summarize when direct quotes are available
 7. Clearly indicate when information requested is not in the document
@@ -162,16 +172,15 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  */
 export async function browse({ url, topic }) {
   window.id ||= Math.random().toString(36).slice(2);
-  const response = await fetch("/api/browse?" + new URLSearchParams({ url, id }));
+  const response = await fetch("/api/browse/" + url);
   const bytes = await response.arrayBuffer();
   const text = new TextDecoder("utf-8").decode(bytes);
   if (!response.ok) {
-    return `Failed to read ${url}: ${response.status} ${response.statusText}\n${text}`;
+    return `Failed to read ${url}: ${response.status} ${response.statusText}`;
   }
-
   const mimetype = response.headers.get("content-type") || "text/html";
   const results = await parseDocument(bytes, mimetype, url);
-  return await queryDocumentWithModel(results, topic);
+  return !topic ? results : await queryDocumentWithModel(`<url>${url}</url>\n<text>${results}</text>`, topic);
 }
 
 /**
@@ -354,104 +363,88 @@ function editor(params, storage = localStorage) {
   }
 }
 
-/**
- * JavaScript executor with ES module & import map support
- * @param {*} params
- * @param {string} params.source - Code to execute as ES module
- * @param {Object} [params.importMap={}] - Optional import map
- * @param {number} [params.timeout=5000] - Timeout in milliseconds
- * @returns {Promise<{html: string, logs: {type: string, content: any}[]}>}>}
- */
-export async function code({ source, importMap = {}, timeout = 5000 }) {
-  return new Promise((resolve) => {
-    // Setup
-    const logs = [];
-    const log = (type, ...args) => logs.push({ type, content: args });
-    const iframe = document.createElement("iframe");
-    iframe.sandbox = "allow-scripts allow-same-origin";
-    // move iframe to left (invisible, but rendered)
-    iframe.style.position = "absolute";
-    iframe.style.left = "-9999px";
+window.code = code;
+export async function code({ language, source, timeout = 5_000 }) {
+  const bridge = `
+    (()=>{const p=globalThis.parent?.postMessage?.bind(globalThis.parent)
+                 ?? globalThis.postMessage?.bind(globalThis)
+                 ??(()=>{}),s=m=>p({type:"log",msg:m});
+      ["log","warn","error","info","debug"].forEach(k=>{
+        const o=console[k];console[k]=(...a)=>(s(a.join(" ")),o(...a));});
+      globalThis.onerror=(m,_u,l)=>(s(\`\${m} [line \${l}]\`),true);
+    })();
+  `;
 
-    // Handle messages from iframe
-    const onMessage = (e) => {
-      if (e.source !== iframe.contentWindow) return;
-      if (e.data.type === "log") log(e.data.level, ...e.data.args);
-      if (e.data.type === "done") {
-        clearTimeout(timer);
-        const { outerHTML: html } = iframe.contentDocument?.documentElement || {};
-        const { height } = e.data;
-        cleanup();
-        resolve({ html, height, logs });
+  if (language === "javascript") {
+    return await new Promise((res) => {
+      const logs = [];
+
+      // wrap user code so we know when it’s done
+      const workerCode = [bridge, source, 'self.postMessage({type:"done"})'].join(";");
+      const worker = new Worker(URL.createObjectURL(new Blob([workerCode], { type: "text/javascript" })), { type: "module" });
+      const kill = setTimeout(() => (worker.terminate(), res({ logs })), timeout);
+
+      worker.onmessage = (e) => {
+        if (e.data?.type === "log") logs.push(e.data.msg);
+        if (e.data?.type === "done") {
+          clearTimeout(kill);
+          worker.terminate();
+          res({ logs });
+        }
+      };
+      worker.onerror = (e) => logs.push(e.message);
+    });
+  }
+
+  if (language === "html") {
+    return await new Promise((res) => {
+      const logs = [];
+      const frame = Object.assign(document.createElement("iframe"), { style: "position:absolute; left: -9999px;" });
+      const listener = (e) => {
+        if (e.source !== frame.contentWindow) return;
+        console.log(e.data);
+        e.data?.type === "log" && logs.push(e.data.msg);
+        e.data?.type === "done" && cleanup();
+      };
+      window.addEventListener("message", listener);
+      document.body.appendChild(frame);
+
+      const doc = new DOMParser().parseFromString(source, "text/html");
+      const script = Array.from(doc.querySelectorAll("script:not([src])")).find((s) => ["", "text/javascript", "module"].includes(s.type));
+      if (script) {
+        script.innerHTML += `;parent.postMessage({type: "done"});`;
       }
-    };
+      const bridgeScript = document.createElement("script");
+      bridgeScript.text = bridge;
+      doc.head.prepend(bridgeScript);
+      const html = doc.documentElement.outerHTML;
 
-    // Set timeout and cleanup
-    const cleanup = () => {
-      window.removeEventListener("message", onMessage);
-      iframe.parentNode?.removeChild(iframe);
-    };
+      const cleanup = () => {
+        clearTimeout(kill);
+        window.removeEventListener("message", listener);
+        const iframeDocument = frame.contentDocument || frame.contentWindow.document;
+        const { body, documentElement } = iframeDocument;
+        const height = Math.max(
+          body.scrollHeight,
+          body.offsetHeight,
+          documentElement.clientHeight,
+          documentElement.scrollHeight,
+          documentElement.offsetHeight
+        );
+        frame.remove();
+        res({ html, logs, height });
+      };
 
-    const timer = setTimeout(() => {
-      log("warn", `Execution timed out after ${timeout}ms`);
-      cleanup();
-      resolve({ html: "", logs });
-    }, timeout);
+      const kill = setTimeout(cleanup, timeout); // fallback
+      frame.srcdoc = html;
+    });
+  }
 
-    window.addEventListener("message", onMessage);
+  if (language === "python") {
+    return { logs: await runPython(source) };
+  }
 
-    // Set up console capture and error handling
-    const initScript = () => {
-      ["log", "warn", "error", "info", "debug"].forEach((level) => {
-        const orig = console[level];
-        console[level] = (...args) => {
-          try {
-            window.parent.postMessage(
-              {
-                type: "log",
-                level,
-                args: args.map((a) => {
-                  try {
-                    return typeof a === "object" ? JSON.stringify(a) : String(a);
-                  } catch {
-                    return String(a);
-                  }
-                }),
-              },
-              "*"
-            );
-          } catch {}
-          orig.apply(console, args);
-        };
-      });
-
-      // Capture errors
-      window.addEventListener("error", (e) => {
-        console.error(`${e.message} [line ${e.lineno}]`);
-        e.preventDefault();
-      });
-    };
-
-    // Generate HTML with console capture and error handling
-    const html = [
-      `<!DOCTYPE html><html>`,
-      `<head><script type="importmap">${JSON.stringify(importMap)}</script><script>(${initScript.toString()})()</script></head>`,
-      `<body><div id="root"></div><script type="module">${source}; window.parent.postMessage({type: 'done', height: document.body.scrollHeight}, '*')</script></body>`,
-      `</html>`,
-    ].join("");
-
-    try {
-      document.body.appendChild(iframe);
-      const doc = iframe.contentDocument;
-      doc.open();
-      doc.write(html);
-      doc.close();
-    } catch (e) {
-      log("error", `Setup error: ${e.message}`);
-      cleanup();
-      resolve({ html: "", logs });
-    }
-  });
+  return { logs: ["Unsupported language"] };
 }
 
 /**
@@ -470,17 +463,19 @@ export function getClientContext(important = {}) {
     .map((_, i) => localStorage.key(i))
     .filter((e) => e.startsWith("file:"))
     .map((e) => e.replace("file:", ""));
-  const main = ["_profile.txt", "_memory.txt", "_workspace.txt", "_knowledge.txt", "_plan.txt", "_heuristics.txt"].map((file) => ({
+  const main = ["_profile.txt", "_memory.txt", "_insights.txt", "_workspace.txt", "_knowledge.txt", "_patterns.txt"].map((file) => ({
     file,
     contents: getFileContents(file),
   }));
   main.push({ description: "The filenames key contains the list of files. " });
   main.push({ filenames });
-  if (Object.keys(important).length) {
+  if (Object.keys(important).length > 0) {
     main.push({ additionalInstructions: "Please review the items under 'important' carefully" });
     main.push({ important });
   }
-  return { main: JSON.stringify(main, null, 2), time, language, platform, memory, hardwareConcurrency, timeFormat };
+  console.log(main);
+  window.jsonToXml = jsonToXml;
+  return { main: JSON.stringify(main), time, language, platform, memory, hardwareConcurrency, timeFormat };
 }
 
 /**
@@ -582,4 +577,77 @@ export function capitalize(str) {
   return str.split(' ').map(word => 
     word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
   ).join(' ');
+}
+
+
+export function toCsv(data = [], headers = null) {
+  headers ||= Object.keys(data?.[0] || {});
+  const serialize = value => value.includes(',') ? `"${value}"` : value;
+  const rows = data.map(row => headers.map(field => row[field]));
+  const csv = [headers].concat(rows).map(row => row.map(serialize).join(','));
+  return csv.join('\n');
+}
+
+export function downloadText(filename, text) {
+  const blob = new Blob([text], { type: "text/plain" });
+  downloadBlob(filename, blob);
+}
+
+export function downloadJson(filename, json) {
+  const blob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
+  downloadBlob(filename, blob);
+}
+
+export function downloadCsv(filename, csv) {
+  const blob = new Blob([toCsv(csv)], { type: "text/csv" });
+  downloadBlob(filename, blob);
+}
+
+export function downloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function convertToAccessorOptions(options) {
+  // Resolve the options object if it's passed as an accessor
+  const resolvedOptions = typeof options === "function" ? options() : options;
+
+  // Create a new object where each property is wrapped in createMemo
+  return Object.entries(resolvedOptions).reduce(
+    (reactiveOptions, [key, value]) => {
+      // Use createMemo to make each property access reactive
+      reactiveOptions[key] = createMemo(() => {
+        // If the original options object was itself reactive,
+        // accessing it here ensures dependencies are tracked.
+        const currentOptions = typeof options === "function" ? options() : options;
+        return currentOptions[key]; // Return the current value for this key
+      });
+      return reactiveOptions;
+    },
+    {} // Start with an empty object
+  );
+}
+
+/**
+ * Opens a new chat window and copies sessionStorage items to it
+ * @param {Event} e - The click event that triggered the new chat
+ * @param {string} e.target.href - The URL to open in the new window
+ * @returns {void}
+ */
+export function openInternalLinkInNewTab(e) {
+  e.preventDefault();
+  const newWindow = window.open(e.target.href, '_blank'); // takes url from href of anchor tag
+  
+  newWindow.addEventListener('load', function() {
+      // Copy all sessionStorage items
+      for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          const value = sessionStorage.getItem(key);
+          newWindow.sessionStorage.setItem(key, value);
+      }
+  });
 }

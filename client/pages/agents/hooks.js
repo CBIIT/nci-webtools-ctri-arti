@@ -1,9 +1,9 @@
 import { createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
-import { fileToBase64, splitFilename } from "./utils/parsers.js";
-import { readStream, runTool, getClientContext, autoscroll } from "./utils/utils.js";
+import { fileToBase64, splitFilename } from "/utils/parsers.js";
+import { readStream, runTool, getClientContext, autoscroll } from "/utils/utils.js";
+import { jsonToXml } from "/utils/xml.js";
 import { systemPrompt, tools } from "./config.js";
-import { jsonToXml } from "./utils/xml.js";
 
 export function useChat() {
   const [messages, setMessages] = createStore([]);

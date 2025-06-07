@@ -2,7 +2,7 @@ import { createSignal, Show } from "solid-js";
 import html from "solid-js/html";
 import { useParams, useLocation } from "@solidjs/router";
 import { createResource } from "solid-js";
-import { capitalize } from "../../utils/utils.js";
+import { capitalize } from "/utils/utils.js";
 
 function UserEdit() {
   const params = useParams();

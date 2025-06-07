@@ -1,7 +1,7 @@
 import { createSignal, createEffect, createMemo, For, Show } from "solid-js";
 import { createResource } from "solid-js";
 import html from "solid-js/html";
-import { capitalize } from "../../utils/utils.js";
+import { capitalize } from "/utils/utils.js";
 
 // Helper function (can be at the top level or inside UsersList if preferred)
 const range = (start, end) => {

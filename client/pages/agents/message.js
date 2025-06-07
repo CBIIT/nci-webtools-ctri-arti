@@ -2,8 +2,7 @@ import { createSignal, For, Show, Index } from "solid-js";
 import html from "solid-js/html";
 import { stringify } from "yaml";
 import { parse } from "marked";
-import { downloadText, } from "./utils/utils.js";
-import { getMarked } from "../../utils/utils.js";
+import { downloadText, getMarked } from "/utils/utils.js";
 
 const marked = getMarked();
 

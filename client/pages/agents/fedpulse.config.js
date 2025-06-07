@@ -1,5 +1,5 @@
-import { browse } from "./utils/utils.js";
-import { jsonToXml } from "./utils/xml.js";
+import { browse } from "/utils/utils.js";
+import { jsonToXml } from "/utils/xml.js";
 
 export const summary = `
 # Comprehensive Political Report: September 2024 - April 2025

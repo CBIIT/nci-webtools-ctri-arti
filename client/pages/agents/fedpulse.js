@@ -1,9 +1,9 @@
 import { createSignal, For, Show, Index } from "solid-js";
 import html from "solid-js/html";
 import Loader from "/components/dna.js";
+import { downloadCsv, downloadJson, openInternalLinkInNewTab } from "/utils/utils.js";
 import { useChat } from "./hooks.js";
 import { context } from "./fedpulse.config.js";
-import { downloadCsv, downloadJson, openInternalLinkInNewTab } from "./utils/utils.js";
 import Message from "./message.js";
 
 export default function Page() {
