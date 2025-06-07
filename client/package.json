@@ -4,19 +4,19 @@
   },
   "devDependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
-    "@huggingface/transformers": "^3.5.0",
+    "@huggingface/transformers": "^3.5.2",
     "@langchain/textsplitters": "^0.1.0",
     "@solidjs/router": "^0.15.3",
+    "docx": "^9.5.0",
     "docx-templates": "^4.14.1",
-    "dompurify": "^3.2.5",
-    "idb": "^8.0.2",
-    "mammoth": "^1.9.0",
-    "marked": "^15.0.8",
-    "pdfjs-dist": "^4.10.38",
-    "pyodide": "^0.27.5",
-    "solid-js": "^1.9.5",
-    "three": "^0.175.0",
+    "dompurify": "^3.2.6",
+    "idb": "^8.0.3",
+    "mammoth": "^1.9.1",
+    "marked": "^15.0.12",
+    "pdfjs-dist": "^5.3.31",
+    "solid-js": "^1.9.7",
+    "three": "^0.177.0",
     "turndown": "^7.2.0",
-    "yaml": "^2.7.1"
+    "yaml": "^2.8.0"
   }
 }
