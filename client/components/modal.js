@@ -1,6 +1,6 @@
 import { Show, createEffect, createResource } from "solid-js";
 import html from "solid-js/html";
-import { getMarked } from "../utils/utils.js";
+import { getMarked } from "/utils/utils.js";
 
 /**
  * Modal component for displaying a modal dialog

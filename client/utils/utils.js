@@ -1,5 +1,4 @@
 import { marked } from "marked";
-import { loadPyodide } from "pyodide";
 import { createMemo } from "solid-js";
 import { parseDocument } from "./parsers.js";
 import { jsonToXml } from "./xml.js";
@@ -25,25 +24,6 @@ export async function runTool(toolUse, tools = window.TOOLS) {
     const content = [{ text: `Error running ${name}: ${errorText}` }];
     return { toolUseId, content };
   }
-}
-
-/**
- * Executes Python code using Pyodide
- * @param {string} code - The Python code to execute
- * @returns {Promise<any>} - The result of the executed Python code
- */
-export async function runPython(code) {
-  const logs = [];
-  const log = (msg) => logs.push(msg);
-  window.pyodide ||= await loadPyodide({
-    stdout: log,
-    stderr: log,
-  });
-  const pyodide = window.pyodide;
-  await pyodide.loadPackagesFromImports(code);
-  const result = await pyodide.runPythonAsync(code);
-  if (result) logs.push(result);
-  return logs;
 }
 
 /**
@@ -438,10 +418,6 @@ export async function code({ language, source, timeout = 5_000 }) {
       const kill = setTimeout(cleanup, timeout); // fallback
       frame.srcdoc = html;
     });
-  }
-
-  if (language === "python") {
-    return { logs: await runPython(source) };
   }
 
   return { logs: ["Unsupported language"] };

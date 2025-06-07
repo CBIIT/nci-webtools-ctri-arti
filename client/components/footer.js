@@ -1,6 +1,6 @@
 import { For, Show } from "solid-js";
 import html from "solid-js/html";
-import { openInternalLinkInNewTab } from "../pages/agents/utils/utils.js";
+import { openInternalLinkInNewTab } from "/utils/utils.js";
 
 export default function Footer() {
   const footerLinks = [
