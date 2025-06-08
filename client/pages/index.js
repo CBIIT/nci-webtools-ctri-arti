@@ -5,4 +5,4 @@ import html from "solid-js/html";
 import Layout from "./layout.js";
 import routes from "./routes.js";
 
-render(() => html`<${Router} root=${Layout}>${routes}</>`, window.app);
+render(() => html`<${Router} root=${Layout}>${routes}<//>`, window.app);
