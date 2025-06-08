@@ -1,9 +1,13 @@
-import { createResource, Show } from "solid-js";
+import { createResource, Show, lazy } from "solid-js";
 import html from "solid-js/html";
 
-export default function ProtectedRoute(props) {
-  const [authorizedUser] = createResource(() => getAuthorizedUser(props));
-  return html`<${Show} when=${authorizedUser}>${props.children}<//>`;
+export default function AuthorizedImport(props) {
+  return () => html`<${Authorized} ...${props}>${lazy(() => import(props.path))}<//>`;
+}
+
+export function Authorized(props) {
+  const [authorized] = createResource(() => getAuthorizedUser(props));
+  return html`<${Show} when=${authorized}>${props.children}<//>`;
 }
 
 export async function getAuthorizedUser(props) {

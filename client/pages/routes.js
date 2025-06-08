@@ -1,17 +1,14 @@
-import { lazy } from "solid-js";
-import html from "solid-js/html";
+import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
-import ProtectedRoute from "./protected-route.js";
-const AsProtectedRoute = (path, props) => () => html`<${ProtectedRoute} ...${props}>${lazy(() => import(path))}<//>`;
-const Chat = AsProtectedRoute("./agents/chat.js");
-const FedPulse = AsProtectedRoute("./agents/fedpulse.js");
-const ConsentCrafter = AsProtectedRoute("./tools/consent-crafter.js");
-const LayPersonAbstract = AsProtectedRoute("./tools/lay-person-abstract.js");
-const Translate = AsProtectedRoute("./tools/translate.js");
-const SemanticSearch = AsProtectedRoute("./tools/semantic-search.js");
-const Users = AsProtectedRoute("./users/index.js", { roles: [1] });
-const UserEdit = AsProtectedRoute("./users/edit.js", { roles: [1] });
-const UserUsage = AsProtectedRoute("./users/usage.js", { roles: [1] });
+const Chat = AuthorizedImport({ path: "./agents/chat.js" });
+const FedPulse = AuthorizedImport({ path: "./agents/fedpulse.js" });
+const ConsentCrafter = AuthorizedImport({ path: "./tools/consent-crafter.js" });
+const LayPersonAbstract = AuthorizedImport({ path: "./tools/lay-person-abstract.js" });
+const Translate = AuthorizedImport({ path: "./tools/translate.js" });
+const SemanticSearch = AuthorizedImport({ path: "./tools/semantic-search.js" });
+const Users = AuthorizedImport({ path: "./users/index.js", roles: [1] });
+const UserEdit = AuthorizedImport({ path: "./users/edit.js", roles: [1] });
+const UserUsage = AuthorizedImport({ path: "./users/usage.js", roles: [1] });
 
 const routes = [
   {
@@ -61,26 +58,38 @@ const routes = [
         title: "Semantic Search",
         component: SemanticSearch,
         hidden: true,
-      }        
-    ]
+      },
+    ],
   },
   {
-    path: "/user",
-    title: "Manage Users",
-    component: Users,
+    path: "/admin",
+    // component: Home,
+    title: "Admin",
     children: [
       {
-        path: ":id",
-        title: "User",
-        component: UserEdit,
+        path: "users",
+        title: "Users",
+        component: Users,
       },
       {
-        path: ":id/usage",
+        path: "users/:id",
+        title: "User",
+        component: UserEdit,
+        hidden: true,
+      },
+      {
+        path: "usage",
+        title: "Usage",
+        component: Users,
+      },
+      {
+        path: "users/:id/usage",
         title: "User Usage",
         component: UserUsage,
-      }
-    ]
-  },
+        hidden: true,
+      },
+    ],
+  }
 ];
 
 export default routes;
