@@ -1,132 +1,86 @@
 import { lazy } from "solid-js";
 import html from "solid-js/html";
 import Home from "./home.js";
-import ProtectedRoute from "./protected-routes.js";
-const Chat = () => import("./agents/chat.js");
-const FedPulse = () => import("./agents/fedpulse.js");
-const ConsentCrafter = () => import("./tools/consent-crafter.js");
-const LayPersonAbstract = () => import("./tools/lay-person-abstract.js");
-const Users = () => import("./users/index.js");
-const UserEdit = () => import("./users/edit.js");
-const UserUsage = () => import("./users/usage.js");
+import ProtectedRoute from "./protected-route.js";
+const AsProtectedRoute = (path, props) => () => html`<${ProtectedRoute} ...${props}>${lazy(() => import(path))}<//>`;
+const Chat = AsProtectedRoute("./agents/chat.js");
+const FedPulse = AsProtectedRoute("./agents/fedpulse.js");
+const ConsentCrafter = AsProtectedRoute("./tools/consent-crafter.js");
+const LayPersonAbstract = AsProtectedRoute("./tools/lay-person-abstract.js");
+const Translate = AsProtectedRoute("./tools/translate.js");
+const SemanticSearch = AsProtectedRoute("./tools/semantic-search.js");
+const Users = AsProtectedRoute("./users/index.js", { roles: [1] });
+const UserEdit = AsProtectedRoute("./users/edit.js", { roles: [1] });
+const UserUsage = AsProtectedRoute("./users/usage.js", { roles: [1] });
 
-const baseRoutes = [
+const routes = [
   {
     path: "",
     title: "Home",
     component: Home,
     hidden: false,
-    protected: false,
+  },
+  {
+    path: "*",
+    title: "Home",
+    component: Home,
+    hidden: true,
   },
   {
     path: "/tools",
     title: "Tools",
-    protected: false,
     children: [
-      {
-        path: "fedpulse",
-        title: "FedPulse",
-        component: FedPulse,
-        protected: true,
-      },
       {
         path: "chat",
         title: "Chat",
         component: Chat,
-        protected: true,
+      },
+      {
+        path: "fedpulse",
+        title: "FedPulse",
+        component: FedPulse,
       },
       {
         path: "consentcrafter",
         title: "ConsentCrafter",
         component: ConsentCrafter,
-        protected: true,
       },
       {
         path: "laypersonabstract",
         title: "Lay Person Abstract",
         component: LayPersonAbstract,
-        protected: true,
-      }
+      },
+      {
+        path: "translate",
+        title: "Translate",
+        component: Translate,
+        hidden: true,
+      },
+      {
+        path: "semanticsearch",
+        title: "Semantic Search",
+        component: SemanticSearch,
+        hidden: true,
+      }        
     ]
   },
   {
-    path: "/users",
-    title: "Users",
+    path: "/user",
+    title: "Manage Users",
     component: Users,
-    hidden: true,
-    protected: true,
-    loginNavbar: true,
-    loginNavbarTitle: 'Manage Users',
-    allowedRoles: [ 1 ],
+    children: [
+      {
+        path: ":id",
+        title: "User",
+        component: UserEdit,
+      },
+      {
+        path: ":id/usage",
+        title: "User Usage",
+        component: UserUsage,
+      }
+    ]
   },
-  {
-    path: "/user/profile/:id",
-    title: "User",
-    component: UserEdit,
-    hidden: true,
-    protected: true,
-  },
-  {
-    path: "/user/:id",
-    title: "User",
-    component: UserEdit,
-    hidden: true,
-    protected: true,
-  },
-  {
-    path: "/user/:id/usage",
-    title: "User Usage",
-    component: UserUsage,
-    hidden: true,
-    protected: true,
-  }
 ];
-// Function to process routes and wrap protected ones with ProtectedRoute
-function processRoutes(routes) {
-  return routes.map(route => {
-    const processedRoute = { ...route };
-    
-    // Handle children routes
-    if (route.children) {
-      processedRoute.children = route.children.map(child => {
-        if (child.protected && child.component) {
-          return {
-            ...child,
-            component: () => html`
-              <${ProtectedRoute}>
-                <${lazy(child.component)} />
-              <//>
-            `,
-          };
-        }
-        else if (child.component) {
-          return {
-            ...child,
-            component: () => html`
-              <${lazy(child.component)} />
-            `,
-          };
-        }
-      });
-    }
-    
-    // Handle top-level protected routes 
-    if (route.protected && !route.children) {
-      processedRoute.component = () => html`
-        <${ProtectedRoute}>
-          <${lazy(route.component)} />
-        <//>
-      `;
-    }
-    else if (!route.protected && route.path !== "" && route.component) {
-      processedRoute.component = () => html`
-        <${lazy(route.component)} />
-      `;
-    }
-    return processedRoute;
-  });
-}
-
-const routes = processRoutes(baseRoutes);
 
 export default routes;
