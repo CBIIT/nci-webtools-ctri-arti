@@ -68,6 +68,7 @@ const routes = [
       path: "/_",
       rawPath: !user ? "/api/login" : undefined,
       title: user?.firstName || "Login",
+      class: "ms-auto",
       children: user && [
         {
           path: "users",

@@ -22,10 +22,10 @@ export default function Nav(props) {
           =
         </button>
         <div id="navbar" class="collapse navbar-collapse" classList=${() => ({ show: visible().main })}>
-          <ul class="navbar-nav me-auto">
+          <ul class="navbar-nav w-100">
             <${For} each=${() => props.routes.filter((route) => !route.hidden)}>
               ${(route) => html`
-                <li class="nav-item" classList=${{ dropdown: route.children }}>
+                <li class="nav-item" classList=${{ dropdown: route.children, [route.class]: true }}>
                   <${A}
                     href=${route.rawPath || route.path}
                     end=${true}
