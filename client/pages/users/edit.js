@@ -18,6 +18,7 @@ function UserEdit() {
     limit: 0,
     remaining: 0
   });
+  const [originalUser, setOriginalUser] = createSignal({ ...user() })
   
   const [generateApiKey, setGenerateApiKey] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
@@ -34,6 +35,7 @@ function UserEdit() {
       .then(res => res.json())
       .then(data => {
         setUser(data);
+        setOriginalUser(data);
         return data;
       });
   });
@@ -73,6 +75,20 @@ function UserEdit() {
       setTimeout(() => setShowSuccess(false), 3000);
     }
   }
+
+  function handleRoleChange(roleId) {
+    //const to check if current role is not admin (roleId 1)
+    const isAdmin = user().roleId === 1;
+    //use XOR to see if the role is changing from admin to non-admin or vice versa
+    if (isAdmin && roleId !== 1) {
+      // If changing from admin to non-admin, reset limit to original value if non-zero, otherwise set to 5
+      setUser(prev => ({ ...prev, limit: originalUser().limit !== 0 ? originalUser().limit : 5 }));
+    } else if (!isAdmin && roleId === 1) {
+      // If changing to admin, set limit to 0
+      setUser(prev => ({ ...prev, limit: 0 }));
+    }
+    setUser(prev => ({ ...prev, roleId }));
+  };
   
   function handleInputChange(field, value) {
     setUser(prev => ({ ...prev, [field]: value }));
@@ -202,7 +218,7 @@ function UserEdit() {
                   class="form-select" 
                   id="roleId" 
                   value=${() => user().roleId || ''}
-                  onChange=${e => handleInputChange("roleId", e.target.value ? parseInt(e.target.value) : null)}>
+                  onChange=${e => handleRoleChange(parseInt(e.target.value))}>
                   ${() => roles()?.map(role => html`
                     <option value=${role.id} selected=${() => role.id === user().roleId}>${capitalize(role.name)}</option>
                   `)}
