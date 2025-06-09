@@ -90,20 +90,7 @@ function UserEdit() {
 
   return html`
     <img src="assets/images/users/profile_banner.png" alt="Profile Management Banner" class="img-fluid object-fit-cover w-100" style="height:153px;" />
-    <div class="container position-relative pb-4">
-      <img
-        class="position-absolute"
-        src="assets/images/users/profile_icon.svg"
-        alt="Profile Icon"
-        style="
-          width: 150px;
-          top: -55px;  /* Pulls icon up: -(icon_height / 2) to center on container's top edge */
-          left: 26.5%; /* (offset-sm-4 width) + (col-sm-2 width / 2) relative to container */
-          transform: translateX(-50%); /* Center the icon at the 'left' point */
-          filter: drop-shadow(10px 13px 9px rgba(0, 0, 0, 0.35));
-          z-index: 10; /* Ensure it's above other content */
-        "
-      />
+    <div class="container pb-4">
       <!-- Success Banner -->
       <${Show} when=${showSuccess}>
         <div class="alert alert-success alert-dismissible fade show position-absolute top-0 start-50 translate-middle-x mt-3" role="alert">
@@ -129,17 +116,32 @@ function UserEdit() {
       
       <!-- User Form -->
        <div class="row position-relative mb-5" style="margin-top:-80px">
-          <h1 class="offset-sm-4 col-auto font-title text-white fw-bold display-5" >${isProfileRoute ? "User Profile" : "Edit User"}</h1>
+          <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto font-title text-white fw-bold display-5" >${isProfileRoute ? "User Profile" : "Edit User"}</h1>
       </div>
       <div class="row mt-4 mb-5">
-        <h1 class="offset-sm-4 col-auto fs-3">${() => user().email || ''} </h1>
+        <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto fs-3">${() => user().email || ''} </h1>
+        <div class="position-relative offset-sm-2 offset-md-3 offset-xl-4">
+              <img
+                class="position-absolute"
+                src="assets/images/users/profile_icon.svg"
+                alt="Profile Icon"
+                style="
+                  width: 150px;
+                  top: -115px;  /* Pulls icon up: -(icon_height / 2) to center on container's top edge */
+                  left: -75px; 
+                  transform: translateX(-50%); /* Center the icon at the 'left' point */
+                  filter: drop-shadow(10px 13px 9px rgba(0, 0, 0, 0.35));
+                  z-index: 10; /* Ensure it's above other content */
+                "
+              />
+        </div>
       </div>
       <${Show} when=${() => !roles.loading && !userData.loading}>
         <form onSubmit=${handleSubmit} class="mb-5">
           <div class="row align-items-center mb-2">
             <!-- Account Type -->
-            <label class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Account Type</label>
-            <div class="col-sm-2">
+            <label class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Account Type</label>
+            <div class="col-sm-3 col-xl-2">
               <div> 
                 NIH
               </div>
@@ -147,8 +149,8 @@ function UserEdit() {
           </div>
           <div class="row align-items-center mb-2">
             <!-- Email -->
-            <label for="email" class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Email</label>
-            <div class="col-sm-2">
+            <label for="email" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Email</label>
+            <div class="col-sm-3 col-xl-2">
               <div>
                 ${() => user().email || ''} 
               </div>
@@ -156,8 +158,8 @@ function UserEdit() {
           </div>
           <div class="row align-items-center mb-2">
             <!-- Name -->
-            <label for="name" class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Name</label>
-            <div class="col-sm-2">
+            <label for="name" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Name</label>
+            <div class="col-sm-3 col-xl-2">
               <div> 
                 ${() => user().firstName + ' ' + user().lastName || ''}
               </div>
@@ -165,8 +167,8 @@ function UserEdit() {
           </div>
           <div class="row align-items-center mb-2">
             <!-- Status -->
-            <label for="status" class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Status<span class="text-danger">*</span></label>
-            <div class="col-sm-2">
+            <label for="status" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Status<span class="text-danger">*</span></label>
+            <div class="col-sm-3 col-xl-2">
               <${Show} when=${!isProfileRoute} fallback=${
                 html`
                   <div class="text-capitalize"> 
@@ -187,8 +189,8 @@ function UserEdit() {
           </div>
           <div class="row align-items-center mb-2">
             <!-- Role -->
-            <label for="roleId" class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Role</label>
-            <div class="col-sm-2">
+            <label for="roleId" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Role</label>
+            <div class="col-sm-3 col-xl-2">
               <${Show} when=${!isProfileRoute} fallback=${
                 html`
                   <div class="text-capitalize"> 
@@ -210,8 +212,8 @@ function UserEdit() {
           </div>
           <div class="row align-items-center mb-2">
             <!-- Weekly Cost Limit -->
-            <label for="limit" class="offset-sm-4 col-sm-2 align-self-center col-form-label form-label-user fw-semibold">Weekly Cost Limit ($)</label>
-            <div class="col-sm-2">
+            <label for="limit" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Weekly Cost Limit ($)</label>
+            <div class="col-sm-3 col-xl-2">
             <${Show} when=${() => !isProfileRoute && !(user().roleId === 1)} fallback=${
                 html`
                   <div> 
