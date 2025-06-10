@@ -255,7 +255,7 @@ function UserEdit() {
               <div class="col-12 mt-4">
                 <div class="d-flex gap-2 justify-content-center">
                   <a 
-                    href="/users"
+                    href="/_/users"
                     class="btn btn-outline-secondary text-decoration-none">
                     Cancel
                   </a>

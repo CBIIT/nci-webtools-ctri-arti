@@ -319,7 +319,7 @@ function UsersList() {
                   <td class="small">${user.estimatedCost}</td>
                   <td class="text-center">
                     <a
-                      href=${`/admin/users/${user.id}/usage`}
+                      href=${`/_/users/${user.id}/usage`}
                       class="btn btn-outline-primary btn-sm text-decoration-none w-100 p-1">
                       View Details
                     </a>
