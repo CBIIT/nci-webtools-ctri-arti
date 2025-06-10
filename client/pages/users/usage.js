@@ -1,314 +1,406 @@
-import { createSignal, createResource, Show } from "solid-js";
+import { createSignal, createEffect, createMemo, For, Show } from "solid-js";
+import { createResource } from "solid-js";
 import html from "solid-js/html";
-import { useParams } from "@solidjs/router";
+import { capitalize } from "/utils/utils.js";
 
-function UserUsage() {
-  const params = useParams();
-  const userId = params.id;
+// Helper function (can be at the top level or inside UsersList if preferred)
+const range = (start, end) => {
+  const length = end - start + 1;
+  return Array.from({ length }, (_, i) => start + i);
+};
+
+function UsersList() {
+  // Date range options for filtering
+  const dateRangeOptions = ["This Week", "Last 30 Days", "Last 60 Days", "Last 120 Days", "Last 360 Days"];
+  const [selectedDateRange, setSelectedDateRange] = createSignal("This Week");
   
-  // Set up date range with default values
-  const [dateRange, setDateRange] = createSignal({
-    startDate: getDefaultStartDate(),
-    endDate: formatDate(new Date())
-  });
-  
-  // Create resource for fetching usage data
-  const [usageData, { refetch }] = createResource(
-    () => {
-      const { startDate, endDate } = dateRange();
-      return fetch(`/api/admin/users/${userId}/usage?startDate=${startDate}&endDate=${endDate}`)
-        .then(res => res.json());
-    }
+  // Create resource for fetching user usage data
+  const [usageResource] = createResource(
+    () => selectedDateRange(),
+    (dateRange) => fetch(`/api/admin/usage?dateRange=${encodeURIComponent(dateRange)}`)
+      .then(res => res.json())
   );
   
-  // Get default start date (30 days ago)
-  function getDefaultStartDate() {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return formatDate(date);
-  }
+  const [rolesResource] = createResource(() => fetch("/api/admin/roles").then(res => res.json()));
   
-  // Format date as YYYY-MM-DD
-  function formatDate(date) {
-    return date.toISOString().split('T')[0];
-  }
+  // --- Filters & Sorting ---
+  const [searchQuery, setSearchQuery] = createSignal("");
+  const [selectedRole, setSelectedRole] = createSignal("All");
+  const [sortColumn, setSortColumn] = createSignal("estimatedCost");
+  const [sortOrder, setSortOrder] = createSignal("desc");
+
+  // --- Pagination State ---
+  const [currentPage, setCurrentPage] = createSignal(1);
+  const [rowsPerPage, setRowsPerPage] = createSignal(20);
+  const rowsPerPageOptions = [5, 10, 20, 50]; 
+  const idSuffix = "users";
+  //TODO: come back and change this to an endpoint of some sort instead of hard coding values in case we want to add more statuses
+  /*
+  const statuses = createMemo(() => {
+    const allStatuses = usersResource()?.map(user => user.status).filter(Boolean) || [];
+    return [...new Set(allStatuses)];
+  });*/
+  const statuses = ['All', 'active', 'inactive']; //hard coding for now because the above iteration doesn't show *all possible* filters
   
-  // Format currency
-  function formatCurrency(value) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 4,
-      maximumFractionDigits: 4
-    }).format(value);
-  }
+  const roleNames = createMemo(() => {
+    const allRoles = rolesResource()?.map(role => role.name).filter(Boolean) || [];
+    return ["All", ...new Set(allRoles)];
+  });
+
+  const filteredUsers = createMemo(() => {
+    if (!usageResource()?.users) return [];
+    return usageResource().users.filter(user => {
+      const roleMatch = selectedRole() === "All" || user.role === selectedRole();
+      const searchMatch = !searchQuery() || 
+        user.name.toLowerCase().includes(searchQuery().toLowerCase()) || 
+        user.email.toLowerCase().includes(searchQuery().toLowerCase());
+      return roleMatch && searchMatch;
+    });
+  });
   
-  // Format numbers with commas
-  function formatNumber(value) {
-    return new Intl.NumberFormat('en-US').format(value);
+  const sortedUsers = createMemo(() => {
+    const usersToSort = filteredUsers();
+    
+    if (!usersToSort || usersToSort.length === 0) {
+      return [];
+    }
+    const column = sortColumn(); 
+    const order = sortOrder();   
+    
+    return [...usersToSort].sort((a, b) => {
+      let valA = a[column];
+      let valB = b[column];
+      
+      let comparison = 0;
+      
+      // Special handling for numeric columns displayed as strings
+      if (column === "estimatedCost" || column === "weeklyCostLimit") {
+        // For weeklyCostLimit, handle "No limit" case
+        if (column === "weeklyCostLimit") {
+          const numA = valA === "No limit" ? Infinity : parseFloat(valA) || 0;
+          const numB = valB === "No limit" ? Infinity : parseFloat(valB) || 0;
+          comparison = numA - numB;
+        } else {
+          comparison = (parseFloat(valA) || 0) - (parseFloat(valB) || 0);
+        }
+      } else if (typeof valA === "number" && typeof valB === "number") {
+        comparison = (valA || 0) - (valB || 0);
+      } else {
+        // String comparison for non-numeric values
+        const strA = String(valA || "").toLowerCase();
+        const strB = String(valB || "").toLowerCase();
+        comparison = strA.localeCompare(strB);
+      }
+
+      return order === "asc" ? comparison : -comparison;
+    });
+  });
+
+  createEffect(() => {
+    const totalItems = sortedUsers().length;
+    const currentTotalPages = Math.ceil(totalItems / rowsPerPage());
+    
+    if (totalItems === 0) {
+        if (currentPage() !== 1) setCurrentPage(1);
+    } else if (currentPage() > currentTotalPages) { 
+        setCurrentPage(1);
+    }
+  });
+
+  function toggleSort(column) {
+    if (sortColumn() === column) {
+      setSortOrder(sortOrder() === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1);
   }
-  
-  // Handle date range change
-  function handleDateRangeChange(field, value) {
-    setDateRange(prev => ({ ...prev, [field]: value }));
-  }
-  
-  // Apply date filter
-  function applyDateFilter(e) {
-    e.preventDefault();
-    refetch();
-  }
-  
+
+  const paginatedUsers = createMemo(() => {
+    const start = (currentPage() - 1) * rowsPerPage();
+    const end = start + rowsPerPage();
+    return sortedUsers().slice(start, end);
+  });
+  // --- Pagination Logic (integrated from TablePagination) ---
+  const totalItemsForPagination = createMemo(() => sortedUsers().length);
+
+  const _totalPages = createMemo(() => {
+    if (totalItemsForPagination() === 0) return 1;
+    return Math.ceil(totalItemsForPagination() / rowsPerPage());
+  });
+
+  const displayedRowsText = createMemo(() => {
+    if (totalItemsForPagination() === 0) { return "0–0 of 0"; }
+    const startItem = (currentPage() - 1) * rowsPerPage() + 1;
+    const endItem = Math.min(currentPage() * rowsPerPage(), totalItemsForPagination());
+    return `${startItem}–${endItem} of ${totalItemsForPagination()}`;
+  });
+
+  const handleRowsPerPageChange = (e) => {
+    const newRowsPerPage = parseInt(e.target.value, 10);
+    setRowsPerPage(newRowsPerPage);
+    setCurrentPage(1); // Always reset to page 1 when RPP changes
+  };
+
+  const goToPage = (page) => {
+    const newPage = Number(page);
+    if (newPage >= 1 && newPage <= _totalPages() && newPage !== currentPage()) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const pageNumbersToDisplay = createMemo(() => {
+    const totalPgs = _totalPages(); 
+    const currentPg = currentPage();
+    const pageNumbers = [];
+
+    if (totalPgs <= 0) return [1]; 
+    if (totalPgs <= 7) { 
+      return range(1, totalPgs); 
+    }
+
+    pageNumbers.push(1); 
+    let middleDynamicStart, middleDynamicEnd;
+
+    if (currentPg <= 4) { 
+      middleDynamicStart = 2; middleDynamicEnd = 4;
+    } else if (currentPg >= totalPgs - 3) { 
+      middleDynamicStart = totalPgs - 3; middleDynamicEnd = totalPgs - 1;
+    } else { 
+      middleDynamicStart = currentPg - 1; middleDynamicEnd = currentPg + 1; 
+    }
+
+    if (middleDynamicStart > 2) { 
+      if (middleDynamicStart === 3) { 
+        pageNumbers.push(2); 
+      } else { 
+        pageNumbers.push("..."); 
+      } 
+    }
+    
+    for (let i = middleDynamicStart; i <= middleDynamicEnd; i++) { 
+      if (i > 1 && i < totalPgs) { 
+        if (!pageNumbers.includes(i)) pageNumbers.push(i); 
+      } 
+    }
+
+    if (middleDynamicEnd < totalPgs - 1) { 
+      if (middleDynamicEnd === totalPgs - 2) { 
+        if(!pageNumbers.includes(totalPgs - 1)) pageNumbers.push(totalPgs - 1); 
+      } else { 
+        pageNumbers.push("..."); 
+      } 
+    }
+
+    if (totalPgs > 1 && !pageNumbers.includes(totalPgs)) { 
+      pageNumbers.push(totalPgs); 
+    }
+    
+    const finalUniquePages = []; 
+    let lastPushedItem = null;
+    for (const item of pageNumbers) { 
+      if (item === "..." && lastPushedItem === "...") { continue; } 
+      finalUniquePages.push(item); 
+      lastPushedItem = item; 
+    }
+    return finalUniquePages;
+  });
+  // --- End of Integrated Pagination Logic ---
+
   return html`
     <div class="container py-4">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="font-title text-gradient fw-bold my-3">Usage Statistics</h1>
-        <div class="d-flex gap-2">
-          <a 
-            href=${`/user/${userId}`}
-            class="btn btn-outline-secondary btn-sm text-decoration-none">
-            Edit User
-          </a>
-          <a 
-            href="/users"
-            class="btn btn-outline-primary btn-sm text-decoration-none">
-            Back to Users
-          </a>
-        </div>
-      </div>
-      
-      <!-- User Info Card -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6">
-              <h5>${() => usageData()?.user ? `${usageData().user.firstName || ''} ${usageData().user.lastName || ''}` : ''}</h5>
-              <p class="text-muted mb-0">${() => usageData()?.user?.email || 'No email'}</p>
-            </div>
-            <div class="col-md-6 text-md-end">
-              <div class="mb-1">
-                <span class="fw-bold">Limit:</span> 
-                <span>${() => formatCurrency(usageData()?.user?.limit || 0)}</span>
-              </div>
-              <div>
-                <span class="fw-bold">Remaining:</span> 
-                <span>${() => formatCurrency(usageData()?.user?.remaining || 0)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Date Range Filter -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-body">
-          <h5 class="card-title">Filter</h5>
-          <form onSubmit=${applyDateFilter} class="row g-3 align-items-end">
-            <div class="col-md-5">
-              <label for="startDate" class="form-label">Start Date</label>
-              <input 
-                type="date" 
-                id="startDate" 
-                class="form-control" 
-                value=${() => dateRange().startDate} 
-                max=${() => dateRange().endDate}
-                onInput=${e => handleDateRangeChange('startDate', e.target.value)} />
-            </div>
-            <div class="col-md-5">
-              <label for="endDate" class="form-label">End Date</label>
-              <input 
-                type="date" 
-                id="endDate" 
-                class="form-control" 
-                value=${() => dateRange().endDate}
-                min=${() => dateRange().startDate}
-                max=${formatDate(new Date())}
-                onInput=${e => handleDateRangeChange('endDate', e.target.value)} />
-            </div>
-            <div class="col-md-2">
-              <button type="submit" class="btn btn-primary w-100">Apply</button>
-            </div>
-          </form>
-        </div>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="font-title fs-1 fw-bold mt-4 table-header-color">Usage</h1>
       </div>
       
       <!-- Error Alert -->
-      <${Show} when=${() => usageData.error}>
+      <${Show} when=${() => usageResource.error || rolesResource.error}>
         <div class="alert alert-danger" role="alert">
-          ${() => usageData.error || "An error occurred while fetching usage data"}
+          ${() => (usageResource.error || rolesResource.error || "An error occurred while fetching data")}
         </div>
       <//>
       
       <!-- Loading State -->
-      <${Show} when=${() => usageData.loading}>
+      <${Show} when=${() => usageResource.loading || rolesResource.loading}>
         <div class="d-flex justify-content-center my-5">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
         </div>
       <//>
-      
-      <!-- Usage Summary -->
-      <${Show} when=${() => !usageData.loading && usageData()?.summary}>
-        <div class="row mb-4">
-          <!-- Summary Card -->
-          <div class="col-md-12">
-            <div class="card shadow-sm h-100">
-              <div class="card-header bg-light">
-                <h5 class="card-title mb-0">Usage Summary</h5>
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-3 mb-3">
-                    <div class="card h-100">
-                      <div class="card-body text-center">
-                        <h6 class="text-muted">Total Requests</h6>
-                        <h3>${() => formatNumber(usageData().summary.totalRequests)}</h3>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-3 mb-3">
-                    <div class="card h-100">
-                      <div class="card-body text-center">
-                        <h6 class="text-muted">Input Tokens</h6>
-                        <h3>${() => formatNumber(usageData().summary.totalInputTokens)}</h3>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-3 mb-3">
-                    <div class="card h-100">
-                      <div class="card-body text-center">
-                        <h6 class="text-muted">Output Tokens</h6>
-                        <h3>${() => formatNumber(usageData().summary.totalOutputTokens)}</h3>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-3 mb-3">
-                    <div class="card h-100">
-                      <div class="card-body text-center">
-                        <h6 class="text-muted">Total Cost</h6>
-                        <h3>${() => formatCurrency(usageData().summary.totalCost)}</h3>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-          
-        <div class="row mb-4">
-          <!-- Model Breakdown -->
-          <div class="col-md-6 mb-3">
-            <div class="card shadow-sm h-100">
-              <div class="card-header bg-light">
-                <h5 class="card-title mb-0">Usage by Model</h5>
-              </div>
-              <div class="card-body">
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Model</th>
-                      <th class="text-end">Requests</th>
-                      <th class="text-end">Tokens</th>
-                      <th class="text-end">Cost</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${() => Object.entries(usageData().usageByModel || {}).map(([modelName, stats]) => html`
-                      <tr>
-                        <td>${modelName}</td>
-                        <td class="text-end">${formatNumber(stats.count)}</td>
-                        <td class="text-end">${formatNumber(stats.inputTokens + stats.outputTokens)}</td>
-                        <td class="text-end">${formatCurrency(stats.cost)}</td>
-                      </tr>
-                    `)}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Daily Usage -->
-          <div class="col-md-6 mb-3">
-            <div class="card shadow-sm h-100">
-              <div class="card-header bg-light">
-                <h5 class="card-title mb-0">Daily Usage</h5>
-              </div>
-              <div class="card-body">
-                ${() => usageData().dailyUsage && usageData().dailyUsage.length > 0 ? html`
-                  <table class="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th class="text-end">Requests</th>
-                        <th class="text-end">Cost</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${() => usageData().dailyUsage.map(day => html`
-                        <tr>
-                          <td>${day.date}</td>
-                          <td class="text-end">${formatNumber(day.count)}</td>
-                          <td class="text-end">${formatCurrency(day.cost)}</td>
-                        </tr>
-                      `)}
-                    </tbody>
-                  </table>
-                ` : html`
-                  <p class="text-muted text-center my-4">No daily usage data available</p>
-                `}
-              </div>
-            </div>
+
+      <!-- Filters -->
+      <div class="row my-3 align-items-center mx-1">
+        <div class="col-md-4 mb-2 mb-md-0">
+          <div class="input-group">
+            <span class="input-group-text">Search</span>
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Search by name or email"
+              value=${searchQuery()}
+              onInput=${e => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
         
-        <!-- Recent Requests -->
-        <div class="card shadow-sm mb-4">
-          <div class="card-header bg-light">
-            <h5 class="card-title mb-0">Recent Requests</h5>
-          </div>
-          <div class="card-body">
-            ${() => usageData().rawData && usageData().rawData.length > 0 ? html`
-              <div class="table-responsive">
-                <table class="table table-sm table-hover">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Model</th>
-                      <th class="text-end">Input Tokens</th>
-                      <th class="text-end">Output Tokens</th>
-                      <th class="text-end">Cost</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${() => usageData().rawData.slice(0, 20).map(entry => html`
-                      <tr>
-                        <td>${new Date(entry.createdAt).toLocaleString()}</td>
-                        <td>${entry.Model?.label || 'Unknown'}</td>
-                        <td class="text-end">${formatNumber(entry.inputTokens || 0)}</td>
-                        <td class="text-end">${formatNumber(entry.outputTokens || 0)}</td>
-                        <td class="text-end">${formatCurrency(entry.cost || 0)}</td>
-                      </tr>
-                    `)}
-                  </tbody>
-                </table>
+        <label for="role-filter" class="col-auto col-form-label fw-semibold">Role</label>
+        <div class="col-md-2 mb-2 mb-md-0">
+          <select 
+            class="form-select" 
+            id="role-filter" 
+            aria-label="Select Role Filter"
+            value=${selectedRole()}
+            onInput=${e => setSelectedRole(e.target.value)}
+            >
+              <${For} each=${() => roleNames()}>
+                ${role => html`<option value=${role}>${capitalize(role)}</option>`}
+              <//>
+          </select>
+        </div>
+        
+        <label for="date-range-filter" class="col-auto col-form-label fw-semibold">Date Range</label>
+        <div class="col-md-2">
+          <select 
+            class="form-select" 
+            id="date-range-filter" 
+            value=${selectedDateRange()}
+            aria-label="Select Date Range"
+            onInput=${e => setSelectedDateRange(e.target.value)}
+            >
+              <${For} each=${dateRangeOptions}>
+                ${range => html`<option value=${range}>${range}</option>`}
+              <//>
+          </select>
+        </div>
+      </div>
+
+      <!-- Users Table -->
+      <${Show} when=${() => !usageResource.loading && usageResource()?.users?.length > 0}>
+        <div class="table-responsive rounded users-table">
+          <table class="table table-striped table-hover mb-0">
+            <thead>
+              <tr>
+                <th onClick=${() => toggleSort("name")} class="cursor-pointer ps-4">
+                  User ${() => sortColumn() === "name" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th onClick=${() => toggleSort("email")} class="cursor-pointer">
+                  Email ${() => sortColumn() === "email" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th onClick=${() => toggleSort("role")} class="cursor-pointer">
+                  User Role ${() => sortColumn() === "role" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th onClick=${() => toggleSort("inputTokens")} class="cursor-pointer">
+                  Input Tokens ${() => sortColumn() === "inputTokens" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th onClick=${() => toggleSort("outputTokens")} class="cursor-pointer">
+                  Output Tokens ${() => sortColumn() === "outputTokens" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th onClick=${() => toggleSort("weeklyCostLimit")} class="cursor-pointer">
+                  Weekly Cost Limit ($) ${() => sortColumn() === "weeklyCostLimit" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th onClick=${() => toggleSort("estimatedCost")} class="cursor-pointer">
+                  Estimated Cost ($) ${() => sortColumn() === "estimatedCost" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <${For} each=${paginatedUsers} fallback=${html`<tr><td colspan="8" class="text-center">No users match current filters.</td></tr>`}>
+                ${user => html`
+                <tr>
+                  <td class="ps-4 small">${user.name}</td>
+                  <td class="small">${user.email || '-'}</td>
+                  <td class="text-capitalize small">${user.role || "No Role"}</td>
+                  <td class="small">${user.inputTokens}</td>
+                  <td class="small">${user.outputTokens}</td>
+                  <td class="small">${user.weeklyCostLimit}</td>
+                  <td class="small">${user.estimatedCost}</td>
+                  <td class="text-center">
+                    <a
+                      href=${`/admin/users/${user.id}/usage`}
+                      class="btn btn-outline-primary btn-sm text-decoration-none w-100 p-1">
+                      View Details
+                    </a>
+                  </td>
+                </tr>
+                `}
+              <//>
+            </tbody>
+          </table>
+          <div class="table-pagination d-flex justify-content-end align-items-center gap-3">
+            <div class="d-flex align-items-center">
+              <label for=${`rows-select-${idSuffix}`} class="col-form-label me-2 small">Rows per page:</label>
+              <div>
+                <select 
+                  class="form-select form-select-sm" 
+                  id=${`rows-select-${idSuffix}`} 
+                  onInput=${handleRowsPerPageChange}
+                >
+                  <${For} each=${rowsPerPageOptions}>
+                    ${(option) => html`<option value=${option} selected=${() => option === rowsPerPage()}>${option}</option>`}
+                  <//>
+                </select>
               </div>
-            ` : html`
-              <p class="text-muted text-center my-4">No recent requests found</p>
-            `}
+            </div>
+            <div class="text-muted px-1 small">${() => displayedRowsText()}</div>
+            <nav aria-label="Page navigation" class="me-4 ms-3">
+              <ul class="pagination pagination-sm mb-0">
+                <li 
+                  classList=${() => ({ 
+                    "page-item": true, 
+                    "disabled": currentPage() === 1 || totalItemsForPagination() === 0 
+                  })}
+                >
+                  <button class="page-link" onClick=${() => goToPage(currentPage() - 1)} aria-label="Previous">
+                    <span aria-hidden="true">«</span>
+                  </button>
+                </li>
+                <${For} each=${pageNumbersToDisplay}>
+                  ${(page) => typeof page === "number" 
+                    ? html`<li 
+                        classList=${() => ({ 
+                          "page-item": true, 
+                          "active": currentPage() === page 
+                        })}
+                      >
+                        <button class="page-link" onClick=${() => goToPage(page)}>${page}</button>
+                      </li>` 
+                    : html`<li class="page-item disabled"><span class="page-link">...</span></li>` 
+                  }
+                <//>
+                <li 
+                  classList=${() => ({ 
+                    "page-item": true, 
+                    "disabled": currentPage() === _totalPages() || totalItemsForPagination() === 0 
+                  })}
+                >
+                  <button class="page-link" onClick=${() => goToPage(currentPage() + 1)} aria-label="Next">
+                    <span aria-hidden="true">»</span>
+                  </button>
+                </li>
+              </ul>
+            </nav>
           </div>
         </div>
       <//>
-      
-      <!-- No Data Message -->
-      <${Show} when=${() => !usageData.loading && !usageData()?.summary}>
+
+      <!-- No Users Message -->
+      <${Show} when=${() => !usageResource.loading && (!usageResource()?.users || usageResource().users.length === 0)}>
         <div class="alert alert-info">
-          No usage data found for this user in the selected date range.
+          No usage data found for the selected date range.
+        </div>
+      <//>
+      
+      <!-- Date Info -->
+      <${Show} when=${() => usageResource() && usageResource().users?.length > 0}>
+        <div class="mt-3 text-muted small">
+          <p>Showing data from ${() => new Date(usageResource().startDate).toLocaleDateString()} to ${() => new Date(usageResource().endDate).toLocaleDateString()}</p>
         </div>
       <//>
     </div>
   `;
 }
 
-export default UserUsage;
+export default UsersList;
