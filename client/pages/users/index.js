@@ -49,16 +49,46 @@ function UsersList() {
   //Might require a refactor to include Account Type as a sortable field; currently not stored in db
   const sortedUsers = createMemo(() => {
     const usersToSort = filteredUsers();
-    const column = sortColumn();
-    const order = sortOrder();
+    
+    if (!usersToSort || usersToSort.length === 0) {
+      return [];
+    }
+    const column = sortColumn(); 
+    const order = sortOrder();   
+    let valueType;
+    const firstUser = usersToSort[0];
 
+    if (column === "Role.name") {
+      valueType = 'string';
+    } else if (firstUser && firstUser.hasOwnProperty(column)) {
+      valueType = typeof firstUser[column];
+    } else {
+      console.warn(`[sortedUsers] Could not determine value type for column "${column}". Defaulting to string comparison.`);
+      valueType = 'string'; 
+    }
+   
     return [...usersToSort].sort((a, b) => {
-      const aValue = (a[column] || a.Role?.name || "").toString().toLowerCase();
-      const bValue = (b[column] || b.Role?.name || "").toString().toLowerCase();
+      let valA, valB;
 
-      if (aValue < bValue) return order === "asc" ? -1 : 1;
-      if (aValue > bValue) return order === "asc" ? 1 : -1;
-      return 0;
+      if (column === "Role.name") {
+        valA = a.Role?.name; 
+        valB = b.Role?.name;
+      } else {
+        valA = a[column];
+        valB = b[column];
+      }
+
+      let comparison = 0;
+
+      if (valueType === "number") {
+        comparison = (valA || 0) - (valB || 0); 
+      } else if (valueType === "string") {
+        const strA = String(valA || "").toLowerCase();
+        const strB = String(valB || "").toLowerCase();
+        comparison = strA.localeCompare(strB);
+      }
+
+      return order === "asc" ? comparison : -comparison;
     });
   });
 
@@ -247,6 +277,9 @@ function UsersList() {
                 <th onClick=${() => toggleSort("Role.name")} class="cursor-pointer">
                   Role ${() => sortColumn() === "Role.name" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
                 </th>
+                <th onClick=${() => toggleSort("limit")} class="cursor-pointer">
+                  Weekly Cost Limit ${() => sortColumn() === "limit" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
+                </th>
                 <th class="text-center">Action</th>
               </tr>
             </thead>
@@ -254,9 +287,9 @@ function UsersList() {
               <${For} each=${paginatedUsers} fallback=${html`<tr><td colspan="6" class="text-center">No users match current filters.</td></tr>`}>
                 ${user => html`
                 <tr>
-                  <td class="ps-4">${user.lastName || ''}${user.lastName && user.firstName ? ', ' : ''}${user.firstName || ''}</td>
-                  <td>NIH</td>
-                  <td>${user.email || '-'}</td>
+                  <td class="ps-4 small">${user.lastName || ''}${user.lastName && user.firstName ? ', ' : ''}${user.firstName || ''}</td>
+                  <td class="small">NIH</td>
+                  <td class="small">${user.email || '-'}</td>
                   <td>
                     <span class=${() => 
                       `badge text-capitalize ${
@@ -268,11 +301,12 @@ function UsersList() {
                       ${user.status || 'unknown'}
                     </span>
                   </td>
-                  <td class="text-capitalize">${() => user.Role?.name || "No Role"}</td>
+                  <td class="text-capitalize small">${() => user.Role?.name || "No Role"}</td>
+                  <td class="text-capitalize small">${() => user.roleId === 1 ? "No Limit" : user.limit}</td>
                   <td class="align-items-center">
                     <a
                       href=${`/user/${user.id}`}
-                      class="btn btn-outline-primary btn-block text-decoration-none w-100 p-0 ">
+                      class="btn btn-outline-primary btn-block text-decoration-none w-100 p-0">
                       Edit
                     </a>
                   </td>
