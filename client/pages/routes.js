@@ -8,7 +8,8 @@ const Translate = AuthorizedImport({ path: "./tools/translate.js" });
 const SemanticSearch = AuthorizedImport({ path: "./tools/semantic-search.js" });
 const Users = AuthorizedImport({ path: "./users/index.js", roles: [1] });
 const UserEdit = AuthorizedImport({ path: "./users/edit.js", roles: [1] });
-const UserUsage = AuthorizedImport({ path: "./users/usage.js", roles: [1] });
+const Usage = AuthorizedImport({ path: "./users/usage.js", roles: [1] });
+const UserUsage = AuthorizedImport({ path: "./users/user-usage.js", roles: [1] });
 
 const { user } = await fetch("/api/session").then((res) => res.json());
 const hasRole = (roleIds) => user && roleIds.includes(user?.Role?.id);
@@ -85,7 +86,7 @@ const routes = [
       {
         path: "usage",
         title: "Usage",
-        component: Users,
+        component: Usage,
         hidden: !hasRole([1]),
       },
       {
