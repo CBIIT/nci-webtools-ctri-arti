@@ -48,8 +48,9 @@ export default function Nav(props) {
                                 <${A}
                                   href=${child.rawPath || [route.path, child.path].join("/")}
                                   activeClass="active"
+                                  end=${true}
                                   target=${child.rawPath && "_self" }
-                                  class="fs-5 fw-semibold nav-link text-decoration-none me-3 my-3"
+                                  class="fs-5 fw-semibold nav-link text-decoration-none me-3 my-3 d-inline-block"
                                   onClick=${() => setVisible({})}>
                                   ${child.title}
                                 <//>
