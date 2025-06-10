@@ -72,20 +72,24 @@ const routes = [
     class: "ms-auto",
     children: user && [
       {
+        rawPath: "_/users/" + user.id,
+        title: "My Profile",
+      },
+      {
         path: "users",
-        title: "Users",
+        title: "Manage Users",
         component: Users,
         hidden: !hasRole([1]),
       },
       {
         path: "users/:id",
-        title: "User",
+        title: "User Profile",
         component: UserEdit,
         hidden: true,
       },
       {
         path: "usage",
-        title: "Usage",
+        title: "User Usage",
         component: Usage,
         hidden: !hasRole([1]),
       },
