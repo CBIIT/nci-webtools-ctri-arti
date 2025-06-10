@@ -305,7 +305,7 @@ function UsersList() {
                   <td class="text-capitalize small">${() => user.roleId === 1 ? "No Limit" : user.limit}</td>
                   <td class="align-items-center">
                     <a
-                      href=${`/user/${user.id}`}
+                      href=${`/_/users/${user.id}`}
                       class="btn btn-outline-primary btn-block text-decoration-none w-100 p-0">
                       Edit
                     </a>
