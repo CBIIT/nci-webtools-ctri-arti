@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { Op } from "sequelize";
+import { Op, fn, col } from "sequelize";
 import { requireRole } from "../middleware.js";
-import { User, Model, Role, Usage } from "../database.js";
+import { User, Model, Role, Usage, Provider } from "../database.js";
 
 const api = Router();
 
@@ -202,6 +202,149 @@ api.get("/admin/users/:id/usage", requireRole("admin"), async (req, res) => {
 api.get("/admin/roles", requireRole("admin"), async (req, res) => {
   const roles = await Role.findAll({ order: [["order"]], });// Order by the 'order' field 
   res.json(roles);
+});
+
+// Get usage statistics for all users (admin only)
+api.get("/admin/usage", requireRole("admin"), async (req, res) => {
+  try {
+    // Get the date range from query parameters
+    const now = new Date();
+    let startDate, endDate;
+    const dateRange = req.query.dateRange || "This Week";
+    
+    // Calculate start date based on dateRange parameter
+    switch(dateRange) {
+      case "This Week": {
+        // Start from the most recent Sunday at midnight
+        startDate = new Date(now);
+        const day = startDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const diff = day; // Days since last Sunday
+        startDate.setDate(startDate.getDate() - diff);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      }
+      case "Last 30 Days": {
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 30);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      }
+      case "Last 60 Days": {
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 60);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      }
+      case "Last 120 Days": {
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 120);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      }
+      case "Last 360 Days": {
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 360);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      }
+      default: { // Default to This Week
+        startDate = new Date(now);
+        const day = startDate.getDay();
+        const diff = day;
+        startDate.setDate(startDate.getDate() - diff);
+        startDate.setHours(0, 0, 0, 0);
+      }
+    }
+    
+    // End date is now
+    endDate = new Date(now);
+    
+    // Get all users with their roles
+    const users = await User.findAll({
+      include: [{ model: Role }]
+    });
+    
+    // Get all usage data within the date range
+    const usageData = await Usage.findAll({
+      where: {
+        createdAt: {
+          [Op.between]: [startDate, endDate],
+        },
+      },
+      include: [
+        { model: Model },
+        { model: User, include: [{ model: Role }] }
+      ],
+    });
+    
+    // Get all models for reference
+    const models = await Model.findAll({
+      include: [{ model: Provider }]
+    });
+    
+    // Process the data to create user summaries
+    const userSummaries = users.map(user => {
+      // Filter usage for this specific user
+      const userUsage = usageData.filter(entry => entry.userId === user.id);
+      
+      // Group usage by model
+      const usageByModel = {};
+      let totalCost = 0;
+      
+      userUsage.forEach(entry => {
+        const modelId = entry.modelId;
+        const model = models.find(m => m.id === modelId);
+        const modelName = model?.label || "Unknown";
+        
+        if (!usageByModel[modelName]) {
+          usageByModel[modelName] = {
+            inputTokens: 0,
+            outputTokens: 0,
+            cost: 0,
+          };
+        }
+        
+        usageByModel[modelName].inputTokens += entry.inputTokens || 0;
+        usageByModel[modelName].outputTokens += entry.outputTokens || 0;
+        usageByModel[modelName].cost += entry.cost || 0;
+        totalCost += entry.cost || 0;
+      });
+      
+      // Calculate input and output tokens for display
+      const inputTokens = Object.values(usageByModel)
+        .map(m => Math.round(m.inputTokens))
+        .join("/");
+      
+      const outputTokens = Object.values(usageByModel)
+        .map(m => Math.round(m.outputTokens))
+        .join("/");
+      
+      // Format the weekly cost limit
+      const weeklyCostLimit = user.roleId === 1 ? "No limit" : user.limit || 0;
+      
+      return {
+        id: user.id,
+        name: `${user.lastName || ''}, ${user.firstName || ''}`.trim(),
+        email: user.email,
+        role: user.Role?.name || "Unknown",
+        roleId: user.roleId,
+        inputTokens: inputTokens || "0",
+        outputTokens: outputTokens || "0",
+        weeklyCostLimit,
+        estimatedCost: parseFloat(totalCost.toFixed(2))
+      };
+    });
+    
+    res.json({
+      dateRange,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      users: userSummaries
+    });
+  } catch (error) {
+    console.error("Error fetching users usage:", error);
+    res.status(500).json({ error: "Failed to fetch users usage data" });
+  }
 });
 
 export default api;
