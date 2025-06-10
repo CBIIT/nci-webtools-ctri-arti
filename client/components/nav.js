@@ -1,11 +1,13 @@
 import html from "solid-js/html";
 import { A } from "@solidjs/router";
 import { createSignal, createResource, For, Show } from "solid-js";
+import { Portal } from "solid-js/web";
 
 export default function Nav(props) {
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
+  const [menuRef, setMenuRef] = createSignal(null);
   const [visible, setVisible] = createSignal({});
-  const toggleVisible = (key) => setVisible((prev) => ({ [key]: !prev[key] }));
+  const toggleVisible = (key) => setVisible((prev) => ({ [key]: !prev?.[key] }));
   return html`
     <nav class="navbar navbar-expand-lg font-title">
       <div class="container">
@@ -36,23 +38,28 @@ export default function Nav(props) {
                     onClick=${(ev) => (route.children ? (ev.preventDefault(), toggleVisible(route.path)) : setVisible({}))}>
                     ${route.title}
                   <//>
-                  <${Show} when=${route.children}>
-                    <ul class="dropdown-menu border-0" classList=${() => ({ show: visible()[route.path] })}>
-                      <${For} each=${route.children?.filter((c) => !c.hidden)}>
-                        ${(child) => html`
-                          <li>
-                            <${A}
-                              href=${child.rawPath || [route.path, child.path].join("/")}
-                              activeClass="active"
-                              target=${child.rawPath && "_self" }
-                              class="dropdown-item nav-link text-decoration-none"
-                              onClick=${() => setVisible({})}>
-                              ${child.title}
-                            <//>
-                          </li>
-                        `}
-                      <//>
-                    </ul>
+                  <${Show} when=${() => route.children}>
+                    <${Portal} mount=${menuRef}>
+                      <div class="container" hidden=${() => !visible()[route.path]}>
+                        <div class="row">
+                          <${For} each=${route.children?.filter((c) => !c.hidden)}>
+                            ${(child) => html`
+                              <div class="col">
+                                <${A}
+                                  href=${child.rawPath || [route.path, child.path].join("/")}
+                                  activeClass="active"
+                                  target=${child.rawPath && "_self" }
+                                  class="fs-5 fw-semibold nav-link text-decoration-none me-3 my-3"
+                                  onClick=${() => setVisible({})}>
+                                  ${child.title}
+                                <//>
+                              </div>
+                            `}
+                          <//>
+                        </div>
+                      </div>
+                      
+                    <//>
                   <//>
                 </li>
               `}
@@ -61,5 +68,7 @@ export default function Nav(props) {
         </div>
       </div>
     </nav>
+    <nav ref=${e => setMenuRef(e)} class="bg-primary text-light position-absolute w-100" />
+
   `;
 }
