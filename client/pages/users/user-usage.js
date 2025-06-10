@@ -65,11 +65,6 @@ function UserUsage() {
         <h1 class="font-title text-gradient fw-bold my-3">Usage Statistics</h1>
         <div class="d-flex gap-2">
           <a 
-            href=${`/_/users/${userId}`}
-            class="btn btn-outline-secondary btn-sm text-decoration-none">
-            Edit User
-          </a>
-          <a 
             href="/_/usage"
             class="btn btn-outline-primary btn-sm text-decoration-none">
             Back to Usage Dashboard
