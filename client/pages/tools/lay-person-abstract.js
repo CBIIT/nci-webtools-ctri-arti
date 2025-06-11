@@ -1,9 +1,8 @@
 import html from "solid-js/html";
-import { createSignal, createResource } from "solid-js";
+import { Show, createSignal, createResource } from "solid-js";
 import { parseDocument } from "/utils/parsers.js";
 import { createReport } from "docx-templates";
 import yaml from "yaml";
-
 
 async function readFile(file, type = "text") {
   const reader = new FileReader();
@@ -21,6 +20,7 @@ export default function Page() {
   const [outputText, setOutputText] = createSignal("");
   const [systemPrompt, setSystemPrompt] = createSignal(defaultSystemPrompt);
   const [outputTemplate, setOutputTemplate] = createSignal();
+  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
   async function handleFileSelect(event) {
     const input = event.target;
@@ -49,7 +49,7 @@ export default function Page() {
     const filename = "output.docx";
     const cmdDelimiter = ["{{", "}}"];
 
-    const template = outputTemplate() || await fetch(templateUrl).then((res) => res.arrayBuffer());
+    const template = outputTemplate() || (await fetch(templateUrl).then((res) => res.arrayBuffer()));
     const data = yaml.parse(outputText());
     const buffer = await createReport({ template, data, cmdDelimiter });
     const blob = new Blob([buffer], { type });
@@ -150,35 +150,39 @@ export default function Page() {
       </div>
 
       <div class="row">
-        <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-          <details class="small text-secondary mt-2">
-            <summary>Advanced Options</summary>
+        <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
+          <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
+            <details class="small text-secondary mt-2">
+              <summary>Advanced Options</summary>
 
-            <div class="d-flex justify-content-between align-items-center">
-              <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
-              <a href="/templates/lay-person-abstract-template.docx" download="lay-person-abstract-template.docx" class="small">Download Example</a>
-            </div>
-            <input
-              type="file"
-              id="outputTemplateFile"
-              name="outputTemplateFile"
-              class="form-control form-control-sm mb-2"
-              accept=".txt, .docx, .pdf"
-              onChange=${handleFileSelect} />
+              <div class="d-flex justify-content-between align-items-center">
+                <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
+                <a href="/templates/lay-person-abstract-template.docx" download="lay-person-abstract-template.docx" class="small"
+                  >Download Example</a
+                >
+              </div>
+              <input
+                type="file"
+                id="outputTemplateFile"
+                name="outputTemplateFile"
+                class="form-control form-control-sm mb-2"
+                accept=".txt, .docx, .pdf"
+                onChange=${handleFileSelect} />
 
-            <label for="systemPrompt" class="form-label">System Prompt</label>
-            <textarea
-              class="form-control form-control-sm rounded-top-0 flex-grow-1"
-              id="systemPrompt"
-              name="systemPrompt"
-              rows="6"
-              placeholder="Enter system prompt"
-              value=${systemPrompt}
-              onChange=${(e) => setSystemPrompt(e.target.value)}
-              required />
-            <small>Use <strong>{{document}}</strong> as a placeholder for the source document.</small>
-          </details>
-        </div>
+              <label for="systemPrompt" class="form-label">System Prompt</label>
+              <textarea
+                class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                id="systemPrompt"
+                name="systemPrompt"
+                rows="6"
+                placeholder="Enter system prompt"
+                value=${systemPrompt}
+                onChange=${(e) => setSystemPrompt(e.target.value)}
+                required />
+              <small>Use <strong>{{document}}</strong> as a placeholder for the source document.</small>
+            </details>
+          </div>
+        <//>
         <div class="col-md-6 mb-2  flex-grow-1  text-end">
           <button class="btn btn-sm btn-outline-danger me-1" id="clearButton" type="reset">Reset</button>
           <button class="btn btn-sm btn-outline-primary me-1" id="submitButton" type="submit">Submit</button>
@@ -212,7 +216,7 @@ export const defaultOutput = {
   voluntariness: "",
   withdrawal: "",
   other_questions: [],
-}
+};
 
 export const defaultSystemPrompt = `# Clinical Trial Protocol Translator
 
