@@ -2,7 +2,7 @@ import dompurify from "dompurify";
 import TurndownService from "turndown";
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.1.91/build/pdf.worker.min.mjs";
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@5/build/pdf.worker.min.mjs";
 
 /**
  * Returns the text content of a document
