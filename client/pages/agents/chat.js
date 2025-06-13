@@ -32,7 +32,7 @@ export default function Page() {
   }
 
   return html`
-    <div class="container">
+    <div class="container py-3">
       <div class="row">
         <div class="col d-flex align-items-center">
           <button class="btn btn-sm btn-light d-flex align-items-center" onClick=${toggle("conversations")}>
