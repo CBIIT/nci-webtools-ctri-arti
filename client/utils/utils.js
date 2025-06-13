@@ -70,7 +70,7 @@ export async function search({ query }) {
   return results;
 }
 
-export async function queryDocumentWithModel(document, topic, model = "us.anthropic.claude-3-5-haiku-20241022-v1:0") {
+export async function queryDocumentWithModel(document, topic, model = "us.meta.llama4-maverick-17b-instruct-v1:0") {
   if (!topic) return document;
   document = truncate(document, 500_000);
   const system = `You are a research assistant. You will be given a document and a question. 
