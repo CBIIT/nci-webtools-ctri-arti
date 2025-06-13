@@ -58,21 +58,25 @@ export async function runModel({ model, messages, system: systemPrompt, tools = 
       }
     }
   }
-  // try to add a cache point to the largest message in the second half of the conversation (usually stays the same)
-  const cachePoint = { type: "default" };
-  const cacheMessages = messages.filter((m, i, a) => i >= a.length / 2 && m.role === 'user');
-  const largestMessage = cacheMessages.reduce((acc, curr) => JSON.stringify(acc).length > JSON.stringify(curr).length ? acc : curr, messages[0]);
-  const largestMessageLength = JSON.stringify(largestMessage).length;
-  if (largestMessageLength > 6000) {
-    largestMessage.content.push({ cachePoint });
-  }
   const {
-    model: { maxOutput },
+    model: { maxOutput, cost1kCacheRead: hasCache },
     provider,
   } = await getModelProvider(model);
   const maxTokens = Math.min(maxOutput, thoughtBudget + 2000);
-  const system = systemPrompt ? [{ text: systemPrompt }, { cachePoint }] : undefined;
-  const toolConfig = tools.length > 0 ? { tools: tools.concat([{ cachePoint }]) } : undefined;
+
+  // try to add a cache point to the largest message in the second half of the conversation (usually stays the same)
+  const cachePoint = hasCache ? { cachePoint: { type: "default" } } : undefined;
+  
+  if (hasCache) {
+    const cacheMessages = messages.filter((m, i, a) => i >= a.length / 2 && m.role === 'user');
+    const largestMessage = cacheMessages.reduce((acc, curr) => JSON.stringify(acc).length > JSON.stringify(curr).length ? acc : curr, messages[0]);
+    const largestMessageLength = JSON.stringify(largestMessage).length;
+    if (largestMessageLength > 1000) {
+      largestMessage.content.push(cachePoint);
+    }
+  }
+  const system = systemPrompt ? [{ text: systemPrompt }, cachePoint].filter(Boolean) : undefined;
+  const toolConfig = tools.length > 0 ? { tools: [...tools, cachePoint].filter(Boolean) } : undefined;
   const inferenceConfig = thoughtBudget > 0 ? { maxTokens } : undefined;
   const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
   const additionalModelRequestFields = thoughtBudget > 0 ? { thinking } : undefined;
