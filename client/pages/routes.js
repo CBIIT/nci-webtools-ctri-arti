@@ -1,7 +1,7 @@
 import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
-const Chat = AuthorizedImport({ path: "./agents/chat.js" });
-const FedPulse = AuthorizedImport({ path: "./agents/fedpulse.js" });
+const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
+const FedPulse = AuthorizedImport({ path: "./tools/chat/fedpulse.js" });
 const ConsentCrafter = AuthorizedImport({ path: "./tools/consent-crafter.js" });
 const LayPersonAbstract = AuthorizedImport({ path: "./tools/lay-person-abstract.js" });
 const Translate = AuthorizedImport({ path: "./tools/translate.js" });
