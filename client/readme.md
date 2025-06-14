@@ -616,6 +616,8 @@ function DataComponent() {
 ### Component Organization
 
 ```js
+import { createResource, Suspense, ErrorBoundary, For } from "solid-js";
+
 // Good: Single responsibility
 function UserCard(props) {
   return html`
@@ -627,21 +629,30 @@ function UserCard(props) {
   `;
 }
 
-// Good: Separate data fetching from presentation
+// Good: Use createResource for data fetching
 function UserList() {
-  const [users, setUsers] = createSignal([]);
-  
-  onMount(async () => {
+  const [users] = createResource(async () => {
     const response = await fetch("/api/users");
-    setUsers(await response.json());
+    if (!response.ok) throw new Error(`Failed to fetch users: ${response.status}`);
+    return response.json();
   });
   
   return html`
-    <div class="user-list">
-      <${For} each=${users}>
-        ${(user) => html`<${UserCard} user=${user} />`}
+    <${ErrorBoundary} fallback=${(error, reset) => html`
+      <div class="alert alert-danger">
+        <h4>Error loading users</h4>
+        <p>${error.message}</p>
+        <button onClick=${reset}>Try Again</button>
+      </div>
+    `}>
+      <${Suspense} fallback=${html`<div class="loading">Loading users...</div>`}>
+        <div class="user-list">
+          <${For} each=${users}>
+            ${(user) => html`<${UserCard} user=${user} />`}
+          <//>
+        </div>
       <//>
-    </div>
+    <//>
   `;
 }
 ```
@@ -649,45 +660,35 @@ function UserList() {
 ### Error Handling
 
 ```js
-function RobustComponent() {
-  const [data, setData] = createSignal(null);
-  const [error, setError] = createSignal(null);
-  const [loading, setLoading] = createSignal(false);
+import { ErrorBoundary, Suspense, createResource } from "solid-js";
+
+function DataComponent() {
+  const [data, { refetch }] = createResource(async () => {
+    const response = await fetch("/api/data");
+    if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+    return response.json();
+  });
   
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch("/api/data");
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      setData(await response.json());
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const onReset = async (e, callback) => {
+    await refetch();
+    callback?.();
   };
   
-  onMount(fetchData);
-  
   return html`
-    <div>
-      <${Show} when=${loading}>
-        <div>Loading...</div>
-      <//>
-      
-      <${Show} when=${error}>
-        <div class="alert alert-danger">
-          Error: ${error}
-          <button onClick=${fetchData}>Retry</button>
+    <${ErrorBoundary} fallback=${(err, reset) => html`
+      <div class="alert alert-danger">
+        <h4>Error: ${err.message}</h4>
+        <button onClick=${(e) => onReset(e, reset)}>Clear Error</button>
+      </div>
+    `}>
+      <${Suspense} fallback=${html`<div>Loading...</div>`}>
+        <div>
+          <h3>Data loaded successfully!</h3>
+          <pre>${() => JSON.stringify(data(), null, 2)}</pre>
+          <button onClick=${refetch}>Refresh Data</button>
         </div>
       <//>
-      
-      <${Show} when=${() => data() && !loading()}>
-        <div>Data loaded successfully!</div>
-      <//>
-    </div>
+    <//>
   `;
 }
 ```
