@@ -2,8 +2,8 @@ import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
 const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
 const FedPulse = AuthorizedImport({ path: "./tools/chat/fedpulse.js" });
-const ConsentCrafter = AuthorizedImport({ path: "./tools/consent-crafter.js" });
-const LayPersonAbstract = AuthorizedImport({ path: "./tools/lay-person-abstract.js" });
+const ConsentCrafter = AuthorizedImport({ path: "./tools/consent-crafter/index.js" });
+const LayPersonAbstract = AuthorizedImport({ path: "./tools/consent-crafter/lay-person-abstract.js" });
 const Translate = AuthorizedImport({ path: "./tools/translate.js" });
 const SemanticSearch = AuthorizedImport({ path: "./tools/semantic-search.js" });
 const Users = AuthorizedImport({ path: "./users/index.js", roles: [1] });
@@ -42,12 +42,12 @@ const routes = [
         component: FedPulse,
       },
       {
-        path: "consentcrafter",
+        path: "consent-crafter",
         title: "ConsentCrafter",
         component: ConsentCrafter,
       },
       {
-        path: "laypersonabstract",
+        path: "lay-person-abstract",
         title: "Lay Person Abstract",
         component: LayPersonAbstract,
       },
@@ -58,7 +58,7 @@ const routes = [
         hidden: true,
       },
       {
-        path: "semanticsearch",
+        path: "semantic-search",
         title: "Semantic Search",
         component: SemanticSearch,
         hidden: true,
@@ -69,7 +69,7 @@ const routes = [
     path: "/_",
     rawPath: !user ? "/api/login" : undefined,
     title: user?.firstName || "Login",
-    class: "ms-auto",
+    class: "ms-lg-auto",
     children: user && [
       {
         rawPath: "_/users/" + user.id,

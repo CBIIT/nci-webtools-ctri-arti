@@ -1,23 +1,14 @@
 import html from "solid-js/html";
 import { Show, createSignal, createResource } from "solid-js";
 import { parseDocument } from "/utils/parsers.js";
+import { readFile } from "/utils/utils.js";
 import { createReport } from "docx-templates";
 import yaml from "yaml";
-
-async function readFile(file, type = "text") {
-  const reader = new FileReader();
-  return new Promise((resolve, reject) => {
-    reader.onload = (e) => resolve(e.target.result);
-    reader.onerror = (e) => reject(e);
-    if (type === "arrayBuffer") reader.readAsArrayBuffer(file);
-    else if (type === "dataURL") reader.readAsDataURL(file);
-    else reader.readAsText(file);
-  });
-}
 
 export default function Page() {
   const [inputText, setInputText] = createSignal("");
   const [outputText, setOutputText] = createSignal("");
+  const [model, setModel] = createSignal("us.anthropic.claude-sonnet-4-20250514-v1:0");
   const [systemPrompt, setSystemPrompt] = createSignal(defaultSystemPrompt);
   const [outputTemplate, setOutputTemplate] = createSignal();
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
@@ -99,8 +90,7 @@ export default function Page() {
     setOutputText("Processing...");
     try {
       const params = {
-        model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
-        // model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+        model: model(),
         messages: [{ role: "user", content: [{ text: "Please process the document in the system prompt." }] }],
         system: systemPrompt().replace("{{document}}", inputText()),
         stream: false,
@@ -114,7 +104,7 @@ export default function Page() {
     }
   }
   return html`
-    <form id="form" onSubmit=${handleSubmit} onReset=${handleReset} class="container">
+    <form id="form" onSubmit=${handleSubmit} onReset=${handleReset} class="container py-3">
       <h1 class="fw-bold text-gradient my-3">Lay-Person Abstract</h1>
       <div class="row align-items-stretch">
         <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
@@ -154,6 +144,14 @@ export default function Page() {
           <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
             <details class="small text-secondary mt-2">
               <summary>Advanced Options</summary>
+              
+              <label for="model" class="form-label">Model</label>
+              <select class="form-select form-select-sm cursor-pointer mb-2" name="model" id="model" value=${model} onChange=${(e) => setModel(e.target.value)}>
+                <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
+                <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet</option>
+                <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
+                <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
+              </select>
 
               <div class="d-flex justify-content-between align-items-center">
                 <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
