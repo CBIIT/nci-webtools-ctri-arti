@@ -1,393 +1,301 @@
-import { openDB, deleteDB } from "idb"
-
-export class PriorityQueue {
-  items = []
-
-  constructor(compare) {
-    this.compare = compare
-  }
-
-  push(item) {
-    let i = 0
-    while (i < this.items.length && this.compare(item, this.items[i]) > 0) {
-      i++
-    }
-    this.items.splice(i, 0, item)
-  }
-
-  pop() {
-    return this.items.shift()
-  }
-
-  isEmpty() {
-    return this.items.length === 0
-  }
-}
-
-export class Node {
-  constructor(id, vector, level, M) {
-    this.id = id
-    this.vector = vector
-    this.level = level
-    this.neighbors = Array.from({ length: level + 1 }, () =>
-      new Array(M).fill(-1)
-    )
-  }
-}
-
-function dotProduct(a, b) {
-  let dP = 0.0
-  for (let i = 0; i < a.length; i++) {
-    dP += a[i] * b[i]
-  }
-  return dP
-}
-
-export function cosineSimilarity(a, b) {
-  return (
-    dotProduct(a, b) /
-    (Math.sqrt(dotProduct(a, a)) * Math.sqrt(dotProduct(b, b)))
-  )
-}
-
-function euclideanDistance(a, b) {
-  let sum = 0.0
-  for (let i = 0; i < a.length; i++) {
-    sum += (a[i] - b[i]) ** 2
-  }
-  return Math.sqrt(sum)
-}
-
-export function euclideanSimilarity(a, b) {
-  return 1 / (1 + euclideanDistance(a, b))
-}
+import { openDB, deleteDB } from "idb";
 
 export class HNSW {
-  d = null // Dimension of the vectors
-
-  constructor(M = 16, efConstruction = 200, d = null, metric = "cosine") {
-    this.metric = metric
-    this.d = d
-    this.M = M
-    this.efConstruction = efConstruction
-    this.entryPointId = -1
-    this.nodes = new Map()
-    this.probs = this.set_probs(M, 1 / Math.log(M))
-    this.levelMax = this.probs.length - 1
-    this.similarityFunction = this.getMetric(metric)
+  constructor({ M = 16, efConstruction = 200, efSearch = 50, metric = "cosine" } = {}) {
+    this.M = M;
+    this.maxM = M;
+    this.maxM0 = M * 2;
+    this.efConstruction = Math.max(efConstruction, M);
+    this.efSearch = efSearch;
+    this.ml = 1.0 / Math.log(2.0);
+    this.elementCount = 0;
+    this.nodes = new Map();
+    this.entryPoint = null;
+    this.distFunc = metric === "cosine" 
+      ? (a, b) => 1 - this.cosine(a, b) 
+      : (a, b) => this.euclidean(a, b);
   }
 
-  getMetric(metric) {
-    if (metric === "cosine") {
-      return cosineSimilarity
-    } else if (metric === "euclidean") {
-      return euclideanSimilarity
-    } else {
-      throw new Error("Invalid metric")
+  cosine(a, b) {
+    let dot = 0,
+      normA = 0,
+      normB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
     }
+    return dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
   }
 
-  set_probs(M, levelMult) {
-    let level = 0
-    const probs = []
-    while (true) {
-      const prob = Math.exp(-level / levelMult) * (1 - Math.exp(-1 / levelMult))
-      if (prob < 1e-9) break
-      probs.push(prob)
-      level++
+  euclidean(a, b) {
+    let sum = 0;
+    for (let i = 0; i < a.length; i++) {
+      const diff = a[i] - b[i];
+      sum += diff * diff;
     }
-    return probs
+    return Math.sqrt(sum);
   }
 
-  selectLevel() {
-    let r = Math.random()
-    for (let i = 0; i < this.probs.length; i++) {
-      if (r < this.probs[i]) {
-        return i
+  getRandomLevel() {
+    let level = 0;
+    while (Math.random() < 0.5 && level < 16) {
+      level++;
+    }
+    return level;
+  }
+
+  add(id, vector) {
+    if (this.nodes.has(id)) {
+      throw new Error(`Point ${id} already exists`);
+    }
+
+    const node = {
+      id,
+      vector: Float32Array.from(vector),
+      level: this.getRandomLevel(),
+      neighbors: [],
+    };
+
+    for (let lc = 0; lc <= node.level; lc++) {
+      node.neighbors[lc] = [];
+    }
+
+    this.nodes.set(id, node);
+    this.elementCount++;
+
+    if (this.elementCount === 1) {
+      this.entryPoint = id;
+      return;
+    }
+
+    const entryPointCopy = this.entryPoint;
+
+    for (let lc = node.level; lc >= 0; lc--) {
+      const candidates = this.searchLayer(vector, [entryPointCopy], this.efConstruction, lc);
+
+      const m = lc === 0 ? this.maxM0 : this.maxM;
+      const neighbors = candidates.slice(0, m);
+
+      for (const neighbor of neighbors) {
+        node.neighbors[lc].push(neighbor.id);
+
+        const neighborNode = this.nodes.get(neighbor.id);
+        if (neighborNode && neighborNode.neighbors[lc]) {
+          neighborNode.neighbors[lc].push(id);
+
+          if (neighborNode.neighbors[lc].length > m) {
+            this.pruneConnections(neighborNode, lc, m);
+          }
+        }
       }
-      r -= this.probs[i]
     }
-    return this.probs.length - 1
+
+    if (node.level > this.nodes.get(this.entryPoint).level) {
+      this.entryPoint = id;
+    }
   }
 
-  async addNodeToGraph(node) {
-    if (this.entryPointId === -1) {
-      this.entryPointId = node.id
-      return
+  searchLayer(query, entryPoints, ef, layer) {
+    const visited = new Set();
+    const candidates = [];
+    const nearest = [];
+
+    for (const pointId of entryPoints) {
+      if (this.nodes.has(pointId)) {
+        const node = this.nodes.get(pointId);
+        const dist = this.distFunc(query, node.vector);
+        const point = { id: pointId, distance: dist };
+
+        candidates.push(point);
+        nearest.push(point);
+        visited.add(pointId);
+      }
     }
 
-    let currentNode = this.nodes.get(this.entryPointId)
-    let closestNode = currentNode
+    candidates.sort((a, b) => a.distance - b.distance);
+    nearest.sort((a, b) => a.distance - b.distance);
 
-    for (let level = this.levelMax; level >= 0; level--) {
-      while (true) {
-        let nextNode = null
-        let maxSimilarity = -Infinity
+    while (candidates.length > 0) {
+      const current = candidates.shift();
 
-        // Make sure neighbors array exists and is iterable
-        if (currentNode.neighbors && Array.isArray(currentNode.neighbors[level])) {
-          for (let i = 0; i < currentNode.neighbors[level].length; i++) {
-            const neighborId = currentNode.neighbors[level][i];
-            if (neighborId === -1) continue;
+      if (current.distance > nearest[0].distance) {
+        break;
+      }
+
+      const currentNode = this.nodes.get(current.id);
+      if (currentNode && currentNode.neighbors[layer]) {
+        for (const neighborId of currentNode.neighbors[layer]) {
+          if (!visited.has(neighborId) && this.nodes.has(neighborId)) {
+            visited.add(neighborId);
 
             const neighborNode = this.nodes.get(neighborId);
-            if (!neighborNode) continue;
-            
-            const similarity = this.similarityFunction(
-              node.vector,
-              neighborNode.vector
-            );
-            if (similarity > maxSimilarity) {
-              maxSimilarity = similarity;
-              nextNode = neighborNode;
+            const dist = this.distFunc(query, neighborNode.vector);
+
+            if (dist < nearest[nearest.length - 1].distance || nearest.length < ef) {
+              const point = { id: neighborId, distance: dist };
+              candidates.push(point);
+              nearest.push(point);
+
+              candidates.sort((a, b) => a.distance - b.distance);
+              nearest.sort((a, b) => a.distance - b.distance);
+
+              if (nearest.length > ef) {
+                nearest.pop();
+              }
             }
           }
         }
-
-        const currentSimilarity = this.similarityFunction(node.vector, closestNode.vector);
-        if (nextNode && maxSimilarity > currentSimilarity) {
-          currentNode = nextNode;
-          closestNode = currentNode;
-        } else {
-          break;
-        }
       }
     }
 
-    const closestLevel = Math.min(node.level, closestNode.level);
-    for (let level = 0; level <= closestLevel; level++) {
-      // Ensure the neighbors arrays are properly initialized
-      if (!Array.isArray(closestNode.neighbors[level])) {
-        closestNode.neighbors[level] = new Array(this.M).fill(-1);
-      }
-      
-      if (!Array.isArray(node.neighbors[level])) {
-        node.neighbors[level] = new Array(this.M).fill(-1);
-      }
-      
-      // Add bidirectional connections
-      this.addNeighbor(closestNode, node.id, level);
-      this.addNeighbor(node, closestNode.id, level);
-    }
-  }
-  
-  // Helper method to safely add a neighbor
-  addNeighbor(node, neighborId, level) {
-    // Find the first available slot or replace the least similar neighbor
-    let emptyIndex = -1;
-    for (let i = 0; i < node.neighbors[level].length; i++) {
-      if (node.neighbors[level][i] === -1) {
-        emptyIndex = i;
-        break;
-      }
-    }
-    
-    if (emptyIndex >= 0) {
-      // Found an empty slot
-      node.neighbors[level][emptyIndex] = neighborId;
-    } else if (node.neighbors[level].length < this.M) {
-      // Array is not at max capacity
-      node.neighbors[level].push(neighborId);
-    }
-    // If array is full, we would need similarity comparison to replace the least similar
-    // but for now we'll just keep the existing neighbors
+    return nearest;
   }
 
-  async addPoint(id, vector) {
-    if (this.d !== null && vector.length !== this.d) {
-      throw new Error("All vectors must be of the same dimension")
-    }
-    this.d = vector.length
-
-    this.nodes.set(id, new Node(id, vector, this.selectLevel(), this.M))
-    const node = this.nodes.get(id)
-    this.levelMax = Math.max(this.levelMax, node.level)
-
-    await this.addNodeToGraph(node)
-  }
-
-  searchKNN(query, k) {
-    // Return empty array if graph is empty
-    if (this.nodes.size === 0) {
-      return [];
-    }
-
-    // Check if there's only one node in the graph
-    if (this.nodes.size === 1) {
-      const onlyNode = this.nodes.get(this.entryPointId);
-      const similarity = this.similarityFunction(onlyNode.vector, query);
-      return [{ id: this.entryPointId, score: similarity }];
-    }
-
-    // Store all similarities to avoid recalculating
-    const similarities = new Map();
-    const getSimilarity = (nodeId) => {
-      if (!similarities.has(nodeId)) {
-        const node = this.nodes.get(nodeId);
-        similarities.set(nodeId, this.similarityFunction(node.vector, query));
-      }
-      return similarities.get(nodeId);
-    };
-
-    // Use a priority queue to collect results sorted by similarity
-    const results = [];
-    const visited = new Set();
-
-    // Start from entry point and visit all nodes
-    const toVisit = [this.entryPointId];
-    
-    while (toVisit.length > 0 && results.length < this.nodes.size) {
-      const currentId = toVisit.shift();
-      
-      if (visited.has(currentId)) continue;
-      visited.add(currentId);
-      
-      const currentNode = this.nodes.get(currentId);
-      const similarity = getSimilarity(currentId);
-      
-      // Add this node to results
-      results.push({ id: currentId, score: similarity });
-      
-      // Enqueue all unvisited neighbors
-      for (let level = 0; level <= currentNode.level; level++) {
-        for (const neighborId of currentNode.neighbors[level]) {
-          if (neighborId !== -1 && !visited.has(neighborId) && !toVisit.includes(neighborId)) {
-            toVisit.push(neighborId);
-          }
-        }
+  pruneConnections(node, layer, m) {
+    const neighbors = [];
+    for (const neighborId of node.neighbors[layer]) {
+      if (this.nodes.has(neighborId)) {
+        const neighborNode = this.nodes.get(neighborId);
+        const dist = this.distFunc(node.vector, neighborNode.vector);
+        neighbors.push({ id: neighborId, distance: dist });
       }
     }
 
-    // Sort by similarity score in descending order
-    results.sort((a, b) => b.score - a.score);
-    
-    // Return top k results
-    return results.slice(0, k);
+    neighbors.sort((a, b) => a.distance - b.distance);
+    node.neighbors[layer] = neighbors.slice(0, m).map((n) => n.id);
   }
 
-  async buildIndex(data) {
-    // Clear existing index
-    this.nodes.clear()
-    this.levelMax = 0
-    this.entryPointId = -1
+  search(queryVector, k = 10, ef = null) {
+    if (this.elementCount === 0) return [];
 
-    // Add points to the index
-    for (const item of data) {
-      await this.addPoint(item.id, item.vector)
+    ef = ef || Math.max(this.efSearch, k);
+
+    const entryNode = this.nodes.get(this.entryPoint);
+    if (!entryNode) return [];
+
+    let candidates = [this.entryPoint];
+
+    for (let lc = entryNode.level; lc > 0; lc--) {
+      const nearest = this.searchLayer(queryVector, candidates, 1, lc);
+      candidates = nearest.map((n) => n.id);
     }
+
+    const nearest = this.searchLayer(queryVector, candidates, ef, 0);
+
+    return nearest.slice(0, k).map((item) => ({
+      id: item.id,
+      distance: item.distance,
+    }));
   }
 
   toJSON() {
-    const entries = Array.from(this.nodes.entries())
+    const nodesArray = [];
+    for (const [id, node] of this.nodes) {
+      nodesArray.push({
+        id,
+        vector: Array.from(node.vector),
+        level: node.level,
+        neighbors: node.neighbors,
+      });
+    }
+
     return {
       M: this.M,
       efConstruction: this.efConstruction,
-      levelMax: this.levelMax,
-      entryPointId: this.entryPointId,
-      nodes: entries.map(([id, node]) => {
-        return [
-          id,
-          {
-            id: node.id,
-            level: node.level,
-            vector: Array.from(node.vector),
-            neighbors: node.neighbors.map(level => Array.from(level))
-          }
-        ]
-      })
-    }
+      efSearch: this.efSearch,
+      elementCount: this.elementCount,
+      entryPoint: this.entryPoint,
+      nodes: nodesArray,
+    };
   }
 
-  static fromJSON(json) {
-    const hnsw = new HNSW(json.M, json.efConstruction)
-    hnsw.levelMax = json.levelMax
-    hnsw.entryPointId = json.entryPointId
-    hnsw.nodes = new Map(
-      json.nodes.map(([id, nodeData]) => {
-        // Create a proper Node instance
-        const node = new Node(
-          nodeData.id, 
-          new Float32Array(nodeData.vector),
-          nodeData.level,
-          json.M
-        )
-        // Copy the neighbors data
-        for (let i = 0; i <= nodeData.level; i++) {
-          if (nodeData.neighbors[i]) {
-            for (let j = 0; j < Math.min(nodeData.neighbors[i].length, json.M); j++) {
-              node.neighbors[i][j] = nodeData.neighbors[i][j]
-            }
-          }
-        }
-        return [id, node]
-      })
-    )
-    return hnsw
+  static fromJSON(data) {
+    const hnsw = new HNSW({
+      M: data.M,
+      efConstruction: data.efConstruction,
+      efSearch: data.efSearch,
+    });
+
+    hnsw.elementCount = data.elementCount;
+    hnsw.entryPoint = data.entryPoint;
+
+    for (const nodeData of data.nodes) {
+      const node = {
+        id: nodeData.id,
+        vector: Float32Array.from(nodeData.vector),
+        level: nodeData.level,
+        neighbors: nodeData.neighbors,
+      };
+      hnsw.nodes.set(nodeData.id, node);
+    }
+
+    return hnsw;
   }
 }
 
 export class HNSWWithDB extends HNSW {
-  db = null
+  db = null;
 
-  constructor(M, efConstruction, dbName) {
-    super(M, efConstruction)
-    this.dbName = dbName
+  constructor({ M = 16, efConstruction = 200, efSearch = 50, metric = "cosine", dbName = "hnsw-db"} = {}) {
+    super({ M, efConstruction, efSearch, metric });
+    this.dbName = dbName;
   }
 
-  static async create(M, efConstruction, dbName) {
-    const instance = new HNSWWithDB(M, efConstruction, dbName)
-    await instance.initDB()
-    return instance
+  static async create({ M = 16, efConstruction = 200, efSearch = 50, metric = "cosine", dbName = "hnsw-db"} = {}) {
+    const instance = new HNSWWithDB({ M, efConstruction, efSearch, metric, dbName });
+    await instance.initDB();
+    return instance;
   }
 
   async initDB() {
     this.db = await openDB(this.dbName, 1, {
       upgrade(db) {
-        db.createObjectStore("hnsw-index")
-      }
-    })
+        db.createObjectStore("hnsw-index");
+      },
+    });
   }
 
   async saveIndex() {
     if (!this.db) {
       // console.error('Database is not initialized');
-      return
+      return;
     }
 
-    await this.db.put("hnsw-index", this.toJSON(), "hnsw")
+    await this.db.put("hnsw-index", this.toJSON(), "hnsw");
   }
 
   async loadIndex() {
     if (!this.db) {
       // console.error('Database is not initialized');
-      return
+      return;
     }
 
-    const loadedHNSW = await this.db.get("hnsw-index", "hnsw")
+    const loadedHNSW = await this.db.get("hnsw-index", "hnsw");
 
     if (!loadedHNSW) {
       // console.error('No saved HNSW index found');
-      return
+      return;
     }
 
-    // Update this HNSW instance with loaded data
-    const hnsw = HNSW.fromJSON(loadedHNSW)
-    this.M = hnsw.M
-    this.efConstruction = hnsw.efConstruction
-    this.levelMax = hnsw.levelMax
-    this.entryPointId = hnsw.entryPointId
-    this.nodes = hnsw.nodes
+    const hnsw = HNSW.fromJSON(loadedHNSW);
+    this.M = hnsw.M;
+    this.efConstruction = hnsw.efConstruction;
+    this.efSearch = hnsw.efSearch;
+    this.elementCount = hnsw.elementCount;
+    this.entryPoint = hnsw.entryPoint;
+    this.nodes = hnsw.nodes;
   }
 
   async deleteIndex() {
     if (!this.db) {
       // console.error('Database is not initialized');
-      return
+      return;
     }
 
     try {
-      await deleteDB(this.dbName)
-      this.initDB()
+      await deleteDB(this.dbName);
+      this.initDB();
     } catch (error) {
       // console.error('Failed to delete index:', error);
     }
