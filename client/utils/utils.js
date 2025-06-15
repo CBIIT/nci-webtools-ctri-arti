@@ -46,6 +46,23 @@ export async function* readStream(response) {
 }
 
 /**
+ * Reads a file as text, arrayBuffer, or dataURL
+ * @param {File} file 
+ * @param {string} type 
+ * @returns {Promise<string|ArrayBuffer>} - The file content
+ */
+export async function readFile(file, type = "text") {
+  const reader = new FileReader();
+  return new Promise((resolve, reject) => {
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = (e) => reject(e);
+    if (type === "arrayBuffer") reader.readAsArrayBuffer(file);
+    else if (type === "dataURL") reader.readAsDataURL(file);
+    else reader.readAsText(file);
+  });
+}
+
+/**
  * Searches for the given query
  * @param {string} query - The search term
  * @param {number} maxResults - Maximum results to return (default 100)
