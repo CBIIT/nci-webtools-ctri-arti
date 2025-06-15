@@ -1,6 +1,6 @@
 import { createSignal, For, Show, Index } from "solid-js";
 import html from "solid-js/html";
-import Loader from "/components/dna.js";
+import Loader from "/components/loader.js";
 import { downloadCsv, downloadJson } from "/utils/utils.js";
 import { useChat } from "./hooks.js";
 import { context } from "./fedpulse.config.js";
