@@ -69,7 +69,7 @@ export default function Nav(props) {
         </div>
       </div>
     </nav>
-    <nav ref=${e => setMenuRef(e)} class="bg-primary text-light position-absolute w-100 z-3" />
+    <nav ref=${e => setMenuRef(e)} class="bg-primary text-light position-absolute w-100 z-3 shadow" />
 
   `;
 }
