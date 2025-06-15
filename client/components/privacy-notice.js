@@ -1,15 +1,14 @@
 import html from "solid-js/html";
-import {
-  createResource,
-} from "solid-js";
+import { createResource } from "solid-js";
+import { getCookie, setCookie } from "/utils/utils.js"
 import Modal from "./modal.js";
 
 export default function PrivacyNotice() {
   const [open, { mutate: setOpen}] = createResource(async () => {
     const session = await fetch("/api/session").then(res => res.json());
-    return session.user ? !sessionStorage.getItem("privacyNoticeAccepted") : false;
+    return session.user ? !getCookie("privacyNoticeAccepted") : false;
   });
-  const onSubmit = (e) => sessionStorage.setItem("privacyNoticeAccepted", "true");
+  const onSubmit = (e) => setCookie("privacyNoticeAccepted", "true");
   const title = html`
     <div class="w-100 text-center">
       <h1 class="font-title fs-4 mb-3">

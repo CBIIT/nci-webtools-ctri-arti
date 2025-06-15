@@ -1,6 +1,5 @@
 import { For, Show } from "solid-js";
 import html from "solid-js/html";
-import { openInternalLinkInNewTab } from "/utils/utils.js";
 
 export default function Footer() {
   const footerLinks = [
@@ -109,7 +108,7 @@ export default function Footer() {
                           <${Show} 
                           fallback=${html`
                              <li>
-                              <a class="link-light" href=${link.href} onClick=${(e) => openInternalLinkInNewTab(e)}>${link.content}</a>
+                              <a class="link-light" href=${link.href} target="_blank">${link.content}</a>
                             </li>`}
                           when=${!link.internal}>
                             <li>

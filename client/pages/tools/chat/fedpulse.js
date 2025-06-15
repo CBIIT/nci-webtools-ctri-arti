@@ -1,7 +1,7 @@
 import { createSignal, For, Show, Index } from "solid-js";
 import html from "solid-js/html";
 import Loader from "/components/dna.js";
-import { downloadCsv, downloadJson, openInternalLinkInNewTab } from "/utils/utils.js";
+import { downloadCsv, downloadJson } from "/utils/utils.js";
 import { useChat } from "./hooks.js";
 import { context } from "./fedpulse.config.js";
 import Message from "./message.js";
@@ -60,7 +60,7 @@ export default function Page() {
       <div class="offcanvas-body">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link" href="/tools/fedpulse" onClick=${(e) => openInternalLinkInNewTab(e)}>New Conversation</a>
+            <a class="nav-link" href="/tools/fedpulse" target="_blank">New Conversation</a>
           </li>
           <${For} each=${conversations}>
             ${(conversation) =>
@@ -117,7 +117,7 @@ export default function Page() {
             or
             <button class="btn btn-sm p-0 btn-link mx-1" onClick=${() => downloadJson("conversation.json", messages)}>json</button>
           </div>
-          <a href="/tools/fedpulse" onClick=${(e) => openInternalLinkInNewTab(e)}>Start a new conversation</a>
+          <a href="/tools/fedpulse" target="_blank">Start a new conversation</a>
         </div>
         <form onSubmit=${handleSubmit} class="bg-light shadow-sm rounded">
           <textarea
