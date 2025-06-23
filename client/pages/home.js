@@ -19,13 +19,13 @@ export default function Page() {
     {
       title: "ConsentCrafter",
       description: "Process and translate protocols and consent forms",
-      href: "/tools/consentcrafter",
+      href: "/tools/consent-crafter",
       icon: html`<img src="/assets/images/icon-pen.svg" height="60" alt="ConsentCrafter Icon" />`,
     },
     {
       title: "Lay Person Abstract",
       description: "Generate lay person abstracts from protocols",
-      href: "/tools/laypersonabstract",
+      href: "/tools/lay-person-abstract",
       icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="Lay Person Abstract Icon" />`,
     },
   ];
