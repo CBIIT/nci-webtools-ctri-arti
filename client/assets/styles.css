@@ -366,15 +366,22 @@ ul {
 }
 
 .nav-link.active {
-  border-bottom-color: var(--bs-gray-600);
-}
-
-.nav-link.subActive {
-  border-bottom-color: var(--bs-info-bg-subtle);
+  border-bottom-color: rgb(58, 117, 189);
 }
 
 .nav-link:hover {
-  border-bottom-color: var(--bs-blue);
+  border-bottom-color: rgb(58, 117, 189);
+  color: rgb(58, 117, 189);
+}
+
+.nav-link.dropdown-link.active {
+  border-bottom-color: #fff;
+}
+
+.nav-link.dropdown-link:hover {
+  color: #fff;
+  text-decoration: underline !important;
+  border-bottom-color: transparent;
 }
 
 .navbar-nav > li.login {
