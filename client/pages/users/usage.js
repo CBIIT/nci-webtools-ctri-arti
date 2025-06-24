@@ -211,7 +211,7 @@ function UsersList() {
   return html`
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="font-title fs-1 fw-bold mt-4 table-header-color">Usage</h1>
+        <h1 class="font-title fs-1 fw-bold mt-4 table-header-color">AI Usage Dashboard</h1>
       </div>
       
       <!-- Error Alert -->
