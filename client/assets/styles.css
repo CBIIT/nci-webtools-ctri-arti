@@ -303,6 +303,9 @@ ul {
   font-size: 0.7rem;
 }
 
+.link-primary .text-primary:hover {
+  color: var(--bs-warning) !important;
+}
 
 .text-prewrap {
   white-space: pre-wrap !important;
