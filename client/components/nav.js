@@ -47,7 +47,7 @@ export default function Nav(props) {
                               <div class="col">
                                 <${A}
                                   href=${child.rawPath || [route.path, child.path].join("/")}
-                                  activeClass="active"
+                                  activeClass="subActive"
                                   end=${true}
                                   target=${child.rawPath && "_self" }
                                   class="fs-5 fw-semibold nav-link text-decoration-none me-3 my-3 d-inline-block"
@@ -69,7 +69,7 @@ export default function Nav(props) {
         </div>
       </div>
     </nav>
-    <nav ref=${e => setMenuRef(e)} class="bg-primary text-light position-absolute w-100 z-3 shadow" />
+    <nav ref=${e => setMenuRef(e)} class="bg-info text-light position-absolute w-100 z-3 shadow" />
 
   `;
 }

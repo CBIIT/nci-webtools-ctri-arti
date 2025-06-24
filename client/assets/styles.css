@@ -369,6 +369,10 @@ ul {
   border-bottom-color: var(--bs-gray-600);
 }
 
+.nav-link.subActive {
+  border-bottom-color: var(--bs-info-bg-subtle);
+}
+
 .navbar-nav > li.login {
     position: static;
 }
