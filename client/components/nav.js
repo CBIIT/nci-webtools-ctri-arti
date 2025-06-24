@@ -11,16 +11,9 @@ export default function Nav(props) {
 
   createEffect(() => {
     const handleClickOutside = (event) => {
-      const isAnyDropdownVisible = Object.keys(visible()).some(
-        key => visible()[key]
-      );
-      const clickedOnPrimaryDropdownToggle = event.target.closest('li.nav-item > a.nav-link.dropdown-toggle');
-      const clickedInMenu = menuRef() && menuRef().contains(event.target);
-      
-      if (!isAnyDropdownVisible || clickedOnPrimaryDropdownToggle || clickedInMenu) {
-        return;
+      if(!menuRef()?.contains(event.target)) {
+        setVisible({});
       }
-      setVisible(prev => ({}));
     };
     
     document.addEventListener("click", handleClickOutside, true);
