@@ -373,6 +373,10 @@ ul {
   border-bottom-color: var(--bs-info-bg-subtle);
 }
 
+.nav-link:hover {
+  border-bottom-color: var(--bs-blue);
+}
+
 .navbar-nav > li.login {
     position: static;
 }
