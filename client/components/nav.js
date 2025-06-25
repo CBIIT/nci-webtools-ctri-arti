@@ -6,13 +6,13 @@ import { Portal } from "solid-js/web";
 export default function Nav(props) {
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
   const [menuRef, setMenuRef] = createSignal(null);
-  const [visible, setVisible] = createSignal({});
-  const toggleVisible = (key) => setVisible((prev) => ({ [key]: !prev?.[key] }));
+  const [activeDropdown, setActiveDropdown] = createSignal(null);
+  const toggleActiveDropdown = (key) => setActiveDropdown((prev) => (key !== prev ? key : null));
 
   createEffect(() => {
     const handleClickOutside = (event) => {
       if(!menuRef()?.contains(event.target) && !event.target.closest('li.nav-item > a.nav-link.dropdown-toggle')) {
-        setVisible({});
+        setActiveDropdown(null);
       }
     };
     
@@ -31,13 +31,13 @@ export default function Nav(props) {
         <button
           class="navbar-toggler border-0"
           type="button"
-          onClick=${() => toggleVisible("main")}
+          onClick=${() => toggleActiveDropdown("main")}
           aria-controls="navbar"
-          aria-expanded=${() => visible().main}
+          aria-expanded=${() => activeDropdown() === "main"}
           aria-label="Toggle navigation">
           =
         </button>
-        <div id="navbar" class="collapse navbar-collapse" classList=${() => ({ show: visible().main })}>
+        <div id="navbar" class="collapse navbar-collapse" classList=${() => ({ show: activeDropdown() === "main" })}>
           <ul class="navbar-nav w-100">
             <${For} each=${() => props.routes.filter((route) => !route.hidden)}>
               ${(route) => html`
@@ -49,12 +49,12 @@ export default function Nav(props) {
                     target=${() => route.rawPath && "_self"}
                     class="nav-link text-decoration-none"
                     classList=${{ "dropdown-toggle": route.children }}
-                    onClick=${(ev) => (route.children ? (ev.preventDefault(), toggleVisible(route.path)) : setVisible({}))}>
+                    onClick=${(ev) => (route.children ? (ev.preventDefault(), toggleActiveDropdown(route.path)) : setActiveDropdown(null))}>
                     ${route.title}
                   <//>
                   <${Show} when=${() => route.children}>
                     <${Portal} mount=${menuRef}>
-                      <div class="container" hidden=${() => !visible()[route.path]}>
+                      <div class="container" hidden=${() => !(activeDropdown() === route.path)}>
                         <div class="row">
                           <${For} each=${route.children?.filter((c) => !c.hidden)}>
                             ${(child) => html`
@@ -65,7 +65,7 @@ export default function Nav(props) {
                                   end=${true}
                                   target=${child.rawPath && "_self" }
                                   class="fs-5 fw-semibold nav-link dropdown-link text-decoration-none me-3 my-3 d-inline-block"
-                                  onClick=${() => setVisible({})}>
+                                  onClick=${() => setActiveDropdown(null)}>
                                   ${child.title}
                                 <//>
                               </div>
