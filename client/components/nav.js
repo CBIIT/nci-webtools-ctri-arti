@@ -1,6 +1,6 @@
 import html from "solid-js/html";
 import { A } from "@solidjs/router";
-import { createSignal, createResource, createEffect, For, Show } from "solid-js";
+import { createSignal, createResource, onMount, onCleanup, For, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 
 export default function Nav(props) {
@@ -9,17 +9,17 @@ export default function Nav(props) {
   const [activeDropdown, setActiveDropdown] = createSignal(null);
   const toggleActiveDropdown = (key) => setActiveDropdown((prev) => (key !== prev ? key : null));
 
-  createEffect(() => {
+  onMount(() => {
     const handleClickOutside = (event) => {
       if(!menuRef()?.contains(event.target) && !event.target.closest('li.nav-item > a.nav-link.dropdown-toggle')) {
         setActiveDropdown(null);
       }
     };
-    
     document.addEventListener("click", handleClickOutside, true);
-    return () => {
-      document.removeEventListener("click", handleClickOutside, true);
-    };
+  });
+
+  onCleanup(() => {
+    document.removeEventListener("click", handleClickOutside, true);
   });
 
   return html`
