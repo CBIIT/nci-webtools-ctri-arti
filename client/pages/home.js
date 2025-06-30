@@ -59,7 +59,7 @@ export default function Page() {
                   <div class="p-2 text-gradient">${link.icon}</div>
                   <div class="p-2 border-start">
                     <div class="font-title fs-5 textAnchorBlue">${link.title}</div>
-                    <div class="fw-normal">${link.description}</div>
+                    <div class="fw-normal text-primary">${link.description}</div>
                   </div>
                 </a>
               `}

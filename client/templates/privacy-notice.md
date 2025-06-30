@@ -27,7 +27,7 @@ This is the development/staging tier of Research Optimizer, a secure platform de
 
 - **Bias and Error Reporting**:
   - Monitor for unfair or discriminatory outputs
-  - Report concerning patterns to [Research Optimizer Support](mailto:tanna.nelson@nih.gov)
+  - Report concerning patterns to [Research Optimizer Support](mailto:ctribresearchoptimizer@mail.nih.gov)
   - Document any systematic errors or biases
 
 #### COMPLIANCE REQUIREMENTS
@@ -59,7 +59,7 @@ This is the development/staging tier of Research Optimizer, a secure platform de
   - Notification of potential security breaches
 
 - **Contact Procedures**:
-  - Report incidents to [Research Optimizer Support](mailto:tanna.nelson@nih.gov)
+  - Report incidents to [Research Optimizer Support](mailto:ctribresearchoptimizer@mail.nih.gov)
   - Follow institutional incident response protocols
   - Maintain detailed incident logs
 
@@ -86,7 +86,7 @@ By using Research Optimizer, you acknowledge that:
 
 These terms may be updated periodically. Users will be notified of significant changes and must accept updated terms to continue platform access.
 
-For questions or concerns, contact Research Optimizer Support at [tanna.nelson@nih.gov](mailto:tanna.nelson@nih.gov)
+For questions or concerns, contact Research Optimizer Support at [ctribresearchoptimizer@mail.nih.gov](mailto:ctribresearchoptimizer@mail.nih.gov)
 
 ---
 

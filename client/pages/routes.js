@@ -89,7 +89,7 @@ const routes = [
       },
       {
         path: "usage",
-        title: "User Usage",
+        title: "AI Usage Dashboard",
         component: Usage,
         hidden: !hasRole([1]),
       },
