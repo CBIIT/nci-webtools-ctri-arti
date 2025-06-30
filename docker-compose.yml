@@ -27,7 +27,8 @@ services:
         ignore:
           - ./server/node_modules
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
         
   postgres:
     image: pgvector/pgvector:pg16 
@@ -40,11 +41,17 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Local Auth Server (Optional)
   # Before running this, ensure that you've created a key.pem file in the server directory (eg: run `npm run cert`)
   # Manual Steps: Create a Realm with a Client (with Client authentication enabled), then generate a client secret and set it in the .env file
   # Using the port below, the discovery url will be: https://localhost:8443/realms/${realm-name}/.well-known/openid-configuration
+  # Start with: docker compose --profile auth up
   keycloak:
     profiles: [auth]
     image: quay.io/keycloak/keycloak:26.1
@@ -60,9 +67,10 @@ services:
       - KC_DB_URL=jdbc:postgresql://postgres:5432/postgres
       - KC_DB_USERNAME=postgres
       - KC_DB_PASSWORD=postgres
-      - KC_HOSTNAME=localhost
+      - KC_HOSTNAME=host.docker.internal
       - KC_HTTP_ENABLED=false
       - KC_HTTPS_CERTIFICATE_FILE=/etc/key.pem
       - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/key.pem
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
