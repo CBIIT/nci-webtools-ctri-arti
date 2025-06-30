@@ -1,27 +1,15 @@
 import html from "solid-js/html";
 import { A } from "@solidjs/router";
-import { createSignal, createResource, onMount, onCleanup, For, Show } from "solid-js";
+import { createSignal, onMount, onCleanup, For, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 
 export default function Nav(props) {
-  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
   const [menuRef, setMenuRef] = createSignal(null);
   const [activeDropdown, setActiveDropdown] = createSignal(null);
   const toggleActiveDropdown = (key) => setActiveDropdown((prev) => (key !== prev ? key : null));
-
-  onMount(() => {
-    const handleClickOutside = (event) => {
-      if(!menuRef()?.contains(event.target) && !event.target.closest('li.nav-item > a.nav-link.dropdown-toggle')) {
-        setActiveDropdown(null);
-      }
-    };
-    document.addEventListener("click", handleClickOutside, true);
-  });
-
-  onCleanup(() => {
-    document.removeEventListener("click", handleClickOutside, true);
-  });
-
+  const handleClickOutside = (event) => !menuRef()?.contains(event.target) && setActiveDropdown(null);
+  onMount(() => document.addEventListener("click", handleClickOutside, true));
+  onCleanup(() => document.removeEventListener("click", handleClickOutside, true));
   return html`
     <nav class="navbar navbar-expand-lg font-title">
       <div class="container">
