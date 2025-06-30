@@ -26,7 +26,7 @@ export function useChat() {
         metadata: {
           timestamp: new Date().toLocaleString(),
           reminders:
-            "Search and browse for current information if needed, interleave tool calls with the think tool to perform necessary analysis, only update memory and heuristics files when given important details, specs, or insights (eg: never record greetings), and include APA-style source citations with full URLs.",
+            "Search and browse for current information if needed. If necessary, interleave tool calls with the think tool to perform complex analysis. Only update the workspace when necessary. Always include APA-style source citations with full URLs when sources are used.",
         },
       },
     });
