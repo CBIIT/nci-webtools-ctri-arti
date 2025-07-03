@@ -116,7 +116,10 @@ export function requireRole(roleName) {
       }
 
       const user = await User.findOne({ where: { id }, include: [{ model: Role }] });
-      if (!user || user.Role?.name !== roleName) {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      if (roleName && user.Role?.name !== roleName) {
         return res.status(403).json({ error: `Role '${roleName}' required` });
       }
 
