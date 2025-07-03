@@ -67,8 +67,8 @@ function UserUsage() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 4,
-      maximumFractionDigits: 4
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(value);
   }
   
@@ -112,12 +112,12 @@ function UserUsage() {
             </div>
             <div class="col-md-6 text-md-end">
               <div class="mb-1">
-                <span class="fw-bold">Limit:</span> 
-                <span>${() => userResource()?.limit === null ? 'No limit' : formatCurrency(userResource()?.limit || 0)}</span>
+                <span class="fw-bold">Limit: </span> 
+                <span>${() => userResource()?.limit === null ? 'Unlimited' : formatCurrency(userResource()?.limit || 0)}</span>
               </div>
               <div>
-                <span class="fw-bold">Remaining:</span> 
-                <span>${() => userResource()?.remaining === null ? 'No limit' : formatCurrency(userResource()?.remaining || 0)}</span>
+                <span class="fw-bold">Remaining: </span> 
+                <span>${() => userResource()?.remaining === null ? 'Unlimited' : formatCurrency(userResource()?.remaining || 0)}</span>
               </div>
             </div>
           </div>
