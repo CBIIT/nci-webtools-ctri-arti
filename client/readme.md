@@ -12,11 +12,27 @@ A comprehensive guide for developing with SolidJS using tagged template literals
 - **Computations**: `${() => calculation()}` (manual wrap)
 - **Event Handlers**: `onClick=${e => handler(e)}` (1+ args, not wrapped)
 
+## COMMON MISTAKES TO AVOID
+
+| Mistake | Wrong | Correct | Why |
+|---------|-------|---------|-----|
+| **Signal Usage** | `${signal()}` | `${signal}` or `${() => signal()}` | Calling `signal()` immediately breaks reactivity. SolidJS needs the function reference to track changes. |
+| **String Interpolation in Attributes** | `<div class="base ${props.className}">` | `<div class=${() => ["base", props.className].join(" ")}>` | Template literals inside attributes don't work. Use a function that returns the complete string. |
+| **Alternative: classList** | `<div class="base ${props.className}">` | `<div classList=${{ base: true, [props.className]: true }}>` | classList syntax handles conditional classes reactively and is more maintainable. |
+| **Store Properties** | `${store.property}` | `${() => store.property}` | Store properties return values, not functions. Wrap them so SolidJS can track changes. |
+| **Props Destructuring** | `function Component({ name, age })` | `function Component(props)` then `${() => props.name}` | Destructuring breaks reactivity by extracting values at creation time. Access via props object. |
+| **Signal Properties** | `${user().name}` | `${() => user().name}` | Accessing properties of signal values needs manual wrapping for reactivity tracking. |
+| **Event Handlers** | `onClick=${() => handler()}` | `onClick=${e => handler(e)}` or `onClick=${handler}` | Zero-argument functions get auto-wrapped, breaking event handling. Include event parameter. |
+| **JSX Syntax** | `<Component prop={value} />` | `<${Component} prop=${value} />` | This is HTML template syntax, not JSX. Components need `${}` interpolation. |
+| **Component Closing** | `<${Component}></${Component}>` | `<${Component} />` or `<${Component}>children<//>` | Use self-closing syntax or SolidJS's `<//>` closing tag, not JSX-style closing. |
+
 ### Key Concepts
 - Functions with 0 arguments are auto-wrapped for reactivity
 - Store properties return values, not functions - always wrap them
 - Don't destructure props - breaks reactivity
 - Use `createSignal` for simple state, `createStore` for complex objects
+
+
 
 ## Table of Contents
 - [Setup & Import Maps](#setup--import-maps)
