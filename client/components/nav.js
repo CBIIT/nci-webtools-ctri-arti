@@ -32,7 +32,7 @@ export default function Nav(props) {
                 <li class="nav-item" classList=${{ dropdown: route.children, [route.class]: true }}>
                   <${A}
                     href=${route.rawPath || route.path}
-                    end=${true}
+                    end=${!route.children?.length}
                     activeClass="active"
                     target=${() => route.rawPath && "_self"}
                     class="nav-link text-decoration-none"
