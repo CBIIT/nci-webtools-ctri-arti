@@ -1,6 +1,6 @@
 import { Router, json } from "express";
 import { QueryTypes } from "sequelize";
-import { authMiddleware, proxyMiddleware } from "../middleware.js";
+import { requireRole, proxyMiddleware } from "../middleware.js";
 import { search } from "../utils.js";
 import { translate, getLanguages } from "../translate.js";
 import { sendFeedback } from "../email.js";
@@ -18,21 +18,21 @@ api.get("/status", async (req, res) => {
   });
 });
 
-api.get("/search", authMiddleware, async (req, res) => {
+api.get("/search", requireRole(), async (req, res) => {
   res.json(await search(req.query));
 });
 
-api.all("/browse/*url", authMiddleware, proxyMiddleware);
+api.all("/browse/*url", requireRole(), proxyMiddleware);
 
-api.post("/translate", authMiddleware, async (req, res) => {
+api.post("/translate", requireRole(), async (req, res) => {
   res.json(await translate(req.body));
 });
 
-api.get("/translate/languages", authMiddleware, async (req, res) => {
+api.get("/translate/languages", requireRole(), async (req, res) => {
   res.json(await getLanguages());
 });
 
-api.post("/feedback", authMiddleware, async (req, res) => {
+api.post("/feedback", requireRole(), async (req, res) => {
   const { feedback, context } = req.body;
   const from = req.session.user?.userinfo?.email;
   const results = await sendFeedback({ from, feedback, context });

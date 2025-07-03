@@ -95,7 +95,7 @@ export async function loginMiddleware(req, res, next) {
  */
 export async function authMiddleware(req, res, next) {
   // todo: switch over when keys are verified
-  const authDisabled = true;
+  const authDisabled = false;
   if (!authDisabled && !req.session.user) {
     return res.status(401).end("Unauthorized");
   }

@@ -1,12 +1,12 @@
 import { Router, json } from "express";
 import { runModel } from "../inference.js";
-import { authMiddleware } from "../middleware.js";
+import { requireRole } from "../middleware.js";
 import db, { User, Model, Usage } from "../database.js";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
 
-api.post("/model", authMiddleware, async (req, res) => {
+api.post("/model", requireRole(), async (req, res) => {
   // Get the request start time
   const startTime = Date.now();
 
@@ -93,7 +93,7 @@ async function trackModelUsage(userId, modelValue, ip, usageData) {
   }
 }
 
-api.get("/model/list", authMiddleware, async (req, res) => {
+api.get("/model/list", requireRole(), async (req, res) => {
   const results = await Model.findAll({
     attributes: ["label", "value", "isReasoner", "maxContext", "maxOutput", "maxReasoning"],
     where: { providerId: 1 },
