@@ -161,7 +161,14 @@ function UserProfile() {
             <!-- Weekly Cost Limit -->
             <label class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Weekly Cost Limit ($)</label>
             <div class="col-sm-3 col-xl-2">
-              <div>${() => session()?.user?.roleId === 1 ? "No Limit" : session()?.user?.limit}</div>
+              <div>${() => {
+                const user = session()?.user;
+                if (user?.limit === null) {
+                  return "Unlimited";
+                } else {
+                  return user?.limit;
+                }
+              }}</div>
             </div>
           </div>
           

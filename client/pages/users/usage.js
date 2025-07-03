@@ -164,7 +164,7 @@ function UsersList() {
     if (!serverAnalyticsResource()?.data) return [];
     return serverAnalyticsResource().data.map(userStats => {
       const user = userStats.User;
-      const limitDisplay = user.limit === null ? "No limit" : `$${user.limit}`;
+      const limitDisplay = user.limit === null ? "Unlimited" : `$${user.limit}`;
       const fullName = `${user.lastName || ''}, ${user.firstName || ''}`.replace(/^,\s*|,\s*$/g, '').trim() || user.email;
       
       return {

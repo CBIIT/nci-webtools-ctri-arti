@@ -64,7 +64,7 @@ function UsersList() {
       email: user.email || '-',
       status: user.status || 'unknown',
       role: user.Role?.name || "No Role",
-      limit: user.roleId === 1 ? "No Limit" : user.limit,
+      limit: user.limit === null ? "Unlimited" : user.limit,
       rawUser: user
     }));
   });
