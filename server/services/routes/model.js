@@ -18,6 +18,14 @@ api.post("/model", authMiddleware, async (req, res) => {
   const ip = req.ip || req.socket.remoteAddress;
 
   try {
+    // Check if user has remaining balance before processing
+    if (userId) {
+      const user = await User.findByPk(userId);
+      if (user && user.limit !== null && user.remaining !== null && user.remaining <= 0) {
+        return res.status(429).json({ error: "Usage limit exceeded." });
+      }
+    }
+
     // Run the model
     const results = await runModel(req.body);
 
