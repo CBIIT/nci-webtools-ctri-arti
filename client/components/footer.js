@@ -15,8 +15,8 @@ export default function Footer() {
       title: "System Info",
       class: "text-lg-center mb-3",
       links: [
-        { href: "https://github.com/CBIIT/nci-webtools-ctri-research-optimizer/releases", content: "Release Notes" },
-        { href: "https://github.com/CBIIT/nci-webtools-ctri-research-optimizer/releases", content: "Current Version: 1.0.0" },
+        { href: "https://github.com/CBIIT/nci-webtools-ctri-arti/releases", content: "Release Notes" },
+        { href: "https://github.com/CBIIT/nci-webtools-ctri-arti/releases", content: "Current Version: 1.0.0" },
       ],
     },
     {
