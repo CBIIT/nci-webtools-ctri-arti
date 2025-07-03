@@ -372,9 +372,8 @@ ul {
   border-bottom-color: rgb(58, 117, 189);
 }
 
-.nav-link:hover {
-  border-bottom-color: rgb(58, 117, 189);
-  color: rgb(58, 117, 189);
+.nav-link:hover, .nav-link.active:hover {
+  border-bottom-color: var(--bs-warning);
 }
 
 .nav-link.dropdown-link.active {
@@ -383,8 +382,7 @@ ul {
 
 .nav-link.dropdown-link:hover {
   color: #fff;
-  text-decoration: underline !important;
-  border-bottom-color: transparent;
+  border-bottom-color: var(--bs-warning);
 }
 
 .navbar-nav > li.login {
