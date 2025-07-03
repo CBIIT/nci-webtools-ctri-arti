@@ -8,6 +8,7 @@ const Translate = AuthorizedImport({ path: "./tools/translate.js" });
 const SemanticSearch = AuthorizedImport({ path: "./tools/semantic-search.js" });
 const Users = AuthorizedImport({ path: "./users/index.js", roles: [1] });
 const UserEdit = AuthorizedImport({ path: "./users/edit.js", roles: [1] });
+const UserProfile = AuthorizedImport({ path: "./users/profile.js" });
 const Usage = AuthorizedImport({ path: "./users/usage.js", roles: [1] });
 const UserUsage = AuthorizedImport({ path: "./users/user-usage.js", roles: [1] });
 
@@ -68,12 +69,13 @@ const routes = [
   {
     path: "/_",
     rawPath: !user ? "/api/login" : undefined,
-    title: user?.firstName || "Login",
+    title: user ? (user.firstName || "User") : "Login",
     class: "ms-lg-auto",
     children: user && [
       {
-        rawPath: "_/users/" + user.id,
+        path: "profile",
         title: "My Profile",
+        component: UserProfile,
       },
       {
         path: "users",
@@ -83,7 +85,7 @@ const routes = [
       },
       {
         path: "users/:id",
-        title: "User Profile",
+        title: "Edit User",
         component: UserEdit,
         hidden: true,
       },
