@@ -4,6 +4,7 @@ import express from "express";
 import session from "express-session";
 import SequelizeStore from "connect-session-sequelize";
 import { createCertificate } from "./services/utils.js";
+import { startScheduler } from "./services/scheduler.js";
 import logger from "./services/logger.js";
 import db from "./services/database.js";
 import api from "./services/api.js";
@@ -12,6 +13,7 @@ const { PORT = 8080, SESSION_MAX_AGE = 60 * 60 * 1000 } = process.env;
 const SessionStore = SequelizeStore(session.Store);
 
 const app = createApp(process.env);
+const scheduler = startScheduler();
 createServer(app, process.env).listen(PORT, () => logger.info(`Server is running on port ${PORT}`));
 
 export function createApp(env = process.env) {
