@@ -269,6 +269,33 @@ api.post("/admin/usage/reset", requireRole("admin"), async (req, res) => {
   res.json({ success: true, updatedUsers: updatedCount });
 });
 
+// Reset usage limit for a specific user (admin only)
+api.post("/admin/users/:id/reset-limit", requireRole("admin"), async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    // Reset the user's remaining balance to match their limit
+    const [updated] = await User.update(
+      { remaining: User.sequelize.col('limit') },
+      { where: { id: userId } }
+    );
+    
+    if (updated) {
+      const updatedUser = await User.findByPk(userId);
+      res.json({ success: true, user: updatedUser });
+    } else {
+      res.status(500).json({ error: "Failed to reset user limit" });
+    }
+  } catch (error) {
+    console.error("Error resetting user limit:", error);
+    res.status(500).json({ error: "An error occurred while resetting the user limit" });
+  }
+});
+
 // Get usage analytics with aggregation (admin only)
 api.get("/admin/analytics", requireRole("admin"), async (req, res) => {
   const { startDate, endDate } = getDateRange(req.query.startDate, req.query.endDate);
