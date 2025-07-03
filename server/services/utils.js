@@ -175,3 +175,17 @@ export function createCertificate(
   const certPem = pki.certificateToPem(cert);
   return { key: privateKeyPem, cert: certPem };
 }
+
+export function getDateRange(startDateParam, endDateParam) {
+  const now = new Date();
+  
+  const startDate = startDateParam ? 
+    new Date(new Date(startDateParam).setHours(0, 0, 0, 0)) :
+    new Date(new Date(now).setDate(now.getDate() - 30)).setHours(0, 0, 0, 0);
+    
+  const endDate = endDateParam ?
+    new Date(new Date(endDateParam).setHours(23, 59, 59, 999)) :
+    new Date(new Date(now).setHours(23, 59, 59, 999));
+    
+  return { startDate: new Date(startDate), endDate: new Date(endDate) };
+}
