@@ -2,30 +2,74 @@ import { Router } from "express";
 import { Op, fn, col } from "sequelize";
 import { requireRole } from "../middleware.js";
 import { User, Model, Role, Usage, Provider } from "../database.js";
+import { getDateRange } from "../utils.js";
+import { resetUsageLimits } from "../scheduler.js";
 
 const api = Router();
 
 // Admin routes - User Management
 api.get("/admin/users", requireRole("admin"), async (req, res) => {
-  const users = await User.findAll({
-    where: req.query,
+  const search = req.query.search;
+  const limit = parseInt(req.query.limit) || 100;
+  const offset = parseInt(req.query.offset) || 0;
+  const sortBy = req.query.sortBy || 'createdAt';
+  const sortOrder = req.query.sortOrder || 'DESC';
+  
+  // Build search conditions
+  const where = { ...req.query };
+  delete where.search;
+  delete where.limit;
+  delete where.offset;
+  delete where.sortBy;
+  delete where.sortOrder;
+  
+  if (search) {
+    where[Op.or] = [
+      { firstName: { [Op.iLike]: `%${search}%` } },
+      { lastName: { [Op.iLike]: `%${search}%` } },
+      { email: { [Op.iLike]: `%${search}%` } }
+    ];
+  }
+
+  // Map sortBy to actual columns/associations
+  const sortMapping = {
+    'name': ['lastName'],
+    'lastName': ['lastName'],
+    'firstName': ['firstName'], 
+    'email': ['email'],
+    'status': ['status'],
+    'role': [{ model: Role }, 'name'],
+    'limit': ['limit'],
+    'createdAt': ['createdAt']
+  };
+
+  const orderBy = sortMapping[sortBy] || ['createdAt'];
+  const orderDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+  
+  const { count, rows: users } = await User.findAndCountAll({
+    where,
     include: [{ model: Role }],
+    limit,
+    offset,
+    order: [[...orderBy, orderDirection]]
   });
-  res.json(users);
+  
+  res.json({ 
+    data: users, 
+    meta: { 
+      total: count, 
+      limit, 
+      offset, 
+      search,
+      sortBy,
+      sortOrder
+    } 
+  });
 });
 
 api.get("/admin/users/:id", requireRole("admin"), async (req, res) => {
   const user = await User.findByPk(req.params.id, {
-    include: [
-      { model: Role },
-      // Include recent usage data for the user
-      {
-        model: Usage,
-        limit: 20,
-        order: [["createdAt", "DESC"]],
-        include: [{ model: Model }],
-      },
-    ],
+    include: [{ model: Role }],
   });
 
   if (!user) {
@@ -33,6 +77,42 @@ api.get("/admin/users/:id", requireRole("admin"), async (req, res) => {
   }
 
   res.json(user);
+});
+
+// Update current user's profile (authenticated users only)
+api.post("/admin/profile", requireRole(), async (req, res) => {
+  const { session } = req;
+  const currentUser = session.user;
+  const { firstName, lastName } = req.body;
+
+  // Only allow firstName and lastName updates
+  const allowedFields = { firstName, lastName };
+  
+  // Remove undefined values
+  Object.keys(allowedFields).forEach(key => {
+    if (allowedFields[key] === undefined) {
+      delete allowedFields[key];
+    }
+  });
+
+  try {
+    const user = await User.findByPk(currentUser.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    await user.update(allowedFields);
+    
+    // Return updated user with Role included
+    const updatedUser = await User.findByPk(currentUser.id, {
+      include: [{ model: Role }]
+    });
+    
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Profile update error:", error);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
 });
 
 // Create or update a user (admin only)
@@ -72,7 +152,7 @@ api.delete("/admin/users/:id", requireRole("admin"), async (req, res) => {
   res.json({ success: true });
 });
 
-// Get usage statistics for a specific user (admin only)
+// Get usage data for a specific user (admin only)
 api.get("/admin/users/:id/usage", requireRole("admin"), async (req, res) => {
   const userId = req.params.id;
   const user = await User.findByPk(userId);
@@ -81,120 +161,45 @@ api.get("/admin/users/:id/usage", requireRole("admin"), async (req, res) => {
     return res.status(404).json({ error: "User not found" });
   }
 
-  // Get the date range from query parameters or use default (last 30 days)
-  const now = new Date();
-  let startDate, endDate;
+  const { startDate, endDate } = getDateRange(req.query.startDate, req.query.endDate);
+  const limit = parseInt(req.query.limit) || 100;
+  const offset = parseInt(req.query.offset) || 0;
 
-  if (req.query.startDate) {
-    // Parse the start date and set time to 00:00:00
-    startDate = new Date(req.query.startDate);
-    startDate.setHours(0, 0, 0, 0);
-  } else {
-    // Default to 30 days ago at 00:00:00
-    startDate = new Date(now);
-    startDate.setDate(startDate.getDate() - 30);
-    startDate.setHours(0, 0, 0, 0);
-  }
-
-  if (req.query.endDate) {
-    // Parse the end date and set time to 23:59:59.999
-    endDate = new Date(req.query.endDate);
-    endDate.setHours(23, 59, 59, 999);
-  } else {
-    // Default to today at 23:59:59.999
-    endDate = new Date(now);
-    endDate.setHours(23, 59, 59, 999);
-  }
-
-  console.log(`Date range for usage statistics: ${startDate.toISOString()} to ${endDate.toISOString()}`);
-
-  // Query usage data for the specific user
-  const usageData = await Usage.findAll({
+  const { count, rows } = await Usage.findAndCountAll({
     where: {
-      userId: userId,
-      createdAt: {
-        [Op.between]: [startDate, endDate],
-      },
+      userId,
+      createdAt: { [Op.between]: [startDate, endDate] }
     },
-    include: [{ model: Model }],
+    include: [{ model: Model, attributes: ['id', 'label'] }],
     order: [["createdAt", "DESC"]],
+    limit,
+    offset
   });
 
-  // Calculate aggregate statistics
-  let totalInputTokens = 0;
-  let totalOutputTokens = 0;
-  let totalCost = 0;
-  const usageByModel = {};
-  const dailyUsage = {};
-
-  usageData.forEach((entry) => {
-    // Increment total counters
-    totalInputTokens += entry.inputTokens || 0;
-    totalOutputTokens += entry.outputTokens || 0;
-    totalCost += entry.cost || 0;
-
-    // Group by model
-    const modelName = entry.Model?.label || "Unknown";
-    if (!usageByModel[modelName]) {
-      usageByModel[modelName] = {
-        inputTokens: 0,
-        outputTokens: 0,
-        cost: 0,
-        count: 0,
-      };
-    }
-    usageByModel[modelName].inputTokens += entry.inputTokens || 0;
-    usageByModel[modelName].outputTokens += entry.outputTokens || 0;
-    usageByModel[modelName].cost += entry.cost || 0;
-    usageByModel[modelName].count += 1;
-
-    // Group by date (daily)
-    const dateKey = entry.createdAt.toISOString().split("T")[0];
-    if (!dailyUsage[dateKey]) {
-      dailyUsage[dateKey] = {
-        inputTokens: 0,
-        outputTokens: 0,
-        cost: 0,
-        count: 0,
-      };
-    }
-    dailyUsage[dateKey].inputTokens += entry.inputTokens || 0;
-    dailyUsage[dateKey].outputTokens += entry.outputTokens || 0;
-    dailyUsage[dateKey].cost += entry.cost || 0;
-    dailyUsage[dateKey].count += 1;
-  });
-
-  // Convert the dailyUsage object to an array sorted by date
-  const dailyUsageArray = Object.entries(dailyUsage)
-    .map(([date, stats]) => ({
-      date,
-      ...stats,
-    }))
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  // Return the statistics
   res.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      limit: user.limit,
-      remaining: user.remaining,
-    },
-    summary: {
-      totalRequests: usageData.length,
-      totalInputTokens,
-      totalOutputTokens,
-      totalCost,
-      dateRange: {
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
-      },
-    },
-    usageByModel,
-    dailyUsage: dailyUsageArray,
-    rawData: usageData,
+    data: rows.map(usage => ({
+      id: usage.id,
+      userId: usage.userId,
+      modelId: usage.modelId,
+      modelName: usage.Model?.label,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      cost: usage.cost,
+      createdAt: usage.createdAt
+    })),
+    meta: {
+      total: count,
+      limit,
+      offset,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        limit: user.limit,
+        remaining: user.remaining
+      }
+    }
   });
 });
 
@@ -204,147 +209,229 @@ api.get("/admin/roles", requireRole("admin"), async (req, res) => {
   res.json(roles);
 });
 
-// Get usage statistics for all users (admin only)
+// Get usage data for all users (admin only)
 api.get("/admin/usage", requireRole("admin"), async (req, res) => {
-  try {
-    // Get the date range from query parameters
-    const now = new Date();
-    let startDate, endDate;
-    const dateRange = req.query.dateRange || "This Week";
-    
-    // Calculate start date based on dateRange parameter
-    switch(dateRange) {
-      case "This Week": {
-        // Start from the most recent Sunday at midnight
-        startDate = new Date(now);
-        const day = startDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-        const diff = day; // Days since last Sunday
-        startDate.setDate(startDate.getDate() - diff);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      }
-      case "Last 30 Days": {
-        startDate = new Date(now);
-        startDate.setDate(startDate.getDate() - 30);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      }
-      case "Last 60 Days": {
-        startDate = new Date(now);
-        startDate.setDate(startDate.getDate() - 60);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      }
-      case "Last 120 Days": {
-        startDate = new Date(now);
-        startDate.setDate(startDate.getDate() - 120);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      }
-      case "Last 360 Days": {
-        startDate = new Date(now);
-        startDate.setDate(startDate.getDate() - 360);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      }
-      default: { // Default to This Week
-        startDate = new Date(now);
-        const day = startDate.getDay();
-        const diff = day;
-        startDate.setDate(startDate.getDate() - diff);
-        startDate.setHours(0, 0, 0, 0);
-      }
-    }
-    
-    // End date is now
-    endDate = new Date(now);
-    
-    // Get all users with their roles
-    const users = await User.findAll({
-      include: [{ model: Role }]
-    });
-    
-    // Get all usage data within the date range
-    const usageData = await Usage.findAll({
-      where: {
-        createdAt: {
-          [Op.between]: [startDate, endDate],
-        },
-      },
-      include: [
-        { model: Model },
-        { model: User, include: [{ model: Role }] }
-      ],
-    });
-    
-    // Get all models for reference
-    const models = await Model.findAll({
-      include: [{ model: Provider }]
-    });
-    
-    // Process the data to create user summaries
-    const userSummaries = users.map(user => {
-      // Filter usage for this specific user
-      const userUsage = usageData.filter(entry => entry.userId === user.id);
-      
-      // Group usage by model
-      const usageByModel = {};
-      let totalCost = 0;
-      
-      userUsage.forEach(entry => {
-        const modelId = entry.modelId;
-        const model = models.find(m => m.id === modelId);
-        const modelName = model?.label || "Unknown";
-        
-        if (!usageByModel[modelName]) {
-          usageByModel[modelName] = {
-            inputTokens: 0,
-            outputTokens: 0,
-            cost: 0,
-          };
-        }
-        
-        usageByModel[modelName].inputTokens += entry.inputTokens || 0;
-        usageByModel[modelName].outputTokens += entry.outputTokens || 0;
-        usageByModel[modelName].cost += entry.cost || 0;
-        totalCost += entry.cost || 0;
-      });
-      
-      // Calculate input and output tokens for display
-      const inputTokens = Object.values(usageByModel)
-        .map(m => Math.round(m.inputTokens))
-        .join("/");
-      
-      const outputTokens = Object.values(usageByModel)
-        .map(m => Math.round(m.outputTokens))
-        .join("/");
-      
-      // Format the weekly cost limit
-      const weeklyCostLimit = user.roleId === 1 ? "No limit" : user.limit || 0;
-      
-      return {
-        id: user.id,
-        name: `${user.lastName || ''}, ${user.firstName || ''}`.trim(),
-        email: user.email,
-        role: user.Role?.name || "Unknown",
-        roleId: user.roleId,
-        inputTokens: inputTokens || "0",
-        outputTokens: outputTokens || "0",
-        weeklyCostLimit,
-        estimatedCost: parseFloat(totalCost.toFixed(2))
-      };
-    });
-    
-    res.json({
-      dateRange,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      users: userSummaries
-    });
-  } catch (error) {
-    console.error("Error fetching users usage:", error);
-    res.status(500).json({ error: "Failed to fetch users usage data" });
+  const { startDate, endDate } = getDateRange(req.query.startDate, req.query.endDate);
+  const limit = parseInt(req.query.limit) || 100;
+  const offset = parseInt(req.query.offset) || 0;
+  const userId = req.query.userId;
+
+  const where = {
+    createdAt: { [Op.between]: [startDate, endDate] }
+  };
+  
+  if (userId) {
+    where.userId = userId;
   }
+
+  const { count, rows } = await Usage.findAndCountAll({
+    where,
+    include: [
+      { model: Model, attributes: ['id', 'label'] },
+      { model: User, attributes: ['id', 'email', 'firstName', 'lastName', 'limit', 'remaining'], include: [{ model: Role, attributes: ['id', 'name'] }] }
+    ],
+    order: [["createdAt", "DESC"]],
+    limit,
+    offset
+  });
+
+  res.json({
+    data: rows.map(usage => ({
+      id: usage.id,
+      userId: usage.userId,
+      modelId: usage.modelId,
+      modelName: usage.Model?.label,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      cost: usage.cost,
+      createdAt: usage.createdAt,
+      user: {
+        id: usage.User.id,
+        email: usage.User.email,
+        firstName: usage.User.firstName,
+        lastName: usage.User.lastName,
+        limit: usage.User.limit,
+        remaining: usage.User.remaining,
+        role: usage.User.Role?.name
+      }
+    })),
+    meta: {
+      total: count,
+      limit,
+      offset
+    }
+  });
+});
+
+// Reset usage limits for all users (admin only)
+api.post("/admin/usage/reset", requireRole("admin"), async (req, res) => {
+  const [updatedCount] = await resetUsageLimits();
+  res.json({ success: true, updatedUsers: updatedCount });
+});
+
+// Get usage analytics with aggregation (admin only)
+api.get("/admin/analytics", requireRole("admin"), async (req, res) => {
+  const { startDate, endDate } = getDateRange(req.query.startDate, req.query.endDate);
+  const groupBy = req.query.groupBy || 'day';
+  const userId = req.query.userId;
+  const search = req.query.search;
+  const limit = parseInt(req.query.limit) || 100;
+  const offset = parseInt(req.query.offset) || 0;
+  const sortBy = req.query.sortBy || 'totalCost';
+  const sortOrder = req.query.sortOrder || 'desc';
+  const roleFilter = req.query.role;
+  
+  let dateFormat, groupCol;
+  switch (groupBy) {
+    case 'hour':
+      dateFormat = '%Y-%m-%d %H:00:00';
+      groupCol = fn('DATE_FORMAT', col('createdAt'), '%Y-%m-%d %H:00:00');
+      break;
+    case 'day':
+      dateFormat = '%Y-%m-%d';
+      groupCol = fn('DATE', col('createdAt'));
+      break;
+    case 'week':
+      dateFormat = '%Y-%u';
+      groupCol = fn('YEARWEEK', col('createdAt'));
+      break;
+    case 'month':
+      dateFormat = '%Y-%m';
+      groupCol = fn('DATE_FORMAT', col('createdAt'), '%Y-%m');
+      break;
+    case 'user':
+      groupCol = col('userId');
+      break;
+    case 'model':
+      groupCol = col('modelId');
+      break;
+    default:
+      groupCol = fn('DATE', col('createdAt'));
+  }
+
+  const baseQuery = {
+    where: { 
+      createdAt: { [Op.between]: [startDate, endDate] },
+      ...(userId && { userId })
+    }
+  };
+
+  if (groupBy === 'user') {
+    // Build search conditions for users
+    const userWhere = {};
+    if (search) {
+      userWhere[Op.or] = [
+        { firstName: { [Op.iLike]: `%${search}%` } },
+        { lastName: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } }
+      ];
+    }
+
+    // Add role filter
+    const roleWhere = {};
+    if (roleFilter && roleFilter !== 'All') {
+      roleWhere.name = roleFilter;
+    }
+
+    // Map sortBy to actual columns
+    const sortMapping = {
+      'name': ['User', 'firstName'],
+      'email': ['User', 'email'],
+      'role': ['User->Role', 'name'],
+      'totalCost': [fn('SUM', col('cost'))],
+      'totalRequests': [fn('COUNT', col('*'))],
+      'totalInputTokens': [fn('SUM', col('inputTokens'))],
+      'totalOutputTokens': [fn('SUM', col('outputTokens'))],
+      'estimatedCost': [fn('SUM', col('cost'))],
+      'inputTokens': [fn('SUM', col('inputTokens'))],
+      'outputTokens': [fn('SUM', col('outputTokens'))]
+    };
+
+    const orderBy = sortMapping[sortBy] || [fn('SUM', col('cost'))];
+    const orderDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    // Get total count first for pagination
+    const totalCount = await Usage.count({
+      ...baseQuery,
+      include: [{ 
+        model: User, 
+        where: userWhere,
+        include: [{ model: Role, where: roleWhere }]
+      }],
+      distinct: true,
+      col: 'userId'
+    });
+
+    const data = await Usage.findAll({
+      ...baseQuery,
+      attributes: [
+        'userId',
+        [fn('SUM', col('cost')), 'totalCost'],
+        [fn('SUM', col('inputTokens')), 'totalInputTokens'],
+        [fn('SUM', col('outputTokens')), 'totalOutputTokens'],
+        [fn('COUNT', col('*')), 'totalRequests']
+      ],
+      include: [{ 
+        model: User, 
+        attributes: ['id', 'email', 'firstName', 'lastName', 'limit', 'remaining', 'roleId'],
+        include: [{ model: Role, attributes: ['name'], where: roleWhere }],
+        where: userWhere
+      }],
+      group: ['userId', 'User.id', 'User.email', 'User.firstName', 'User.lastName', 'User.limit', 'User.remaining', 'User.roleId', 'User->Role.id', 'User->Role.name'],
+      order: [[...orderBy, orderDirection]],
+      limit,
+      offset
+    });
+    
+    return res.json({ 
+      data, 
+      meta: { 
+        groupBy, 
+        search, 
+        limit, 
+        offset, 
+        sortBy, 
+        sortOrder,
+        role: roleFilter,
+        total: totalCount 
+      } 
+    });
+  }
+
+  if (groupBy === 'model') {
+    const data = await Usage.findAll({
+      ...baseQuery,
+      attributes: [
+        'modelId',
+        [fn('SUM', col('cost')), 'totalCost'],
+        [fn('SUM', col('inputTokens')), 'totalInputTokens'],
+        [fn('SUM', col('outputTokens')), 'totalOutputTokens'],
+        [fn('COUNT', col('*')), 'totalRequests']
+      ],
+      include: [{ model: Model, attributes: ['label'] }],
+      group: ['modelId', 'Model.id', 'Model.label'],
+      order: [[fn('SUM', col('cost')), 'DESC']]
+    });
+    return res.json({ data, meta: { groupBy } });
+  }
+
+  // Time-based grouping
+  const data = await Usage.findAll({
+    ...baseQuery,
+    attributes: [
+      [groupCol, 'period'],
+      [fn('SUM', col('cost')), 'totalCost'],
+      [fn('SUM', col('inputTokens')), 'totalInputTokens'],
+      [fn('SUM', col('outputTokens')), 'totalOutputTokens'],
+      [fn('COUNT', col('*')), 'totalRequests'],
+      [fn('COUNT', fn('DISTINCT', col('userId'))), 'uniqueUsers']
+    ],
+    group: [groupCol],
+    order: [[groupCol, 'DESC']],
+    raw: true
+  });
+
+  res.json({ data, meta: { groupBy } });
 });
 
 export default api;
