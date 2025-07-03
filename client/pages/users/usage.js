@@ -2,6 +2,7 @@ import { createSignal, createEffect, createMemo, For, Show } from "solid-js";
 import { createResource } from "solid-js";
 import html from "solid-js/html";
 import { capitalize } from "/utils/utils.js";
+import { DataTable } from "/components/table.js";
 
 // Helper function (can be at the top level or inside UsersList if preferred)
 const range = (start, end) => {
@@ -9,204 +10,201 @@ const range = (start, end) => {
   return Array.from({ length }, (_, i) => start + i);
 };
 
-function UsersList() {
-  // Date range options for filtering
-  const dateRangeOptions = ["This Week", "Last 30 Days", "Last 60 Days", "Last 120 Days", "Last 360 Days"];
-  const [selectedDateRange, setSelectedDateRange] = createSignal("This Week");
+// Shared date range utilities
+export const VALID_DATE_RANGES = ["This Week", "Last 30 Days", "Last 60 Days", "Last 120 Days", "Last 360 Days", "Custom"];
+
+// Format date as YYYY-MM-DD
+export function formatDate(date) {
+  return date.toISOString().split('T')[0];
+}
+
+// Get default start date (30 days ago)
+export function getDefaultStartDate() {
+  const date = new Date();
+  date.setDate(date.getDate() - 30);
+  return formatDate(date);
+}
+
+// Calculate date range from preset
+export function calculateDateRange(preset) {
+  const now = new Date();
+  let startDate, endDate;
   
-  // Create resource for fetching user usage data
-  const [usageResource] = createResource(
-    () => selectedDateRange(),
-    (dateRange) => fetch(`/api/admin/usage?dateRange=${encodeURIComponent(dateRange)}`)
+  switch(preset) {
+    case "This Week": {
+      startDate = new Date(now);
+      const day = startDate.getDay();
+      const diff = day;
+      startDate.setDate(startDate.getDate() - diff);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    }
+    case "Last 30 Days": {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 30);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    }
+    case "Last 60 Days": {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 60);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    }
+    case "Last 120 Days": {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 120);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    }
+    case "Last 360 Days": {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 360);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    }
+    default: {
+      startDate = new Date(now);
+      const day = startDate.getDay();
+      const diff = day;
+      startDate.setDate(startDate.getDate() - diff);
+      startDate.setHours(0, 0, 0, 0);
+    }
+  }
+  
+  endDate = new Date(now);
+  endDate.setHours(23, 59, 59, 999);
+  
+  return {
+    startDate: formatDate(startDate),
+    endDate: formatDate(endDate)
+  };
+}
+
+// Validate date range from URL params
+export function validateDateRange(dateRange, defaultRange = "Last 30 Days") {
+  return VALID_DATE_RANGES.includes(dateRange) ? dateRange : defaultRange;
+}
+
+function UsersList() {
+  
+  const [selectedDateRange, setSelectedDateRange] = createSignal("This Week");
+  const [customDates, setCustomDates] = createSignal({
+    startDate: getDefaultStartDate(),
+    endDate: formatDate(new Date())
+  });
+  
+  
+  // Get current date range (either from preset or custom)
+  const currentDateRange = createMemo(() => {
+    if (selectedDateRange() === "Custom") {
+      return customDates();
+    }
+    return calculateDateRange(selectedDateRange());
+  });
+  
+  // Create resource for fetching analytics data
+  const [analyticsResource] = createResource(
+    () => currentDateRange(),
+    ({ startDate, endDate }) => fetch(`/api/admin/analytics?groupBy=user&startDate=${startDate}&endDate=${endDate}`)
       .then(res => res.json())
   );
   
   const [rolesResource] = createResource(() => fetch("/api/admin/roles").then(res => res.json()));
   
-  // --- Filters & Sorting ---
+  // --- Server-side Filters & Sorting ---
   const [searchQuery, setSearchQuery] = createSignal("");
   const [selectedRole, setSelectedRole] = createSignal("All");
   const [sortColumn, setSortColumn] = createSignal("estimatedCost");
   const [sortOrder, setSortOrder] = createSignal("desc");
-
-  // --- Pagination State ---
   const [currentPage, setCurrentPage] = createSignal(1);
-  const [rowsPerPage, setRowsPerPage] = createSignal(20);
-  const rowsPerPageOptions = [5, 10, 20, 50]; 
-  const idSuffix = "users";
-  //TODO: come back and change this to an endpoint of some sort instead of hard coding values in case we want to add more statuses
-  /*
-  const statuses = createMemo(() => {
-    const allStatuses = usersResource()?.map(user => user.status).filter(Boolean) || [];
-    return [...new Set(allStatuses)];
-  });*/
-  const statuses = ['All', 'active', 'inactive']; //hard coding for now because the above iteration doesn't show *all possible* filters
-  
+  const rowsPerPage = 20;
+
   const roleNames = createMemo(() => {
     const allRoles = rolesResource()?.map(role => role.name).filter(Boolean) || [];
     return ["All", ...new Set(allRoles)];
   });
 
-  const filteredUsers = createMemo(() => {
-    if (!usageResource()?.users) return [];
-    return usageResource().users.filter(user => {
-      const roleMatch = selectedRole() === "All" || user.role === selectedRole();
-      const searchMatch = !searchQuery() || 
-        user.name.toLowerCase().includes(searchQuery().toLowerCase()) || 
-        user.email.toLowerCase().includes(searchQuery().toLowerCase());
-      return roleMatch && searchMatch;
+  // Server-side analytics resource with all parameters
+  const analyticsParams = createMemo(() => ({
+    startDate: currentDateRange().startDate,
+    endDate: currentDateRange().endDate,
+    search: searchQuery(),
+    role: selectedRole(),
+    sortBy: sortColumn(),
+    sortOrder: sortOrder(),
+    limit: rowsPerPage,
+    offset: (currentPage() - 1) * rowsPerPage
+  }));
+
+  // Replace the simple analytics resource with parameterized one
+  const [serverAnalyticsResource] = createResource(
+    analyticsParams,
+    async (params) => {
+      const queryParams = new URLSearchParams({
+        groupBy: 'user',
+        startDate: params.startDate,
+        endDate: params.endDate,
+        limit: params.limit.toString(),
+        offset: params.offset.toString()
+      });
+      
+      if (params.search) queryParams.set('search', params.search);
+      if (params.role && params.role !== 'All') queryParams.set('role', params.role);
+      if (params.sortBy) queryParams.set('sortBy', params.sortBy);
+      if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
+      
+      const response = await fetch(`/api/admin/analytics?${queryParams}`);
+      return response.json();
+    }
+  );
+
+  // Format user data from server response
+  const formattedUsers = createMemo(() => {
+    if (!serverAnalyticsResource()?.data) return [];
+    return serverAnalyticsResource().data.map(userStats => {
+      const user = userStats.User;
+      const limitDisplay = user.limit === null ? "No limit" : `$${user.limit}`;
+      const fullName = `${user.lastName || ''}, ${user.firstName || ''}`.replace(/^,\s*|,\s*$/g, '').trim() || user.email;
+      
+      return {
+        id: userStats.userId,
+        name: fullName,
+        email: user.email,
+        role: user.Role?.name || "No Role",
+        roleId: user.roleId,
+        inputTokens: Math.round(userStats.totalInputTokens || 0),
+        outputTokens: Math.round(userStats.totalOutputTokens || 0),
+        weeklyCostLimit: limitDisplay,
+        estimatedCost: parseFloat((userStats.totalCost || 0).toFixed(2)),
+        totalRequests: userStats.totalRequests || 0
+      };
     });
   });
-  
-  const sortedUsers = createMemo(() => {
-    const usersToSort = filteredUsers();
-    
-    if (!usersToSort || usersToSort.length === 0) {
-      return [];
-    }
-    const column = sortColumn(); 
-    const order = sortOrder();   
-    
-    return [...usersToSort].sort((a, b) => {
-      let valA = a[column];
-      let valB = b[column];
-      
-      let comparison = 0;
-      
-      // Special handling for numeric columns displayed as strings
-      if (column === "estimatedCost" || column === "weeklyCostLimit") {
-        // For weeklyCostLimit, handle "No limit" case
-        if (column === "weeklyCostLimit") {
-          const numA = valA === "No limit" ? Infinity : parseFloat(valA) || 0;
-          const numB = valB === "No limit" ? Infinity : parseFloat(valB) || 0;
-          comparison = numA - numB;
-        } else {
-          comparison = (parseFloat(valA) || 0) - (parseFloat(valB) || 0);
-        }
-      } else if (typeof valA === "number" && typeof valB === "number") {
-        comparison = (valA || 0) - (valB || 0);
-      } else {
-        // String comparison for non-numeric values
-        const strA = String(valA || "").toLowerCase();
-        const strB = String(valB || "").toLowerCase();
-        comparison = strA.localeCompare(strB);
-      }
 
-      return order === "asc" ? comparison : -comparison;
-    });
-  });
-
-  createEffect(() => {
-    const totalItems = sortedUsers().length;
-    const currentTotalPages = Math.ceil(totalItems / rowsPerPage());
-    
-    if (totalItems === 0) {
-        if (currentPage() !== 1) setCurrentPage(1);
-    } else if (currentPage() > currentTotalPages) { 
-        setCurrentPage(1);
-    }
-  });
-
-  function toggleSort(column) {
-    if (sortColumn() === column) {
-      setSortOrder(sortOrder() === "asc" ? "desc" : "asc");
-    } else {
-      setSortColumn(column);
-      setSortOrder("asc");
-    }
-    setCurrentPage(1);
-  }
-
-  const paginatedUsers = createMemo(() => {
-    const start = (currentPage() - 1) * rowsPerPage();
-    const end = start + rowsPerPage();
-    return sortedUsers().slice(start, end);
-  });
-  // --- Pagination Logic (integrated from TablePagination) ---
-  const totalItemsForPagination = createMemo(() => sortedUsers().length);
-
-  const _totalPages = createMemo(() => {
-    if (totalItemsForPagination() === 0) return 1;
-    return Math.ceil(totalItemsForPagination() / rowsPerPage());
-  });
-
-  const displayedRowsText = createMemo(() => {
-    if (totalItemsForPagination() === 0) { return "0–0 of 0"; }
-    const startItem = (currentPage() - 1) * rowsPerPage() + 1;
-    const endItem = Math.min(currentPage() * rowsPerPage(), totalItemsForPagination());
-    return `${startItem}–${endItem} of ${totalItemsForPagination()}`;
-  });
-
-  const handleRowsPerPageChange = (e) => {
-    const newRowsPerPage = parseInt(e.target.value, 10);
-    setRowsPerPage(newRowsPerPage);
-    setCurrentPage(1); // Always reset to page 1 when RPP changes
+  // Server-side event handlers
+  const handleSearch = (newSearch) => {
+    setSearchQuery(newSearch);
+    setCurrentPage(1); // Reset to first page
   };
 
-  const goToPage = (page) => {
-    const newPage = Number(page);
-    if (newPage >= 1 && newPage <= _totalPages() && newPage !== currentPage()) {
-      setCurrentPage(newPage);
-    }
+  const handleRoleChange = (newRole) => {
+    setSelectedRole(newRole);
+    setCurrentPage(1); // Reset to first page
   };
 
-  const pageNumbersToDisplay = createMemo(() => {
-    const totalPgs = _totalPages(); 
-    const currentPg = currentPage();
-    const pageNumbers = [];
+  const handleSort = ({column, order}) => {
+    setSortColumn(column);
+    setSortOrder(order);
+    setCurrentPage(1); // Reset to first page
+  };
 
-    if (totalPgs <= 0) return [1]; 
-    if (totalPgs <= 7) { 
-      return range(1, totalPgs); 
-    }
+  const handlePageChange = ({page}) => {
+    setCurrentPage(page);
+  };
 
-    pageNumbers.push(1); 
-    let middleDynamicStart, middleDynamicEnd;
 
-    if (currentPg <= 4) { 
-      middleDynamicStart = 2; middleDynamicEnd = 4;
-    } else if (currentPg >= totalPgs - 3) { 
-      middleDynamicStart = totalPgs - 3; middleDynamicEnd = totalPgs - 1;
-    } else { 
-      middleDynamicStart = currentPg - 1; middleDynamicEnd = currentPg + 1; 
-    }
 
-    if (middleDynamicStart > 2) { 
-      if (middleDynamicStart === 3) { 
-        pageNumbers.push(2); 
-      } else { 
-        pageNumbers.push("..."); 
-      } 
-    }
-    
-    for (let i = middleDynamicStart; i <= middleDynamicEnd; i++) { 
-      if (i > 1 && i < totalPgs) { 
-        if (!pageNumbers.includes(i)) pageNumbers.push(i); 
-      } 
-    }
-
-    if (middleDynamicEnd < totalPgs - 1) { 
-      if (middleDynamicEnd === totalPgs - 2) { 
-        if(!pageNumbers.includes(totalPgs - 1)) pageNumbers.push(totalPgs - 1); 
-      } else { 
-        pageNumbers.push("..."); 
-      } 
-    }
-
-    if (totalPgs > 1 && !pageNumbers.includes(totalPgs)) { 
-      pageNumbers.push(totalPgs); 
-    }
-    
-    const finalUniquePages = []; 
-    let lastPushedItem = null;
-    for (const item of pageNumbers) { 
-      if (item === "..." && lastPushedItem === "...") { continue; } 
-      finalUniquePages.push(item); 
-      lastPushedItem = item; 
-    }
-    return finalUniquePages;
-  });
-  // --- End of Integrated Pagination Logic ---
 
   return html`
     <div class="container py-4">
@@ -215,188 +213,170 @@ function UsersList() {
       </div>
       
       <!-- Error Alert -->
-      <${Show} when=${() => usageResource.error || rolesResource.error}>
+      <${Show} when=${() => serverAnalyticsResource.error || rolesResource.error}>
         <div class="alert alert-danger" role="alert">
-          ${() => (usageResource.error || rolesResource.error || "An error occurred while fetching data")}
-        </div>
-      <//>
-      
-      <!-- Loading State -->
-      <${Show} when=${() => usageResource.loading || rolesResource.loading}>
-        <div class="d-flex justify-content-center my-5">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
+          ${() => (serverAnalyticsResource.error || rolesResource.error || "An error occurred while fetching data")}
         </div>
       <//>
 
-      <!-- Filters -->
-      <div class="row my-3 align-items-center mx-1">
-        <div class="col-md-4 mb-2 mb-md-0">
-          <div class="input-group">
-            <span class="input-group-text">Search</span>
-            <input 
-              type="text" 
-              class="form-control" 
-              placeholder="Search by name or email"
-              value=${searchQuery()}
-              onInput=${e => setSearchQuery(e.target.value)}
-            />
+      <!-- Date Range Filter -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Filter</h5>
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label for="date-range-filter" class="form-label">Date Range</label>
+              <select 
+                class="form-select" 
+                id="date-range-filter" 
+                value=${selectedDateRange}
+                onInput=${e => setSelectedDateRange(e.target.value)}>
+                <option>This Week</option>
+                <option>Last 30 Days</option>
+                <option>Last 60 Days</option>
+                <option>Last 120 Days</option>
+                <option>Last 360 Days</option>
+                <option>Custom</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="role-filter" class="form-label">Role</label>
+              <select 
+                class="form-select" 
+                id="role-filter" 
+                aria-label="Select Role Filter"
+                value=${selectedRole}
+                onInput=${e => handleRoleChange(e.target.value)}
+                >
+                  <${For} each=${() => roleNames()}>
+                    ${role => html`<option value=${role}>${capitalize(role)}</option>`}
+                  <//>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <div class="input-group">
+                <span class="input-group-text">Search</span>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  placeholder="Search by name or email"
+                  value=${searchQuery}
+                  onInput=${e => handleSearch(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <label for="role-filter" class="col-auto col-form-label fw-semibold">Role</label>
-        <div class="col-md-2 mb-2 mb-md-0">
-          <select 
-            class="form-select" 
-            id="role-filter" 
-            aria-label="Select Role Filter"
-            value=${selectedRole()}
-            onInput=${e => setSelectedRole(e.target.value)}
-            >
-              <${For} each=${() => roleNames()}>
-                ${role => html`<option value=${role}>${capitalize(role)}</option>`}
-              <//>
-          </select>
-        </div>
-        
-        <label for="date-range-filter" class="col-auto col-form-label fw-semibold">Date Range</label>
-        <div class="col-md-2">
-          <select 
-            class="form-select" 
-            id="date-range-filter" 
-            value=${selectedDateRange()}
-            aria-label="Select Date Range"
-            onInput=${e => setSelectedDateRange(e.target.value)}
-            >
-              <${For} each=${dateRangeOptions}>
-                ${range => html`<option value=${range}>${range}</option>`}
-              <//>
-          </select>
+          
+          <!-- Custom Date Range (shown when Custom is selected) -->
+          <${Show} when=${() => selectedDateRange() === "Custom"}>
+            <div class="row g-3 align-items-center mt-3">
+              <div class="col-md-3">
+                <label for="custom-startDate" class="form-label">Start Date</label>
+                <input 
+                  type="date" 
+                  id="custom-startDate" 
+                  class="form-control" 
+                  value=${() => customDates().startDate}
+                  max=${() => customDates().endDate}
+                  onInput=${e => setCustomDates(prev => ({ ...prev, startDate: e.target.value }))} />
+              </div>
+              <div class="col-md-3">
+                <label for="custom-endDate" class="form-label">End Date</label>
+                <input 
+                  type="date" 
+                  id="custom-endDate" 
+                  class="form-control" 
+                  value=${() => customDates().endDate}
+                  min=${() => customDates().startDate}
+                  max=${formatDate(new Date())}
+                  onInput=${e => setCustomDates(prev => ({ ...prev, endDate: e.target.value }))} />
+              </div>
+            </div>
+          <//>
         </div>
       </div>
 
       <!-- Users Table -->
-      <${Show} when=${() => !usageResource.loading && usageResource()?.users?.length > 0}>
-        <div class="table-responsive rounded users-table">
-          <table class="table table-striped table-hover mb-0">
-            <thead>
-              <tr>
-                <th onClick=${() => toggleSort("name")} class="cursor-pointer ps-4">
-                  User ${() => sortColumn() === "name" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
-                </th>
-                <th onClick=${() => toggleSort("email")} class="cursor-pointer">
-                  Email ${() => sortColumn() === "email" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
-                </th>
-                <th onClick=${() => toggleSort("role")} class="cursor-pointer">
-                  User Role ${() => sortColumn() === "role" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
-                </th>
-                <th onClick=${() => toggleSort("inputTokens")} class="cursor-pointer">
-                  Input Tokens ${() => sortColumn() === "inputTokens" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
-                </th>
-                <th onClick=${() => toggleSort("outputTokens")} class="cursor-pointer">
-                  Output Tokens ${() => sortColumn() === "outputTokens" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
-                </th>
-                <th onClick=${() => toggleSort("weeklyCostLimit")} class="cursor-pointer">
-                  Weekly Cost Limit ($) ${() => sortColumn() === "weeklyCostLimit" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
-                </th>
-                <th onClick=${() => toggleSort("estimatedCost")} class="cursor-pointer">
-                  Estimated Cost ($) ${() => sortColumn() === "estimatedCost" ? (sortOrder() === "asc" ? "↑" : "↓") : ""}
-                </th>
-                <th class="text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <${For} each=${paginatedUsers} fallback=${html`<tr><td colspan="8" class="text-center">No users match current filters.</td></tr>`}>
-                ${user => html`
-                <tr>
-                  <td class="ps-4 small">${user.name}</td>
-                  <td class="small">${user.email || '-'}</td>
-                  <td class="text-capitalize small">${user.role || "No Role"}</td>
-                  <td class="small">${user.inputTokens}</td>
-                  <td class="small">${user.outputTokens}</td>
-                  <td class="small">${user.weeklyCostLimit}</td>
-                  <td class="small">${user.estimatedCost}</td>
-                  <td class="text-center">
-                    <a
-                      href=${`/_/users/${user.id}/usage`}
-                      class="btn btn-outline-primary btn-sm text-decoration-none w-100 p-1">
-                      View Details
-                    </a>
-                  </td>
-                </tr>
-                `}
-              <//>
-            </tbody>
-          </table>
-          <div class="table-pagination d-flex justify-content-end align-items-center gap-3">
-            <div class="d-flex align-items-center">
-              <label for=${`rows-select-${idSuffix}`} class="col-form-label me-2 small">Rows per page:</label>
-              <div>
-                <select 
-                  class="form-select form-select-sm" 
-                  id=${`rows-select-${idSuffix}`} 
-                  onInput=${handleRowsPerPageChange}
-                >
-                  <${For} each=${rowsPerPageOptions}>
-                    ${(option) => html`<option value=${option} selected=${() => option === rowsPerPage()}>${option}</option>`}
-                  <//>
-                </select>
-              </div>
-            </div>
-            <div class="text-muted px-1 small">${() => displayedRowsText()}</div>
-            <nav aria-label="Page navigation" class="me-4 ms-3">
-              <ul class="pagination pagination-sm mb-0">
-                <li 
-                  classList=${() => ({ 
-                    "page-item": true, 
-                    "disabled": currentPage() === 1 || totalItemsForPagination() === 0 
-                  })}
-                >
-                  <button class="page-link" onClick=${() => goToPage(currentPage() - 1)} aria-label="Previous">
-                    <span aria-hidden="true">«</span>
-                  </button>
-                </li>
-                <${For} each=${pageNumbersToDisplay}>
-                  ${(page) => typeof page === "number" 
-                    ? html`<li 
-                        classList=${() => ({ 
-                          "page-item": true, 
-                          "active": currentPage() === page 
-                        })}
-                      >
-                        <button class="page-link" onClick=${() => goToPage(page)}>${page}</button>
-                      </li>` 
-                    : html`<li class="page-item disabled"><span class="page-link">...</span></li>` 
-                  }
-                <//>
-                <li 
-                  classList=${() => ({ 
-                    "page-item": true, 
-                    "disabled": currentPage() === _totalPages() || totalItemsForPagination() === 0 
-                  })}
-                >
-                  <button class="page-link" onClick=${() => goToPage(currentPage() + 1)} aria-label="Next">
-                    <span aria-hidden="true">»</span>
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        </div>
-      <//>
-
-      <!-- No Users Message -->
-      <${Show} when=${() => !usageResource.loading && (!usageResource()?.users || usageResource().users.length === 0)}>
-        <div class="alert alert-info">
-          No usage data found for the selected date range.
-        </div>
-      <//>
+      <${DataTable}
+        remote=${true}
+        data=${formattedUsers}
+        loading=${() => serverAnalyticsResource.loading || rolesResource.loading}
+        loadingText="Loading users..."
+        totalItems=${() => serverAnalyticsResource()?.meta?.total || 0}
+        page=${currentPage}
+        search=${searchQuery}
+        sortColumn=${sortColumn}
+        sortOrder=${sortOrder}
+        onSort=${handleSort}
+        onPageChange=${handlePageChange}
+        className="users-table"
+        columns=${[
+            {
+              key: "name",
+              title: "User",
+              className: "ps-4",
+              cellClassName: "ps-4 small"
+            },
+            {
+              key: "email",
+              title: "Email",
+              cellClassName: "small",
+              render: (user) => user.email || '-'
+            },
+            {
+              key: "role",
+              title: "User Role",
+              cellClassName: "text-capitalize small",
+              render: (user) => user.role || "No Role"
+            },
+            {
+              key: "inputTokens",
+              title: "Input Tokens",
+              cellClassName: "small"
+            },
+            {
+              key: "outputTokens",
+              title: "Output Tokens",
+              cellClassName: "small"
+            },
+            {
+              key: "weeklyCostLimit",
+              title: "Weekly Cost Limit ($)",
+              cellClassName: "small"
+            },
+            {
+              key: "estimatedCost",
+              title: "Estimated Cost ($)",
+              cellClassName: "small"
+            },
+            {
+              key: "action",
+              title: "Action",
+              cellClassName: "text-center",
+              render: (user) => html`
+                <a
+                  href=${() => {
+                    const range = currentDateRange();
+                    const params = new URLSearchParams({
+                      dateRange: selectedDateRange(),
+                      startDate: range.startDate,
+                      endDate: range.endDate
+                    });
+                    return `/_/users/${user.id}/usage?${params.toString()}`;
+                  }}
+                  class="btn btn-outline-primary btn-sm text-decoration-none w-100 p-1">
+                  View Details
+                </a>
+              `
+            }
+          ]}
+        />
       
       <!-- Date Info -->
-      <${Show} when=${() => usageResource() && usageResource().users?.length > 0}>
+      <${Show} when=${() => !serverAnalyticsResource.loading && formattedUsers()?.length > 0}>
         <div class="mt-3 text-muted small">
-          <p>Showing data from ${() => new Date(usageResource().startDate).toLocaleDateString()} to ${() => new Date(usageResource().endDate).toLocaleDateString()}</p>
+          <p>Showing data from ${() => new Date(currentDateRange().startDate).toLocaleDateString()} to ${() => new Date(currentDateRange().endDate).toLocaleDateString()}</p>
+          <p>Total results: ${() => serverAnalyticsResource()?.meta?.total || 0}</p>
         </div>
       <//>
     </div>
