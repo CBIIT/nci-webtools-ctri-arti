@@ -1,14 +1,11 @@
 import { createSignal, Show } from "solid-js";
 import html from "solid-js/html";
-import { useParams, useLocation } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
 import { createResource } from "solid-js";
 import { capitalize } from "/utils/utils.js";
 
 function UserEdit() {
   const params = useParams();
-  const location = useLocation();
-  const isProfileRoute = location.pathname.includes("/profile/");
-  
   const [user, setUser] = createSignal({
     email: "",
     firstName: "",
@@ -19,7 +16,6 @@ function UserEdit() {
     remaining: 0
   });
   const [originalUser, setOriginalUser] = createSignal({ ...user() })
-  
   const [generateApiKey, setGenerateApiKey] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
@@ -29,8 +25,12 @@ function UserEdit() {
     fetch("/api/admin/roles").then(res => res.json())
   );
   
-  // Fetch user data if editing existing user
+  // Fetch user data to edit (admin only)
   const [userData] = createResource(() => {
+    if (!params.id) {
+      return null; // No user ID provided
+    }
+    
     return fetch(`/api/admin/users/${params.id}`)
       .then(res => res.json())
       .then(data => {
@@ -47,7 +47,7 @@ function UserEdit() {
     try {
       const userData = { ...user() };
       
-      // Include ID if editing existing user
+      // Include ID for user being edited
       userData.id = params.id;
       
       // Include generateApiKey flag if checked
@@ -132,7 +132,7 @@ function UserEdit() {
       
       <!-- User Form -->
        <div class="row position-relative mb-5" style="margin-top:-80px">
-          <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto font-title text-white fw-bold display-5" >${isProfileRoute ? "User Profile" : "Edit User"}</h1>
+          <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto font-title text-white fw-bold display-5">Edit User</h1>
       </div>
       <div class="row mt-4 mb-5">
         <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto fs-3">${() => user().email || ''} </h1>
@@ -173,68 +173,67 @@ function UserEdit() {
             </div>
           </div>
           <div class="row align-items-center mb-2">
-            <!-- Name -->
-            <label for="name" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Name</label>
+            <!-- First Name -->
+            <label for="firstName" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">First Name</label>
             <div class="col-sm-3 col-xl-2">
-              <div> 
-                ${() => user().firstName + ' ' + user().lastName || ''}
-              </div>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="firstName" 
+                value=${() => user().firstName || ''} 
+                onInput=${e => handleInputChange("firstName", e.target.value)} 
+                placeholder="Enter first name" />
+            </div>
+          </div>
+          <div class="row align-items-center mb-2">
+            <!-- Last Name -->
+            <label for="lastName" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Last Name</label>
+            <div class="col-sm-3 col-xl-2">
+              <input 
+                type="text" 
+                class="form-control" 
+                id="lastName" 
+                value=${() => user().lastName || ''} 
+                onInput=${e => handleInputChange("lastName", e.target.value)} 
+                placeholder="Enter last name" />
             </div>
           </div>
           <div class="row align-items-center mb-2">
             <!-- Status -->
             <label for="status" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Status<span class="text-danger">*</span></label>
             <div class="col-sm-3 col-xl-2">
-              <${Show} when=${!isProfileRoute} fallback=${
-                html`
-                  <div class="text-capitalize"> 
-                    ${() => user().status}
-                  </div>
-                `
-              }>
-                <select 
-                  class="form-select" 
-                  id="status"
-                  value=${() => user().status || 'active'}
-                  onChange=${e => handleInputChange("status", e.target.value)}>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              <//>
+              <select 
+                class="form-select" 
+                id="status"
+                value=${() => user().status || 'active'}
+                onChange=${e => handleInputChange("status", e.target.value)}>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
             </div>
           </div>
           <div class="row align-items-center mb-2">
             <!-- Role -->
             <label for="roleId" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Role</label>
             <div class="col-sm-3 col-xl-2">
-              <${Show} when=${!isProfileRoute} fallback=${
-                html`
-                  <div class="text-capitalize"> 
-                    ${() => user().Role?.name}
-                  </div>
-                `
-              }>
-                <select 
-                  class="form-select" 
-                  id="roleId" 
-                  value=${() => user().roleId || ''}
-                  onChange=${e => handleRoleChange(parseInt(e.target.value))}>
-                  ${() => roles()?.map(role => html`
-                    <option value=${role.id} selected=${() => role.id === user().roleId}>${capitalize(role.name)}</option>
-                  `)}
-                </select>
-              <//>
+              <select 
+                class="form-select" 
+                id="roleId" 
+                value=${() => user().roleId || ''}
+                onChange=${e => handleRoleChange(parseInt(e.target.value))}>
+                ${() => roles()?.map(role => html`
+                  <option value=${role.id} selected=${() => role.id === user().roleId}>${capitalize(role.name)}</option>
+                `)}
+              </select>
             </div>
           </div>
           <div class="row align-items-center mb-2">
             <!-- Weekly Cost Limit -->
             <label for="limit" class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold">Weekly Cost Limit ($)</label>
             <div class="col-sm-3 col-xl-2">
-            <${Show} when=${() => !isProfileRoute && !(user().roleId === 1)} fallback=${
+              <${Show} when=${() => !(user().roleId === 1)} fallback=${
                 html`
-                  <div> 
-                    ${() => user().roleId === 1 ? "No Limit" : user().limit }
-                  </div>
+                  <div>No Limit</div>
                 `
               }>
                 <input 
@@ -245,11 +244,10 @@ function UserEdit() {
                   id="limit" 
                   value=${() => user().limit || 0} 
                   onInput=${e => handleInputChange("limit", parseFloat(e.target.value) || 0)} />
-            <//>
+              <//>
             </div>
           </div>
           
-          <${Show} when=${!isProfileRoute}>
             <div class="row">
               <!-- Form Buttons -->
               <div class="col-12 mt-4">
@@ -263,12 +261,11 @@ function UserEdit() {
                     type="submit" 
                     class="btn btn-primary" 
                     disabled=${saving}>
-                    ${() => saving() ? "Saving..." : "Save"}
+                    ${() => saving() ? "Saving..." : "Save User"}
                   </button>
                 </div>
               </div>
             </div>
-          <//>
         </form>
       <//>
     </div>
