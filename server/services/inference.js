@@ -1,9 +1,10 @@
 import bedrock from "./providers/bedrock.js";
 import gemini from "./providers/gemini.js";
+import test from "./providers/test.js";
 import { Model, Provider } from "./database.js";
 
 export async function getModelProvider(value) {
-  const providers = { bedrock, gemini };
+  const providers = { bedrock, gemini, test };
   const model = await Model.findOne({ where: { value }, include: Provider });
   const provider = new providers[model?.Provider?.name]();
   return { model, provider };
