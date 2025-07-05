@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Op, fn, col } from "sequelize";
+import { Op, fn, col, where as sequelizeWhere } from "sequelize";
 import { requireRole } from "../middleware.js";
 import { User, Model, Role, Usage, Provider } from "../database.js";
 import { getDateRange } from "../utils.js";
@@ -24,10 +24,12 @@ api.get("/admin/users", requireRole("admin"), async (req, res) => {
   delete where.sortOrder;
   
   if (search) {
+    // Use database-agnostic case-insensitive search
+    const searchTerm = `%${search.toLowerCase()}%`;
     where[Op.or] = [
-      { firstName: { [Op.iLike]: `%${search}%` } },
-      { lastName: { [Op.iLike]: `%${search}%` } },
-      { email: { [Op.iLike]: `%${search}%` } }
+      sequelizeWhere(fn('LOWER', col('firstName')), Op.like, searchTerm),
+      sequelizeWhere(fn('LOWER', col('lastName')), Op.like, searchTerm),
+      sequelizeWhere(fn('LOWER', col('email')), Op.like, searchTerm)
     ];
   }
 
@@ -347,10 +349,12 @@ api.get("/admin/analytics", requireRole("admin"), async (req, res) => {
     // Build search conditions for users
     const userWhere = {};
     if (search) {
+      // Use database-agnostic case-insensitive search
+      const searchTerm = `%${search.toLowerCase()}%`;
       userWhere[Op.or] = [
-        { firstName: { [Op.iLike]: `%${search}%` } },
-        { lastName: { [Op.iLike]: `%${search}%` } },
-        { email: { [Op.iLike]: `%${search}%` } }
+        sequelizeWhere(fn('LOWER', col('firstName')), Op.like, searchTerm),
+        sequelizeWhere(fn('LOWER', col('lastName')), Op.like, searchTerm),
+        sequelizeWhere(fn('LOWER', col('email')), Op.like, searchTerm)
       ];
     }
 
