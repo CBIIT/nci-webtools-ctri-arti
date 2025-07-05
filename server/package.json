@@ -45,6 +45,10 @@
       "**/__tests__/**/*.js",
       "**/?(*.)+(spec|test).js"
     ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/services/providers/"
+    ],
     "setupFiles": ["<rootDir>/test/setup.js"]
   }
 }
