@@ -7,7 +7,7 @@ import { context } from "./fedpulse.config.js";
 import Message from "./message.js";
 
 export default function Page() {
-  const { conversation, updateConversation, conversations, messages, loading, submitMessage } = useChat();
+  const { conversation, updateConversation, deleteConversation, conversations, messages, loading, submitMessage } = useChat();
   const [toggles, setToggles] = createSignal({});
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -42,7 +42,15 @@ export default function Page() {
           <input
             value=${() => conversation?.title}
             onChange=${(ev) => updateConversation({ title: ev.target.value })}
-            class="form-control form-control-sm fw-semibold border-0 bg-transparent " />
+            class="form-control form-control-sm fw-semibold border-0 bg-transparent flex-grow-1" />
+          <${Show} when=${() => conversation?.id}>
+            <button 
+              class="btn btn-sm btn-outline-danger ms-2" 
+              onClick=${deleteConversation}
+              title="Delete conversation">
+              Delete
+            </button>
+          <//>
         </div>
       </div>
     </div>
@@ -63,16 +71,17 @@ export default function Page() {
             <a class="nav-link" href="/tools/fedpulse" target="_blank">New Conversation</a>
           </li>
           <${For} each=${conversations}>
-            ${(conversation) =>
+            ${(conv) =>
               html`<li class="nav-item">
                 <a
                   class="nav-link"
-                  href=${`agents/chat/?id=${conversation.id}`}
-                  classList=${() => ({ active: conversation.id === conversation()?.id })}>
-                  ${conversation.title}
+                  href=${`/tools/fedpulse?id=${conv.id}`}
+                  target="_self"
+                  classList=${() => ({ active: conv.id === conversation?.id })}>
+                  ${conv.title}
                 </a>
               </li>`}
-          <//>
+          </>
         </ul>
       </div>
     </aside>

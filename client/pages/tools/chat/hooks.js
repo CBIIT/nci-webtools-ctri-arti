@@ -125,6 +125,34 @@ export function useChat() {
     }
   };
 
+  // Delete conversation
+  const deleteConversation = async () => {
+    const database = db();
+    if (!database || !conversation?.id) return;
+
+    const confirmDelete = window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.');
+    if (!confirmDelete) return;
+
+    try {
+      await database.deleteConversation(conversation.id);
+      
+      // Clear current conversation
+      setConversation({ id: null, title: "", messages: [] });
+      setMessages([]);
+      
+      // Update URL to remove conversation ID
+      const url = new URL(window.location);
+      url.searchParams.delete('id');
+      window.history.replaceState({}, '', url);
+      
+      // Refresh conversations list
+      await loadRecentConversations();
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+      alert('Failed to delete conversation. Please try again.');
+    }
+  };
+
   // Update URL with conversation ID
   const updateURL = (conversationId) => {
     if (conversationId) {
@@ -392,6 +420,7 @@ export function useChat() {
     submitMessage, 
     conversation, 
     updateConversation, 
+    deleteConversation,
     conversations, 
     loading,
     loadConversation,
