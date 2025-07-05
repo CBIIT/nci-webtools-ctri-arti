@@ -21,12 +21,21 @@ export const User = db.define("User", {
   apiKey: DataTypes.STRING,
   limit: DataTypes.FLOAT,
   remaining: DataTypes.FLOAT,
+}, {
+  indexes: [
+    { fields: ['email'] },
+    { fields: ['roleId'] }
+  ]
 });
 
 export const Role = db.define("Role", {
   name: DataTypes.STRING,
   policy: DataTypes.JSON,
   order: DataTypes.INTEGER
+}, {
+  indexes: [
+    { fields: ['order'] }
+  ]
 });
 
 export const Provider = db.define("Provider", {
@@ -45,6 +54,11 @@ export const Model = db.define("Model", {
   cost1kOutput: DataTypes.FLOAT,
   cost1kCacheRead: DataTypes.FLOAT,
   cost1kCacheWrite: DataTypes.FLOAT,
+}, {
+  indexes: [
+    { fields: ['value'] },
+    { fields: ['providerId'] }
+  ]
 });
 
 export const Usage = db.define("Usage", {
@@ -56,6 +70,13 @@ export const Usage = db.define("Usage", {
   cacheReadTokens: DataTypes.FLOAT,
   cacheWriteTokens: DataTypes.FLOAT,
   cost: DataTypes.FLOAT,
+}, {
+  indexes: [
+    { fields: ['userId'] },
+    { fields: ['modelId'] },
+    { fields: ['createdAt'] },
+    { fields: ['userId', 'createdAt'] }
+  ]
 });
 
 await db.sync({ alter: true });
