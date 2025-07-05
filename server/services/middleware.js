@@ -88,21 +88,6 @@ export async function loginMiddleware(req, res, next) {
 }
 
 /**
- * Returns 401 if the user is not authenticated
- * @param {Express.Request} req
- * @param {Express.Response} res
- * @param {Function} next
- */
-export async function authMiddleware(req, res, next) {
-  // todo: switch over when keys are verified
-  const authDisabled = false;
-  if (!authDisabled && !req.session.user) {
-    return res.status(401).end("Unauthorized");
-  }
-  next();
-}
-
-/**
  * Middleware that requires user to have a specific role
  * @param {string} roleName - Name of the required role (e.g., "admin")
  * @returns {Function} Middleware function
@@ -110,23 +95,29 @@ export async function authMiddleware(req, res, next) {
 export function requireRole(roleName) {
   return async (req, res, next) => {
     try {
+      const apiKey = req.headers['x-api-key'];
       const id = req.session?.user?.id;
-      if (!id) {
+      if (!apiKey && !id) {
         return res.status(401).json({ error: "Authentication required" });
       }
-
-      const user = await User.findOne({ where: { id }, include: [{ model: Role }] });
+      const user = await User.findOne({ 
+        where: apiKey ? { apiKey }: { id },
+        include: [{ model: Role }] 
+      });
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(401).json({ error: "Authentication required" });
       }
+      // Check role requirement
       if (roleName && user.Role?.name !== roleName) {
-        return res.status(403).json({ error: `Role '${roleName}' required` });
+        return res.status(403).json({ error: "Authorization required" });
       }
-
+      // Set user in session for downstream handlers
+      req.session ||= {};
+      req.session.user = user;
       next();
     } catch (err) {
       next(err);
-    } 
+    }
   };
 }
 
