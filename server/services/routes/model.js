@@ -1,29 +1,20 @@
 import { Router, json } from "express";
 import { runModel } from "../inference.js";
 import { requireRole } from "../middleware.js";
-import db, { User, Model, Usage } from "../database.js";
+import { User, Model, Usage } from "../database.js";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
 
 api.post("/model", requireRole(), async (req, res) => {
-  // Get the request start time
-  const startTime = Date.now();
-
-  // Store the model value from the request for usage tracking
+  const user = req.session.user;
   const modelValue = req.body.model;
-
-  // Get user information from the session
-  const userId = req.session?.user?.id;
   const ip = req.ip || req.socket.remoteAddress;
 
   try {
     // Check if user has remaining balance before processing
-    if (userId) {
-      const user = await User.findByPk(userId);
-      if (user && user.limit !== null && user.remaining !== null && user.remaining <= 0) {
-        return res.status(429).json({ error: "Usage limit exceeded." });
-      }
+    if (user && user.limit !== null && user.remaining !== null && user.remaining <= 0) {
+      return res.status(429).json({ error: "Usage limit exceeded." });
     }
 
     // Run the model
@@ -31,13 +22,13 @@ api.post("/model", requireRole(), async (req, res) => {
 
     // For non-streaming responses with Bedrock/Claude
     if (!results?.stream) {
-      await trackModelUsage(userId, modelValue, ip, results.usage);
+      await trackModelUsage(user.id, modelValue, ip, results.usage);
       return res.json(results);
     }
 
     for await (const message of results.stream) {
       try {
-        if (message.metadata) await trackModelUsage(userId, modelValue, ip, message.metadata.usage);
+        if (message.metadata) await trackModelUsage(user.id, modelValue, ip, message.metadata.usage);
         res.write(JSON.stringify(message) + "\n");
       } catch (err) {
         console.error("Error processing stream message:", err);
@@ -80,7 +71,7 @@ async function trackModelUsage(userId, modelValue, ip, usageData) {
     // Update user's remaining balance if needed
     if (totalCost > 0) {
       const user = await User.findByPk(userId);
-      if (user && user.remaining !== null) {
+      if (user && user.remaining !== null && user.limit !== null) {
         await user.update({
           remaining: Math.max(0, (user.remaining || 0) - totalCost),
         });
