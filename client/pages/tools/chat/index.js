@@ -62,13 +62,14 @@ export default function Page() {
             <a class="nav-link" href="/tools/chat" target="_blank">New Conversation</a>
           </li>
           <${For} each=${conversations}>
-            ${(conversation) =>
+            ${(conv) =>
               html`<li class="nav-item">
                 <a
                   class="nav-link"
-                  href=${`agents/chat/?id=${conversation.id}`}
-                  classList=${() => ({ active: conversation.id === conversation()?.id })}>
-                  ${conversation.title}
+                  href=${`/tools/chat?id=${conv.id}`}
+                  target="_self"
+                  classList=${() => ({ active: conv.id === conversation?.id })}>
+                  ${conv.title}
                 </a>
               </li>`}
           <//>

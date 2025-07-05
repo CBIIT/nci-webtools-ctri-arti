@@ -6,12 +6,133 @@ import { readStream } from "/utils/files.js";
 import { autoscroll } from "/utils/utils.js";
 import { jsonToXml } from "/utils/xml.js";
 import { systemPrompt, tools } from "./config.js";
+import { getDB } from "/models/database.js";
 
 export function useChat() {
   const [messages, setMessages] = createStore([]);
   const [conversation, setConversation] = createStore({ id: null, title: "", messages });
   const [conversations, setConversations] = createStore([]);
   const [loading, setLoading] = createSignal(false);
+  const [userEmail, setUserEmail] = createSignal(null);
+  const [db, setDB] = createSignal(null);
+
+  // Initialize user session and database
+  const initializeDatabase = async () => {
+    try {
+      const { user } = await fetch("/api/session").then((res) => res.json());
+      if (user?.email) {
+        setUserEmail(user.email);
+        const database = await getDB(user.email);
+        setDB(database);
+        
+        // Load conversation from URL if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const conversationId = urlParams.get('id');
+        if (conversationId) {
+          await loadConversation(conversationId);
+        }
+        
+        // Load recent conversations for sidebar
+        await loadRecentConversations();
+      }
+    } catch (error) {
+      console.error('Failed to initialize database:', error);
+    }
+  };
+
+  // Initialize on mount
+  initializeDatabase();
+
+  // Load conversation from database
+  const loadConversation = async (conversationId) => {
+    const database = db();
+    if (!database) return;
+
+    try {
+      const conv = await database.getConversation(conversationId);
+      if (conv) {
+        setConversation({ 
+          id: conv.id, 
+          title: conv.title,
+          projectId: conv.projectId 
+        });
+        
+        // Load messages for this conversation
+        const msgs = await database.getMessages(conversationId);
+        setMessages(msgs.map(msg => {
+          try {
+            // Parse the stored content back to array
+            const content = typeof msg.content === 'string' 
+              ? JSON.parse(msg.content) 
+              : msg.content;
+            
+            return {
+              role: msg.role,
+              content: Array.isArray(content) ? content : [{ text: String(content) }],
+              timestamp: msg.timestamp,
+              metadata: msg.metadata
+            };
+          } catch (error) {
+            console.error('Failed to parse message content:', error);
+            // Fallback to text content
+            return {
+              role: msg.role,
+              content: [{ text: String(msg.content) }],
+              timestamp: msg.timestamp,
+              metadata: msg.metadata
+            };
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error);
+    }
+  };
+
+  // Load recent conversations for sidebar
+  const loadRecentConversations = async () => {
+    const database = db();
+    if (!database) return;
+
+    try {
+      const recentConvs = await database.getRecentConversations(20);
+      setConversations(recentConvs.map(conv => ({
+        id: conv.id,
+        title: conv.title,
+        lastMessageAt: conv.lastMessageAt,
+        messageCount: conv.messageCount
+      })));
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+    }
+  };
+
+  // Update conversation title
+  const updateConversation = async (updates) => {
+    const database = db();
+    if (!database || !conversation.id) return;
+
+    try {
+      await database.updateConversation(conversation.id, updates);
+      setConversation(prev => ({ ...prev, ...updates }));
+      
+      // Refresh conversations list if title changed
+      if (updates.title) {
+        await loadRecentConversations();
+      }
+    } catch (error) {
+      console.error('Failed to update conversation:', error);
+    }
+  };
+
+  // Update URL with conversation ID
+  const updateURL = (conversationId) => {
+    if (conversationId) {
+      const url = new URL(window.location);
+      url.searchParams.set('id', conversationId);
+      window.history.replaceState({}, '', url);
+    }
+  };
 
   /**
    * Submit a message along with optional files.
@@ -22,6 +143,8 @@ export function useChat() {
    * @param {string} params.model - The model to use.
    */
   async function submitMessage({ message, inputFiles, reasoningMode, model, context = {}, reset = () => {} }) {
+    const database = db();
+    
     const text = jsonToXml({
       message: {
         text: message,
@@ -37,7 +160,31 @@ export function useChat() {
       content: [{ text }],
     };
 
-    if (!messages.length) {
+    // Create new conversation if this is the first message
+    if (!messages.length && database) {
+      try {
+        const newConversation = await database.createConversation({
+          title: message.length > 50 ? message.substring(0, 50) + '...' : message
+        });
+        
+        setConversation({ 
+          id: newConversation.id, 
+          title: newConversation.title,
+          projectId: newConversation.projectId 
+        });
+        
+        // Update URL with new conversation ID
+        updateURL(newConversation.id);
+        
+        // Refresh conversations list
+        await loadRecentConversations();
+      } catch (error) {
+        console.error('Failed to create conversation:', error);
+        // Fallback to local storage behavior
+        setConversation({ id: Math.random().toString(36).substr(2, 9), title: message });
+      }
+    } else if (!messages.length) {
+      // Fallback if no database
       setConversation({ id: Math.random().toString(36).substr(2, 9), title: message });
     }
 
@@ -64,6 +211,18 @@ export function useChat() {
     // Update the state with the user message
     setMessages(messages.length, userMessage);
     reset?.();
+    
+    // Store user message in database (as-is)
+    if (database && conversation.id) {
+      try {
+        await database.addMessage(conversation.id, {
+          role: userMessage.role,
+          content: JSON.stringify(userMessage.content)
+        });
+      } catch (error) {
+        console.error('Failed to store user message:', error);
+      }
+    }
 
     try {
       let isComplete = false;
@@ -187,8 +346,35 @@ export function useChat() {
                   content: toolResults.map((r) => ({ toolResult: r })),
                 };
                 setMessages(messages.length, toolResultsMessage);
+                
+                // Store tool results message in database (as-is)
+                if (database && conversation.id) {
+                  try {
+                    await database.addMessage(conversation.id, {
+                      role: toolResultsMessage.role,
+                      content: JSON.stringify(toolResultsMessage.content)
+                    });
+                  } catch (error) {
+                    console.error('Failed to store tool results message:', error);
+                  }
+                }
               } else {
                 isComplete = true;
+                
+                // Store assistant message in database (as-is)
+                if (database && conversation.id) {
+                  try {
+                    const assistantMessage = messages.at(-1);
+                    if (assistantMessage && assistantMessage.role === 'assistant') {
+                      await database.addMessage(conversation.id, {
+                        role: assistantMessage.role,
+                        content: JSON.stringify(assistantMessage.content)
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Failed to store assistant message:', error);
+                  }
+                }
               }
             }
           }
@@ -201,7 +387,16 @@ export function useChat() {
     }
   }
 
-  return { messages, submitMessage, conversation, setConversation, conversations, setConversations, loading };
+  return { 
+    messages, 
+    submitMessage, 
+    conversation, 
+    updateConversation, 
+    conversations, 
+    loading,
+    loadConversation,
+    userEmail
+  };
 }
 
 export function useSubmitMessage() {
