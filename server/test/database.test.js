@@ -18,10 +18,6 @@ describe('Database Tests', () => {
     await teardownTestDatabase();
   });
 
-  beforeEach(async () => {
-    await clearTestData();
-  });
-
   test('should have seed data', async () => {
     const roles = await Role.findAll();
     const models = await Model.findAll();
@@ -29,6 +25,10 @@ describe('Database Tests', () => {
     expect(roles.length).toBeGreaterThan(0);
     expect(models.length).toBeGreaterThan(0);
     expect(roles.find(r => r.name === 'admin')).toBeDefined();
+  });
+
+  afterEach(async () => {
+    await clearTestData();
   });
 
   test('should create and find user', async () => {
@@ -49,7 +49,15 @@ describe('Database Tests', () => {
 
   test('should create usage record', async () => {
     const user = await createTestUser();
-    const model = await Model.findOne();
+    
+    // Create a test model since clearTestData removes them
+    const model = await Model.create({
+      label: 'Test Model',
+      value: 'test-model',
+      providerId: 1,
+      cost1kInput: 0.01,
+      cost1kOutput: 0.02
+    });
 
     const usage = await Usage.create({
       userId: user.id,

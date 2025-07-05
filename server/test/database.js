@@ -18,6 +18,7 @@ export async function teardownTestDatabase() {
 // Clear user data between tests
 export async function clearTestData() {
   await Usage.destroy({ where: {} });
+  await Model.destroy({ where: {} });
   await User.destroy({ where: {} });
 }
 
