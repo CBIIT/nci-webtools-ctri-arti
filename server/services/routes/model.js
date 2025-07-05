@@ -86,7 +86,7 @@ async function trackModelUsage(userId, modelValue, ip, usageData) {
 
 api.get("/model/list", requireRole(), async (req, res) => {
   const results = await Model.findAll({
-    attributes: ["label", "value", "isReasoner", "maxContext", "maxOutput", "maxReasoning"],
+    attributes: ["label", "value", "maxContext", "maxOutput", "maxReasoning"],
     where: { providerId: 1 },
   });
   res.json(results);
