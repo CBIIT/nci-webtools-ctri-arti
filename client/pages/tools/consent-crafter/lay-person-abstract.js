@@ -1,7 +1,7 @@
 import html from "solid-js/html";
 import { Show, createSignal, createResource } from "solid-js";
 import { parseDocument } from "/utils/parsers.js";
-import { readFile } from "/utils/utils.js";
+import { readFile } from "/utils/files.js";
 import { createReport } from "docx-templates";
 import yaml from "yaml";
 

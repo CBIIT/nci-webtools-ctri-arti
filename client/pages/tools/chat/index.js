@@ -1,7 +1,7 @@
 import { createSignal, For, Show, Index } from "solid-js";
 import html from "solid-js/html";
 import Loader from "/components/loader.js";
-import { downloadCsv, downloadJson } from "/utils/utils.js";
+import { downloadCsv, downloadJson } from "/utils/files.js";
 import { useChat } from "./hooks.js";
 import Message from "./message.js";
 

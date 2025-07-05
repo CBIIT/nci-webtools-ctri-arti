@@ -1,7 +1,9 @@
 import { createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import { fileToBase64, splitFilename } from "/utils/parsers.js";
-import { readStream, runTool, getClientContext, autoscroll } from "/utils/utils.js";
+import { runTool, getClientContext } from "/utils/tools.js";
+import { readStream } from "/utils/files.js";
+import { autoscroll } from "/utils/utils.js";
 import { jsonToXml } from "/utils/xml.js";
 import { systemPrompt, tools } from "./config.js";
 
