@@ -34,7 +34,7 @@ api.get("/translate/languages", requireRole(), async (req, res) => {
 
 api.post("/feedback", requireRole(), async (req, res) => {
   const { feedback, context } = req.body;
-  const from = req.session.user?.userinfo?.email;
+  const from = req.session?.user?.email;
   const results = await sendFeedback({ from, feedback, context });
   return res.json(results);
 });
