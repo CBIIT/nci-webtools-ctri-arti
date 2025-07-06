@@ -19,7 +19,12 @@ import { getMarked } from "/utils/utils.js";
  */
 export default function Modal(props) {
   createEffect(() => (document.body.style.overflow = props.open ? "hidden" : "auto"));
-  const [innerHTML] = createResource(() => fetch(props.url).then(r => r.text()).then(getMarked().parse));
+  const [innerHTML] = createResource(() => {
+    if (!props.url) return Promise.resolve('');
+    return fetch(props.url)
+      .then(r => r.text())
+      .then(text => getMarked().parse(text));
+  });
   return html`
     <dialog class="modal modal-lg border-0 show" open=${() => props.open} onClose=${(e) => props.setOpen?.(false)} onSubmit=${(e) => props.onSubmit?.(e)}>
       <form method="dialog" class="modal-dialog modal-dialog-scrollable" classList=${() => props.dialogClass || ""}>
