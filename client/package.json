@@ -1,12 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "dev": "npx http-server --port 3000 --proxy http://localhost:8080",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest"
-  },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": ["<rootDir>/test/setup.js"]
+    "pretest": "npx playwright install chromium",
+    "test": "node test.js"
   },
   "devDependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
@@ -19,12 +15,11 @@
     "idb": "^8.0.3",
     "mammoth": "^1.9.1",
     "marked": "^16.0.0",
-    "pdfjs-dist": "^5.3.31",
+    "pdfjs-dist": "^5.3.93",
+    "playwright": "^1.53.2",
     "solid-js": "^1.9.7",
     "three": "^0.178.0",
     "turndown": "^7.2.0",
-    "yaml": "^2.8.0",
-    "jest": "^30.0.4",
-    "jest-environment-jsdom": "^30.0.4"
+    "yaml": "^2.8.0"
   }
 }
