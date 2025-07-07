@@ -59,6 +59,13 @@ describe('My Component', () => {
 
 Run tests: `node test.js`
 
+**Testing Guidelines:**
+- **Browser-based testing**: Tests run in real Playwright browser, NO MOCKING needed
+- **Real dependencies**: All imports work naturally (solid-js, utils, parsers, etc.)
+- **API mocking**: Already handled in `test.js` with route interception (`/api/session`, `/api/model`)
+- **Test patterns**: Follow examples in `test/solidjs.test.js` and `test/utils/files.test.js`
+- **Simple tests**: Keep tests focused and simple, don't create massive test suites
+
 ### Client-Side ML
 
 - **Vector Search**: Custom HNSW implementation in `utils/hnsw.js`
