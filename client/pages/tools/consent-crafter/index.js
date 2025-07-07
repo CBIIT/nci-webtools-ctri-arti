@@ -217,22 +217,12 @@ export default function Page() {
               type="file"
               id="inputTextFile"
               name="inputTextFile"
-              class="form-control form-control-sm"
+              class="form-control form-control-sm  mb-3"
               accept=".txt, .docx, .pdf"
               onChange=${handleFileSelect} />
-            <textarea
-              class="form-control form-control-sm rounded-top-0 flex-grow-1"
-              id="inputText"
-              name="inputText"
-              rows="6"
-              placeholder="Enter protocol or choose a file above"
-              value=${inputText}
-              onChange=${(e) => setInputText(e.target.value)}
-              required
-              hidden />
 
             <!-- Template Selection -->
-            <div class="mt-3">
+            <div class="mb-3">
               <label class="form-label">Generate Forms</label>
               <div class="border rounded p-2">
                 <${For} each=${templateGroups}>
@@ -254,7 +244,8 @@ export default function Page() {
                                 setSelectedTemplates((prev) => (isChecked ? [...prev, value] : prev.filter((v) => v !== value)));
                               }} />
                             <label
-                              class=${() => ["form-check-label cursor-pointer ", option.disabled ? "text-muted" : ""].filter(Boolean).join(" ")}
+                              class=${() =>
+                                ["form-check-label cursor-pointer ", option.disabled ? "text-muted" : ""].filter(Boolean).join(" ")}
                               for=${() => option.value}>
                               ${() => promptTemplates()[option.value].label}
                             </label>
@@ -267,62 +258,64 @@ export default function Page() {
               </div>
             </div>
 
-            <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
-              <details class="small text-secondary mt-2">
-                <summary>Advanced Options</summary>
-
-                <label for="model" class="form-label">Model</label>
-                <select
-                  class="form-select form-select-sm cursor-pointer mb-2"
-                  name="model"
-                  id="model"
-                  value=${model}
-                  onChange=${(e) => setModel(e.target.value)}>
-                  <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
-                  <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet</option>
-                  <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
-                  <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
-                </select>
-
-                <div class="d-flex justify-content-between align-items-center">
-                  <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
-                  <a
-                    href="/templates/nih-cc-consent-template-2024-04-15.docx"
-                    download="nih-cc-consent-template-2024-04-15.docx"
-                    class="small"
-                    >Download Template</a
-                  >
-                </div>
-                <input
-                  type="file"
-                  id="outputTemplateFile"
-                  name="outputTemplateFile"
-                  class="form-control form-control-sm mb-2"
-                  accept=".txt, .docx, .pdf"
-                  onChange=${handleFileSelect} />
-
-                <label for="systemPrompt" class="form-label">Custom System Prompt</label>
-                <textarea
-                  class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                  id="systemPrompt"
-                  name="systemPrompt"
-                  rows="20"
-                  placeholder="Enter custom system prompt"
-                  value=${customSystemPrompt}
-                  onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
-                <small
-                  >Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                  and template are provided.</small
-                >
-              </details>
-            <//>
-
             <!-- Submit Button -->
-            <div class="mt-3 d-flex justify-content-end">
-              <button type="reset" class="btn btn-sm btn-outline-danger me-2">Reset</button>
-              <button type="submit" class="btn btn-sm btn-primary" disabled=${() => !inputText() || selectedTemplates().length === 0}>
-                Generate
-              </button>
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+              <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
+                <details class="small text-secondary mt-2">
+                  <summary>Advanced Options</summary>
+
+                  <label for="model" class="form-label">Model</label>
+                  <select
+                    class="form-select form-select-sm cursor-pointer mb-2"
+                    name="model"
+                    id="model"
+                    value=${model}
+                    onChange=${(e) => setModel(e.target.value)}>
+                    <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
+                    <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet</option>
+                    <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
+                    <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
+                  </select>
+
+                  <div class="d-flex justify-content-between align-items-center">
+                    <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
+                    <a
+                      href="/templates/nih-cc-consent-template-2024-04-15.docx"
+                      download="nih-cc-consent-template-2024-04-15.docx"
+                      class="small"
+                      >Download Template</a
+                    >
+                  </div>
+                  <input
+                    type="file"
+                    id="outputTemplateFile"
+                    name="outputTemplateFile"
+                    class="form-control form-control-sm mb-2"
+                    accept=".txt, .docx, .pdf"
+                    onChange=${handleFileSelect} />
+
+                  <label for="systemPrompt" class="form-label">Custom System Prompt</label>
+                  <textarea
+                    class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                    id="systemPrompt"
+                    name="systemPrompt"
+                    rows="20"
+                    placeholder="Enter custom system prompt"
+                    value=${customSystemPrompt}
+                    onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                  <div class="form-text">
+                    Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
+                    and template are provided.
+                  </div>
+                </details>
+              <//>
+
+              <div class="d-flex mt-1 gap-1">
+                <button type="reset" class="btn btn-sm btn-outline-danger">Reset</button>
+                <button type="submit" class="btn btn-sm btn-primary" disabled=${() => !inputText() || selectedTemplates().length === 0}>
+                  Generate
+                </button>
+              </div>
             </div>
           </div>
           <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
@@ -369,7 +362,9 @@ export default function Page() {
                               </div>
                             <//>
                             <${Show} when=${() => doc()?.status === "completed"}>
-                              <button type="button" class="btn btn-sm btn-success me-2" onClick=${() => downloadDocument(templateId)}>Download</button>
+                              <button type="button" class="btn btn-sm btn-success me-2" onClick=${() => downloadDocument(templateId)}>
+                                Download
+                              </button>
                             <//>
                             <${Show} when=${() => doc()?.status === "error"}>
                               <div class="text-danger small">Error: ${() => doc().error}</div>
@@ -384,8 +379,6 @@ export default function Page() {
             </div>
           </div>
         </div>
-
-        
       </form>
     </div>
   `;

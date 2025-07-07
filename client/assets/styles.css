@@ -477,3 +477,7 @@ dialog.modal[open] {
   display: block;
   background-color: rgba(0, 0, 0, 0.5);
 }
+
+details[open] {
+  width: 100%;
+}
