@@ -66,6 +66,20 @@ await page.route("**/*", async (route) => {
       });
     }
 
+    // Mock API endpoints for testing
+    if (url.pathname === "/api/session") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            firstName: "Test User",
+            Role: { id: 1 }
+          }
+        }),
+      });
+    }
+
     // Generic test control API
     if (url.pathname === "/test.json") {
       const method = route.request().method();
