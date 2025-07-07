@@ -1,3 +1,95 @@
+# ARTI Platform Architecture & Development
+
+## Project Structure
+
+ARTI is a conversational AI platform for biomedical research. Frontend uses SolidJS with no build step - just ES6 modules and CDN dependencies.
+
+```
+client/
+├── components/          # UI components (modal, table, etc.)
+├── pages/              # Route components
+│   └── tools/chat/     # Main chat interface
+├── models/             # IndexedDB wrappers, embedding models
+├── utils/              # File handling, vector search (HNSW)
+├── test/               # Custom test framework + tests
+├── assets/             # Static files
+└── index.html          # Entry point with import maps
+```
+
+## Chat System
+
+The chat interface (`pages/tools/chat/`) handles:
+- Conversation persistence (IndexedDB)
+- File uploads (PDF, images, docs)
+- Streaming AI responses
+- Tool calling for research tasks
+
+Key files:
+- `index.js` - Main UI component
+- `hooks.js` - State management and API calls
+- `message.js` - Message rendering
+- `config.js` - AI model settings
+
+## Custom Test Framework
+
+Built a Jest-like framework from scratch (`test/index.js`):
+
+```javascript
+describe('My Component', () => {
+  test('should work', async () => {
+    const result = MyComponent({ prop: 'value' });
+    expect(result).toBeTruthy();
+    await waitFor(() => result.textContent.includes('expected'));
+  });
+});
+```
+
+**Features:**
+- Full Jest API (`describe`, `it`, `expect`, `beforeEach`, etc.)
+- Asymmetric matchers (`expect.any()`, `expect.arrayContaining()`)
+- Promise matchers (`resolves`, `rejects`)
+- Mock functions (`jest.fn()`)
+- Network request monitoring
+
+**Test Runner (`test.js`):**
+- Uses Playwright for real browser testing
+- Serves files locally with proper MIME types
+- Captures console output and network errors
+- Auto-discovers `*.test.js` files
+
+Run tests: `node test.js`
+
+### Client-Side ML
+
+- **Vector Search**: Custom HNSW implementation in `utils/hnsw.js`
+- **Embeddings**: Hugging Face Transformers.js for local text vectorization
+- **Storage**: IndexedDB for user-isolated conversation data
+
+### Development
+
+**Local setup:**
+```bash
+docker compose up --build -w  # Start with file watching
+node test.js                  # Run tests
+```
+
+**Key patterns:**
+- Components use SolidJS tagged templates (`html` from `solid-js/html`)
+- State with `createSignal`/`createStore`
+- No bundler - dependencies via import maps in `index.html`
+- Tests run in real browser environment
+
+### Architecture Notes
+
+- **Buildless**: No webpack/vite, just ES modules
+- **CDN deps**: Import maps for external libraries
+- **Client-heavy**: ML processing happens locally for privacy
+- **Reactive**: SolidJS for efficient UI updates
+
+
+---
+
+
 # SolidJS Development Guide
 
 A comprehensive guide for developing with SolidJS using tagged template literals (buildless approach) in the ARTI platform.
