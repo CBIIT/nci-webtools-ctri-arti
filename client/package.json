@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "pretest": "npx playwright install chromium",
+    "postinstall": "npx playwright install chromium",
     "test": "node test.js"
   },
   "devDependencies": {
