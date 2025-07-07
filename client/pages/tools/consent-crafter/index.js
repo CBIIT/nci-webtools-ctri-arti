@@ -1,5 +1,5 @@
 import html from "solid-js/html";
-import { Show, createSignal, createResource } from "solid-js";
+import { Show, For, createSignal, createResource } from "solid-js";
 import { parseDocument } from "/utils/parsers.js";
 import { readFile } from "/utils/files.js";
 import { createReport } from "docx-templates";
@@ -9,9 +9,31 @@ export default function Page() {
   const [inputText, setInputText] = createSignal("");
   const [outputText, setOutputText] = createSignal("");
   const [model, setModel] = createSignal("us.anthropic.claude-sonnet-4-20250514-v1:0");
-  const [systemPrompt, setSystemPrompt] = createSignal(defaultSystemPrompt);
-  const [outputTemplate, setOutputTemplate] = createSignal();
+  const [customSystemPrompt, setCustomSystemPrompt] = createSignal(defaultSystemPrompt);
+  const [customTemplate, setCustomTemplate] = createSignal();
+  const [promptTemplates, setPromptTemplates] = createSignal(defaultPromptTemplates);
+  const [selectedTemplates, setSelectedTemplates] = createSignal([]);
+  const [generatedDocuments, setGeneratedDocuments] = createSignal({});
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
+
+  // Create template groups from available prompt templates
+  const templateGroups = () => {
+    const templates = promptTemplates();
+    const groups = {};
+
+    Object.entries(templates).forEach(([id, template]) => {
+      const category = template.category || "Other";
+      if (!groups[category]) {
+        groups[category] = { label: category, options: [] };
+      }
+      groups[category].options.push({
+        value: id,
+        disabled: template.disabled === true,
+      });
+    });
+
+    return Object.values(groups);
+  };
 
   async function handleFileSelect(event) {
     const input = event.target;
@@ -19,33 +41,105 @@ export default function Page() {
     const file = input.files?.[0];
     if (!file) return;
     const bytes = await readFile(file, "arrayBuffer");
-    input.value = "";
 
     if (name === "outputTemplateFile") {
-      setOutputTemplate(bytes);
+      setCustomTemplate(bytes);
     } else if (name === "inputTextFile") {
       setInputText("Reading file...");
       setOutputText("");
+      setGeneratedDocuments({});
       const text = await parseDocument(bytes, file.type, file.name);
       setInputText(text);
       setOutputText("");
-      await handleSubmit(null);
-      await handleDownload();
     }
   }
 
-  async function handleDownload() {
-    const templateUrl = "/templates/lay-person-abstract-template.docx";
-    const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    const filename = "output.docx";
-    const cmdDelimiter = ["{{", "}}"];
+  async function processSelectedTemplates(text) {
+    const selected = selectedTemplates();
+    const templates = promptTemplates();
 
-    const template = outputTemplate() || (await fetch(templateUrl).then((res) => res.arrayBuffer()));
-    const data = yaml.parse(outputText());
-    const buffer = await createReport({ template, data, cmdDelimiter });
-    const blob = new Blob([buffer], { type });
+    // Build list of templates to process (selected + custom if available)
+    const templatesToProcess = [...selected];
+    const hasCustom = customTemplate() && customSystemPrompt().trim();
+    if (hasCustom) {
+      templatesToProcess.push("custom");
+    }
 
-    const url = URL.createObjectURL(blob);
+    if (templatesToProcess.length === 0) return;
+
+    // Initialize processing status for each template
+    const initialStatus = {};
+    templatesToProcess.forEach((templateId) => {
+      initialStatus[templateId] = { status: "processing", blob: null, error: null };
+    });
+    setGeneratedDocuments(initialStatus);
+
+    // Process all templates in parallel
+    const promises = templatesToProcess.map(async (templateId) => {
+      try {
+        let template, templateFile, systemPrompt, defaultOutputData;
+
+        if (templateId === "custom") {
+          // Handle custom template
+          systemPrompt = customSystemPrompt();
+          defaultOutputData = defaultOutput; // Use default output structure for custom
+          templateFile = customTemplate();
+        } else {
+          // Handle predefined templates
+          template = templates[templateId];
+          systemPrompt = template.systemPrompt;
+          defaultOutputData = template.defaultOutput;
+          templateFile = await fetch(template.templateUrl).then((res) => res.arrayBuffer());
+        }
+
+        // Extract data using AI
+        const params = {
+          model: model(),
+          messages: [{ role: "user", content: [{ text: "Please process the document in the system prompt." }] }],
+          system: systemPrompt.replace("{{document}}", text),
+          stream: false,
+        };
+        const output = await runModel(params);
+        const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || "{}";
+        const data = { ...defaultOutputData, ...yaml.parse(jsonOutput) };
+
+        // Generate document
+        const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        const cmdDelimiter = ["{{", "}}"];
+        const buffer = await createReport({ template: templateFile, data, cmdDelimiter });
+        const blob = new Blob([buffer], { type });
+
+        // Update status to completed
+        setGeneratedDocuments((prev) => ({
+          ...prev,
+          [templateId]: { status: "completed", blob, error: null },
+        }));
+      } catch (error) {
+        console.error(`Error processing ${templateId}:`, error);
+        setGeneratedDocuments((prev) => ({
+          ...prev,
+          [templateId]: { status: "error", blob: null, error: error.message },
+        }));
+      }
+    });
+
+    await Promise.all(promises);
+  }
+
+  function downloadDocument(templateId) {
+    const doc = generatedDocuments()[templateId];
+    if (!doc?.blob) return;
+
+    let filename;
+    if (templateId === "custom") {
+      filename = "custom-document.docx";
+    } else {
+      const templates = promptTemplates();
+      const template = templates[templateId];
+      filename = template.filename;
+    }
+
+    const url = URL.createObjectURL(doc.blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
@@ -55,12 +149,39 @@ export default function Page() {
     URL.revokeObjectURL(url);
   }
 
+  function downloadAll() {
+    const docs = generatedDocuments();
+    Object.keys(docs).forEach((templateId) => {
+      if (docs[templateId].status === "completed") {
+        downloadDocument(templateId);
+      }
+    });
+  }
+
+  async function handleSubmit(event) {
+    event?.preventDefault();
+    const text = inputText();
+    if (!text || selectedTemplates().length === 0) return;
+    await processSelectedTemplates(text);
+  }
+
   async function handleReset(event) {
     event?.preventDefault();
+
+    // Reset form inputs
+    if (event?.target) {
+      event.target.inputTextFile.value = "";
+      event.target.outputTemplateFile.value = "";
+    }
+
+    // Clear all state
     setInputText("");
     setOutputText("");
-    setOutputTemplate(null);
-    setSystemPrompt(defaultSystemPrompt);
+    setCustomTemplate(null);
+    setCustomSystemPrompt(defaultSystemPrompt);
+    setPromptTemplates(defaultPromptTemplates);
+    setSelectedTemplates([]);
+    setGeneratedDocuments({});
   }
 
   /**
@@ -85,144 +206,249 @@ export default function Page() {
     return data?.output?.message?.content?.[0]?.text || "";
   }
 
-  async function handleSubmit(event) {
-    event?.preventDefault();
-    setOutputText("Processing...");
-    try {
-      const params = {
-        model: model(),
-        messages: [{ role: "user", content: [{ text: "Please process the document in the system prompt." }] }],
-        system: systemPrompt().replace("{{document}}", inputText()),
-        stream: false,
-      };
-      const output = await runModel(params);
-      const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || "{}";
-      setOutputText(yaml.stringify({ ...defaultOutput, ...yaml.parse(jsonOutput) }));
-    } catch (error) {
-      console.error(error);
-      setOutputText("An error occurred while processing the text.");
-    }
-  }
   return html`
-    <form id="form" onSubmit=${handleSubmit} onReset=${handleReset} class="container py-3">
+    <div class="container py-3">
       <h1 class="fw-bold text-gradient my-3">Consent Crafter</h1>
-      <div class="row align-items-stretch">
-        <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-          <label for="inputText" class="form-label">Source Document</label>
-          <input
-            type="file"
-            id="inputTextFile"
-            name="inputTextFile"
-            class="form-control form-control-sm border-bottom-0 rounded-bottom-0"
-            accept=".txt, .docx, .pdf"
-            onChange=${handleFileSelect} />
-          <textarea
-            class="form-control form-control-sm rounded-top-0 flex-grow-1"
-            id="inputText"
-            name="inputText"
-            rows="6"
-            placeholder="Enter protocol or choose a file above"
-            value=${inputText}
-            onChange=${(e) => setInputText(e.target.value)}
-            required />
-        </div>
-        <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-          <label for="outputText" class="form-label">Output Document</label>
-          <textarea
-            class="form-control form-control-sm flex-grow-1"
-            id="outputText"
-            name="outputText"
-            rows="6"
-            placeholder="Submit text to view output"
-            value=${outputText}
-            readonly />
-        </div>
-      </div>
-
-      <div class="row">
-        <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
+      <form onSubmit=${handleSubmit} onReset=${handleReset}>
+        <div class="row align-items-stretch">
           <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-            <details class="small text-secondary mt-2">
-              <summary>Advanced Options</summary>
-              
-              <label for="model" class="form-label">Model</label>
-              <select class="form-select form-select-sm cursor-pointer mb-2" name="model" id="model" value=${model} onChange=${(e) => setModel(e.target.value)}>
-                <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
-                <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet</option>
-                <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
-                <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
-              </select>
+            <label for="inputText" class="form-label">Source Document</label>
+            <input
+              type="file"
+              id="inputTextFile"
+              name="inputTextFile"
+              class="form-control form-control-sm"
+              accept=".txt, .docx, .pdf"
+              onChange=${handleFileSelect} />
+            <textarea
+              class="form-control form-control-sm rounded-top-0 flex-grow-1"
+              id="inputText"
+              name="inputText"
+              rows="6"
+              placeholder="Enter protocol or choose a file above"
+              value=${inputText}
+              onChange=${(e) => setInputText(e.target.value)}
+              required
+              hidden />
 
-              <div class="d-flex justify-content-between align-items-center">
-                <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
-                <a href="/templates/lay-person-abstract-template.docx" download="lay-person-abstract-template.docx" class="small"
-                  >Download Example</a
-                >
+            <!-- Template Selection -->
+            <div class="mt-3">
+              <label class="form-label">Generate Forms</label>
+              <div class="border rounded p-2">
+                <${For} each=${templateGroups}>
+                  ${(group) => html`
+                    <div class="mb-2">
+                      <div class="fw-bold text-muted small">${() => group.label}</div>
+                      <${For} each=${() => group.options}>
+                        ${(option) => html`
+                          <div class="form-check form-control-sm py-0 mb-0 ms-1">
+                            <input
+                              class="form-check-input"
+                              type="checkbox"
+                              id=${() => option.value}
+                              disabled=${() => option.disabled}
+                              checked=${() => selectedTemplates().includes(option.value)}
+                              onChange=${(e) => {
+                                const value = option.value;
+                                const isChecked = e.target.checked;
+                                setSelectedTemplates((prev) => (isChecked ? [...prev, value] : prev.filter((v) => v !== value)));
+                              }} />
+                            <label
+                              class=${() => ["form-check-label", option.disabled ? "text-muted" : ""].filter(Boolean).join(" ")}
+                              for=${() => option.value}>
+                              ${() => promptTemplates()[option.value].label}
+                            </label>
+                          </div>
+                        `}
+                      <//>
+                    </div>
+                  `}
+                <//>
               </div>
-              <input
-                type="file"
-                id="outputTemplateFile"
-                name="outputTemplateFile"
-                class="form-control form-control-sm mb-2"
-                accept=".txt, .docx, .pdf"
-                onChange=${handleFileSelect} />
+            </div>
 
-              <label for="systemPrompt" class="form-label">System Prompt</label>
-              <textarea
-                class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                id="systemPrompt"
-                name="systemPrompt"
-                rows="6"
-                placeholder="Enter system prompt"
-                value=${systemPrompt}
-                onChange=${(e) => setSystemPrompt(e.target.value)}
-                required />
-              <small>Use <strong>{{document}}</strong> as a placeholder for the source document.</small>
-            </details>
+            <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
+              <details class="small text-secondary mt-2">
+                <summary>Advanced Options</summary>
+
+                <label for="model" class="form-label">Model</label>
+                <select
+                  class="form-select form-select-sm cursor-pointer mb-2"
+                  name="model"
+                  id="model"
+                  value=${model}
+                  onChange=${(e) => setModel(e.target.value)}>
+                  <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
+                  <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet</option>
+                  <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
+                  <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
+                </select>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
+                  <a
+                    href="/templates/nih-cc-consent-template-2024-04-15.docx"
+                    download="nih-cc-consent-template-2024-04-15.docx"
+                    class="small"
+                    >Download Template</a
+                  >
+                </div>
+                <input
+                  type="file"
+                  id="outputTemplateFile"
+                  name="outputTemplateFile"
+                  class="form-control form-control-sm mb-2"
+                  accept=".txt, .docx, .pdf"
+                  onChange=${handleFileSelect} />
+
+                <label for="systemPrompt" class="form-label">Custom System Prompt</label>
+                <textarea
+                  class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                  id="systemPrompt"
+                  name="systemPrompt"
+                  rows="20"
+                  placeholder="Enter custom system prompt"
+                  value=${customSystemPrompt}
+                  onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                <small
+                  >Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
+                  and template are provided.</small
+                >
+              </details>
+            <//>
+
+            <!-- Submit Button -->
+            <div class="mt-3 d-flex justify-content-end">
+              <button type="reset" class="btn btn-sm btn-outline-danger me-2">Reset</button>
+              <button type="submit" class="btn btn-sm btn-primary" disabled=${() => !inputText() || selectedTemplates().length === 0}>
+                Generate
+              </button>
+            </div>
           </div>
-        <//>
-        <div class="col-md-6 mb-2  flex-grow-1  text-end">
-          <button class="btn btn-sm btn-outline-danger me-1" id="clearButton" type="reset">Reset</button>
-          <button class="btn btn-sm btn-outline-primary me-1" id="submitButton" type="submit">Submit</button>
-          <button class="btn btn-sm btn-outline-dark" id="downloadButton" type="button" onClick=${handleDownload}>Download</button>
+          <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
+            <div class="d-flex justify-content-between align-items-center">
+              <label class="form-label">Generated Forms</label>
+              <${Show}
+                when=${() => {
+                  const docs = generatedDocuments();
+                  return Object.values(docs).some((doc) => doc.status === "completed");
+                }}>
+                <button type="button" class="btn btn-sm btn-link" onClick=${downloadAll}>Download All</button>
+              <//>
+            </div>
+            <div class="border rounded p-3 flex-grow-1" style="min-height: 200px;">
+              <${Show}
+                when=${() => Object.keys(generatedDocuments()).length > 0}
+                fallback=${html`<div class="text-muted text-center mt-5">
+                  Upload a source document on the left, select consent forms, and click "Generate"
+                </div>`}>
+                <div class="d-flex flex-column gap-2">
+                  <${For} each=${() => Object.keys(generatedDocuments())}>
+                    ${(templateId) => {
+                      const doc = () => generatedDocuments()[templateId];
+                      const documentInfo = () => {
+                        if (templateId === "custom") {
+                          return { label: "Custom Document", filename: "custom-document.docx" };
+                        } else {
+                          const templates = promptTemplates();
+                          const template = templates[templateId];
+                          return { label: template.label, filename: template.filename };
+                        }
+                      };
+
+                      return html`
+                        <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                          <div class="flex-grow-1">
+                            <div class="fw-medium">${() => documentInfo().label}</div>
+                            <small class="text-muted">${() => documentInfo().filename}</small>
+                          </div>
+                          <div>
+                            <${Show} when=${() => doc()?.status === "processing"}>
+                              <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                <span class="visually-hidden">Processing...</span>
+                              </div>
+                            <//>
+                            <${Show} when=${() => doc()?.status === "completed"}>
+                              <button type="button" class="btn btn-sm btn-success me-2" onClick=${() => downloadDocument(templateId)}>Download</button>
+                            <//>
+                            <${Show} when=${() => doc()?.status === "error"}>
+                              <div class="text-danger small">Error: ${() => doc().error}</div>
+                            <//>
+                          </div>
+                        </div>
+                      `;
+                    }}
+                  <//>
+                </div>
+              <//>
+            </div>
+          </div>
         </div>
-      </div>
-    </form>
+
+        
+      </form>
+    </div>
   `;
 }
 
 export const defaultOutput = {
-  study_title: "",
-  nct_number: "",
-  simple_summary: "",
-  purpose: "",
-  who_can_participate: [],
-  who_cannot_participate: [],
-  investigator_names: [],
-  procedures: [],
-  timeline: "",
-  visits_required: "",
-  potential_benefits: [],
-  potential_benefits_others: [],
-  potential_risks: [],
-  expanded_risks: "",
-  alternatives: [],
-  costs_and_compensation: "",
-  contact_name: "",
-  contact_email: "",
-  contact_phone: "",
-  voluntariness: "",
-  withdrawal: "",
-  other_questions: [],
+  PI: "",
+  Title: "",
+  Cohort: "",
+  Contact_Name: "",
+  Contact_Email: "",
+  Contact_Phone: "",
+  Key_Info_1: "",
+  Key_Info_2: "",
+  Voluntariness: "",
+  Parent_Permission: "",
+  Impaired_Adults: "",
+  Study_Purpose: "",
+  Investigational_Use: "",
+  Approved_Use: "",
+  Before_You_Begin: "",
+  During_The_Study: "",
+  Follow_Up: "",
+  How_Long: "",
+  How_Many: "",
+  Risks_Discomforts: "",
+  Risks_Procedures: "",
+  Risks_Pregnancy: "",
+  Risks_Radiation: "",
+  Potential_Benefits_You: "",
+  Potential_Benefits_Others: "",
+  Other_Options: "",
+  Return_Results: "",
+  Early_Withdrawal: "",
+  Disease_Condition: "",
+  Genomic_Sensitivity: "",
+  Anonymized_Specimen_Sharing: "",
+  Data_Save_Type: "",
+  Specimen_Storage: "",
+  No_Payment: "",
+  Yes_Payment: "",
+  Partial_Payment: "",
+  Payment_Large: "",
+  Reimbursement: "",
+  Costs: "",
+  COI_None: "",
+  Technology_License: "",
+  CRADA: "",
+  CTA_No_NonNIH: "",
+  CTA_Yes_NonNIH: "",
+  Confidentiality: "",
+  Confidentiality_Study_Sponsor: "",
+  Confidentiality_Manufacturer: "",
+  Confidentiality_Drug_Device: "",
+  Other_Contacts: "",
+  Other_Contact_Name: "",
+  Other_Contact_Email: "",
+  Other_Contact_Phone: "",
 };
 
-export const defaultSystemPrompt = `# Clinical Trial Protocol Translator
+export const defaultSystemPrompt = `# NIH Consent Form Variable Extractor
 
-## ROLE
-You are a compassionate patient advocate at the National Cancer Institute who specializes in translating complex medical research into accessible information for potential clinical trial participants.
-
-## OBJECTIVE
-Extract key information from clinical trial protocols and translate it into clear, jargon-free language at a 6th-grade reading level that helps people make informed participation decisions.
+Extract variables from the clinical protocol to populate an NIH consent form template.
 
 ## INPUT
 The clinical trial protocol is provided below:
@@ -230,186 +456,137 @@ The clinical trial protocol is provided below:
 <protocol>{{document}}</protocol>
 \`\`\`
 
-## OUTPUT SPECIFICATION
-Return a response with two sections:
+## OUTPUT
+Return a valid JSON object with ALL variables below. Use empty strings ("") for any variables not found in the protocol.
 
-### 1. REFERENCES
-Quote the exact sections from the document that you will be using to extract information. Include relevant page numbers, section headers, or paragraph identifiers when available.
-
-### 2. JSON OUTPUT
-Return a valid JSON object with this exact typed structure:
-
-\`\`\`typescript
-{
-  "study_title": string,                    // Simplified, descriptive title (not a question)
-  "nct_number": string,                     // NCT number exactly as written
-  "simple_summary": string,                 // 1-2 sentence study overview
-  "purpose": string,                        // Why research is conducted, in plain language
-  "who_can_participate": string[],          // Array of main inclusion criteria, everyday language
-  "who_cannot_participate": string[],       // Array of main exclusion criteria, everyday language  
-  "investigator_names": string[],           // Array of investigator names
-  "procedures": string[],                   // Array of main procedures, each starting with "You will"
-  "timeline": string,                       // Participation duration, start with "You will"
-  "visits_required": string,                // Number and frequency of clinic visits
-  "potential_benefits": string[],           // Array of possible benefits to participant
-  "potential_benefits_others": string[],    // Array of possible benefits to others
-  "potential_risks": string[],              // Array of main risks, explained simply
-  "expanded_risks": string,                 // Comprehensive risk explanation in paragraph form
-  "alternatives": string[],                 // Array of alternatives to participation
-  "costs_and_compensation": string,         // Costs and compensation details
-  "contact_name": string,                   // Primary contact name
-  "contact_email": string,                  // Primary contact email
-  "contact_phone": string,                  // Primary contact phone
-  "voluntariness": string,                  // Voluntary participation explanation
-  "withdrawal": string,                     // Withdrawal rights explanation
-  "other_questions": Array<{                // 5 relevant Q&As
-    "question": string,
-    "answer": string
-  }>
-}
-\`\`\`
-
-## EXAMPLE OUTPUT
-
-### REFERENCES
-\`\`\`text
-Section 3.1 "Study Objectives": "The primary objective is to evaluate the safety and efficacy of..."
-Section 4.2 "Inclusion Criteria": "Participants must be 18 years or older with confirmed diagnosis of..."
-Section 6.1 "Study Procedures": "Participants will undergo the following procedures: blood collection..."
-Section 8.3 "Risks and Benefits": "Potential risks include fatigue, headache, and nausea..."
-\`\`\`
-
-### JSON OUTPUT
 \`\`\`json
 {
-  "study_title": "Testing a New Cancer Drug to Help Stop Tumor Growth",
-  "nct_number": "NCT12345678",
-  "simple_summary": "We are testing if a new drug can slow down cancer growth. We want to see if it works better than current treatments.",
-  "purpose": "We want to find out if this new drug can help people with cancer live longer with fewer side effects.",
-  "who_can_participate": [
-    "You are 18 years or older",
-    "You have cancer that has spread",
-    "You can take care of yourself most days"
-  ],
-  "who_cannot_participate": [
-    "You are pregnant or breastfeeding",
-    "You have serious heart problems",
-    "You are taking certain other medicines"
-  ],
-  "investigator_names": ["Dr. Jane Smith", "Dr. John Wilson"],
-  "procedures": [
-    "You will take the study drug by mouth twice a day",
-    "You will have blood drawn every 2 weeks",
-    "You will have scans every 8 weeks"
-  ],
-  "timeline": "You will be in the study for about 1 year",
-  "visits_required": "You will come to the clinic every 2 weeks for the first 3 months, then once a month",
-  "potential_benefits": [
-    "The drug might slow your cancer growth",
-    "You will get close medical care during the study"
-  ],
-  "potential_benefits_others": [
-    "We will learn if this drug helps people with cancer",
-    "Future patients might benefit from what we learn"
-  ],
-  "potential_risks": [
-    "You might feel tired or weak",
-    "You might get headaches",
-    "Your blood counts might get low"
-  ],
-  "expanded_risks": "Most people who take this drug feel tired. About half get headaches. Some people get low blood counts, which means you might get infections more easily. We will watch you closely and can treat these problems if they happen.",
-  "alternatives": [
-    "You can get the standard treatment for your cancer",
-    "You can join a different study",
-    "You can choose not to get treatment right now"
-  ],
-  "costs_and_compensation": "The study drug and all study tests are free. We will pay for your parking. You will not be paid to be in the study.",
-  "contact_name": "Sarah Johnson, Study Coordinator",
-  "contact_email": "sarah.johnson@cancer.gov",
-  "contact_phone": "(555) 123-4567",
-  "voluntariness": "You do not have to join this study. It is your choice. Your doctor will still take care of you if you say no.",
-  "withdrawal": "You can leave the study at any time. You do not have to give a reason. Your care will not change if you leave.",
-  "other_questions": [
-    {
-      "question": "Will I get too much radiation from all the scans?",
-      "answer": "The scans use a small amount of radiation. It is about the same as flying across the country twice. This is considered safe."
-    },
-    {
-      "question": "Why do you need so much of my blood?",
-      "answer": "We take about 2 tablespoons each time. This is much less than when you donate blood. Your body makes new blood quickly."
-    }
-  ]
+  "PI": "",
+  "Title": "",
+  "Cohort": "", 
+  "Contact_Name": "",
+  "Contact_Email": "",
+  "Contact_Phone": "",
+  "Key_Info_1": "",
+  "Key_Info_2": "",
+  "Voluntariness": "",
+  "Parent_Permission": "",
+  "Impaired_Adults": "",
+  "Study_Purpose": "",
+  "Investigational_Use": "",
+  "Approved_Use": "",
+  "Before_You_Begin": "",
+  "During_The_Study": "",
+  "Follow_Up": "",
+  "How_Long": "",
+  "How_Many": "",
+  "Risks_Discomforts": "",
+  "Risks_Procedures": "",
+  "Risks_Pregnancy": "",
+  "Risks_Radiation": "",
+  "Potential_Benefits_You": "",
+  "Potential_Benefits_Others": "",
+  "Other_Options": "",
+  "Return_Results": "",
+  "Early_Withdrawal": "",
+  "Disease_Condition": "",
+  "Genomic_Sensitivity": "",
+  "Anonymized_Specimen_Sharing": "",
+  "Data_Save_Type": "",
+  "Specimen_Storage": "",
+  "No_Payment": "",
+  "Yes_Payment": "",
+  "Partial_Payment": "",
+  "Payment_Large": "",
+  "Reimbursement": "",
+  "Costs": "",
+  "COI_None": "",
+  "Technology_License": "",
+  "CRADA": "",
+  "CTA_No_NonNIH": "",
+  "CTA_Yes_NonNIH": "",
+  "Confidentiality": "",
+  "Confidentiality_Study_Sponsor": "",
+  "Confidentiality_Manufacturer": "",
+  "Confidentiality_Drug_Device": "",
+  "Other_Contacts": "",
+  "Other_Contact_Name": "",
+  "Other_Contact_Email": "",
+  "Other_Contact_Phone": ""
 }
 \`\`\`
 
-## LANGUAGE REQUIREMENTS
+## EXTRACTION RULES
+- Fill in values ONLY from information explicitly stated in the protocol
+- Use empty string ("") for any variable not found in the document
+- Keep language clear and appropriate for consent forms
+- Use direct address ("you will") when describing procedures
+- Do not guess or infer information not explicitly stated
 
-### Reading Level
-- Write at 6th-grade level using common words
-- Keep sentences or phrases to 3-7 words (fewer is better)
-- Replace medical jargon: "malignant neoplastic cells" -> "cancer cells that have spread"
+## VARIABLE DESCRIPTIONS
+- **PI**: Principal Investigator name
+- **Title**: Study title
+- **Cohort**: Study population/cohort description
+- **Contact_Name/Email/Phone**: Primary contact information
+- **Key_Info_1/2**: Most important information participants should know
+- **Study_Purpose**: Why this study is being conducted
+- **Before_You_Begin**: What happens before study participation starts
+- **During_The_Study**: Main study procedures and activities
+- **Follow_Up**: Follow-up procedures and timeline
+- **How_Long**: Total duration of study participation
+- **How_Many**: Number of participants in the study
+- **Risks_Discomforts**: Main risks and discomforts of participation
+- **Potential_Benefits_You**: Benefits to the participant
+- **Potential_Benefits_Others**: Benefits to others/society
+- **Other_Options**: Alternatives to study participation
 
-### Voice and Tone
-- **Direct address**: Use "you" instead of "participants" or "patients"
-  - Instead of: "Participants will undergo blood draws"
-  - Use: "You will have your blood drawn"
+Return the complete JSON object with all variables, using empty strings for missing values.`;
 
-- **Active voice**: Make actions clear and direct
-  - Instead of: "The medication will be administered"
-  - Use: "The study team will give you medication"
-  - Instead of: "The report will be submitted by the researcher"
-  - Use: "The researcher will submit the report"
-
-- **Warm and supportive**: Maintain compassionate, helpful tone throughout
-
-## CONTENT GUIDELINES
-
-### Extraction Rules
-- Extract ONLY information explicitly stated in the protocol
-- Quote exact sections in the REFERENCES section before translating
-- If information is missing, omit that field entirely (do not guess)
-- Use exact numbers and timeframes when provided
-- Prioritize safety information and time commitments that impact daily life
-
-### Formatting Preferences
-- For array fields, break information into discrete, scannable items
-- Include approximate timeframes: "about 2 hours" rather than "varies"
-- Present side effects by frequency and severity in plain language
-- Each array item should be a complete, standalone point
-- Use bullet points for sequential procedures in your mind, but format as array items
-
-### Focus Areas
-1. **Decision-critical information**: Cover what patients need to know for decisions
-2. **Safety information**: Risks, side effects, monitoring
-3. **Time commitments**: Duration, visits, daily life impact
-4. **Practical details**: Costs, compensation, contacts
-
-## EXAMPLES OF DIRECT ADDRESS
-- Instead of: "Participants will undergo three blood draws"
-  Use: "You will have your blood drawn three times"
-- Instead of: "The study medication may cause headaches"
-  Use: "You may get headaches from the study drug"
-- Instead of: "Participants have the right to withdraw"
-  Use: "You can leave the study at any time"
-
-## VALIDATION CHECKLIST
-Before submitting, verify:
-- [ ] All relevant document sections quoted in REFERENCES
-- [ ] All field names match exactly as specified
-- [ ] Array fields contain arrays, not strings
-- [ ] JSON is valid and properly formatted
-- [ ] Language is consistently at 6th-grade level
-- [ ] Direct address ("you") used throughout
-- [ ] Active voice maintained
-- [ ] No medical jargon remains untranslated
-- [ ] Missing information omitted rather than guessed
-
-## OTHER_QUESTIONS GUIDANCE
-Develop 5 questions specific to the protocol that address common concerns beyond basic study details. Examples include:
-- Radiation exposure concerns for imaging studies
-- Anemia worries for frequent blood draws  
-- Why so many tests and procedures are needed
-- How the study affects their current condition
-- Concerns about getting too much of something (scans, blood draws, etc.)
-
-Tailor questions and answers to the specific protocol and provide clear, reassuring responses.`;
+// NIH Consent Crafter Default Templates
+export const defaultPromptTemplates = {
+  "adult-healthy": {
+    label: "Adult healthy volunteer",
+    category: "Consent",
+    templateUrl: "/templates/nih-cc-consent-template-2024-04-15.docx",
+    systemPrompt: defaultSystemPrompt,
+    defaultOutput: defaultOutput,
+    filename: "nih-consent-healthy-volunteer.docx",
+    disabled: false,
+  },
+  "adult-patient": {
+    label: "Adult affected patient",
+    category: "Consent",
+    templateUrl: "/templates/nih-cc-consent-template-2024-04-15.docx",
+    systemPrompt: defaultSystemPrompt,
+    defaultOutput: defaultOutput,
+    filename: "nih-consent-patient.docx",
+    disabled: false,
+  },
+  "adult-family": {
+    label: "Adult family member",
+    category: "Consent",
+    templateUrl: "/templates/nih-cc-consent-template-2024-04-15.docx",
+    systemPrompt: defaultSystemPrompt,
+    defaultOutput: defaultOutput,
+    filename: "nih-consent-family.docx",
+    disabled: false,
+  },
+  "child-assent": {
+    label: "Child or cognitive impairment patient",
+    category: "Assent",
+    templateUrl: "/templates/nih-cc-assent-template-2024-04-15.docx",
+    systemPrompt: defaultSystemPrompt, // Would be different assent prompt in future
+    defaultOutput: defaultOutput,
+    filename: "nih-assent-child.docx",
+    disabled: true,
+  },
+  "child-family-assent": {
+    label: "Child or cognitive impairment family member",
+    category: "Assent",
+    templateUrl: "/templates/nih-cc-assent-template-2024-04-15.docx",
+    systemPrompt: defaultSystemPrompt, // Would be different assent prompt in future
+    defaultOutput: defaultOutput,
+    filename: "nih-assent-family.docx",
+    disabled: true,
+  },
+};
