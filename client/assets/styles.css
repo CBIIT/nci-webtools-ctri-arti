@@ -412,6 +412,10 @@ ul {
   max-height: 100vh;
 }
 
+.min-height-auto {
+  min-height: auto !important;
+}
+
 .form-label {
   color: #444;
 }

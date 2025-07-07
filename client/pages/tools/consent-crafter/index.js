@@ -241,9 +241,9 @@ export default function Page() {
                       <div class="fw-bold text-muted small">${() => group.label}</div>
                       <${For} each=${() => group.options}>
                         ${(option) => html`
-                          <div class="form-check form-control-sm py-0 mb-0 ms-1">
+                          <div class="form-check form-control-sm min-height-auto py-0 ms-1">
                             <input
-                              class="form-check-input"
+                              class="form-check-input cursor-pointer "
                               type="checkbox"
                               id=${() => option.value}
                               disabled=${() => option.disabled}
@@ -254,7 +254,7 @@ export default function Page() {
                                 setSelectedTemplates((prev) => (isChecked ? [...prev, value] : prev.filter((v) => v !== value)));
                               }} />
                             <label
-                              class=${() => ["form-check-label", option.disabled ? "text-muted" : ""].filter(Boolean).join(" ")}
+                              class=${() => ["form-check-label cursor-pointer ", option.disabled ? "text-muted" : ""].filter(Boolean).join(" ")}
                               for=${() => option.value}>
                               ${() => promptTemplates()[option.value].label}
                             </label>
