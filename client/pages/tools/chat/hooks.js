@@ -8,6 +8,47 @@ import { jsonToXml } from "/utils/xml.js";
 import { systemPrompt, tools } from "./config.js";
 import { getDB } from "/models/database.js";
 
+/**
+ * Normalize message content to array format, handling various edge cases
+ * @param {any} content - Raw content from storage
+ * @returns {Array} - Normalized content array
+ */
+export function normalizeMessageContent(content) {
+  // Handle null/undefined
+  if (content === null || content === undefined) {
+    return [{ text: "" }];
+  }
+  
+  // If already an array, return as-is
+  if (Array.isArray(content)) {
+    return content.length > 0 ? content : [{ text: "" }];
+  }
+  
+  // If it's a string, try to parse as JSON first
+  if (typeof content === 'string') {
+    // Empty string
+    if (content.trim() === '') {
+      return [{ text: "" }];
+    }
+    
+    // Try JSON parsing
+    try {
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed)) {
+        return parsed.length > 0 ? parsed : [{ text: "" }];
+      }
+      // If parsed but not array, treat as text
+      return [{ text: String(parsed) }];
+    } catch (error) {
+      // Not JSON, treat as plain text
+      return [{ text: content }];
+    }
+  }
+  
+  // For any other type, convert to string
+  return [{ text: String(content) }];
+}
+
 export function useChat() {
   const [messages, setMessages] = createStore([]);
   const [conversation, setConversation] = createStore({ id: null, title: "", messages });
@@ -60,28 +101,15 @@ export function useChat() {
         // Load messages for this conversation
         const msgs = await database.getMessages(conversationId);
         setMessages(msgs.map(msg => {
-          try {
-            // Parse the stored content back to array
-            const content = typeof msg.content === 'string' 
-              ? JSON.parse(msg.content) 
-              : msg.content;
+          // Normalize content to array format
+          const content = normalizeMessageContent(msg.content);
             
-            return {
-              role: msg.role,
-              content: Array.isArray(content) ? content : [{ text: String(content) }],
-              timestamp: msg.timestamp,
-              metadata: msg.metadata
-            };
-          } catch (error) {
-            console.error('Failed to parse message content:', error);
-            // Fallback to text content
-            return {
-              role: msg.role,
-              content: [{ text: String(msg.content) }],
-              timestamp: msg.timestamp,
-              metadata: msg.metadata
-            };
-          }
+          return {
+            role: msg.role,
+            content,
+            timestamp: msg.timestamp,
+            metadata: msg.metadata
+          };
         }));
       }
     } catch (error) {
@@ -171,7 +199,19 @@ export function useChat() {
    * @param {string} params.model - The model to use.
    */
   async function submitMessage({ message, inputFiles, reasoningMode, model, context = {}, reset = () => {} }) {
-    const database = db();
+    // CRITICAL FIX: Wait for database to be initialized before proceeding
+    let database = db();
+    let retries = 0;
+    while (!database && retries < 10) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      database = db();
+      retries++;
+    }
+    
+    if (!database) {
+      console.error('Database not initialized after waiting');
+      // Continue without database for now, but this should be fixed
+    }
     
     const text = jsonToXml({
       message: {
@@ -240,12 +280,12 @@ export function useChat() {
     setMessages(messages.length, userMessage);
     reset?.();
     
-    // Store user message in database (as-is)
+    // Store user message in database (as array)
     if (database && conversation.id) {
       try {
         await database.addMessage(conversation.id, {
           role: userMessage.role,
-          content: JSON.stringify(userMessage.content)
+          content: userMessage.content // Store as array directly
         });
       } catch (error) {
         console.error('Failed to store user message:', error);
@@ -277,6 +317,21 @@ export function useChat() {
         const decoder = new TextDecoder();
         let assistantMessage = { role: "assistant", content: [] };
         setMessages(messages.length, assistantMessage);
+        
+        // CRITICAL FIX: Store assistant message immediately when created
+        // This ensures it's persisted even if tool calls or errors occur
+        let assistantMessageId = null;
+        if (database && conversation.id) {
+          try {
+            const storedMessage = await database.addMessage(conversation.id, {
+              role: assistantMessage.role,
+              content: assistantMessage.content
+            });
+            assistantMessageId = storedMessage.id;
+          } catch (error) {
+            console.error('Failed to store initial assistant message:', error);
+          }
+        }
 
         // Process streaming chunks from the API
         for await (const chunk of readStream(response)) {
@@ -363,6 +418,22 @@ export function useChat() {
               };
               if (toolUse) setMessages(messages.length - 1, "content", contentBlockIndex, "toolUse", "input", (prev) => parse(prev));
             } else if (stopReason) {
+              // Update the stored assistant message with final content
+              if (database && conversation.id && assistantMessageId) {
+                try {
+                  const currentAssistantMessage = messages.at(-1);
+                  if (currentAssistantMessage && currentAssistantMessage.role === 'assistant') {
+                    // CRITICAL FIX: Deep clone the content to remove any reactive references
+                    const serializedContent = JSON.parse(JSON.stringify(currentAssistantMessage.content));
+                    await database.updateMessage(assistantMessageId, {
+                      content: serializedContent
+                    });
+                  }
+                } catch (error) {
+                  console.error('Failed to update assistant message:', error);
+                }
+              }
+              
               if (stopReason === "tool_use") {
                 const toolUses = messages
                   .at(-1)
@@ -375,12 +446,12 @@ export function useChat() {
                 };
                 setMessages(messages.length, toolResultsMessage);
                 
-                // Store tool results message in database (as-is)
+                // CRITICAL FIX: Store tool results message immediately when created
                 if (database && conversation.id) {
                   try {
                     await database.addMessage(conversation.id, {
                       role: toolResultsMessage.role,
-                      content: JSON.stringify(toolResultsMessage.content)
+                      content: toolResultsMessage.content
                     });
                   } catch (error) {
                     console.error('Failed to store tool results message:', error);
@@ -388,21 +459,6 @@ export function useChat() {
                 }
               } else {
                 isComplete = true;
-                
-                // Store assistant message in database (as-is)
-                if (database && conversation.id) {
-                  try {
-                    const assistantMessage = messages.at(-1);
-                    if (assistantMessage && assistantMessage.role === 'assistant') {
-                      await database.addMessage(conversation.id, {
-                        role: assistantMessage.role,
-                        content: JSON.stringify(assistantMessage.content)
-                      });
-                    }
-                  } catch (error) {
-                    console.error('Failed to store assistant message:', error);
-                  }
-                }
               }
             }
           }
