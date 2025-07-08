@@ -37,6 +37,7 @@ function UserEdit() {
       .then((data) => {
         // Set noLimit flag based on limit being null
         data.noLimit = data.limit === null;
+        data.limit = formatLimitForDisplay(data.limit);
         setUser(data);
         setOriginalUser(data);
         return data;
@@ -110,17 +111,18 @@ function UserEdit() {
     }));
   }
 
+  function formatLimitForDisplay(value) {
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+      return num.toFixed(2);
+    }
+    return 0.00.toFixed(2);
+  }
+
   // Format limit to two decimal places on blur to ensure consistent formatting
   function handleLimitBlur() {
-    const currentValue = user().limit;
-    const num = parseFloat(currentValue);
-
-    if (!isNaN(num)) {
-      const formattedValue = num.toFixed(2);
-      handleInputChange("limit", formattedValue);
-    } else {
-      handleInputChange("limit", "");
-    }
+    const formattedValue = formatLimitForDisplay(user().limit);
+    handleInputChange("limit", formattedValue);
   }
 
   function copyToClipboard(text) {
