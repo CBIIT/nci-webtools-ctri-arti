@@ -3,6 +3,55 @@ import { EmbeddingService, TestEmbedder } from "./embedders.js";
 import { Project, Conversation, Message, Resource } from "./models.js";
 
 /**
+ * Extract searchable text from message content array
+ * @param {Array|string} content - Message content in Bedrock format
+ * @returns {string} - Searchable text
+ */
+function extractSearchableText(content) {
+  if (!content) return "";
+  
+  // If it's already a string, return it
+  if (typeof content === 'string') return content;
+  
+  // If it's not an array, convert to string
+  if (!Array.isArray(content)) return String(content);
+  
+  // Extract text from all content blocks
+  const textParts = [];
+  
+  for (const block of content) {
+    if (block.text) {
+      textParts.push(block.text);
+    } else if (block.toolUse && block.toolUse.name) {
+      // Include tool names for searchability
+      textParts.push(`Tool: ${block.toolUse.name}`);
+      if (block.toolUse.input && typeof block.toolUse.input === 'object') {
+        // Include tool input parameters
+        const inputText = Object.values(block.toolUse.input).join(' ');
+        textParts.push(inputText);
+      }
+    } else if (block.toolResult) {
+      // Include tool results if they contain text
+      if (Array.isArray(block.toolResult.content)) {
+        for (const resultBlock of block.toolResult.content) {
+          if (resultBlock.text) {
+            textParts.push(resultBlock.text);
+          }
+        }
+      }
+    } else if (block.document && block.document.name) {
+      // Include document names for searchability
+      textParts.push(`Document: ${block.document.name}`);
+    } else if (block.image && block.image.name) {
+      // Include image names for searchability
+      textParts.push(`Image: ${block.image.name}`);
+    }
+  }
+  
+  return textParts.join(' ').trim();
+}
+
+/**
  * User-scoped conversation database with vector search
  */
 export class ConversationDB {
@@ -339,10 +388,11 @@ export class ConversationDB {
     }
     
     // Add to embeddings for search
-    if (message.content && typeof message.content === 'string') {
+    const searchableText = extractSearchableText(message.content);
+    if (searchableText) {
       await this.embeddingService.add(
         `msg:${message.id}`,
-        message.content,
+        searchableText,
         { 
           type: "message", 
           id: message.id, 
@@ -385,18 +435,21 @@ export class ConversationDB {
     
     // Update embeddings if content changed
     if (updates.content) {
-      await this.embeddingService.add(
-        `msg:${id}`,
-        message.content,
-        { 
-          type: "message", 
-          id, 
-          conversationId: message.conversationId, 
-          role: message.role,
-          timestamp: message.timestamp
-        }
-      );
-      await this.saveEmbeddings();
+      const searchableText = extractSearchableText(message.content);
+      if (searchableText) {
+        await this.embeddingService.add(
+          `msg:${id}`,
+          searchableText,
+          { 
+            type: "message", 
+            id, 
+            conversationId: message.conversationId, 
+            role: message.role,
+            timestamp: message.timestamp
+          }
+        );
+        await this.saveEmbeddings();
+      }
     }
     
     return message;
@@ -523,10 +576,11 @@ export class ConversationDB {
     const messages = await this.db.getAll("messages");
     for (const msgData of messages) {
       const msg = Message.fromJSON(msgData);
-      if (msg.content && typeof msg.content === 'string') {
+      const searchableText = extractSearchableText(msg.content);
+      if (searchableText) {
         await this.embeddingService.add(
           `msg:${msg.id}`,
-          msg.content,
+          searchableText,
           { 
             type: "message", 
             id: msg.id, 
