@@ -110,6 +110,19 @@ function UserEdit() {
     }));
   }
 
+  // Format limit to two decimal places on blur to ensure consistent formatting
+  function handleLimitBlur() {
+    const currentValue = user().limit;
+    const num = parseFloat(currentValue);
+
+    if (!isNaN(num)) {
+      const formattedValue = num.toFixed(2);
+      handleInputChange("limit", formattedValue);
+    } else {
+      handleInputChange("limit", "");
+    }
+  }
+
   function copyToClipboard(text) {
     navigator.clipboard
       .writeText(text)
@@ -324,15 +337,16 @@ function UserEdit() {
               <div class="input-group mb-2">
                 <span class="input-group-text">$</span>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputmode="decimal" 
                   class="form-control"
                   disabled=${() => user().noLimit}
                   id="limit"
-                  value=${() => user().limit || 0}
-                  onInput=${(e) => handleInputChange("limit", parseFloat(e.target.value) || 0)}
-                  aria-label="Weekly cost limit" />
+                  value=${() => user().limit ?? ""}
+                  onInput=${(e) => handleInputChange("limit", e.target.value)}
+                  onBlur=${handleLimitBlur}
+                  aria-label="Weekly cost limit"
+                />
                 <${Show} when=${() => params.id}>
                   <button 
                     type="button" 
