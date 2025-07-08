@@ -346,7 +346,7 @@ function UserEdit() {
             <div class="col-12 mt-4">
               <div class="d-flex gap-2 justify-content-center">
                 <a href="/_/users" class="btn btn-outline-secondary text-decoration-none"> Cancel </a>
-                <button type="submit" class="btn btn-primary" disabled=${saving}>${() => (saving() ? "Saving..." : "Save User")}</button>
+                <button type="submit" class="btn btn-primary" disabled=${saving}>${() => (saving() ? "Saving..." : "Save")}</button>
               </div>
             </div>
           </div>
