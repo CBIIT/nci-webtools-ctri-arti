@@ -320,7 +320,7 @@ export default function Page() {
           </div>
           <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
             <div class="d-flex justify-content-between align-items-center">
-              <label class="form-label">Generated Forms</label>
+              <label class="form-label">Output</label>
               <${Show}
                 when=${() => {
                   const docs = generatedDocuments();
