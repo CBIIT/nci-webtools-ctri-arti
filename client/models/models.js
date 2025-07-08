@@ -125,7 +125,8 @@ export class Message extends BaseModel {
     super(data);
     this.conversationId = data.conversationId;
     this.role = data.role; // "user", "assistant", "system"
-    this.content = data.content || "";
+    // Content should be Bedrock-compatible array format: [{ text: "..." }, { toolUse: {...} }]
+    this.content = data.content || [];
     this.timestamp = data.timestamp || new Date().toISOString();
     
     // Message metadata
