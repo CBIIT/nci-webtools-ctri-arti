@@ -335,7 +335,7 @@ function UserEdit() {
                 <//>
               </div>
               <div class="small text-muted">
-                Remaining: $${() => (user().remaining !== null ? parseFloat(user().remaining).toFixed(2) : "N/A")}
+                Remaining: $${() => (user().noLimit ? 0 : user().remaining !== null ? parseFloat(user().remaining).toFixed(2) : "N/A")}
               </div>
             </div>
           </div>
