@@ -37,9 +37,9 @@ function UserEdit() {
       .then((data) => {
         // Set noLimit flag based on limit being null
         data.noLimit = data.limit === null;
-        data.limit = formatLimitForDisplay(data.limit);
-        setUser(data);
         setOriginalUser(data);
+        data.limit = data.limit !== null ? formatLimitForDisplay(data.limit) : data.limit;
+        setUser(data);
         return data;
       });
   });
@@ -50,15 +50,15 @@ function UserEdit() {
 
     try {
       const userData = { ...user() };
-
+      userData.limit = parseFloat(userData.limit);
       // Handle no limit case - send null for limit when noLimit is true
       if (userData.noLimit) {
         userData.limit = null;
       }
       // Track differences in limit to adjust remaining accordingly even if limit becomes null
-      if (originalUser().limit !== userData.limit) {
-        const limitDiff = (userData.limit || 0) - (originalUser().limit || 0);
-        userData.remaining = (userData.remaining || 0) + limitDiff;
+      if (parseFloat(originalUser().limit) !== userData.limit) {
+        const limitDiff = (userData.limit || 0) - (parseFloat(originalUser().limit) || 0);
+        userData.remaining = (parseFloat(userData.remaining) || 0) + limitDiff;
       }
 
       // Include generateApiKey flag if checked
@@ -82,8 +82,9 @@ function UserEdit() {
         const data = await response.json();
         throw new Error(data.error || "Failed to save user");
       }
-      setUser(userData);
       setOriginalUser(userData);
+      userData.limit = userData.limit !== null ? formatLimitForDisplay(userData.limit) : userData.limit;
+      setUser(userData);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
@@ -107,7 +108,7 @@ function UserEdit() {
       setUser((prev) => ({
         ...prev,
         noLimit: false,
-        limit: prev.limit === null ? originalUser().limit || 5 : prev.limit,
+        limit: prev.limit === null ? formatLimitForDisplay(originalUser().limit || 5) : prev.limit,
       }));
     }
   }
@@ -120,7 +121,7 @@ function UserEdit() {
     setUser((prev) => ({
       ...prev,
       noLimit: checked,
-      limit: checked ? null : originalUser().limit || 5,
+      limit: checked ? null : formatLimitForDisplay(originalUser().limit || 5),
     }));
   }
 
