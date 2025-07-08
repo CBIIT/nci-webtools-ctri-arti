@@ -97,7 +97,7 @@ function UserEdit() {
     setUser((prev) => ({
       ...prev,
       noLimit: checked,
-      limit: checked ? null : prev.limit || 5,
+      limit: checked ? null : originalUser().limit || 5,
     }));
   }
 
