@@ -97,6 +97,19 @@ function UserEdit() {
   function handleRoleChange(roleId) {
     // Simply update the role ID without changing limit settings
     setUser((prev) => ({ ...prev, roleId }));
+    if (roleId === 1) {
+      setUser((prev) => ({
+        ...prev,
+        noLimit: true,
+        limit: null,
+      }));
+    } else {
+      setUser((prev) => ({
+        ...prev,
+        noLimit: false,
+        limit: prev.limit === null ? originalUser().limit || 5 : prev.limit,
+      }));
+    }
   }
 
   function handleInputChange(field, value) {
