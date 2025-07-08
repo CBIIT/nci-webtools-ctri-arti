@@ -83,13 +83,13 @@ function UserEdit() {
       }
       setUser(userData);
       setOriginalUser(userData);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
       console.error("Error saving user:", err);
       alert(err.message || "An error occurred while saving the user");
     } finally {
       setSaving(false);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
     }
   }
 
