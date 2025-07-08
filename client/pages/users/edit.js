@@ -50,9 +50,6 @@ function UserEdit() {
     try {
       const userData = { ...user() };
 
-      // Include ID for user being edited
-      userData.id = params.id;
-
       // Handle no limit case - send null for limit when noLimit is true
       if (userData.noLimit) {
         userData.limit = null;
@@ -61,25 +58,31 @@ function UserEdit() {
       if (originalUser().limit !== userData.limit) {
         const limitDiff = (userData.limit || 0) - (originalUser().limit || 0);
         userData.remaining = (userData.remaining || 0) + limitDiff;
-        //for when remaining is negative, we still store it but set it to 0 in the UI
       }
-      delete userData.noLimit; // Remove the UI-only property
 
       // Include generateApiKey flag if checked
       if (generateApiKey()) {
         userData.generateApiKey = true;
       }
 
+      const apiPayload = { ...userData };
+      // Include ID for user being edited
+      apiPayload.id = params.id;
+      // Remove the UI-only property
+      delete apiPayload.noLimit; 
+
       const response = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
+        body: JSON.stringify(apiPayload),
       });
 
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "Failed to save user");
       }
+      setUser(userData);
+      setOriginalUser(userData);
     } catch (err) {
       console.error("Error saving user:", err);
       alert(err.message || "An error occurred while saving the user");
