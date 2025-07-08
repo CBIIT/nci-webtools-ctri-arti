@@ -565,18 +565,18 @@ export async function runTests() {
         const maxWaitTime = 50; // 500ms max
         while (window.PENDING_REQUESTS.size > 0 && waitCount < maxWaitTime) {
           if (waitCount === 0) {
-            console.log(`  🕐 Waiting for ${window.PENDING_REQUESTS.size} pending network requests...`);
+            console.log(`  Waiting for ${window.PENDING_REQUESTS.size} pending network requests...`);
           }
           await new Promise(resolve => setTimeout(resolve, 10));
           waitCount++;
         }
         
         if (window.PENDING_REQUESTS.size > 0) {
-          console.log(`  ⚠️  Timeout: ${window.PENDING_REQUESTS.size} requests still pending after ${waitCount * 10}ms`);
+          console.log(`  Timeout: ${window.PENDING_REQUESTS.size} requests still pending after ${waitCount * 10}ms`);
           // Clear pending requests to avoid affecting next test
           window.PENDING_REQUESTS.clear();
         } else if (waitCount > 0) {
-          console.log(`  ✅ All network requests completed (waited ${waitCount * 10}ms)`);
+          console.log(`  All network requests completed (waited ${waitCount * 10}ms)`);
         }
         
         const testTime = Date.now() - testStartTime;
