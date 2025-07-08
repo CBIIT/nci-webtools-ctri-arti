@@ -376,6 +376,12 @@ ul {
   border-bottom-color: var(--bs-warning);
 }
 
+.nav-link.dropdown-link {
+  --bs-navbar-nav-link-dropdown-link-padding-y: 0.3rem;
+  --bs-navbar-nav-link-dropdown-link-padding-x: 0.5rem;
+  padding: var(--bs-navbar-nav-link-dropdown-link-padding-y) var(--bs-navbar-nav-link-dropdown-link-padding-x);
+}
+
 .nav-link.dropdown-link.active {
   border-bottom-color: #fff;
 }
