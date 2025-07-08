@@ -23,6 +23,8 @@ function UserEdit() {
   const [resetMessage, setResetMessage] = createSignal("");
   const [showResetMessage, setShowResetMessage] = createSignal(false);
 
+  const ADMIN_ROLE_ID = 1;
+
   // Fetch roles data using resource
   const [roles] = createResource(() => fetch("/api/admin/roles").then((res) => res.json()));
 
@@ -98,7 +100,7 @@ function UserEdit() {
   function handleRoleChange(roleId) {
     // Simply update the role ID without changing limit settings
     setUser((prev) => ({ ...prev, roleId }));
-    if (roleId === 1) {
+    if (roleId === ADMIN_ROLE_ID) {
       setUser((prev) => ({
         ...prev,
         noLimit: true,
