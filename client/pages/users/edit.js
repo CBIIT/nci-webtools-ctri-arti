@@ -319,6 +319,7 @@ function UserEdit() {
                   step="0.01"
                   min="0"
                   class="form-control"
+                  disabled=${() => user().noLimit}
                   id="limit"
                   value=${() => user().limit || 0}
                   onInput=${(e) => handleInputChange("limit", parseFloat(e.target.value) || 0)}
@@ -326,6 +327,7 @@ function UserEdit() {
                 <${Show} when=${() => params.id}>
                   <button 
                     type="button" 
+                    disabled=${() => user().noLimit}
                     class="btn btn-outline-primary"
                     onClick=${resetUserLimit}>
                     Reset
