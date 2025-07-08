@@ -36,7 +36,7 @@ describe('Modal Component - Debug', () => {
   });
 });
 
-describe.skip('Modal Component', () => {
+describe('Modal Component', () => {
   test('renders without errors when closed', () => {
     const result = Modal({ open: false });
     expect(result).toBeTruthy();
