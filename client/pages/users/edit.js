@@ -57,6 +57,12 @@ function UserEdit() {
       if (userData.noLimit) {
         userData.limit = null;
       }
+      // Track differences in limit to adjust remaining accordingly even if limit becomes null
+      if (originalUser().limit !== userData.limit) {
+        const limitDiff = (userData.limit || 0) - (originalUser().limit || 0);
+        userData.remaining = (userData.remaining || 0) + limitDiff;
+        //for when remaining is negative, we still store it but set it to 0 in the UI
+      }
       delete userData.noLimit; // Remove the UI-only property
 
       // Include generateApiKey flag if checked
