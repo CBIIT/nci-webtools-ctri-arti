@@ -485,6 +485,17 @@ export const jest = {
       mockFn.__lastArgs = undefined;
       mockFn.__allCalls = [];
     };
+    mockFn.mockResolvedValue = (value) => {
+      mockFn.__implementation = () => Promise.resolve(value);
+      return mockFn;
+    };
+    mockFn.mockImplementation = (impl) => {
+      mockFn.__implementation = impl;
+      return mockFn;
+    };
+    mockFn.mock = {
+      get calls() { return mockFn.__allCalls || []; }
+    };
     return mockFn;
   }
 };
