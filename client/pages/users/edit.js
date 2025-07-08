@@ -24,6 +24,7 @@ function UserEdit() {
   const [showResetMessage, setShowResetMessage] = createSignal(false);
 
   const ADMIN_ROLE_ID = 1;
+  const DEFAULT_WEEKLY_LIMIT = 5.00;
 
   // Fetch roles data using resource
   const [roles] = createResource(() => fetch("/api/admin/roles").then((res) => res.json()));
@@ -110,7 +111,7 @@ function UserEdit() {
       setUser((prev) => ({
         ...prev,
         noLimit: false,
-        limit: prev.limit === null ? formatLimitForDisplay(originalUser().limit || 5) : prev.limit,
+        limit: prev.limit === null ? formatLimitForDisplay(originalUser().limit || DEFAULT_WEEKLY_LIMIT) : prev.limit,
       }));
     }
   }
@@ -123,7 +124,7 @@ function UserEdit() {
     setUser((prev) => ({
       ...prev,
       noLimit: checked,
-      limit: checked ? null : formatLimitForDisplay(originalUser().limit || 5),
+      limit: checked ? null : formatLimitForDisplay(originalUser().limit || DEFAULT_WEEKLY_LIMIT),
     }));
   }
 
