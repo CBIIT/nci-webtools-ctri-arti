@@ -74,10 +74,141 @@ await page.route("**/*", async (route) => {
         body: JSON.stringify({
           user: {
             firstName: "Test User",
-            Role: { id: 1 }
-          }
+            email: "test@example.com",
+            Role: { id: 1 },
+          },
         }),
       });
+    }
+
+    // Mock model API endpoint
+    if (url.pathname === "/api/model") {
+      const method = route.request().method();
+
+      if (method === "GET") {
+        // Return available models
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([{ label: "Test Model", value: "test-model", maxContext: 8000, maxOutput: 2000 }]),
+        });
+      }
+
+      if (method === "POST") {
+        const body = route.request().postData();
+        const request = JSON.parse(body || "{}");
+        const { messages = [], tools = [], thoughtBudget = 0, stream = false } = request;
+
+        // Get user message text
+        const userMessage = messages[messages.length - 1];
+        const userText = userMessage?.content?.find((c) => c.text)?.text || "";
+
+        // Determine response behavior
+        const shouldError = userText.includes("error");
+        const shouldUseTool = tools.length > 0 && userText.includes("tool");
+        const hasReasoning = thoughtBudget > 0;
+
+        if (shouldError) {
+          return route.fulfill({
+            status: 500,
+            contentType: "application/json",
+            body: JSON.stringify({ error: "Mock error triggered" }),
+          });
+        }
+
+        const responseText = `Your message was: ${userText}`;
+
+        if (stream) {
+          // Create streaming response
+          const events = [];
+
+          // Message start
+          events.push({ type: "messageStart", messageStart: { role: "assistant" } });
+
+          let blockIndex = 0;
+
+          // Add reasoning if requested
+          if (hasReasoning) {
+            events.push({ type: "contentBlockStart", contentBlockStart: { contentBlockIndex: blockIndex, start: {} } });
+            events.push({
+              type: "contentBlockDelta",
+              contentBlockDelta: {
+                contentBlockIndex: blockIndex,
+                delta: { reasoningContent: { text: "Thinking about this request..." } },
+              },
+            });
+            events.push({ type: "contentBlockStop", contentBlockStop: { contentBlockIndex: blockIndex } });
+            blockIndex++;
+          }
+
+          // Add tool use or text response
+          if (shouldUseTool) {
+            events.push({
+              type: "contentBlockStart",
+              contentBlockStart: {
+                contentBlockIndex: blockIndex,
+                start: { toolUse: { toolUseId: "tool-123", name: "example_tool" } },
+              },
+            });
+            events.push({
+              type: "contentBlockDelta",
+              contentBlockDelta: {
+                contentBlockIndex: blockIndex,
+                delta: { toolUse: { input: '{"action": "test"}' } },
+              },
+            });
+            events.push({ type: "contentBlockStop", contentBlockStop: { contentBlockIndex: blockIndex } });
+            events.push({ type: "messageStop", messageStop: { stopReason: "tool_use" } });
+          } else {
+            events.push({
+              type: "contentBlockStart",
+              contentBlockStart: { contentBlockIndex: blockIndex, start: { text: {} } },
+            });
+            events.push({
+              type: "contentBlockDelta",
+              contentBlockDelta: { contentBlockIndex: blockIndex, delta: { text: responseText } },
+            });
+            events.push({ type: "contentBlockStop", contentBlockStop: { contentBlockIndex: blockIndex } });
+            events.push({ type: "messageStop", messageStop: { stopReason: "end_turn" } });
+          }
+
+          // Add usage metadata
+          events.push({
+            type: "metadata",
+            metadata: {
+              usage: { inputTokens: 50, outputTokens: 25, totalTokens: 75 },
+              metrics: { latencyMs: 100 },
+            },
+          });
+
+          return route.fulfill({
+            status: 200,
+            contentType: "text/plain",
+            body: events.map((e) => JSON.stringify(e)).join("\n") + "\n",
+          });
+        } else {
+          // Non-streaming response
+          const response = {
+            output: {
+              message: {
+                role: "assistant",
+                content: shouldUseTool
+                  ? [{ toolUse: { toolUseId: "tool-123", name: "example_tool", input: { action: "test" } } }]
+                  : [{ text: responseText }],
+              },
+            },
+            stopReason: shouldUseTool ? "tool_use" : "end_turn",
+            usage: { inputTokens: 50, outputTokens: 25, totalTokens: 75 },
+            metrics: { latencyMs: 100 },
+          };
+
+          return route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify(response),
+          });
+        }
+      }
     }
 
     // Generic test control API
