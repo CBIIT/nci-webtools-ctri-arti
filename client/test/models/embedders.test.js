@@ -1,5 +1,5 @@
 // Tests for embedding system
-import { BaseEmbedder, TestEmbedder, EmbeddingService } from "../../models/embedders.js";
+import { BaseEmbedder, TestEmbedder, TransformersEmbedder, EmbeddingService } from "../../models/embedders.js";
 
 describe('BaseEmbedder', () => {
   test('creates embedder with default dimensions', () => {
@@ -238,4 +238,108 @@ describe('EmbeddingService', () => {
       expect(results[0].distance).toBeLessThanOrEqual(results[1].distance);
     }
   });
+});
+
+describe('TransformersEmbedder', () => {
+  test('creates transformers embedder with correct dimensions', () => {
+    const embedder = new TransformersEmbedder();
+    
+    expect(embedder.dimensions).toBe(384);
+    expect(embedder.model).toBe('Xenova/all-MiniLM-L6-v2');
+    expect(embedder.getMetadata().type).toBe('transformers');
+  });
+
+  test('accepts custom model and dimensions', () => {
+    const embedder = new TransformersEmbedder('Xenova/paraphrase-multilingual-MiniLM-L12-v2', 512);
+    
+    expect(embedder.dimensions).toBe(512);
+    expect(embedder.model).toBe('Xenova/paraphrase-multilingual-MiniLM-L12-v2');
+  });
+
+  test('embeds real text to semantic vectors', async () => {
+    const embedder = new TransformersEmbedder();
+    
+    const text1 = "The quick brown fox jumps over the lazy dog";
+    const text2 = "A fast brown fox leaps over a sleeping dog";
+    const text3 = "Climate change affects global weather patterns";
+    
+    const embedding1 = await embedder.embed(text1);
+    const embedding2 = await embedder.embed(text2);
+    const embedding3 = await embedder.embed(text3);
+    
+    // Check embedding properties
+    expect(embedding1).toBeInstanceOf(Float32Array);
+    expect(embedding1.length).toBe(384);
+    expect(embedding2.length).toBe(384);
+    expect(embedding3.length).toBe(384);
+    
+    // Calculate cosine similarity
+    function cosineSimilarity(a, b) {
+      let dot = 0, normA = 0, normB = 0;
+      for (let i = 0; i < a.length; i++) {
+        dot += a[i] * b[i];
+        normA += a[i] * a[i];
+        normB += b[i] * b[i];
+      }
+      return dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
+    }
+    
+    const sim1and2 = cosineSimilarity(embedding1, embedding2);
+    const sim1and3 = cosineSimilarity(embedding1, embedding3);
+    
+    // Similar texts should be more similar than different topics
+    expect(sim1and2).toBeGreaterThan(sim1and3);
+    expect(sim1and2).toBeGreaterThan(0.7); // High similarity for similar content
+    
+    console.log(`Fox texts similarity: ${sim1and2.toFixed(4)}`);
+    console.log(`Fox vs climate similarity: ${sim1and3.toFixed(4)}`);
+  }, 30000); // 30 second timeout for model loading
+
+  test('handles empty text gracefully', async () => {
+    const embedder = new TransformersEmbedder();
+    
+    const emptyEmbedding = await embedder.embed('');
+    const nullEmbedding = await embedder.embed(null);
+    
+    expect(emptyEmbedding).toBeInstanceOf(Float32Array);
+    expect(emptyEmbedding.length).toBe(384);
+    expect(nullEmbedding.length).toBe(384);
+  });
+
+  test('produces consistent embeddings for same text', async () => {
+    const embedder = new TransformersEmbedder();
+    
+    const text = "Consistent embedding test";
+    const embedding1 = await embedder.embed(text);
+    const embedding2 = await embedder.embed(text);
+    
+    expect(embedding1).toEqual(embedding2);
+  }, 20000);
+
+  test('semantic search with real embeddings', async () => {
+    const embedder = new TransformersEmbedder();
+    const service = new EmbeddingService(embedder);
+    
+    // Add documents about different topics
+    await service.add("ai1", "Machine learning algorithms process data efficiently", { topic: "AI" });
+    await service.add("ai2", "Neural networks learn from training examples", { topic: "AI" });
+    await service.add("health1", "Regular exercise improves cardiovascular health", { topic: "Health" });
+    await service.add("health2", "Proper nutrition supports immune system function", { topic: "Health" });
+    await service.add("tech1", "Cloud computing enables scalable applications", { topic: "Technology" });
+    
+    // Search for AI-related content
+    const aiResults = await service.search("artificial intelligence and deep learning", 3);
+    
+    expect(aiResults.length).toBeGreaterThan(0);
+    expect(aiResults[0].metadata.topic).toBe("AI");
+    
+    // Search for health content
+    const healthResults = await service.search("fitness and wellness", 2);
+    
+    expect(healthResults.length).toBeGreaterThan(0);
+    expect(healthResults[0].metadata.topic).toBe("Health");
+    
+    console.log("AI search top result:", aiResults[0].id);
+    console.log("Health search top result:", healthResults[0].id);
+  }, 45000); // Long timeout for multiple embeddings
 });

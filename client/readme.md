@@ -117,7 +117,7 @@ A comprehensive guide for developing with SolidJS using tagged template literals
 |---------|-------|---------|-----|
 | **Signal Usage** | `${signal()}` | `${signal}` or `${() => signal()}` | Calling `signal()` immediately breaks reactivity. SolidJS needs the function reference to track changes. |
 | **String Interpolation in Attributes** | `<div class="base ${props.className}">` | `<div class=${() => ["base", props.className].join(" ")}>` | Template literals inside attributes don't work. Use a function that returns the complete string. |
-| **Alternative: classList** | `<div class="base ${props.className}">` | `<div classList=${{ base: true, [props.className]: true }}>` | classList syntax handles conditional classes reactively and is more maintainable. |
+| **Alternative: classList** | `<div class="base ${props.className}">` | `<div classList=${() => ({ base: true, [props.className]: true })}>` | classList syntax handles conditional classes reactively and is more maintainable. |
 | **Store Properties** | `${store.property}` | `${() => store.property}` | Store properties return values, not functions. Wrap them so SolidJS can track changes. |
 | **Props Destructuring** | `function Component({ name, age })` | `function Component(props)` then `${() => props.name}` | Destructuring breaks reactivity by extracting values at creation time. Access via props object. |
 | **Signal Properties** | `${user().name}` | `${() => user().name}` | Accessing properties of signal values needs manual wrapping for reactivity tracking. |

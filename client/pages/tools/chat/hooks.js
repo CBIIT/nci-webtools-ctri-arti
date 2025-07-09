@@ -98,17 +98,20 @@ export function useChat() {
           projectId: conv.projectId 
         });
         
-        // Load messages for this conversation
-        const msgs = await database.getMessages(conversationId);
+        // Load messages for this conversation (with active alternatives)
+        const msgs = await database.getConversationMessages(conversationId);
         setMessages(msgs.map(msg => {
           // Normalize content to array format
           const content = normalizeMessageContent(msg.content);
             
           return {
+            id: msg.id,
             role: msg.role,
             content,
             timestamp: msg.timestamp,
-            metadata: msg.metadata
+            metadata: msg.metadata,
+            baseMessageId: msg.baseMessageId,
+            alternativeIndex: msg.alternativeIndex
           };
         }));
       }
@@ -191,107 +194,15 @@ export function useChat() {
   };
 
   /**
-   * Submit a message along with optional files.
+   * Continue conversation with AI using existing messages
    * @param {Object} params
-   * @param {string} params.message - The text message.
-   * @param {FileList} [params.inputFiles] - Any files attached.
-   * @param {boolean} params.reasoningMode - Whether reasoning mode is enabled.
    * @param {string} params.model - The model to use.
+   * @param {boolean} params.reasoningMode - Whether reasoning mode is enabled.
+   * @param {Object} params.context - Additional context for the AI.
    */
-  async function submitMessage({ message, inputFiles, reasoningMode, model, context = {}, reset = () => {} }) {
-    // CRITICAL FIX: Wait for database to be initialized before proceeding
-    let database = db();
-    let retries = 0;
-    while (!database && retries < 10) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      database = db();
-      retries++;
-    }
+  async function continueConversation({ model, reasoningMode = false, context = {} }) {
+    const database = db();
     
-    if (!database) {
-      console.error('Database not initialized after waiting');
-      // Continue without database for now, but this should be fixed
-    }
-    
-    const text = jsonToXml({
-      message: {
-        text: message,
-        metadata: {
-          timestamp: new Date().toLocaleString(),
-          reminders:
-            "Search and browse for current information if needed. If necessary, interleave tool calls with the think tool to perform complex analysis. Only update the workspace when necessary. Always include APA-style source citations with full URLs when sources are used.",
-        },
-      },
-    });
-    const userMessage = {
-      role: "user",
-      content: [{ text }],
-    };
-
-    // Create new conversation if this is the first message
-    if (!messages.length && database) {
-      try {
-        const newConversation = await database.createConversation({
-          title: message.length > 50 ? message.substring(0, 50) + '...' : message
-        });
-        
-        setConversation({ 
-          id: newConversation.id, 
-          title: newConversation.title,
-          projectId: newConversation.projectId 
-        });
-        
-        // Update URL with new conversation ID
-        updateURL(newConversation.id);
-        
-        // Refresh conversations list
-        await loadRecentConversations();
-      } catch (error) {
-        console.error('Failed to create conversation:', error);
-        // Fallback to local storage behavior
-        setConversation({ id: Math.random().toString(36).substr(2, 9), title: message });
-      }
-    } else if (!messages.length) {
-      // Fallback if no database
-      setConversation({ id: Math.random().toString(36).substr(2, 9), title: message });
-    }
-
-    if (inputFiles && inputFiles.length) {
-      for (const file of inputFiles) {
-        const byteLengthLimit = 1024 * 1024 * 5; // 5MB
-        const imageTypes = ["png", "jpeg", "gif", "webp"];
-        const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
-        let [name, format] = splitFilename(file.name);
-        name = name.replace(/[^a-zA-Z0-9\s\[\]\(\)\-]/g, "_").replace(/\s{2,}/g, " ") + new Date().getTime();
-        const bytes = await fileToBase64(file, true);
-        const contentType = imageTypes.includes(format) ? "image" : "document";
-        if (!documentTypes.concat(imageTypes).includes(format)) format = "txt";
-        if (file.size > byteLengthLimit) {
-          console.warn(`File ${file.name} exceeds the 5MB limit and will not be sent.`);
-          continue;
-        }
-        userMessage.content.unshift({
-          [contentType]: { name, format, source: { bytes } },
-        });
-      }
-    }
-
-    // Update the state with the user message
-    setMessages(messages.length, userMessage);
-    reset?.();
-    
-    // Store user message in database (as array)
-    if (database && conversation.id) {
-      try {
-        await database.addMessage(conversation.id, {
-          role: userMessage.role,
-          content: userMessage.content // Store as array directly
-        });
-      } catch (error) {
-        console.error('Failed to store user message:', error);
-      }
-    }
-
     try {
       let isComplete = false;
       setLoading(true);
@@ -318,8 +229,7 @@ export function useChat() {
         let assistantMessage = { role: "assistant", content: [] };
         setMessages(messages.length, assistantMessage);
         
-        // CRITICAL FIX: Store assistant message immediately when created
-        // This ensures it's persisted even if tool calls or errors occur
+        // Store assistant message immediately when created
         let assistantMessageId = null;
         if (database && conversation.id) {
           try {
@@ -328,6 +238,10 @@ export function useChat() {
               content: assistantMessage.content
             });
             assistantMessageId = storedMessage.id;
+            
+            // Update the assistant message in state with the database ID
+            setMessages(messages.length - 1, "id", storedMessage.id);
+            setMessages(messages.length - 1, "timestamp", storedMessage.timestamp);
           } catch (error) {
             console.error('Failed to store initial assistant message:', error);
           }
@@ -423,7 +337,7 @@ export function useChat() {
                 try {
                   const currentAssistantMessage = messages.at(-1);
                   if (currentAssistantMessage && currentAssistantMessage.role === 'assistant') {
-                    // CRITICAL FIX: Deep clone the content to remove any reactive references
+                    // Deep clone the content to remove any reactive references
                     const serializedContent = JSON.parse(JSON.stringify(currentAssistantMessage.content));
                     await database.updateMessage(assistantMessageId, {
                       content: serializedContent
@@ -446,13 +360,17 @@ export function useChat() {
                 };
                 setMessages(messages.length, toolResultsMessage);
                 
-                // CRITICAL FIX: Store tool results message immediately when created
+                // Store tool results message immediately when created
                 if (database && conversation.id) {
                   try {
-                    await database.addMessage(conversation.id, {
+                    const storedToolMessage = await database.addMessage(conversation.id, {
                       role: toolResultsMessage.role,
                       content: toolResultsMessage.content
                     });
+                    
+                    // Update the tool results message in state with the database ID
+                    setMessages(messages.length - 1, "id", storedToolMessage.id);
+                    setMessages(messages.length - 1, "timestamp", storedToolMessage.timestamp);
                   } catch (error) {
                     console.error('Failed to store tool results message:', error);
                   }
@@ -465,9 +383,301 @@ export function useChat() {
         }
       }
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Error in AI conversation:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  /**
+   * Submit a message along with optional files.
+   * @param {Object} params
+   * @param {string} params.message - The text message.
+   * @param {FileList} [params.inputFiles] - Any files attached.
+   * @param {boolean} params.reasoningMode - Whether reasoning mode is enabled.
+   * @param {string} params.model - The model to use.
+   */
+  async function submitMessage({ message, inputFiles, reasoningMode, model, context = {}, reset = () => {} }) {
+    // CRITICAL FIX: Wait for database to be initialized before proceeding
+    let database = db();
+    // await database.init();
+    let retries = 0;
+    while (!database && retries < 10) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      database = db();
+      retries++;
+    }
+    
+    if (!database) {
+      console.error('Database not initialized after waiting');
+      // Continue without database for now, but this should be fixed
+    }
+    
+    const text = jsonToXml({
+      message: {
+        text: message,
+        metadata: {
+          timestamp: new Date().toLocaleString(),
+          reminders:
+            "Search and browse for current information if needed. If necessary, interleave tool calls with the think tool to perform complex analysis. Only update the workspace when necessary. Always include APA-style source citations with full URLs when sources are used.",
+        },
+      },
+    });
+    const userMessage = {
+      role: "user",
+      content: [{ text }],
+    };
+
+    // Create new conversation if this is the first message
+    if (!messages.length && database) {
+      try {
+        const newConversation = await database.createConversation({
+          title: message.length > 50 ? message.substring(0, 50) + '...' : message
+        });
+        
+        setConversation({ 
+          id: newConversation.id, 
+          title: newConversation.title,
+          projectId: newConversation.projectId 
+        });
+        
+        // Update URL with new conversation ID
+        updateURL(newConversation.id);
+        
+        // Refresh conversations list
+        await loadRecentConversations();
+      } catch (error) {
+        console.error('Failed to create conversation:', error);
+        // Fallback to local storage behavior
+        setConversation({ id: Math.random().toString(36).substr(2, 9), title: message });
+      }
+    } else if (!messages.length) {
+      // Fallback if no database
+      setConversation({ id: Math.random().toString(36).substr(2, 9), title: message });
+    }
+
+    if (inputFiles && inputFiles.length) {
+      for (const file of inputFiles) {
+        const byteLengthLimit = 1024 * 1024 * 5; // 5MB
+        const imageTypes = ["png", "jpeg", "gif", "webp"];
+        const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
+        let [name, format] = splitFilename(file.name);
+        name = name.replace(/[^a-zA-Z0-9\s\[\]\(\)\-]/g, "_").replace(/\s{2,}/g, " ") + new Date().getTime();
+        const bytes = await fileToBase64(file, true);
+        const contentType = imageTypes.includes(format) ? "image" : "document";
+        if (!documentTypes.concat(imageTypes).includes(format)) format = "txt";
+        if (file.size > byteLengthLimit) {
+          console.warn(`File ${file.name} exceeds the 5MB limit and will not be sent.`);
+          continue;
+        }
+        userMessage.content.unshift({
+          [contentType]: { name, format, source: { bytes } },
+        });
+      }
+    }
+
+    // Update the state with the user message
+    setMessages(messages.length, userMessage);
+    reset?.();
+    
+    // Store user message in database (as array)
+    if (database && conversation.id) {
+      try {
+        const storedUserMessage = await database.addMessage(conversation.id, {
+          role: userMessage.role,
+          content: userMessage.content // Store as array directly
+        });
+        
+        // CRITICAL FIX: Update the message in state with the database ID
+        setMessages(messages.length - 1, {
+          ...userMessage,
+          id: storedUserMessage.id,
+          timestamp: storedUserMessage.timestamp
+        });
+      } catch (error) {
+        console.error('Failed to store user message:', error);
+      }
+    }
+
+    // Continue conversation with AI
+    await continueConversation({ model, reasoningMode, context });
+  }
+
+  // ===== BRANCHING FUNCTIONALITY =====
+  
+  /**
+   * Create a message alternative (branch)
+   * @param {number} messageIndex - Index of message to branch from
+   * @param {string} newText - New message text
+   */
+  async function createMessageBranch(messageIndex, newText) {
+    const database = db();
+    if (!database || !conversation.id) return;
+    
+    try {
+      const originalMessage = messages[messageIndex];
+      if (!originalMessage || originalMessage.role !== 'user') {
+        throw new Error('Can only branch from user messages');
+      }
+      
+      // Create alternative in database
+      const alternative = await database.createMessageAlternative(
+        originalMessage.id,
+        [{ text: newText }]
+      );
+      
+      // Set the new alternative as active
+      await database.setActiveAlternative(conversation.id, originalMessage.id, alternative.alternativeIndex);
+      
+      // Reload conversation messages to reflect the change
+      await loadConversationMessages();
+      
+    } catch (error) {
+      console.error('Failed to create message branch:', error);
+    }
+  }
+
+  /**
+   * Create message branch and continue conversation from that point
+   * @param {number} messageIndex - Index of message to branch from  
+   * @param {string} newText - New message text
+   * @param {string} model - Model to use for continuation
+   * @param {boolean} reasoningMode - Whether to use reasoning mode
+   */
+  async function createMessageBranchAndContinue(messageIndex, newText, model = 'us.anthropic.claude-sonnet-4-20250514-v1:0', reasoningMode = false) {
+    const database = db();
+    if (!database || !conversation.id) return;
+    
+    try {
+      const originalMessage = messages[messageIndex];
+      if (!originalMessage || originalMessage.role !== 'user') {
+        throw new Error('Can only branch from user messages');
+      }
+      
+      // Create alternative in database
+      const alternative = await database.createMessageAlternative(
+        originalMessage.id,
+        [{ text: newText }]
+      );
+      
+      // Set the new alternative as active
+      await database.setActiveAlternative(conversation.id, originalMessage.id, alternative.alternativeIndex);
+      
+      // Remove all messages after the branched message from the database
+      const messagesToRemove = messages.slice(messageIndex + 1);
+      for (const msg of messagesToRemove) {
+        if (msg.id) {
+          await database.deleteMessage(msg.id);
+        }
+      }
+      
+      // Reload conversation messages to get the truncated conversation
+      await loadConversationMessages();
+      
+      // Continue conversation with AI using the edited message
+      await continueConversation({ model, reasoningMode });
+      
+    } catch (error) {
+      console.error('Failed to create message branch and continue:', error);
+    }
+  }
+  
+  /**
+   * Navigate to next alternative for a message
+   * @param {number} messageIndex - Index of message in current view
+   */
+  async function switchToNextAlternative(messageIndex) {
+    const database = db();
+    if (!database || !conversation.id) return;
+    
+    try {
+      const message = messages[messageIndex];
+      if (!message) return;
+      
+      // Get the base message ID (could be the message itself or its base)
+      const baseMessageId = message.baseMessageId || message.id;
+      
+      const switched = await database.switchToNextAlternative(conversation.id, baseMessageId);
+      if (switched) {
+        await loadConversationMessages();
+      }
+    } catch (error) {
+      console.error('Failed to switch to next alternative:', error);
+    }
+  }
+  
+  /**
+   * Navigate to previous alternative for a message
+   * @param {number} messageIndex - Index of message in current view
+   */
+  async function switchToPrevAlternative(messageIndex) {
+    const database = db();
+    if (!database || !conversation.id) return;
+    
+    try {
+      const message = messages[messageIndex];
+      if (!message) return;
+      
+      // Get the base message ID (could be the message itself or its base)
+      const baseMessageId = message.baseMessageId || message.id;
+      
+      const switched = await database.switchToPrevAlternative(conversation.id, baseMessageId);
+      if (switched) {
+        await loadConversationMessages();
+      }
+    } catch (error) {
+      console.error('Failed to switch to previous alternative:', error);
+    }
+  }
+  
+  /**
+   * Get alternative information for a message
+   * @param {number} messageIndex - Index of message in current view
+   * @returns {Promise<Object>} Alternative info
+   */
+  async function getAlternativeInfo(messageIndex) {
+    const database = db();
+    if (!database || !conversation.id) return null;
+    
+    try {
+      const message = messages[messageIndex];
+      if (!message) return null;
+      
+      // Get the base message ID (could be the message itself or its base)
+      const baseMessageId = message.baseMessageId || message.id;
+      
+      return await database.getAlternativeInfo(conversation.id, baseMessageId);
+    } catch (error) {
+      console.error('Failed to get alternative info:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Load conversation messages with active alternatives
+   */
+  async function loadConversationMessages() {
+    const database = db();
+    if (!database || !conversation.id) return;
+    
+    try {
+      const msgs = await database.getConversationMessages(conversation.id);
+      setMessages(msgs.map(msg => {
+        // Normalize content to array format
+        const content = normalizeMessageContent(msg.content);
+          
+        return {
+          id: msg.id,
+          role: msg.role,
+          content,
+          timestamp: msg.timestamp,
+          metadata: msg.metadata,
+          baseMessageId: msg.baseMessageId,
+          alternativeIndex: msg.alternativeIndex
+        };
+      }));
+    } catch (error) {
+      console.error('Failed to load conversation messages:', error);
     }
   }
 
@@ -480,7 +690,14 @@ export function useChat() {
     conversations, 
     loading,
     loadConversation,
-    userEmail
+    userEmail,
+    // Branching functions
+    createMessageBranch,
+    createMessageBranchAndContinue,
+    switchToNextAlternative,
+    switchToPrevAlternative,
+    getAlternativeInfo,
+    loadConversationMessages
   };
 }
 
@@ -656,5 +873,13 @@ export function useSubmitMessage() {
     }
   }
 
-  return { messages, conversation, updateConversation, conversations, activeMessage: assistantMessage, loading, submitMessage };
+  return { 
+    messages, 
+    conversation, 
+    updateConversation, 
+    conversations, 
+    activeMessage: assistantMessage, 
+    loading, 
+    submitMessage
+  };
 }

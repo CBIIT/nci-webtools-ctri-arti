@@ -105,6 +105,9 @@ export class Conversation extends BaseModel {
     this.tags = data.tags || [];
     this.archived = data.archived || false;
     this.starred = data.starred || false;
+    
+    // BRANCHING: Track which alternative is active for each base message
+    this.activeAlternatives = data.activeAlternatives || {}; // { baseMessageId: activeIndex }
   }
 
   /**
@@ -143,6 +146,10 @@ export class Message extends BaseModel {
     // Message state
     this.isStreaming = data.isStreaming || false;
     this.isComplete = data.isComplete !== undefined ? data.isComplete : true;
+    
+    // BRANCHING: Simple alternative tracking
+    this.baseMessageId = data.baseMessageId || null; // Points to original message if this is an alternative
+    this.alternativeIndex = data.alternativeIndex || 0; // 0 = original, 1+ = alternatives
   }
 }
 

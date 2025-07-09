@@ -13,7 +13,10 @@ const MIME_TYPES = {
   ".svg": "image/svg+xml",
 };
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ 
+  args: ["--enable-unsafe-webgpu"],
+  headless: true 
+});
 const page = await browser.newPage();
 
 // Capture all console output from client

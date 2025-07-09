@@ -1,3 +1,4 @@
+import { pipeline } from "@huggingface/transformers";
 import { HNSW } from "../utils/hnsw.js";
 
 /**
@@ -10,7 +11,7 @@ export class BaseEmbedder {
 
   /**
    * Generate embedding for text
-   * @param {string} text 
+   * @param {string} text
    * @returns {Promise<Float32Array>}
    */
   async embed(text) {
@@ -25,7 +26,7 @@ export class BaseEmbedder {
     return {
       name: this.constructor.name,
       dimensions: this.dimensions,
-      version: "1.0.0"
+      version: "1.0.0",
     };
   }
 }
@@ -40,35 +41,26 @@ export class TestEmbedder extends BaseEmbedder {
   }
 
   async embed(text) {
-    if (!text || typeof text !== 'string') {
+    if (!text || typeof text !== "string") {
       return new Float32Array(this.dimensions);
     }
 
     // Convert text to bytes (Node.js compatible)
-    let bytes;
-    if (typeof TextEncoder !== 'undefined') {
-      const encoder = new TextEncoder();
-      bytes = encoder.encode(text);
-    } else if (typeof Buffer !== 'undefined') {
-      bytes = Buffer.from(text, 'utf8');
-    } else {
-      // Fallback: convert to char codes
-      bytes = new Uint8Array(text.length);
-      for (let i = 0; i < text.length; i++) {
-        bytes[i] = text.charCodeAt(i) & 0xFF;
-      }
+    let bytes = new Uint8Array(text.length);
+    for (let i = 0; i < text.length; i++) {
+      bytes[i] = text.charCodeAt(i) & 0xff;
     }
-    
+
     // Create embedding array
     const embedding = new Float32Array(this.dimensions);
-    
+
     // Fill with normalized byte values, cycling through if text is shorter
     for (let i = 0; i < this.dimensions; i++) {
       const byteIndex = i % bytes.length;
       // Normalize byte value to [-1, 1] range
       embedding[i] = (bytes[byteIndex] - 127.5) / 127.5;
     }
-    
+
     return embedding;
   }
 
@@ -76,14 +68,14 @@ export class TestEmbedder extends BaseEmbedder {
     return {
       ...super.getMetadata(),
       type: "test",
-      description: "Simple byte-based embedder for testing"
+      description: "Simple byte-based embedder for testing",
     };
   }
 }
 
 /**
- * Placeholder for Transformers.js embedder
- * Would use models like all-MiniLM-L6-v2 in production
+ * Transformers.js embedder using Hugging Face models
+ * Uses models like all-MiniLM-L6-v2 for production embeddings
  */
 export class TransformersEmbedder extends BaseEmbedder {
   constructor(model = "Xenova/all-MiniLM-L6-v2", dimensions = 384) {
@@ -93,22 +85,42 @@ export class TransformersEmbedder extends BaseEmbedder {
   }
 
   async init() {
-    // In production, would initialize Transformers.js pipeline
-    // const { pipeline } = await import('@xenova/transformers');
-    // this.pipeline = await pipeline('feature-extraction', this.model);
-    throw new Error("TransformersEmbedder not implemented - requires @xenova/transformers");
+    if (this.pipeline) return;
+
+    try {
+      this.pipeline = await pipeline("feature-extraction", this.model);
+    } catch (error) {
+      throw new Error(`Failed to initialize TransformersEmbedder: ${error.message}`);
+    }
   }
 
   async embed(text) {
+    if (!text || typeof text !== "string") {
+      return new Float32Array(this.dimensions);
+    }
+
     if (!this.pipeline) {
       await this.init();
     }
-    
-    // In production, would use:
-    // const output = await this.pipeline(text, { pooling: 'mean', normalize: true });
-    // return new Float32Array(output.data);
-    
-    throw new Error("TransformersEmbedder not implemented");
+
+    try {
+      const output = await this.pipeline(text, { pooling: "mean", normalize: true });
+
+      // Convert tensor to nested array
+      const embeddings = output.tolist();
+
+      // Handle both single text and array cases
+      if (Array.isArray(embeddings[0])) {
+        // Multiple sentences - take first one
+        return new Float32Array(embeddings[0]);
+      } else {
+        // Single sentence
+        return new Float32Array(embeddings);
+      }
+    } catch (error) {
+      console.warn(`TransformersEmbedder failed for text "${text}":`, error);
+      return new Float32Array(this.dimensions);
+    }
   }
 
   getMetadata() {
@@ -116,7 +128,7 @@ export class TransformersEmbedder extends BaseEmbedder {
       ...super.getMetadata(),
       type: "transformers",
       model: this.model,
-      description: "Client-side Transformers.js embedder"
+      description: "Client-side Transformers.js embedder",
     };
   }
 }
@@ -133,17 +145,17 @@ export class APIEmbedder extends BaseEmbedder {
 
   async embed(text) {
     const headers = {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     };
-    
+
     if (this.apiKey) {
-      headers['Authorization'] = `Bearer ${this.apiKey}`;
+      headers["Authorization"] = `Bearer ${this.apiKey}`;
     }
 
     const response = await fetch(this.endpoint, {
-      method: 'POST',
+      method: "POST",
       headers,
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ text }),
     });
 
     if (!response.ok) {
@@ -159,7 +171,7 @@ export class APIEmbedder extends BaseEmbedder {
       ...super.getMetadata(),
       type: "api",
       endpoint: this.endpoint,
-      description: "Server-side API embedder"
+      description: "Server-side API embedder",
     };
   }
 }
@@ -175,7 +187,7 @@ export class EmbeddingService {
       efConstruction: 200,
       efSearch: 50,
       metric: "cosine",
-      ...hnswOptions
+      ...hnswOptions,
     });
     this.metadata = new Map(); // Store original text/metadata for each ID
   }
@@ -210,16 +222,16 @@ export class EmbeddingService {
     }
     const queryEmbedding = await this.embedder.embed(query);
     const results = this.hnsw.search(queryEmbedding, k, ef);
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       ...result,
-      metadata: this.metadata.get(result.id)
+      metadata: this.metadata.get(result.id),
     }));
   }
 
   /**
    * Get item by ID
-   * @param {string} id 
+   * @param {string} id
    * @returns {object|null}
    */
   get(id) {
@@ -228,7 +240,7 @@ export class EmbeddingService {
 
   /**
    * Remove item from index
-   * @param {string} id 
+   * @param {string} id
    */
   remove(id) {
     // Note: HNSW doesn't support removal, would need to rebuild
@@ -246,9 +258,9 @@ export class EmbeddingService {
         elementCount: this.hnsw.elementCount,
         M: this.hnsw.M,
         efConstruction: this.hnsw.efConstruction,
-        efSearch: this.hnsw.efSearch
+        efSearch: this.hnsw.efSearch,
       },
-      totalItems: this.metadata.size
+      totalItems: this.metadata.size,
     };
   }
 
@@ -260,14 +272,14 @@ export class EmbeddingService {
     return {
       embedder: this.embedder.getMetadata(),
       hnsw: this.hnsw.toJSON(),
-      metadata: Object.fromEntries(this.metadata)
+      metadata: Object.fromEntries(this.metadata),
     };
   }
 
   /**
    * Restore service from serialized data
-   * @param {object} data 
-   * @param {BaseEmbedder} embedder 
+   * @param {object} data
+   * @param {BaseEmbedder} embedder
    * @returns {EmbeddingService}
    */
   static fromJSON(data, embedder) {

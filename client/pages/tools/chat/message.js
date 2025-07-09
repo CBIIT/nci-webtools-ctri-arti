@@ -1,9 +1,10 @@
-import { createSignal, For, Show, Index } from "solid-js";
+import { createSignal, For, Show, Index, createEffect, onMount, createResource } from "solid-js";
 import html from "solid-js/html";
 import { stringify } from "yaml";
 import { parse } from "marked";
 import { downloadText } from "/utils/files.js";
 import { getMarked } from "/utils/utils.js";
+import { xmlToJson } from "/utils/xml.js";
 
 const marked = getMarked();
 
@@ -11,10 +12,148 @@ export default function Message(p) {
   const [dialog, setDialog] = createSignal(null);
   const [visible, setVisible] = createSignal({});
   const toggleVisible = (key) => setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
+  
+  // Branching state
+  const [isEditing, setIsEditing] = createSignal(false);
+  const [editText, setEditText] = createSignal("");
+  
+  // Use resource for alternative info - much cleaner than signal+effect
+  const [alternativeInfo] = createResource(
+    // Source function - returns null when we don't want to fetch
+    () => {
+      const message = p.message;
+      const messageId = message?.id;
+      console.log('DEBUG: Resource source function called for message:', messageId, 'role:', message?.role);
+      
+      // Only return non-null when we want to fetch alternative info
+      if (p.getAlternativeInfo && message?.role === 'user' && messageId) {
+        return { id: messageId, index: p.index };
+      }
+      console.log('DEBUG: Not loading alternative info - conditions not met');
+      return null;
+    },
+    // Fetch function - runs when source changes and isn't null
+    async (source) => {
+      console.log('DEBUG: Loading alternative info for message index:', source.index);
+      try {
+        const info = await p.getAlternativeInfo(source.index);
+        console.log('DEBUG: Alternative info loaded:', info);
+        return info;
+      } catch (error) {
+        console.error('DEBUG: Failed to load alternative info:', error);
+        throw error; // Let SolidJS resource handle errors
+      }
+    }
+  );
   const getToolResult = (toolUse) =>
     p.messages?.find((m) => m.content?.find((c) => c?.toolResult?.toolUseId === toolUse?.toolUseId))?.content[0].toolResult?.content[0]
       ?.json?.results;
   const getSearchResults = (results) => results?.web && [...results.web, ...results.news];
+  
+  // Branching functions
+  function startEdit() {
+    const messageText = p.message.content?.[0]?.text || "";
+    console.log('startEdit called with messageText:', messageText);
+    
+    // Extract clean text from XML structure if present
+    let cleanText = messageText;
+    try {
+      // Try to parse as XML to extract just the message text
+      if (messageText.includes('<message>')) {
+        const parsed = xmlToJson(messageText);
+        // Navigate the parsed structure to get the actual text
+        if (parsed.message?.text?._text) {
+          cleanText = parsed.message.text._text;
+        } else if (parsed.message?._text) {
+          cleanText = parsed.message._text;
+        } else if (parsed.message?.text && Array.isArray(parsed.message.text) && parsed.message.text[0]?._text) {
+          cleanText = parsed.message.text[0]._text;
+        } else {
+          // Try to find any text content in the structure
+          const findText = (obj) => {
+            if (typeof obj === 'string') return obj;
+            if (obj?._text) return obj._text;
+            if (Array.isArray(obj)) {
+              for (const item of obj) {
+                const result = findText(item);
+                if (result) return result;
+              }
+            } else if (typeof obj === 'object' && obj !== null) {
+              for (const value of Object.values(obj)) {
+                const result = findText(value);
+                if (result) return result;
+              }
+            }
+            return null;
+          };
+          const foundText = findText(parsed.message);
+          cleanText = foundText || messageText;
+        }
+      } else {
+        // Fallback: remove metadata tags
+        cleanText = messageText.replace(/<metadata[\s\S]*?<\/metadata>/gi, '').trim();
+        // Also remove message tags if present
+        cleanText = cleanText.replace(/<\/?message>/gi, '').trim();
+      }
+    } catch (error) {
+      console.error('Failed to parse message XML:', error);
+      // If parsing fails, try simple text extraction
+      cleanText = messageText.replace(/<metadata[\s\S]*?<\/metadata>/gi, '').replace(/<\/?message>/gi, '').trim();
+    }
+    
+    console.log('Extracted cleanText:', cleanText);
+    setEditText(cleanText);
+    console.log('Set editText and isEditing to true');
+    setIsEditing(true);
+  }
+  
+  function cancelEdit() {
+    setIsEditing(false);
+    setEditText("");
+  }
+  
+  async function saveEdit() {
+    const currentEditText = editText().trim();
+    console.log('saveEdit called with editText:', currentEditText);
+    
+    if (!currentEditText) {
+      console.log('editText is empty, exiting saveEdit');
+      return;
+    }
+    
+    try {
+      console.log('Calling createMessageBranchAndContinue with:', p.index, currentEditText);
+      
+      // Close dialog immediately - don't wait for LLM
+      setIsEditing(false);
+      setEditText("");
+      
+      // Run branching in background
+      p.createMessageBranchAndContinue?.(p.index, currentEditText);
+    } catch (error) {
+      console.error('Failed to save edit:', error);
+    }
+  }
+  
+  async function navigateNext() {
+    console.log('navigateNext called for index:', p.index);
+    try {
+      await p.switchToNextAlternative?.(p.index);
+      console.log('switchToNextAlternative completed');
+    } catch (error) {
+      console.error('Failed to navigate to next alternative:', error);
+    }
+  }
+  
+  async function navigatePrev() {
+    console.log('navigatePrev called for index:', p.index);
+    try {
+      await p.switchToPrevAlternative?.(p.index);
+      console.log('switchToPrevAlternative completed');
+    } catch (error) {
+      console.error('Failed to navigate to previous alternative:', error);
+    }
+  }
 
   function openFeedback(feedback, comment) {
     let d = dialog();
@@ -66,10 +205,86 @@ export default function Message(p) {
         if (c.text !== undefined) { // include empty text to start message
           return html`
             <div class="position-relative hover-visible-parent">
-              <div
-                class="p-2 markdown"
-                classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
-                innerHTML=${() => marked.parse(c.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, '')}></div>
+              <!-- Edit mode for user messages -->
+              <${Show} when=${() => p.message.role === "user" && isEditing()}>
+                <div class="p-2 bg-light rounded">
+                  <textarea 
+                    class="form-control mb-2" 
+                    rows="3"
+                    value=${editText}
+                    onInput=${(e) => {
+                      console.log('Textarea input changed to:', e.target.value);
+                      setEditText(e.target.value);
+                    }}
+                    placeholder="Edit your message..."
+                  ></textarea>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-primary" onClick=${saveEdit}>Save</button>
+                    <button class="btn btn-sm btn-secondary" onClick=${cancelEdit}>Cancel</button>
+                  </div>
+                </div>
+              <//>
+
+              <!-- Normal message display -->
+              <${Show} when=${() => !(p.message.role === "user" && isEditing())}>
+                <div
+                  class="p-2 markdown"
+                  classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
+                  innerHTML=${() => marked.parse(c.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, '')}></div>
+              <//>
+
+              <!-- User message controls (edit + branch navigation) -->
+              <${Show} when=${() => p.message?.role === "user" && !isEditing()}>
+                <div class="text-end end-0 top-0 opacity-50 position-absolute d-flex">
+                  <!-- Debug info -->
+                  
+                
+                  <!-- Branch navigation -->
+                  <${Show} when=${() => !alternativeInfo.loading && alternativeInfo() && alternativeInfo().hasAlternatives}>
+                    <div class="me-2 d-flex align-items-center">
+                      <button
+                        class="btn btn-sm btn-outline-light border-0 hover-visible"
+                        classList=${() => ({ disabled: !alternativeInfo()?.canGoPrev })}
+                        onClick=${navigatePrev}
+                        title="Previous alternative">
+                        ←
+                      </button>
+                      <small class="text-muted mx-1 hover-visible">
+                        ${() => (alternativeInfo()?.currentIndex || 0) + 1}/${() => alternativeInfo()?.totalCount || 1}
+                      </small>
+                      <button
+                        class="btn btn-sm btn-outline-light border-0 hover-visible"
+                        classList=${() => ({ disabled: !alternativeInfo()?.canGoNext })}
+                        onClick=${navigateNext}
+                        title="Next alternative">
+                        →
+                      </button>
+                    </div>
+                  <//>
+                  <!-- Edit button -->
+                  <button
+                    class="btn btn-sm btn-outline-light border-0 hover-visible"
+                    onClick=${startEdit}
+                    title="Edit message">
+                    ✏️
+                  </button>
+                </div>
+
+
+                <pre style="font-size: 10px; background: yellow;">${() => JSON.stringify({
+                    message: p.message,
+                    index: p.index,
+                    hasGetAlternativeInfo: !!p.getAlternativeInfo,
+                    alternativeInfo: alternativeInfo(),
+                    resourceState: {
+                      loading: alternativeInfo.loading,
+                      error: alternativeInfo.error ? alternativeInfo.error.message : null,
+                      state: alternativeInfo.state
+                    }
+                  }, null, 2)}</pre>
+              <//>
+
+              <!-- Assistant message controls (feedback + download) -->
               <${Show} when=${() => p.message?.role !== "user"}>
                 <div class="text-end end-0 top-0 opacity-50 position-absolute">
                   <button

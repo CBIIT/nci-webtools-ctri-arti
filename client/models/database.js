@@ -330,16 +330,29 @@ export class ConversationDB {
     const existing = await this.getConversation(id);
     if (!existing) throw new Error(`Conversation ${id} not found`);
     
+    // Check if title will change and get the old title before updating
+    const titleWillChange = updates.title && updates.title !== existing.title;
+    const oldTitle = existing.title;
+    
     existing.update(updates);
     await this.db.put("conversations", existing.toJSON());
     
     // Update embeddings if title changed
-    if (updates.title) {
-      await this.embeddingService.add(
-        `conv:${id}`,
-        existing.title,
-        { type: "conversation", id, projectId: existing.projectId }
-      );
+    if (titleWillChange) {
+      // Generate new embedding for updated title
+      const newEmbedding = await this.embeddingService.embedder.embed(existing.title);
+      
+      // Update the vector in HNSW (smart reconnection based on similarity)
+      this.embeddingService.hnsw.update(`conv:${id}`, newEmbedding, 0.1);
+      
+      // Update metadata
+      this.embeddingService.metadata.set(`conv:${id}`, {
+        text: existing.title,
+        type: "conversation",
+        id,
+        projectId: existing.projectId
+      });
+      
       await this.saveEmbeddings();
     }
     
@@ -463,6 +476,202 @@ export class ConversationDB {
     await this.db.delete("messages", id);
     this.embeddingService.remove(`msg:${id}`);
     await this.saveEmbeddings();
+  }
+
+  // ===== BRANCHING METHODS =====
+
+  /**
+   * Create message alternative
+   * @param {string} baseMessageId - ID of the original message
+   * @param {Array} newContent - New content for the alternative
+   * @returns {Promise<Message>}
+   */
+  async createMessageAlternative(baseMessageId, newContent) {
+    const baseMessage = await this.db.get("messages", baseMessageId);
+    if (!baseMessage) {
+      throw new Error(`Message ${baseMessageId} not found`);
+    }
+
+    // Get existing alternatives to determine next index
+    const alternatives = await this.getMessageAlternatives(baseMessageId);
+    const nextIndex = alternatives.length + 1;
+
+    // Create new alternative message
+    const alternative = new Message({
+      conversationId: baseMessage.conversationId,
+      role: baseMessage.role,
+      content: newContent,
+      baseMessageId: baseMessageId,
+      alternativeIndex: nextIndex
+    });
+
+    await this.db.add("messages", alternative.toJSON());
+
+    // Update conversation counts
+    const conversation = await this.getConversation(baseMessage.conversationId);
+    if (conversation) {
+      conversation.addMessage();
+      await this.db.put("conversations", conversation.toJSON());
+    }
+
+    // Add to embeddings for search
+    const searchableText = extractSearchableText(alternative.content);
+    if (searchableText) {
+      await this.embeddingService.add(
+        `msg:${alternative.id}`,
+        searchableText,
+        { 
+          type: "message", 
+          id: alternative.id, 
+          conversationId: baseMessage.conversationId, 
+          role: alternative.role,
+          timestamp: alternative.timestamp,
+          isAlternative: true,
+          baseMessageId: baseMessageId
+        }
+      );
+      await this.saveEmbeddings();
+    }
+
+    return alternative;
+  }
+
+  /**
+   * Get all alternatives for a base message
+   * @param {string} baseMessageId 
+   * @returns {Promise<Message[]>}
+   */
+  async getMessageAlternatives(baseMessageId) {
+    const allMessages = await this.db.getAll("messages");
+    return allMessages
+      .filter(m => m.baseMessageId === baseMessageId)
+      .map(m => Message.fromJSON(m))
+      .sort((a, b) => a.alternativeIndex - b.alternativeIndex);
+  }
+
+  /**
+   * Get conversation messages with active alternatives
+   * @param {string} conversationId 
+   * @returns {Promise<Message[]>}
+   */
+  async getConversationMessages(conversationId) {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation) return [];
+
+    const allMessages = await this.getMessages(conversationId);
+    
+    // Group by base message (messages without baseMessageId are base messages)
+    const baseMessages = allMessages.filter(m => !m.baseMessageId);
+    const messageGroups = {};
+    
+    for (const base of baseMessages) {
+      messageGroups[base.id] = allMessages
+        .filter(m => m.baseMessageId === base.id || m.id === base.id)
+        .sort((a, b) => a.alternativeIndex - b.alternativeIndex);
+    }
+    
+    // Build conversation using active alternatives
+    return baseMessages.map(base => {
+      const alternatives = messageGroups[base.id] || [base];
+      const activeIndex = conversation.activeAlternatives?.[base.id] || 0;
+      return alternatives[activeIndex] || base;
+    });
+  }
+
+  /**
+   * Set active alternative for a message
+   * @param {string} conversationId 
+   * @param {string} baseMessageId 
+   * @param {number} alternativeIndex 
+   */
+  async setActiveAlternative(conversationId, baseMessageId, alternativeIndex) {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation) {
+      throw new Error(`Conversation ${conversationId} not found`);
+    }
+
+    // Validate that the alternative exists
+    const baseMessage = await this.db.get("messages", baseMessageId);
+    if (!baseMessage) {
+      throw new Error(`Message ${baseMessageId} not found`);
+    }
+
+    if (alternativeIndex > 0) {
+      const alternatives = await this.getMessageAlternatives(baseMessageId);
+      if (alternativeIndex > alternatives.length) {
+        throw new Error(`Alternative index ${alternativeIndex} not found for message ${baseMessageId}`);
+      }
+    }
+
+    const newActiveAlternatives = {
+      ...conversation.activeAlternatives,
+      [baseMessageId]: alternativeIndex
+    };
+
+    await this.updateConversation(conversationId, { 
+      activeAlternatives: newActiveAlternatives 
+    });
+  }
+
+  /**
+   * Switch to next alternative for a message
+   * @param {string} conversationId 
+   * @param {string} baseMessageId 
+   * @returns {Promise<boolean>} - true if switched, false if already at last
+   */
+  async switchToNextAlternative(conversationId, baseMessageId) {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation) return false;
+
+    const alternatives = await this.getMessageAlternatives(baseMessageId);
+    const currentIndex = conversation.activeAlternatives?.[baseMessageId] || 0;
+    const maxIndex = alternatives.length; // alternatives.length because original is index 0
+
+    if (currentIndex < maxIndex) {
+      await this.setActiveAlternative(conversationId, baseMessageId, currentIndex + 1);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Switch to previous alternative for a message
+   * @param {string} conversationId 
+   * @param {string} baseMessageId 
+   * @returns {Promise<boolean>} - true if switched, false if already at first
+   */
+  async switchToPrevAlternative(conversationId, baseMessageId) {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation) return false;
+
+    const currentIndex = conversation.activeAlternatives?.[baseMessageId] || 0;
+
+    if (currentIndex > 0) {
+      await this.setActiveAlternative(conversationId, baseMessageId, currentIndex - 1);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Get information about alternatives for a message
+   * @param {string} conversationId 
+   * @param {string} baseMessageId 
+   * @returns {Promise<Object>}
+   */
+  async getAlternativeInfo(conversationId, baseMessageId) {
+    const conversation = await this.getConversation(conversationId);
+    const alternatives = await this.getMessageAlternatives(baseMessageId);
+    const currentIndex = conversation?.activeAlternatives?.[baseMessageId] || 0;
+    const totalCount = alternatives.length + 1; // +1 for original
+
+    return {
+      currentIndex,
+      totalCount,
+      canGoPrev: currentIndex > 0,
+      canGoNext: currentIndex < alternatives.length,
+      hasAlternatives: alternatives.length > 0
+    };
   }
 
   // ===== RESOURCE METHODS =====

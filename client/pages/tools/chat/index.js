@@ -6,7 +6,20 @@ import { useChat } from "./hooks.js";
 import Message from "./message.js";
 
 export default function Page() {
-  const { conversation, updateConversation, deleteConversation, conversations, messages, loading, submitMessage } = useChat();
+  const { 
+    conversation, 
+    updateConversation, 
+    deleteConversation, 
+    conversations, 
+    messages, 
+    loading, 
+    submitMessage,
+    createMessageBranch,
+    createMessageBranchAndContinue,
+    switchToNextAlternative,
+    switchToPrevAlternative,
+    getAlternativeInfo
+  } = useChat();
   const [toggles, setToggles] = createSignal({});
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -91,12 +104,17 @@ export default function Page() {
           <h1 class="text-gradient fw-bold font-title mb-2">Welcome</h1>
           <div class="text-secondary fw-semibold">How can we help you today?</div>
         </div>
-        <${Index} each=${messages}>
+        <${For} each=${messages}>
           ${(message, index) => html`
             <${Message}
               message=${message}
               index=${index}
               messages=${messages}
+              createMessageBranch=${createMessageBranch}
+              createMessageBranchAndContinue=${createMessageBranchAndContinue}
+              switchToNextAlternative=${switchToNextAlternative}
+              switchToPrevAlternative=${switchToPrevAlternative}
+              getAlternativeInfo=${getAlternativeInfo}
               class="small markdown shadow-sm rounded mb-3 p-2 position-relative" />
           `}
         <//>
