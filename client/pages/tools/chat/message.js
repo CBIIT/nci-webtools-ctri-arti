@@ -165,7 +165,7 @@ export default function Message(p) {
           const contents = () => localStorage.getItem(`file:${filename()}`) || c.toolUse?.input?.file_text || c.toolUse?.input?.new_str || "";
 
           return html`<details
-            class="w-100 overflow-auto p-2 rounded mvh-25"
+            class="w-100 overflow-auto p-2 rounded hover-visible-parent position-relative"
             classList=${() => ({ "shadow-sm": visible()[p.index] })}
             open=${() => visible()[p.index]}>
             <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
