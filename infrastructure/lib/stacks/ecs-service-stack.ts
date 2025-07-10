@@ -194,7 +194,7 @@ export class EcsServiceStack extends Stack {
           port: "443",
           protocol: "HTTPS",
           permanent: true,
-          path: "#{path}",
+          path: "/#{path}",
           query: "#{query}",
         }),
         priority: props.priority + 1,
