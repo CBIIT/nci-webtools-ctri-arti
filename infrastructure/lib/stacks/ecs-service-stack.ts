@@ -17,6 +17,7 @@ export interface EcsServiceStackProps extends StackProps {
   subnets: string[];
 
   domainName: string;
+  altDomainName?: string;
 
   // default resources
   desiredCount: number;
@@ -180,7 +181,9 @@ export class EcsServiceStack extends Stack {
     listener.addTargetGroups("ecs-service-listener-targets", {
       targetGroups: [targetGroup],
       priority: props.priority,
-      conditions: [elbv2.ListenerCondition.hostHeaders([props.domainName])],
+      conditions: [
+        elbv2.ListenerCondition.hostHeaders([props.domainName, props.altDomainName].filter(e => e !== undefined)), // filter out undefined domain names
+      ], // filter out undefined conditions
     });
 
     service.attachToApplicationTargetGroup(targetGroup);
