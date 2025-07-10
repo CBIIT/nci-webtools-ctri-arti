@@ -182,9 +182,25 @@ export class EcsServiceStack extends Stack {
       targetGroups: [targetGroup],
       priority: props.priority,
       conditions: [
-        elbv2.ListenerCondition.hostHeaders([props.domainName, props.altDomainName].filter(e => e !== undefined)), // filter out undefined domain names
+        elbv2.ListenerCondition.hostHeaders([props.domainName]), // filter out undefined domain names
       ], // filter out undefined conditions
     });
+
+    // redirect, preserve path and query string
+    if (props.altDomainName) {
+      listener.addAction("ecs-service-listener-redirect", {
+        action: elbv2.ListenerAction.redirect({
+          host: props.domainName,
+          port: "443",
+          protocol: "HTTPS",
+          permanent: true,
+          path: "#{path}",
+          query: "#{query}",
+        }),
+        priority: props.priority + 1,
+        conditions: [elbv2.ListenerCondition.hostHeaders([props.altDomainName])],
+      });
+    }
 
     service.attachToApplicationTargetGroup(targetGroup);
 
