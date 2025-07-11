@@ -375,8 +375,11 @@ export default function Message(p) {
         }
 
         else if (c.toolUse?.name === "editor") {
+          const filename = () => c.toolUse?.input?.path || "untitled.txt";
+          const contents = () => localStorage.getItem(`file:${filename()}`) || c.toolUse?.input?.file_text || c.toolUse?.input?.new_str || "";
+
           return html`<details
-            class="w-100 overflow-auto p-2 rounded mvh-25"
+            class="w-100 overflow-auto p-2 rounded hover-visible-parent position-relative"
             classList=${() => ({ "shadow-sm": visible()[p.index] })}
             open=${() => visible()[p.index]}>
             <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
@@ -387,9 +390,16 @@ export default function Message(p) {
                 insert: "Updating",
                 undo_edit: "Undoing Edit",
               }[c.toolUse?.input?.command])}  
-              File: ${() => c.toolUse?.input?.path}
+              File: ${filename}
             </summary>
-            <div class="text-prewrap">${() => c.toolUse?.input?.new_str}</div>
+            <div class="text-end end-0 top-0 opacity-50 position-absolute">
+              <button
+                class="btn btn-sm btn-outline-light border-0 hover-visible"
+                onClick=${() => downloadText(filename(), contents())}>
+                💾
+              </button>
+            </div>
+            <div class="text-prewrap">${contents}</div>
             <div class="text-prewrap" innerHTML=${() => parse(getToolResult(c.toolUse) || "")?.trim()} />
           </details>`;
         }

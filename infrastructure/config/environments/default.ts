@@ -32,6 +32,7 @@ const config: Config = {
     subnets,
     // certificate: process.env.CERTIFICATE_ARN || "",
     domainName: process.env.DOMAIN_NAME || "",
+    altDomainName: process.env.ALT_DOMAIN_NAME || "",
     priority: 100,
     // domainZone: process.env.DOMAIN_ZONE || "",
     desiredCount: 1,
