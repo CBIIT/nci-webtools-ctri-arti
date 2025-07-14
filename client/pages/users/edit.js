@@ -16,6 +16,7 @@ function UserEdit() {
     remaining: 0,
     noLimit: false,
   });
+  const [originalLimit, setOriginalLimit] = createSignal(0);
   const [generateApiKey, setGenerateApiKey] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
@@ -44,6 +45,7 @@ function UserEdit() {
         // Set noLimit flag based on limit being null
         data.noLimit = data.limit === null;
         setUser(data);
+        setOriginalLimit(data.limit || 0);
         return data;
       });
   });
@@ -64,6 +66,10 @@ function UserEdit() {
       }
       delete userData.noLimit; // Remove the UI-only property
 
+      if (userData.limit !== originalLimit()) {
+        userData.remaining = userData.limit; // Reset remaining to if limit changes
+      }
+
       // Include generateApiKey flag if checked
       if (generateApiKey()) {
         userData.generateApiKey = true;
@@ -81,6 +87,8 @@ function UserEdit() {
       }
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
+      setUser((prev) => ({ ...prev, remaining: userData.remaining })); // Update remaining on UI
+      setOriginalLimit(userData.limit || 0); // Reset original limit to new value
     } catch (err) {
       console.error("Error saving user:", err);
       alert(err.message || "An error occurred while saving the user");
