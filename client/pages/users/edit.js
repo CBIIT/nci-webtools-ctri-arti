@@ -317,31 +317,29 @@ function UserEdit() {
                 <label class="form-check-label" for="noLimitCheckbox">Unlimited</label>
               </div>
 
-              <${Show} when=${() => !user().noLimit}>
-                <div class="input-group mb-2">
-                  <span class="input-group-text">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="form-control"
-                    id="limit"
-                    value=${() => user().limit || 0}
-                    onInput=${(e) => handleInputChange("limit", parseFloat(e.target.value) || 0)}
-                    aria-label="Weekly cost limit" />
-                  <${Show} when=${() => params.id}>
-                    <button 
-                      type="button" 
-                      class="btn btn-outline-primary"
-                      onClick=${resetUserLimit}>
-                      Reset
-                    </button>
-                  <//>
-                </div>
-                <div class="small text-muted">
-                  Remaining: $${() => (user().remaining !== null ? parseFloat(user().remaining).toFixed(2) : "N/A")}
-                </div>
-              <//>
+              <div class="input-group mb-2">
+                <span class="input-group-text">$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="form-control"
+                  id="limit"
+                  value=${() => user().limit || 0}
+                  onInput=${(e) => handleInputChange("limit", parseFloat(e.target.value) || 0)}
+                  aria-label="Weekly cost limit" />
+                <${Show} when=${() => params.id}>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-primary"
+                    onClick=${resetUserLimit}>
+                    Reset
+                  </button>
+                <//>
+              </div>
+              <div class="small text-muted">
+                Remaining: $${() => (user().remaining !== null ? parseFloat(user().remaining).toFixed(2) : "N/A")}
+              </div>
             </div>
           </div>
 
