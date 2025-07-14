@@ -12,7 +12,6 @@ Quote the exact sections from the document that you will be using to extract inf
 2. JSON OUTPUT
 Return a valid JSON object with this exact typed structure:
 
-json\`\`\`
 {
 "Title": "Exact title of the study"
 "PI": "Full name and credentials of the principal investigator as shown in the protocol (e.g., Jane Smith, M.D., Ph.D.)"
@@ -121,7 +120,6 @@ json\`\`\`
 
 "Confidentiality_Drug_Device":"If there is a drug or device, return this statement, replacing [Drug_Device] with the name of the drug or device, but keeping the rest of the text exactly as writtern: ", and the drug company who makes [Drug_Device]"."
 }
-\`\`\`
 
 EXAMPLE OUTPUT
 REFERENCES
@@ -151,6 +149,7 @@ Return the response in two sections:
 Quote the exact sections from the document that you will be using to extract information. Include relevant page numbers, section headers, or paragraph identifiers when available.
 2. JSON OUTPUT
 Return a valid JSON object with this exact typed structure:
+json\`\`\`
 {
 "Title": "Exact title of the study"
 "PI": "Full name and credentials of the principal investigator as shown in the protocol (e.g., Jane Smith, M.D., Ph.D.)"
@@ -211,6 +210,7 @@ Return a valid JSON object with this exact typed structure:
 "Confidentiality_Manufacturer":"If there is a manufacturer of a drug or device, return this statement, replacing [Manufacturer] with the manufacturer name, but keeping the rest of the text exactly as writtern: "Qualified people from [Manufacturer]"."
 "Confidentiality_Drug_Device":"If there is a drug or device, return this statement, replacing [Drug_Device] with the name of the drug or device, but keeping the rest of the text exactly as writtern: ", and the drug company who makes [Drug_Device]"."
 }
+\`\`\`
 EXAMPLE OUTPUT
 REFERENCES
 \`\`\`text Section 3.1 "Study Objectives": "The primary objective is to evaluate the safety and efficacy of..." Section 4.2 "Inclusion Criteria": "Participants must be 18 years or older with confirmed diagnosis of..." Section 6.1 "Study Procedures": "Participants will undergo the following procedures: blood collection..." Section 8.3 "Risks and Benefits": "Potential risks include fatigue, headache, and nausea..."
