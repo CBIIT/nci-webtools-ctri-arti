@@ -344,8 +344,10 @@ ul {
   visibility: visible;
 }
 
-.navbar {
+.navbar, .nav-link {
   --bs-navbar-padding-y: 0;
+  --bs-navbar-nav-link-padding-x: .5rem;
+  --bs-navbar-nav-link-padding-y: .3rem;
 }
 
 .navbar-nav {
@@ -377,9 +379,7 @@ ul {
 }
 
 .nav-link.dropdown-link {
-  --bs-navbar-nav-link-dropdown-link-padding-y: 0.3rem;
-  --bs-navbar-nav-link-dropdown-link-padding-x: 0.5rem;
-  padding: var(--bs-navbar-nav-link-dropdown-link-padding-y) var(--bs-navbar-nav-link-dropdown-link-padding-x);
+  padding: var(--bs-navbar-nav-link-padding-y) var(--bs-navbar-nav-link-padding-x);
 }
 
 .nav-link.dropdown-link.active {
