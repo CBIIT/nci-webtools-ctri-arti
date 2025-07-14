@@ -16,7 +16,6 @@ function UserEdit() {
     remaining: 0,
     noLimit: false,
   });
-  const [originalUser, setOriginalUser] = createSignal({ ...user() });
   const [generateApiKey, setGenerateApiKey] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
@@ -38,7 +37,6 @@ function UserEdit() {
         // Set noLimit flag based on limit being null
         data.noLimit = data.limit === null;
         setUser(data);
-        setOriginalUser(data);
         return data;
       });
   });
