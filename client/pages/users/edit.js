@@ -22,6 +22,13 @@ function UserEdit() {
   const [resetMessage, setResetMessage] = createSignal("");
   const [showResetMessage, setShowResetMessage] = createSignal(false);
 
+  // Default value mapping based on role ID
+  const DEFAULT_ROLE_LIMITS = {
+    1: { limit: null, remaining: 0, noLimit: true }, // Admin
+    2: { limit: 10, remaining: 10, noLimit: false }, // Super Admin
+    3: { limit: 5, remaining: 5, noLimit: false }, // User
+  };
+
   // Fetch roles data using resource
   const [roles] = createResource(() => fetch("/api/admin/roles").then((res) => res.json()));
 
@@ -84,7 +91,7 @@ function UserEdit() {
 
   function handleRoleChange(roleId) {
     // Simply update the role ID without changing limit settings
-    setUser((prev) => ({ ...prev, roleId }));
+    setUser((prev) => ({ ...prev, roleId, ...DEFAULT_ROLE_LIMITS[roleId] || {} }));
   }
 
   function handleInputChange(field, value) {
