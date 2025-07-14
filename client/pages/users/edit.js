@@ -79,13 +79,13 @@ function UserEdit() {
         const data = await response.json();
         throw new Error(data.error || "Failed to save user");
       }
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
       console.error("Error saving user:", err);
       alert(err.message || "An error occurred while saving the user");
     } finally {
       setSaving(false);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
     }
   }
 
