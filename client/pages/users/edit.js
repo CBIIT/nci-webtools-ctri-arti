@@ -102,7 +102,7 @@ function UserEdit() {
     setUser((prev) => ({
       ...prev,
       noLimit: checked,
-      limit: checked ? null : prev.limit || 5,
+      limit: checked ? null : DEFAULT_ROLE_LIMITS[prev.roleId]?.limit || 0,
     }));
   }
 
