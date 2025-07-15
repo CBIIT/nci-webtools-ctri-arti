@@ -87,7 +87,6 @@ function UserEdit() {
       }
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-      setUser((prev) => ({ ...prev, remaining: userData.remaining })); // Update remaining on UI
       setOriginalLimit(userData.limit || 0); // Reset original limit to new value
     } catch (err) {
       console.error("Error saving user:", err);
@@ -139,9 +138,6 @@ function UserEdit() {
       }
       
       const data = await response.json();
-      
-      // Update the user data with the reset values
-      setUser(prev => ({ ...prev, remaining: data.user.remaining }));
       
       // Show success message
       setResetMessage("Weekly limit has been reset successfully.");
@@ -346,9 +342,6 @@ function UserEdit() {
                     Reset
                   </button>
                 <//>
-              </div>
-              <div class="small text-muted">
-                Remaining: $${() => (!user().noLimit && user().remaining !== null ? parseFloat(user().remaining).toFixed(2) : "N/A")}
               </div>
             </div>
           </div>
