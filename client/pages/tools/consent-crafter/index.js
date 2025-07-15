@@ -4,36 +4,20 @@ import { parseDocument } from "/utils/parsers.js";
 import { readFile } from "/utils/files.js";
 import { createReport } from "docx-templates";
 import yaml from "yaml";
+import { templateConfigs, getTemplateConfigsByCategory, getPrompt } from "./config.js";
 
 export default function Page() {
   const [inputText, setInputText] = createSignal("");
   const [outputText, setOutputText] = createSignal("");
   const [model, setModel] = createSignal("us.anthropic.claude-sonnet-4-20250514-v1:0");
-  const [customSystemPrompt, setCustomSystemPrompt] = createSignal(defaultSystemPrompt);
+  const [customSystemPrompt, setCustomSystemPrompt] = createSignal("");
   const [customTemplate, setCustomTemplate] = createSignal();
-  const [promptTemplates, setPromptTemplates] = createSignal(defaultPromptTemplates);
   const [selectedTemplates, setSelectedTemplates] = createSignal([]);
   const [generatedDocuments, setGeneratedDocuments] = createSignal({});
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
-  // Create template groups from available prompt templates
-  const templateGroups = () => {
-    const templates = promptTemplates();
-    const groups = {};
-
-    Object.entries(templates).forEach(([id, template]) => {
-      const category = template.category || "Other";
-      if (!groups[category]) {
-        groups[category] = { label: category, options: [] };
-      }
-      groups[category].options.push({
-        value: id,
-        disabled: template.disabled === true,
-      });
-    });
-
-    return Object.values(groups);
-  };
+  // Get template groups from config
+  const templateGroups = () => getTemplateConfigsByCategory();
 
   async function handleFileSelect(event) {
     const input = event.target;
@@ -56,7 +40,6 @@ export default function Page() {
 
   async function processSelectedTemplates(text) {
     const selected = selectedTemplates();
-    const templates = promptTemplates();
 
     // Build list of templates to process (selected + custom if available)
     const templatesToProcess = [...selected];
@@ -77,19 +60,19 @@ export default function Page() {
     // Process all templates in parallel
     const promises = templatesToProcess.map(async (templateId) => {
       try {
-        let template, templateFile, systemPrompt, defaultOutputData;
+        let templateFile, systemPrompt, defaultOutputData;
 
         if (templateId === "custom") {
           // Handle custom template
           systemPrompt = customSystemPrompt();
-          defaultOutputData = defaultOutput; // Use default output structure for custom
+          defaultOutputData = templateConfigs["nih-cc-adult-healthy"].defaultOutput; // Use NIH consent output structure for custom
           templateFile = customTemplate();
         } else {
           // Handle predefined templates
-          template = templates[templateId];
-          systemPrompt = template.systemPrompt;
-          defaultOutputData = template.defaultOutput;
-          templateFile = await fetch(template.templateUrl).then((res) => res.arrayBuffer());
+          const config = templateConfigs[templateId];
+          systemPrompt = await getPrompt(templateId);
+          defaultOutputData = config.defaultOutput;
+          templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
         }
 
         // Extract data using AI
@@ -134,9 +117,8 @@ export default function Page() {
     if (templateId === "custom") {
       filename = "custom-document.docx";
     } else {
-      const templates = promptTemplates();
-      const template = templates[templateId];
-      filename = template.filename;
+      const config = templateConfigs[templateId];
+      filename = config.filename;
     }
 
     const url = URL.createObjectURL(doc.blob);
@@ -178,8 +160,7 @@ export default function Page() {
     setInputText("");
     setOutputText("");
     setCustomTemplate(null);
-    setCustomSystemPrompt(defaultSystemPrompt);
-    setPromptTemplates(defaultPromptTemplates);
+    setCustomSystemPrompt("");
     setSelectedTemplates([]);
     setGeneratedDocuments({});
   }
@@ -247,7 +228,7 @@ export default function Page() {
                               class=${() =>
                                 ["form-check-label cursor-pointer ", option.disabled ? "text-muted" : ""].filter(Boolean).join(" ")}
                               for=${() => option.value}>
-                              ${() => promptTemplates()[option.value].label}
+                              ${() => templateConfigs[option.value].label}
                             </label>
                           </div>
                         `}
@@ -280,7 +261,7 @@ export default function Page() {
                   <div class="d-flex justify-content-between align-items-center">
                     <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
                     <a
-                      href="/templates/nih-cc-consent-template-2024-04-15.docx"
+                      href="/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx"
                       download="nih-cc-consent-template-2024-04-15.docx"
                       class="small"
                       >Download Template</a
@@ -343,16 +324,15 @@ export default function Page() {
                         if (templateId === "custom") {
                           return { label: "Custom Document", filename: "custom-document.docx" };
                         } else {
-                          const templates = promptTemplates();
-                          const template = templates[templateId];
-                          return { label: template.label, filename: template.filename };
+                          const config = templateConfigs[templateId];
+                          return { prefix: config.prefix || "", label: config.label, filename: config.filename };
                         }
                       };
 
                       return html`
                         <div class="d-flex justify-content-between align-items-center p-2 border rounded">
                           <div class="flex-grow-1">
-                            <div class="fw-medium">${() => documentInfo().label}</div>
+                            <div class="fw-medium">${() => [documentInfo().prefix, documentInfo().label].filter(Boolean).join(': ')}</div>
                             <small class="text-muted">${() => documentInfo().filename}</small>
                           </div>
                           <div>
@@ -383,203 +363,3 @@ export default function Page() {
     </div>
   `;
 }
-
-export const defaultOutput = {
-  PI: "",
-  Title: "",
-  Cohort: "",
-  Contact_Name: "",
-  Contact_Email: "",
-  Contact_Phone: "",
-  Key_Info_1: "",
-  Key_Info_2: "",
-  Voluntariness: "",
-  Parent_Permission: "",
-  Impaired_Adults: "",
-  Study_Purpose: "",
-  Investigational_Use: "",
-  Approved_Use: "",
-  Before_You_Begin: "",
-  During_The_Study: "",
-  Follow_Up: "",
-  How_Long: "",
-  How_Many: "",
-  Risks_Discomforts: "",
-  Risks_Procedures: "",
-  Risks_Pregnancy: "",
-  Risks_Radiation: "",
-  Potential_Benefits_You: "",
-  Potential_Benefits_Others: "",
-  Other_Options: "",
-  Return_Results: "",
-  Early_Withdrawal: "",
-  Disease_Condition: "",
-  Genomic_Sensitivity: "",
-  Anonymized_Specimen_Sharing: "",
-  Data_Save_Type: "",
-  Specimen_Storage: "",
-  No_Payment: "",
-  Yes_Payment: "",
-  Partial_Payment: "",
-  Payment_Large: "",
-  Reimbursement: "",
-  Costs: "",
-  COI_None: "",
-  Technology_License: "",
-  CRADA: "",
-  CTA_No_NonNIH: "",
-  CTA_Yes_NonNIH: "",
-  Confidentiality: "",
-  Confidentiality_Study_Sponsor: "",
-  Confidentiality_Manufacturer: "",
-  Confidentiality_Drug_Device: "",
-  Other_Contacts: "",
-  Other_Contact_Name: "",
-  Other_Contact_Email: "",
-  Other_Contact_Phone: "",
-};
-
-export const defaultSystemPrompt = `# NIH Consent Form Variable Extractor
-
-Extract variables from the clinical protocol to populate an NIH consent form template.
-
-## INPUT
-The clinical trial protocol is provided below:
-\`\`\`
-<protocol>{{document}}</protocol>
-\`\`\`
-
-## OUTPUT
-Return a valid JSON object with ALL variables below. Use empty strings ("") for any variables not found in the protocol.
-
-\`\`\`json
-{
-  "PI": "",
-  "Title": "",
-  "Cohort": "", 
-  "Contact_Name": "",
-  "Contact_Email": "",
-  "Contact_Phone": "",
-  "Key_Info_1": "",
-  "Key_Info_2": "",
-  "Voluntariness": "",
-  "Parent_Permission": "",
-  "Impaired_Adults": "",
-  "Study_Purpose": "",
-  "Investigational_Use": "",
-  "Approved_Use": "",
-  "Before_You_Begin": "",
-  "During_The_Study": "",
-  "Follow_Up": "",
-  "How_Long": "",
-  "How_Many": "",
-  "Risks_Discomforts": "",
-  "Risks_Procedures": "",
-  "Risks_Pregnancy": "",
-  "Risks_Radiation": "",
-  "Potential_Benefits_You": "",
-  "Potential_Benefits_Others": "",
-  "Other_Options": "",
-  "Return_Results": "",
-  "Early_Withdrawal": "",
-  "Disease_Condition": "",
-  "Genomic_Sensitivity": "",
-  "Anonymized_Specimen_Sharing": "",
-  "Data_Save_Type": "",
-  "Specimen_Storage": "",
-  "No_Payment": "",
-  "Yes_Payment": "",
-  "Partial_Payment": "",
-  "Payment_Large": "",
-  "Reimbursement": "",
-  "Costs": "",
-  "COI_None": "",
-  "Technology_License": "",
-  "CRADA": "",
-  "CTA_No_NonNIH": "",
-  "CTA_Yes_NonNIH": "",
-  "Confidentiality": "",
-  "Confidentiality_Study_Sponsor": "",
-  "Confidentiality_Manufacturer": "",
-  "Confidentiality_Drug_Device": "",
-  "Other_Contacts": "",
-  "Other_Contact_Name": "",
-  "Other_Contact_Email": "",
-  "Other_Contact_Phone": ""
-}
-\`\`\`
-
-## EXTRACTION RULES
-- Fill in values ONLY from information explicitly stated in the protocol
-- Use empty string ("") for any variable not found in the document
-- Keep language clear and appropriate for consent forms
-- Use direct address ("you will") when describing procedures
-- Do not guess or infer information not explicitly stated
-
-## VARIABLE DESCRIPTIONS
-- **PI**: Principal Investigator name
-- **Title**: Study title
-- **Cohort**: Study population/cohort description
-- **Contact_Name/Email/Phone**: Primary contact information
-- **Key_Info_1/2**: Most important information participants should know
-- **Study_Purpose**: Why this study is being conducted
-- **Before_You_Begin**: What happens before study participation starts
-- **During_The_Study**: Main study procedures and activities
-- **Follow_Up**: Follow-up procedures and timeline
-- **How_Long**: Total duration of study participation
-- **How_Many**: Number of participants in the study
-- **Risks_Discomforts**: Main risks and discomforts of participation
-- **Potential_Benefits_You**: Benefits to the participant
-- **Potential_Benefits_Others**: Benefits to others/society
-- **Other_Options**: Alternatives to study participation
-
-Return the complete JSON object with all variables, using empty strings for missing values.`;
-
-// NIH Consent Crafter Default Templates
-export const defaultPromptTemplates = {
-  "adult-healthy": {
-    label: "Adult healthy volunteer",
-    category: "Consent",
-    templateUrl: "/templates/nih-cc-consent-template-2024-04-15.docx",
-    systemPrompt: defaultSystemPrompt,
-    defaultOutput: defaultOutput,
-    filename: "nih-consent-healthy-volunteer.docx",
-    disabled: false,
-  },
-  "adult-patient": {
-    label: "Adult affected patient",
-    category: "Consent",
-    templateUrl: "/templates/nih-cc-consent-template-2024-04-15.docx",
-    systemPrompt: defaultSystemPrompt,
-    defaultOutput: defaultOutput,
-    filename: "nih-consent-patient.docx",
-    disabled: false,
-  },
-  "adult-family": {
-    label: "Adult family member",
-    category: "Consent",
-    templateUrl: "/templates/nih-cc-consent-template-2024-04-15.docx",
-    systemPrompt: defaultSystemPrompt,
-    defaultOutput: defaultOutput,
-    filename: "nih-consent-family.docx",
-    disabled: false,
-  },
-  "child-assent": {
-    label: "Child or cognitive impairment patient",
-    category: "Assent",
-    templateUrl: "/templates/nih-cc-assent-template-2024-04-15.docx",
-    systemPrompt: defaultSystemPrompt, // Would be different assent prompt in future
-    defaultOutput: defaultOutput,
-    filename: "nih-assent-child.docx",
-    disabled: true,
-  },
-  "child-family-assent": {
-    label: "Child or cognitive impairment family member",
-    category: "Assent",
-    templateUrl: "/templates/nih-cc-assent-template-2024-04-15.docx",
-    systemPrompt: defaultSystemPrompt, // Would be different assent prompt in future
-    defaultOutput: defaultOutput,
-    filename: "nih-assent-family.docx",
-    disabled: true,
-  },
-};
