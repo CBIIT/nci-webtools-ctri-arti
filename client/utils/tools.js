@@ -346,7 +346,7 @@ export async function code({ language, source, timeout = 5_000 }) {
       const frame = Object.assign(document.createElement("iframe"), { style: "position:absolute; left: -9999px;" });
       const listener = (e) => {
         if (e.source !== frame.contentWindow) return;
-        console.log(e.data);
+        // console.log(e.data);
         e.data?.type === "log" && logs.push(e.data.msg);
         e.data?.type === "done" && cleanup();
       };
@@ -413,7 +413,7 @@ export function getClientContext(important = {}) {
     main.push({ additionalInstructions: "Please review the items under 'important' carefully" });
     main.push({ important });
   }
-  console.log(main);
+  // console.log(main);
   window.jsonToXml = jsonToXml;
   return { main: JSON.stringify(main), time, language, platform, memory, hardwareConcurrency, timeFormat };
 }
