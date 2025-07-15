@@ -1,11 +1,18 @@
-// Consent Crafter Basic Test
-import ConsentCrafter, { defaultPromptTemplates } from "../../../../pages/tools/consent-crafter/index.js";
+import html from "solid-js/html";
+import { render } from "solid-js/web";
+import ConsentCrafter from "/pages/tools/consent-crafter/index.js";
 
 describe('Consent Crafter', () => {
   test('renders without errors', () => {
-    const result = ConsentCrafter();
-    expect(result).toBeTruthy();
+    const div = document.createElement('div');
+    document.body.appendChild(div);
+    render(() => html`<${ConsentCrafter} />`, div);
+    console.log('div', div);
+    
+    // const result = ConsentCrafter();
+    // expect(result).toBeTruthy();
   });
+
 
   test('displays required UI elements', () => {
     const result = ConsentCrafter();
