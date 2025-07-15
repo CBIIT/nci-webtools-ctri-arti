@@ -329,13 +329,13 @@ function UserEdit() {
                 <span class="input-group-text">$</span>
                 <input
                   type="number"
-                  step="0.01"
+                  step="5"
                   min="0"
                   class="form-control"
                   disabled=${() => user().noLimit}
                   id="limit"
                   value=${() => user().limit || 0}
-                  onInput=${(e) => handleInputChange("limit", parseFloat(e.target.value) || 0)}
+                  onInput=${(e) => handleInputChange("limit", parseInt(e.target.value) || 0)}
                   aria-label="Weekly cost limit" />
                 <${Show} when=${() => params.id}>
                   <button 
