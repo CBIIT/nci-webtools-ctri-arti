@@ -20,14 +20,12 @@ function UserEdit() {
   const [generateApiKey, setGenerateApiKey] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
-  const [resetMessage, setResetMessage] = createSignal("");
-  const [showResetMessage, setShowResetMessage] = createSignal(false);
 
   // Default value mapping based on role ID
   const DEFAULT_ROLE_LIMITS = {
-    1: { limit: null, remaining: 0, noLimit: true }, // Admin
-    2: { limit: 10, remaining: 10, noLimit: false }, // Super Admin
-    3: { limit: 5, remaining: 5, noLimit: false }, // User
+    1: { limit: null, noLimit: true }, // Admin
+    2: { limit: 10, noLimit: false }, // Super Admin
+    3: { limit: 5, noLimit: false }, // User
   };
 
   // Fetch roles data using resource
@@ -123,32 +121,6 @@ function UserEdit() {
         console.error("Could not copy text: ", err);
       });
   }
-  
-  // Function to reset a user's weekly limit
-  async function resetUserLimit() {
-    try {
-      const response = await fetch(`/api/admin/users/${params.id}/reset-limit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to reset user limit");
-      }
-      
-      const data = await response.json();
-      
-      // Show success message
-      setResetMessage("Weekly limit has been reset successfully.");
-      setShowResetMessage(true);
-      setTimeout(() => setShowResetMessage(false), 3000);
-      
-    } catch (err) {
-      console.error("Error resetting user limit:", err);
-      alert(err.message || "An error occurred while resetting the user limit");
-    }
-  }
 
   return html`
     <img
@@ -165,13 +137,6 @@ function UserEdit() {
         </div>
       <//>
       
-      <!-- Reset Success Banner -->
-      <${Show} when=${showResetMessage}>
-        <div class="alert alert-success alert-dismissible fade show position-absolute top-0 start-50 translate-middle-x mt-3" role="alert">
-          <strong>Success!</strong> ${resetMessage}
-          <button type="button" class="btn-close" onClick=${() => setShowResetMessage(false)} aria-label="Close"></button>
-        </div>
-      <//>
       <!-- Error Alert -->
       <${Show} when=${() => roles.error || userData.error}>
         <div class="alert alert-danger" role="alert">${() => roles.error || userData.error || "An error occurred while fetching data"}</div>
@@ -338,7 +303,9 @@ function UserEdit() {
                     type="button" 
                     disabled=${() => user().noLimit}
                     class="btn btn-outline-primary"
-                    onClick=${resetUserLimit}>
+                    onClick=${() => {
+                      setUser((prev) => ({ ...prev, limit: DEFAULT_ROLE_LIMITS[prev.roleId]?.limit, noLimit: DEFAULT_ROLE_LIMITS[prev.roleId]?.noLimit }));
+                    }}>
                     Reset
                   </button>
                 <//>
