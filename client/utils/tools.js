@@ -53,15 +53,22 @@ export async function search({ query }) {
  */
 export async function browse({ url, topic }) {
   window.id ||= Math.random().toString(36).slice(2);
-  const response = await fetch("/api/browse/" + url);
-  const bytes = await response.arrayBuffer();
-  const text = new TextDecoder("utf-8").decode(bytes);
-  if (!response.ok) {
-    return `Failed to read ${url}: ${response.status} ${response.statusText}`;
-  }
-  const mimetype = response.headers.get("content-type") || "text/html";
-  const results = await parseDocument(bytes, mimetype, url);
-  return !topic ? results : await queryDocumentWithModel(`<url>${url}</url>\n<text>${results}</text>`, topic);
+  // urls can be an array of strings
+  if (!Array.isArray(url)) url = [url];
+  if (url.length === 0) return "No URLs provided";
+  const results = await Promise.all(url.map(async (u) => {
+    const response = await fetch("/api/browse/" + u);
+    const bytes = await response.arrayBuffer();
+    const text = new TextDecoder("utf-8").decode(bytes);
+    if (!response.ok) {
+      return `Failed to read ${u}: ${response.status} ${response.statusText}`;
+    }
+    const mimetype = response.headers.get("content-type") || "text/html";
+    const results = await parseDocument(bytes, mimetype, u);
+    const finalResults = !topic ? results : await queryDocumentWithModel(`<url>${u}</url>\n<text>${results}</text>`, topic);
+    return ['## ' + u, finalResults].join('\n\n');
+  }));
+  return results.join('\n\n---\n\n');
 }
 
 export async function queryDocumentWithModel(document, topic, model = "us.meta.llama4-maverick-17b-instruct-v1:0") {

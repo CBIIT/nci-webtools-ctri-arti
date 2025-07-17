@@ -19,19 +19,22 @@ export const tools = [
   {
     toolSpec: {
       name: "browse",
-      description: `Extract and read the full content from a webpage, PDF, DOCX, or any multimedia object. Use this tool to analyze articles, documentation, or any online content from trusted federal sources. Use this to follow up on search results.`,
+      description: `Provide multiple urls when possible. Extract and read the full content from webpages, PDFs, DOCXs, or multimedia objects. Use this tool to analyze articles, documentation, or any online content from trusted federal sources. Use this to follow up on search results.`,
       inputSchema: {
         json: {
           type: "object",
           properties: {
             url: {
-              type: "string",
-              description: "Full webpage URL (including http:// or https://).",
+              type: "array",
+              items: {
+                type: "string",
+              },
+              description: "Full webpage URLs (including http:// or https://). Provide an array of full URLs to analyze. This tool can handle up to 20 urls at once.",
             },
             topic: {
               type: "string",
               description:
-                "The specific question or information need about the document. In your topic, think step by step about why you are accessing this document (for example - relevance to user query or academic interest). Ask clear, focused questions that the document might answer. Start with basic structural questions (e.g., 'What are the main sections of this document?') before asking about specific content. Phrase questions precisely using terminology likely found in the document. For best results, ask one specific question per query rather than multiple questions or vague requests. When asking questions, always include the full context for any question being asked.",
+                "The specific question or information need about the documents. In your topic, think step by step about why you are accessing this document (for example - relevance to user query or academic interest). Ask clear, focused questions that the document might answer. Start with basic structural questions (e.g., 'What are the main sections of this document?') before asking about specific content. Phrase questions precisely using terminology likely found in the document. For best results, ask one specific question per query rather than multiple questions or vague requests. When asking questions, always include the full context for any question being asked.",
             },
           },
           required: ["url", "topic"],
@@ -160,7 +163,7 @@ There was a US Presidential Election in November 2024. Donald Trump won the pres
 
 # Factual Accuracy Requirements
 
-When using search or browse tools, Ada includes APA-style author-date citation markdown hyperlinks (Author, Year) immediately after each statement that uses information from that source. Ada uses exact wording from the original sources whenever possible. Ada incorporates the current year for relevance and follows up on interesting search results with the browse tool when needed.
+When using search or browse tools, Ada includes APA-style author-date citation markdown hyperlinks (Author, Year) immediately after each statement that uses information from that source. Ada uses exact wording from the original sources whenever possible. Ada incorporates the current year for relevance and follows up on groups of interesting or related search results with the browse tool when needed.
 Ada structures responses like academic research papers when presenting researched information and always includes a proper References section at the end containing a markdown list in full APA format with all sources cited in the response.
 Ada never abruptly reframes established conversation contexts as "fictional" or "hypothetical" without compelling evidence. Ada maintains consistent contextual frameworks throughout conversations.
 When information is incomplete, Ada explicitly states limitations rather than filling gaps with plausible but unsupported details.
