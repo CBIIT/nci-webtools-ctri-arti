@@ -16,12 +16,17 @@ function UserEdit() {
     remaining: 0,
     noLimit: false,
   });
-  const [originalUser, setOriginalUser] = createSignal({ ...user() });
+  const [originalLimit, setOriginalLimit] = createSignal(0);
   const [generateApiKey, setGenerateApiKey] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
-  const [resetMessage, setResetMessage] = createSignal("");
-  const [showResetMessage, setShowResetMessage] = createSignal(false);
+
+  // Default value mapping based on role ID
+  const DEFAULT_ROLE_LIMITS = {
+    1: { limit: null, noLimit: true }, // Admin
+    2: { limit: 10, noLimit: false }, // Super Admin
+    3: { limit: 5, noLimit: false }, // User
+  };
 
   // Fetch roles data using resource
   const [roles] = createResource(() => fetch("/api/admin/roles").then((res) => res.json()));
@@ -38,7 +43,7 @@ function UserEdit() {
         // Set noLimit flag based on limit being null
         data.noLimit = data.limit === null;
         setUser(data);
-        setOriginalUser(data);
+        setOriginalLimit(data.limit || 0);
         return data;
       });
   });
@@ -59,6 +64,10 @@ function UserEdit() {
       }
       delete userData.noLimit; // Remove the UI-only property
 
+      if (userData.limit !== originalLimit()) {
+        userData.remaining = userData.limit; // Reset remaining to if limit changes
+      }
+
       // Include generateApiKey flag if checked
       if (generateApiKey()) {
         userData.generateApiKey = true;
@@ -74,19 +83,20 @@ function UserEdit() {
         const data = await response.json();
         throw new Error(data.error || "Failed to save user");
       }
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      setOriginalLimit(userData.limit || 0); // Reset original limit to new value
     } catch (err) {
       console.error("Error saving user:", err);
       alert(err.message || "An error occurred while saving the user");
     } finally {
       setSaving(false);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
     }
   }
 
   function handleRoleChange(roleId) {
     // Simply update the role ID without changing limit settings
-    setUser((prev) => ({ ...prev, roleId }));
+    setUser((prev) => ({ ...prev, roleId, ...DEFAULT_ROLE_LIMITS[roleId] || {} }));
   }
 
   function handleInputChange(field, value) {
@@ -97,7 +107,7 @@ function UserEdit() {
     setUser((prev) => ({
       ...prev,
       noLimit: checked,
-      limit: checked ? null : prev.limit || 5,
+      limit: checked ? null : DEFAULT_ROLE_LIMITS[prev.roleId]?.limit || 0,
     }));
   }
 
@@ -110,35 +120,6 @@ function UserEdit() {
       .catch((err) => {
         console.error("Could not copy text: ", err);
       });
-  }
-  
-  // Function to reset a user's weekly limit
-  async function resetUserLimit() {
-    try {
-      const response = await fetch(`/api/admin/users/${params.id}/reset-limit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to reset user limit");
-      }
-      
-      const data = await response.json();
-      
-      // Update the user data with the reset values
-      setUser(prev => ({ ...prev, remaining: data.user.remaining }));
-      
-      // Show success message
-      setResetMessage("Weekly limit has been reset successfully.");
-      setShowResetMessage(true);
-      setTimeout(() => setShowResetMessage(false), 3000);
-      
-    } catch (err) {
-      console.error("Error resetting user limit:", err);
-      alert(err.message || "An error occurred while resetting the user limit");
-    }
   }
 
   return html`
@@ -156,13 +137,6 @@ function UserEdit() {
         </div>
       <//>
       
-      <!-- Reset Success Banner -->
-      <${Show} when=${showResetMessage}>
-        <div class="alert alert-success alert-dismissible fade show position-absolute top-0 start-50 translate-middle-x mt-3" role="alert">
-          <strong>Success!</strong> ${resetMessage}
-          <button type="button" class="btn-close" onClick=${() => setShowResetMessage(false)} aria-label="Close"></button>
-        </div>
-      <//>
       <!-- Error Alert -->
       <${Show} when=${() => roles.error || userData.error}>
         <div class="alert alert-danger" role="alert">${() => roles.error || userData.error || "An error occurred while fetching data"}</div>
@@ -312,31 +286,30 @@ function UserEdit() {
                 <label class="form-check-label" for="noLimitCheckbox">Unlimited</label>
               </div>
 
-              <${Show} when=${() => !user().noLimit}>
-                <div class="input-group mb-2">
-                  <span class="input-group-text">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="form-control"
-                    id="limit"
-                    value=${() => user().limit || 0}
-                    onInput=${(e) => handleInputChange("limit", parseFloat(e.target.value) || 0)}
-                    aria-label="Weekly cost limit" />
-                  <${Show} when=${() => params.id}>
-                    <button 
-                      type="button" 
-                      class="btn btn-outline-primary"
-                      onClick=${resetUserLimit}>
-                      Reset
-                    </button>
-                  <//>
-                </div>
-                <div class="small text-muted">
-                  Remaining: $${() => (user().remaining !== null ? parseFloat(user().remaining).toFixed(2) : "N/A")}
-                </div>
-              <//>
+              <div class="input-group mb-2">
+                <span class="input-group-text">$</span>
+                <input
+                  type="number"
+                  step="5"
+                  min="0"
+                  class="form-control"
+                  disabled=${() => user().noLimit}
+                  id="limit"
+                  value=${() => user().limit || 0}
+                  onInput=${(e) => handleInputChange("limit", parseInt(e.target.value) || 0)}
+                  aria-label="Weekly cost limit" />
+                <${Show} when=${() => params.id}>
+                  <button 
+                    type="button" 
+                    disabled=${() => user().noLimit}
+                    class="btn btn-outline-primary"
+                    onClick=${() => {
+                      setUser((prev) => ({ ...prev, limit: DEFAULT_ROLE_LIMITS[prev.roleId]?.limit, noLimit: DEFAULT_ROLE_LIMITS[prev.roleId]?.noLimit }));
+                    }}>
+                    Reset
+                  </button>
+                <//>
+              </div>
             </div>
           </div>
 
@@ -346,7 +319,7 @@ function UserEdit() {
             <div class="col-12 mt-4">
               <div class="d-flex gap-2 justify-content-center">
                 <a href="/_/users" class="btn btn-outline-secondary text-decoration-none"> Cancel </a>
-                <button type="submit" class="btn btn-primary" disabled=${saving}>${() => (saving() ? "Saving..." : "Save User")}</button>
+                <button type="submit" class="btn btn-primary" disabled=${saving}>${() => (saving() ? "Saving..." : "Save")}</button>
               </div>
             </div>
           </div>
