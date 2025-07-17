@@ -52,7 +52,7 @@ export default function Nav(props) {
                                   activeClass="active"
                                   end=${true}
                                   target=${child.rawPath && "_self" }
-                                  class="fs-5 fw-semibold nav-link dropdown-link text-decoration-none me-3 my-3 d-inline-block"
+                                  class="fw-semibold nav-link dropdown-link text-decoration-none me-3 d-inline-block"
                                   onClick=${() => setActiveDropdown(null)}>
                                   ${child.title}
                                 <//>

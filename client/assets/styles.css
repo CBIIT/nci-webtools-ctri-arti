@@ -344,8 +344,10 @@ ul {
   visibility: visible;
 }
 
-.navbar {
+.navbar, .nav-link {
   --bs-navbar-padding-y: 0;
+  --bs-navbar-nav-link-padding-x: .5rem;
+  --bs-navbar-nav-link-padding-y: .3rem;
 }
 
 .navbar-nav {
@@ -374,6 +376,10 @@ ul {
 
 .nav-link:hover, .nav-link.active:hover {
   border-bottom-color: var(--bs-warning);
+}
+
+.nav-link.dropdown-link {
+  padding: var(--bs-navbar-nav-link-padding-y) var(--bs-navbar-nav-link-padding-x);
 }
 
 .nav-link.dropdown-link.active {
