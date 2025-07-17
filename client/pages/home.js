@@ -5,12 +5,6 @@ export default function Page() {
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
   const links = [
     {
-      title: "FedPulse",
-      description: "Access real-time guidance on federal policies",
-      href: "/tools/fedpulse",
-      icon: html`<img src="/assets/images/icon-radar.svg" height="60" alt="FedPulse Icon" />`,
-    },
-    {
       title: "Chat",
       description: "Develop with workspace and chat tools",
       href: "/tools/chat",
@@ -23,10 +17,10 @@ export default function Page() {
       icon: html`<img src="/assets/images/icon-pen.svg" height="60" alt="ConsentCrafter Icon" />`,
     },
     {
-      title: "Lay Person Abstract",
-      description: "Generate lay person abstracts from protocols",
-      href: "/tools/lay-person-abstract",
-      icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="Lay Person Abstract Icon" />`,
+      title: "New Tools",
+      description: "Coming soon",
+      href: "/",
+      icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="New Tools Icon" />`,
     },
   ];
 
