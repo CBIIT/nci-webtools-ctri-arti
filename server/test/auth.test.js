@@ -1,3 +1,5 @@
+import { test, before, after, beforeEach } from 'node:test';
+import assert from 'node:assert';
 import express from 'express';
 import request from 'supertest';
 import { requireRole } from '../services/middleware.js';
@@ -28,12 +30,12 @@ app.get('/admin-only', requireRole('admin'), (req, res) => {
   });
 });
 
-describe('API Key Authentication', () => {
-  beforeAll(async () => {
+test('API Key Authentication', async (t) => {
+  before(async () => {
     await setupTestDatabase();
   });
 
-  afterAll(async () => {
+  after(async () => {
     await teardownTestDatabase();
   });
 
@@ -41,7 +43,7 @@ describe('API Key Authentication', () => {
     await clearTestData();
   });
 
-  test('should authenticate with valid API key', async () => {
+  await t.test('should authenticate with valid API key', async () => {
     const user = await createTestUser({
       email: 'apitest@example.com'
     });
@@ -51,24 +53,24 @@ describe('API Key Authentication', () => {
       .set('X-API-KEY', 'test-api-key')
       .expect(200);
 
-    expect(response.body.success).toBe(true);
-    expect(response.body.email).toBe('apitest@example.com');
+    assert.strictEqual(response.body.success, true);
+    assert.strictEqual(response.body.email, 'apitest@example.com');
   });
 
-  test('should reject invalid API key', async () => {
+  await t.test('should reject invalid API key', async () => {
     await request(app)
       .get('/protected')
       .set('X-API-KEY', 'invalid-key')
       .expect(401);
   });
 
-  test('should reject missing authentication', async () => {
+  await t.test('should reject missing authentication', async () => {
     await request(app)
       .get('/protected')
       .expect(401);
   });
 
-  test('should enforce role requirements', async () => {
+  await t.test('should enforce role requirements', async () => {
     const regularUser = await createTestUser({
       email: 'regular@example.com',
       roleId: 3 // user role

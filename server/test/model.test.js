@@ -1,3 +1,5 @@
+import { test, before, after, beforeEach } from 'node:test';
+import assert from 'node:assert';
 import express from 'express';
 import request from 'supertest';
 import modelRoutes from '../services/routes/model.js';
@@ -13,21 +15,21 @@ import {
   Provider
 } from './database.js';
 
-describe('Model Routes', () => {
+test('Model Routes', async (t) => {
   let app;
   let testUser;
   let testModel;
   let testProvider;
   let mockProvider;
 
-  beforeAll(async () => {
+  before(async () => {
     await setupTestDatabase();
     
     app = express();
     app.use(modelRoutes);
   });
 
-  afterAll(async () => {
+  after(async () => {
     await teardownTestDatabase();
   });
 
@@ -66,8 +68,8 @@ describe('Model Routes', () => {
     mockProvider = new TestProvider();
   });
 
-  describe('POST /model - Usage Limits', () => {
-    test('should reject usage when limit exceeded', async () => {
+  await t.test('POST /model - Usage Limits', async (subT) => {
+    await subT.test('should reject usage when limit exceeded', async () => {
       // Set user balance to 0
       await testUser.update({ remaining: 0 });
 
@@ -77,11 +79,11 @@ describe('Model Routes', () => {
         .send({ model: 'test-model', messages: [{ role: 'user', content: [{ text: 'test' }] }] })
         .expect(429)
         .expect((res) => {
-          expect(res.body.error).toBe('Usage limit exceeded.');
+          assert.strictEqual(res.body.error, 'Usage limit exceeded.');
         });
     });
 
-    test('should allow usage when user has remaining balance', async () => {
+    await subT.test('should allow usage when user has remaining balance', async () => {
       // Mock a successful response
       mockProvider.setMockResponse({
         output: {
@@ -103,10 +105,10 @@ describe('Model Routes', () => {
         .set('X-API-KEY', 'test-key')
         .send({ model: 'test-model', messages: [{ role: 'user', content: [{ text: 'test' }] }] });
       
-      expect(response.status).toBe(200);
+      assert.strictEqual(response.status, 200);
     });
 
-    test('should allow unlimited users', async () => {
+    await subT.test('should allow unlimited users', async () => {
       // Set user to unlimited
       await testUser.update({ limit: null, remaining: null });
 
@@ -115,10 +117,10 @@ describe('Model Routes', () => {
         .set('X-API-KEY', 'test-key')
         .send({ model: 'test-model', messages: [{ role: 'user', content: [{ text: 'test' }] }] });
       
-      expect(response.status).toBe(200);
+      assert.strictEqual(response.status, 200);
     });
 
-    test('should require authentication', async () => {
+    await subT.test('should require authentication', async () => {
       await request(app)
         .post('/model')
         .send({ model: 'test-model', messages: [] })
@@ -126,8 +128,8 @@ describe('Model Routes', () => {
     });
   });
 
-  describe('POST /model - Response Processing', () => {
-    test('should process non-streaming response and track usage', async () => {
+  await t.test('POST /model - Response Processing', async (subT) => {
+    await subT.test('should process non-streaming response and track usage', async () => {
       // Set up mock response with specific usage
       const mockResponse = {
         output: {
@@ -152,23 +154,23 @@ describe('Model Routes', () => {
         .send({ model: 'test-model', messages: [{ role: 'user', content: [{ text: 'test question' }] }] });
 
       // The request should succeed (though it will use default test provider response)
-      expect(response.status).toBe(200);
+      assert.strictEqual(response.status, 200);
     });
 
-    test('should handle missing model gracefully', async () => {
+    await subT.test('should handle missing model gracefully', async () => {
       const response = await request(app)
         .post('/model')
         .set('X-API-KEY', 'test-key')
         .send({ model: 'nonexistent-model', messages: [{ role: 'user', content: [{ text: 'test' }] }] });
 
       // Should return 500 because model doesn't exist
-      expect(response.status).toBe(500);
-      expect(response.body.error).toBe('An error occurred while processing the model request');
+      assert.strictEqual(response.status, 500);
+      assert.strictEqual(response.body.error, 'An error occurred while processing the model request');
     });
   });
 
-  describe('GET /model/list', () => {
-    test('should return model list for authenticated user', async () => {
+  await t.test('GET /model/list', async (subT) => {
+    await subT.test('should return model list for authenticated user', async () => {
       // Create a model from provider 1 (bedrock) for the list endpoint
       const bedrockProvider = await Provider.findByPk(1);
       if (!bedrockProvider) {
@@ -195,9 +197,9 @@ describe('Model Routes', () => {
         .set('X-API-KEY', 'test-key')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBe(1);
-      expect(response.body[0]).toEqual({
+      assert.strictEqual(Array.isArray(response.body), true);
+      assert.strictEqual(response.body.length, 1);
+      assert.deepStrictEqual(response.body[0], {
         label: 'Bedrock Model',
         value: 'bedrock-model',
         maxContext: 8000,
@@ -206,25 +208,25 @@ describe('Model Routes', () => {
       });
     });
 
-    test('should require authentication', async () => {
+    await subT.test('should require authentication', async () => {
       await request(app)
         .get('/model/list')
         .expect(401);
     });
 
-    test('should only return models from provider 1', async () => {
+    await subT.test('should only return models from provider 1', async () => {
       // Our test model uses provider 99, so shouldn't appear
       const response = await request(app)
         .get('/model/list')
         .set('X-API-KEY', 'test-key')
         .expect(200);
 
-      expect(response.body.length).toBe(0);
+      assert.strictEqual(response.body.length, 0);
     });
   });
 
-  describe('Usage Tracking Logic (Unit Tests)', () => {
-    test('should calculate costs correctly', () => {
+  await t.test('Usage Tracking Logic (Unit Tests)', async (subT) => {
+    await subT.test('should calculate costs correctly', () => {
       const usageData = {
         inputTokens: 1000,
         outputTokens: 500
@@ -235,10 +237,10 @@ describe('Model Routes', () => {
       const outputCost = (500 / 1000) * 0.02; // 0.5 * 0.02 = 0.01
       const expectedCost = inputCost + outputCost; // 0.02
 
-      expect(expectedCost).toBe(0.02);
+      assert.strictEqual(expectedCost, 0.02);
     });
 
-    test('should handle zero cost models', () => {
+    await subT.test('should handle zero cost models', () => {
       const usageData = {
         inputTokens: 1000,
         outputTokens: 500
@@ -248,19 +250,19 @@ describe('Model Routes', () => {
       const outputCost = (500 / 1000) * 0;
       const expectedCost = inputCost + outputCost;
 
-      expect(expectedCost).toBe(0);
+      assert.strictEqual(expectedCost, 0);
     });
 
-    test('should handle negative token counts', () => {
+    await subT.test('should handle negative token counts', () => {
       // Test that Math.max(0, ...) works as expected
       const inputTokens = Math.max(0, -100);
       const outputTokens = Math.max(0, 50);
 
-      expect(inputTokens).toBe(0);
-      expect(outputTokens).toBe(50);
+      assert.strictEqual(inputTokens, 0);
+      assert.strictEqual(outputTokens, 50);
     });
 
-    test('should create usage records correctly', async () => {
+    await subT.test('should create usage records correctly', async () => {
       const usageRecord = await Usage.create({
         userId: testUser.id,
         modelId: testModel.id,
@@ -270,14 +272,14 @@ describe('Model Routes', () => {
         cost: 0.002
       });
 
-      expect(usageRecord.userId).toBe(testUser.id);
-      expect(usageRecord.modelId).toBe(testModel.id);
-      expect(usageRecord.inputTokens).toBe(100);
-      expect(usageRecord.outputTokens).toBe(50);
-      expect(usageRecord.cost).toBe(0.002);
+      assert.strictEqual(usageRecord.userId, testUser.id);
+      assert.strictEqual(usageRecord.modelId, testModel.id);
+      assert.strictEqual(usageRecord.inputTokens, 100);
+      assert.strictEqual(usageRecord.outputTokens, 50);
+      assert.strictEqual(usageRecord.cost, 0.002);
     });
 
-    test('should update user balance correctly', async () => {
+    await subT.test('should update user balance correctly', async () => {
       const originalBalance = testUser.remaining;
       const cost = 0.5;
 
@@ -286,10 +288,10 @@ describe('Model Routes', () => {
       });
 
       await testUser.reload();
-      expect(testUser.remaining).toBe(4.5); // 5.0 - 0.5
+      assert.strictEqual(testUser.remaining, 4.5); // 5.0 - 0.5
     });
 
-    test('should not go below zero balance', async () => {
+    await subT.test('should not go below zero balance', async () => {
       const cost = 10.0; // More than available balance
 
       await testUser.update({
@@ -297,7 +299,7 @@ describe('Model Routes', () => {
       });
 
       await testUser.reload();
-      expect(testUser.remaining).toBe(0);
+      assert.strictEqual(testUser.remaining, 0);
     });
   });
 });

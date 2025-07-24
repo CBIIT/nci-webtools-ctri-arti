@@ -1,3 +1,5 @@
+import { test, before, after, afterEach } from 'node:test';
+import assert from 'node:assert';
 import { 
   setupTestDatabase, 
   teardownTestDatabase, 
@@ -9,45 +11,45 @@ import {
   Usage
 } from './database.js';
 
-describe('Database Tests', () => {
-  beforeAll(async () => {
+test('Database Tests', async (t) => {
+  before(async () => {
     await setupTestDatabase();
   });
 
-  afterAll(async () => {
+  after(async () => {
     await teardownTestDatabase();
   });
 
-  test('should have seed data', async () => {
+  await t.test('should have seed data', async () => {
     const roles = await Role.findAll();
     const models = await Model.findAll();
     
-    expect(roles.length).toBeGreaterThan(0);
-    expect(models.length).toBeGreaterThan(0);
-    expect(roles.find(r => r.name === 'admin')).toBeDefined();
+    assert.ok(roles.length > 0);
+    assert.ok(models.length > 0);
+    assert.ok(roles.find(r => r.name === 'admin'));
   });
 
   afterEach(async () => {
     await clearTestData();
   });
 
-  test('should create and find user', async () => {
+  await t.test('should create and find user', async () => {
     const user = await createTestUser({
       email: 'new@example.com',
       firstName: 'New'
     });
 
-    expect(user.id).toBeDefined();
-    expect(user.email).toBe('new@example.com');
-    expect(user.firstName).toBe('New');
+    assert.ok(user.id);
+    assert.strictEqual(user.email, 'new@example.com');
+    assert.strictEqual(user.firstName, 'New');
 
     const foundUser = await User.findOne({ 
       where: { email: 'new@example.com' } 
     });
-    expect(foundUser.id).toBe(user.id);
+    assert.strictEqual(foundUser.id, user.id);
   });
 
-  test('should create usage record', async () => {
+  await t.test('should create usage record', async () => {
     const user = await createTestUser();
     
     // Create a test model since clearTestData removes them
@@ -67,18 +69,18 @@ describe('Database Tests', () => {
       cost: 0.25
     });
 
-    expect(usage.id).toBeDefined();
-    expect(usage.cost).toBe(0.25);
+    assert.ok(usage.id);
+    assert.strictEqual(usage.cost, 0.25);
   });
 
-  test('should have working associations', async () => {
+  await t.test('should have working associations', async () => {
     const user = await createTestUser();
     
     const userWithRole = await User.findByPk(user.id, {
       include: [Role]
     });
 
-    expect(userWithRole.Role).toBeDefined();
-    expect(userWithRole.Role.name).toBe('user');
+    assert.ok(userWithRole.Role);
+    assert.strictEqual(userWithRole.Role.name, 'user');
   });
 });

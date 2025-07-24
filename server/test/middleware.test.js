@@ -1,3 +1,5 @@
+import { test, before, after, beforeEach } from 'node:test';
+import assert from 'node:assert';
 import express from 'express';
 import request from 'supertest';
 import { 
@@ -12,10 +14,10 @@ import {
   createTestUser
 } from './database.js';
 
-describe('Middleware Functions', () => {
+test('Middleware Functions', async (t) => {
   let app;
 
-  beforeAll(async () => {
+  before(async () => {
     await setupTestDatabase();
     
     // Simple test app
@@ -39,7 +41,7 @@ describe('Middleware Functions', () => {
     });
   });
 
-  afterAll(async () => {
+  after(async () => {
     await teardownTestDatabase();
   });
 
@@ -47,8 +49,8 @@ describe('Middleware Functions', () => {
     await clearTestData();
   });
 
-  describe('requireRole middleware', () => {
-    test('should authenticate with valid API key', async () => {
+  await t.test('requireRole middleware', async (subT) => {
+    await subT.test('should authenticate with valid API key', async () => {
       const user = await createTestUser({ 
         email: 'api@test.com',
         apiKey: 'test-key' 
@@ -59,24 +61,24 @@ describe('Middleware Functions', () => {
         .set('X-API-KEY', 'test-key')
         .expect(200);
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.email).toBe('api@test.com');
+      assert.strictEqual(response.body.success, true);
+      assert.strictEqual(response.body.email, 'api@test.com');
     });
 
-    test('should reject invalid API key', async () => {
+    await subT.test('should reject invalid API key', async () => {
       await request(app)
         .get('/protected')
         .set('X-API-KEY', 'invalid-key')
         .expect(401);
     });
 
-    test('should reject missing authentication', async () => {
+    await subT.test('should reject missing authentication', async () => {
       await request(app)
         .get('/protected')
         .expect(401);
     });
 
-    test('should enforce admin role requirements', async () => {
+    await subT.test('should enforce admin role requirements', async () => {
       const regularUser = await createTestUser({ 
         roleId: 3, // user role
         apiKey: 'user-key' 
@@ -102,53 +104,53 @@ describe('Middleware Functions', () => {
     });
   });
 
-  describe('utility functions', () => {
-    describe('getAuthorizedUrl', () => {
-      test('should add API key for govinfo.gov', () => {
+  await t.test('utility functions', async (subT) => {
+    await subT.test('getAuthorizedUrl', async (subSubT) => {
+      await subSubT.test('should add API key for govinfo.gov', () => {
         const url = new URL('https://api.govinfo.gov/collections');
         const env = { DATA_GOV_API_KEY: 'test-key' };
         
         const result = getAuthorizedUrl(url, env);
         
-        expect(result).toContain('api_key=test-key');
+        assert.ok(result.includes('api_key=test-key'));
       });
 
-      test('should add API key for congress.gov', () => {
+      await subSubT.test('should add API key for congress.gov', () => {
         const url = new URL('https://api.congress.gov/v3/bill');
         const env = { CONGRESS_GOV_API_KEY: 'congress-key' };
         
         const result = getAuthorizedUrl(url, env);
         
-        expect(result).toContain('api_key=congress-key');
+        assert.ok(result.includes('api_key=congress-key'));
       });
 
-      test('should not modify other URLs', () => {
+      await subSubT.test('should not modify other URLs', () => {
         const url = new URL('https://example.com/test');
         const env = { DATA_GOV_API_KEY: 'test-key' };
         
         const result = getAuthorizedUrl(url, env);
         
-        expect(result).toBe('https://example.com/test');
+        assert.strictEqual(result, 'https://example.com/test');
       });
     });
 
-    describe('getAuthorizedHeaders', () => {
-      test('should add subscription token for Brave Search', () => {
+    await subT.test('getAuthorizedHeaders', async (subSubT) => {
+      await subSubT.test('should add subscription token for Brave Search', () => {
         const url = new URL('https://api.search.brave.com/res/v1/web/search');
         const env = { BRAVE_SEARCH_API_KEY: 'brave-key' };
         
         const result = getAuthorizedHeaders(url, env);
         
-        expect(result).toEqual({ 'x-subscription-token': 'brave-key' });
+        assert.deepStrictEqual(result, { 'x-subscription-token': 'brave-key' });
       });
 
-      test('should return empty object for other URLs', () => {
+      await subSubT.test('should return empty object for other URLs', () => {
         const url = new URL('https://example.com/test');
         const env = { BRAVE_SEARCH_API_KEY: 'brave-key' };
         
         const result = getAuthorizedHeaders(url, env);
         
-        expect(result).toEqual({});
+        assert.deepStrictEqual(result, {});
       });
     });
   });
