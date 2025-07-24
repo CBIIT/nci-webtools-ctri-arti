@@ -6,6 +6,7 @@ import { readStream } from "/utils/files.js";
 import { jsonToXml } from "/utils/xml.js";
 import { systemPrompt, tools } from "./config.js";
 import { getDB } from "/models/database.js";
+import { showError, handleHttpError, handleError } from "/utils/alerts.js";
 
 /**
  * Normalize message content to array format, handling various edge cases
@@ -77,6 +78,7 @@ export function useChat() {
       }
     } catch (error) {
       console.error('Failed to initialize database:', error);
+      handleError(error, "initializing user session");
     }
   };
 
@@ -113,6 +115,7 @@ export function useChat() {
       }
     } catch (error) {
       console.error('Failed to load conversation:', error);
+      handleError(error, "loading conversation");
     }
   };
 
@@ -131,6 +134,7 @@ export function useChat() {
       })));
     } catch (error) {
       console.error('Failed to load conversations:', error);
+      handleError(error, "loading conversations");
     }
   };
 
@@ -149,6 +153,7 @@ export function useChat() {
       }
     } catch (error) {
       console.error('Failed to update conversation:', error);
+      handleError(error, "updating conversation");
     }
   };
 
@@ -176,7 +181,7 @@ export function useChat() {
       await loadRecentConversations();
     } catch (error) {
       console.error('Failed to delete conversation:', error);
-      alert('Failed to delete conversation. Please try again.');
+      showError('Failed to delete conversation. Please try again.');
     }
   };
 
@@ -247,6 +252,7 @@ export function useChat() {
         await loadRecentConversations();
       } catch (error) {
         console.error('Failed to create conversation:', error);
+        handleError(error, "creating new conversation");
         // Fallback to local storage behavior
         setConversation({ id: Math.random().toString(36).substr(2, 9), title: message });
       }
@@ -288,6 +294,7 @@ export function useChat() {
         });
       } catch (error) {
         console.error('Failed to store user message:', error);
+        handleError(error, "storing user message");
       }
     }
 
@@ -310,7 +317,8 @@ export function useChat() {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          await handleHttpError(response, "sending message");
+          return; // Stop execution on error
         }
 
         const decoder = new TextDecoder();
@@ -329,6 +337,7 @@ export function useChat() {
             assistantMessageId = storedMessage.id;
           } catch (error) {
             console.error('Failed to store initial assistant message:', error);
+            handleError(error, "storing assistant message");
           }
         }
 
@@ -430,6 +439,7 @@ export function useChat() {
                   }
                 } catch (error) {
                   console.error('Failed to update assistant message:', error);
+                  handleError(error, "updating assistant message");
                 }
               }
               
@@ -454,6 +464,7 @@ export function useChat() {
                     });
                   } catch (error) {
                     console.error('Failed to store tool results message:', error);
+                    handleError(error, "storing tool results");
                   }
                 }
               } else {
@@ -465,6 +476,7 @@ export function useChat() {
       }
     } catch (error) {
       console.error("Error sending message:", error);
+      handleError(error, "sending message");
     } finally {
       setLoading(false);
     }
