@@ -6,8 +6,9 @@
   "scripts": {
     "start": "node --env-file .env server.js",
     "start:dev": "node --env-file .env --watch-path=. server.js",
-    "test": "DB_DIALECT=sqlite NODE_ENV=test node --test test/*.test.js",
-    "test:watch": "DB_DIALECT=sqlite NODE_ENV=test node --test --watch test/*.test.js",
+    "test:setup": "npx playwright install chromium",
+    "test": "node --env-file test.env --test --test-reporter=tap && npm run test:integration",
+    "test:integration": "node --env-file test.env integration.js",
     "cert": "openssl req -x509 -newkey rsa:2048 -nodes -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost' -keyout key.tmp -out cert.tmp && cat key.tmp cert.tmp > key.pem && rm key.tmp cert.tmp"
   },
   "author": "",
@@ -33,6 +34,7 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "playwright": "^1.49.1",
     "sqlite3": "^5.1.7",
     "supertest": "^7.1.1"
   }
