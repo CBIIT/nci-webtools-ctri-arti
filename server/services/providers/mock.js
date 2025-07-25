@@ -1,5 +1,5 @@
 // Test provider for mocking AI responses in tests
-export default class TestProvider {
+export default class MockProvider {
   constructor() {
     this.mockResponse = null;
     this.mockError = null;
