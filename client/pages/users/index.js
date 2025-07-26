@@ -187,6 +187,11 @@ function UsersList() {
             cellClassName: "small"
           },
           {
+            key: "role",
+            title: "Role",
+            cellClassName: "text-capitalize small"
+          },
+          {
             key: "status",
             title: "Status",
             render: (user) => html`
@@ -200,11 +205,6 @@ function UsersList() {
                 ${user.status}
               </span>
             `
-          },
-          {
-            key: "role",
-            title: "Role",
-            cellClassName: "text-capitalize small"
           },
           {
             key: "limit",
