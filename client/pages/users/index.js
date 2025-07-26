@@ -11,7 +11,7 @@ function UsersList() {
   // Server-side filters & sorting
   const [searchQuery, setSearchQuery] = createSignal("");
   const [selectedRole, setSelectedRole] = createSignal("All");
-  const [selectedStatus, setSelectedStatus] = createSignal("All");
+  const [selectedStatus, setSelectedStatus] = createSignal("active");
   const [sortColumn, setSortColumn] = createSignal("lastName");
   const [sortOrder, setSortOrder] = createSignal("asc");
   const [currentPage, setCurrentPage] = createSignal(1);
@@ -145,7 +145,7 @@ function UsersList() {
                 aria-label="Select Status Filter"
                 onInput=${e => handleStatusChange(e.target.value)}>
                 <${For} each=${statuses}>
-                  ${status => html`<option value=${status}>${capitalize(status)}</option>`}
+                  ${status => html`<option value=${status} selected=${() => selectedStatus() === status}>${capitalize(status)}</option>`}
                 <//>
               </select>
             </div>
