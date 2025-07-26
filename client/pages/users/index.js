@@ -113,6 +113,17 @@ function UsersList() {
         <div class="card-body">
           <div class="row g-3 align-items-end">
             <div class="col-md-3">
+              <label for="search-filter" class="form-label">User</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="search-filter"
+                placeholder="Search by name or email"
+                value=${searchQuery}
+                onInput=${e => handleSearch(e.target.value)}
+              />
+            </div>
+            <div class="col-md-3">
               <label for="role-filter" class="form-label">Role</label>
               <select 
                 class="form-select" 
@@ -137,17 +148,6 @@ function UsersList() {
                   ${status => html`<option value=${status}>${capitalize(status)}</option>`}
                 <//>
               </select>
-            </div>
-            <div class="col-md-6">
-              <label for="search-filter" class="form-label">User</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="search-filter"
-                placeholder="Search by name or email"
-                value=${searchQuery}
-                onInput=${e => handleSearch(e.target.value)}
-              />
             </div>
           </div>
         </div>
