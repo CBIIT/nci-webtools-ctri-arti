@@ -224,19 +224,15 @@ function UsersList() {
         <div class="card-body">
           <div class="row g-3 align-items-end">
             <div class="col-md-3">
-              <label for="date-range-filter" class="form-label">Date Range</label>
-              <select 
-                class="form-select" 
-                id="date-range-filter" 
-                value=${selectedDateRange}
-                onInput=${e => setSelectedDateRange(e.target.value)}>
-                <option>This Week</option>
-                <option>Last 30 Days</option>
-                <option>Last 60 Days</option>
-                <option>Last 120 Days</option>
-                <option>Last 360 Days</option>
-                <option>Custom</option>
-              </select>
+              <label for="search-filter" class="form-label">User</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="search-filter"
+                placeholder="Search by name or email"
+                value=${searchQuery}
+                onInput=${e => handleSearch(e.target.value)}
+              />
             </div>
             <div class="col-md-3">
               <label for="role-filter" class="form-label">Role</label>
@@ -252,16 +248,20 @@ function UsersList() {
                   <//>
               </select>
             </div>
-            <div class="col-md-6">
-              <label for="search-filter" class="form-label">User</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="search-filter"
-                placeholder="Search by name or email"
-                value=${searchQuery}
-                onInput=${e => handleSearch(e.target.value)}
-              />
+            <div class="col-md-3">
+              <label for="date-range-filter" class="form-label">Date Range</label>
+              <select 
+                class="form-select" 
+                id="date-range-filter" 
+                value=${selectedDateRange}
+                onInput=${e => setSelectedDateRange(e.target.value)}>
+                <option>This Week</option>
+                <option>Last 30 Days</option>
+                <option>Last 60 Days</option>
+                <option>Last 120 Days</option>
+                <option>Last 360 Days</option>
+                <option>Custom</option>
+              </select>
             </div>
           </div>
           
