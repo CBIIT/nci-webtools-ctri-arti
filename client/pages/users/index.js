@@ -26,7 +26,7 @@ function UsersList() {
 
   // Server-side users resource with all parameters
   const usersParams = createMemo(() => ({
-    search: searchQuery(),
+    search: searchQuery().length >= 3 ? searchQuery() : undefined,
     roleId: selectedRole() === "All" ? undefined : rolesResource()?.find(r => r.name === selectedRole())?.id,
     status: selectedStatus() === "All" ? undefined : selectedStatus(),
     sortBy: sortColumn(),
@@ -161,7 +161,7 @@ function UsersList() {
         loadingText="Loading users..."
         totalItems=${() => usersResource()?.meta?.total || 0}
         page=${currentPage}
-        search=${searchQuery}
+        search=${() => searchQuery().length >= 3 ? searchQuery() : ""}
         sortColumn=${sortColumn}
         sortOrder=${sortOrder}
         onSort=${handleSort}
