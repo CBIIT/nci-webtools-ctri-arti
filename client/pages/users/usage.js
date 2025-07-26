@@ -253,16 +253,15 @@ function UsersList() {
               </select>
             </div>
             <div class="col-md-6">
-              <div class="input-group">
-                <span class="input-group-text">Search</span>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  placeholder="Search by name or email"
-                  value=${searchQuery}
-                  onInput=${e => handleSearch(e.target.value)}
-                />
-              </div>
+              <label for="search-filter" class="form-label">User</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="search-filter"
+                placeholder="Search by name or email"
+                value=${searchQuery}
+                onInput=${e => handleSearch(e.target.value)}
+              />
             </div>
           </div>
           
