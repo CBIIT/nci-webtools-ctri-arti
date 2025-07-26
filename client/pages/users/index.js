@@ -145,7 +145,7 @@ function UsersList() {
                 aria-label="Select Status Filter"
                 onInput=${e => handleStatusChange(e.target.value)}>
                 <${For} each=${statuses}>
-                  ${status => html`<option value=${status} selected=${() => selectedStatus() === status}>${capitalize(status)}</option>`}
+                  ${status => html`<option value=${status} selected=${selectedStatus() === status}>${capitalize(status)}</option>`}
                 <//>
               </select>
             </div>
