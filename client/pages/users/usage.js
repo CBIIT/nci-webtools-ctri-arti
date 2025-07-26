@@ -115,10 +115,13 @@ function UsersList() {
   // --- Server-side Filters & Sorting ---
   const [searchQuery, setSearchQuery] = createSignal("");
   const [selectedRole, setSelectedRole] = createSignal("All");
+  const [selectedStatus, setSelectedStatus] = createSignal("active");
   const [sortColumn, setSortColumn] = createSignal("estimatedCost");
   const [sortOrder, setSortOrder] = createSignal("desc");
   const [currentPage, setCurrentPage] = createSignal(1);
   const rowsPerPage = 20;
+
+  const statuses = ['All', 'active', 'inactive'];
 
   const roleNames = createMemo(() => {
     const allRoles = rolesResource()?.map(role => role.name).filter(Boolean) || [];
@@ -131,6 +134,7 @@ function UsersList() {
     endDate: currentDateRange().endDate,
     search: searchQuery(),
     role: selectedRole(),
+    status: selectedStatus(),
     sortBy: sortColumn(),
     sortOrder: sortOrder(),
     limit: rowsPerPage,
@@ -151,6 +155,7 @@ function UsersList() {
       
       if (params.search) queryParams.set('search', params.search);
       if (params.role && params.role !== 'All') queryParams.set('role', params.role);
+      if (params.status && params.status !== 'All') queryParams.set('status', params.status);
       if (params.sortBy) queryParams.set('sortBy', params.sortBy);
       if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
       
@@ -190,6 +195,11 @@ function UsersList() {
 
   const handleRoleChange = (newRole) => {
     setSelectedRole(newRole);
+    setCurrentPage(1); // Reset to first page
+  };
+
+  const handleStatusChange = (newStatus) => {
+    setSelectedStatus(newStatus);
     setCurrentPage(1); // Reset to first page
   };
 
@@ -246,6 +256,19 @@ function UsersList() {
                   <${For} each=${() => roleNames()}>
                     ${role => html`<option value=${role}>${capitalize(role)}</option>`}
                   <//>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label for="status-filter" class="form-label">Account Status</label>
+              <select 
+                class="form-select" 
+                id="status-filter" 
+                value=${selectedStatus}
+                aria-label="Select Status Filter"
+                onInput=${e => handleStatusChange(e.target.value)}>
+                <${For} each=${statuses}>
+                  ${status => html`<option value=${status} selected=${selectedStatus() === status}>${capitalize(status)}</option>`}
+                <//>
               </select>
             </div>
             <div class="col-md-3">
