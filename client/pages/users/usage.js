@@ -132,7 +132,7 @@ function UsersList() {
   const analyticsParams = createMemo(() => ({
     startDate: currentDateRange().startDate,
     endDate: currentDateRange().endDate,
-    search: searchQuery(),
+    search: searchQuery().length >= 3 ? searchQuery() : undefined,
     role: selectedRole(),
     status: selectedStatus(),
     sortBy: sortColumn(),
@@ -325,7 +325,7 @@ function UsersList() {
         loadingText="Loading users..."
         totalItems=${() => serverAnalyticsResource()?.meta?.total || 0}
         page=${currentPage}
-        search=${searchQuery}
+        search=${() => searchQuery().length >= 3 ? searchQuery() : ""}
         sortColumn=${sortColumn}
         sortOrder=${sortOrder}
         onSort=${handleSort}
