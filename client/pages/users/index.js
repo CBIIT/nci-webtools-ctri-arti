@@ -111,7 +111,6 @@ function UsersList() {
       <!-- Filters -->
       <div class="card shadow-sm mb-4">
         <div class="card-body">
-          <h5 class="card-title">Filter</h5>
           <div class="row g-3 align-items-end">
             <div class="col-md-3">
               <label for="role-filter" class="form-label">Role</label>
