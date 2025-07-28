@@ -1,5 +1,5 @@
 import html from "solid-js/html";
-import { Show, For, createSignal, createResource } from "solid-js";
+import { Show, For, createSignal, createResource, createEffect } from "solid-js";
 import { parseDocument } from "/utils/parsers.js";
 import { readFile } from "/utils/files.js";
 import { createReport } from "docx-templates";
@@ -14,10 +14,36 @@ export default function Page() {
   const [customTemplate, setCustomTemplate] = createSignal();
   const [selectedTemplates, setSelectedTemplates] = createSignal([]);
   const [generatedDocuments, setGeneratedDocuments] = createSignal({});
+  const [templateSourceType, setTemplateSourceType] = createSignal("predefined");
+  const [selectedPredefinedTemplate, setSelectedPredefinedTemplate] = createSignal("");
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
   // Get template groups from config
   const templateGroups = () => getTemplateConfigsByCategory();
+
+  // Auto-select the first checked template when templates are selected
+  createEffect(() => {
+    const selected = selectedTemplates();
+    if (selected.length > 0 && !selectedPredefinedTemplate()) {
+      setSelectedPredefinedTemplate(selected[0]);
+    } else if (selected.length === 0) {
+      setSelectedPredefinedTemplate("");
+    }
+  });
+
+  // Load the predefined template's prompt when selected
+  createEffect(async () => {
+    const templateId = selectedPredefinedTemplate();
+    if (templateId && templateSourceType() === "predefined") {
+      try {
+        const prompt = await getPrompt(templateId);
+        setCustomSystemPrompt(prompt);
+      } catch (error) {
+        console.error("Failed to load template prompt:", error);
+        setCustomSystemPrompt("");
+      }
+    }
+  });
 
   async function handleFileSelect(event) {
     const input = event.target;
@@ -43,9 +69,15 @@ export default function Page() {
 
     // Build list of templates to process (selected + custom if available)
     const templatesToProcess = [...selected];
-    const hasCustom = customTemplate() && customSystemPrompt().trim();
-    if (hasCustom) {
+    
+    // Add custom template if in custom mode with template and prompt
+    if (templateSourceType() === "custom" && customTemplate() && customSystemPrompt().trim()) {
       templatesToProcess.push("custom");
+    }
+    
+    // Add predefined template if in predefined mode with valid selection
+    if (templateSourceType() === "predefined" && selectedPredefinedTemplate()) {
+      templatesToProcess.push("predefined-custom");
     }
 
     if (templatesToProcess.length === 0) return;
@@ -67,6 +99,12 @@ export default function Page() {
           systemPrompt = customSystemPrompt();
           defaultOutputData = templateConfigs["nih-cc-adult-healthy"].defaultOutput; // Use NIH consent output structure for custom
           templateFile = customTemplate();
+        } else if (templateId === "predefined-custom") {
+          // Handle predefined template with optional custom prompt
+          const config = templateConfigs[selectedPredefinedTemplate()];
+          systemPrompt = customSystemPrompt().trim() || await getPrompt(selectedPredefinedTemplate());
+          defaultOutputData = config.defaultOutput;
+          templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
         } else {
           // Handle predefined templates
           const config = templateConfigs[templateId];
@@ -116,6 +154,9 @@ export default function Page() {
     let filename;
     if (templateId === "custom") {
       filename = "custom-document.docx";
+    } else if (templateId === "predefined-custom") {
+      const config = templateConfigs[selectedPredefinedTemplate()];
+      filename = config.filename.replace(".docx", "-custom.docx");
     } else {
       const config = templateConfigs[templateId];
       filename = config.filename;
@@ -163,6 +204,8 @@ export default function Page() {
     setCustomSystemPrompt("");
     setSelectedTemplates([]);
     setGeneratedDocuments({});
+    setTemplateSourceType("predefined");
+    setSelectedPredefinedTemplate("");
   }
 
   /**
@@ -258,36 +301,110 @@ export default function Page() {
                     <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
                   </select>
 
-                  <div class="d-flex justify-content-between align-items-center">
-                    <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
-                    <a
-                      href="/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx"
-                      download="nih-cc-consent-template-2024-04-15.docx"
-                      class="small"
-                      >Download Template</a
-                    >
+                  <label class="form-label">Output Template Source</label>
+                  <div class="mb-2">
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="templateSource"
+                        id="templateSourcePredefined"
+                        value="predefined"
+                        checked=${() => templateSourceType() === "predefined"}
+                        onChange=${(e) => setTemplateSourceType(e.target.value)} />
+                      <label class="form-check-label" for="templateSourcePredefined">
+                        Predefined template
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="templateSource"
+                        id="templateSourceCustom"
+                        value="custom"
+                        checked=${() => templateSourceType() === "custom"}
+                        onChange=${(e) => setTemplateSourceType(e.target.value)} />
+                      <label class="form-check-label" for="templateSourceCustom">
+                        Custom template
+                      </label>
+                    </div>
                   </div>
-                  <input
-                    type="file"
-                    id="outputTemplateFile"
-                    name="outputTemplateFile"
-                    class="form-control form-control-sm mb-2"
-                    accept=".txt, .docx, .pdf"
-                    onChange=${handleFileSelect} />
 
-                  <label for="systemPrompt" class="form-label">Custom System Prompt</label>
-                  <textarea
-                    class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                    id="systemPrompt"
-                    name="systemPrompt"
-                    rows="20"
-                    placeholder="Enter custom system prompt"
-                    value=${customSystemPrompt}
-                    onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
-                  <div class="form-text">
-                    Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                    and template are provided.
-                  </div>
+                  <${Show} when=${() => templateSourceType() === "predefined"}>
+                    <label for="predefinedTemplate" class="form-label">Select Template</label>
+                    <select
+                      class="form-select form-select-sm cursor-pointer mb-2"
+                      name="predefinedTemplate"
+                      id="predefinedTemplate"
+                      value=${selectedPredefinedTemplate}
+                      onChange=${(e) => setSelectedPredefinedTemplate(e.target.value)}>
+                      <option value="">-- Select a template --</option>
+                      <${For} each=${templateGroups}>
+                        ${(group) => html`
+                          <optgroup label=${() => group.label}>
+                            <${For} each=${() => group.options}>
+                              ${(option) => html`
+                                <option 
+                                  value=${() => option.value} 
+                                  disabled=${() => option.disabled}>
+                                  ${() => templateConfigs[option.value].label}
+                                </option>
+                              `}
+                            <//>
+                          </optgroup>
+                        `}
+                      <//>
+                    </select>
+                  <//>
+
+                  <${Show} when=${() => templateSourceType() === "custom"}>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
+                      <a
+                        href="/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx"
+                        download="nih-cc-consent-template-2024-04-15.docx"
+                        class="small"
+                        >Download Template</a
+                      >
+                    </div>
+                    <input
+                      type="file"
+                      id="outputTemplateFile"
+                      name="outputTemplateFile"
+                      class="form-control form-control-sm mb-2"
+                      accept=".txt, .docx, .pdf"
+                      onChange=${handleFileSelect} />
+
+                    <label for="systemPrompt" class="form-label">Custom System Prompt</label>
+                    <textarea
+                      class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                      id="systemPrompt"
+                      name="systemPrompt"
+                      rows="20"
+                      placeholder="Enter custom system prompt"
+                      value=${customSystemPrompt}
+                      onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                    <div class="form-text">
+                      Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
+                      and template are provided.
+                    </div>
+                  <//>
+
+                  <${Show} when=${() => templateSourceType() === "predefined" && selectedPredefinedTemplate()}>
+                    <label for="systemPrompt" class="form-label">Custom System Prompt (Optional)</label>
+                    <textarea
+                      class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                      id="systemPrompt"
+                      name="systemPrompt"
+                      rows="10"
+                      placeholder="Leave empty to use default prompt for selected template"
+                      value=${customSystemPrompt}
+                      onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                    <div class="form-text">
+                      Override the default prompt for the selected template. Use <strong>{{document}}</strong> as a placeholder.
+                    </div>
+                  </>
                 </details>
               <//>
 
@@ -323,6 +440,13 @@ export default function Page() {
                       const documentInfo = () => {
                         if (templateId === "custom") {
                           return { label: "Custom Document", filename: "custom-document.docx" };
+                        } else if (templateId === "predefined-custom") {
+                          const config = templateConfigs[selectedPredefinedTemplate()];
+                          return { 
+                            prefix: config.prefix || "", 
+                            label: config.label + " (Custom)", 
+                            filename: config.filename.replace(".docx", "-custom.docx") 
+                          };
                         } else {
                           const config = templateConfigs[templateId];
                           return { prefix: config.prefix || "", label: config.label, filename: config.filename };
