@@ -309,6 +309,7 @@ api.get("/admin/analytics", requireRole("admin"), async (req, res) => {
   const sortBy = req.query.sortBy || 'totalCost';
   const sortOrder = req.query.sortOrder || 'desc';
   const roleFilter = req.query.role;
+  const statusFilter = req.query.status;
   
   let dateFormat, groupCol;
   switch (groupBy) {
@@ -362,6 +363,11 @@ api.get("/admin/analytics", requireRole("admin"), async (req, res) => {
     const roleWhere = {};
     if (roleFilter && roleFilter !== 'All') {
       roleWhere.name = roleFilter;
+    }
+
+    // Add status filter
+    if (statusFilter && statusFilter !== 'All') {
+      userWhere.status = statusFilter;
     }
 
     // Map sortBy to actual columns
