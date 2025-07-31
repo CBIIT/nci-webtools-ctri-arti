@@ -230,91 +230,89 @@ function UsersList() {
       <//>
 
       <!-- Date Range Filter -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-body">
-          <div class="row g-3 align-items-end">
-            <div class="col-md-3">
-              <label for="search-filter" class="form-label">User</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="search-filter"
-                placeholder="Search by name or email"
-                value=${searchQuery}
-                onInput=${e => handleSearch(e.target.value)}
-              />
-            </div>
-            <div class="col-md-3">
-              <label for="role-filter" class="form-label">Role</label>
-              <select 
-                class="form-select" 
-                id="role-filter" 
-                aria-label="Select Role Filter"
-                value=${selectedRole}
-                onInput=${e => handleRoleChange(e.target.value)}
-                >
-                  <${For} each=${() => roleNames()}>
-                    ${role => html`<option value=${role}>${capitalize(role)}</option>`}
-                  <//>
-              </select>
-            </div>
-            <div class="col-md-2">
-              <label for="status-filter" class="form-label">Account Status</label>
-              <select 
-                class="form-select" 
-                id="status-filter" 
-                value=${selectedStatus}
-                aria-label="Select Status Filter"
-                onInput=${e => handleStatusChange(e.target.value)}>
-                <${For} each=${statuses}>
-                  ${status => html`<option value=${status} selected=${selectedStatus() === status}>${capitalize(status)}</option>`}
+      <div class="mb-4">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label for="search-filter" class="form-label">User</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="search-filter"
+              placeholder="Search by name or email"
+              value=${searchQuery}
+              onInput=${e => handleSearch(e.target.value)}
+            />
+          </div>
+          <div class="col-md-3">
+            <label for="role-filter" class="form-label">Role</label>
+            <select 
+              class="form-select" 
+              id="role-filter" 
+              aria-label="Select Role Filter"
+              value=${selectedRole}
+              onInput=${e => handleRoleChange(e.target.value)}
+              >
+                <${For} each=${() => roleNames()}>
+                  ${role => html`<option value=${role}>${capitalize(role)}</option>`}
                 <//>
-              </select>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="status-filter" class="form-label">Account Status</label>
+            <select 
+              class="form-select" 
+              id="status-filter" 
+              value=${selectedStatus}
+              aria-label="Select Status Filter"
+              onInput=${e => handleStatusChange(e.target.value)}>
+              <${For} each=${statuses}>
+                ${status => html`<option value=${status} selected=${selectedStatus() === status}>${capitalize(status)}</option>`}
+              <//>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="date-range-filter" class="form-label">Date Range</label>
+            <select 
+              class="form-select" 
+              id="date-range-filter" 
+              value=${selectedDateRange}
+              onInput=${e => setSelectedDateRange(e.target.value)}>
+              <option>This Week</option>
+              <option>Last 30 Days</option>
+              <option>Last 60 Days</option>
+              <option>Last 120 Days</option>
+              <option>Last 360 Days</option>
+              <option>Custom</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Custom Date Range (shown when Custom is selected) -->
+        <${Show} when=${() => selectedDateRange() === "Custom"}>
+          <div class="row g-3 align-items-center mt-3">
+            <div class="col-md-3">
+              <label for="custom-startDate" class="form-label">Start Date</label>
+              <input 
+                type="date" 
+                id="custom-startDate" 
+                class="form-control" 
+                value=${() => customDates().startDate}
+                max=${() => customDates().endDate}
+                onInput=${e => setCustomDates(prev => ({ ...prev, startDate: e.target.value }))} />
             </div>
             <div class="col-md-3">
-              <label for="date-range-filter" class="form-label">Date Range</label>
-              <select 
-                class="form-select" 
-                id="date-range-filter" 
-                value=${selectedDateRange}
-                onInput=${e => setSelectedDateRange(e.target.value)}>
-                <option>This Week</option>
-                <option>Last 30 Days</option>
-                <option>Last 60 Days</option>
-                <option>Last 120 Days</option>
-                <option>Last 360 Days</option>
-                <option>Custom</option>
-              </select>
+              <label for="custom-endDate" class="form-label">End Date</label>
+              <input 
+                type="date" 
+                id="custom-endDate" 
+                class="form-control" 
+                value=${() => customDates().endDate}
+                min=${() => customDates().startDate}
+                max=${formatDate(new Date())}
+                onInput=${e => setCustomDates(prev => ({ ...prev, endDate: e.target.value }))} />
             </div>
           </div>
-          
-          <!-- Custom Date Range (shown when Custom is selected) -->
-          <${Show} when=${() => selectedDateRange() === "Custom"}>
-            <div class="row g-3 align-items-center mt-3">
-              <div class="col-md-3">
-                <label for="custom-startDate" class="form-label">Start Date</label>
-                <input 
-                  type="date" 
-                  id="custom-startDate" 
-                  class="form-control" 
-                  value=${() => customDates().startDate}
-                  max=${() => customDates().endDate}
-                  onInput=${e => setCustomDates(prev => ({ ...prev, startDate: e.target.value }))} />
-              </div>
-              <div class="col-md-3">
-                <label for="custom-endDate" class="form-label">End Date</label>
-                <input 
-                  type="date" 
-                  id="custom-endDate" 
-                  class="form-control" 
-                  value=${() => customDates().endDate}
-                  min=${() => customDates().startDate}
-                  max=${formatDate(new Date())}
-                  onInput=${e => setCustomDates(prev => ({ ...prev, endDate: e.target.value }))} />
-              </div>
-            </div>
-          <//>
-        </div>
+        <//>
       </div>
 
       <!-- Users Table -->

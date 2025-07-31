@@ -20,6 +20,7 @@ export default function Page() {
       title: "New Tools",
       description: "Coming soon",
       href: "/",
+      disabled: true,
       icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="New Tools Icon" />`,
     },
   ];
@@ -49,11 +50,13 @@ export default function Page() {
           <div class="py-3 d-flex flex-column justify-content-center h-100">
             <${For} each=${links}>
               ${(link) => html`
-                <a class="d-flex align-items-center my-3 text-decoration-none link-primary" href="${link.href}">
+                <a class="d-flex align-items-center my-3 text-decoration-none link-primary" 
+                   classList=${{ "disabled-link": link.disabled }} 
+                   href="${link.href}">
                   <div class="p-2 text-gradient">${link.icon}</div>
                   <div class="p-2 border-start">
                     <div class="font-title fs-5 textAnchorBlue">${link.title}</div>
-                    <div class="fw-normal text-primary">${link.description}</div>
+                    <div class="fw-normal" classList=${{ "text-primary": !link.disabled, "text-muted": link.disabled }}>${link.description}</div>
                   </div>
                 </a>
               `}

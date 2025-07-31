@@ -1,11 +1,15 @@
 import { createSignal, createEffect, createMemo, For, Show } from "solid-js";
 import { createResource } from "solid-js";
 import html from "solid-js/html";
+import { useLocation } from "@solidjs/router";
 import { capitalize } from "/utils/utils.js";
 import { DataTable } from "/components/table.js";
+import { AlertContainer } from "/components/alert.js";
+import { showSuccess, showError, alerts, clearAlert } from "/utils/alerts.js";
 
 
 function UsersList() {
+  const location = useLocation();
   const [rolesResource] = createResource(() => fetch("/api/admin/roles").then(res => res.json()));
   
   // Server-side filters & sorting
@@ -95,8 +99,23 @@ function UsersList() {
     setCurrentPage(page);
   };
 
+  // Check for alert message from navigation state
+  createEffect(() => {
+    const state = location.state;
+    if (state?.alertMessage) {
+      if (state.alertType === 'success') {
+        showSuccess(state.alertMessage);
+      } else if (state.alertType === 'error') {
+        showError(state.alertMessage);
+      }
+      // Clear the state after showing the alert
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  });
+
   return html`
     <div class="container py-4">
+      <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="font-title fs-1 fw-bold mt-4 table-header-color">Manage Users</h1>
       </div>
@@ -109,46 +128,44 @@ function UsersList() {
       <//>
 
       <!-- Filters -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-body">
-          <div class="row g-3 align-items-end">
-            <div class="col-md-3">
-              <label for="search-filter" class="form-label">User</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="search-filter"
-                placeholder="Search by name or email"
-                value=${searchQuery}
-                onInput=${e => handleSearch(e.target.value)}
-              />
-            </div>
-            <div class="col-md-3">
-              <label for="role-filter" class="form-label">Role</label>
-              <select 
-                class="form-select" 
-                id="role-filter" 
-                aria-label="Select Role Filter"
-                value=${selectedRole}
-                onInput=${e => handleRoleChange(e.target.value)}>
-                <${For} each=${() => roleNames()}>
-                  ${role => html`<option value=${role}>${capitalize(role)}</option>`}
-                <//>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label for="status-filter" class="form-label">Status</label>
-              <select 
-                class="form-select" 
-                id="status-filter" 
-                value=${selectedStatus}
-                aria-label="Select Status Filter"
-                onInput=${e => handleStatusChange(e.target.value)}>
-                <${For} each=${statuses}>
-                  ${status => html`<option value=${status} selected=${selectedStatus() === status}>${capitalize(status)}</option>`}
-                <//>
-              </select>
-            </div>
+      <div class="mb-4">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label for="search-filter" class="form-label">User</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="search-filter"
+              placeholder="Search by name or email"
+              value=${searchQuery}
+              onInput=${e => handleSearch(e.target.value)}
+            />
+          </div>
+          <div class="col-md-3">
+            <label for="role-filter" class="form-label">Role</label>
+            <select 
+              class="form-select" 
+              id="role-filter" 
+              aria-label="Select Role Filter"
+              value=${selectedRole}
+              onInput=${e => handleRoleChange(e.target.value)}>
+              <${For} each=${() => roleNames()}>
+                ${role => html`<option value=${role}>${capitalize(role)}</option>`}
+              <//>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="status-filter" class="form-label">Status</label>
+            <select 
+              class="form-select" 
+              id="status-filter" 
+              value=${selectedStatus}
+              aria-label="Select Status Filter"
+              onInput=${e => handleStatusChange(e.target.value)}>
+              <${For} each=${statuses}>
+                ${status => html`<option value=${status} selected=${selectedStatus() === status}>${capitalize(status)}</option>`}
+              <//>
+            </select>
           </div>
         </div>
       </div>

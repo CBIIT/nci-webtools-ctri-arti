@@ -1,11 +1,12 @@
 import { createSignal, Show } from "solid-js";
 import html from "solid-js/html";
-import { useParams } from "@solidjs/router";
+import { useParams, useNavigate } from "@solidjs/router";
 import { createResource } from "solid-js";
 import { capitalize } from "/utils/utils.js";
 
 function UserEdit() {
   const params = useParams();
+  const navigate = useNavigate();
   const [user, setUser] = createSignal({
     email: "",
     firstName: "",
@@ -19,7 +20,6 @@ function UserEdit() {
   const [originalLimit, setOriginalLimit] = createSignal(0);
   const [generateApiKey, setGenerateApiKey] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
-  const [showSuccess, setShowSuccess] = createSignal(false);
 
   // Default value mapping based on role ID
   const DEFAULT_ROLE_LIMITS = {
@@ -83,9 +83,15 @@ function UserEdit() {
         const data = await response.json();
         throw new Error(data.error || "Failed to save user");
       }
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-      setOriginalLimit(userData.limit || 0); // Reset original limit to new value
+      
+      // Navigate with success message in state
+      navigate("/_/users", { 
+        state: { 
+          alertMessage: "User successfully updated!",
+          alertType: "success"
+        }
+      });
+
     } catch (err) {
       console.error("Error saving user:", err);
       alert(err.message || "An error occurred while saving the user");
@@ -129,14 +135,6 @@ function UserEdit() {
       class="img-fluid object-fit-cover w-100"
       style="height:153px;" />
     <div class="container pb-4">
-      <!-- Success Banner -->
-      <${Show} when=${showSuccess}>
-        <div class="alert alert-success alert-dismissible fade show position-absolute top-0 start-50 translate-middle-x mt-3" role="alert">
-          <strong>Success!</strong> All changes have been saved.
-          <button type="button" class="btn-close" onClick=${() => setShowSuccess(false)} aria-label="Close"></button>
-        </div>
-      <//>
-      
       <!-- Error Alert -->
       <${Show} when=${() => roles.error || userData.error}>
         <div class="alert alert-danger" role="alert">${() => roles.error || userData.error || "An error occurred while fetching data"}</div>
@@ -318,8 +316,8 @@ function UserEdit() {
             <!-- Form Buttons -->
             <div class="col-12 mt-4">
               <div class="d-flex gap-2 justify-content-center">
-                <a href="/_/users" class="btn btn-outline-secondary text-decoration-none"> Cancel </a>
-                <button type="submit" class="btn btn-primary" disabled=${saving}>${() => (saving() ? "Saving..." : "Save")}</button>
+                <a href="/_/users" class="btn btn-outline-secondary text-decoration-none btn-uniform"> Cancel </a>
+                <button type="submit" class="btn btn-primary btn-uniform" disabled=${saving}>${() => (saving() ? "Saving..." : "Save")}</button>
               </div>
             </div>
           </div>

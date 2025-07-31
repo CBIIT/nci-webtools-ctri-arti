@@ -40,6 +40,7 @@ const routes = [
         path: "fedpulse",
         title: "FedPulse",
         component: FedPulse,
+        hidden: true,
       },
       {
         path: "consent-crafter",
