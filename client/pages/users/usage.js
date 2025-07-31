@@ -257,7 +257,7 @@ function UsersList() {
                 <//>
             </select>
           </div>
-          <div class="col-md-2">
+          <div class="col-md-3">
             <label for="status-filter" class="form-label">Account Status</label>
             <select 
               class="form-select" 
