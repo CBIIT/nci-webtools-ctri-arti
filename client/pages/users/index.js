@@ -1,11 +1,15 @@
 import { createSignal, createEffect, createMemo, For, Show } from "solid-js";
 import { createResource } from "solid-js";
 import html from "solid-js/html";
+import { useLocation } from "@solidjs/router";
 import { capitalize } from "/utils/utils.js";
 import { DataTable } from "/components/table.js";
+import { AlertContainer } from "/components/alert.js";
+import { showSuccess, showError, alerts, clearAlert } from "/utils/alerts.js";
 
 
 function UsersList() {
+  const location = useLocation();
   const [rolesResource] = createResource(() => fetch("/api/admin/roles").then(res => res.json()));
   
   // Server-side filters & sorting
@@ -95,8 +99,23 @@ function UsersList() {
     setCurrentPage(page);
   };
 
+  // Check for alert message from navigation state
+  createEffect(() => {
+    const state = location.state;
+    if (state?.alertMessage) {
+      if (state.alertType === 'success') {
+        showSuccess(state.alertMessage);
+      } else if (state.alertType === 'error') {
+        showError(state.alertMessage);
+      }
+      // Clear the state after showing the alert
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  });
+
   return html`
     <div class="container py-4">
+      <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="font-title fs-1 fw-bold mt-4 table-header-color">Manage Users</h1>
       </div>
