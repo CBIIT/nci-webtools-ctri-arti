@@ -145,6 +145,11 @@ a.disabled-link {
   pointer-events: none;
 }
 
+.btn-uniform {
+  width: auto;
+  min-width: 100px;
+}
+
 .shadow-hover:hover,
 .shadow-hover:active,
 .shadow-hover:focus {
