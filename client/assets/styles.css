@@ -459,11 +459,8 @@ ul {
   --bs-table-bg: rgb(227, 238, 249);
 }
 
-.users-table tbody>tr:not(:last-child)>td {
+.users-table tbody>tr>td {
   border-color: rgb(8, 58, 80);
-}
-.users-table tbody>tr:last-child>td {
-  border:none
 }
 
 .users-table .btn {
