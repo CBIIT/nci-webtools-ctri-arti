@@ -109,46 +109,44 @@ function UsersList() {
       <//>
 
       <!-- Filters -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-body">
-          <div class="row g-3 align-items-end">
-            <div class="col-md-3">
-              <label for="search-filter" class="form-label">User</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="search-filter"
-                placeholder="Search by name or email"
-                value=${searchQuery}
-                onInput=${e => handleSearch(e.target.value)}
-              />
-            </div>
-            <div class="col-md-3">
-              <label for="role-filter" class="form-label">Role</label>
-              <select 
-                class="form-select" 
-                id="role-filter" 
-                aria-label="Select Role Filter"
-                value=${selectedRole}
-                onInput=${e => handleRoleChange(e.target.value)}>
-                <${For} each=${() => roleNames()}>
-                  ${role => html`<option value=${role}>${capitalize(role)}</option>`}
-                <//>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label for="status-filter" class="form-label">Status</label>
-              <select 
-                class="form-select" 
-                id="status-filter" 
-                value=${selectedStatus}
-                aria-label="Select Status Filter"
-                onInput=${e => handleStatusChange(e.target.value)}>
-                <${For} each=${statuses}>
-                  ${status => html`<option value=${status} selected=${selectedStatus() === status}>${capitalize(status)}</option>`}
-                <//>
-              </select>
-            </div>
+      <div class="mb-4">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label for="search-filter" class="form-label">User</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="search-filter"
+              placeholder="Search by name or email"
+              value=${searchQuery}
+              onInput=${e => handleSearch(e.target.value)}
+            />
+          </div>
+          <div class="col-md-3">
+            <label for="role-filter" class="form-label">Role</label>
+            <select 
+              class="form-select" 
+              id="role-filter" 
+              aria-label="Select Role Filter"
+              value=${selectedRole}
+              onInput=${e => handleRoleChange(e.target.value)}>
+              <${For} each=${() => roleNames()}>
+                ${role => html`<option value=${role}>${capitalize(role)}</option>`}
+              <//>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="status-filter" class="form-label">Status</label>
+            <select 
+              class="form-select" 
+              id="status-filter" 
+              value=${selectedStatus}
+              aria-label="Select Status Filter"
+              onInput=${e => handleStatusChange(e.target.value)}>
+              <${For} each=${statuses}>
+                ${status => html`<option value=${status} selected=${selectedStatus() === status}>${capitalize(status)}</option>`}
+              <//>
+            </select>
           </div>
         </div>
       </div>
