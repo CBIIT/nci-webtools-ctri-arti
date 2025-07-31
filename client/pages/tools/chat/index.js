@@ -1,9 +1,11 @@
 import { createSignal, For, Show, Index } from "solid-js";
 import html from "solid-js/html";
 import Loader from "/components/loader.js";
+import { AlertContainer } from "/components/alert.js";
 import { downloadCsv, downloadJson } from "/utils/files.js";
 import { useChat } from "./hooks.js";
 import Message from "./message.js";
+import { alerts, clearAlert } from "/utils/alerts.js";
 
 export default function Page() {
   const { conversation, updateConversation, deleteConversation, conversations, messages, loading, submitMessage } = useChat();
@@ -32,7 +34,8 @@ export default function Page() {
   }
 
   return html`
-    <div class="container py-3">
+    <div class="container position-relative py-3">
+      <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
       <div class="row">
         <div class="col d-flex align-items-center">
           <button class="btn btn-sm btn-light d-flex align-items-center" onClick=${toggle("conversations")}>

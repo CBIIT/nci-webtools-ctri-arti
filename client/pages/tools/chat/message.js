@@ -124,7 +124,7 @@ export default function Message(p) {
             classList=${() => ({ "shadow-sm": visible()[p.index] })}
             open=${() => visible()[p.index]}>
             <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
-              Researching: ${() => c.toolUse?.input?.url}...
+              Researching: ${() => c.toolUse?.input?.url?.map(e => new URL(e).hostname).join(", ")}...
             </summary>
             <div class="fw-semibold mb-2 text-muted">${() => c.toolUse?.input?.topic}</div>
             <div class="markdown" innerHTML=${() => parse(getToolResult(c.toolUse) || "")} />

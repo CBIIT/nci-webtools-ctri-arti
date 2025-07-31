@@ -106,6 +106,7 @@ export const seedData = {
   providers: [
     { id: 1, name: "bedrock", apiKey: null },
     { id: 2, name: "google", apiKey: process.env.GEMINI_API_KEY },
+    { id: 99, name: "mock", apiKey: null },
   ],
 
   models: [
@@ -191,6 +192,19 @@ export const seedData = {
       maxContext: 1_048_576,
       maxOutput: 65_536,
       maxReasoning: 1_000_000,
+    },
+    {
+      id: 99,
+      providerId: 99,
+      label: "Mock Model",
+      value: "mock-model",
+      cost1kInput: 0.0000001,
+      cost1kOutput: 0.0000005,
+      cost1kCacheRead: 0.00000001,
+      cost1kCacheWrite: 0.00000012,
+      maxContext: 1_000_000,
+      maxOutput: 100_000,
+      maxReasoning: 500_000,
     },
   ]
 };

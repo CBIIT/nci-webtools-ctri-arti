@@ -4,6 +4,7 @@ import { createModels, seedDatabase } from "./schema.js";
 
 const { 
   DB_DIALECT = 'postgres',
+  DB_STORAGE = ':memory:',
   PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD 
 } = process.env;
 
@@ -18,8 +19,8 @@ const dbConfigs = {
     password: PGPASSWORD,
   },
   sqlite: {
-    dialect: 'sqlite',
-    storage: ':memory:',
+    dialect: "sqlite",
+    storage: DB_STORAGE,
     logging: false
   }
 };

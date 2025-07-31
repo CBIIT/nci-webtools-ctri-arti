@@ -6,49 +6,36 @@
   "scripts": {
     "start": "node --env-file .env server.js",
     "start:dev": "node --env-file .env --watch-path=. server.js",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest",
-    "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
+    "test:setup": "npx playwright install chromium",
+    "test": "node --env-file test.env --test --test-reporter=tap && npm run test:integration",
+    "test:integration": "node --env-file test.env integration.js",
     "cert": "openssl req -x509 -newkey rsa:2048 -nodes -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost' -keyout key.tmp -out cert.tmp && cat key.tmp cert.tmp > key.pem && rm key.tmp cert.tmp"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.828.0",
-    "@aws-sdk/client-translate": "^3.828.0",
-    "@google/genai": "^1.5.0",
-    "connect-session-sequelize": "^7.1.7",
+    "@aws-sdk/client-bedrock-runtime": "^3.848.0",
+    "@aws-sdk/client-translate": "^3.848.0",
+    "@google/genai": "^1.11.0",
+    "connect-session-sequelize": "^8.0.2",
     "express": "^5.1.0",
-    "express-session": "^1.18.1",
+    "express-session": "^1.18.2",
     "lodash": "^4.17.21",
     "mammoth": "^1.9.1",
-    "multer": "^2.0.1",
-    "node-cron": "^4.2.0",
+    "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "node-forge": "^1.3.1",
-    "nodemailer": "^7.0.3",
-    "openid-client": "^6.5.1",
-    "pdfjs-dist": "^5.3.31",
-    "pg": "^8.16.0",
+    "nodemailer": "^7.0.5",
+    "openid-client": "^6.6.2",
+    "pdfjs-dist": "^5.3.93",
+    "pg": "^8.16.3",
     "sequelize": "^6.37.7",
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.0",
-    "@babel/preset-env": "^7.28.0",
-    "jest": "^30.0.4",
+    "playwright": "^1.54.1",
     "sqlite3": "^5.1.7",
-    "supertest": "^7.1.1"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/__tests__/**/*.js",
-      "**/?(*.)+(spec|test).js"
-    ],
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/services/providers/"
-    ],
-    "setupFiles": ["<rootDir>/test/setup.js"]
+    "supertest": "^7.1.4"
   }
 }

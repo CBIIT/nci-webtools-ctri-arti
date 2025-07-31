@@ -1,6 +1,7 @@
 import http from "http";
 import https from "https";
 import express from "express";
+import { pathToFileURL } from "url";
 import session from "express-session";
 import SequelizeStore from "connect-session-sequelize";
 import { createCertificate } from "./services/utils.js";
@@ -10,16 +11,19 @@ import db from "./services/database.js";
 import api from "./services/api.js";
 
 const { PORT = 8080, SESSION_MAX_AGE = 60 * 60 * 1000 } = process.env;
-const SessionStore = SequelizeStore(session.Store);
 
-const app = createApp(process.env);
-const scheduler = startScheduler();
-createServer(app, process.env).listen(PORT, () => logger.info(`Server is running on port ${PORT}`));
+// Only start server if this file is run directly (not imported)
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const app = createApp(process.env);
+  const scheduler = startScheduler();
+  createServer(app, process.env).listen(PORT, () => logger.info(`Server is running on port ${PORT}`));
+}
 
 export function createApp(env = process.env) {
   const { CLIENT_FOLDER = "../client", SESSION_SECRET } = env;
   const app = express();
   app.set("trust proxy", true);
+  const SessionStore = SequelizeStore(session.Store);
   const store = new SessionStore({ db });
   store.sync({ force: true });
   app.use(

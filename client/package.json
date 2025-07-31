@@ -1,12 +1,8 @@
 {
   "type": "module",
-  "scripts": {
-    "postinstall": "npx playwright install chromium",
-    "test": "node test.js"
-  },
   "devDependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
-    "@huggingface/transformers": "^3.6.1",
+    "@huggingface/transformers": "^3.7.0",
     "@langchain/textsplitters": "^0.1.0",
     "@solidjs/router": "^0.15.3",
     "docx": "^9.5.1",
@@ -14,9 +10,8 @@
     "dompurify": "^3.2.6",
     "idb": "^8.0.3",
     "mammoth": "^1.9.1",
-    "marked": "^16.0.0",
+    "marked": "^16.1.1",
     "pdfjs-dist": "^5.3.93",
-    "playwright": "^1.53.2",
     "solid-js": "^1.9.7",
     "three": "^0.178.0",
     "turndown": "^7.2.0",
