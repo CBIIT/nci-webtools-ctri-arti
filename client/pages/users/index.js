@@ -11,7 +11,7 @@ function UsersList() {
   // Server-side filters & sorting
   const [searchQuery, setSearchQuery] = createSignal("");
   const [selectedRole, setSelectedRole] = createSignal("All");
-  const [selectedStatus, setSelectedStatus] = createSignal("All");
+  const [selectedStatus, setSelectedStatus] = createSignal("active");
   const [sortColumn, setSortColumn] = createSignal("lastName");
   const [sortOrder, setSortOrder] = createSignal("asc");
   const [currentPage, setCurrentPage] = createSignal(1);
@@ -26,7 +26,7 @@ function UsersList() {
 
   // Server-side users resource with all parameters
   const usersParams = createMemo(() => ({
-    search: searchQuery(),
+    search: searchQuery().length >= 3 ? searchQuery() : undefined,
     roleId: selectedRole() === "All" ? undefined : rolesResource()?.find(r => r.name === selectedRole())?.id,
     status: selectedStatus() === "All" ? undefined : selectedStatus(),
     sortBy: sortColumn(),
@@ -111,8 +111,18 @@ function UsersList() {
       <!-- Filters -->
       <div class="card shadow-sm mb-4">
         <div class="card-body">
-          <h5 class="card-title">Filter</h5>
           <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label for="search-filter" class="form-label">User</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="search-filter"
+                placeholder="Search by name or email"
+                value=${searchQuery}
+                onInput=${e => handleSearch(e.target.value)}
+              />
+            </div>
             <div class="col-md-3">
               <label for="role-filter" class="form-label">Role</label>
               <select 
@@ -135,21 +145,9 @@ function UsersList() {
                 aria-label="Select Status Filter"
                 onInput=${e => handleStatusChange(e.target.value)}>
                 <${For} each=${statuses}>
-                  ${status => html`<option value=${status}>${capitalize(status)}</option>`}
+                  ${status => html`<option value=${status} selected=${selectedStatus() === status}>${capitalize(status)}</option>`}
                 <//>
               </select>
-            </div>
-            <div class="col-md-6">
-              <div class="input-group">
-                <span class="input-group-text">Search</span>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  placeholder="Search by name or email"
-                  value=${searchQuery}
-                  onInput=${e => handleSearch(e.target.value)}
-                />
-              </div>
             </div>
           </div>
         </div>
@@ -163,7 +161,7 @@ function UsersList() {
         loadingText="Loading users..."
         totalItems=${() => usersResource()?.meta?.total || 0}
         page=${currentPage}
-        search=${searchQuery}
+        search=${() => searchQuery().length >= 3 ? searchQuery() : ""}
         sortColumn=${sortColumn}
         sortOrder=${sortOrder}
         onSort=${handleSort}
@@ -187,6 +185,11 @@ function UsersList() {
             cellClassName: "small"
           },
           {
+            key: "role",
+            title: "Role",
+            cellClassName: "text-capitalize small"
+          },
+          {
             key: "status",
             title: "Status",
             render: (user) => html`
@@ -200,11 +203,6 @@ function UsersList() {
                 ${user.status}
               </span>
             `
-          },
-          {
-            key: "role",
-            title: "Role",
-            cellClassName: "text-capitalize small"
           },
           {
             key: "limit",

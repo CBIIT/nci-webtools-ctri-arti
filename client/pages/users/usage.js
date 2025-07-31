@@ -115,10 +115,13 @@ function UsersList() {
   // --- Server-side Filters & Sorting ---
   const [searchQuery, setSearchQuery] = createSignal("");
   const [selectedRole, setSelectedRole] = createSignal("All");
+  const [selectedStatus, setSelectedStatus] = createSignal("active");
   const [sortColumn, setSortColumn] = createSignal("estimatedCost");
   const [sortOrder, setSortOrder] = createSignal("desc");
   const [currentPage, setCurrentPage] = createSignal(1);
   const rowsPerPage = 20;
+
+  const statuses = ['All', 'active', 'inactive'];
 
   const roleNames = createMemo(() => {
     const allRoles = rolesResource()?.map(role => role.name).filter(Boolean) || [];
@@ -129,8 +132,9 @@ function UsersList() {
   const analyticsParams = createMemo(() => ({
     startDate: currentDateRange().startDate,
     endDate: currentDateRange().endDate,
-    search: searchQuery(),
+    search: searchQuery().length >= 3 ? searchQuery() : undefined,
     role: selectedRole(),
+    status: selectedStatus(),
     sortBy: sortColumn(),
     sortOrder: sortOrder(),
     limit: rowsPerPage,
@@ -151,6 +155,7 @@ function UsersList() {
       
       if (params.search) queryParams.set('search', params.search);
       if (params.role && params.role !== 'All') queryParams.set('role', params.role);
+      if (params.status && params.status !== 'All') queryParams.set('status', params.status);
       if (params.sortBy) queryParams.set('sortBy', params.sortBy);
       if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
       
@@ -193,6 +198,11 @@ function UsersList() {
     setCurrentPage(1); // Reset to first page
   };
 
+  const handleStatusChange = (newStatus) => {
+    setSelectedStatus(newStatus);
+    setCurrentPage(1); // Reset to first page
+  };
+
   const handleSort = ({column, order}) => {
     setSortColumn(column);
     setSortOrder(order);
@@ -222,22 +232,17 @@ function UsersList() {
       <!-- Date Range Filter -->
       <div class="card shadow-sm mb-4">
         <div class="card-body">
-          <h5 class="card-title">Filter</h5>
           <div class="row g-3 align-items-end">
             <div class="col-md-3">
-              <label for="date-range-filter" class="form-label">Date Range</label>
-              <select 
-                class="form-select" 
-                id="date-range-filter" 
-                value=${selectedDateRange}
-                onInput=${e => setSelectedDateRange(e.target.value)}>
-                <option>This Week</option>
-                <option>Last 30 Days</option>
-                <option>Last 60 Days</option>
-                <option>Last 120 Days</option>
-                <option>Last 360 Days</option>
-                <option>Custom</option>
-              </select>
+              <label for="search-filter" class="form-label">User</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="search-filter"
+                placeholder="Search by name or email"
+                value=${searchQuery}
+                onInput=${e => handleSearch(e.target.value)}
+              />
             </div>
             <div class="col-md-3">
               <label for="role-filter" class="form-label">Role</label>
@@ -253,17 +258,33 @@ function UsersList() {
                   <//>
               </select>
             </div>
-            <div class="col-md-6">
-              <div class="input-group">
-                <span class="input-group-text">Search</span>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  placeholder="Search by name or email"
-                  value=${searchQuery}
-                  onInput=${e => handleSearch(e.target.value)}
-                />
-              </div>
+            <div class="col-md-2">
+              <label for="status-filter" class="form-label">Account Status</label>
+              <select 
+                class="form-select" 
+                id="status-filter" 
+                value=${selectedStatus}
+                aria-label="Select Status Filter"
+                onInput=${e => handleStatusChange(e.target.value)}>
+                <${For} each=${statuses}>
+                  ${status => html`<option value=${status} selected=${selectedStatus() === status}>${capitalize(status)}</option>`}
+                <//>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="date-range-filter" class="form-label">Date Range</label>
+              <select 
+                class="form-select" 
+                id="date-range-filter" 
+                value=${selectedDateRange}
+                onInput=${e => setSelectedDateRange(e.target.value)}>
+                <option>This Week</option>
+                <option>Last 30 Days</option>
+                <option>Last 60 Days</option>
+                <option>Last 120 Days</option>
+                <option>Last 360 Days</option>
+                <option>Custom</option>
+              </select>
             </div>
           </div>
           
@@ -304,7 +325,7 @@ function UsersList() {
         loadingText="Loading users..."
         totalItems=${() => serverAnalyticsResource()?.meta?.total || 0}
         page=${currentPage}
-        search=${searchQuery}
+        search=${() => searchQuery().length >= 3 ? searchQuery() : ""}
         sortColumn=${sortColumn}
         sortOrder=${sortOrder}
         onSort=${handleSort}
