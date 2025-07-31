@@ -140,6 +140,11 @@ a:hover {
   text-decoration: underline;
 }
 
+a.disabled-link {
+  cursor: default;
+  pointer-events: none;
+}
+
 .shadow-hover:hover,
 .shadow-hover:active,
 .shadow-hover:focus {
