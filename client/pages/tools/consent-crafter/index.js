@@ -231,259 +231,263 @@ export default function Page() {
   }
 
   return html`
-    <div class="container py-3">
-      <h1 class="fw-bold text-gradient my-3">Consent Crafter</h1>
-      <form onSubmit=${handleSubmit} onReset=${handleReset}>
-        <div class="row align-items-stretch">
-          <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-            <label for="inputText" class="form-label">Source Document</label>
-            <input
-              type="file"
-              id="inputTextFile"
-              name="inputTextFile"
-              class="form-control form-control-sm  mb-3"
-              accept=".txt, .docx, .pdf"
-              onChange=${handleFileSelect} />
+    <div class="bg-light">
+      <div class="container py-3">
+        <form onSubmit=${handleSubmit} onReset=${handleReset}>
+          <div class="row align-items-stretch">
+            <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
+              <div class="bg-white shadow  rounded p-3">
+                <label for="inputText" class="form-label text-info fs-5 mb-1">Source Document</label>
+                <input
+                  type="file"
+                  id="inputTextFile"
+                  name="inputTextFile"
+                  class="form-control form-control-sm  mb-3"
+                  accept=".txt, .docx, .pdf"
+                  onChange=${handleFileSelect} />
 
-            <!-- Template Selection -->
-            <div class="mb-3">
-              <label class="form-label">Generate Forms</label>
-              <div class="border rounded p-2">
-                <${For} each=${templateGroups}>
-                  ${(group) => html`
-                    <div class="mb-2">
-                      <div class="fw-bold text-muted small">${() => group.label}</div>
-                      <${For} each=${() => group.options}>
-                        ${(option) => html`
-                          <div class="form-check form-control-sm min-height-auto py-0 ms-1">
-                            <input
-                              class="form-check-input cursor-pointer "
-                              type="checkbox"
-                              id=${() => option.value}
-                              disabled=${() => option.disabled}
-                              checked=${() => selectedTemplates().includes(option.value)}
-                              onChange=${(e) => {
-                                const value = option.value;
-                                const isChecked = e.target.checked;
-                                setSelectedTemplates((prev) => (isChecked ? [...prev, value] : prev.filter((v) => v !== value)));
-                              }} />
-                            <label
-                              class=${() =>
-                                ["form-check-label cursor-pointer ", option.disabled ? "text-muted" : ""].filter(Boolean).join(" ")}
-                              for=${() => option.value}>
-                              ${() => templateConfigs[option.value].label}
-                            </label>
+                <!-- Template Selection -->
+                <div class="mb-3">
+                  <label class="form-label text-info fs-5 mb-1">Form Templates</label>
+                  <div class="border rounded p-2">
+                    <${For} each=${templateGroups}>
+                      ${(group) => html`
+                        <div class="mb-2">
+                          <div class="fw-bold text-muted small">${() => group.label}</div>
+                          <${For} each=${() => group.options}>
+                            ${(option) => html`
+                              <div class="form-check form-control-sm min-height-auto py-0 ms-1">
+                                <input
+                                  class="form-check-input cursor-pointer "
+                                  type="checkbox"
+                                  id=${() => option.value}
+                                  disabled=${() => option.disabled}
+                                  checked=${() => selectedTemplates().includes(option.value)}
+                                  onChange=${(e) => {
+                                    const value = option.value;
+                                    const isChecked = e.target.checked;
+                                    setSelectedTemplates((prev) => (isChecked ? [...prev, value] : prev.filter((v) => v !== value)));
+                                  }} />
+                                <label
+                                  class=${() =>
+                                    ["form-check-label cursor-pointer ", option.disabled ? "text-muted" : ""].filter(Boolean).join(" ")}
+                                  for=${() => option.value}>
+                                  ${() => templateConfigs[option.value].label}
+                                </label>
+                              </div>
+                            `}
+                          <//>
+                        </div>
+                      `}
+                    <//>
+                  </div>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                  <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
+                    <details class="small text-secondary mt-2 ">
+                      <summary class="form-label text-info fs-5 mb-1">Advanced Options</summary>
+                        <div class="border rounded p-2">
+                          <label for="model" class="form-label">Model</label>
+                          <select
+                            class="form-select form-select-sm cursor-pointer mb-2"
+                            name="model"
+                            id="model"
+                            value=${model}
+                            onChange=${(e) => setModel(e.target.value)}>
+                            <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
+                            <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet</option>
+                            <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
+                            <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
+                          </select>
+
+                          <div class="d-flex justify-content-between">
+                            <label class="form-label">Form Template</label>
+                            <div>
+                              <div class="form-check  form-check-inline">
+                                <input
+                                  class="form-check-input"
+                                  type="radio"
+                                  name="templateSource"
+                                  id="templateSourcePredefined"
+                                  value="predefined"
+                                  checked=${() => templateSourceType() === "predefined"}
+                                  onChange=${(e) => setTemplateSourceType(e.target.value)} />
+                                <label class="form-check-label" for="templateSourcePredefined">
+                                  Predefined template
+                                </label>
+                              </div>
+                              <div class="form-check  form-check-inline">
+                                <input
+                                  class="form-check-input"
+                                  type="radio"
+                                  name="templateSource"
+                                  id="templateSourceCustom"
+                                  value="custom"
+                                  checked=${() => templateSourceType() === "custom"}
+                                  onChange=${(e) => setTemplateSourceType(e.target.value)} />
+                                <label class="form-check-label" for="templateSourceCustom">
+                                  Custom template
+                                </label>
+                              </div>
+                            </div>
                           </div>
-                        `}
-                      <//>
+
+                          <${Show} when=${() => templateSourceType() === "predefined"}>
+                            <select
+                              class="form-select form-select-sm cursor-pointer mb-2"
+                              name="predefinedTemplate"
+                              id="predefinedTemplate"
+                              value=${selectedPredefinedTemplate}
+                              onChange=${(e) => setSelectedPredefinedTemplate(e.target.value)}>
+                              <option value="">-- Select a template --</option>
+                              <${For} each=${templateGroups}>
+                                ${(group) => html`
+                                  <optgroup label=${() => group.label}>
+                                    <${For} each=${() => group.options}>
+                                      ${(option) => html`
+                                        <option 
+                                          value=${() => option.value} 
+                                          disabled=${() => option.disabled}>
+                                          ${() => templateConfigs[option.value].label}
+                                        </option>
+                                      `}
+                                    <//>
+                                  </optgroup>
+                                `}
+                              <//>
+                            </select>
+                          <//>
+
+                          <${Show} when=${() => templateSourceType() === "custom"}>
+                            <input
+                              type="file"
+                              id="outputTemplateFile"
+                              name="outputTemplateFile"
+                              class="form-control form-control-sm mb-2"
+                              accept=".txt, .docx, .pdf"
+                              onChange=${handleFileSelect} />
+
+                            <label for="systemPrompt" class="form-label" title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
+                              and template are provided.">Custom Prompt</label>
+                            <textarea
+                              class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                              id="systemPrompt"
+                              name="systemPrompt"
+                              rows="20"
+                              placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
+                              value=${customSystemPrompt}
+                              onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                          <//>
+
+                          <${Show} when=${() => templateSourceType() === "predefined" && selectedPredefinedTemplate()}>
+                            <label for="systemPrompt" class="form-label" title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
+                              and template are provided.">Custom Prompt</label>
+                            <textarea
+                              class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                              id="systemPrompt"
+                              name="systemPrompt"
+                              rows="10"
+                              placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
+                              value=${customSystemPrompt}
+                              onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                            <div class="form-text">
+                              Override the default prompt for the selected template. Use <strong>{{document}}</strong> as a placeholder.
+                            </div>
+                          </>
+                        </div>
+                      </details>
+                    <//>
+                  
+
+                  
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
+              <div class="d-flex justify-content-between align-items-center">
+                <${Show}
+                  when=${() => {
+                    const docs = generatedDocuments();
+                    return Object.values(docs).some((doc) => doc.status === "completed");
+                  }}>
+                  <button type="button" class="btn btn-sm btn-link" onClick=${downloadAll}>Download All</button>
+                <//>
+              </div>
+              <div class="bg-white shadow border rounded p-3 flex-grow-1" style="min-height: 200px;">
+                <${Show}
+                  when=${() => Object.keys(generatedDocuments()).length > 0}
+                  fallback=${html`<div class="d-flex-center h-100">
+                    <div class="text-center py-3">
+                      <h1 class="text-info mb-3">Welcome to Consent Crafter</h1>
+                      <div>To get started, upload your source document, select one or more
+                      form templates from the list, and click Generate to create tailored
+                      consent documents.</div>
                     </div>
-                  `}
+                  </div>`}>
+                  <div class="d-flex flex-column gap-2">
+                    <${For} each=${() => Object.keys(generatedDocuments())}>
+                      ${(templateId) => {
+                        const doc = () => generatedDocuments()[templateId];
+                        const documentInfo = () => {
+                          if (templateId === "custom") {
+                            return { label: "Custom Document", filename: "custom-document.docx" };
+                          } else if (templateId === "predefined-custom") {
+                            const config = templateConfigs[selectedPredefinedTemplate()];
+                            return { 
+                              prefix: config.prefix || "", 
+                              label: config.label + " (Custom)", 
+                              filename: config.filename.replace(".docx", "-custom.docx") 
+                            };
+                          } else {
+                            const config = templateConfigs[templateId];
+                            return { prefix: config.prefix || "", label: config.label, filename: config.filename };
+                          }
+                        };
+
+                        return html`
+                          <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                            <div class="flex-grow-1">
+                              <div class="fw-medium">${() => [documentInfo().prefix, documentInfo().label].filter(Boolean).join(': ')}</div>
+                              <small class="text-muted">${() => documentInfo().filename}</small>
+                            </div>
+                            <div>
+                              <${Show} when=${() => doc()?.status === "processing"}>
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                  <span class="visually-hidden">Processing...</span>
+                                </div>
+                              <//>
+                              <${Show} when=${() => doc()?.status === "completed"}>
+                                <button type="button" class="btn btn-sm rounded-pill btn-success me-2" onClick=${() => downloadDocument(templateId)}>
+                                  Download
+                                </button>
+                              <//>
+                              <${Show} when=${() => doc()?.status === "error"}>
+                                <div class="text-danger small">Error: ${() => doc().error}</div>
+                              <//>
+                            </div>
+                          </div>
+                        `;
+                      }}
+                    <//>
+                  </div>
                 <//>
               </div>
             </div>
-
-            <!-- Submit Button -->
-            <div class="d-flex flex-wrap justify-content-between align-items-center">
-              <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
-                <details class="small text-secondary mt-2">
-                  <summary>Advanced Options</summary>
-
-                  <label for="model" class="form-label">Model</label>
-                  <select
-                    class="form-select form-select-sm cursor-pointer mb-2"
-                    name="model"
-                    id="model"
-                    value=${model}
-                    onChange=${(e) => setModel(e.target.value)}>
-                    <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
-                    <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet</option>
-                    <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
-                    <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
-                  </select>
-
-                  <label class="form-label">Output Template Source</label>
-                  <div class="mb-2">
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="radio"
-                        name="templateSource"
-                        id="templateSourcePredefined"
-                        value="predefined"
-                        checked=${() => templateSourceType() === "predefined"}
-                        onChange=${(e) => setTemplateSourceType(e.target.value)} />
-                      <label class="form-check-label" for="templateSourcePredefined">
-                        Predefined template
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="radio"
-                        name="templateSource"
-                        id="templateSourceCustom"
-                        value="custom"
-                        checked=${() => templateSourceType() === "custom"}
-                        onChange=${(e) => setTemplateSourceType(e.target.value)} />
-                      <label class="form-check-label" for="templateSourceCustom">
-                        Custom template
-                      </label>
-                    </div>
-                  </div>
-
-                  <${Show} when=${() => templateSourceType() === "predefined"}>
-                    <label for="predefinedTemplate" class="form-label">Select Template</label>
-                    <select
-                      class="form-select form-select-sm cursor-pointer mb-2"
-                      name="predefinedTemplate"
-                      id="predefinedTemplate"
-                      value=${selectedPredefinedTemplate}
-                      onChange=${(e) => setSelectedPredefinedTemplate(e.target.value)}>
-                      <option value="">-- Select a template --</option>
-                      <${For} each=${templateGroups}>
-                        ${(group) => html`
-                          <optgroup label=${() => group.label}>
-                            <${For} each=${() => group.options}>
-                              ${(option) => html`
-                                <option 
-                                  value=${() => option.value} 
-                                  disabled=${() => option.disabled}>
-                                  ${() => templateConfigs[option.value].label}
-                                </option>
-                              `}
-                            <//>
-                          </optgroup>
-                        `}
-                      <//>
-                    </select>
-                  <//>
-
-                  <${Show} when=${() => templateSourceType() === "custom"}>
-                    <div class="d-flex justify-content-between align-items-center">
-                      <label for="outputTemplate" class="form-label">Output Template (.docx)</label>
-                      <a
-                        href="/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx"
-                        download="nih-cc-consent-template-2024-04-15.docx"
-                        class="small"
-                        >Download Template</a
-                      >
-                    </div>
-                    <input
-                      type="file"
-                      id="outputTemplateFile"
-                      name="outputTemplateFile"
-                      class="form-control form-control-sm mb-2"
-                      accept=".txt, .docx, .pdf"
-                      onChange=${handleFileSelect} />
-
-                    <label for="systemPrompt" class="form-label">Custom System Prompt</label>
-                    <textarea
-                      class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                      id="systemPrompt"
-                      name="systemPrompt"
-                      rows="20"
-                      placeholder="Enter custom system prompt"
-                      value=${customSystemPrompt}
-                      onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
-                    <div class="form-text">
-                      Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                      and template are provided.
-                    </div>
-                  <//>
-
-                  <${Show} when=${() => templateSourceType() === "predefined" && selectedPredefinedTemplate()}>
-                    <label for="systemPrompt" class="form-label">Custom System Prompt (Optional)</label>
-                    <textarea
-                      class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                      id="systemPrompt"
-                      name="systemPrompt"
-                      rows="10"
-                      placeholder="Leave empty to use default prompt for selected template"
-                      value=${customSystemPrompt}
-                      onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
-                    <div class="form-text">
-                      Override the default prompt for the selected template. Use <strong>{{document}}</strong> as a placeholder.
-                    </div>
-                  </>
-                </details>
-              <//>
-
-              <div class="d-flex mt-1 gap-1">
-                <button type="reset" class="btn btn-sm btn-outline-danger">Reset</button>
-                <button type="submit" class="btn btn-sm btn-primary" disabled=${() => !inputText() || selectedTemplates().length === 0}>
+            
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="d-flex-center mt-1 gap-1">
+                <button type="reset" class="btn btn-light p-1 border rounded-pill col-2">Reset</button>
+                <button type="submit" class="btn btn-primary p-1 rounded-pill col-2" disabled=${() => !inputText() || selectedTemplates().length === 0}>
                   Generate
                 </button>
               </div>
             </div>
           </div>
-          <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-            <div class="d-flex justify-content-between align-items-center">
-              <label class="form-label">Output</label>
-              <${Show}
-                when=${() => {
-                  const docs = generatedDocuments();
-                  return Object.values(docs).some((doc) => doc.status === "completed");
-                }}>
-                <button type="button" class="btn btn-sm btn-link" onClick=${downloadAll}>Download All</button>
-              <//>
-            </div>
-            <div class="border rounded p-3 flex-grow-1" style="min-height: 200px;">
-              <${Show}
-                when=${() => Object.keys(generatedDocuments()).length > 0}
-                fallback=${html`<div class="text-muted text-center mt-5">
-                  Upload a source document on the left, select consent forms, and click "Generate"
-                </div>`}>
-                <div class="d-flex flex-column gap-2">
-                  <${For} each=${() => Object.keys(generatedDocuments())}>
-                    ${(templateId) => {
-                      const doc = () => generatedDocuments()[templateId];
-                      const documentInfo = () => {
-                        if (templateId === "custom") {
-                          return { label: "Custom Document", filename: "custom-document.docx" };
-                        } else if (templateId === "predefined-custom") {
-                          const config = templateConfigs[selectedPredefinedTemplate()];
-                          return { 
-                            prefix: config.prefix || "", 
-                            label: config.label + " (Custom)", 
-                            filename: config.filename.replace(".docx", "-custom.docx") 
-                          };
-                        } else {
-                          const config = templateConfigs[templateId];
-                          return { prefix: config.prefix || "", label: config.label, filename: config.filename };
-                        }
-                      };
-
-                      return html`
-                        <div class="d-flex justify-content-between align-items-center p-2 border rounded">
-                          <div class="flex-grow-1">
-                            <div class="fw-medium">${() => [documentInfo().prefix, documentInfo().label].filter(Boolean).join(': ')}</div>
-                            <small class="text-muted">${() => documentInfo().filename}</small>
-                          </div>
-                          <div>
-                            <${Show} when=${() => doc()?.status === "processing"}>
-                              <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                                <span class="visually-hidden">Processing...</span>
-                              </div>
-                            <//>
-                            <${Show} when=${() => doc()?.status === "completed"}>
-                              <button type="button" class="btn btn-sm btn-success me-2" onClick=${() => downloadDocument(templateId)}>
-                                Download
-                              </button>
-                            <//>
-                            <${Show} when=${() => doc()?.status === "error"}>
-                              <div class="text-danger small">Error: ${() => doc().error}</div>
-                            <//>
-                          </div>
-                        </div>
-                      `;
-                    }}
-                  <//>
-                </div>
-              <//>
-            </div>
-          </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   `;
 }
