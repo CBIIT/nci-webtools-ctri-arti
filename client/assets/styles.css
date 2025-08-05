@@ -61,6 +61,9 @@
   --bs-btn-hover-bg: rgb(var(--bs-primary-dark-rgb));
   --bs-btn-hover-border-color: rgb(var(--bs-primary-dark-rgb));
   --bs-btn-active-bg: rgb(var(--bs-primary-dark-rgb));
+  --bs-btn-disabled-color: #444;
+  --bs-btn-disabled-bg: #ddd;
+  --bs-btn-disabled-border-color: #ccc;
 }
 
 .btn-outline-primary {
