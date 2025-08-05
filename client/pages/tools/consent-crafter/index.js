@@ -5,6 +5,8 @@ import { readFile } from "/utils/files.js";
 import { createReport } from "docx-templates";
 import yaml from "yaml";
 import { templateConfigs, getTemplateConfigsByCategory, getPrompt } from "./config.js";
+import { alerts, showAlert, clearAlert } from "/utils/alerts.js";
+import { AlertContainer } from "/components/alert.js";
 
 export default function Page() {
   const [inputText, setInputText] = createSignal("");
@@ -189,12 +191,11 @@ export default function Page() {
   }
 
   async function handleReset(event) {
-    event?.preventDefault();
-
-    // Reset form inputs
-    if (event?.target) {
-      event.target.inputTextFile.value = "";
-      event.target.outputTemplateFile.value = "";
+    event?.preventDefault?.();
+    const form = event?.target;
+    form.inputTextFile.value = "";
+    if (form.outputTemplateFile) {
+      form.outputTemplateFile.value = "";
     }
 
     // Clear all state
@@ -231,7 +232,8 @@ export default function Page() {
   }
 
   return html`
-    <div class="bg-light">
+    <div class="bg-info-subtle h-100 position-relative">
+      <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
       <div class="container py-3">
         <form onSubmit=${handleSubmit} onReset=${handleReset}>
           <div class="row align-items-stretch">
@@ -380,7 +382,7 @@ export default function Page() {
                               onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
                           <//>
 
-                          <${Show} when=${() => templateSourceType() === "predefined" && selectedPredefinedTemplate()}>
+                          <${Show} when=${() => templateSourceType() === "predefined"}>
                             <label for="systemPrompt" class="form-label" title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
                               and template are provided.">Custom Prompt</label>
                             <textarea
@@ -405,16 +407,7 @@ export default function Page() {
               </div>
             </div>
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-              <div class="d-flex justify-content-between align-items-center">
-                <${Show}
-                  when=${() => {
-                    const docs = generatedDocuments();
-                    return Object.values(docs).some((doc) => doc.status === "completed");
-                  }}>
-                  <button type="button" class="btn btn-sm btn-link" onClick=${downloadAll}>Download All</button>
-                <//>
-              </div>
-              <div class="bg-white shadow border rounded p-3 flex-grow-1" style="min-height: 200px;">
+              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1">
                 <${Show}
                   when=${() => Object.keys(generatedDocuments()).length > 0}
                   fallback=${html`<div class="d-flex-center h-100">
@@ -448,8 +441,11 @@ export default function Page() {
                         return html`
                           <div class="d-flex justify-content-between align-items-center p-2 border rounded">
                             <div class="flex-grow-1">
-                              <div class="fw-medium">${() => [documentInfo().prefix, documentInfo().label].filter(Boolean).join(': ')}</div>
-                              <small class="text-muted">${() => documentInfo().filename}</small>
+                              <div class="fw-medium">
+                                <span>${() => documentInfo().prefix}</span>
+                                <span class="text-muted  fw-normal">: ${() => documentInfo().label}</span>
+                              </div>
+                              <div class="small text-muted">${() => documentInfo().filename}</div>
                             </div>
                             <div>
                               <${Show} when=${() => doc()?.status === "processing"}>
@@ -470,6 +466,12 @@ export default function Page() {
                         `;
                       }}
                     <//>
+                  </div>
+                  <div class="h-100 d-flex flex-column justify-content-between">
+                    <div class="text-end">
+                      <button type="button" class="btn btn-sm btn-link p-0" onClick=${downloadAll}>Download All</button>
+                    </div>
+                    <div class="mt-auto">* We would love your feedback! Take a <a href="#">quick survey</a> to help us improve.</div>
                   </div>
                 <//>
               </div>
