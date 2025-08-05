@@ -371,12 +371,12 @@ export default function Page() {
                               onChange=${handleFileSelect} />
 
                             <label for="systemPrompt" class="form-label" title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                              and template are provided.">Custom Prompt</label>
+                              and template are provided.">Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info" /></label>
                             <textarea
                               class="form-control form-control-sm rounded-top-0 flex-grow-1"
                               id="systemPrompt"
                               name="systemPrompt"
-                              rows="20"
+                              rows="10"
                               placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
                               value=${customSystemPrompt}
                               onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
@@ -384,7 +384,7 @@ export default function Page() {
 
                           <${Show} when=${() => templateSourceType() === "predefined"}>
                             <label for="systemPrompt" class="form-label" title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                              and template are provided.">Custom Prompt</label>
+                              and template are provided.">Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info" /></label>
                             <textarea
                               class="form-control form-control-sm rounded-top-0 flex-grow-1"
                               id="systemPrompt"
