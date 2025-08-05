@@ -186,4 +186,4 @@ export function handleError(error, context = "operation") {
   console.error(`Error during ${context}:`, error);
 }
 
-export { alerts };
+export { alerts, setAlerts };
