@@ -161,7 +161,7 @@ export default function Page() {
                 </label>
               </div>
               <select class="form-select form-select-sm border-0 bg-transparent cursor-pointer" name="model" id="model" required>
-                <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
+                <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus</option>
                 <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>Sonnet</option>
                 <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
               </select>

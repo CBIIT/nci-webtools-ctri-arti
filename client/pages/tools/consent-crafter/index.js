@@ -297,7 +297,7 @@ export default function Page() {
                             id="model"
                             value=${model}
                             onChange=${(e) => setModel(e.target.value)}>
-                            <option value="us.anthropic.claude-opus-4-20250514-v1:0">Opus</option>
+                            <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus</option>
                             <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet</option>
                             <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
                             <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>

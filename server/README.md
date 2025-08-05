@@ -167,7 +167,7 @@ server/
 ## Available AI Models
 
 ### AWS Bedrock Models
-- **Opus 4.0** - `us.anthropic.claude-opus-4-20250514-v1:0`
+- **Opus 4.1** - `us.anthropic.claude-opus-4-1-20250805-v1:0`
 - **Sonnet 4.0** - `us.anthropic.claude-sonnet-4-20250514-v1:0`
 - **Haiku 3.5** - `us.anthropic.claude-3-5-haiku-20241022-v1:0`
 - **Maverick** - `us.meta.llama4-maverick-17b-instruct-v1:0`
