@@ -67,7 +67,7 @@ export default function Alert(props) {
  */
 export function AlertContainer(props) {
   return html`
-    <div class="alert-container position-absolute top-0 start-50 translate-middle-x p-3" style="z-index: 1050; max-width: 800px; width: 100%;">
+    <div class="alert-container position-absolute top-0 start-50 translate-middle-x p-3 z-2 w-75">
       <${For} each=${() => props.alerts || []}>
         ${(alert) => html`
           <${Alert}
