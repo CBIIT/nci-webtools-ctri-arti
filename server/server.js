@@ -10,7 +10,7 @@ import logger from "./services/logger.js";
 import db from "./services/database.js";
 import api from "./services/api.js";
 
-const { PORT = 8080, SESSION_MAX_AGE = 60 * 60 * 1000 } = process.env;
+const { PORT = 8080, SESSION_MAX_AGE = 24 * 60 * 60 * 1000 } = process.env;
 
 // Only start server if this file is run directly (not imported)
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
