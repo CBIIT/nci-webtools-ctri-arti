@@ -279,119 +279,121 @@ export default function Page() {
                   <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
                     <details class="small text-secondary mt-2 ">
                       <summary class="form-label text-info fs-5 mb-1">Advanced Options</summary>
-                        <div class="border rounded p-2">
-                          <label for="model" class="form-label">Model</label>
-                          <select
-                            class="form-select form-select-sm cursor-pointer mb-2"
-                            name="model"
-                            id="model"
-                            value=${model}
-                            onChange=${(e) => setModel(e.target.value)}>
-                            <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
-                            <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet 4.0</option>
-                            <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">Sonnet 3.7</option>
-                            <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
-                            <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
-                          </select>
+                      <div class="border rounded p-2">
+                        <label for="model" class="form-label">Model</label>
+                        <select
+                          class="form-select form-select-sm cursor-pointer mb-2"
+                          name="model"
+                          id="model"
+                          value=${model}
+                          onChange=${(e) => setModel(e.target.value)}>
+                          <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
+                          <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet 4.0</option>
+                          <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">Sonnet 3.7</option>
+                          <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
+                          <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
+                        </select>
 
-                          <div class="d-flex justify-content-between">
-                            <label class="form-label">Form Template</label>
-                            <div>
-                              <div class="form-check  form-check-inline">
-                                <input
-                                  class="form-check-input"
-                                  type="radio"
-                                  name="templateSource"
-                                  id="templateSourcePredefined"
-                                  value="predefined"
-                                  checked=${() => templateSourceType() === "predefined"}
-                                  onChange=${(e) => setTemplateSourceType(e.target.value)} />
-                                <label class="form-check-label" for="templateSourcePredefined">
-                                  Predefined template
-                                </label>
-                              </div>
-                              <div class="form-check  form-check-inline">
-                                <input
-                                  class="form-check-input"
-                                  type="radio"
-                                  name="templateSource"
-                                  id="templateSourceCustom"
-                                  value="custom"
-                                  checked=${() => templateSourceType() === "custom"}
-                                  onChange=${(e) => setTemplateSourceType(e.target.value)} />
-                                <label class="form-check-label" for="templateSourceCustom">
-                                  Custom template
-                                </label>
-                              </div>
+                        <div class="d-flex justify-content-between">
+                          <label class="form-label">Form Template</label>
+                          <div>
+                            <div class="form-check  form-check-inline">
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="templateSource"
+                                id="templateSourcePredefined"
+                                value="predefined"
+                                checked=${() => templateSourceType() === "predefined"}
+                                onChange=${(e) => setTemplateSourceType(e.target.value)} />
+                              <label class="form-check-label" for="templateSourcePredefined"> Predefined template </label>
+                            </div>
+                            <div class="form-check  form-check-inline">
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="templateSource"
+                                id="templateSourceCustom"
+                                value="custom"
+                                checked=${() => templateSourceType() === "custom"}
+                                onChange=${(e) => setTemplateSourceType(e.target.value)} />
+                              <label class="form-check-label" for="templateSourceCustom"> Custom template </label>
                             </div>
                           </div>
-
-                          <${Show} when=${() => templateSourceType() === "predefined"}>
-                            <div class="input-group mb-2">
-                              <select
-                                class="form-select form-select-sm cursor-pointer"
-                                name="predefinedTemplate"
-                                id="predefinedTemplate"
-                                value=${selectedPredefinedTemplate}
-                                onChange=${(e) => setSelectedPredefinedTemplate(e.target.value)}>
-                                <option value="">No Template</option>
-                                <${For} each=${templateGroups}>
-                                  ${(group) => html`
-                                    <optgroup label=${() => group.label}>
-                                      <${For} each=${() => group.options}>
-                                        ${(option) => html`
-                                          <option value=${() => option.value} disabled=${() => option.disabled}>
-                                            ${() => templateConfigs[option.value].label}
-                                          </option>
-                                        `}
-                                      <//>
-                                    </optgroup>
-                                  `}
-                                <//>
-                              </select>
-                            </div>
-                          <//>
-
-                          <${Show} when=${() => templateSourceType() === "custom"}>
-                            <input
-                              type="file"
-                              id="outputTemplateFile"
-                              name="outputTemplateFile"
-                              class="form-control form-control-sm mb-2"
-                              accept=".txt, .docx, .pdf"
-                              onChange=${handleFileSelect} />
-
-                            <label for="systemPrompt" class="form-label" title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                              and template are provided.">Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info" /></label>
-                            <textarea
-                              class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                              id="systemPrompt"
-                              name="systemPrompt"
-                              rows="10"
-                              placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
-                              value=${customSystemPrompt}
-                              onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
-                          <//>
-
-                          <${Show} when=${() => templateSourceType() === "predefined"}>
-                            <label for="systemPrompt" class="form-label" title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                              and template are provided.">Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info" /></label>
-                            <textarea
-                              class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                              id="systemPrompt"
-                              name="systemPrompt"
-                              rows="10"
-                              placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
-                              value=${customSystemPrompt}
-                              onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
-                            
-                          </>
                         </div>
-                      </details>
-                    <//>
-                  
 
-                  
+                        <${Show} when=${() => templateSourceType() === "predefined"}>
+                          <div class="input-group mb-2">
+                            <select
+                              class="form-select form-select-sm cursor-pointer"
+                              name="predefinedTemplate"
+                              id="predefinedTemplate"
+                              value=${selectedPredefinedTemplate}
+                              onChange=${(e) => setSelectedPredefinedTemplate(e.target.value)}>
+                              <option value="">No Template</option>
+                              <${For} each=${templateGroups}>
+                                ${(group) => html`
+                                  <optgroup label=${() => group.label}>
+                                    <${For} each=${() => group.options}>
+                                      ${(option) => html`
+                                        <option value=${() => option.value} disabled=${() => option.disabled}>
+                                          ${() => templateConfigs[option.value].label}
+                                        </option>
+                                      `}
+                                    <//>
+                                  </optgroup>
+                                `}
+                              <//>
+                            </select>
+                          </div>
+                        <//>
+
+                        <${Show} when=${() => templateSourceType() === "custom"}>
+                          <input
+                            type="file"
+                            id="outputTemplateFile"
+                            name="outputTemplateFile"
+                            class="form-control form-control-sm mb-2"
+                            accept=".txt, .docx, .pdf"
+                            onChange=${handleFileSelect} />
+
+                          <label
+                            for="systemPrompt"
+                            class="form-label"
+                            title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
+                              and template are provided."
+                            >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                          /></label>
+                          <textarea
+                            class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                            id="systemPrompt"
+                            name="systemPrompt"
+                            rows="10"
+                            placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
+                            value=${customSystemPrompt}
+                            onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                        <//>
+
+                        <${Show} when=${() => templateSourceType() === "predefined"}>
+                          <label
+                            for="systemPrompt"
+                            class="form-label"
+                            title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
+                              and template are provided."
+                            >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                          /></label>
+                          <textarea
+                            class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                            id="systemPrompt"
+                            name="systemPrompt"
+                            rows="10"
+                            placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
+                            value=${customSystemPrompt}
+                            onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                        <//>
+                      </div>
+                    </details>
+                  <//>
                 </div>
               </div>
             </div>
@@ -463,21 +465,24 @@ export default function Page() {
                     </div>
                     <div class="mt-auto d-flex align-items-center">
                       <img src="/assets/images/icon-star.svg" alt="Star" class="me-2" height="16" />
-                      We would love your feedback! 
-                      <a href="#">Take a quick survey</a> to help us improve.</div>
+                      <div>
+                        <span class="me-1">We would love your feedback!</span>
+                        <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a> to help us improve.
+                      </div>
                     </div>
                   </div>
                 <//>
               </div>
             </div>
-            
           </div>
           <div class="row">
             <div class="col-md-6">
               <div class="d-flex-center mt-1 gap-1">
                 <button type="reset" class="btn btn-light p-1 border rounded-pill col-2">Reset</button>
-                <button type="submit" class="btn btn-primary p-1 rounded-pill col-2" disabled=${() =>
-                  !inputText() || selectedTemplates().length === 0}>
+                <button
+                  type="submit"
+                  class="btn btn-primary p-1 rounded-pill col-2"
+                  disabled=${() => !inputText() || selectedTemplates().length === 0}>
                   Generate
                 </button>
               </div>
