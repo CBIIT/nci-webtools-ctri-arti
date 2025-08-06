@@ -11,7 +11,7 @@ import { AlertContainer } from "/components/alert.js";
 export default function Page() {
   const [inputText, setInputText] = createSignal("");
   const [outputText, setOutputText] = createSignal("");
-  const [model, setModel] = createSignal("us.anthropic.claude-sonnet-4-20250514-v1:0");
+  const [model, setModel] = createSignal("us.anthropic.claude-3-7-sonnet-20250219-v1:0");
   const [customSystemPrompt, setCustomSystemPrompt] = createSignal("");
   const [customTemplate, setCustomTemplate] = createSignal();
   const [selectedTemplates, setSelectedTemplates] = createSignal([]);
@@ -22,16 +22,6 @@ export default function Page() {
 
   // Get template groups from config
   const templateGroups = () => getTemplateConfigsByCategory();
-
-  // Auto-select the first checked template when templates are selected
-  createEffect(() => {
-    const selected = selectedTemplates();
-    if (selected.length > 0 && !selectedPredefinedTemplate()) {
-      setSelectedPredefinedTemplate(selected[0]);
-    } else if (selected.length === 0) {
-      setSelectedPredefinedTemplate("");
-    }
-  });
 
   // Load the predefined template's prompt when selected
   createEffect(async () => {
@@ -71,12 +61,12 @@ export default function Page() {
 
     // Build list of templates to process (selected + custom if available)
     const templatesToProcess = [...selected];
-    
+
     // Add custom template if in custom mode with template and prompt
     if (templateSourceType() === "custom" && customTemplate() && customSystemPrompt().trim()) {
       templatesToProcess.push("custom");
     }
-    
+
     // Add predefined template if in predefined mode with valid selection
     if (templateSourceType() === "predefined" && selectedPredefinedTemplate()) {
       templatesToProcess.push("predefined-custom");
@@ -104,7 +94,7 @@ export default function Page() {
         } else if (templateId === "predefined-custom") {
           // Handle predefined template with optional custom prompt
           const config = templateConfigs[selectedPredefinedTemplate()];
-          systemPrompt = customSystemPrompt().trim() || await getPrompt(selectedPredefinedTemplate());
+          systemPrompt = customSystemPrompt().trim() || (await getPrompt(selectedPredefinedTemplate()));
           defaultOutputData = config.defaultOutput;
           templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
         } else {
@@ -297,9 +287,10 @@ export default function Page() {
                             id="model"
                             value=${model}
                             onChange=${(e) => setModel(e.target.value)}>
-                            <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus</option>
-                            <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet</option>
-                            <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku</option>
+                            <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
+                            <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet 4.0</option>
+                            <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">Sonnet 3.7</option>
+                            <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
                             <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
                           </select>
 
@@ -336,29 +327,29 @@ export default function Page() {
                           </div>
 
                           <${Show} when=${() => templateSourceType() === "predefined"}>
-                            <select
-                              class="form-select form-select-sm cursor-pointer mb-2"
-                              name="predefinedTemplate"
-                              id="predefinedTemplate"
-                              value=${selectedPredefinedTemplate}
-                              onChange=${(e) => setSelectedPredefinedTemplate(e.target.value)}>
-                              <option value="">-- Select a template --</option>
-                              <${For} each=${templateGroups}>
-                                ${(group) => html`
-                                  <optgroup label=${() => group.label}>
-                                    <${For} each=${() => group.options}>
-                                      ${(option) => html`
-                                        <option 
-                                          value=${() => option.value} 
-                                          disabled=${() => option.disabled}>
-                                          ${() => templateConfigs[option.value].label}
-                                        </option>
-                                      `}
-                                    <//>
-                                  </optgroup>
-                                `}
-                              <//>
-                            </select>
+                            <div class="input-group mb-2">
+                              <select
+                                class="form-select form-select-sm cursor-pointer"
+                                name="predefinedTemplate"
+                                id="predefinedTemplate"
+                                value=${selectedPredefinedTemplate}
+                                onChange=${(e) => setSelectedPredefinedTemplate(e.target.value)}>
+                                <option value="">No Template</option>
+                                <${For} each=${templateGroups}>
+                                  ${(group) => html`
+                                    <optgroup label=${() => group.label}>
+                                      <${For} each=${() => group.options}>
+                                        ${(option) => html`
+                                          <option value=${() => option.value} disabled=${() => option.disabled}>
+                                            ${() => templateConfigs[option.value].label}
+                                          </option>
+                                        `}
+                                      <//>
+                                    </optgroup>
+                                  `}
+                                <//>
+                              </select>
+                            </div>
                           <//>
 
                           <${Show} when=${() => templateSourceType() === "custom"}>
@@ -393,9 +384,7 @@ export default function Page() {
                               placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
                               value=${customSystemPrompt}
                               onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
-                            <div class="form-text">
-                              Override the default prompt for the selected template. Use <strong>{{document}}</strong> as a placeholder.
-                            </div>
+                            
                           </>
                         </div>
                       </details>
@@ -413,9 +402,10 @@ export default function Page() {
                   fallback=${html`<div class="d-flex-center h-100">
                     <div class="text-center py-3">
                       <h1 class="text-info mb-3">Welcome to Consent Crafter</h1>
-                      <div>To get started, upload your source document, select one or more
-                      form templates from the list, and click Generate to create tailored
-                      consent documents.</div>
+                      <div>
+                        To get started, upload your source document, select one or more form templates from the list, and click Generate to
+                        create tailored consent documents.
+                      </div>
                     </div>
                   </div>`}>
                   <div class="d-flex flex-column gap-2">
@@ -427,10 +417,10 @@ export default function Page() {
                             return { label: "Custom Document", filename: "custom-document.docx" };
                           } else if (templateId === "predefined-custom") {
                             const config = templateConfigs[selectedPredefinedTemplate()];
-                            return { 
-                              prefix: config.prefix || "", 
-                              label: config.label + " (Custom)", 
-                              filename: config.filename.replace(".docx", "-custom.docx") 
+                            return {
+                              prefix: config.prefix || "",
+                              label: config.label + " (Custom)",
+                              filename: config.filename.replace(".docx", "-custom.docx"),
                             };
                           } else {
                             const config = templateConfigs[templateId];
@@ -454,8 +444,8 @@ export default function Page() {
                                 </div>
                               <//>
                               <${Show} when=${() => doc()?.status === "completed"}>
-                                <button type="button" class="btn btn-sm rounded-pill btn-success me-2" onClick=${() => downloadDocument(templateId)}>
-                                  Download
+                                <button type="button" class="btn btn-outline-light" onClick=${() => downloadDocument(templateId)}>
+                                  <img src="/assets/images/icon-download.svg" height="16" alt="Download" />
                                 </button>
                               <//>
                               <${Show} when=${() => doc()?.status === "error"}>
@@ -471,7 +461,11 @@ export default function Page() {
                     <div class="text-end">
                       <button type="button" class="btn btn-sm btn-link p-0" onClick=${downloadAll}>Download All</button>
                     </div>
-                    <div class="mt-auto">* We would love your feedback! Take a <a href="#">quick survey</a> to help us improve.</div>
+                    <div class="mt-auto d-flex align-items-center">
+                      <img src="/assets/images/icon-star.svg" alt="Star" class="me-2" height="16" />
+                      We would love your feedback! 
+                      <a href="#">Take a quick survey</a> to help us improve.</div>
+                    </div>
                   </div>
                 <//>
               </div>
@@ -482,7 +476,8 @@ export default function Page() {
             <div class="col-md-6">
               <div class="d-flex-center mt-1 gap-1">
                 <button type="reset" class="btn btn-light p-1 border rounded-pill col-2">Reset</button>
-                <button type="submit" class="btn btn-primary p-1 rounded-pill col-2" disabled=${() => !inputText() || selectedTemplates().length === 0}>
+                <button type="submit" class="btn btn-primary p-1 rounded-pill col-2" disabled=${() =>
+                  !inputText() || selectedTemplates().length === 0}>
                   Generate
                 </button>
               </div>
