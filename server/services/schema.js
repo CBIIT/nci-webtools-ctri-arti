@@ -172,6 +172,20 @@ export const seedData = {
       maxReasoning: 0,
     },
     {
+      id: 6,
+      providerId: 1,
+      label: "Sonnet 3.7",
+      value: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+      cost1kInput: 0.003,
+      cost1kOutput: 0.015,
+      cost1kCacheRead: 0.0003,
+      cost1kCacheWrite: 0.00375,
+      maxContext: 200_000,
+      maxOutput: 64_000,
+      maxReasoning: 60_000,
+    },
+    
+    {
       id: 10,
       providerId: 2,
       label: "Gemini 2.5 Pro",
