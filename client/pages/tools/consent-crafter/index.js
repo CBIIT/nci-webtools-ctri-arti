@@ -330,7 +330,7 @@ export default function Page() {
                               id="predefinedTemplate"
                               value=${selectedPredefinedTemplate}
                               onChange=${(e) => setSelectedPredefinedTemplate(e.target.value)}>
-                              <option value="">No Template</option>
+                              <option value="">[No Template]</option>
                               <${For} each=${templateGroups}>
                                 ${(group) => html`
                                   <optgroup label=${() => group.label}>
@@ -401,8 +401,8 @@ export default function Page() {
               <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1">
                 <${Show}
                   when=${() => Object.keys(generatedDocuments()).length > 0}
-                  fallback=${html`<div class="d-flex-center h-100">
-                    <div class="text-center py-3">
+                  fallback=${html`<div class="d-flex h-100 py-5">
+                    <div class="text-center py-5">
                       <h1 class="text-info mb-3">Welcome to Consent Crafter</h1>
                       <div>
                         To get started, upload your source document, select one or more form templates from the list, and click Generate to
