@@ -439,21 +439,19 @@ export default function Page() {
                               </div>
                               <div class="small text-muted">${() => documentInfo().filename}</div>
                             </div>
-                            <div>
-                              <${Show} when=${() => doc()?.status === "processing"}>
-                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                                  <span class="visually-hidden">Processing...</span>
-                                </div>
-                              <//>
-                              <${Show} when=${() => doc()?.status === "completed"}>
-                                <button type="button" class="btn btn-outline-light" onClick=${() => downloadDocument(templateId)}>
-                                  <img src="/assets/images/icon-download.svg" height="16" alt="Download" />
-                                </button>
-                              <//>
-                              <${Show} when=${() => doc()?.status === "error"}>
-                                <div class="text-danger small">Error: ${() => doc().error}</div>
-                              <//>
-                            </div>
+                            <${Show} when=${() => doc()?.status === "processing"}>
+                              <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                <span class="visually-hidden">Processing...</span>
+                              </div>
+                            <//>
+                            <${Show} when=${() => doc()?.status === "completed"}>
+                              <button type="button" class="btn btn-outline-light" onClick=${() => downloadDocument(templateId)}>
+                                <img src="/assets/images/icon-download.svg" height="16" alt="Download" />
+                              </button>
+                            <//>
+                            <${Show} when=${() => doc()?.status === "error"}>
+                              <div class="text-danger small text-truncate w-25" title=${() => doc().error}>Error: ${() => doc().error}</div>
+                            <//>
                           </div>
                         `;
                       }}
