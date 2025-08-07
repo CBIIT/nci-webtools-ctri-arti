@@ -36,6 +36,7 @@
   --bs-primary-dark-rgb: 13, 38, 72;
   --bs-secondary-rgb: 68, 68, 68;
   --bs-danger-rgb: 187, 14, 61;
+  --bs-info-bg-subtle: #deeaf3;
   --bs-font-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial,
     sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --bs-font-title: "Montserrat", var(--bs-font-sans-serif);
