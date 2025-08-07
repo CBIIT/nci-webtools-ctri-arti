@@ -8,8 +8,12 @@ WHO DO YOU CONTACT ABOUT THIS STUDY?
 KEY INFORMATION ABOUT THIS RESEARCH 
 This consent form describes a research study and is designed to help you decide if you would like to be a part of the research study.  
 You are being asked to take part in a research study at the National Institutes of Health (NIH). This section provides the information we believe is most helpful and important to you in making your decision about participating in this study. Additional information that may help you decide can be found in other sections of the document. Taking part in research at the NIH is your choice.
-{{Key_Info_1}}
-{{Key_Info_2}}
+{{Why_Asked}}
+{{Study_Purpose}} {{Intervention}} {{Intervention_Uses}}
+{{Brief_Happenings}}
+{{Time_Commitment}}
+{{Responsibilities}}
+{{Benefits_Brief}}
 {{Voluntariness}}
 The remaining document will now describe the research study in more detail.  This information should be considered before you make your choice. Members of the study team will talk with you about the information in this document. Some people have personal, religious, or ethical beliefs that may limit the kinds of medical or research interventions in which they would want to participate. Take the time you need to ask any questions and discuss this study with NIH staff, and with your family, friends, and personal health care providers.
 {{Parent_Permission}} {{Impaired_Adults}}
@@ -20,18 +24,29 @@ WHY IS THIS STUDY BEING DONE?
 {{Investigational_Use}} {{Approved_Use}}
 WHAT WILL HAPPEN DURING THE STUDY?
 If you decide to take part in this study, you will be asked to:
-{{Before_You_Begin}}
-{{During_The_Study}}
-{{Follow_Up}}
+{{FOR item IN Before_You_Begin}}
+•	{{$item}}
+{{END-FOR item}}
+{{FOR item IN During_The_Study}}
+•	{{$item}}
+{{END-FOR item}}
+{{FOR item IN Follow_Up}}
+•	{{$item}}
+{{END-FOR item}}
 HOW LONG WILL THE STUDY TAKE?
 {{How_Long}}
 HOW MANY PEOPLE WILL PARTICIPATE IN THIS STUDY?
 {{How_Many}}
 WHAT ARE THE RISKS AND DISCOMFORTS OF BEING IN THE STUDY?
-{{Risks_Discomforts}}
-{{Risks_Procedures}}
+{{FOR item IN Risks_Discomforts}}
+•	{{$item}}
+{{END-FOR item}}
+{{FOR item IN Risks_Procedures}}
+•	{{$item}}
+{{END-FOR item}}
 {{Risks_Pregnancy}}
-{{Risks_Radiation}}
+{{Risks_Radiation}}{{Rad_Risk_LT3}}{{Rad_Risk_GE3_LT5}}{{Rad_Risk_GT5}}
+{{Thera_Rad}}
 WHAT ARE THE BENEFITS OF BEING IN THE STUDY?
 {{Potential_Benefits_You}}
 Are there any potential benefits to others that might result from the study?
@@ -44,7 +59,7 @@ If we find out any new information that may affect your choice to participate in
 Return of research results
 {{Return_Results}}
 EARLY WITHDRAWAL FROM THE STUDY 
-{{ Early_Withdrawal}}
+{{Early_Withdrawal}}
 STORAGE, SHARING AND FUTURE RESEARCH USING YOUR SPECIMENS AND DATA
 Will your specimens or data be saved by the study team for use in other studies?
 As part of this study, we are obtaining specimens and data from you. We plan to store and use these specimens and data for studies other than the one described in this consent form that are going on right now, as well as studies that may be conducted in the future. The specimens and data will be kept in a way that we will still know that they came from you (i.e., they will be identifiable to us). If we use your identifiable specimens or data for future research, our study will be reviewed and approved by an Institutional Review Board who will make sure that we are protecting your confidentiality. These future studies might help us better understand {{ Disease_Condition}} or other diseases or conditions. This could include studies to develop other research tests, treatments, drugs, or devices, that may lead to the development of a commercial product by the NIH and/or its research or commercial partners. There are no plans to provide financial compensation to you if this happens. Also, it is unlikely that we will learn anything from these studies that may directly benefit you. 
@@ -74,7 +89,6 @@ How long will your specimens and data be stored by the NIH?
 {{Specimen_Storage}}
 PAYMENT
 Will you receive any type of payment for taking part in this study?
-{{ No_Payment}}{{Yes_Payment}}
 {{Partial_Payment}}
 {{Payment_Large}}
 REIMBURSEMENT
@@ -98,7 +112,7 @@ Will your medical information be kept private?
 We do our best to keep your medical information private.  However, we cannot promise this.  Certain groups may look at and copy your medical records. This may be for research, quality and data review including:
 •	The NIH and other government groups. (For example, the Food and Drug Administration (FDA) to help keep research safe.) 
 •	NIH Institutional Review Board
-•	{{Confidentiality_Study_Sponsor}}
+•	The study sponsor: {{Study_Sponsor}}
 •	{{Confidentiality_Manufacturer}}{{Confidentiality_Drug_Device}}
 NIH and researchers doing this study follow special laws and policies to keep your information as private as possible. However, your identity and information about being in this study may accidentally be seen by others. 
 In most cases, NIH will not share any identifiable information about you unless you say it is okay in writing.    More information about sharing your information is below.
@@ -120,8 +134,9 @@ Information may also be shared for some research. It can be given to some federa
 RESEARCH-RELATED INJURIES  
 The NIH Clinical Center will provide short-term medical care for any injury resulting from your participation in research here. In general, no long-term medical care or financial compensation for research-related injuries will be provided by the NIH, the NIH Clinical Center, or the Federal Government. However, you have the right to pursue legal remedy if you believe that your injury justifies such action.
 PROBLEMS OR QUESTIONS
-If you have any problems or questions about this study, about your rights as a research participant, or about any research-related injury, contact the Principal Investigator, {{Contact_Name}}: By email at {{Contact_Email}} or by phone at {{Contact_Phone}}. 
-{IF “{Other_Contacts}” = “Yes” “Other researchers you may call are: {Other_Contact_Name}: By email at {Other_Contact_Email} or by phone at { Other_Contact_Phone}.”} You may also call the NIH Clinical Center Patient Representative at 301-496-2626, or the NIH Office of IRB Operations at 301-402-3713 if you have a research-related complaint or concern.
+If you have any problems or questions about this study, about your rights as a research participant, or about any research-related injury, contact the Principal Investigator, {{Contact_Name}}: By email at {{Contact_Email}} or by phone at {{Contact_Phone}} 
+{{Other_Contact_Name}} {{Other_Contact_Email}} {{ Other_Contact_Phone}}
+You may also call the NIH Clinical Center Patient Representative at 301-496-2626, or the NIH Office of IRB Operations at 301-402-3713 if you have a research-related complaint or concern.
 CONSENT DOCUMENT 
 Please keep a copy of this document in case you want to read it again.
  
