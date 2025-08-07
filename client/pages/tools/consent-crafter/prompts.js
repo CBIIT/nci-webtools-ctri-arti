@@ -68,6 +68,7 @@ export const defaultOutput = {
 export const lpa_default_output = {
   study_title: "",
   nct_number: "",
+  institute: "",
   simple_summary: "",
   purpose: "",
   who_can_participate: [],

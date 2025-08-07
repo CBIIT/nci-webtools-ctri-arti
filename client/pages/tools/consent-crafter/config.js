@@ -17,6 +17,16 @@ export async function loadPrompt(filepath) {
 
 // Template configuration for all consent forms and lay person abstracts
 export const templateConfigs = {
+    "nih-cc-adult-patient": {
+        label: "Adult affected patient",
+        prefix: "NIH CC",
+        category: "NIH Clinical Center Consent",
+        templateUrl: "/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx",
+        promptUrl: "/templates/nih-cc/adult-affected-patient.txt",
+        defaultOutput: defaultOutput,
+        filename: "nih-cc-consent-adult-affected.docx",
+        disabled: false,
+    },
     // NIH Clinical Center Consent Forms
     "nih-cc-adult-healthy": {
         label: "Adult healthy volunteer",
@@ -26,16 +36,6 @@ export const templateConfigs = {
         promptUrl: "/templates/nih-cc/adult-healthy-volunteer.txt",
         defaultOutput: defaultOutput,
         filename: "nih-cc-consent-adult-healthy.docx",
-        disabled: false,
-    },
-    "nih-cc-adult-patient": {
-        label: "Adult affected patient",
-        prefix: "NIH CC",
-        category: "NIH Clinical Center Consent",
-        templateUrl: "/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx",
-        promptUrl: "/templates/nih-cc/adult-affected-patient.txt",
-        defaultOutput: defaultOutput,
-        filename: "nih-cc-consent-adult-affected.docx",
         disabled: false,
     },
     "nih-cc-adult-family": {
@@ -60,16 +60,6 @@ export const templateConfigs = {
     },
 
     // Lay Person Abstract Templates
-    "lpa-adult-healthy": {
-        label: "Adult healthy volunteer",
-        prefix: "LPA",
-        category: "Lay Person Abstract (LPA)",
-        templateUrl: "/templates/lay-person-abstract/lay-person-abstract-template.docx",
-        promptUrl: "/templates/lay-person-abstract/adult-healthy-volunteer.txt",
-        defaultOutput: lpa_default_output,
-        filename: "lay-person-abstract-healthy.docx",
-        disabled: false,
-    },
     "lpa-adult-patient": {
         label: "Adult affected patient",
         prefix: "LPA",
@@ -78,6 +68,16 @@ export const templateConfigs = {
         promptUrl: "/templates/lay-person-abstract/adult-affected-patient.txt",
         defaultOutput: lpa_default_output,
         filename: "lay-person-abstract-patient.docx",
+        disabled: false,
+    },
+    "lpa-adult-healthy": {
+        label: "Adult healthy volunteer",
+        prefix: "LPA",
+        category: "Lay Person Abstract (LPA)",
+        templateUrl: "/templates/lay-person-abstract/lay-person-abstract-template.docx",
+        promptUrl: "/templates/lay-person-abstract/adult-healthy-volunteer.txt",
+        defaultOutput: lpa_default_output,
+        filename: "lay-person-abstract-healthy.docx",
         disabled: false,
     },
     "lpa-adult-family": {
