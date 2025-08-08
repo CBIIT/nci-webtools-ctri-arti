@@ -1,7 +1,6 @@
 import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
 const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
-const FedPulse = AuthorizedImport({ path: "./tools/chat/fedpulse.js" });
 const ConsentCrafter = AuthorizedImport({ path: "./tools/consent-crafter/index.js" });
 const Translate = AuthorizedImport({ path: "./tools/translate.js" });
 const SemanticSearch = AuthorizedImport({ path: "./tools/semantic-search.js" });
@@ -35,12 +34,6 @@ const routes = [
         path: "chat",
         title: "Chat",
         component: Chat,
-      },
-      {
-        path: "fedpulse",
-        title: "FedPulse",
-        component: FedPulse,
-        hidden: true,
       },
       {
         path: "consent-crafter",
