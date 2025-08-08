@@ -14,7 +14,7 @@ export default function Layout(props) {
       <${Nav} routes=${routes} />
     </div>
     <${PrivacyNotice}/>
-    <main class="d-flex flex-column flex-grow-1">${props.children}</main>
+    <main class="d-flex flex-column flex-grow-1 position-relative">${props.children}</main>
     <${Footer} />
   `;
 }
