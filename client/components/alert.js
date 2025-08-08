@@ -67,18 +67,20 @@ export default function Alert(props) {
  */
 export function AlertContainer(props) {
   return html`
-    <div class="alert-container position-absolute top-0 start-50 translate-middle-x p-3 z-2 w-75">
-      <${For} each=${() => props.alerts || []}>
-        ${(alert) => html`
-          <${Alert}
-            type=${alert.type}
-            message=${alert.message}
-            dismissible=${alert.dismissible !== false}
-            autoDismiss=${alert.autoDismiss || 5000}
-            onDismiss=${() => props.onDismiss?.(alert.id)}
-          />
-        `}
-      <//>
-    </div>
+    <${Show} when=${() => props.alerts && props.alerts.length > 0}>
+      <div class="alert-container position-absolute top-0 start-50 translate-middle-x p-3 z-2 w-75">
+        <${For} each=${() => props.alerts || []}>
+          ${(alert) => html`
+            <${Alert}
+              type=${alert.type}
+              message=${alert.message}
+              dismissible=${alert.dismissible !== false}
+              autoDismiss=${alert.autoDismiss || 5000}
+              onDismiss=${() => props.onDismiss?.(alert.id)}
+            />
+          `}
+        <//>
+      </div>
+    <//>
   `;
 }
