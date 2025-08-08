@@ -2,9 +2,8 @@ import { createSignal, For, Show, Index } from "solid-js";
 import html from "solid-js/html";
 import { stringify } from "yaml";
 import { parse } from "marked";
-import { downloadText } from "/utils/files.js";
+import { downloadText, downloadCsv } from "/utils/files.js";
 import { getMarked } from "/utils/utils.js";
-import { editor } from "/utils/tools.js";
 
 const marked = getMarked();
 
@@ -27,6 +26,7 @@ export default function Message(p) {
 
   async function submitFeedback(e) {
     e.preventDefault();
+    e.stopPropagation();
     await dialog()?.close();
     let feedback = e.target.feedback.value;
     let comment = e.target.comment.value;
@@ -66,26 +66,53 @@ export default function Message(p) {
       ${(c) => {
         if (c.text !== undefined) { // include empty text to start message
           return html`
-            <div class="position-relative hover-visible-parent">
+            <div class="position-relative hover-visible-parent"
+              classList=${{ "text-end": p.message.role === "user" }}>
               <div
                 class="p-2 markdown"
-                classList=${{ "d-inline-block bg-light rounded": p.message.role === "user" }}
+                classList=${{ "d-inline-block p-3 bg-secondary-subtle rounded mb-2": p.message.role === "user" }}
                 innerHTML=${() => marked.parse(c.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, '')}></div>
-              <${Show} when=${() => p.message?.role !== "user"}>
-                <div class="text-end end-0 top-0 opacity-50 position-absolute">
+              
+              <!-- Show feedback only for last message from model -->
+              <${Show} when=${() => p.message?.role !== "user" && p.index === p.messages.length - 1}>
+                <div>
                   <button
-                    class="btn btn-sm btn-outline-light border-0 hover-visible"
+                    type="button"
+                    class="btn btn-sm btn-outline-light border-0"
+                    title="Mark as helpful"
                     onClick=${(e) => openFeedback(true)}>
                     👍
                   </button>
                   <button
-                    class="btn btn-sm btn-outline-light border-0 hover-visible"
+                    type="button"
+                    class="btn btn-sm btn-outline-light border-0"
+                    title="Mark as not helpful"
                     onClick=${(e) => openFeedback(false)}>
                     👎
                   </button>
                   <button
-                    class="btn btn-sm btn-outline-light border-0 hover-visible"
-                    onClick=${() => downloadText("results.txt", c.text)}>
+                    type="button"
+                    class="btn btn-sm btn-outline-light border-0"
+                    title="Copy response to clipboard"
+                    onClick=${() => navigator.clipboard.writeText(c.text)}>
+                    📃
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-light border-0"
+                    title="Export the entire conversation as CSV file"
+                    onClick=${() =>
+                    downloadCsv(
+                      "conversation.csv",
+                      p.messages.map((m) => ({
+                        role: m.role,
+                        content: m.content
+                          ?.map((c) => c.text)
+                          .filter(Boolean)
+                          .map(e => e.trim())
+                          .join("\n"),
+                      }))
+                    )}>
                     💾
                   </button>
                 </div>
@@ -97,7 +124,7 @@ export default function Message(p) {
         else if (c.toolUse?.name === "search") {
           return html`<details
             class="w-100 overflow-auto p-2 rounded mvh-25"
-            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            classList=${() => ({ "shadow-sm bg-light": visible()[p.index] })}
             open=${() => visible()[p.index]}>
             <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
               Searching: ${() => c.toolUse?.input?.query}...
@@ -121,7 +148,7 @@ export default function Message(p) {
         else if (c.toolUse?.name === "browse") {
           return html`<details
             class="w-100 overflow-auto p-2 rounded mvh-25"
-            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            classList=${() => ({ "shadow-sm bg-light": visible()[p.index] })}
             open=${() => visible()[p.index]}>
             <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
               Researching: ${() => c.toolUse?.input?.url?.map(e => new URL(e).hostname).join(", ")}...
@@ -134,7 +161,7 @@ export default function Message(p) {
         else if (c.toolUse?.name === "code") {
           return html`<details
             class="w-100 overflow-auto p-2 rounded hover-visible-parent position-relative"
-            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            classList=${() => ({ "shadow-sm bg-primary-subtle": visible()[p.index] })}
             open=${() => visible()[p.index]}>
             <summary class="fw-semibold  px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
               Writing Code...
@@ -167,7 +194,7 @@ export default function Message(p) {
           return html`<details
             class="w-100 overflow-auto p-2 rounded hover-visible-parent position-relative"
             classList=${() => ({ "shadow-sm": visible()[p.index] })}
-            open=${() => visible()[p.index]}>
+            open=${() => true || visible()[p.index]}>
             <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
               ${() => ({
                 view: "Viewing",
@@ -194,7 +221,7 @@ export default function Message(p) {
           
           return html`<details
             class="w-100 overflow-auto p-2 rounded mvh-25"
-            classList=${() => ({ "shadow-sm": visible()[p.index] })}
+            classList=${() => ({ "shadow-sm bg-warning-subtle": visible()[p.index] })}
             open=${() => visible()[p.index]}>
             <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
               ${() => (c.reasoningContent || c.toolUse?.name === "think" ? "Reasoning..." : c?.toolUse?.name)}
