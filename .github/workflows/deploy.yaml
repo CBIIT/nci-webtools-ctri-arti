@@ -9,6 +9,7 @@ on:
   push:
     branches:
       # - main
+      - 'stage'
       - '*dev'
       - '*qa'
 
@@ -24,7 +25,7 @@ jobs:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-latest
-    environment: ${{ (endsWith(github.ref, 'dev') && 'dev') || (endsWith(github.ref, 'qa') && 'qa') || inputs.environment || 'dev' }}
+    environment: ${{ (endsWith(github.ref, 'dev') && 'dev') || (endsWith(github.ref, 'qa') && 'qa') || (endsWith(github.ref, 'stage') && 'stage') || inputs.environment || 'dev' }}
 
     steps:
       - uses: actions/checkout@v4
