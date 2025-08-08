@@ -107,7 +107,7 @@ Section 8.3 "Risks and Benefits": "Potential risks include fatigue, headache, an
 ## LANGUAGE REQUIREMENTS
  
 ### Reading Level
-- Every single word used should be understandable to a high school student
+- Every single word used should be understandable to a child
 - Use words with less than 3 syllables whenever possible
 - Keep sentences to 5-10 words (fewer is better)
 - Explain abbreviations: "FSGS" --> "Focal Segmental Glomerulosclerosis (FSGS)"
@@ -162,7 +162,7 @@ Before submitting, verify:
 - [ ] All field names match exactly as specified
 - [ ] Array fields contain arrays, not strings
 - [ ] JSON is valid and properly formatted
-- [ ] A child would understand every word
+- [ ] A child should understand every word. Only use words with less than 3 syllables.
 - [ ] Direct address ("you") used throughout
 - [ ] Active voice maintained
 - [ ] No medical jargon remains untranslated

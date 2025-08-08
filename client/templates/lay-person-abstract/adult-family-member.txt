@@ -98,7 +98,7 @@ Section 8.3 "Risks and Benefits": "Potential risks include fatigue, headache, an
 ```
 ## LANGUAGE REQUIREMENTS
 ### Reading Level
-- Every single word used should be understandable to a high school student
+- Every single word used should be understandable to a xhild
 - Use words with less than 3 syllables whenever possible
 - Keep sentences to 5-10 words (fewer is better)
 - Replace medical jargon: "malignant neoplastic cells" → "cancer cells that have spread"
@@ -137,13 +137,14 @@ Use: "You will have your blood drawn three times"
 Use: "You may get headaches from the study drug"
 - Instead of: "Participants have the right to withdraw"
 Use: "You can leave the study at any time"
+
 ## VALIDATION CHECKLIST
 Before submitting, verify:
 - [ ] All relevant document sections quoted in REFERENCES
 - [ ] All field names match exactly as specified
 - [ ] Array fields contain arrays, not strings
 - [ ] JSON is valid and properly formatted
-- [ ] A child would understand every word
+- [ ] A child should understand every word. Only use words with less than 3 syllables.
 - [ ] Direct address ("you") used throughout
 - [ ] Active voice maintained
 - [ ] No medical jargon remains untranslated

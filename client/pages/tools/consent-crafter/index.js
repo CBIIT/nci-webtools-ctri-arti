@@ -416,7 +416,7 @@ export default function Page() {
                         const doc = () => generatedDocuments()[templateId];
                         const documentInfo = () => {
                           if (templateId === "custom") {
-                            return { label: "Custom Document", filename: "custom-document.docx" };
+                            return { prefix: "Custom Document", label: "", filename: "custom-document.docx" };
                           } else if (templateId === "predefined-custom") {
                             const config = templateConfigs[selectedPredefinedTemplate()];
                             return {

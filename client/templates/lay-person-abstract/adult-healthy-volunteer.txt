@@ -98,7 +98,7 @@ Section 8.3 "Risks and Benefits": "Potential risks include fatigue, headache, an
 ```
 ## LANGUAGE REQUIREMENTS
 ### Reading Level
-- Every single word used should be understandable to a high school student
+- Every single word used should be understandable to a child
 - Use words with less than 3 syllables whenever possible
 - Keep sentences to 5-10 words (fewer is better)
 - Replace medical jargon: "malignant neoplastic cells" → "cancer cells that have spread"
@@ -112,7 +112,9 @@ Section 8.3 "Risks and Benefits": "Potential risks include fatigue, headache, an
 - Instead of: "The report will be submitted by the researcher"
 - Use: "The study team will submit the report"
 - **Warm and supportive**: Maintain compassionate, helpful tone throughout
+
 ## CONTENT GUIDELINES
+
 ### Extraction Rules
 - Extract ONLY information explicitly stated in the protocol
 - Quote exact sections in the REFERENCES section before translating
@@ -125,11 +127,13 @@ Section 8.3 "Risks and Benefits": "Potential risks include fatigue, headache, an
 - Present side effects by frequency and severity in plain language
 - Each array item should be a complete, standalone point
 - Use bullet points for sequential procedures in your mind, but format as array items
+
 ### Focus Areas
 1. **Decision-critical information**: Cover what patients need to know for decisions
 2. **Safety information**: Risks, side effects, monitoring
 3. **Time commitments**: Duration, visits, daily life impact
 4. **Practical details**: Costs, compensation, contacts
+
 ## EXAMPLES OF DIRECT ADDRESS
 - Instead of: "Participants will undergo three blood draws"
 Use: "You will have your blood drawn three times"
@@ -137,13 +141,14 @@ Use: "You will have your blood drawn three times"
 Use: "You may get headaches from the study drug"
 - Instead of: "Participants have the right to withdraw"
 Use: "You can leave the study at any time"
+
 ## VALIDATION CHECKLIST
 Before submitting, verify:
 - [ ] All relevant document sections quoted in REFERENCES
 - [ ] All field names match exactly as specified
 - [ ] Array fields contain arrays, not strings
 - [ ] JSON is valid and properly formatted
-- [ ] A high school student would understand every word
+- [ ] A child should understand every word. Only use words with less than 3 syllables.
 - [ ] Direct address ("you") used throughout
 - [ ] Active voice maintained
 - [ ] No medical jargon remains untranslated
