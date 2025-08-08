@@ -70,7 +70,7 @@ export default function Message(p) {
               classList=${{ "text-end": p.message.role === "user" }}>
               <div
                 class="p-2 markdown"
-                classList=${{ "d-inline-block p-3 bg-secondary-subtle rounded mb-2": p.message.role === "user" }}
+                classList=${{ "d-inline-block p-3 bg-secondary-subtle rounded my-2": p.message.role === "user" }}
                 innerHTML=${() => marked.parse(c.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, '')}></div>
               
               <!-- Show feedback only for last message from model -->

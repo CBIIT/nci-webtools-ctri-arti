@@ -47,6 +47,7 @@ export default function Page() {
 
         <aside
           class=${() => ["position-relative z-5 bg-light p-3", toggles().conversations ? "d-block" : "d-none"].join(" ")}
+          style="min-width: 300px;"
           tabindex="-1"
           id="conversations-menu"
           aria-labelledby="conversations-menu-label">
