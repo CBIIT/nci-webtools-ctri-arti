@@ -122,7 +122,13 @@ export async function runModel({ model, messages, system: systemPrompt, tools = 
     if (!message.content.filter(Boolean).length) {
       message.content.push({ text: "_" });
     }
-    for (const content of message.content) {
+    const contents = message.content.filter(c => {
+      if (thoughtBudget <= 0 && c.reasoningContent) {
+        return false;
+      }
+      return !!c;
+    });
+    for (const content of contents) {
       if (!content) continue;
       // prevent empty text content
       if (content.text?.trim().length === 0) {
