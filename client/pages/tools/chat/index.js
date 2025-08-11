@@ -10,7 +10,7 @@ import { alerts, clearAlert } from "/utils/alerts.js";
 export default function Page() {
   const [session] = createResource(() => fetch("/api/session").then(res => res.json()));
   const { conversation, updateConversation, deleteConversation, conversations, messages, loading, submitMessage } = useChat();
-  const [toggles, setToggles] = createSignal({});
+  const [toggles, setToggles] = createSignal({conversations: true});
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
 
   function handleKeyDown(event) {
@@ -46,7 +46,7 @@ export default function Page() {
         <//>
 
         <aside
-          class=${() => ["position-relative z-5 bg-light p-3", toggles().conversations ? "d-block" : "d-none"].join(" ")}
+          class=${() => ["position-relative z-5 bg-light p-3 shadow h-100", toggles().conversations ? "d-block" : "d-none"].join(" ")}
           style="min-width: 300px;"
           tabindex="-1"
           id="conversations-menu"
