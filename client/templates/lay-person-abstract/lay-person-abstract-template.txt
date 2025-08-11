@@ -23,23 +23,16 @@ You might:
 •	{{$item}}
 {{END-FOR item}}
 	For you:
-{{FOR item IN potential_benefits}}
-•	{{$item}}
-{{END-FOR item}}
+{{potential_benefits}}
 For others: 
-{{FOR item IN potential_benefits_others}}
-•	{{$item}}
-{{END-FOR item}}
+{{potential_benefits_others}}
 
 
 		
 Do I have to be in this study?		Will I be paid or have costs in this study?
 •	Your taking part in the study is voluntary
 •	Withdrawal: {{withdrawal}}
-•	Alternatives:
-{{FOR item IN alternatives}}
-    - {{$item}}
-{{END-FOR item}}		{{costs_and_compensation}}
+•	Alternatives: {{alternatives}}		{{costs_and_compensation}}
 
 Please review more details on the next pages.
 If you have questions or want to join the study, contact {{contact_name}}:
