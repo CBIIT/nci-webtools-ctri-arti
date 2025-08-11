@@ -104,11 +104,11 @@ export default function Page() {
           defaultOutputData = config.defaultOutput;
           templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
         }
-
+ 
         // Extract data using AI
         const params = {
           model: model(),
-          messages: [{ role: "user", content: [{ text: "Please process the document in the system prompt." }] }],
+          messages: [{ role: "user", content: [{ text: "Please process the ENTIRE document according to your instructions and your role. The document may be quite lengthy, so take your time. Provide your response below, without preamble. Begin your detailed extraction and JSON generation process now." }] }],
           system: systemPrompt.replace("{{document}}", text),
           stream: false,
         };
