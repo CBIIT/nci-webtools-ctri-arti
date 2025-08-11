@@ -1,5 +1,5 @@
 import html from "solid-js/html";
-import { Show, For, createSignal, createResource, createEffect } from "solid-js";
+import { Show, For, createSignal, createResource, createEffect, createMemo } from "solid-js";
 import { parseDocument } from "/utils/parsers.js";
 import { readFile } from "/utils/files.js";
 import { createReport } from "docx-templates";
@@ -22,6 +22,14 @@ export default function Page() {
 
   // Get template groups from config
   const templateGroups = () => getTemplateConfigsByCategory();
+
+  // Check if all documents are done processing
+  const allDocumentsProcessed = createMemo(() => {
+    const docs = generatedDocuments();
+    const docKeys = Object.keys(docs);
+    if (docKeys.length === 0) return false;
+    return docKeys.every(key => docs[key].status === "completed" || docs[key].status === "error");
+  });
 
   // Load the predefined template's prompt when selected
   createEffect(async () => {
@@ -113,7 +121,9 @@ export default function Page() {
           stream: false,
         };
         const output = await runModel(params);
-        const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || "{}";
+        const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || 
+          output.match(/{\s*[\s\S]*?}/)?.[0] || "{}";
+
         const data = { ...defaultOutputData, ...yaml.parse(jsonOutput) };
 
         // Generate document
@@ -411,6 +421,9 @@ export default function Page() {
                     </div>
                   </div>`}>
                   <div class="d-flex flex-column gap-2">
+                    <${Show} when=${allDocumentsProcessed}>
+                      <div class="text-muted small fw-semibold">All processing is complete. The generated forms are available for download.</div>
+                    <//>
                     <${For} each=${() => Object.keys(generatedDocuments())}>
                       ${(templateId) => {
                         const doc = () => generatedDocuments()[templateId];
@@ -459,7 +472,9 @@ export default function Page() {
                   </div>
                   <div class="h-100 d-flex flex-column justify-content-between">
                     <div class="text-end">
-                      <button type="button" class="btn btn-sm btn-link p-0" onClick=${downloadAll}>Download All</button>
+                      <${Show} when=${allDocumentsProcessed}>
+                        <button type="button" class="btn btn-sm btn-link fw-semibold p-0" onClick=${downloadAll}>Download All</button>
+                      <//>
                     </div>
                     <div class="mt-auto d-flex align-items-center">
                       <img src="/assets/images/icon-star.svg" alt="Star" class="me-2" height="16" />
@@ -476,10 +491,11 @@ export default function Page() {
           <div class="row">
             <div class="col-md-6">
               <div class="d-flex-center mt-1 gap-1">
-                <button type="reset" class="btn btn-light p-1 border rounded-pill col-2">Reset</button>
+                <button type="reset" class="btn btn-light border rounded-pill">Reset</button>
                 <button
                   type="submit"
-                  class="btn btn-primary p-1 rounded-pill col-2"
+                  class="btn btn-primary rounded-pill"
+                  title=${() => !inputText() || selectedTemplates().length === 0 ? "Not all required fields are provided." : ""}
                   disabled=${() => !inputText() || selectedTemplates().length === 0}>
                   Generate
                 </button>
