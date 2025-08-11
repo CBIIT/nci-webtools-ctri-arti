@@ -99,7 +99,7 @@ The JSON object must have this exact typed structure:
 
 ```json
 {
-  "references": string[],                   // FIRST FIELD - Comprehensive array (20-40+ entries) of complete quotes from source. Include FULL text for every data point, not summaries or fragments
+  "references": string[],                   // FIRST FIELD - METADATA, NOT VISIBLE TO PATIENT - Comprehensive array (20-40+ entries) of complete quotes from source. Include FULL text for every data point, not summaries or fragments. UNLIKE THE REST OF THE OUTPUT, THIS CAN BE AS VERBOSE AS POSSIBLE. USE THIS SPACE TO PLAN OUT HOW TO WRITE SIMPLE AND CONCISE DESCRIPTIONS THAT ADHERE TO THE LANGUAGE GUIDELINES.
   "study_title": string,                    // Simplified, descriptive title without abbreviations (not a question)
   "nct_number": string,                     // NCT number exactly as written
   "institute": string,                      // Name of institute conducting the study

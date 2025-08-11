@@ -15,6 +15,8 @@ You are being asked to take part in a research study at the National Institutes 
 {{Responsibilities}}
 {{Benefits_Brief}}
 {{Voluntariness}}
+{{Alternatives}}
+{{Abbreviated_Risks}}
 The remaining document will now describe the research study in more detail.  This information should be considered before you make your choice. Members of the study team will talk with you about the information in this document. Some people have personal, religious, or ethical beliefs that may limit the kinds of medical or research interventions in which they would want to participate. Take the time you need to ask any questions and discuss this study with NIH staff, and with your family, friends, and personal health care providers.
 {{Parent_Permission}} {{Impaired_Adults}}
 IT IS YOUR CHOICE TO TAKE PART IN THE STUDY
@@ -24,12 +26,18 @@ WHY IS THIS STUDY BEING DONE?
 {{Investigational_Use}} {{Approved_Use}}
 WHAT WILL HAPPEN DURING THE STUDY?
 If you decide to take part in this study, you will be asked to:
+
+Before you begin:
 {{FOR item IN Before_You_Begin}}
 •	{{$item}}
 {{END-FOR item}}
+
+During the study:
 {{FOR item IN During_The_Study}}
 •	{{$item}}
 {{END-FOR item}}
+
+After the study:
 {{FOR item IN Follow_Up}}
 •	{{$item}}
 {{END-FOR item}}
@@ -89,6 +97,8 @@ How long will your specimens and data be stored by the NIH?
 {{Specimen_Storage}}
 PAYMENT
 Will you receive any type of payment for taking part in this study?
+{{No_Payment}}
+{{Yes_Payment}}
 {{Partial_Payment}}
 {{Payment_Large}}
 REIMBURSEMENT
@@ -112,7 +122,7 @@ Will your medical information be kept private?
 We do our best to keep your medical information private.  However, we cannot promise this.  Certain groups may look at and copy your medical records. This may be for research, quality and data review including:
 •	The NIH and other government groups. (For example, the Food and Drug Administration (FDA) to help keep research safe.) 
 •	NIH Institutional Review Board
-•	The study sponsor: {{Study_Sponsor}}
+•	The study sponsor: {{Confidentiality_Study_Sponsor}}
 •	{{Confidentiality_Manufacturer}}{{Confidentiality_Drug_Device}}
 NIH and researchers doing this study follow special laws and policies to keep your information as private as possible. However, your identity and information about being in this study may accidentally be seen by others. 
 In most cases, NIH will not share any identifiable information about you unless you say it is okay in writing.    More information about sharing your information is below.

@@ -1,38 +1,43 @@
-	Project Title: {{study_title}} ({{nct_number}})
-Principal Investigators: {{FOR name IN investigator_names}}{{$name}}{{END-FOR name}}
+Project Title: {{study_title}} ({{nct_number}})
+Principal Investigators: {{investigator_names}}
 Institute/Center: {{institute}}
 
 What is the goal of this study?
-	Who can be in this study?
 {{simple_summary}}
-	People who:
+
+Who can be in this study?
+People who:
 {{FOR item IN who_can_participate}}
-•	{{$item}}
+-	{{$item}}
 {{END-FOR item}}
 		
-What will happen during this study?		How long will I be in this study?
+What will happen during this study?
 You will:
 {{FOR item IN procedures}}
-•	{{$item}}
-{{END-FOR item}}		•	{{timeline}}
-•	{{visits_required}}
+-	{{$item}}
+{{END-FOR item}}
+
+How long will I be in this study?
+-	{{timeline}}
+-	{{visits_required}}
 		
-What are some risks of this study?		What are the benefits of this study?
+What are some risks of this study?
 You might:
 {{FOR item IN potential_risks}}
-•	{{$item}}
+-	{{$item}}
 {{END-FOR item}}
-	For you:
-{{potential_benefits}}
-For others: 
-{{potential_benefits_others}}
 
-
+What are the benefits of this study?
+For you: {{potential_benefits}}
+For others: {{potential_benefits_others}}
 		
-Do I have to be in this study?		Will I be paid or have costs in this study?
-•	Your taking part in the study is voluntary
-•	Withdrawal: {{withdrawal}}
-•	Alternatives: {{alternatives}}		{{costs_and_compensation}}
+Do I have to be in this study?		
+-	Your taking part in the study is voluntary
+-	Withdrawal: {{withdrawal}}
+-	Alternatives: {{alternatives}}
+
+Will I be paid or have costs in this study?
+{{costs_and_compensation}}
 
 Please review more details on the next pages.
 If you have questions or want to join the study, contact {{contact_name}}:
