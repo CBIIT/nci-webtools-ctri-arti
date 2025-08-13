@@ -206,7 +206,7 @@ The JSON object must have this exact typed structure:
 
 ```json
 {
-  "references": string[],                   // FIRST FIELD - METADATA, NOT VISIBLE TO PATIENT - Array of quotes from source. Include FULL text for every data point, not summaries or fragments. UNLIKE THE REST OF THE OUTPUT, THIS CAN BE VERBOSE. USE THIS SPACE TO PLAN OUT HOW TO WRITE SIMPLE AND CONCISE DESCRIPTIONS THAT ADHERE TO THE LANGUAGE GUIDELINES.
+  "references": string[],                   // FIRST FIELD - METADATA, NOT VISIBLE TO PATIENT - Array of quotes from source. Include FULL text for every data point. USE THIS SPACE TO PLAN OUT HOW TO WRITE SIMPLE AND CONCISE DESCRIPTIONS THAT ADHERE TO THE LANGUAGE GUIDELINES.
   "PI": string,                             // Full name and credentials of principal investigator
   "Title": string,                          // Exact title of the study
   "Cohort": string,                         // "Healthy volunteer"
@@ -325,55 +325,49 @@ Group related side effects in SINGLE array items by body system:
 
 ### Reference Requirements for Comprehensive Coverage
 
-Extract and quote COMPLETE sentences from the document, not fragments. Your references must include:
+Extract and quote COMPLETE sentences from the document. Your references must include:
 
-STUDY IDENTIFICATION (3-5 references):
+STUDY IDENTIFICATION:
 - Full title with all subtitles
 - Complete protocol numbers, NCT numbers, IND numbers
 - All sponsor and funding information
 - Complete investigator names, titles, affiliations, contact details
 
-OBJECTIVES (2-4 references):
+OBJECTIVES:
 - Complete primary objective text
 - All secondary objectives in full
 - Any exploratory objectives
 
-ELIGIBILITY (10-15 references minimum):
-- EACH inclusion criterion quoted in FULL (not summarized)
-- EACH exclusion criterion quoted in FULL (not summarized)
+ELIGIBILITY:
+- EACH inclusion criterion
+- EACH exclusion criterion
 - Include all sub-bullets and exceptions
-- Include all laboratory values and ranges
 
-PROCEDURES (5-10 references):
+PROCEDURES:
 - Complete description of each procedure
 - Full timeline and schedule details
 - All screening procedures
-- All intervention procedures
+- All treatment procedures
 - All follow-up procedures
 
-RISKS (5-10 references):
+RISKS:
 - Complete adverse event descriptions
-- Include percentages and severity grades when available
 - Full text of all warnings and precautions
-- Complete contraception requirements if applicable
+- Complete contraception requirements
 
-OTHER SECTIONS (5-10 references):
+OTHER SECTIONS:
 - Complete compensation/payment information
 - Full withdrawal procedures
-- Complete alternative options
+- Complete alternative treatment options
 - All contact information
 
 Include page numbers and section headings.
-Quote sentences.
 
 ## VALIDATION CHECKLIST
 Before submitting, verify:
 - [ ] References array is the FIRST field in the JSON
-- [ ] References array contains 20-40+ comprehensive quotes
-- [ ] Each reference includes COMPLETE text, not fragments
 - [ ] Every inclusion/exclusion criterion has its own full reference
 - [ ] Page numbers and section headings included for all references
-- [ ] Laboratory values and specific numbers preserved in references
 - [ ] All field names match exactly as specified
 - [ ] Array fields contain arrays where specified, string fields contain strings
 - [ ] JSON is valid and properly formatted
@@ -384,4 +378,6 @@ Before submitting, verify:
 - [ ] Information is verifiable from quotes
 - [ ] Procedures start with action verbs (have, get, take, receive)
 - [ ] Risks start with verbs and group related symptoms
+- [ ] Alternatives field contains 1-2 clear sentences about options
+- [ ] Abbreviated_Risks field contains brief 1-2 sentence risk summary
 - [ ] Output is succinct and clear
