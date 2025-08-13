@@ -141,16 +141,14 @@ export default function Page() {
                 required />
 
               <div class="d-flex justify-content-between py-1 px-2">
-                <label class="btn btn-light btn-sm rounded-pill">
-                  <input
-                    type="file"
-                    id="inputFiles"
-                    name="inputFiles"
-                    class="visually-hidden"
-                    accept="image/*,text/*,.pdf,.xls,.xlsx"
-                    multiple />
-                    +
-                </label>
+                <input
+                  type="file"
+                  id="inputFiles"
+                  name="inputFiles"
+                  aria-label="Input files"
+                  class="form-control form-control-sm w-auto bg-transparent border-transparent"
+                  accept="image/*,text/*,.pdf,.xls,.xlsx,.doc,.docx"
+                  multiple />
 
                 <div class="d-flex w-auto align-items-center">
                   <div class="form-check form-switch   form-control-sm me-2">
