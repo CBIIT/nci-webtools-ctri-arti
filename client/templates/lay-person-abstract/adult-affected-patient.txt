@@ -10,7 +10,7 @@ Patient educators MUST:
 - Ensure all work is verifiable with direct quotes from source documents
 
 ## TEMPLATE TO FILL
-This is the template that your JSON output will be used to populate:
+This is the template that your JSON output will be used to populate. Ensure that your JSON is grammatically correct within the context in which it is used:
 
 ```
 Project Title: {{study_title}} ({{nct_number}})
@@ -99,7 +99,7 @@ The JSON object must have this exact typed structure:
 
 ```json
 {
-  "references": string[],                   // FIRST FIELD - METADATA, NOT VISIBLE TO PATIENT - Comprehensive array (20-40+ entries) of complete quotes from source. Include FULL text for every data point, not summaries or fragments. UNLIKE THE REST OF THE OUTPUT, THIS CAN BE AS VERBOSE AS POSSIBLE. USE THIS SPACE TO PLAN OUT HOW TO WRITE SIMPLE AND CONCISE DESCRIPTIONS THAT ADHERE TO THE LANGUAGE GUIDELINES.
+  "references": string[],                   // FIRST FIELD - METADATA, NOT VISIBLE TO PATIENT - Array of sources. USE THIS SPACE TO PLAN OUT HOW TO WRITE SIMPLE AND CONCISE DESCRIPTIONS THAT ADHERE TO THE LANGUAGE GUIDELINES.
   "study_title": string,                    // Simplified, descriptive title without abbreviations (not a question)
   "nct_number": string,                     // NCT number exactly as written
   "institute": string,                      // Name of institute conducting the study
@@ -113,7 +113,7 @@ The JSON object must have this exact typed structure:
   "visits_required": string,                // Number and frequency of clinic visits
   "potential_benefits": string,             // One or two sentences describing possible benefits to participant
   "potential_benefits_others": string,      // One or two sentences describing possible benefits to others
-  "potential_risks": string[],              // Array of main risks grouped by type/body system - each must start with a verb. Group related symptoms together
+  "potential_risks": string[],              // Array of main risks grouped. Group related symptoms together
   "expanded_risks": string,                 // Comprehensive risk explanation in paragraph form
   "alternatives": string,                   // One or two sentences describing alternatives to participation
   "costs_and_compensation": string,         // 1 brief sentence about costs and compensation
@@ -131,119 +131,65 @@ The JSON object must have this exact typed structure:
 ✗ **Bad**: "Weekly phlebotomy procedures will be performed" (too technical)
 ✗ **Bad**: "You will undergo a process where medical professionals extract blood samples from your veins weekly" (too wordy)
 
-✓ **Good** (one grouped array item): ["have stomach problems like nausea, vomiting, or diarrhea"]
-✗ **Bad** (separate array items): ["feel sick to your stomach", "throw up", "have diarrhea"]
-Why: Related symptoms should be grouped in ONE array item, not split into multiple items
-
 ### Direct Address
 - Always use "you" instead of "participants" or "patients"
 - Make actions clear and direct using active voice
 - Maintain a warm, supportive tone
 
-### Risk Grouping
-Group related side effects in SINGLE array items by body system:
-
-✓ **Correct** JSON array structure:
-```json
-[
-  "feel tired, weak, or dizzy",
-  "have stomach problems like nausea, vomiting, or diarrhea",
-  "get headaches or have trouble sleeping"
-]
-```
-
-✗ **Incorrect** JSON array structure (too many separate items):
-```json
-[
-  "feel tired",
-  "feel weak", 
-  "feel dizzy",
-  "have nausea",
-  "vomit",
-  "have diarrhea"
-]
-```
-
-Use connecting words like "such as", "like", "including", or "or" to group related symptoms in one item.
-
 ## EXTRACTION RULES
 - Extract ONLY information explicitly stated for affected patients
 - Exclude information pertaining to healthy volunteers
-- Quote COMPLETE sections in references, not fragments
+- Include page numbers and section headings in references
 - If information is missing, omit that field entirely
 - Use exact numbers and timeframes when provided
 - Prioritize safety information and time commitments
 
-### Reference Requirements for Comprehensive Coverage
+## VALIDATION CHECKLIST
+Before submitting, verify:
+- [ ] References array is the FIRST field in the JSON
+- [ ] Page numbers and section headings included for all references
+- [ ] All field names match exactly as specified
+- [ ] Array fields contain arrays where specified, string fields contain strings
+- [ ] JSON is valid and properly formatted
+- [ ] Every word is understandable to a child
+- [ ] Direct address ("you") used throughout
+- [ ] Active voice maintained
+- [ ] No medical jargon remains untranslated
+- [ ] Information is verifiable from references
+- [ ] Procedures start with action verbs (have, get, take, receive)
+- [ ] Risks start with verbs and group related symptoms
+- [ ] Output is succinct and clear
 
-Extract and quote COMPLETE sections, not fragments. Your references must include:
-
-STUDY IDENTIFICATION (3-5 references):
-- Full title with all subtitles
-- Complete protocol numbers, NCT numbers, IND numbers  
-- All sponsor and funding information
-- Complete investigator names, titles, affiliations, contact details
-
-OBJECTIVES (2-4 references):
-- Complete primary objective text
-- All secondary objectives in full
-- Any exploratory objectives
-
-ELIGIBILITY (10-15 references minimum):
-- EACH inclusion criterion quoted in FULL (not summarized)
-- EACH exclusion criterion quoted in FULL (not summarized)
-- Include all sub-bullets and exceptions
-- Include all laboratory values and ranges
-
-PROCEDURES (5-10 references):
-- Complete description of each procedure
-- Full timeline and schedule details
-- All screening procedures
-- All treatment procedures  
-- All follow-up procedures
-
-RISKS (5-10 references):
-- Complete adverse event descriptions
-- Include percentages and severity grades when available
-- Full text of all warnings and precautions
-- Complete contraception requirements
-
-OTHER SECTIONS (5-10 references):
-- Complete compensation/payment information
-- Full withdrawal procedures
-- Complete alternative treatment options
-- All contact information
-
-Aim for 20-40+ total references. Include page numbers and section headings.
-Quote FULL paragraphs, not sentences. More detail is always better.
-
-## EXAMPLE OUTPUT
+## EXAMPLE OUTPUT - SHORTENED FOR BREVITY
 ```json
 {
-  "references": [
-    "Page 1, Full Title: 'A Phase 2, Open-Label Study to Evaluate the Safety and Efficacy of XYZ-123 in Combination with Standard Chemotherapy in Patients with Advanced Non-Small Cell Lung Cancer (NSCLC)'",
-    "Page 1, Protocol Identifiers: 'Protocol Number: XYZ-123-201, ClinicalTrials.gov Identifier: NCT12345678, IND Number: 123456, Version Date: January 15, 2024'",
-    "Page 1, Sponsor: 'This study is sponsored by ABC Pharmaceuticals, Inc., 123 Research Drive, Cambridge, MA 02139, in collaboration with the National Cancer Institute, Division of Cancer Treatment and Diagnosis'",
-    "Page 2, Principal Investigator: 'Jane Smith, MD, PhD, Professor of Oncology, National Cancer Institute, 9000 Rockville Pike, Building 10, Room 12N226, Bethesda, MD 20892, Phone: (301) 496-1234, Email: jane.smith@nih.gov'",
-    "Page 2, Co-Investigator: 'John Wilson, MD, Associate Professor of Medicine, National Cancer Institute, 9000 Rockville Pike, Building 10, Room 13N240, Bethesda, MD 20892, Phone: (301) 496-5678, Email: john.wilson@nih.gov'",
-    "Page 3, Primary Objective: 'The primary objective of this study is to evaluate the safety and tolerability of XYZ-123 when administered in combination with carboplatin and paclitaxel in patients with previously untreated, advanced non-small cell lung cancer. Safety will be assessed through monitoring of adverse events graded according to NCI CTCAE v5.0, laboratory abnormalities, vital signs, and physical examinations throughout the treatment period and for 30 days following the last dose of study drug.'",
-    "Page 3, Secondary Objectives: 'Secondary objectives include: 1) To assess the overall response rate (ORR) defined as the proportion of patients with complete response (CR) or partial response (PR) per RECIST v1.1 criteria, 2) To evaluate progression-free survival (PFS) defined as the time from first dose to disease progression or death from any cause, whichever occurs first, 3) To assess overall survival (OS) at 12 and 24 months, 4) To evaluate duration of response (DOR) in patients achieving CR or PR, 5) To assess quality of life using EORTC QLQ-C30 and QLQ-LC13 questionnaires administered at baseline and every 6 weeks'",
-    "Page 7, Inclusion Criterion 3.1.1: 'Patients must be 18 years of age or older at the time of signing informed consent. There is no upper age limit for participation in this study.'",
-    "Page 7, Inclusion Criterion 3.1.2: 'Histologically or cytologically confirmed diagnosis of non-small cell lung cancer (NSCLC), including adenocarcinoma, squamous cell carcinoma, or large cell carcinoma. Mixed histologies are permitted if NSCLC is the predominant histology. Diagnosis must be confirmed by institutional pathology review.'",
-    "Page 7, Inclusion Criterion 3.1.3: 'Stage IIIB (not amenable to definitive chemoradiotherapy) or Stage IV disease according to the 8th edition of the AJCC staging system, confirmed by CT or PET-CT imaging within 28 days prior to enrollment.'",
-    "Page 8, Inclusion Criterion 3.1.4: 'At least one measurable lesion according to RECIST version 1.1 criteria. Measurable disease is defined as at least one lesion that can be accurately measured in at least one dimension with longest diameter ≥20 mm using conventional imaging or ≥10 mm using spiral CT scan. Lesions situated in a previously irradiated area are considered measurable if progression has been demonstrated in such lesions.'",
-    "Page 8, Inclusion Criterion 3.1.5: 'Eastern Cooperative Oncology Group (ECOG) performance status of 0 or 1. Performance status should be assessed within 7 days prior to first dose of study treatment.'",
-    "Page 8, Inclusion Criterion 3.1.6: 'Adequate organ and marrow function as defined below, with all screening labs to be obtained within 14 days prior to registration: Absolute neutrophil count (ANC) ≥1,500/µL, Hemoglobin ≥9.0 g/dL (transfusion permitted), Platelets ≥100,000/µL, Total bilirubin ≤1.5 × institutional ULN (≤3 × ULN for patients with Gilbert syndrome), AST(SGOT)/ALT(SGPT) ≤2.5 × institutional ULN (≤5 × ULN for patients with liver metastases), Serum creatinine ≤1.5 × institutional ULN OR calculated creatinine clearance ≥50 mL/min using Cockcroft-Gault formula'",
-    "Page 9, Exclusion Criterion 3.2.1: 'Prior systemic therapy for metastatic NSCLC. Patients who received adjuvant or neoadjuvant chemotherapy are eligible if therapy was completed at least 12 months prior to enrollment.'",
-    "Page 9, Exclusion Criterion 3.2.2: 'Known activating EGFR mutations (exon 19 deletion or L858R), ALK rearrangements, or ROS1 rearrangements. Testing for these alterations is required for non-squamous NSCLC.'",
-    "Page 10, Study Procedures Overview: 'Patients will receive XYZ-123 at a dose of 10 mg/kg intravenously on Day 1 of each 21-day cycle, in combination with carboplatin (AUC 5) and paclitaxel (175 mg/m²) administered intravenously on Day 1 of each cycle. Treatment will continue for up to 6 cycles or until disease progression, unacceptable toxicity, or patient withdrawal. Following completion of combination therapy, patients without disease progression may continue maintenance therapy with XYZ-123 alone every 3 weeks until progression.'",
-    "Page 15, Common Adverse Events: 'Based on previous studies with XYZ-123, the most frequently reported adverse events (occurring in ≥20% of patients) include: Fatigue (65%), Nausea (45%), Decreased appetite (40%), Diarrhea (35%), Rash (30%), Peripheral neuropathy (28%), Anemia (25%), Constipation (23%), and Vomiting (20%). Most events were Grade 1-2 in severity.'",
-    "Page 16, Serious Adverse Events: 'Serious adverse events reported in ≥2% of patients in prior studies include: Pneumonitis (3%), Hepatitis (2%), Colitis (2%), Endocrinopathies including thyroid disorders (4%), and Infusion-related reactions (2%). One treatment-related death due to pneumonitis was reported in the phase 1 study. Patients will be monitored closely for these immune-related adverse events.'",
-    "Page 25, Study Timeline: 'The expected duration of participation is approximately 12 months, consisting of: Screening period (up to 28 days), Treatment period (approximately 4-6 months for combination therapy), Maintenance period (continuing until progression, average 6 months), and Safety follow-up (30 days after last dose). Long-term survival follow-up will continue every 3 months for up to 2 years.'",
-    "Page 26, Study Visits: 'Patients will be required to attend clinic visits on Day 1 of each 21-day cycle during treatment. Each visit will last approximately 4-6 hours for infusion and monitoring. Additional visits for laboratory assessments will be required on Day 8 and Day 15 of Cycle 1, then Day 8 of subsequent cycles (approximately 1 hour each). Imaging assessments will be performed every 6 weeks during treatment and every 12 weeks during follow-up.'",
-    "Page 30, Compensation: 'Patients will not receive payment for participation in this study. However, the study drug XYZ-123 and all study-related procedures, including laboratory tests, imaging studies, and physician visits, will be provided at no cost. Parking vouchers will be provided for all study visits. Travel expenses exceeding $50 per visit may be reimbursed with appropriate documentation.'",
-    "Page 31, Study Withdrawal: 'Patients have the right to withdraw from the study at any time without penalty or loss of benefits. If a patient chooses to withdraw, they should notify the study team immediately. The investigator may recommend safety assessments including laboratory tests and a final study visit to ensure safe discontinuation. Patients who discontinue will be asked to complete a 30-day safety follow-up visit if possible.'",
-    "Page 32, Alternative Treatments: 'Alternative treatment options for advanced NSCLC include: 1) Standard platinum-based chemotherapy alone (carboplatin or cisplatin with pemetrexed, paclitaxel, or gemcitabine), 2) Immunotherapy with pembrolizumab or nivolumab for PD-L1 positive tumors, 3) Targeted therapy for patients with EGFR, ALK, or ROS1 alterations, 4) Best supportive care focusing on symptom management, 5) Participation in other clinical trials. Patients should discuss these options with their oncologist.'"
+"references": [
+    "Page 1, Full Title: 'A Longitudinal Study of Genetic and Environmental Risk Factors in First-Degree Relatives of Patients with Hereditary Cancer Syndromes'",
+    "Page 1, Protocol Identifiers: 'Protocol Number: GEN-FAM-2024-001, ClinicalTrials.gov Identifier: NCT12345678, Version Date: January 15, 2024'",
+    "Page 1, Sponsor: 'This study is sponsored by the National Cancer Institute, Division of Cancer Epidemiology and Genetics, 9609 Medical Center Drive, Rockville, MD 20850'",
+    "Page 2, Principal Investigator: 'Jane Smith, MD, PhD, Senior Investigator, Genetic Epidemiology Branch, National Cancer Institute, 9609 Medical Center Drive, Room 7E-420, Rockville, MD 20850, Phone: (240) 276-1234, Email: jane.smith@nih.gov'",
+    "Page 2, Genetic Counselor: 'Sarah Johnson, MS, CGC, Certified Genetic Counselor, NCI Genetic Counseling Service, 9609 Medical Center Drive, Rockville, MD 20850, Phone: (240) 276-5678, Email: sarah.johnson@nih.gov'",
+    "Page 3, Primary Objective: 'The primary objective is to evaluate genetic markers and environmental risk factors in first-degree relatives (parents, siblings, and children) of patients diagnosed with hereditary cancer syndromes, including Lynch syndrome, hereditary breast and ovarian cancer syndrome (HBOC), and Li-Fraumeni syndrome. We aim to identify genetic variants that may increase cancer risk and to understand how these variants interact with environmental factors.'",
+    "Page 3, Secondary Objectives: 'Secondary objectives include: 1) To assess the psychological impact of genetic testing on family members, measured through validated questionnaires at baseline, 3 months, and 12 months post-disclosure, 2) To evaluate the uptake of preventive measures following genetic counseling and risk assessment, 3) To establish a biorepository of DNA samples from family members for future research, 4) To assess family communication patterns about genetic risk using semi-structured interviews'",
+    "Page 7, Inclusion Criterion 2.1.1: 'First-degree biological relatives (parents, siblings, or children) of patients with a confirmed diagnosis of a hereditary cancer syndrome, as documented by genetic testing showing a pathogenic or likely pathogenic variant in a cancer predisposition gene.'",
+    "Page 7, Inclusion Criterion 2.1.2: 'Age 18 years or older at the time of enrollment. There is no upper age limit for participation.'",
+    "Page 7, Inclusion Criterion 2.1.3: 'Able and willing to provide informed consent and comply with study procedures, including providing a blood or saliva sample for genetic testing and completing questionnaires.'",
+    "Page 8, Inclusion Criterion 2.1.4: 'Must be able to provide documentation of biological relationship to the index patient (proband) through medical records, birth certificates, or other official documentation.'",
+    "Page 8, Exclusion Criterion 2.2.1: 'Previous genetic testing for the familial variant. Participants who have already been tested for the specific genetic variant identified in their family member are not eligible.'",
+    "Page 8, Exclusion Criterion 2.2.2: 'Active cancer diagnosis or cancer treatment within the past 5 years, excluding non-melanoma skin cancer.'",
+    "Page 9, Exclusion Criterion 2.2.3: 'Cognitive impairment or psychiatric condition that would interfere with the ability to understand the study procedures or provide informed consent, as determined by the study team.'",
+    "Page 10, Study Procedures - Initial Visit: 'The initial study visit will last approximately 3 hours and include: 1) Detailed family history assessment using a standardized three-generation pedigree, 2) Pre-test genetic counseling session (60-90 minutes) covering inheritance patterns, cancer risks, testing options, and implications for family members, 3) Blood draw (two 10-mL tubes) or saliva collection (2 mL) for DNA extraction and genetic testing, 4) Baseline psychological assessment questionnaires including the Multidimensional Impact of Cancer Risk Assessment (MICRA) and Hospital Anxiety and Depression Scale (HADS), 5) Demographics and medical history questionnaire.'",
+    "Page 11, Genetic Testing Procedures: 'Genetic testing will be performed for the specific pathogenic variant identified in the index patient. Testing will be conducted at a CLIA-certified laboratory with results typically available within 2-3 weeks. Variants of uncertain significance (VUS) will not be reported to participants but may be used for research purposes with appropriate consent.'",
+    "Page 12, Results Disclosure Visit: 'Results will be disclosed in person or via secure video conference by a certified genetic counselor. The disclosure session (60-90 minutes) will include: 1) Explanation of test results and what they mean for cancer risk, 2) Discussion of medical management options including surveillance and risk-reducing interventions, 3) Implications for other family members and cascade testing, 4) Psychological support and resources, 5) Written summary of results and recommendations.'",
+    "Page 13, Follow-up Procedures: 'Follow-up will occur at 3, 6, and 12 months post-disclosure and include: 1) Brief questionnaires about medical follow-up and preventive measures taken (15-20 minutes), 2) Psychological assessment questionnaires, 3) Optional semi-structured interview about family communication (30-45 minutes) at 6 months, 4) Annual follow-up questionnaires for 5 years via mail or secure online portal.'",
+    "Page 15, Psychological Risks: 'Genetic testing may cause emotional distress including anxiety, depression, worry about cancer risk, guilt about potentially passing mutations to children, and concerns about genetic discrimination. Some participants experience survivor guilt if they test negative while other family members test positive. Relationship strain within families may occur due to differing opinions about testing or results. All participants will have access to psychological support services through the study.'",
+    "Page 16, Privacy Risks: 'Although we take extensive measures to protect confidentiality, there is a small risk that genetic information could be inadvertently disclosed. The Genetic Information Nondiscrimination Act (GINA) provides protection against genetic discrimination in health insurance and employment, but does not cover life insurance, disability insurance, or long-term care insurance. Participants should consider these implications before enrolling.'",
+    "Page 17, Physical Risks: 'Blood draw risks include temporary pain, bruising, or rarely, infection at the needle site. Some people may feel lightheaded or faint. Saliva collection has no significant physical risks.'",
+    "Page 20, Benefits to Participants: 'Participants will receive genetic counseling and testing at no cost (value approximately $3,000-5,000). Those who test positive will receive personalized cancer risk assessment and prevention recommendations. All participants receive ongoing genetic counseling support. Testing negative may provide peace of mind and reduce anxiety about cancer risk.'",
+    "Page 21, Benefits to Others: 'This research may help identify new genetic factors that influence cancer risk in families. Results may improve risk prediction models and lead to better prevention strategies for hereditary cancers. The biorepository will support future research that may benefit other families with hereditary cancer syndromes.'",
+    "Page 25, Compensation: 'Participants will receive $25 for completing the initial visit, $25 for the results disclosure visit, and $10 for each follow-up questionnaire, for a maximum total of $100 over the study period. Genetic counseling and testing are provided at no cost. Parking validation or public transportation vouchers will be provided for in-person visits.'",
+    "Page 26, Withdrawal: 'Participants may withdraw from the study at any time without affecting their medical care or relationship with their family member's healthcare team. If withdrawing after genetic testing but before results disclosure, participants can choose whether to receive their results. Data and samples collected before withdrawal will be retained unless the participant specifically requests destruction.'",
+    "Page 27, Alternatives: 'Alternatives to participation include: 1) Clinical genetic testing through your healthcare provider (may involve out-of-pocket costs), 2) Direct-to-consumer genetic testing (limited cancer risk assessment, not recommended for medical decisions), 3) Choosing not to undergo genetic testing and following general population screening guidelines, 4) Waiting to decide about testing at a later time. Genetic counseling through this study or clinical services can help you understand these options.'"
   ],
   "study_title": "Testing a New Cancer Drug to Help Stop Tumor Growth",
   "nct_number": "NCT12345678",
@@ -284,23 +230,3 @@ Quote FULL paragraphs, not sentences. More detail is always better.
   "withdrawal": "You can leave the study at any time."
 }
 ```
-
-## VALIDATION CHECKLIST
-Before submitting, verify:
-- [ ] References array is the FIRST field in the JSON
-- [ ] References array contains 20-40+ comprehensive quotes
-- [ ] Each reference includes COMPLETE text, not fragments
-- [ ] Every inclusion/exclusion criterion has its own full reference
-- [ ] Page numbers and section headings included for all references
-- [ ] Laboratory values and specific numbers preserved in references
-- [ ] All field names match exactly as specified
-- [ ] Array fields contain arrays where specified, string fields contain strings
-- [ ] JSON is valid and properly formatted
-- [ ] Every word is understandable to a child
-- [ ] Direct address ("you") used throughout
-- [ ] Active voice maintained
-- [ ] No medical jargon remains untranslated
-- [ ] Information is verifiable from quotes
-- [ ] Procedures start with action verbs (have, get, take, receive)
-- [ ] Risks start with verbs and group related symptoms
-- [ ] Output is succinct and clear
