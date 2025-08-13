@@ -12,6 +12,7 @@ Patient educators MUST:
 ## TEMPLATE TO FILL
 This is the NIH Clinical Center consent template that your JSON output will be used to populate:
 
+
 ```
 PRINCIPAL INVESTIGATOR: {{PI}}
 STUDY TITLE: {{Title}}
@@ -30,8 +31,8 @@ You are being asked to take part in a research study at the National Institutes 
 {{Responsibilities}}
 {{Benefits_Brief}}
 {{Voluntariness}}
-{{Alternatives}}
-{{Abbreviated_Risks}}
+{{Brief_Alternatives}}
+{{Brief_Risks}}
 The remaining document will now describe the research study in more detail.  This information should be considered before you make your choice. Members of the study team will talk with you about the information in this document. Some people have personal, religious, or ethical beliefs that may limit the kinds of medical or research interventions in which they would want to participate. Take the time you need to ask any questions and discuss this study with NIH staff, and with your family, friends, and personal health care providers.
 {{Parent_Permission}} {{Impaired_Adults}}
 IT IS YOUR CHOICE TO TAKE PART IN THE STUDY
@@ -112,8 +113,7 @@ How long will your specimens and data be stored by the NIH?
 {{Specimen_Storage}}
 PAYMENT
 Will you receive any type of payment for taking part in this study?
-{{No_Payment}}
-{{Yes_Payment}}
+{{Payment}}
 {{Partial_Payment}}
 {{Payment_Large}}
 REIMBURSEMENT
@@ -165,7 +165,6 @@ You may also call the NIH Clinical Center Patient Representative at 301-496-2626
 CONSENT DOCUMENT 
 Please keep a copy of this document in case you want to read it again.
 ```
-
 ## PROCESS
 You must ALWAYS follow this process:
 1. Extract all relevant quotes from the source document
@@ -175,25 +174,32 @@ You must ALWAYS follow this process:
 ## CRITICAL REQUIREMENTS
 
 ### Verifiability
-- Every fact must come from a direct quote in your references
+- Every fact must come from a reference
 - Include page numbers, section headers, or paragraph identifiers when available
 - Never guess or infer information not explicitly stated
 
 ### Language Simplicity  
 - **Use words a child (8-10 years old) can understand**
-- Keep sentences to 5-10 words maximum
+- Keep sentences to 5-10 words maximum (fewer is better)
 - Use words with less than 3 syllables whenever possible
 - Replace medical jargon with simple explanations
+- Example: "malignant neoplastic cells" → "cancer cells that have spread"
 
 ### Succinctness
 - Be brief - no unnecessary words
 - One idea per sentence
 - Get to the point quickly
+- Break long sentences into multiple short sentences
 
 ### Accuracy
 - Maintain medical accuracy while using simple language
 - Don't oversimplify to the point of losing important information
 - Explain medical terms in parentheses when needed
+
+### Tone and Address
+- Always use "you" instead of "participants" or "patients"
+- Use "we" instead of "the researchers" or "the study team"
+- Maintain a warm, supportive, formal, respectful tone throughout
 
 ## INPUT
 The clinical trial protocol is provided below:
@@ -206,72 +212,84 @@ The JSON object must have this exact typed structure:
 
 ```json
 {
-  "references": string[],                   // FIRST FIELD - METADATA, NOT VISIBLE TO PATIENT - Array of quotes from source. Include FULL text for every data point. USE THIS SPACE TO PLAN OUT HOW TO WRITE SIMPLE AND CONCISE DESCRIPTIONS THAT ADHERE TO THE LANGUAGE GUIDELINES.
-  "PI": string,                             // Full name and credentials of principal investigator
+  "references": string[],                   // FIRST FIELD - METADATA, NOT VISIBLE TO PATIENT - Array of sources. USE THIS SPACE TO PLAN OUT HOW TO WRITE SIMPLE AND CONCISE DESCRIPTIONS THAT ADHERE TO THE LANGUAGE GUIDELINES.
+  "PI": string,                             // Full name and credentials of the principal investigator as shown in the protocol.
   "Title": string,                          // Exact title of the study
-  "Cohort": string,                         // "Healthy volunteer"
-  "Contact_Name": string,                   // Name without credentials
-  "Contact_Email": string,                  // Email address
-  "Contact_Phone": string,                  // Phone number
-  "Why_Asked": string,                      // Why being asked to participate (simple language)
-  "Study_Purpose": string,                  // Purpose starting with "The purpose of this study is to"
-  "Intervention": string,                   // Description of intervention if applicable
-  "Intervention_Uses": string,              // Approved uses of intervention if applicable
-  "Brief_Happenings": string,               // What will happen (comprehensive but brief)
-  "Time_Commitment": string,                // Duration, visits, length of visits
-  "Responsibilities": string,               // Participant responsibilities (neutral tone)
-  "Benefits_Brief": string,                 // Brief benefits description
-  "Voluntariness": string,                  // Statement about voluntary participation
-  "Alternatives": string,                   // One or two sentences describing alternatives to participation
+  "Study_Site": string,                     // Name of site where the study will take place.
+  "Cohort": string,                         // Return "Healthy volunteer"
+  "Contact_Name": string,                   // Name of the person to contact with questions about the study, without including credentials.
+  "Contact_Email": string,                  // Email address of the contact person.
+  "Contact_Phone": string,                  // Phone number of the contact person.
+  "Why_Asked": string,                      // Describe why they are being asked to take part in the research study.
+  "Study_Purpose": string,                  // Describe the purpose or objective of the study including what the intervention will be. Begin with "The purpose of this study is to". If applicable, explain all abbreviations.
+  "Intervention": string,                   // If the study has an intervention, describe the intervention, its approved uses, who approved the uses, and describe how the study is using the intervention beyone its approved uses. Make sure to clarify abbreviations like Food and Drug Administration (FDA).
+  "Intervention_Uses": string,              // If the study has an intervention, describe the approved uses of the intervention, who approved the uses (e.g., Food and Drug Administration (FDA)).
+  "Intervention_Not_Approved": string,      // If the study has an intervention beyond the approved uses, describe how it will be used and that it is not an approved use but studying it to see if we could use it for this kind of use.
+  "Brief_Risks": string,                    // Briefly describe the most important risk information associated with interventions, tests, and procedures for participants in this study.
+  "Brief_Alternatives": string,             // Briefly describe what alternative patients could have other than joining the study.
+  "Phase1_Why": string,                     // If this is a Phase 1 study, describe that the point of the study is to look for side effects and that the study cannot and will not determine effectiveness of the intervention.
+  "Therapeutic_Trial": string,              // If this is a therapeutic trial, explain what that is.
+  "Brief_Happenings": string,               // Comprehensive description of what participants will experience beginning with screening, randomization, blinding, during the study, and follow-up. Describe each procedure, test, assessment, and exam.
+  "Time_Commitment": string,                // Describe the expected duration of participation including how many visits, where the visit will take place, and how long each visit is expected to take, and if there are any overnight stays in the hospital.
+  "Responsibilities": string,               // Describe in neutral terms the patient's responsibilities like avoiding pregnancy, using effective forms of birth control, stopping breastfeeding, avoiding certain medications and herbals, foods, and activities.
+  "Benefits_Brief": string,                 // Briefly describe the direct benefits to the participant if they join the study.
+  "Voluntariness": string,                  // Return this statement: "You are free to stop taking part in the study at any time. If you want to stop, tell your study doctor." Then discuss if any additional tests or procedures are needed to ensure the patient can stop safely.
+  "Alternatives": string,                   // Describe what alternatives to participating in this research study are available, if any, including FDA-approved treatments for the condition being studied
   "Abbreviated_Risks": string,              // Brief 1-2 sentence summary of main risks
-  "Parent_Permission": string,              // Exact text if minors included, empty otherwise
-  "Impaired_Adults": string,                // Exact text if impaired adults included, empty otherwise
-  "Investigational_Use": string,            // Statement if drug/device not FDA approved
-  "Approved_Use": string,                   // Statement if using outside FDA approval
-  "Before_You_Begin": string[],             // Array of screening procedures
-  "During_The_Study": string[],             // Array of study procedures
-  "Follow_Up": string[],                    // Array of follow-up procedures
-  "How_Long": string,                       // 3-4 sentences about study duration
-  "How_Many": string,                       // Number of participants
-  "Risks_Discomforts": string[],           // Array of potential risks grouped by type
-  "Risks_Procedures": string[],            // Array of procedural risks
-  "Risks_Pregnancy": string,               // Pregnancy-related risks if applicable
-  "Risks_Radiation": string,               // Radiation header if applicable
-  "Rad_Risk_LT3": string,                  // Low radiation risk statement if applicable
-  "Rad_Risk_GE3_LT5": string,              // Medium radiation risk statement if applicable  
-  "Rad_Risk_GT5": string,                  // High radiation risk statement if applicable
-  "Thera_Rad": string,                     // Therapeutic radiation statement if applicable
-  "Potential_Benefits_You": string,        // Benefits to participant
-  "Potential_Benefits_Others": string,     // Benefits to others/future patients
-  "Other_Options": string,                  // Alternative treatment options
-  "Return_Results": string,                 // Plan for returning results
-  "Early_Withdrawal": string,               // Circumstances for termination
-  "Disease_Condition": string,              // Patient-friendly disease name
-  "Genomic_Sensitivity": string,           // Genomic data sharing statement if applicable
-  "Anonymized_Specimen_Sharing": string,   // Specimen sharing statement
-  "Data_Save_Type": string,                // Repository type statement
-  "Specimen_Storage": string,              // Storage duration statement
-  "No_Payment": string,                    // No payment statement if applicable
-  "Yes_Payment": string,                   // Payment details if applicable
-  "Partial_Payment": string,               // Partial payment statement if applicable
-  "Payment_Large": string,                 // IRS form statement if >$600/year
-  "Reimbursement": string,                 // Travel/lodging reimbursement details
-  "Costs": string,                         // Out-of-pocket costs
-  "COI_None": string,                      // No conflict statement if applicable
-  "Technology_License": string,            // Technology license statement if applicable
-  "CRADA": string,                         // CRADA statement if applicable
-  "CTA_No_NonNIH": string,                // CTA without non-NIH statement if applicable
-  "CTA_Yes_NonNIH": string,               // CTA with non-NIH statement if applicable
-  "Confidentiality": string,               // Confidentiality maintenance statement
-  "Confidentiality_Study_Sponsor": string, // Sponsor name if applicable
-  "Confidentiality_Manufacturer": string,  // Manufacturer name if applicable
-  "Confidentiality_Drug_Device": string,   // Drug/device name if applicable
+  "Participation_Requirements": string,      // 1-2 sentence description of the eligibility criteria
+  "Study_Procedures": string,               // Comprehensive list of procedures the participant will experience during the study. Identify each procedure, test, assessment, and exam by name, a detailed description of what the procedure is is, and describe why they will have this done.
+  "Parent_Permission": string,              // If this study needs parental permission for participation of a child, add this sentence exactly: "If the individual being enrolled is a minor then the term 'you' refers to 'you and/or your child' throughout the remainder of this document."
+  "Impaired_Adults": string,                // If this study is approved to include adults with impaired decision-making capacity, add this text exactly: "If the individual being asked to participate in this research study is not able to give consent for themselves, you, as the Legally Authorized Representative, will be their decisionmaker and you are being asked to give permission for this person to be in this study. For the remainder of this document, the term 'you' refers to you as the decision-maker and/or the individual being asked to participate in this research."
+  "Before_You_Begin": string[],             // Provide an extensive and detailed explanation of the screening process to verify eligibility. Use lists and bullets if needed. Make sure describe what each test or procedure is.
+  "During_The_Study": string[],             // Provide an extensive and detailed explanation of what the treatment procedures will be, including the randomization process, blinding process, the schedule of activities. Identify the procedures that will take place at every visit, procedures that will happen occasionally, and procedures that are contingent on other events. Provide as much detail as possible and be exhaustive in explaining. Make sure describe what each test or procedure is.
+  "Follow_Up": string[],                    // Provide an extensive and detailed explanation of what will happen after treatments are completed. Provide as much detail as possible and be exhaustive in explaining simply. Make sure describe what each test or procedure is.
+  "How_Long": string,                       // 3-4 sentence explanation of how long the study will take if they agree to participate. Include length of study, number and frequency of visits, approximate length of time for each visit (e.g., 4-8 hours), and follow up time
+  "How_Many": string,                       // Describe how many people will participate in the study at each and all locations
+  "Risks_Discomforts": string[],           // An exhaustive listing explaining the potential risks of participation starting with the intervention drug or device. Be exhaustive and detailed. For each procedure, drug, or device, describe the reasonably foreseeable risks or discomforts, both immediate and long-term. Include both physical harms that may occur, as well as non-physical harms such as psychological, emotional, legal, economic, and privacy or confidentiality issues. Risk information should be organized by the intervention with which it is associated. For example, risks of each drug should be listed together, but distinct from risks from other drugs. Physical risks should be described both in terms of magnitude and likelihood. This information may be presented in either a bulleted or table format. Do not include risks for pregnancy or Radiation since that information will be captured in seperate data elements. If death is a foreseeable outcome from the risks of any study intervention, this should be stated by including a statement such as: "Some risks described in this consent document, if severe, may cause death."
+  "Risks_Procedures": string[],            // List all possible risks of tests and procedures. For each test and procedure, include both short-term and long-term risks. Describe physical risks by how severe and how likely they are. Include non-physical risks such as mental, emotional, financial, and privacy concerns. Group risks by test or procedure, keeping all risks from one test or procedure together. You may use bullet points or tables. If death is possible from any treatment, include this statement: "Some risks described in this document, if severe, may cause death."
+  "Risks_Pregnancy": string,               // If the study involves an intervention that may have a negative or unknown impact on a fetus include the following language with this bolded heading "What are the risks related to pregnancy?", a line break, and then an array describing each of the following elements: Rationale for preventing pregnancy during study, and which subgroups are excluded, pregnancy testing requirements (women able to become pregnant only), duration and type of contraception required, actions taken in event of pregnancy, any potential risks to future fertility if noted in protocol.
+  "Risks_Radiation": string,               // If the study involves radiation, return this bolded heading "What are the risks of radiation from being in the study?"
+  "Rad_Risk_LT3": string,                  // If the Effective Dose (ED) is less than 0.3 rem then return this statement replacing [RAD_PROCS] with the listing of radiological procedures required in the protocol: "During this research study, you may be exposed to radiation from [RAD_PROCS] each year. This is considered a low exposure. The risk of this exposure is too low to be reliably measured." If children can also be participants, add this additional statement: "The amount of radiation you will get is less than the NIH Radiation Guidelines of 0.5 rem per year for children." Then add: "Every day, people are exposed to low levels of radiation that come from the sun and the environment around them. This type of radiation is called 'background radiation.' No one knows for sure whether exposure to these low amounts of radiation is harmful to your body. The radiation you will get by being in this study is less than the average yearly background radiation in the United States."
+  "Rad_Risk_GE3_LT5": string,              // If the Effective Dose (ED) is less than 5.0 rem and greater than 0.3 rem then return this statement replacing [RAD_PROCS] with the listing of radiological procedures required in the protocol and [ED_rem] with the effective dose value from the protocol: "During this research study, you may be exposed to radiation from [RAD_PROCS] each year. The amount of radiation exposure from these procedures is equal to about [ED_rem]. A rem is a unit of radiation absorbed by the body." If children can also be participants, add this additional statment replacing [AMOUNT] with whether the ED amount is less than, the same as, or greater than 0.5 rem: "This amount of radiation is [AMOUNT] the NIH Radiation Guidelines of 0.5 rem per year for children." Then add the following statement replacing [ESTIMATE] with the estimate dose in years: The [RAD_PROCS] that you get in this study will expose you to roughly the same amount of radiation as [ESTIMATE] of background radiation. Most of the time, this amount of extra radiation is not harmful to you. However, scientists believe that being exposed to too much radiation can cause harmful side effects. This could include getting a new cancer. We estimate that this could happen in about 1 out of every 1000 people who get a very large amount of extra radiation."
+  "Rad_Risk_GT5": string,                  // If the Effective Dose (ED) is greater than 5.0 rems then return this statement replacing [RAD_PROCS] with the listing of radiological procedures required in the protocol, [ED_rem] with the effective dose value from the protocol, and [ESTIMATE] with the estimate dose in years, and replace [FATAL] with a calculation based on the ED rems multipied by 0.05: "During this research study, you may be exposed to radiation from [RAD_PROCS] each year. The amount of radiation exposure from these procedures is equal to about [ED_rem]. A rem is a unit of radiation absorbed by the body. Every day, people are exposed to low levels of radiation that come from the sun and the environment around them. The average person in the United States gets a radiation exposure of 0.3 rem per year from these sources. This type of radiation is called 'background radiation.' This study will expose you to more radiation than you get from everyday background radiation. No one knows for sure whether exposure to these low amounts of radiation is harmful to your body. The [RAD_PROCS] that you get in this study will expose you to roughly the same amount of radiation as [ESTIMATE] of background radiation. Being exposed to too much radiation can cause harmful side effects such as an increase in the risk of cancer. The risk depends on how much radiation you are exposed to. Please be aware that about 40 out of 100 people (40%) will get cancer during their lifetime, and 20 out of 100 (20%) will die from cancer. The risk of getting cancer from the radiation exposure in this study is [ED_rem] out of 100 ([ED_rem]%) and of getting a fatal cancer is [FATAL] out of 100 ([FATAL]%)."
+  "Thera_Rad": string,                     // If there is therapeutic radiation described in the protocol return this statement: "Therapeutic Radiation For assistance drafting risk language specific to a therapy, researchers should contact: - Radioactive therapy drugs (I-131, Lu-177, etc.): the Clinical Authorized User (CAU) signing off on the protocol. A CAU is required for all clinical administrations of radioactive materials. - Radiation Oncology therapies (TBI, SBRT, HDR): Kevin Camphausen or Freddy Escorcia - Additional guidance may be found at https://drs.ors.od.nih.gov/rsc/Pages/forms_index.aspx Risks and side effects related to radiation therapy include: - Likely: [List of risks and side effects] - Less likely: [List of risks and side effects] - Rare, but serious: [List of risks and side effects]"
+  "Potential_Benefits_You": string,        // If there aren't benefits return this statement: "You will not benefit from being in this study." If there are possible benefits to the participant return this statement: "You might not benefit from being in this study. However, the potential benefit to you might be", then desribe the potential benefits.
+  "Potential_Benefits_Others": string,     // If other might benefit from the study, return this statement: "In the future, other people might benefit from this study because" then describe in plain, simple language the potential benefits to others in simple language
+  "Other_Options": string,                  // Describe what alternatives to participating in this research study are available, if any, including FDA-approved treatments for the condition being studied
+  "Return_Results": string,                 // Explain the plan for returning clinically relevant research results to the participant. This includes primary research results as well as secondary or incidental findings. You should also include the plan for returning the outcome of the study analysis to participants, if applicable. If there is not a plan to return study results then clearly state that.
+  "Early_Withdrawal": string,               // Explain the circumstances under which the participant's participation may be terminated by the investigator without regard to the participant's consent. Include whether the participant should be monitored for safety reasons and for how long, even if withdrawn from the study.
+  "Disease_Condition": string,              // The patient-friendly name of the disease or condistion being studied (e.g., stomach cancer). Do not capitalize the first word unless it is a proper noun.
+  "Genomic_Sensitivity": string,           // If this study will create genomic summary results and those results are not deemed as sensitive, return this statement: "Information about all the people (including you) in this study may be combined to create what is called summary information. The summary information may be placed in a database and shared in scientific publications. This information will help the researchers understand if some patterns are more common than others among everyone who was a part of this study. The summary information will be available to anyone without the need for any permission. The risk of anyone identifying you based on this information is very low." However, if the study will create genomic summary results and those results are deemed as sensitive, include this statement: "Information about all the people (including you) in this study may be combined to create what is called summary information. The summary information may be placed in a database and will be made available to researchers only if they are granted permission. However, the summary information may still be shared in scientific publications without permissions. This information will help the researchers understand if some patterns are more common than others among everyone who was a part of this study. The risk of anyone identifying you based on this information is very low."
+  "Anonymized_Specimen_Sharing": string,   // If anonymized specimens or data may be used or shared (including in CRIS or BTRIS) then include this statment: "In addition to the planned use and sharing described above, we might remove any labels from your specimens and data that might identify you (i.e., anonymize them), and use them or share them with other researchers for future studies at the NIH or other places. When we or the other researchers use your anonymized specimens and data for these projects, there will be no way to know that they came from you. We want to make sure that you understand that this is a possibility if you participate in this study. Once we do this, we would not be able to remove your specimens or data from these studies or prevent their use in future studies because we would not be able to tell which specimens or data belong to you." However, if anonumized specimens or data will never be shared and data will not be available in CRIS or BTRIS then include this statment: "We will not remove any labels that might identify you (anonymize) from your specimens and data and use or share them with other researchers for future studies at the NIH or other places."
+  "Data_Save_Type": string,                // If the participant's data will be saved in an open access respository, include this statement: "The data in the repository will be widely available to anyone who wants it." If the participant's data will be saved in a closed or restricted access repository include the following statement: "The data in the repository will only be available to qualified researchers. These researchers must receive permission before they are allowed to access the data. Before receiving the data, the researchers must promise that they will not try to figure out the identity of the research participants."
+  "Specimen_Storage": string,              // Include this statement: "Your specimens and data may be stored by the NIH" then explain the time period the specimens will be stored (e.g., forever, 2 years, etc.)
+  "Payment": string,                       // If no payment will be given, return this statement: "You will not receive any payment for taking part in this study." If payment will be given, explain how payment will be given including the type (e.g., check payments, gift cards, or other items) amount and timing that is being provided. Also specify how much is going to the parent and how much is going to the subject if the subject is a minor.
+  "Partial_Payment": string,               // If no payment will be given, return "". If payment will be given but the participant is unable to finish the entire study return this statement, replacing [Partial_Payment] with the actual partial payment information, but keeping the rest of the text exactly as written: "If you are unable to finish the study, you will receive [Partial_Payment] for the parts you completed. If you have unpaid debt to the federal government, please be aware that some or all of your compensation may be automatically reduced to repay that debt on your behalf."
+  "Payment_Large": string,                 // If no payment will be given, return "". If payment will exceed $600 (not including reimbursement for parking, meals, etc. based on receipts) in a calendar year, start with a line break then include the following statement: "With few exceptions, study compensation is considered taxable income that is reportable to the Internal Revenue Service (IRS). A 'Form 1099-Other Income' will be sent to you if your total payments for research participation are $600 or more in a calendar year."
+  "Reimbursement": string,                 // If NIH will cover any of the costs for travel, lodging or meals, explain what will and will not be provided, e.g., travel to and from the Clinical Center within the U.S., lodging and meals. State whether this will be paid to the participant as a reimbursement or paid by the NIH directly. If travel, lodging and meals will not be provided, provide this statement: "This study does not offer reimbursement for parents and participants, or payment of, hotel, travel, or meals."
+  "Reimbursement_Identifiable": string,    // If travel will be arranged and paid for by the NIH return this statement exactly: "If your travel to the NIH Clinical Center (e.g., flight, hotel) is arranged and paid for by the NIH, the agency making the reservations and their representatives will have access to your identifiable information."
+  "Costs": string,                         // Describe in plain, simple language if there are any costs of participation that a participant might incur. Some examples include when there are outpatient costs of participation that they would pay out of pocket.
+  "Drug_Device": string,                   // What is the exact name of the study drug, device, or intervention? (e.g., Aztreonam)
+  "Investigational_Use": string,            // If the drug or device is not approved by the FDA add a statement explaining that the medication or device is considered investigational and has not been approved by the U.S. Food and Drug Administration (FDA) to treat the condition.
+  "Approved_Use": string,                   // If the drug or device is approved by the FDA but is being used outside of the FDA approved indications, explain the drug or device, its approved uses, and what is being studied that is outside the approved use.
+  "Study_Sponsor": string,                 // Exact names of study sponsors
+  "Manufacturer": string,                  // Exact names of the manufacturers of the drugs and devices
+  "COI_None": string,                      // If there is neither a technology licence (including patents) nor a CRADA involved with the study return this statment exactly as written: "No NIH investigator involved in this study receives payments or other benefits from any company whose drug, product or device is being tested."
+  "Technology_License": string,            // If there is a technology licence (including patents) involved with the study return this statement, replacing [DRUG_DEVICE] with the actual drug or device name, but keeping the rest of the text exactly as written: "The NIH and the research team for this study have developed [DRUG_DEVICE] being used in this study. This means it is possible that the results of this study could lead to payments to NIH. By law, the government is required to share such payments with the employee inventors. You will not receive any money from the development of [DRUG_DEVICE]."
+  "CRADA": string,                         // If the study is associated with a CRADA return this statement: "NIH and researchers doing this study follow special laws and policies to keep your information as private as possible. However, your identity and information about being in this study may accidentally be seen by others. In most cases, NIH will not share any identifiable information about you unless you say it is okay in writing. More information about sharing your information is below. Information gathered for this study is protected under a Certificate of Confidentiality and the Privacy Act."
+  "CTA_No_NonNIH": string,                // If there is a clinical trial agreement (CTA) and there are no non-NIH investigators then return this statement, replacing [COMPANY_NAME] with the name of the company providing the drug or device and [DRUG_DEVICE] with the name of the drug or device, but keeping the rest of the text exactly as written: [COMPANY_NAME] is providing [DRUG_DEVICE] for this study to NIH without charge. No NIH employee involved in this study receives any payment or other benefits from [COMPANY_NAME]."
+  "CTA_Yes_NonNIH": string,               // If there is a clinical trial agreement (CTA) and there are non-NIH investigators then return this statment, replacing [COMPANY_NAME] with the name of the company providing the drug or device and [DRUG_DEVICE] with the name of the drug or device, but keeping the rest of the text exactly as written: [COMPANY_NAME] is providing [DRUG_DEVICE] for this study to NIH without charge. No NIH investigator involved in this study receives payments or other benefits from any company whose drug, product or device is being tested. However, there are some research partners not associated with the NIH working on this study who may receive payments or benefits, limited by the rules of their workplace."
+  "Confidentiality": string,               // Provide a brief statement explaining the extent to which confidentiality of records identifying the participant will be maintained by the study team. Specify whether social security numbers are collected and if participants can withhold their social security numbers and still participate in the research making sure they know they may not be able to receive compensation if they choose to withhold their social security number.
+  "Confidentiality_Study_Sponsor": string, // If there is a study sponsor, return this statement, replacing [Study_Sponsor] with the study sponsor name, but keeping the rest of the text exactly as written: "The study Sponsor: [Study_Sponsor]".
+  "Confidentiality_Manufacturer": string,  // If there is a manufacturer of a drug or device, return this statement, replacing [Manufacturer] with the manufacturer name, but keeping the rest of the text exactly as writtern: "Qualified people from [Manufacturer]".
+  "Confidentiality_Drug_Device": string,   // If there is a drug or device, return this statement, replacing [Drug_Device] with the name of the drug or device, but keeping the rest of the text exactly as writtern: ", and the drug company who makes [Drug_Device]".
   "Other_Contacts": string,                // Description of other contacts
-  "Other_Contact_Name": string,            // Other contact name
-  "Other_Contact_Email": string,           // Other contact email
-  "Other_Contact_Phone": string            // Other contact phone
+  "Other_Contact_Name": string,            // Name of other person, besides the principal investigator, listed as contacts for participants taking part at NIH.
+  "Other_Contact_Email": string,           // Email of other person, besides the principal investigator, listed as contact for participants taking part at NIH.
+  "Other_Contact_Phone": string            // Phone number of other person, besides the principal investigator, listed as contact for participants taking part at NIH.
 }
 ```
+
 
 ## LANGUAGE GUIDELINES
 
@@ -280,14 +298,14 @@ The JSON object must have this exact typed structure:
 ✗ **Bad**: "Weekly phlebotomy procedures will be performed" (too technical)
 ✗ **Bad**: "You will undergo a process where medical professionals extract blood samples from your veins weekly" (too wordy)
 
-✓ **Good** Alternatives: "You could choose not to join this study and continue your normal routine"
-✗ **Bad** Alternatives: "Alternative options include non-participation in research activities" (too technical)
+✓ **Good** Alternatives: "You could get regular treatment without joining the study or try a different study"
+✗ **Bad** Alternatives: "Alternative therapeutic modalities include standard-of-care interventions" (too technical)
 
-✓ **Good** Abbreviated_Risks: "You might feel dizzy after blood draws. The vaccine might cause a sore arm."
-✗ **Bad** Abbreviated_Risks: "Potential adverse events include vasovagal episodes and injection site reactions" (too technical)
+✓ **Good** Abbreviated_Risks: "You might feel tired or sick from the drug. Blood draws might cause bruising."
+✗ **Bad** Abbreviated_Risks: "Potential adverse events include grade 1-3 fatigue, nausea, and localized hematomas" (too technical)
 
 ### Direct Address
-- Always use "you" instead of "participants" or "volunteers"
+- Always use "you" instead of "participants" or "patients"
 - Make actions clear and direct using active voice
 - Maintain a warm, supportive tone
 
@@ -298,8 +316,8 @@ Group related side effects in SINGLE array items by body system:
 ```json
 [
   "feel tired, weak, or dizzy",
-  "have pain, redness, or swelling where you got the shot",
-  "get headaches or muscle aches"
+  "have stomach problems like nausea, vomiting, or diarrhea",
+  "get headaches or have trouble sleeping"
 ]
 ```
 
@@ -309,64 +327,25 @@ Group related side effects in SINGLE array items by body system:
   "feel tired",
   "feel weak",
   "feel dizzy",
-  "have pain at injection site",
-  "have redness",
-  "have swelling"
+  "have nausea",
+  "vomit",
+  "have diarrhea"
 ]
 ```
 
 ## EXTRACTION RULES
 - Extract ONLY information explicitly stated for healthy volunteers
-- Exclude information pertaining to affected patients
-- Quote COMPLETE sections in references, not fragments
+- Exclude information pertaining to affected patients. Eg: return empty strings.
+- Include page numbers and section headings in references
 - If information is missing, return empty string for that field
 - Use exact numbers and timeframes when provided
 - Prioritize safety information and time commitments
 
-### Reference Requirements for Comprehensive Coverage
 
-Extract and quote COMPLETE sentences from the document. Your references must include:
-
-STUDY IDENTIFICATION:
-- Full title with all subtitles
-- Complete protocol numbers, NCT numbers, IND numbers
-- All sponsor and funding information
-- Complete investigator names, titles, affiliations, contact details
-
-OBJECTIVES:
-- Complete primary objective text
-- All secondary objectives in full
-- Any exploratory objectives
-
-ELIGIBILITY:
-- EACH inclusion criterion
-- EACH exclusion criterion
-- Include all sub-bullets and exceptions
-
-PROCEDURES:
-- Complete description of each procedure
-- Full timeline and schedule details
-- All screening procedures
-- All treatment procedures
-- All follow-up procedures
-
-RISKS:
-- Complete adverse event descriptions
-- Full text of all warnings and precautions
-- Complete contraception requirements
-
-OTHER SECTIONS:
-- Complete compensation/payment information
-- Full withdrawal procedures
-- Complete alternative treatment options
-- All contact information
-
-Include page numbers and section headings.
 
 ## VALIDATION CHECKLIST
 Before submitting, verify:
 - [ ] References array is the FIRST field in the JSON
-- [ ] Every inclusion/exclusion criterion has its own full reference
 - [ ] Page numbers and section headings included for all references
 - [ ] All field names match exactly as specified
 - [ ] Array fields contain arrays where specified, string fields contain strings
@@ -378,6 +357,4 @@ Before submitting, verify:
 - [ ] Information is verifiable from quotes
 - [ ] Procedures start with action verbs (have, get, take, receive)
 - [ ] Risks start with verbs and group related symptoms
-- [ ] Alternatives field contains 1-2 clear sentences about options
-- [ ] Abbreviated_Risks field contains brief 1-2 sentence risk summary
 - [ ] Output is succinct and clear
