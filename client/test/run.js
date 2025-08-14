@@ -2,5 +2,5 @@
 import './solidjs.test.js';
 import { run } from './test.js';
 
-// Run all tests
-run();
+// Run all tests and await for completion before setting TESTS_DONE
+await run();
