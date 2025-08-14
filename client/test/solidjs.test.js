@@ -4,6 +4,16 @@ import assert from './assert.js';
 import { createSignal, createMemo, For, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import html from "solid-js/html";
+import { render } from 'solid-js/web';
+
+// Utility function to wait for a condition to be true
+const waitFor = async (condition, timeout = 1000) => {
+  const start = Date.now();
+  while (!condition()) {
+    if (Date.now() - start > timeout) throw new Error('Timeout waiting for condition');
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+};
 
 test('SolidJS README Patterns', async (t) => {
   await t.test('signals auto-wrapped', () => {
@@ -107,9 +117,11 @@ test('SolidJS README Patterns', async (t) => {
       const [user, setUser] = createSignal({ name: 'Alice' });
       
       return html`
-        <${Show} when=${user} fallback=${html`<p>Not logged in</p>`}>
-          <p>Welcome ${() => user().name}</p>
-        <//>
+        <div>
+          <${Show} when=${user} fallback=${html`<p>Not logged in</p>`}>
+            <p>Welcome ${() => user().name}</p>
+          <//>
+        </div>
       `;
     }
 
@@ -153,12 +165,18 @@ test('SolidJS README Patterns', async (t) => {
       return html`<button onClick=${handleClick}>Click me</button>`;
     }
 
-    const result = ClickButton();
-    const event = new MouseEvent('click');
-    result.dispatchEvent(event);
-    
-    assert.strictEqual(clickCount, 1);
-    assert.ok(lastEvent);
+    // we need to attach to the DOM to handle events
+    let container = document.createElement('div');
+    try {
+      document.body.appendChild(container);
+      render(() => html`<${ClickButton} />`, container);
+      container.querySelector('button').click();
+      assert.strictEqual(clickCount, 1);
+      assert.ok(lastEvent);
+    } finally {
+      document.body.removeChild(container);
+    }
+
   });
 
   await t.test('inline styles', () => {
@@ -167,11 +185,11 @@ test('SolidJS README Patterns', async (t) => {
       const [color] = createSignal('blue');
       
       return html`
-        <div style=${{
-          width: () => `${width()}px`,
+        <div style=${() => ({
+          width: `${width()}px`,
           height: '50px',
-          backgroundColor: color
-        }}>
+          'background-color': color()
+        })}>
           Styled content
         </div>
       `;
@@ -197,19 +215,27 @@ test('SolidJS README Patterns', async (t) => {
       `;
     }
 
-    const result = ReactiveCounter();
-    const countSpan = result.querySelector('.count');
-    const button = result.querySelector('button');
-    
-    assert.strictEqual(countSpan.textContent, '0');
-    
-    // Simulate click
-    button.click();
-    assert.strictEqual(countSpan.textContent, '1');
-    
-    // Click again
-    button.click();
-    assert.strictEqual(countSpan.textContent, '2');
+    // we need to attach to the DOM to handle events
+    const container = document.createElement('div');
+    try {
+      document.body.appendChild(container);
+      render(() => html`<${ReactiveCounter} />`, container);
+      const result = container.querySelector('div');
+      const countSpan = result.querySelector('.count');
+      const button = result.querySelector('button');
+      
+      assert.strictEqual(countSpan.textContent, '0');
+      
+      // Simulate click
+      button.click();
+      assert.strictEqual(countSpan.textContent, '1');
+      
+      // Click again
+      button.click();
+      assert.strictEqual(countSpan.textContent, '2');
+    } finally {
+      document.body.removeChild(container);
+    }
   });
 
   await t.test('store updates', () => {
@@ -229,14 +255,22 @@ test('SolidJS README Patterns', async (t) => {
       `;
     }
 
-    const result = UserForm();
-    const nameSpan = result.querySelector('.name');
-    const button = result.querySelector('button');
-    
-    assert.strictEqual(nameSpan.textContent, 'John');
-    
-    // Simulate click to update
-    button.click();
-    assert.strictEqual(nameSpan.textContent, 'Jane');
+    // we need to attach to the DOM to handle events
+    const container = document.createElement('div');
+    try {
+      document.body.appendChild(container);
+      render(() => html`<${UserForm} />`, container);
+      const result = container.querySelector('div');
+      const nameSpan = result.querySelector('.name');
+      const button = result.querySelector('button');
+      
+      assert.strictEqual(nameSpan.textContent, 'John');
+      
+      // Simulate click to update
+      button.click();
+      assert.strictEqual(nameSpan.textContent, 'Jane');
+    } finally {
+      document.body.removeChild(container);
+    }
   });
 });
