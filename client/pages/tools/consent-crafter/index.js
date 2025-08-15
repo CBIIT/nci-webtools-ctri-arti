@@ -90,7 +90,7 @@ export default function Page() {
     setGeneratedDocuments(initialStatus);
 
     // Process all templates in parallel
-    const promises = templatesToProcess.map(async (templateId) => {
+    for (const templateId of templatesToProcess) {
       try {
         let templateFile, systemPrompt, defaultOutputData;
 
@@ -112,12 +112,14 @@ export default function Page() {
           defaultOutputData = config.defaultOutput;
           templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
         }
- 
+
+        const system = "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
+
         // Extract data using AI
         const params = {
           model: model(),
-          messages: [{ role: "user", content: [{ text: "Please process the ENTIRE document according to your instructions and your role. The document may be quite lengthy, so take your time. Provide your response below, without preamble. Begin your detailed extraction and JSON generation process now." }] }],
-          system: systemPrompt.replace("{{document}}", text),
+          messages: [{ role: "user", content: [{ text: systemPrompt.replace("{{document}}", "see above") }] }],
+          system: system.replace("{{document}}", text),
           stream: false,
         };
         const output = await runModel(params);
@@ -144,9 +146,9 @@ export default function Page() {
           [templateId]: { status: "error", blob: null, error: error.message },
         }));
       }
-    });
+    }
 
-    await Promise.all(promises);
+    // await Promise.all(promises);
   }
 
   function downloadDocument(templateId) {
