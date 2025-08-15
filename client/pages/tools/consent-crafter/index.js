@@ -496,8 +496,8 @@ export default function Page() {
                 <button type="reset" class="btn btn-light border rounded-pill">Reset</button>
                 <button
                   type="submit"
-                  class="btn btn-primary rounded-pill"
-                  title=${() => !inputText() || selectedTemplates().length === 0 ? "Not all required fields are provided." : ""}
+                  class="btn btn-primary rounded-pill custom-tooltip"
+                  data-tooltip=${() => !inputText() || selectedTemplates().length === 0 ? "Not all required fields are provided." : ""}
                   disabled=${() => !inputText() || selectedTemplates().length === 0}>
                   Generate
                 </button>
