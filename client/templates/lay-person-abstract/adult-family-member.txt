@@ -89,8 +89,7 @@ You must ALWAYS follow this process:
 - Explain medical terms in parentheses when needed
 
 ## INPUT
-The clinical trial protocol is provided below:
-<protocol>{{document}}</protocol>
+The clinical trial protocol is provided above.
 
 ## OUTPUT SPECIFICATION
 Return a single JSON output with references as the FIRST field for accuracy and verifiability.
