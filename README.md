@@ -9,8 +9,7 @@ AI research platform for biomedical and regulatory information analysis. Built w
 docker compose up --build -w
 
 # Run tests
-cd client && npm test           # Frontend tests (Playwright)
-cd server && npm test           # Backend tests (Jest)
+cd server && npm test           # Runs both backend and client e2e/integration tests
 ```
 
 **Access**: https://localhost (ignore cert warnings for dev)  
