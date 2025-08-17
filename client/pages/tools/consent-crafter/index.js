@@ -385,7 +385,6 @@ export default function Page() {
                               name="systemPrompt"
                               rows="10"
                               style="resize: none; padding-right: 20px;"
-                              placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
                               value=${customSystemPrompt}
                               onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
                             <button
@@ -414,7 +413,6 @@ export default function Page() {
                               name="systemPrompt"
                               rows="10"
                               style="resize: none; padding-right: 20px;"
-                              placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
                               value=${customSystemPrompt}
                               onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
                             <button
