@@ -545,7 +545,7 @@ export default function Page() {
             <div class="d-flex justify-content-end">
               <button
                 type="button"
-                class="btn btn-secondary"
+                class="btn btn-light border rounded-pill"
                 onClick=${() => setExpandModalOpen(false)}>
                 Close
               </button>
