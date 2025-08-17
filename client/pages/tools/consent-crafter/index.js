@@ -374,7 +374,7 @@ export default function Page() {
 
                           <div class="position-relative">
                             <label
-                              for="systemPrompt"
+                              for="systemPromptCustom"
                               class="form-label clickable-trigger"
                               onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
                               >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
@@ -386,8 +386,8 @@ export default function Page() {
                           <div class="position-relative">
                             <textarea
                               class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                              id="systemPrompt"
-                              name="systemPrompt"
+                              id="systemPromptCustom"
+                              name="systemPromptCustom"
                               rows="10"
                               style="resize: none; padding-right: 20px;"
                               value=${customSystemPrompt}
@@ -406,7 +406,7 @@ export default function Page() {
                         <${Show} when=${() => templateSourceType() === "predefined"}>
                           <div class="position-relative">
                             <label
-                              for="systemPrompt"
+                              for="systemPromptPredefined"
                               class="form-label clickable-trigger"
                               onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
                               >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
@@ -418,8 +418,8 @@ export default function Page() {
                           <div class="position-relative">
                             <textarea
                               class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                              id="systemPrompt"
-                              name="systemPrompt"
+                              id="systemPromptPredefined"
+                              name="systemPromptPredefined"
                               rows="10"
                               style="resize: none; padding-right: 20px;"
                               value=${customSystemPrompt}
