@@ -243,7 +243,7 @@ export default function Page() {
           <div class="row align-items-stretch">
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
               <div class="bg-white shadow  rounded p-3">
-                <label for="inputText" class="form-label text-info fs-5 mb-1">Source Document <span class="text-danger">*</span></label>
+                <label for="inputText" class="form-label text-info fs-5 mb-1">Source Document<span class="text-danger">*</span></label>
                 <input
                   type="file"
                   id="inputTextFile"
@@ -254,7 +254,7 @@ export default function Page() {
 
                 <!-- Template Selection -->
                 <div class="mb-3">
-                  <label class="form-label text-info fs-5 mb-1">Form Templates <span class="text-danger">*</span></label>
+                  <label class="form-label text-info fs-5 mb-1">Form Templates<span class="text-danger">*</span></label>
                   <div class="border rounded p-2">
                     <${For} each=${templateGroups}>
                       ${(group) => html`
