@@ -7,6 +7,7 @@ import yaml from "yaml";
 import { templateConfigs, getTemplateConfigsByCategory, getPrompt } from "./config.js";
 import { alerts, showAlert, clearAlert } from "/utils/alerts.js";
 import { AlertContainer } from "/components/alert.js";
+import Modal from "/components/modal.js";
 
 export default function Page() {
   const [inputText, setInputText] = createSignal("");
@@ -18,6 +19,7 @@ export default function Page() {
   const [generatedDocuments, setGeneratedDocuments] = createSignal({});
   const [templateSourceType, setTemplateSourceType] = createSignal("predefined");
   const [selectedPredefinedTemplate, setSelectedPredefinedTemplate] = createSignal("");
+  const [expandModalOpen, setExpandModalOpen] = createSignal(false);
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
   // Get template groups from config
@@ -391,7 +393,7 @@ export default function Page() {
                               class="position-absolute d-flex align-items-center justify-content-center"
                               style="bottom: 4px; right: 4px; width: 20px; height: 20px; padding: 0; border: none; background: transparent;"
                               title="Expand Custom Prompt"
-                              onClick=${() => console.log("Expand clicked")}>
+                              onClick=${() => setExpandModalOpen(true)}>
                               <img src="/assets/images/icon-expand.svg" alt="Expand" height="12" />
                             </button>
                           </div>
@@ -420,7 +422,7 @@ export default function Page() {
                               class="position-absolute d-flex align-items-center justify-content-center"
                               style="bottom: 4px; right: 4px; width: 20px; height: 20px; padding: 0; border: none; background: transparent;"
                               title="Expand Custom Prompt"
-                              onClick=${() => console.log("Expand clicked")}>
+                              onClick=${() => setExpandModalOpen(true)}>
                               <img src="/assets/images/icon-expand.svg" alt="Expand" height="12" />
                             </button>
                           </div>
@@ -528,6 +530,31 @@ export default function Page() {
           </div>
         </form>
       </div>
+      
+      <${Modal}
+        open=${expandModalOpen}
+        setOpen=${setExpandModalOpen}
+        dialogClass=${"modal-xl"}
+        children=${html`
+          <div class="p-3">
+            <textarea
+              class="form-control mb-3"
+              rows="25"
+              style="resize: none; font-size: 12px;"
+              value=${customSystemPrompt}
+              onChange=${(e) => setCustomSystemPrompt(e.target.value)}
+            />
+            <div class="d-flex justify-content-end">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onClick=${() => setExpandModalOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        `}
+      />
     </div>
   `;
 }
