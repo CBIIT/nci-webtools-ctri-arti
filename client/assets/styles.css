@@ -549,3 +549,42 @@ details[open] {
   opacity: 1;
   visibility: visible;
 }
+
+/* Reusable click popover system */
+.clickable-trigger {
+  cursor: pointer;
+}
+
+.click-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #333;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  max-width: 300px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+
+.click-popover.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.click-popover::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 20px;
+  border: 6px solid transparent;
+  border-bottom-color: #333;
+}

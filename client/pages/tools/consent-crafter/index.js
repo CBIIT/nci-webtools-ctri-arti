@@ -20,6 +20,7 @@ export default function Page() {
   const [templateSourceType, setTemplateSourceType] = createSignal("predefined");
   const [selectedPredefinedTemplate, setSelectedPredefinedTemplate] = createSignal("");
   const [expandModalOpen, setExpandModalOpen] = createSignal(false);
+  const [customPromptTooltipOpen, setCustomPromptTooltipOpen] = createSignal(false);
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
   // Get template groups from config
@@ -371,13 +372,17 @@ export default function Page() {
                             accept=".txt, .docx, .pdf"
                             onChange=${handleFileSelect} />
 
-                          <label
-                            for="systemPrompt"
-                            class="form-label"
-                            title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                              and template are provided."
-                            >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
-                          /></label>
+                          <div class="position-relative">
+                            <label
+                              for="systemPrompt"
+                              class="form-label clickable-trigger"
+                              onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
+                              >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                            /></label>
+                            <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
+                              Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt and template are provided.
+                            </div>
+                          </div>
                           <div class="position-relative">
                             <textarea
                               class="form-control form-control-sm rounded-top-0 flex-grow-1"
@@ -399,13 +404,17 @@ export default function Page() {
                         <//>
 
                         <${Show} when=${() => templateSourceType() === "predefined"}>
-                          <label
-                            for="systemPrompt"
-                            class="form-label"
-                            title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                              and template are provided."
-                            >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
-                          /></label>
+                          <div class="position-relative">
+                            <label
+                              for="systemPrompt"
+                              class="form-label clickable-trigger"
+                              onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
+                              >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                            /></label>
+                            <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
+                              Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt and template are provided.
+                            </div>
+                          </div>
                           <div class="position-relative">
                             <textarea
                               class="form-control form-control-sm rounded-top-0 flex-grow-1"
