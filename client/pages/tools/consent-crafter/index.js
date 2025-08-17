@@ -538,10 +538,13 @@ export default function Page() {
             <textarea
               class="form-control mb-3"
               rows="25"
-              style="resize: none; font-size: 12px;"
+              style="resize: none;"
               value=${customSystemPrompt}
               onChange=${(e) => setCustomSystemPrompt(e.target.value)}
             />
+            <div class="text-muted mb-3 opacity-75 small">
+              Conversations with your GPT can potentially include part or all of the instructions provided.
+            </div>
             <div class="d-flex justify-content-end">
               <button
                 type="button"
