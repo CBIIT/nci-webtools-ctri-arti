@@ -7,6 +7,7 @@ import yaml from "yaml";
 import { templateConfigs, getTemplateConfigsByCategory, getPrompt } from "./config.js";
 import { alerts, showAlert, clearAlert } from "/utils/alerts.js";
 import { AlertContainer } from "/components/alert.js";
+import Modal from "/components/modal.js";
 
 export default function Page() {
   const [inputText, setInputText] = createSignal("");
@@ -18,6 +19,8 @@ export default function Page() {
   const [generatedDocuments, setGeneratedDocuments] = createSignal({});
   const [templateSourceType, setTemplateSourceType] = createSignal("predefined");
   const [selectedPredefinedTemplate, setSelectedPredefinedTemplate] = createSignal("");
+  const [expandModalOpen, setExpandModalOpen] = createSignal(false);
+  const [customPromptTooltipOpen, setCustomPromptTooltipOpen] = createSignal(false);
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
   // Get template groups from config
@@ -151,19 +154,32 @@ export default function Page() {
     // await Promise.all(promises);
   }
 
+
+  function formatDate(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+  }
+
   function downloadDocument(templateId) {
     const doc = generatedDocuments()[templateId];
     if (!doc?.blob) return;
+    const timestamp = formatDate(new Date());
 
     let filename;
     if (templateId === "custom") {
-      filename = "custom-document.docx";
+      filename = `custom-document-${timestamp}.docx`;
     } else if (templateId === "predefined-custom") {
       const config = templateConfigs[selectedPredefinedTemplate()];
-      filename = config.filename.replace(".docx", "-custom.docx");
+      filename = config.filename.replace(".docx", `-${timestamp}.docx`);
     } else {
       const config = templateConfigs[templateId];
       filename = config.filename;
+      filename = filename.replace(".docx", `-${timestamp}.docx`);
     }
 
     const url = URL.createObjectURL(doc.blob);
@@ -241,7 +257,7 @@ export default function Page() {
           <div class="row align-items-stretch">
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
               <div class="bg-white shadow  rounded p-3">
-                <label for="inputText" class="form-label text-info fs-5 mb-1">Source Document</label>
+                <label for="inputText" class="form-label text-info fs-5 mb-1">Source Document<span class="text-danger">*</span></label>
                 <input
                   type="file"
                   id="inputTextFile"
@@ -252,7 +268,7 @@ export default function Page() {
 
                 <!-- Template Selection -->
                 <div class="mb-3">
-                  <label class="form-label text-info fs-5 mb-1">Form Templates</label>
+                  <label class="form-label text-info fs-5 mb-1">Form Templates<span class="text-danger">*</span></label>
                   <div class="border rounded p-2">
                     <${For} each=${templateGroups}>
                       ${(group) => html`
@@ -369,39 +385,67 @@ export default function Page() {
                             accept=".txt, .docx, .pdf"
                             onChange=${handleFileSelect} />
 
-                          <label
-                            for="systemPrompt"
-                            class="form-label"
-                            title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                              and template are provided."
-                            >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
-                          /></label>
-                          <textarea
-                            class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                            id="systemPrompt"
-                            name="systemPrompt"
-                            rows="10"
-                            placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
-                            value=${customSystemPrompt}
-                            onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                          <div class="position-relative">
+                            <label
+                              for="systemPromptCustom"
+                              class="form-label clickable-trigger"
+                              onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
+                              >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                            /></label>
+                            <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
+                              Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt and template are provided.
+                            </div>
+                          </div>
+                          <div class="position-relative">
+                            <textarea
+                              class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                              id="systemPromptCustom"
+                              name="systemPromptCustom"
+                              rows="10"
+                              style="resize: none; padding-right: 20px;"
+                              value=${customSystemPrompt}
+                              onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                            <button
+                              type="button"
+                              class="position-absolute d-flex align-items-center justify-content-center"
+                              style="bottom: 4px; right: 4px; width: 20px; height: 20px; padding: 0; border: none; background: transparent;"
+                              title="Expand Custom Prompt"
+                              onClick=${() => setExpandModalOpen(true)}>
+                              <img src="/assets/images/icon-expand.svg" alt="Expand" height="12" />
+                            </button>
+                          </div>
                         <//>
 
                         <${Show} when=${() => templateSourceType() === "predefined"}>
-                          <label
-                            for="systemPrompt"
-                            class="form-label"
-                            title="Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt
-                              and template are provided."
-                            >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
-                          /></label>
-                          <textarea
-                            class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                            id="systemPrompt"
-                            name="systemPrompt"
-                            rows="10"
-                            placeholder="Use {{document}} as a placeholder for the source document. Will create a custom document if both prompt and template are provided."
-                            value=${customSystemPrompt}
-                            onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                          <div class="position-relative">
+                            <label
+                              for="systemPromptPredefined"
+                              class="form-label clickable-trigger"
+                              onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
+                              >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                            /></label>
+                            <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
+                              Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt and template are provided.
+                            </div>
+                          </div>
+                          <div class="position-relative">
+                            <textarea
+                              class="form-control form-control-sm rounded-top-0 flex-grow-1"
+                              id="systemPromptPredefined"
+                              name="systemPromptPredefined"
+                              rows="10"
+                              style="resize: none; padding-right: 20px;"
+                              value=${customSystemPrompt}
+                              onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                            <button
+                              type="button"
+                              class="position-absolute d-flex align-items-center justify-content-center"
+                              style="bottom: 4px; right: 4px; width: 20px; height: 20px; padding: 0; border: none; background: transparent;"
+                              title="Expand Custom Prompt"
+                              onClick=${() => setExpandModalOpen(true)}>
+                              <img src="/assets/images/icon-expand.svg" alt="Expand" height="12" />
+                            </button>
+                          </div>
                         <//>
                       </div>
                     </details>
@@ -496,8 +540,8 @@ export default function Page() {
                 <button type="reset" class="btn btn-light border rounded-pill">Reset</button>
                 <button
                   type="submit"
-                  class="btn btn-primary rounded-pill"
-                  title=${() => !inputText() || selectedTemplates().length === 0 ? "Not all required fields are provided." : ""}
+                  class="btn btn-primary rounded-pill custom-tooltip"
+                  data-tooltip=${() => !inputText() || selectedTemplates().length === 0 ? "Not all required fields are provided." : ""}
                   disabled=${() => !inputText() || selectedTemplates().length === 0}>
                   Generate
                 </button>
@@ -506,6 +550,34 @@ export default function Page() {
           </div>
         </form>
       </div>
+      
+      <${Modal}
+        open=${expandModalOpen}
+        setOpen=${setExpandModalOpen}
+        dialogClass=${"modal-xl"}
+        children=${html`
+          <div class="p-3">
+            <textarea
+              class="form-control mb-3"
+              rows="25"
+              style="resize: none;"
+              value=${customSystemPrompt}
+              onChange=${(e) => setCustomSystemPrompt(e.target.value)}
+            />
+            <div class="text-muted mb-3 opacity-75 small">
+              Conversations with your GPT can potentially include part or all of the instructions provided.
+            </div>
+            <div class="d-flex justify-content-end">
+              <button
+                type="button"
+                class="btn btn-light border rounded-pill"
+                onClick=${() => setExpandModalOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        `}
+      />
     </div>
   `;
 }
