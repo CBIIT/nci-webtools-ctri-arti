@@ -154,19 +154,32 @@ export default function Page() {
     // await Promise.all(promises);
   }
 
+
+  function formatDate(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+  }
+
   function downloadDocument(templateId) {
     const doc = generatedDocuments()[templateId];
     if (!doc?.blob) return;
+    const timestamp = formatDate(new Date());
 
     let filename;
     if (templateId === "custom") {
-      filename = "custom-document.docx";
+      filename = `custom-document-${timestamp}.docx`;
     } else if (templateId === "predefined-custom") {
       const config = templateConfigs[selectedPredefinedTemplate()];
-      filename = config.filename.replace(".docx", "-custom.docx");
+      filename = config.filename.replace(".docx", `-${timestamp}.docx`);
     } else {
       const config = templateConfigs[templateId];
       filename = config.filename;
+      filename = filename.replace(".docx", `-${timestamp}.docx`);
     }
 
     const url = URL.createObjectURL(doc.blob);
