@@ -242,10 +242,6 @@ textarea::-moz-resizer {
   display: none;
 } */
 
-.mw-50 {
-  max-width: 50%;
-}
-
 .text-prewrap {
   white-space: pre-wrap !important;
 }
@@ -427,9 +423,30 @@ ul {
     background-color: rgba(0, 0, 0, 0.1);   
 }
 
+.mw-50 {
+  max-width: 50%;
+}
+
 .mw-60 {
   max-width: 60%;
 }
+
+.w-10r {
+  width: 10rem;
+}
+
+.w-20r {
+  width: 20rem;
+}
+
+.w-40r {
+  width: 40rem;
+}
+
+.w-50r {
+  width: 50rem;
+}
+
 
 .mvh-25 {
   max-height: 25vh;
@@ -439,9 +456,19 @@ ul {
   max-height: 100vh;
 }
 
+.min-vh-100 {
+  min-height: 100vh;
+}
+
 .min-height-auto {
   min-height: auto !important;
 }
+
+.wh-2 {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
 
 .form-label {
   color: #444;
