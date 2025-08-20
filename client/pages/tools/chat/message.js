@@ -161,7 +161,7 @@ export default function Message(p) {
         else if (c.toolUse?.name === "code") {
           return html`<details
             class="w-100 overflow-auto p-2 rounded hover-visible-parent position-relative"
-            classList=${() => ({ "shadow-sm bg-primary-subtle": visible()[p.index] })}
+            classList=${() => ({ "shadow-sm bg-light": visible()[p.index] })}
             open=${() => visible()[p.index]}>
             <summary class="fw-semibold  px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
               Writing Code...
@@ -221,7 +221,7 @@ export default function Message(p) {
           
           return html`<details
             class="w-100 overflow-auto p-2 rounded mvh-25"
-            classList=${() => ({ "shadow-sm bg-warning-subtle": visible()[p.index] })}
+            classList=${() => ({ "shadow-sm bg-light": visible()[p.index] })}
             open=${() => visible()[p.index]}>
             <summary class="fw-semibold px-1 mb-2" onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}>
               ${() => (c.reasoningContent || c.toolUse?.name === "think" ? "Reasoning..." : c?.toolUse?.name)}
