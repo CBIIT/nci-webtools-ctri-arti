@@ -366,7 +366,7 @@ export default function Page() {
                                     <${For} each=${() => group.options}>
                                       ${(option) => html`
                                         <option value=${() => option.value} disabled=${() => option.disabled}>
-                                          ${() => templateConfigs[option.value].label}
+                                          ${() => `${templateConfigs[option.value].prefix} - ${templateConfigs[option.value].label}`}
                                         </option>
                                       `}
                                     <//>
