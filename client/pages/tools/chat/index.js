@@ -121,8 +121,8 @@ export default function Page() {
             <div class="flex-grow-1 py-3" classList=${() => ({ "x-mvh-100": messages.length > 0 })}>
               <div class="text-center my-5 font-serif" hidden=${() => messages.length > 0}>
                 <h1 class="text-gradient fw-bold font-title mb-2">Welcome, ${() => session()?.user?.firstName || ''}</h1>
-                <div class="text-secondary fw-semibold">
-                    ${() => new URLSearchParams(location.search).get("fedpulse") ? "Searche U.S. federal websites for policies, guidelines, executive orders, and other official content." : "How can I help you today?"}
+                <div class="text-secondary fw-semibold small">
+                    ${() => new URLSearchParams(location.search).get("fedpulse") ? "Search U.S. federal websites for policies, guidelines, executive orders, and other official content." : "How can I help you today?"}
                 </div>
 
               </div>
