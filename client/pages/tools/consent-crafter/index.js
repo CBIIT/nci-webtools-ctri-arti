@@ -220,11 +220,12 @@ export default function Page() {
     setInputText("");
     setOutputText("");
     setCustomTemplate(null);
-    setCustomSystemPrompt("");
     setSelectedTemplates([]);
     setGeneratedDocuments({});
-    setTemplateSourceType("predefined");
     setSelectedPredefinedTemplate("");
+    setTemplateSourceType("predefined");
+    setModel("us.anthropic.claude-3-7-sonnet-20250219-v1:0");
+    setCustomSystemPrompt("");
   }
 
   /**
