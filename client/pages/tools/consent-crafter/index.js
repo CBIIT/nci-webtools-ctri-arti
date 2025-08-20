@@ -558,7 +558,7 @@ export default function Page() {
         children=${html`
           <div class="p-3">
             <textarea
-              class="form-control mb-3"
+              class="form-control form-control-sm mb-3"
               rows="25"
               style="resize: none;"
               value=${customSystemPrompt}
