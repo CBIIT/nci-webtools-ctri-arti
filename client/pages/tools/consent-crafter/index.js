@@ -35,6 +35,16 @@ export default function Page() {
     return docKeys.every(key => docs[key].status === "completed" || docs[key].status === "error");
   });
 
+  // Check if Generate button should be disabled
+  const isGenerateDisabled = createMemo(() => {
+    const basicRequirements = !inputText() || selectedTemplates().length === 0;
+    const advancedRequirements = advancedOptionsOpen() && (
+      (templateSourceType() === 'predefined' && selectedPredefinedTemplate() && !customSystemPrompt().trim()) ||
+      (templateSourceType() === 'custom' && customTemplate() && !customSystemPrompt().trim())
+    );
+    return basicRequirements || advancedRequirements;
+  });
+
   // Load the predefined template's prompt when selected
   createEffect(async () => {
     const templateId = selectedPredefinedTemplate();
@@ -545,25 +555,8 @@ export default function Page() {
                 <button
                   type="submit"
                   class="btn btn-primary rounded-pill custom-tooltip"
-                  data-tooltip=${() => {
-                    const basicRequirements = !inputText() || selectedTemplates().length === 0;
-                    const advancedRequirements = advancedOptionsOpen() && (
-                      (templateSourceType() === 'predefined' && selectedPredefinedTemplate() && !customSystemPrompt().trim()) ||
-                      (templateSourceType() === 'custom' && customTemplate() && !customSystemPrompt().trim())
-                    );
-                    if (basicRequirements || advancedRequirements) {
-                      return "Not all required fields are provided.";
-                    }
-                    return "";
-                  }}
-                  disabled=${() => {
-                    const basicRequirements = !inputText() || selectedTemplates().length === 0;
-                    const advancedRequirements = advancedOptionsOpen() && (
-                      (templateSourceType() === 'predefined' && selectedPredefinedTemplate() && !customSystemPrompt().trim()) ||
-                      (templateSourceType() === 'custom' && customTemplate() && !customSystemPrompt().trim())
-                    );
-                    return basicRequirements || advancedRequirements;
-                  }}>
+                  data-tooltip=${() => isGenerateDisabled() ? "Not all required fields are provided." : ""}
+                  disabled=${isGenerateDisabled}>
                   Generate
                 </button>
               </div>
