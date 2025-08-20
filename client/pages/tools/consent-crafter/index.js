@@ -545,8 +545,12 @@ export default function Page() {
                 <button
                   type="submit"
                   class="btn btn-primary rounded-pill custom-tooltip"
-                  data-tooltip=${() => !inputText() || selectedTemplates().length === 0 ? "Not all required fields are provided." : ""}
-                  disabled=${() => !inputText() || selectedTemplates().length === 0}>
+                  data-tooltip=${() => {
+                    if (!inputText() || selectedTemplates().length === 0) return "Not all required fields are provided.";
+                    if (advancedOptionsOpen() && !customSystemPrompt().trim()) return "Custom prompt is required when advanced options are open.";
+                    return "";
+                  }}
+                  disabled=${() => !inputText() || selectedTemplates().length === 0 || (advancedOptionsOpen() && !customSystemPrompt().trim())}>
                   Generate
                 </button>
               </div>
