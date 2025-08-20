@@ -394,7 +394,7 @@ export default function Page() {
                               >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
                             /></label>
                             <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
-                              Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt and template are provided.
+                              Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
                             </div>
                           </div>
                           <div class="position-relative">
@@ -427,7 +427,7 @@ export default function Page() {
                               >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
                             /></label>
                             <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
-                              Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt and template are provided.
+                              Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
                             </div>
                           </div>
                           <div class="position-relative">
