@@ -21,6 +21,7 @@ export default function Page() {
   const [selectedPredefinedTemplate, setSelectedPredefinedTemplate] = createSignal("");
   const [expandModalOpen, setExpandModalOpen] = createSignal(false);
   const [customPromptTooltipOpen, setCustomPromptTooltipOpen] = createSignal(false);
+  const [advancedOptionsOpen, setAdvancedOptionsOpen] = createSignal(false);
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
   // Get template groups from config
@@ -306,7 +307,7 @@ export default function Page() {
 
                 <div class="d-flex flex-wrap justify-content-between align-items-center">
                   <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
-                    <details class="small text-secondary mt-2 ">
+                    <details class="small text-secondary mt-2 " open=${advancedOptionsOpen} onToggle=${(e) => setAdvancedOptionsOpen(e.target.open)}>
                       <summary class="form-label text-info fs-5 mb-1">Advanced Options</summary>
                       <div class="border rounded p-2">
                         <label for="model" class="form-label">Model</label>
