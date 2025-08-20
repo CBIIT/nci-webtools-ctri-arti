@@ -392,7 +392,7 @@ export default function Page() {
                               for="systemPromptCustom"
                               class="form-label clickable-trigger"
                               onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
-                              >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                              >Custom Prompt${() => advancedOptionsOpen() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
                             /></label>
                             <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
                               Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
@@ -425,7 +425,7 @@ export default function Page() {
                               for="systemPromptPredefined"
                               class="form-label clickable-trigger"
                               onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
-                              >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                              >Custom Prompt${() => advancedOptionsOpen() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
                             /></label>
                             <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
                               Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
@@ -546,8 +546,9 @@ export default function Page() {
                   type="submit"
                   class="btn btn-primary rounded-pill custom-tooltip"
                   data-tooltip=${() => {
-                    if (!inputText() || selectedTemplates().length === 0) return "Not all required fields are provided.";
-                    if (advancedOptionsOpen() && !customSystemPrompt().trim()) return "Custom prompt is required when advanced options are open.";
+                    if (!inputText() || selectedTemplates().length === 0 || (advancedOptionsOpen() && !customSystemPrompt().trim())) {
+                      return "Not all required fields are provided.";
+                    }
                     return "";
                   }}
                   disabled=${() => !inputText() || selectedTemplates().length === 0 || (advancedOptionsOpen() && !customSystemPrompt().trim())}>
