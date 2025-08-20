@@ -562,7 +562,8 @@ export default function Page() {
       <${Modal}
         open=${expandModalOpen}
         setOpen=${setExpandModalOpen}
-        dialogClass=${"modal-xl"}
+        dialogClass=${{"modal-xl": true}}
+        bodyClass=${{"px-4": true}}
         children=${html`
           <div class="p-3">
             <textarea
