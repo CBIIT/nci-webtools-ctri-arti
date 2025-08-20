@@ -404,6 +404,7 @@ export default function Page() {
                               name="systemPromptCustom"
                               rows="10"
                               style="resize: none; padding-right: 20px;"
+                              placeholder="Enter a custom prompt to generate your form."
                               value=${customSystemPrompt}
                               onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
                             <button
@@ -436,6 +437,7 @@ export default function Page() {
                               name="systemPromptPredefined"
                               rows="10"
                               style="resize: none; padding-right: 20px;"
+                              placeholder="Enter a custom prompt to generate your form."
                               value=${customSystemPrompt}
                               onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
                             <button
@@ -562,6 +564,7 @@ export default function Page() {
               class="form-control form-control-sm mb-3"
               rows="25"
               style="resize: none;"
+              placeholder="Enter a custom prompt to generate your form."
               value=${customSystemPrompt}
               onChange=${(e) => setCustomSystemPrompt(e.target.value)}
             />
