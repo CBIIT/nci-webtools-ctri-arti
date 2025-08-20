@@ -21,6 +21,7 @@ export default function Page() {
   const [selectedPredefinedTemplate, setSelectedPredefinedTemplate] = createSignal("");
   const [expandModalOpen, setExpandModalOpen] = createSignal(false);
   const [customPromptTooltipOpen, setCustomPromptTooltipOpen] = createSignal(false);
+  const [advancedOptionsOpen, setAdvancedOptionsOpen] = createSignal(false);
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
   // Get template groups from config
@@ -32,6 +33,16 @@ export default function Page() {
     const docKeys = Object.keys(docs);
     if (docKeys.length === 0) return false;
     return docKeys.every(key => docs[key].status === "completed" || docs[key].status === "error");
+  });
+
+  // Check if Generate button should be disabled
+  const isGenerateDisabled = createMemo(() => {
+    const basicRequirements = !inputText() || selectedTemplates().length === 0;
+    const advancedRequirements = advancedOptionsOpen() && (
+      (templateSourceType() === 'predefined' && selectedPredefinedTemplate() && !customSystemPrompt().trim()) ||
+      (templateSourceType() === 'custom' && customTemplate() && !customSystemPrompt().trim())
+    );
+    return basicRequirements || advancedRequirements;
   });
 
   // Load the predefined template's prompt when selected
@@ -220,11 +231,12 @@ export default function Page() {
     setInputText("");
     setOutputText("");
     setCustomTemplate(null);
-    setCustomSystemPrompt("");
     setSelectedTemplates([]);
     setGeneratedDocuments({});
-    setTemplateSourceType("predefined");
     setSelectedPredefinedTemplate("");
+    setTemplateSourceType("predefined");
+    setModel("us.anthropic.claude-3-7-sonnet-20250219-v1:0");
+    setCustomSystemPrompt("");
   }
 
   /**
@@ -305,7 +317,7 @@ export default function Page() {
 
                 <div class="d-flex flex-wrap justify-content-between align-items-center">
                   <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
-                    <details class="small text-secondary mt-2 ">
+                    <details class="small text-secondary mt-2 " open=${advancedOptionsOpen} onToggle=${(e) => setAdvancedOptionsOpen(e.target.open)}>
                       <summary class="form-label text-info fs-5 mb-1">Advanced Options</summary>
                       <div class="border rounded p-2">
                         <label for="model" class="form-label">Model</label>
@@ -365,7 +377,7 @@ export default function Page() {
                                     <${For} each=${() => group.options}>
                                       ${(option) => html`
                                         <option value=${() => option.value} disabled=${() => option.disabled}>
-                                          ${() => templateConfigs[option.value].label}
+                                          ${() => `${templateConfigs[option.value].prefix} - ${templateConfigs[option.value].label}`}
                                         </option>
                                       `}
                                     <//>
@@ -390,10 +402,10 @@ export default function Page() {
                               for="systemPromptCustom"
                               class="form-label clickable-trigger"
                               onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
-                              >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                              >Custom Prompt${() => advancedOptionsOpen() && customTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
                             /></label>
                             <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
-                              Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt and template are provided.
+                              Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
                             </div>
                           </div>
                           <div class="position-relative">
@@ -403,6 +415,7 @@ export default function Page() {
                               name="systemPromptCustom"
                               rows="10"
                               style="resize: none; padding-right: 20px;"
+                              placeholder="Enter a custom prompt to generate your form."
                               value=${customSystemPrompt}
                               onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
                             <button
@@ -422,10 +435,10 @@ export default function Page() {
                               for="systemPromptPredefined"
                               class="form-label clickable-trigger"
                               onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
-                              >Custom Prompt <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                              >Custom Prompt${() => advancedOptionsOpen() && selectedPredefinedTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
                             /></label>
                             <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
-                              Use <strong>{{document}}</strong> as a placeholder for the source document. Will create a custom document if both prompt and template are provided.
+                              Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
                             </div>
                           </div>
                           <div class="position-relative">
@@ -435,6 +448,7 @@ export default function Page() {
                               name="systemPromptPredefined"
                               rows="10"
                               style="resize: none; padding-right: 20px;"
+                              placeholder="Enter a custom prompt to generate your form."
                               value=${customSystemPrompt}
                               onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
                             <button
@@ -541,8 +555,8 @@ export default function Page() {
                 <button
                   type="submit"
                   class="btn btn-primary rounded-pill custom-tooltip"
-                  data-tooltip=${() => !inputText() || selectedTemplates().length === 0 ? "Not all required fields are provided." : ""}
-                  disabled=${() => !inputText() || selectedTemplates().length === 0}>
+                  data-tooltip=${() => isGenerateDisabled() ? "Not all required fields are provided." : ""}
+                  disabled=${isGenerateDisabled}>
                   Generate
                 </button>
               </div>
@@ -554,19 +568,18 @@ export default function Page() {
       <${Modal}
         open=${expandModalOpen}
         setOpen=${setExpandModalOpen}
-        dialogClass=${"modal-xl"}
+        dialogClass=${{"modal-xl": true}}
+        bodyClass=${{"px-4": true}}
         children=${html`
           <div class="p-3">
             <textarea
-              class="form-control mb-3"
+              class="form-control form-control-sm mb-3"
               rows="25"
               style="resize: none;"
+              placeholder="Enter a custom prompt to generate your form."
               value=${customSystemPrompt}
               onChange=${(e) => setCustomSystemPrompt(e.target.value)}
             />
-            <div class="text-muted mb-3 opacity-75 small">
-              Conversations with your GPT can potentially include part or all of the instructions provided.
-            </div>
             <div class="d-flex justify-content-end">
               <button
                 type="button"
