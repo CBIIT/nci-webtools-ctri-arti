@@ -166,15 +166,21 @@ export default function Page() {
                       ${() => filenames().join(", ") || "Attach"}
                     </label>
 
-                    <div class="form-check form-switch cursor-pointer form-control-sm my-0 mx-2">
-                      <input class="form-check-input p-0" type="checkbox" id="reasoningMode" name="reasoningMode" />
-                      <label
-                        class="form-check-label text-secondary fw-semibold"
-                        for="reasoningMode"
-                        title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">
-                        Research Mode
-                      </label>
-                    </div>
+                    <${ClassToggle} class="position-relative" activeClass="show" event="hover">
+                      <div class="form-check form-switch form-control-sm my-0 mx-2" toggle>
+                        <input class="form-check-input p-0 cursor-pointer" type="checkbox" id="reasoningMode" name="reasoningMode" />
+                        <label
+                          toggle
+                          class="form-check-label text-secondary fw-semibold cursor-pointer"
+                          for="reasoningMode"
+                          title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">
+                          Research Mode
+                        </label>
+                      </div>
+                      <div class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-200 ms-n50 text-muted text-center">
+                        Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.                        
+                      </div>
+                    <//>
                   </div>
 
                   <div class="d-flex w-auto align-items-center">
