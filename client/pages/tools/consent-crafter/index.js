@@ -329,7 +329,7 @@ export default function Page() {
                           onChange=${(e) => setModel(e.target.value)}>
                           <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
                           <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet 4.0</option>
-                          <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">Sonnet 3.7</option>
+                          <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">Sonnet 3.7 (Default)</option>
                           <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
                           <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
                         </select>
@@ -481,9 +481,12 @@ export default function Page() {
                     </div>
                   </div>`}>
                   <div class="d-flex flex-column gap-2">
-                    <${Show} when=${allDocumentsProcessed}>
-                      <div class="text-muted small fw-semibold">All processing is complete. The generated forms are available for download.</div>
-                    <//>
+                    <div class="text-muted small fw-semibold">
+                      <${Show} when=${allDocumentsProcessed} fallback="We are generating your forms now. This may take a few moments.">
+                        All processing is complete. The generated forms are available for download.
+                      <//>
+                    </div>
+
                     <${For} each=${() => Object.keys(generatedDocuments())}>
                       ${(templateId) => {
                         const doc = () => generatedDocuments()[templateId];
@@ -530,20 +533,20 @@ export default function Page() {
                       }}
                     <//>
                   </div>
-                  <div class="h-100 d-flex flex-column justify-content-between">
-                    <div class="text-end">
-                      <${Show} when=${allDocumentsProcessed}>
+                  <${Show} when=${allDocumentsProcessed}>
+                    <div class="h-100 d-flex flex-column justify-content-between">
+                      <div class="text-end">
                         <button type="button" class="btn btn-sm btn-link fw-semibold p-0" onClick=${downloadAll}>Download All</button>
-                      <//>
-                    </div>
-                    <div class="mt-auto d-flex align-items-center">
-                      <img src="/assets/images/icon-star.svg" alt="Star" class="me-2" height="16" />
-                      <div>
-                        <span class="me-1">We would love your feedback!</span>
-                        <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a> to help us improve.
+                      </div>
+                      <div class="mt-auto d-flex align-items-center">
+                        <img src="/assets/images/icon-star.svg" alt="Star" class="me-2" height="16" />
+                        <div>
+                          <span class="me-1">We would love your feedback!</span>
+                          <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a> to help us improve.
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  <//>
                 <//>
               </div>
             </div>
