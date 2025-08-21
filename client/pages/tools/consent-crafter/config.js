@@ -126,8 +126,8 @@ export async function loadPrompt(filepath) {
 export const templateConfigs = {
     "nih-cc-adult-patient": {
         label: "Adult affected patient",
-        prefix: "NIH CC",
-        category: "NIH Clinical Center Consent",
+        prefix: "NIH CCC",
+        category: "NIH Clinical Center Consent (NIH CCC)",
         templateUrl: "/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx",
         promptUrl: "/templates/nih-cc/adult-affected-patient.txt",
         defaultOutput: defaultOutput,
@@ -137,8 +137,8 @@ export const templateConfigs = {
     // NIH Clinical Center Consent Forms
     "nih-cc-adult-healthy": {
         label: "Adult healthy volunteer",
-        prefix: "NIH CC",
-        category: "NIH Clinical Center Consent",
+        prefix: "NIH CCC",
+        category: "NIH Clinical Center Consent (NIH CCC)",
         templateUrl: "/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx",
         promptUrl: "/templates/nih-cc/adult-healthy-volunteer.txt",
         defaultOutput: defaultOutput,
@@ -147,8 +147,8 @@ export const templateConfigs = {
     },
     "nih-cc-adult-family": {
         label: "Adult family member",
-        prefix: "NIH CC",
-        category: "NIH Clinical Center Consent",
+        prefix: "NIH CCC",
+        category: "NIH Clinical Center Consent (NIH CCC)",
         templateUrl: "/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx",
         promptUrl: "/templates/nih-cc/adult-family-member.txt",
         defaultOutput: defaultOutput,
@@ -157,8 +157,8 @@ export const templateConfigs = {
     },
     "nih-cc-child-assent": {
         label: "Child or cognitive impairment patient",
-        prefix: "NIH CC",
-        category: "NIH Clinical Center Assent",
+        prefix: "NIH CCA",
+        category: "NIH Clinical Center Assent (NIH CCA)",
         templateUrl: "/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx", // Would be different assent template in future
         promptUrl: "/templates/nih-cc/adult-healthy-volunteer.txt", // Placeholder - would be different assent prompt
         defaultOutput: defaultOutput,
