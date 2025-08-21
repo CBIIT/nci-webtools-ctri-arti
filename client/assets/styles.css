@@ -222,6 +222,8 @@ a.disabled-link {
   z-index: -1;
 }
 
+
+
 * {
   transition: all 0.1s;
 }
@@ -423,6 +425,14 @@ ul {
     background-color: rgba(0, 0, 0, 0.1);   
 }
 
+.ms-n50 {
+  margin-left: -50% !important;
+}
+
+.w-200 {
+  width: 200%;
+}
+
 .mw-50 {
   max-width: 50%;
 }
@@ -516,7 +526,6 @@ ul {
   --bs-btn-hover-border-color: rgb(132, 180, 190);
 
 }
-
 .table-pagination {
   border-top: solid 2px rgb(8, 58, 80);
 }
