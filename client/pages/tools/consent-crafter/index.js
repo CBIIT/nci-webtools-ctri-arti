@@ -329,7 +329,7 @@ export default function Page() {
                           onChange=${(e) => setModel(e.target.value)}>
                           <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
                           <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet 4.0</option>
-                          <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">Sonnet 3.7 (Default)</option>
+                          <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">Sonnet 3.7</option>
                           <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
                           <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
                         </select>
@@ -559,7 +559,7 @@ export default function Page() {
                   type="submit"
                   class="btn btn-primary rounded-pill custom-tooltip"
                   data-tooltip=${() => isGenerateDisabled() ? "Not all required fields are provided." : ""}
-                  disabled=${isGenerateDisabled}>
+                  disabled=${() => isGenerateDisabled() && !allDocumentsProcessed()}>
                   Generate
                 </button>
               </div>
