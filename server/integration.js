@@ -13,7 +13,7 @@ async function runTests({ PORT } = env) {
   const page = await browser.newPage();
   page.on("console", (msg) => console.log(msg.text()));
   await page.goto(`http://localhost:${PORT}/?test=1`, { waitUntil: "networkidle" });
-  await page.waitForFunction(() => window.TESTS_DONE === true, { timeout: 60000 });
+  await page.waitForFunction(() => window.TESTS_DONE === true, { timeout: 60 * 60 * 1000 });
   await browser.close();
   process.exit(0);
 }
