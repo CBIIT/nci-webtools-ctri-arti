@@ -1,6 +1,7 @@
-import { createSignal, createResource, For, Show, Index, onMount } from "solid-js";
+import { createSignal, createResource, For, Show, Index, onMount, onCleanup, children } from "solid-js";
 import html from "solid-js/html";
 import Loader from "/components/loader.js";
+import ClassToggle from "/components/class-toggle.js";
 import { AlertContainer } from "/components/alert.js";
 import { downloadCsv, downloadJson } from "/utils/files.js";
 import { useChat } from "./hooks.js";
@@ -8,9 +9,9 @@ import Message from "./message.js";
 import { alerts, clearAlert } from "/utils/alerts.js";
 
 export default function Page() {
-  const [session] = createResource(() => fetch("/api/session").then(res => res.json()));
+  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
   const { conversation, updateConversation, deleteConversation, conversations, messages, loading, submitMessage } = useChat();
-  const [toggles, setToggles] = createSignal({conversations: true});
+  const [toggles, setToggles] = createSignal({ conversations: true });
   const [filenames, setFilenames] = createSignal([]);
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   let elementRef;
@@ -18,7 +19,7 @@ export default function Page() {
 
   function handleFileChange(event) {
     let files = Array.from(event.target.files || []);
-    setFilenames(files.map(file => file.name));
+    setFilenames(files.map((file) => file.name));
   }
 
   function handleKeyDown(event) {
@@ -45,7 +46,7 @@ export default function Page() {
   return html`
     <div class="container-fluid">
       <div class="row min-vh-100 position-relative" ref=${(el) => (elementRef = el)}>
-        <div class="col-sm-auto shadow-sm border-end px-0 position-sticky" classList=${() => ({"w-20r" : toggles().conversations })}>
+        <div class="col-sm-auto shadow-sm border-end px-0 position-sticky" classList=${() => ({ "w-20r": toggles().conversations })}>
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
               <button type="button" class="btn btn-sm btn-light d-flex-center rounded-5 wh-2 p-0" onClick=${toggle("conversations")}>
@@ -60,20 +61,18 @@ export default function Page() {
                 <img src="assets/images/icon-plus.svg" alt="New Chat" width="16" />
               </a>
               <${Show} when=${() => toggles().conversations}>
-                <div class="dropdown d-flex-center">
-                  <small class="btn btn-sm p-0 border-0 dropdown-toggle" onClick=${toggle("projects")}>New Chat</small>
-                  <ul class="dropdown-menu position-absolute start-0 top-100" classList=${() => ({ "show": toggles().projects })}>
-                    <li><a class="dropdown-item text-decoration-none small fw-semibold" href="/tools/chat" target="_self">Default</a></li>
+                <${ClassToggle} class="dropdown d-flex-center" activeClass="show" event="hover">
+                  <button toggle type="button" class="btn btn-sm p-0 dropdown-toggle">New Chat</button>
+                  <ul class="dropdown-menu top-100 start-0">
+                    <li><a class="dropdown-item text-decoration-none small fw-semibold" href="/tools/chat" target="_self">General Chat</a></li>
                     <li><a class="dropdown-item text-decoration-none small fw-semibold" href="/tools/chat?fedpulse=1" target="_self">FedPulse</a></li>
                   </ul>
-                </div>
+                <//>
               <//>
             </div>
 
             <${Show} when=${() => toggles().conversations}>
-              <small class="mb-2 fw-normal text-muted fs-08">
-                Recent
-              </small>
+              <small class="mb-2 fw-normal text-muted fs-08"> Recent </small>
 
               <ul class="list-unstyled">
                 <${For} each=${conversations}>
@@ -98,7 +97,7 @@ export default function Page() {
             <div class="row">
               <div class="col d-flex align-items-center justify-content-between py-3">
                 <div class="d-flex align-items-center">
-                  <div class="fw-semibold me-2">${() => new URLSearchParams(location.search).get("fedpulse") ? "FedPulse" : "Chat"}</div>
+                  <div class="fw-semibold me-2">${() => (new URLSearchParams(location.search).get("fedpulse") ? "FedPulse" : "Chat")}</div>
                   <select class="form-select form-select-sm border-0 bg-light cursor-pointer" name="model" id="model" required>
                     <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
                     <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>Sonnet 4.0</option>
@@ -107,9 +106,9 @@ export default function Page() {
                 </div>
 
                 <${Show} when=${() => conversation?.id}>
-                  <button 
+                  <button
                     type="button"
-                    class="btn btn-sm btn-outline-danger ms-2" 
+                    class="btn btn-sm btn-outline-danger ms-2"
                     onClick=${deleteConversation}
                     title="Delete conversation">
                     Delete
@@ -120,11 +119,13 @@ export default function Page() {
 
             <div class="flex-grow-1 py-3" classList=${() => ({ "x-mvh-100": messages.length > 0 })}>
               <div class="text-center my-5 font-serif" hidden=${() => messages.length > 0}>
-                <h1 class="text-gradient fw-bold font-title mb-2">Welcome, ${() => session()?.user?.firstName || ''}</h1>
+                <h1 class="text-gradient fw-bold font-title mb-2">Welcome, ${() => session()?.user?.firstName || ""}</h1>
                 <div class="text-secondary fw-semibold small">
-                    ${() => new URLSearchParams(location.search).get("fedpulse") ? "Search U.S. federal websites for policies, guidelines, executive orders, and other official content." : "How can I help you today?"}
+                  ${() =>
+                    new URLSearchParams(location.search).get("fedpulse")
+                      ? "Search U.S. federal websites for policies, guidelines, executive orders, and other official content."
+                      : "How can I help you today?"}
                 </div>
-
               </div>
               <${Index} each=${messages}>
                 ${(message, index) => html`
@@ -161,8 +162,8 @@ export default function Page() {
                         class="visually-hidden"
                         accept="image/*,text/*,.pdf,.xls,.xlsx,.doc,.docx"
                         multiple />
-                        <img src="assets/images/icon-paperclip.svg" alt="Upload" width="16" class="me-1" />
-                        ${() => filenames().join(", ") || "Attach"}
+                      <img src="assets/images/icon-paperclip.svg" alt="Upload" width="16" class="me-1" />
+                      ${() => filenames().join(", ") || "Attach"}
                     </label>
 
                     <div class="form-check form-switch cursor-pointer form-control-sm my-0 mx-2">
@@ -177,8 +178,13 @@ export default function Page() {
                   </div>
 
                   <div class="d-flex w-auto align-items-center">
-                    <button class="btn btn-primary btn-sm rounded-pill px-3" type="submit" style="border-radius: 0 0 var(--bs-border-radius-sm) 0">Send</button>
-                  </div>  
+                    <button
+                      class="btn btn-primary btn-sm rounded-pill px-3"
+                      type="submit"
+                      style="border-radius: 0 0 var(--bs-border-radius-sm) 0">
+                      Send
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="text-center text-muted small py-1">
@@ -190,7 +196,7 @@ export default function Page() {
             </div>
           </form>
         </div>
-        <div class="col-sm-auto shadow-sm border-end px-0 position-sticky d-none" classList=${() => ({"w-20r" : toggles().files })}>
+        <div class="col-sm-auto shadow-sm border-end px-0 position-sticky d-none" classList=${() => ({ "w-20r": toggles().files })}>
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
               <button type="button" class="btn btn-sm btn-light d-flex-center rounded-5 wh-2 p-0" onClick=${toggle("files")}>
@@ -200,7 +206,11 @@ export default function Page() {
                 <small>Files</small>
               <//>
             </div>
-            <a href="/tools/chat" target="_self" class="d-flex align-items-center gap-2 link-primary text-decoration-none mb-3 fw-semibold" title="New Chat">
+            <a
+              href="/tools/chat"
+              target="_self"
+              class="d-flex align-items-center gap-2 link-primary text-decoration-none mb-3 fw-semibold"
+              title="New Chat">
               <button type="button" class="btn btn-sm btn-primary d-flex-center rounded-5 wh-2 p-0">
                 <img src="assets/images/icon-upload.svg" alt="Menu" width="16" />
               </button>
@@ -210,12 +220,10 @@ export default function Page() {
             </a>
 
             <${Show} when=${() => toggles().files}>
-              <small class="mb-2 fw-normal text-muted fs-08">
-                Files
-              </small>
+              <small class="mb-2 fw-normal text-muted fs-08"> Files </small>
 
               <ul class="list-unstyled">
-                <${For} each=${() => [{name: 'test.txt'}]}>
+                <${For} each=${() => [{ name: "test.txt" }]}>
                   ${(file) =>
                     html`<li class="small w-100 mb-2 link-primary text-decoration-none fw-normal text-truncate w-100 d-inline-block">
                       ${file.name}
