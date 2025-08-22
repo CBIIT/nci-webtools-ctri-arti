@@ -63,6 +63,18 @@ assert.strictEqual = function(actual, expected, message) {
   }
 };
 
+// Not strict equality
+assert.notStrictEqual = function(actual, expected, message) {
+  if (actual === expected) {
+    throw new AssertionError(
+      message || `Expected values to be strictly unequal:\n\nactual: ${formatValue(actual)}\nexpected: not ${formatValue(expected)}`,
+      actual,
+      expected,
+      'notStrictEqual'
+    );
+  }
+};
+
 // Deep equality
 assert.deepStrictEqual = function(actual, expected, message) {
   if (!deepEqual(actual, expected)) {
