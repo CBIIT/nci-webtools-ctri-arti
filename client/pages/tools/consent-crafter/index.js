@@ -404,7 +404,7 @@ export default function Page() {
                                 toggle
                                 >Custom Prompt${() => advancedOptionsOpen() && customTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
                               /></label>
-                              <div class="click-popover">
+                              <div class="clickover">
                                 Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
                               </div>
                             <//>
@@ -438,7 +438,7 @@ export default function Page() {
                                 toggle
                                 >Custom Prompt${() => advancedOptionsOpen() && customTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
                               /></label>
-                              <div class="click-popover">
+                              <div class="clickover">
                                 Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
                               </div>
                             <//>
@@ -557,13 +557,20 @@ export default function Page() {
             <div class="col-md-6">
               <div class="d-flex-center mt-1 gap-1">
                 <button type="reset" class="btn btn-light border rounded-pill">Reset</button>
-                <button
-                  type="submit"
-                  class="btn btn-primary rounded-pill custom-tooltip"
-                  data-tooltip=${() => isGenerateDisabled() ? "Not all required fields are provided." : ""}
-                  disabled=${() => isGenerateDisabled() && !allDocumentsProcessed()}>
-                  Generate
-                </button>
+                <${ClassToggle} class="position-relative" activeClass="show" event="hover">
+                  <button
+                    toggle
+                    type="submit"
+                    class="btn btn-primary rounded-pill"
+                    disabled=${() => isGenerateDisabled() && !allDocumentsProcessed()}>
+                    Generate
+                  </button>
+                  <${Show} when=${() => isGenerateDisabled()}>
+                    <div class="tooltip-top">
+                      Not all required fields are provided. 
+                    </div>
+                  <//>
+                <//>
               </div>
             </div>
           </div>
