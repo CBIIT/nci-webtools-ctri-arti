@@ -443,7 +443,7 @@ export default function Page() {
                               <label
                                 class="form-label"
                                 toggle
-                                >Custom Prompt${() => advancedOptionsOpen() && customTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                                >Custom Prompt${() => advancedOptionsOpen() && selectedPredefinedTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
                               /></label>
                               <div class="clickover">
                                 Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
