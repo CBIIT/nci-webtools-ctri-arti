@@ -37,12 +37,19 @@ export default function Page() {
 
   // Check if Generate button should be disabled
   const isGenerateDisabled = createMemo(() => {
-    const basicRequirements = !inputText() || selectedTemplates().length === 0;
-    const advancedRequirements = advancedOptionsOpen() && (
-      (templateSourceType() === 'predefined' && selectedPredefinedTemplate() && !customSystemPrompt().trim()) ||
-      (templateSourceType() === 'custom' && customTemplate() && !customSystemPrompt().trim())
+    // Always need input text
+    if (!inputText()) return true;
+    
+    // Check if we have either basic templates OR fully configured advanced options
+    const hasBasicTemplates = selectedTemplates().length > 0;
+    
+    const hasValidAdvancedOptions = advancedOptionsOpen() && (
+      (templateSourceType() === 'predefined' && selectedPredefinedTemplate() && customSystemPrompt().trim()) ||
+      (templateSourceType() === 'custom' && customTemplate() && customSystemPrompt().trim())
     );
-    return basicRequirements || advancedRequirements;
+    
+    // Enable if we have either basic templates OR valid advanced options
+    return !(hasBasicTemplates || hasValidAdvancedOptions);
   });
 
   // Load the predefined template's prompt when selected
