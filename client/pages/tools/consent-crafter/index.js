@@ -418,7 +418,7 @@ export default function Page() {
                               style="resize: none; padding-right: 20px;"
                               placeholder="Enter a custom prompt to generate your form."
                               value=${customSystemPrompt}
-                              onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                              onInput=${(e) => setCustomSystemPrompt(e.target.value)} />
                             <button
                               type="button"
                               class="position-absolute d-flex align-items-center justify-content-center"
@@ -452,7 +452,7 @@ export default function Page() {
                               style="resize: none; padding-right: 20px;"
                               placeholder="Enter a custom prompt to generate your form."
                               value=${customSystemPrompt}
-                              onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                              onInput=${(e) => setCustomSystemPrompt(e.target.value)} />
                             <button
                               type="button"
                               class="position-absolute d-flex align-items-center justify-content-center"
@@ -590,7 +590,7 @@ export default function Page() {
               style="resize: none;"
               placeholder="Enter a custom prompt to generate your form."
               value=${customSystemPrompt}
-              onChange=${(e) => setCustomSystemPrompt(e.target.value)}
+              onInput=${(e) => setCustomSystemPrompt(e.target.value)}
             />
             <div class="d-flex justify-content-end">
               <button
