@@ -8,6 +8,7 @@ import { templateConfigs, getTemplateConfigsByCategory, getPrompt } from "./conf
 import { alerts, showAlert, clearAlert } from "/utils/alerts.js";
 import { AlertContainer } from "/components/alert.js";
 import Modal from "/components/modal.js";
+import ClassToggle from "/components/class-toggle.js";
 
 export default function Page() {
   const [inputText, setInputText] = createSignal("");
@@ -20,7 +21,6 @@ export default function Page() {
   const [templateSourceType, setTemplateSourceType] = createSignal("predefined");
   const [selectedPredefinedTemplate, setSelectedPredefinedTemplate] = createSignal("");
   const [expandModalOpen, setExpandModalOpen] = createSignal(false);
-  const [customPromptTooltipOpen, setCustomPromptTooltipOpen] = createSignal(false);
   const [advancedOptionsOpen, setAdvancedOptionsOpen] = createSignal(false);
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
@@ -398,15 +398,16 @@ export default function Page() {
                             onChange=${handleFileSelect} />
 
                           <div class="position-relative">
-                            <label
-                              for="systemPromptCustom"
-                              class="form-label clickable-trigger"
-                              onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
-                              >Custom Prompt${() => advancedOptionsOpen() && customTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
-                            /></label>
-                            <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
-                              Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
-                            </div>
+                            <${ClassToggle} activeClass="show">
+                              <label
+                                class="form-label"
+                                toggle
+                                >Custom Prompt${() => advancedOptionsOpen() && customTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                              /></label>
+                              <div class="click-popover">
+                                Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
+                              </div>
+                            <//>
                           </div>
                           <div class="position-relative">
                             <textarea
@@ -431,15 +432,16 @@ export default function Page() {
 
                         <${Show} when=${() => templateSourceType() === "predefined"}>
                           <div class="position-relative">
-                            <label
-                              for="systemPromptPredefined"
-                              class="form-label clickable-trigger"
-                              onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
-                              >Custom Prompt${() => advancedOptionsOpen() && selectedPredefinedTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
-                            /></label>
-                            <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
-                              Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
-                            </div>
+                            <${ClassToggle} activeClass="show">
+                              <label
+                                class="form-label"
+                                toggle
+                                >Custom Prompt${() => advancedOptionsOpen() && customTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                              /></label>
+                              <div class="click-popover">
+                                Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
+                              </div>
+                            <//>
                           </div>
                           <div class="position-relative">
                             <textarea
