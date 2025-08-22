@@ -1,8 +1,17 @@
-// Import tests using the new test framework
-import './solidjs.test.js';
-
-// Page tests
-import './pages/tools/chat/message.test.js';
+try {
+  const tests = [
+    './solidjs.test.js',
+    './models/database2.test.js',
+    './models/database-migration.test.js',
+    './utils/similarity.test.js',
+    './pages/tools/chat/message.test.js',
+  ];
+  for (const test of tests) {
+    await import(test);
+  }
+} catch (error) {
+  console.error('Error loading test:', error);
+}
 
 import { run } from './test.js';
 
