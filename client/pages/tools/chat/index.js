@@ -76,16 +76,19 @@ export default function Page() {
 
               <ul class="list-unstyled">
                 <${For} each=${conversations}>
-                  ${(conv) =>
-                    html`<li class="small w-100 mb-2">
+                  ${(conv) => {
+                    const isFedPulse = new URLSearchParams(location.search).get("fedpulse") === "1";
+                    const href = isFedPulse ? `/tools/chat?fedpulse=1&id=${conv.id}` : `/tools/chat?id=${conv.id}`;
+                    return html`<li class="small w-100 mb-2">
                       <a
                         class="link-primary text-decoration-none fw-normal text-truncate w-100 d-inline-block"
-                        href=${`/tools/chat?id=${conv.id}`}
+                        href=${href}
                         target="_self"
                         classList=${() => ({ active: conv.id === conversation?.id })}>
                         ${conv.title}
                       </a>
-                    </li>`}
+                    </li>`;
+                  }}
                 <//>
               </ul>
             <//>

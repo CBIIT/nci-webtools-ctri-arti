@@ -49,6 +49,15 @@ export function normalizeMessageContent(content) {
   return [{ text: String(content) }];
 }
 
+/**
+ * Get current project ID from URL
+ * @returns {string} - "2" for FedPulse, "1" for Default
+ */
+function getCurrentProjectId() {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('fedpulse') === '1' ? '2' : '1';
+}
+
 export function useChat() {
   const [messages, setMessages] = createStore([]);
   const [conversation, setConversation] = createStore({ id: null, title: "", messages });
@@ -125,12 +134,14 @@ export function useChat() {
     if (!database) return;
 
     try {
-      const recentConvs = await database.getRecentConversations(20);
+      const currentProjectId = getCurrentProjectId();
+      const recentConvs = await database.getRecentConversationsByProject(currentProjectId, 20);
       setConversations(recentConvs.map(conv => ({
         id: conv.id,
         title: conv.title,
         lastMessageAt: conv.lastMessageAt,
-        messageCount: conv.messageCount
+        messageCount: conv.messageCount,
+        projectId: conv.projectId
       })));
     } catch (error) {
       console.error('Failed to load conversations:', error);
@@ -235,8 +246,10 @@ export function useChat() {
     // Create new conversation if this is the first message
     if (!messages.length && database) {
       try {
+        const currentProjectId = getCurrentProjectId();
         const newConversation = await database.createConversation({
-          title: message.length > 50 ? message.substring(0, 50) + '...' : message
+          title: message.length > 50 ? message.substring(0, 50) + '...' : message,
+          projectId: currentProjectId
         });
         
         setConversation({ 
@@ -254,11 +267,13 @@ export function useChat() {
         console.error('Failed to create conversation:', error);
         handleError(error, "creating new conversation");
         // Fallback to local storage behavior
-        setConversation({ id: Math.random().toString(36).substr(2, 9), title: message });
+        const currentProjectId = getCurrentProjectId();
+        setConversation({ id: Math.random().toString(36).substr(2, 9), title: message, projectId: currentProjectId });
       }
     } else if (!messages.length) {
       // Fallback if no database
-      setConversation({ id: Math.random().toString(36).substr(2, 9), title: message });
+      const currentProjectId = getCurrentProjectId();
+      setConversation({ id: Math.random().toString(36).substr(2, 9), title: message, projectId: currentProjectId });
     }
 
     if (inputFiles && inputFiles.length) {
