@@ -153,12 +153,13 @@ export class ConversationDB {
   async ensureDefaultProject() {
     // Get all projects and find the default one
     const allProjects = await this.db.getAll("projects");
-    const existing = allProjects.filter(p => p.isDefault === true);
+    let defaultProject = allProjects.find(p => p.isDefault === true);
     
-    if (existing.length === 0) {
+    if (!defaultProject) {
       this.defaultProject = new Project({
-        name: "Default Project",
-        description: "Default project for conversations",
+        id: "1", // Fixed ID for Default project
+        name: "Default",
+        description: "Default project for general conversations",
         isDefault: true,
         context: {
           systemPrompt: "You are Claude, a helpful AI assistant created by Anthropic.",
@@ -169,7 +170,25 @@ export class ConversationDB {
       
       await this.db.add("projects", this.defaultProject.toJSON());
     } else {
-      this.defaultProject = Project.fromJSON(existing[0]);
+      this.defaultProject = Project.fromJSON(defaultProject);
+    }
+
+    // Ensure FedPulse project exists
+    let fedPulseProject = allProjects.find(p => p.id === "2");
+    if (!fedPulseProject) {
+      const fedPulse = new Project({
+        id: "2", // Fixed ID for FedPulse project
+        name: "FedPulse",
+        description: "FedPulse project for U.S. federal website searches",
+        isDefault: false,
+        context: {
+          systemPrompt: "You are Claude, specialized in searching U.S. federal websites for policies, guidelines, executive orders, and other official content.",
+          files: [],
+          customText: ""
+        }
+      });
+      
+      await this.db.add("projects", fedPulse.toJSON());
     }
   }
 
@@ -313,6 +332,21 @@ export class ConversationDB {
    */
   async getRecentConversations(limit = 20) {
     const data = await this.db.getAll("conversations");
+    return data
+      .map(d => Conversation.fromJSON(d))
+      .filter(c => !c.archived)
+      .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))
+      .slice(0, limit);
+  }
+
+  /**
+   * Get recent conversations for a specific project
+   * @param {string} projectId
+   * @param {number} limit 
+   * @returns {Promise<Conversation[]>}
+   */
+  async getRecentConversationsByProject(projectId, limit = 20) {
+    const data = await this.db.getAllFromIndex("conversations", "projectId", projectId);
     return data
       .map(d => Conversation.fromJSON(d))
       .filter(c => !c.archived)
