@@ -92,7 +92,7 @@ export class Project extends BaseModel {
 export class Conversation extends BaseModel {
   constructor(data = {}) {
     super(data);
-    this.projectId = data.projectId || "default";
+    this.projectId = data.projectId || "1";
     this.title = data.title || "New Conversation";
     this.summary = data.summary || "";
     this.messageCount = data.messageCount || 0;
