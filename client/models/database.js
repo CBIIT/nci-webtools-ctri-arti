@@ -346,16 +346,16 @@ export class ConversationDB {
    * @returns {Promise<Conversation[]>}
    */
   async getRecentConversationsByProject(projectId, limit = 20) {
-    // For Default project (projectId = "1"), include legacy conversations without projectId
+    // For Default project (projectId = "1"), show all conversations that are NOT FedPulse (projectId = "2")
     if (projectId === "1") {
       const allData = await this.db.getAll("conversations");
       return allData
         .map(d => Conversation.fromJSON(d))
-        .filter(c => !c.archived && (c.projectId === "1" || c.projectId === "default" || c.projectId === undefined || c.projectId === null))
+        .filter(c => !c.archived && c.projectId !== "2")
         .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))
         .slice(0, limit);
     } else {
-      // For other projects, only show conversations with exact projectId match
+      // For other projects (like FedPulse), only show conversations with exact projectId match
       const data = await this.db.getAllFromIndex("conversations", "projectId", projectId);
       return data
         .map(d => Conversation.fromJSON(d))
