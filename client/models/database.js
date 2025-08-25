@@ -282,8 +282,8 @@ export class ConversationDB {
    * @returns {Promise<Conversation>}
    */
   async createConversation(conversationData = {}) {
-    // Use default project if no project specified
-    if (!conversationData.projectId) {
+    // Use default project if no project specified or if set to "default"
+    if (!conversationData.projectId || conversationData.projectId === "default") {
       conversationData.projectId = this.defaultProject.id;
     }
     
