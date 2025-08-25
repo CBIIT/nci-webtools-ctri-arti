@@ -23,7 +23,7 @@ export default function Page() {
   }
 
   function handleKeyDown(event) {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey && !loading()) {
       event.preventDefault();
       event.target?.closest("form")?.requestSubmit();
     }
@@ -187,6 +187,7 @@ export default function Page() {
                     <button
                       class="btn btn-primary btn-sm rounded-pill px-3"
                       type="submit"
+                      disabled=${loading}
                       style="border-radius: 0 0 var(--bs-border-radius-sm) 0">
                       Send
                     </button>

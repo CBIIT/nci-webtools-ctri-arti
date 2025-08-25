@@ -8,6 +8,7 @@ import { templateConfigs, getTemplateConfigsByCategory, getPrompt } from "./conf
 import { alerts, showAlert, clearAlert } from "/utils/alerts.js";
 import { AlertContainer } from "/components/alert.js";
 import Modal from "/components/modal.js";
+import ClassToggle from "/components/class-toggle.js";
 
 export default function Page() {
   const [inputText, setInputText] = createSignal("");
@@ -20,7 +21,6 @@ export default function Page() {
   const [templateSourceType, setTemplateSourceType] = createSignal("predefined");
   const [selectedPredefinedTemplate, setSelectedPredefinedTemplate] = createSignal("");
   const [expandModalOpen, setExpandModalOpen] = createSignal(false);
-  const [customPromptTooltipOpen, setCustomPromptTooltipOpen] = createSignal(false);
   const [advancedOptionsOpen, setAdvancedOptionsOpen] = createSignal(false);
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
@@ -37,12 +37,19 @@ export default function Page() {
 
   // Check if Generate button should be disabled
   const isGenerateDisabled = createMemo(() => {
-    const basicRequirements = !inputText() || selectedTemplates().length === 0;
-    const advancedRequirements = advancedOptionsOpen() && (
-      (templateSourceType() === 'predefined' && selectedPredefinedTemplate() && !customSystemPrompt().trim()) ||
-      (templateSourceType() === 'custom' && customTemplate() && !customSystemPrompt().trim())
+    // Always need input text
+    if (!inputText()) return true;
+    
+    // Check if we have either basic templates OR fully configured advanced options
+    const hasBasicTemplates = selectedTemplates().length > 0;
+    
+    const hasValidAdvancedOptions = advancedOptionsOpen() && (
+      (templateSourceType() === 'predefined' && selectedPredefinedTemplate() && customSystemPrompt().trim()) ||
+      (templateSourceType() === 'custom' && customTemplate() && customSystemPrompt().trim())
     );
-    return basicRequirements || advancedRequirements;
+    
+    // Enable if we have either basic templates OR valid advanced options
+    return !(hasBasicTemplates || hasValidAdvancedOptions);
   });
 
   // Load the predefined template's prompt when selected
@@ -398,15 +405,16 @@ export default function Page() {
                             onChange=${handleFileSelect} />
 
                           <div class="position-relative">
-                            <label
-                              for="systemPromptCustom"
-                              class="form-label clickable-trigger"
-                              onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
-                              >Custom Prompt${() => advancedOptionsOpen() && customTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
-                            /></label>
-                            <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
-                              Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
-                            </div>
+                            <${ClassToggle} activeClass="show">
+                              <label
+                                class="form-label"
+                                toggle
+                                >Custom Prompt${() => advancedOptionsOpen() && customTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                              /></label>
+                              <div class="clickover">
+                                Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
+                              </div>
+                            <//>
                           </div>
                           <div class="position-relative">
                             <textarea
@@ -417,7 +425,7 @@ export default function Page() {
                               style="resize: none; padding-right: 20px;"
                               placeholder="Enter a custom prompt to generate your form."
                               value=${customSystemPrompt}
-                              onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                              onInput=${(e) => setCustomSystemPrompt(e.target.value)} />
                             <button
                               type="button"
                               class="position-absolute d-flex align-items-center justify-content-center"
@@ -431,15 +439,16 @@ export default function Page() {
 
                         <${Show} when=${() => templateSourceType() === "predefined"}>
                           <div class="position-relative">
-                            <label
-                              for="systemPromptPredefined"
-                              class="form-label clickable-trigger"
-                              onClick=${() => setCustomPromptTooltipOpen(!customPromptTooltipOpen())}
-                              >Custom Prompt${() => advancedOptionsOpen() && selectedPredefinedTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
-                            /></label>
-                            <div class=${() => `click-popover ${customPromptTooltipOpen() ? 'show' : ''}`}>
-                              Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
-                            </div>
+                            <${ClassToggle} activeClass="show">
+                              <label
+                                class="form-label"
+                                toggle
+                                >Custom Prompt${() => advancedOptionsOpen() && customTemplate() ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info"
+                              /></label>
+                              <div class="clickover">
+                                Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
+                              </div>
+                            <//>
                           </div>
                           <div class="position-relative">
                             <textarea
@@ -450,7 +459,7 @@ export default function Page() {
                               style="resize: none; padding-right: 20px;"
                               placeholder="Enter a custom prompt to generate your form."
                               value=${customSystemPrompt}
-                              onChange=${(e) => setCustomSystemPrompt(e.target.value)} />
+                              onInput=${(e) => setCustomSystemPrompt(e.target.value)} />
                             <button
                               type="button"
                               class="position-absolute d-flex align-items-center justify-content-center"
@@ -555,13 +564,20 @@ export default function Page() {
             <div class="col-md-6">
               <div class="d-flex-center mt-1 gap-1">
                 <button type="reset" class="btn btn-light border rounded-pill">Reset</button>
-                <button
-                  type="submit"
-                  class="btn btn-primary rounded-pill custom-tooltip"
-                  data-tooltip=${() => isGenerateDisabled() ? "Not all required fields are provided." : ""}
-                  disabled=${() => isGenerateDisabled() && !allDocumentsProcessed()}>
-                  Generate
-                </button>
+                <${ClassToggle} class="position-relative" activeClass="show" event="hover">
+                  <button
+                    toggle
+                    type="submit"
+                    class="btn btn-primary rounded-pill"
+                    disabled=${() => isGenerateDisabled() && !allDocumentsProcessed()}>
+                    Generate
+                  </button>
+                  <${Show} when=${() => isGenerateDisabled()}>
+                    <div class="tooltip-top">
+                      Not all required fields are provided. 
+                    </div>
+                  <//>
+                <//>
               </div>
             </div>
           </div>
@@ -581,7 +597,7 @@ export default function Page() {
               style="resize: none;"
               placeholder="Enter a custom prompt to generate your form."
               value=${customSystemPrompt}
-              onChange=${(e) => setCustomSystemPrompt(e.target.value)}
+              onInput=${(e) => setCustomSystemPrompt(e.target.value)}
             />
             <div class="d-flex justify-content-end">
               <button
