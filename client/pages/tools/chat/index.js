@@ -64,8 +64,8 @@ export default function Page() {
                 <${ClassToggle} class="dropdown d-flex-center" activeClass="show" event="hover">
                   <a toggle href="/tools/chat" target="_self" class="btn btn-sm p-0 dropdown-toggle">New Chat</a>
                   <ul class="dropdown-menu top-100 start-0">
-                    <li><a class="dropdown-item text-decoration-none small fw-semibold" href="/tools/chat" target="_self">General Chat</a></li>
-                    <li><a class="dropdown-item text-decoration-none small fw-semibold" href="/tools/chat?fedpulse=1" target="_self">FedPulse</a></li>
+                    <li><a title="General chat" class="dropdown-item text-decoration-none small fw-semibold" href="/tools/chat" target="_self">Standard Chat</a></li>
+                    <li><a title="Search U.S. federal websites for policies, guidelines, executive orders, and other official content." class="dropdown-item text-decoration-none small fw-semibold" href="/tools/chat?fedpulse=1" target="_self">FedPulse</a></li>
                   </ul>
                 <//>
               <//>
