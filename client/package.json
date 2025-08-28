@@ -2,7 +2,7 @@
   "type": "module",
   "devDependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
-    "@huggingface/transformers": "^3.7.1",
+    "@huggingface/transformers": "^3.7.2",
     "@langchain/textsplitters": "^0.1.0",
     "@solidjs/router": "^0.15.3",
     "docx": "^9.5.1",
@@ -10,11 +10,11 @@
     "dompurify": "^3.2.6",
     "idb": "^8.0.3",
     "mammoth": "^1.10.0",
-    "marked": "^16.1.2",
+    "marked": "^16.2.0",
     "pdfjs-dist": "^5.4.54",
     "solid-js": "^1.9.9",
     "three": "^0.179.1",
-    "turndown": "^7.2.0",
+    "turndown": "^7.2.1",
     "yaml": "^2.8.1"
   }
 }
