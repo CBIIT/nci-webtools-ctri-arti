@@ -1,29 +1,36 @@
+Human Review is Required
+This document represents a computational draft generated using artificial intelligence.  It is provided as an initial draft and the contents require comprehensive human review, validation, and refinement by qualified research personnel. 
+
+All stakeholders are advised to conduct thorough verification of scientific accuracy, regulatory compliance, and institutional requirements before proceeding with formal Institutional Review Board (IRB) submission or other regulatory processes.
+ 
 PRINCIPAL INVESTIGATOR: {{PI}}
 STUDY TITLE: {{Title}}
 STUDY SITE: NIH Clinical Center
 Cohort: {{Cohort}} 
-Consent Version:  
+Consent Version:
 WHO DO YOU CONTACT ABOUT THIS STUDY? 
 {{Contact_Name}} by email at {{Contact_Email}} or by phone at {{Contact_Phone}}
 KEY INFORMATION ABOUT THIS RESEARCH 
 This consent form describes a research study and is designed to help you decide if you would like to be a part of the research study.  
 You are being asked to take part in a research study at the National Institutes of Health (NIH). This section provides the information we believe is most helpful and important to you in making your decision about participating in this study. Additional information that may help you decide can be found in other sections of the document. Taking part in research at the NIH is your choice.
 {{Why_Asked}}
-{{Study_Purpose}} {{Intervention}} {{Intervention_Uses}}
-{{Brief_Happenings}}
+{{Study_Purpose}} {{FDA_Approval_Status }}
+{{Phase_Trial}}
 {{Time_Commitment}}
+{{Brief_Happenings}} 
 {{Responsibilities}}
-{{Benefits_Brief}}
-{{Voluntariness}}
-{{Alternatives}}
+{{Brief_Benefits }}
 {{Abbreviated_Risks}}
+{{Brief_Alternatives}}
+{{Voluntariness}}
 The remaining document will now describe the research study in more detail.  This information should be considered before you make your choice. Members of the study team will talk with you about the information in this document. Some people have personal, religious, or ethical beliefs that may limit the kinds of medical or research interventions in which they would want to participate. Take the time you need to ask any questions and discuss this study with NIH staff, and with your family, friends, and personal health care providers.
-{{Parent_Permission}} {{Impaired_Adults}}
+{{Parent_Permission}} 
+{{Impaired_Adults}}
 IT IS YOUR CHOICE TO TAKE PART IN THE STUDY
 You may choose not to take part in this study for any reason. If you join this study, you may change your mind and stop participating in the study at any time and for any reason. In either case, you will not lose any benefits to which you are otherwise entitled. However, to be seen at the NIH, you must be taking part in a study or are being considered for a study. If you do choose to leave the study, please inform your study team to ensure a safe withdrawal from the research.  
 WHY IS THIS STUDY BEING DONE?
-{{Study_Purpose}}
-{{Investigational_Use}} {{Approved_Use}}
+This is a research study. {{Study_Purpose}}
+{{FDA_Approval_Status}}
 WHAT WILL HAPPEN DURING THE STUDY?
 If you decide to take part in this study, you will be asked to:
 
@@ -31,7 +38,8 @@ Before you begin:
 {{FOR item IN Before_You_Begin}}
 •	{{$item}}
 {{END-FOR item}}
-
+{{Randomization_Process}}
+{{Blinding_Process}}
 During the study:
 {{FOR item IN During_The_Study}}
 •	{{$item}}
@@ -46,14 +54,32 @@ HOW LONG WILL THE STUDY TAKE?
 HOW MANY PEOPLE WILL PARTICIPATE IN THIS STUDY?
 {{How_Many}}
 WHAT ARE THE RISKS AND DISCOMFORTS OF BEING IN THE STUDY?
+{{Risks_Study_Drug_Title}}
+{{Risks_Study_Drug_General}}
+{{FOR item IN Points_Side_Effects}}
+•	{{$item}}
+{{END-FOR item}}
 {{FOR item IN Risks_Discomforts}}
 •	{{$item}}
 {{END-FOR item}}
-{{FOR item IN Risks_Procedures}}
+{{FOR item IN Privacy_Confidentiality_Risks}}
 •	{{$item}}
 {{END-FOR item}}
-{{Risks_Pregnancy}}
-{{Risks_Radiation}}{{Rad_Risk_LT3}}{{Rad_Risk_GE3_LT5}}{{Rad_Risk_GT5}}
+{{Risks_Pregnancy_Title}}
+{{ Risks_Pregnancy_Rationale_Women}} 
+{{ Risks_Pregnancy_Rationale_Men}}
+{{Pregnancy_Women_Title}}
+{{Pregnancy_Testing_Requirements}} {{Pregnancy_Testing_Women_Over_Forty}}
+{{Required_Contraception_Women}}
+{{Pregnancy_Event_Women}}
+{{Fertility_Risk_Women}}
+{{Pregnancy_Men_Title}}
+{{Required_Contraception_Men}}
+{{Pregnancy_Event_Men}}
+{{Fertility_Risk_Men}}
+{{Risks_Radiation_Title}}
+{{Rad_Risk_LT3}}{{Rad_Risk_GE3_LT5}}{{Rad_Risk_GT5}}
+{{Thera_Rad_Title}}
 {{Thera_Rad}}
 WHAT ARE THE BENEFITS OF BEING IN THE STUDY?
 {{Potential_Benefits_You}}
@@ -97,23 +123,18 @@ How long will your specimens and data be stored by the NIH?
 {{Specimen_Storage}}
 PAYMENT
 Will you receive any type of payment for taking part in this study?
-{{No_Payment}}
-{{Yes_Payment}}
-{{Partial_Payment}}
-{{Payment_Large}}
+{{Payment_Information}} 
 REIMBURSEMENT
 Will you receive reimbursement or direct payment by NIH as part of your participation?
-{{Reimbursement}}
+{{Reimbursement_Information}}
 COSTS
 Will taking part in this research study cost you anything?
 NIH does not bill health insurance companies or participants for any research or related clinical care that you receive at the NIH Clinical Center. 
 {{Costs}}   
 CONFLICT OF INTEREST (COI) 
 The NIH reviews NIH staff researchers at least yearly for conflicts of interest.  This process is detailed in a COI Guide.  You may ask your research team for a copy of the COI Guide or for more information.  Members of the research team who do not work for NIH are expected to follow these guidelines or the guidelines of their home institution, but they do not need to report their personal finances to the NIH.
-{{COI_None}}
-{{Technology_License}}
-{{CRADA}}
-{{CTA_No_NonNIH}}{{CTA_Yes_NonNIH}}
+{{Conflict_Of_Interest_Information}}
+{{Clinical_Trial_Agreement_Information}}
 CLINICAL TRIAL REGISTRATION AND RESULTS REPORTING 
 A description of this clinical trial will be available on http://www.ClinicalTrials.gov, as required by U.S. Law. This Web site will not include information that can identify you. At most, the Web site will include a summary of the results. You can search this Web site at any time.
 CONFIDENTIALITY PROTECTIONS PROVIDED IN THIS STUDY  
@@ -122,8 +143,8 @@ Will your medical information be kept private?
 We do our best to keep your medical information private.  However, we cannot promise this.  Certain groups may look at and copy your medical records. This may be for research, quality and data review including:
 •	The NIH and other government groups. (For example, the Food and Drug Administration (FDA) to help keep research safe.) 
 •	NIH Institutional Review Board
-•	The study sponsor: {{Confidentiality_Study_Sponsor}}
-•	{{Confidentiality_Manufacturer}}{{Confidentiality_Drug_Device}}
+•	{{Confidentiality_Study_Sponsor}}
+•	{{Confidentiality_Manufacturer}} {{Confidentiality_Drug_Device}}
 NIH and researchers doing this study follow special laws and policies to keep your information as private as possible. However, your identity and information about being in this study may accidentally be seen by others. 
 In most cases, NIH will not share any identifiable information about you unless you say it is okay in writing.    More information about sharing your information is below.
 Information gathered for this study is protected under a Certificate of Confidentiality and the Privacy Act.
