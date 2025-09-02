@@ -21,7 +21,7 @@ const dbConfigs = {
   sqlite: {
     dialect: "sqlite",
     storage: DB_STORAGE,
-    logging: false
+    logging: (m) => logger.debug(m),
   }
 };
 
@@ -30,7 +30,8 @@ const db = new Sequelize(dbConfigs[DB_DIALECT]);
 const models = createModels(db);
 
 // Sync and seed database
-await db.sync({ alter: true });
+const syncOptions = DB_DIALECT === "sqlite" ? { force: false } : { alter: true };
+await db.sync(syncOptions);
 await seedDatabase(models);
 
 export const { User, Role, Provider, Model, Usage } = models;
