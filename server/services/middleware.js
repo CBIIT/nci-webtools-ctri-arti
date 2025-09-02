@@ -1,12 +1,17 @@
 import { Readable } from "stream";
 import * as client from "openid-client";
+import Provider from "oidc-provider";
 import logger, { formatObject } from "./logger.js";
 import { User, Role } from "./database.js";
-const { OAUTH_CALLBACK_URL, OAUTH_DISCOVERY_URL, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET } = process.env;
+const { 
+  HOSTNAME,
+  PORT,
+  OAUTH_CALLBACK_URL, 
+  OAUTH_DISCOVERY_URL, 
+  OAUTH_CLIENT_ID, 
+  OAUTH_CLIENT_SECRET
+} = process.env;
 export const WHITELIST = [/.*/i];
-export const oidcConfig = OAUTH_CLIENT_ID
-  ? await client.discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET)
-  : null;
 
 /**
  * Logs requests
@@ -41,6 +46,9 @@ export function logErrors(formatter = (e) => ({ error: e.message })) {
  */
 export async function loginMiddleware(req, res, next) {
   try {
+    const oidcConfig = OAUTH_CLIENT_ID
+      ? await client.discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET)
+      : null;
     const sess = req.session;
 
     // Initially, we need to build the authorization URL and redirect the user to the authorization server.
@@ -86,6 +94,49 @@ export async function loginMiddleware(req, res, next) {
     return next(err);
   }
 }
+
+/**
+ * Returns middleware for handling local OIDC provider (for development/testing)
+ * @returns {Function} Middleware function
+ */
+export function oauthMiddleware() {
+  const hostname = HOSTNAME || 'localhost';
+  const port = PORT !== '443' ? ':' +PORT : '';
+  const issuer = `https://${hostname}${port}`;
+  const provider = new Provider(issuer, {
+    clients: [
+      {
+        client_id: OAUTH_CLIENT_ID,
+        client_secret: OAUTH_CLIENT_SECRET,
+        redirect_uris: [
+          OAUTH_CALLBACK_URL || 'https://localhost/api/login'
+        ],
+      }
+    ],
+    claims: {
+      profile: ['given_name', 'family_name', 'name'],
+      email: ['email', 'email_verified']
+    },
+    async findAccount(ctx, subject, token) {
+      return {
+        accountId: subject,
+        async claims(use, scope) {
+          return { 
+            sub: subject,
+            email: subject,
+            email_verified: true,
+            given_name: 'Local',
+            family_name: 'User',
+            name: 'Local User'
+           };
+        },
+      };
+    },
+  });
+  provider.proxy = true;
+  return provider.callback();
+}
+
 
 /**
  * Middleware that requires user to have a specific role
