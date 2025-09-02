@@ -46,31 +46,3 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
-  # Local Auth Server (Optional)
-  # Before running this, ensure that you've created a key.pem file in the server directory (eg: run `npm run cert`)
-  # Manual Steps: Create a Realm with a Client (with Client authentication enabled), then generate a client secret and set it in the .env file
-  # Using the port below, the discovery url will be: https://localhost:8443/realms/${realm-name}/.well-known/openid-configuration
-  # Start with: docker compose --profile auth up
-  keycloak:
-    profiles: [auth]
-    image: quay.io/keycloak/keycloak:26.1
-    command: start
-    ports:
-      - "8443:8443"
-    volumes:
-      - ./server/key.pem:/etc/key.pem
-    environment:
-      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
-      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
-      - KC_DB=postgres
-      - KC_DB_URL=jdbc:postgresql://postgres:5432/postgres
-      - KC_DB_USERNAME=postgres
-      - KC_DB_PASSWORD=postgres
-      - KC_HOSTNAME=host.docker.internal
-      - KC_HTTP_ENABLED=false
-      - KC_HTTPS_CERTIFICATE_FILE=/etc/key.pem
-      - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/key.pem
-    depends_on:
-      postgres:
-        condition: service_healthy
