@@ -29,19 +29,19 @@ The server acts as both an API backend and serves the SolidJS client application
 
 ## Quick Start
 
-### Docker (Recommended)
-```bash
-# From project root
-docker compose up --build -w
-```
-
 ### Local Development
 ```bash
 cd server
 npm install
-npm run cert    # Generate self-signed SSL certificates
-npm run start   # Regular start
+npm run cert      # (Optional) Generate self-signed SSL certificates
+npm run start     # Regular start
 npm run start:dev # Watch mode for development
+```
+
+### Docker (Optional)
+```bash
+# From project root
+docker compose up --build -w
 ```
 
 ## Project Structure
