@@ -5,11 +5,15 @@ AI research platform for biomedical and regulatory information analysis. Built w
 ## Quick Start
 
 ```bash
-# Start full development environment (Docker)
+# Start server
+cd server && npm install && npm start
+
+# Optional: Start full development environment (Docker)
 docker compose up --build -w
 
 # Run tests
-cd server && npm test           # Runs both backend and client e2e/integration tests
+cd server && npm test           # Backend unit tests + full application integration tests
+cd server && npm run test:integration  # Integration tests only (full app in browser)
 ```
 
 **Access**: https://localhost (ignore cert warnings for dev)  
@@ -19,9 +23,19 @@ cd server && npm test           # Runs both backend and client e2e/integration t
 
 | Component | Technology | Key Features |
 |-----------|------------|--------------|
-| **Frontend** | Buildless SolidJS, CDN deps | Chat interface, custom test framework, client-side ML |
+| **Frontend** | Buildless SolidJS, CDN deps | Chat interface, local database, client-side embeddings |
 | **Backend** | Express.js, PostgreSQL | Multi-provider AI, research tools, authentication |
+| **Testing** | Node.js test + Playwright | No mocking, real services, browser testing |
 | **Infrastructure** | AWS CDK | Container deployment |
+
+## Testing Philosophy
+
+Real-world testing approach with no mocking:
+
+- All tests use real AWS Bedrock, databases, and API calls
+- Client tests run in actual Chromium browser via Playwright
+- Custom TAP-compliant test framework for buildless client testing
+- `npm test` runs both backend unit tests and integration tests
 
 ## Development Guide
 
@@ -32,9 +46,13 @@ cd server && npm test           # Runs both backend and client e2e/integration t
 | What | Where | Notes |
 |------|-------|-------|
 | **Chat Interface** | `pages/tools/chat/` | Main app feature with streaming AI |
-| **Custom Tests** | `test/index.js` | Jest-like framework, runs in real browser |
-| **Dependencies** | `index.html` | Import maps point to CDN, no npm install |
+| **Chat Hooks** | `pages/tools/chat/hooks.js` | Core chat functionality and database interactions |
+| **Client Database** | `models/database.js` | IndexedDB with vector search for conversation storage |
+| **Client Models** | `models/models.js` | Project, Conversation, Message data structures |
+| **Embeddings** | `models/embedders.js` | Client-side vector embeddings for search |
 | **Components** | `components/` | Use `html` tagged templates, not JSX |
+| **Dependencies** | `index.html` | Import maps point to CDN, no npm install |
+| **Tests** | `test/` | Custom TAP framework, runs in browser via `?test=1` |
 
 ### Backend (Server)
 
@@ -57,18 +75,37 @@ cd server && npm test           # Runs both backend and client e2e/integration t
 ```bash
 cd server
 npm install
-cp .env.example .env            # Configure environment
-npm run start:dev              # Watch mode
-npm test                        # Jest test suite
+cp .env.example .env           # Configure environment
+npm run start:dev              # Watch mode with auto-restart
 ```
 
 ### Environment Setup
 
-Essential `.env` variables:
-- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` - For AI models
-- `PGHOST`, `PGUSER`, `PGPASSWORD` - Database connection
-- `SESSION_SECRET` - Cookie signing
-- `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET` - Authentication
+Copy `server/.env.example` to `server/.env` and configure:
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_SESSION_TOKEN=
+```
+
+### Testing Guide
+
+| Command | What It Does |
+|---------|--------------|
+| `cd server && npm test` | Backend unit tests + integration tests |
+| `cd server && npm run test:integration` | Integration tests only (full app in browser) |
+
+**Writing Tests:**
+```javascript
+// Backend (Node.js)
+import { test } from 'node:test';
+import assert from 'node:assert';
+
+// Client (Browser)  
+import test from '../test.js';
+import assert from '../assert.js';
+```
+
+**Setup:** Tests use `server/test.env`, integration tests start full server with HTTPS, client tests triggered via `?test=1`
 
 ## Detailed Documentation
 
