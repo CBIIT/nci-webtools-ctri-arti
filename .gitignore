@@ -4,3 +4,6 @@ venv
 *.env
 **/*/cdk.context.json
 /postgres
+/tmp
+database.sqlite
+.DS_Store
