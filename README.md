@@ -5,7 +5,7 @@ AI research platform for biomedical and regulatory information analysis. Built w
 ## Quick Start
 
 ```bash
-# Start full development environment
+# Start full development environment (Docker)
 docker compose up --build -w
 
 # Run tests
@@ -27,7 +27,7 @@ cd server && npm test           # Runs both backend and client e2e/integration t
 
 ### Frontend (Client)
 
-**Key Gotcha**: Buildless SolidJS - no webpack/vite, dependencies via CDN import maps
+**Key Gotcha**: Buildless SolidJS - no webpack/vite, dependencies via CDN import maps. Test via integration tests: `npm run test:integration`
 
 | What | Where | Notes |
 |------|-------|-------|
@@ -35,13 +35,6 @@ cd server && npm test           # Runs both backend and client e2e/integration t
 | **Custom Tests** | `test/index.js` | Jest-like framework, runs in real browser |
 | **Dependencies** | `index.html` | Import maps point to CDN, no npm install |
 | **Components** | `components/` | Use `html` tagged templates, not JSX |
-
-**Development:**
-```bash
-cd client
-npm install                     # Installs Playwright only
-npm test                        # Run custom test framework
-```
 
 ### Backend (Server)
 
