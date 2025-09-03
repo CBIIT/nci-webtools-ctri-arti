@@ -7,8 +7,9 @@ import routes from "./routes.js";
 
 render(() => html`<${Router} root=${Layout}>${routes}<//>`, window.app);
 
-const params = new URLSearchParams(window.location.search);
-if (params.has("test")) {
+const { search, hostname } = window.location;
+const params = new URLSearchParams(search);
+if (params.has("test") && hostname === "localhost") {
   try {
     await import("../test/run.js");
   } finally {
