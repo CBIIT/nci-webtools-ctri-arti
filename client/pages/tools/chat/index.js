@@ -15,9 +15,9 @@ export default function Page() {
   const [filenames, setFilenames] = createSignal([]);
   const [isAtBottom, setIsAtBottom] = createSignal(true);
   const [chatHeight, setChatHeight] = createSignal(0);
-  const [initScroll, setInitScroll] = createSignal(false);
   const toggle = (key) => () =>
     setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+  let elementRef;
   let bottomEl;
   let chatRef;
 
@@ -28,6 +28,9 @@ export default function Page() {
   }
 
   onMount(() => {
+    // Initial scroll on mount
+    elementRef?.scrollIntoView({ behavior: "smooth", block: "end" });
+
     const resizeObserver = new ResizeObserver(() => setChatHeight(chatRef.offsetHeight || 0));
     resizeObserver.observe(chatRef);
 
@@ -38,10 +41,6 @@ export default function Page() {
           return;
         }
         setIsAtBottom(isIntersecting);
-        if (!isIntersecting && !initScroll()) {
-          scrollToBottom();
-          setInitScroll(true);
-        }
       },
       { root: null, threshold: 0, rootMargin: `-${chatHeight()}px` }
     );
@@ -82,7 +81,7 @@ export default function Page() {
 
   return html`
     <div class="container-fluid">
-      <div class="row min-vh-100 position-relative">
+      <div class="row min-vh-100 position-relative" ref=${(el) => (elementRef = el)}>
         <div class="col-sm-auto shadow-sm border-end px-0 position-sticky" classList=${() => ({ "w-20r": toggles().conversations })}>
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
