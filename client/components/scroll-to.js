@@ -21,8 +21,6 @@ export default function ScrollTo(props) {
     });
   }
 
-  console.log({ props })
-
   return html`<div
     class="d-flex justify-content-center align-items-center pb-3"
     classList=${() => ({ "d-none": props.hidden })}
