@@ -2,6 +2,7 @@ import { createSignal, createResource, For, Show, Index, onMount, onCleanup, cre
 import html from "solid-js/html";
 import Loader from "/components/loader.js";
 import ClassToggle from "/components/class-toggle.js";
+import ScrollTo from "/components/scroll-to.js";
 import { AlertContainer } from "/components/alert.js";
 import { downloadCsv, downloadJson } from "/utils/files.js";
 import { useChat } from "./hooks.js";
@@ -19,12 +20,6 @@ export default function Page() {
     setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   let bottomEl;
   let chatRef;
-
-  function scrollToBottom() {
-    requestAnimationFrame(() => {
-      bottomEl?.scrollIntoView({ behavior: "smooth", block: "end" });
-    });
-  }
 
   onMount(() => {
     const resizeObserver = new ResizeObserver(() => setChatHeight(chatRef.offsetHeight || 0));
@@ -52,7 +47,9 @@ export default function Page() {
   let initScroll = false;
   createEffect(() => {
     if (!initScroll && messages?.length > 0 && bottomEl) {
-      scrollToBottom();
+      requestAnimationFrame(() => {
+        bottomEl?.scrollIntoView({ behavior: "smooth", block: "end" });
+      });
       initScroll = true;
     }
   });
@@ -184,12 +181,7 @@ export default function Page() {
               <div ref=${(el) => { bottomEl = el }} style=${() => `scroll-margin-bottom: ${chatHeight()}px`} />
             </div>
             <div class="position-sticky bottom-0">
-              <div class="d-flex justify-content-center align-items-center pb-3" classList=${() => ({ "d-none": isAtBottom() })}>
-                <button type="button" onClick=${scrollToBottom} class="btn btn-primary d-flex justify-content-center align-items-center text-nowrap fw-semibold pe-auto gap-2 rounded-pill px-[12px] ps-3 fs-08 focus-ring text-white">
-                  <span class="pb-0">Scroll to bottom</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-1r h-1r"><path d="m6 9 6 6 6-6" /></svg>
-                </button>
-              </div>
+              <${ScrollTo} targetRef=${() => bottomEl} hidden=${isAtBottom} label="Scroll to bottom" />
               <div ref=${(el) => { chatRef = el }} class="bg-white">
                 <div class="bg-light shadow-sm rounded">
                   <textarea
