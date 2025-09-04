@@ -178,7 +178,6 @@ export default function Page() {
               <//>
               <${Show} when=${loading}><${Loader} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" /><//>
 
-              <!-- bottom sentinel -->
               <div ref=${(el) => { bottomEl = el }} style=${() => `scroll-margin-bottom: ${chatHeight()}px`} />
             </div>
             <div class="position-sticky bottom-0">
