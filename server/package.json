@@ -16,6 +16,7 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.873.0",
+    "@aws-sdk/client-textract": "^3.882.0",
     "@aws-sdk/client-translate": "^3.873.0",
     "@google/genai": "^1.15.0",
     "connect-session-sequelize": "^8.0.2",
@@ -29,6 +30,7 @@
     "nodemailer": "^7.0.5",
     "oidc-provider": "^9.5.1",
     "openid-client": "^6.6.4",
+    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.4.54",
     "pg": "^8.16.3",
     "sequelize": "^6.37.7",
