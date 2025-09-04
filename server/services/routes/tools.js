@@ -3,6 +3,7 @@ import { QueryTypes } from "sequelize";
 import { requireRole, proxyMiddleware } from "../middleware.js";
 import { search } from "../utils.js";
 import { translate, getLanguages } from "../translate.js";
+import { textract } from "../textract.js";
 import { sendFeedback } from "../email.js";
 import db from "../database.js";
 
@@ -23,6 +24,10 @@ api.get("/search", requireRole(), async (req, res) => {
 });
 
 api.all("/browse/*url", requireRole(), proxyMiddleware);
+
+api.post("/textract", requireRole(), async (req, res) => {
+  res.json(await textract(req.body));
+});
 
 api.post("/translate", requireRole(), async (req, res) => {
   res.json(await translate(req.body));
