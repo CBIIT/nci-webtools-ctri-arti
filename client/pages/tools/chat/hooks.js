@@ -279,9 +279,10 @@ export function useChat() {
     if (inputFiles && inputFiles.length) {
       for (const file of inputFiles) {
         const byteLengthLimit = 1024 * 1024 * 5; // 5MB
-        const imageTypes = ["png", "jpeg", "gif", "webp"];
+        const imageTypes = ["gif", "jpg", "jpeg", "png", "webp"];
         const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
         let [name, format] = splitFilename(file.name);
+        if (format === "jpg") format = "jpeg"; //bedrock 
         name = name.replace(/[^a-zA-Z0-9\s\[\]\(\)\-]/g, "_").replace(/\s{2,}/g, " ") + new Date().getTime();
         const bytes = await fileToBase64(file, true);
         const contentType = imageTypes.includes(format) ? "image" : "document";
