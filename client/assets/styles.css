@@ -92,6 +92,10 @@
   animation-range-end: 1px;
 }
 
+.h-1r {
+  height: 1rem;
+}
+
 .h-90 {
   height: 90% !important;
 }
@@ -439,6 +443,10 @@ ul {
 
 .mw-60 {
   max-width: 60%;
+}
+
+.w-1r {
+  width: 1rem;
 }
 
 .w-10r {
