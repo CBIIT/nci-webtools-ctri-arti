@@ -29,7 +29,7 @@ export default function Page() {
 
   onMount(() => {
     const resizeObserver = new ResizeObserver(() => setChatHeight(chatRef.offsetHeight || 0));
-      resizeObserver.observe(chatRef);
+    resizeObserver.observe(chatRef);
 
     const observer = new IntersectionObserver(
       (entries) => {
