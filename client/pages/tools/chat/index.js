@@ -1,4 +1,4 @@
-import { createSignal, createResource, For, Show, Index, onMount, onCleanup, children } from "solid-js";
+import { createSignal, createResource, For, Show, Index, onMount, onCleanup, createEffect } from "solid-js";
 import html from "solid-js/html";
 import Loader from "/components/loader.js";
 import ClassToggle from "/components/class-toggle.js";
@@ -13,9 +13,46 @@ export default function Page() {
   const { conversation, updateConversation, deleteConversation, conversations, messages, loading, submitMessage } = useChat();
   const [toggles, setToggles] = createSignal({ conversations: true });
   const [filenames, setFilenames] = createSignal([]);
-  const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
-  let elementRef;
-  onMount(() => elementRef?.scrollIntoView({ behavior: "smooth", block: "end" }));
+  const [isAtBottom, setIsAtBottom] = createSignal(true);
+  const [chatHeight, setChatHeight] = createSignal(0);
+  const [initScroll, setInitScroll] = createSignal(false);
+  const toggle = (key) => () =>
+    setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+  let bottomEl;
+  let chatRef;
+
+  function scrollToBottom() {
+    requestAnimationFrame(() => {
+      bottomEl?.scrollIntoView({ behavior: "smooth", block: "end" });
+    });
+  }
+
+  onMount(() => {
+    const resizeObserver = new ResizeObserver(() => setChatHeight(chatRef.offsetHeight || 0));
+      resizeObserver.observe(chatRef);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const isIntersecting = entries[0]?.isIntersecting ?? false;
+        if (isAtBottom() === isIntersecting) {
+          return;
+        }
+        setIsAtBottom(isIntersecting);
+        if (!isIntersecting && !initScroll()) {
+          scrollToBottom();
+          setInitScroll(true);
+        }
+      },
+      { root: null, threshold: 0, rootMargin: `-${chatHeight()}px` }
+    );
+
+    observer.observe(bottomEl);
+
+    onCleanup(() => {
+      observer.disconnect();
+      resizeObserver.disconnect();
+    });
+  });
 
   function handleFileChange(event) {
     let files = Array.from(event.target.files || []);
@@ -45,7 +82,7 @@ export default function Page() {
 
   return html`
     <div class="container-fluid">
-      <div class="row min-vh-100 position-relative" ref=${(el) => (elementRef = el)}>
+      <div class="row min-vh-100 position-relative">
         <div class="col-sm-auto shadow-sm border-end px-0 position-sticky" classList=${() => ({ "w-20r": toggles().conversations })}>
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
@@ -140,68 +177,79 @@ export default function Page() {
                 `}
               <//>
               <${Show} when=${loading}><${Loader} style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5" /><//>
+
+              <!-- bottom sentinel -->
+              <div ref=${(el) => { bottomEl = el }} style=${() => `scroll-margin-bottom: ${chatHeight()}px`} />
             </div>
-            <div class="position-sticky bottom-0 bg-white">
-              <div class="bg-light shadow-sm rounded">
-                <textarea
-                  onKeyDown=${handleKeyDown}
-                  class="form-control form-control-sm border-0 bg-transparent shadow-0 p-3"
-                  id="message"
-                  name="message"
-                  placeholder="Ask me (Shift + Enter for new line)"
-                  rows="3"
-                  autofocus
-                  required />
+            <div class="position-sticky bottom-0">
+              <div class="d-flex justify-content-center align-items-center pb-3" classList=${() => ({ "d-none": isAtBottom() })}>
+                <button type="button" onClick=${scrollToBottom} class="btn btn-primary d-flex justify-content-center align-items-center text-nowrap fw-semibold pe-auto gap-2 rounded-pill px-[12px] ps-3 fs-08 focus-ring text-white">
+                  <span class="pb-0">Scroll to bottom</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-1r h-1r"><path d="m6 9 6 6 6-6" /></svg>
+                </button>
+              </div>
+              <div ref=${(el) => { chatRef = el }} class="bg-white">
+                <div class="bg-light shadow-sm rounded">
+                  <textarea
+                    onKeyDown=${handleKeyDown}
+                    class="form-control form-control-sm border-0 bg-transparent shadow-0 p-3"
+                    id="message"
+                    name="message"
+                    placeholder="Ask me (Shift + Enter for new line)"
+                    rows="3"
+                    autofocus
+                    required />
 
-                <div class="d-flex justify-content-between py-1 px-2">
-                  <div class="d-flex w-auto align-items-center">
-                    <label class="btn btn-light btn-sm rounded-pill m-0" for="inputFiles">
-                      <input
-                        onChange=${handleFileChange}
-                        type="file"
-                        id="inputFiles"
-                        name="inputFiles"
-                        aria-label="Input files"
-                        class="visually-hidden"
-                        accept="image/*,text/*,.pdf,.xls,.xlsx,.doc,.docx"
-                        multiple />
-                      <img src="assets/images/icon-paperclip.svg" alt="Upload" width="16" class="me-1" />
-                      ${() => filenames().join(", ") || "Attach"}
-                    </label>
+                  <div class="d-flex justify-content-between py-1 px-2">
+                    <div class="d-flex w-auto align-items-center">
+                      <label class="btn btn-light btn-sm rounded-pill m-0" for="inputFiles">
+                        <input
+                          onChange=${handleFileChange}
+                          type="file"
+                          id="inputFiles"
+                          name="inputFiles"
+                          aria-label="Input files"
+                          class="visually-hidden"
+                          accept="image/*,text/*,.pdf,.xls,.xlsx,.doc,.docx"
+                          multiple />
+                        <img src="assets/images/icon-paperclip.svg" alt="Upload" width="16" class="me-1" />
+                        ${() => filenames().join(", ") || "Attach"}
+                      </label>
 
-                    <${ClassToggle} class="position-relative" activeClass="show" event="hover">
-                      <div class="form-check form-switch form-control-sm my-0 mx-2" toggle>
-                        <input class="form-check-input p-0 cursor-pointer" type="checkbox" id="reasoningMode" name="reasoningMode" />
-                        <label
-                          toggle
-                          class="form-check-label text-secondary fw-semibold cursor-pointer"
-                          for="reasoningMode"
-                          title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">
-                          Research Mode
-                        </label>
-                      </div>
-                      <div class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-200 ms-n50 text-muted text-center">
-                        Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.                        
-                      </div>
-                    <//>
-                  </div>
+                      <${ClassToggle} class="position-relative" activeClass="show" event="hover">
+                        <div class="form-check form-switch form-control-sm my-0 mx-2" toggle>
+                          <input class="form-check-input p-0 cursor-pointer" type="checkbox" id="reasoningMode" name="reasoningMode" />
+                          <label
+                            toggle
+                            class="form-check-label text-secondary fw-semibold cursor-pointer"
+                            for="reasoningMode"
+                            title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.">
+                            Research Mode
+                          </label>
+                        </div>
+                        <div class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-200 ms-n50 text-muted text-center">
+                          Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources.
+                        </div>
+                      <//>
+                    </div>
 
-                  <div class="d-flex w-auto align-items-center">
-                    <button
-                      class="btn btn-primary btn-sm rounded-pill px-3"
-                      type="submit"
-                      disabled=${loading}
-                      style="border-radius: 0 0 var(--bs-border-radius-sm) 0">
-                      Send
-                    </button>
+                    <div class="d-flex w-auto align-items-center">
+                      <button
+                        class="btn btn-primary btn-sm rounded-pill px-3"
+                        type="submit"
+                        disabled=${loading}
+                        style="border-radius: 0 0 var(--bs-border-radius-sm) 0">
+                        Send
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="text-center text-muted small py-1">
-                <span class="me-1" title="Your conversations are stored only on your personal device.">
-                  To maintain your privacy, we never retain your data on our systems.
-                </span>
-                Please double-check statements, as Research Optimizer can make mistakes.
+                <div class="text-center text-muted small py-1">
+                  <span class="me-1" title="Your conversations are stored only on your personal device.">
+                    To maintain your privacy, we never retain your data on our systems.
+                  </span>
+                  Please double-check statements, as Research Optimizer can make mistakes.
+                </div>
               </div>
             </div>
           </form>
