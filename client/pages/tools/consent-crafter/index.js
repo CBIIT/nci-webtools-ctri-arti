@@ -118,6 +118,37 @@ function TreeSelect(props) {
   `;
 }
 
+// ============= FileInputWithDisplay Component =============
+
+function FileInputWithDisplay(props) {
+  const { filename, inputId, inputName, accept, onFileSelect, onClear } = props;
+  
+  return html`
+    <${Show} when=${filename} fallback=${html`
+      <input 
+        type="file" 
+        id=${inputId} 
+        name=${inputName}
+        class="form-control form-control-sm mb-3"
+        accept=${accept} 
+        onChange=${onFileSelect} 
+      />
+    `}>
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <div class="form-control form-control-sm d-flex justify-content-between align-items-center">
+          <span class="text-truncate" title=${filename}>${filename}</span>
+          <button 
+            type="button" 
+            class="btn-close btn-close-sm" 
+            aria-label="Clear file" 
+            onClick=${onClear}
+          ></button>
+        </div>
+      </div>
+    <//>
+  `;
+}
+
 // ============= Main Component =============
 
 export default function Page() {
@@ -131,10 +162,12 @@ export default function Page() {
     
     // Input state
     inputText: "",
+    inputTextFilename: "",
     
     // Template state  
     selectedTemplates: [],
     customTemplate: null, // ArrayBuffer for custom template
+    customTemplateFilename: "",
     customSystemPrompt: "",
     
     // Advanced options (keep exact same UI)
@@ -208,6 +241,14 @@ export default function Page() {
       const sessionId = new URLSearchParams(window.location.search).get('id');
       if (sessionId) {
         await loadSession(sessionId);
+        
+        // Auto-restart any interrupted jobs (documents with "processing" status)
+        const interruptedDocs = Object.entries(store.generatedDocuments)
+          .filter(([id, doc]) => doc.status === "processing");
+
+        for (const [templateId] of interruptedDocs) {
+          retryTemplate(templateId);
+        }
       }
     }
   });
@@ -269,8 +310,10 @@ export default function Page() {
 
     if (name === "outputTemplateFile") {
       setStore('customTemplate', bytes);
+      setStore('customTemplateFilename', file.name);
     } else if (name === "inputTextFile") {
       setStore('inputText', "Reading file...");
+      setStore('inputTextFilename', file.name);
       setStore('generatedDocuments', {});
       const text = await parseDocument(bytes, file.type, file.name);
       setStore('inputText', text);
@@ -284,6 +327,91 @@ export default function Page() {
   }
 
   // ============= Template Processing =============
+
+  async function processSingleTemplate(templateId, text) {
+    // Set status to processing
+    setStore('generatedDocuments', templateId, { 
+      status: "processing", 
+      blob: null, 
+      content: null,
+      error: null 
+    });
+
+    // Save state immediately after setting processing status
+    await saveSession(false);
+
+    try {
+      let templateFile, systemPrompt, defaultOutputData;
+
+      if (templateId === "custom") {
+        // Handle custom template
+        systemPrompt = store.customSystemPrompt;
+        defaultOutputData = templateConfigs["nih-cc-adult-healthy"].defaultOutput; // Use NIH consent output structure for custom
+        templateFile = store.customTemplate;
+      } else if (templateId === "predefined-custom") {
+        // Handle predefined template with optional custom prompt
+        const config = templateConfigs[store.selectedPredefinedTemplate];
+        systemPrompt = store.customSystemPrompt.trim() || (await getPrompt(store.selectedPredefinedTemplate));
+        defaultOutputData = config.defaultOutput;
+        templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
+      } else {
+        // Handle predefined templates
+        const config = templateConfigs[templateId];
+        systemPrompt = await getPrompt(templateId);
+        defaultOutputData = config.defaultOutput;
+        templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
+      }
+
+      const system = "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
+
+      // Extract data using AI
+      const params = {
+        model: store.model,
+        messages: [{ role: "user", content: [{ text: systemPrompt.replace("{{document}}", "see above") }] }],
+        system: system.replace("{{document}}", text),
+        stream: false,
+      };
+      const output = await runModel(params);
+      const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || 
+        output.match(/{\s*[\s\S]*?}/)?.[0] || "{}";
+
+      const data = { ...defaultOutputData, ...yaml.parse(jsonOutput) };
+
+      // Generate document
+      const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const cmdDelimiter = ["{{", "}}"];
+      const buffer = await createReport({ template: templateFile, data, cmdDelimiter });
+      const blob = new Blob([buffer], { type });
+
+      // Update status to completed
+      setStore('generatedDocuments', templateId, { 
+        status: "completed", 
+        blob, 
+        content: await blobToBase64(blob),
+        error: null 
+      });
+    } catch (error) {
+      console.error(`Error processing ${templateId}:`, error);
+      setStore('generatedDocuments', templateId, { 
+        status: "error", 
+        blob: null, 
+        content: null,
+        error: error.message 
+      });
+    } finally {
+      // Update session after processing completes
+      await saveSession(false);
+    }
+  }
+
+  async function retryTemplate(templateId) {
+    const text = store.inputText;
+    if (!text) {
+      console.error('No input text available for retry');
+      return;
+    }
+    await processSingleTemplate(templateId, text);
+  }
   
   async function processSelectedTemplates(text) {
     const selected = store.selectedTemplates;
@@ -306,74 +434,16 @@ export default function Page() {
     // Initialize processing status for each template
     const initialStatus = {};
     templatesToProcess.forEach((templateId) => {
-      initialStatus[templateId] = { status: "processing", blob: null, error: null };
+      initialStatus[templateId] = { status: "processing", blob: null, content: null, error: null };
     });
     setStore('generatedDocuments', initialStatus);
 
+    // Save state immediately after setting initial processing status
+    await saveSession(false);
+
     // Process all templates in parallel
     for (const templateId of templatesToProcess) {
-      try {
-        let templateFile, systemPrompt, defaultOutputData;
-
-        if (templateId === "custom") {
-          // Handle custom template
-          systemPrompt = store.customSystemPrompt;
-          defaultOutputData = templateConfigs["nih-cc-adult-healthy"].defaultOutput; // Use NIH consent output structure for custom
-          templateFile = store.customTemplate;
-        } else if (templateId === "predefined-custom") {
-          // Handle predefined template with optional custom prompt
-          const config = templateConfigs[store.selectedPredefinedTemplate];
-          systemPrompt = store.customSystemPrompt.trim() || (await getPrompt(store.selectedPredefinedTemplate));
-          defaultOutputData = config.defaultOutput;
-          templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
-        } else {
-          // Handle predefined templates
-          const config = templateConfigs[templateId];
-          systemPrompt = await getPrompt(templateId);
-          defaultOutputData = config.defaultOutput;
-          templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
-        }
-
-        const system = "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
-
-        // Extract data using AI
-        const params = {
-          model: store.model,
-          messages: [{ role: "user", content: [{ text: systemPrompt.replace("{{document}}", "see above") }] }],
-          system: system.replace("{{document}}", text),
-          stream: false,
-        };
-        const output = await runModel(params);
-        const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || 
-          output.match(/{\s*[\s\S]*?}/)?.[0] || "{}";
-
-        const data = { ...defaultOutputData, ...yaml.parse(jsonOutput) };
-
-        // Generate document
-        const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-        const cmdDelimiter = ["{{", "}}"];
-        const buffer = await createReport({ template: templateFile, data, cmdDelimiter });
-        const blob = new Blob([buffer], { type });
-
-        // Update status to completed
-        setStore('generatedDocuments', templateId, { 
-          status: "completed", 
-          blob, 
-          content: await blobToBase64(blob),
-          error: null 
-        });
-      } catch (error) {
-        console.error(`Error processing ${templateId}:`, error);
-        setStore('generatedDocuments', templateId, { 
-          status: "error", 
-          blob: null, 
-          content: null,
-          error: error.message 
-        });
-      } finally {
-        // Update session after processing completes
-        await saveSession(false);
-      }
+      processSingleTemplate(templateId, text);
     }
   }
 
@@ -456,7 +526,9 @@ export default function Page() {
     setStore({
       id: null,
       inputText: "",
+      inputTextFilename: "",
       customTemplate: null,
+      customTemplateFilename: "",
       selectedTemplates: [],
       generatedDocuments: {},
       selectedPredefinedTemplate: "",
@@ -504,13 +576,18 @@ export default function Page() {
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
               <div class="bg-white shadow rounded p-3">
                 <label for="inputText" class="form-label text-info fs-5 mb-1">Source Document<span class="text-danger">*</span></label>
-                <input
-                  type="file"
-                  id="inputTextFile"
-                  name="inputTextFile"
-                  class="form-control form-control-sm mb-3"
+                <${FileInputWithDisplay}
+                  filename=${() => store.inputTextFilename}
+                  inputId="inputTextFile"
+                  inputName="inputTextFile"
                   accept=".txt, .docx, .pdf"
-                  onChange=${handleFileSelect} />
+                  onFileSelect=${handleFileSelect}
+                  onClear=${() => {
+                    setStore('inputTextFilename', '');
+                    setStore('inputText', '');
+                    setStore('generatedDocuments', {});
+                  }}
+                />
 
                 <!-- Template Selection -->
                 <div class="mb-3">
@@ -596,13 +673,17 @@ export default function Page() {
                         <//>
 
                         <${Show} when=${() => store.templateSourceType === "custom"}>
-                          <input
-                            type="file"
-                            id="outputTemplateFile"
-                            name="outputTemplateFile"
-                            class="form-control form-control-sm mb-2"
+                          <${FileInputWithDisplay}
+                            filename=${() => store.customTemplateFilename}
+                            inputId="outputTemplateFile"
+                            inputName="outputTemplateFile"
                             accept=".txt, .docx, .pdf"
-                            onChange=${handleFileSelect} />
+                            onFileSelect=${handleFileSelect}
+                            onClear=${() => {
+                              setStore('customTemplateFilename', '');
+                              setStore('customTemplate', null);
+                            }}
+                          />
 
                           <div class="position-relative">
                             <${ClassToggle} activeClass="show">
@@ -735,7 +816,12 @@ export default function Page() {
                               </button>
                             <//>
                             <${Show} when=${() => doc()?.status === "error"}>
-                              <div class="text-danger small text-truncate w-25" title=${() => doc().error}>Error: ${() => doc().error}</div>
+                              <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-danger"  title=${() => doc().error} 
+                                  onClick=${() => retryTemplate(templateId)}>
+                                  Retry
+                                </button>
+                              </div>
                             <//>
                           </div>
                         `;
