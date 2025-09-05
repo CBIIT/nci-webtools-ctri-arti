@@ -137,7 +137,7 @@ export async function handleHttpError(response, context = "request") {
     } else if (errorData.message) {
       errorMessage = errorData.message;
     }
-  } catch (e) {
+  } catch (_e) {
     // If we can't parse JSON, use status-based message
     switch (response.status) {
       case 400:

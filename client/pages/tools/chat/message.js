@@ -1,4 +1,4 @@
-import { createSignal, For, Show, Index } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
 import { stringify } from "yaml";
 import { parse } from "marked";
@@ -30,7 +30,7 @@ export default function Message(p) {
     await dialog()?.close();
     let feedback = e.target.feedback.value;
     let comment = e.target.comment.value;
-    const success = await fetch("/api/feedback", {
+    await fetch("/api/feedback", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -119,7 +119,7 @@ export default function Message(p) {
                     type="button"
                     class="btn btn-sm btn-outline-light border-0"
                     title="Mark as helpful"
-                    onClick=${(e) => openFeedback(true)}
+                    onClick=${() => openFeedback(true)}
                   >
                     👍
                   </button>
@@ -127,7 +127,7 @@ export default function Message(p) {
                     type="button"
                     class="btn btn-sm btn-outline-light border-0"
                     title="Mark as not helpful"
-                    onClick=${(e) => openFeedback(false)}
+                    onClick=${() => openFeedback(false)}
                   >
                     👎
                   </button>
@@ -262,7 +262,7 @@ export default function Message(p) {
           return html`<details
             class="w-100 overflow-auto p-2 rounded hover-visible-parent position-relative"
             classList=${() => ({ "shadow-sm": visible()[p.index] })}
-            open=${() => true || visible()[p.index]}
+            open=${() => true}
           >
             <summary
               class="fw-semibold px-1 mb-2"

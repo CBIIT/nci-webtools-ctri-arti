@@ -62,7 +62,8 @@ export async function browse({ url, topic }) {
     url.map(async (u) => {
       const response = await fetch("/api/browse/" + u);
       const bytes = await response.arrayBuffer();
-      const text = new TextDecoder("utf-8").decode(bytes);
+      // const text = new TextDecoder("utf-8").decode(bytes);
+
       if (!response.ok) {
         return `Failed to read ${u}: ${response.status} ${response.statusText}`;
       }
@@ -417,7 +418,6 @@ export async function code({ language, source, timeout = 5_000 }) {
  * @returns {any} - The client environment information
  */
 export function getClientContext(important = {}) {
-  const now = new Date();
   const { language, platform, deviceMemory, hardwareConcurrency } = navigator;
   const timeFormat = Intl.DateTimeFormat().resolvedOptions();
   const time = new Date().toDateString();

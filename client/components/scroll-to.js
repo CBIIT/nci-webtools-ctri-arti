@@ -1,4 +1,3 @@
-import { splitProps } from "solid-js";
 import html from "solid-js/html";
 
 /**

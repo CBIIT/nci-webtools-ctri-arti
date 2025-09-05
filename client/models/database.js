@@ -104,7 +104,7 @@ export class ConversationDB {
   /**
    * Database schema upgrade function
    */
-  upgradeDB(db, oldVersion, newVersion) {
+  upgradeDB(db, _oldVersion, _newVersion) {
     // Projects store
     if (!db.objectStoreNames.contains("projects")) {
       const projectStore = db.createObjectStore("projects", { keyPath: "id" });
@@ -728,7 +728,7 @@ class ConversationDBFactory {
    * Close all database instances
    */
   async closeAll() {
-    for (const [email, db] of this.instances) {
+    for (const [_email, db] of this.instances) {
       await db.close();
     }
     this.instances.clear();

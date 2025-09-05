@@ -1,14 +1,8 @@
-import { createSignal, createEffect, createMemo, For, Show } from "solid-js";
+import { createSignal, createMemo, For, Show } from "solid-js";
 import { createResource } from "solid-js";
 import html from "solid-js/html";
 import { capitalize } from "/utils/utils.js";
 import { DataTable } from "/components/table.js";
-
-// Helper function (can be at the top level or inside UsersList if preferred)
-const range = (start, end) => {
-  const length = end - start + 1;
-  return Array.from({ length }, (_, i) => start + i);
-};
 
 // Shared date range utilities
 export const VALID_DATE_RANGES = [
@@ -109,7 +103,7 @@ function UsersList() {
   });
 
   // Create resource for fetching analytics data
-  const [analyticsResource] = createResource(
+  const [_analyticsResource] = createResource(
     () => currentDateRange(),
     ({ startDate, endDate }) =>
       fetch(`/api/admin/analytics?groupBy=user&startDate=${startDate}&endDate=${endDate}`).then(

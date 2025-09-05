@@ -6,19 +6,10 @@ import { createStore } from "solid-js/store";
 import html from "solid-js/html";
 import { render } from "solid-js/web";
 
-// Utility function to wait for a condition to be true
-const waitFor = async (condition, timeout = 1000) => {
-  const start = Date.now();
-  while (!condition()) {
-    if (Date.now() - start > timeout) throw new Error("Timeout waiting for condition");
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  }
-};
-
 test("SolidJS README Patterns", async (t) => {
   await t.test("signals auto-wrapped", () => {
     function Counter() {
-      const [count, setCount] = createSignal(5);
+      const [count] = createSignal(5);
 
       return html`<div>${count}</div>`;
     }
@@ -29,7 +20,7 @@ test("SolidJS README Patterns", async (t) => {
 
   await t.test("store properties always wrapped", () => {
     function UserCard() {
-      const [user, setUser] = createStore({ name: "John", age: 25 });
+      const [user] = createStore({ name: "John", age: 25 });
 
       return html`<div>${() => user.name} is ${() => user.age}</div>`;
     }
@@ -40,7 +31,7 @@ test("SolidJS README Patterns", async (t) => {
 
   await t.test("signal properties manual wrap", () => {
     function UserProfile() {
-      const [user, setUser] = createSignal({ name: "Jane", email: "jane@test.com" });
+      const [user] = createSignal({ name: "Jane", email: "jane@test.com" });
 
       return html`<div>${() => user().name}: ${() => user().email}</div>`;
     }
@@ -51,7 +42,7 @@ test("SolidJS README Patterns", async (t) => {
 
   await t.test("memos auto-wrapped", () => {
     function Calculator() {
-      const [count, setCount] = createSignal(5);
+      const [count] = createSignal(5);
       const doubled = createMemo(() => count() * 2);
 
       return html`<div>${doubled}</div>`;
@@ -63,8 +54,8 @@ test("SolidJS README Patterns", async (t) => {
 
   await t.test("computations manual wrap", () => {
     function Calculator() {
-      const [a, setA] = createSignal(3);
-      const [b, setB] = createSignal(4);
+      const [a] = createSignal(3);
+      const [b] = createSignal(4);
 
       return html`<div>${() => a() + b()}</div>`;
     }
@@ -85,8 +76,8 @@ test("SolidJS README Patterns", async (t) => {
 
   await t.test("dynamic class names", () => {
     function StatusCard() {
-      const [isActive, setIsActive] = createSignal(true);
-      const [theme, setTheme] = createSignal("dark");
+      const [isActive] = createSignal(true);
+      const [theme] = createSignal("dark");
 
       const classes = () => ["card", theme(), isActive() ? "active" : ""].filter(Boolean).join(" ");
 
@@ -99,7 +90,7 @@ test("SolidJS README Patterns", async (t) => {
 
   await t.test("classList syntax", () => {
     function ConditionalCard() {
-      const [theme, setTheme] = createSignal("dark");
+      const [theme] = createSignal("dark");
 
       return html`<div
         classList=${{
@@ -118,7 +109,7 @@ test("SolidJS README Patterns", async (t) => {
 
   await t.test("control flow - Show", () => {
     function UserGreeting() {
-      const [user, setUser] = createSignal({ name: "Alice" });
+      const [user] = createSignal({ name: "Alice" });
 
       return html`
         <div>

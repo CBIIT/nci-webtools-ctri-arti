@@ -1,4 +1,5 @@
 import { HNSW } from "../utils/hnsw.js";
+import { Buffer } from "node:buffer";
 
 /**
  * Base embedder interface
@@ -13,7 +14,7 @@ export class BaseEmbedder {
    * @param {string} text
    * @returns {Promise<Float32Array>}
    */
-  async embed(text) {
+  async embed(_text) {
     throw new Error("embed method must be implemented");
   }
 
@@ -99,7 +100,7 @@ export class TransformersEmbedder extends BaseEmbedder {
     throw new Error("TransformersEmbedder not implemented - requires @xenova/transformers");
   }
 
-  async embed(text) {
+  async embed(_text) {
     if (!this.pipeline) {
       await this.init();
     }

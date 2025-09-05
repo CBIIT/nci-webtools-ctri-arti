@@ -250,7 +250,7 @@ export default function Footer() {
       </div>
       <button
         class="btn btn-secondary btn-sm rounded-start-pill position-fixed end-0 bottom-0 border-bottom-start-0 border-0 visible-scroll ps-4 pt-4 pe-2 pb-2 text-transform-uppercase"
-        onClick=${(e) => scrollTo(0, 0)}
+        onClick=${() => scrollTo(0, 0)}
       >
         BACK TO <br />
         TOP

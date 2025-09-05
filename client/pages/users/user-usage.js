@@ -1,4 +1,4 @@
-import { createSignal, createResource, createMemo, Show, For } from "solid-js";
+import { createSignal, createResource, createMemo, Show } from "solid-js";
 import html from "solid-js/html";
 import { useParams, useSearchParams } from "@solidjs/router";
 import { formatDate, getDefaultStartDate, calculateDateRange, validateDateRange } from "./usage.js";
@@ -39,7 +39,7 @@ function UserUsage() {
     fetch(`/api/admin/users/${userId}`).then((res) => res.json())
   );
 
-  const [analyticsData, { refetch }] = createResource(
+  const [analyticsData] = createResource(
     () => currentDateRange(),
     ({ startDate, endDate }) =>
       fetch(

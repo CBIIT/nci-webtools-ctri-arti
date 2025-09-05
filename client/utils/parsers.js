@@ -11,7 +11,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
  * @param {string} mimetype
  * @returns {Promise<string>}
  */
-export async function parseDocument(buffer, mimetype = null) {
+export async function parseDocument(buffer, _mimetype = null) {
   const filetype = detectFileType(buffer);
   const text = new TextDecoder("utf-8").decode(buffer);
   switch (filetype) {
@@ -64,7 +64,7 @@ export function parseStreamingJson(incompleteJson) {
 
   try {
     return JSON.parse(incompleteJson);
-  } catch (e) {
+  } catch (_e) {
     // Continue with auto-completion logic
   }
 
@@ -122,7 +122,7 @@ export function parseStreamingJson(incompleteJson) {
   // Try to parse the fixed JSON string
   try {
     return JSON.parse(str);
-  } catch (e) {
+  } catch (_e) {
     return incompleteJson;
   }
 }

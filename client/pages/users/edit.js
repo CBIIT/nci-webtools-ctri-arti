@@ -18,7 +18,7 @@ function UserEdit() {
     noLimit: false,
   });
   const [originalLimit, setOriginalLimit] = createSignal(0);
-  const [generateApiKey, setGenerateApiKey] = createSignal(false);
+  const [generateApiKey] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
 
   // Default value mapping based on role ID
@@ -114,17 +114,6 @@ function UserEdit() {
       noLimit: checked,
       limit: checked ? null : DEFAULT_ROLE_LIMITS[prev.roleId]?.limit || 0,
     }));
-  }
-
-  function copyToClipboard(text) {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        alert("API Key copied to clipboard!");
-      })
-      .catch((err) => {
-        console.error("Could not copy text: ", err);
-      });
   }
 
   return html`

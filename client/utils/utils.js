@@ -146,7 +146,7 @@ export function convertToAccessorOptions(options) {
 
   // Create a new object where each property is wrapped in createMemo
   return Object.entries(resolvedOptions).reduce(
-    (reactiveOptions, [key, value]) => {
+    (reactiveOptions, [key, _value]) => {
       // Use createMemo to make each property access reactive
       reactiveOptions[key] = createMemo(() => {
         // If the original options object was itself reactive,

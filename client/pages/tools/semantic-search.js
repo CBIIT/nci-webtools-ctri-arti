@@ -4,7 +4,6 @@ import html from "solid-js/html";
 import { pipeline } from "@huggingface/transformers";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { HNSW } from "/utils/hnsw.js";
-import { createEmbedder } from "/utils/similarity.js";
 
 // Utility function to read file as text
 const readFile = (file) =>
@@ -18,9 +17,10 @@ const readFile = (file) =>
 const createSearchPipeline = async (files, settings) => {
   if (!files.length) return null;
 
+  // Always use window.embedder
   window.embedder ||= await pipeline(
     "feature-extraction",
-    "onnx-community/Qwen3-Embedding-0.6B-ONNX",
+    settings.model || "onnx-community/Qwen3-Embedding-0.6B-ONNX",
     {
       revision: "main",
       device: navigator.gpu ? "webgpu" : undefined,
@@ -52,7 +52,7 @@ const createSearchPipeline = async (files, settings) => {
   const batchSize = 5;
   for (let i = 0; i < chunks.length; i += batchSize) {
     const batch = chunks.slice(i, i + batchSize);
-    const embeddings = await embedder(batch.map((c) => c.text));
+    const embeddings = await window.embedder(batch.map((c) => c.text));
     batch.forEach((chunk, j) => (chunk.embedding = embeddings[j]));
   }
 
@@ -67,7 +67,7 @@ const createSearchPipeline = async (files, settings) => {
 
   // Return search function
   return async (query, limit = 5) => {
-    const [queryEmbedding] = await embedder([query]);
+    const [queryEmbedding] = await window.embedder([query]);
     const results = index.searchKNN(queryEmbedding, limit);
     return results.map((r) => ({
       ...chunks.find((c) => c.id === r.id),
@@ -94,8 +94,8 @@ export default function Page() {
 
   // Memoized search function
   const searchFn = createMemo(async () => {
-    const filesKey = state.files.map((f) => `${f.name}-${f.size}-${f.lastModified}`).join("|");
-    const settingsKey = JSON.stringify(state.settings);
+    // const filesKey = state.files.map((f) => `${f.name}-${f.size}-${f.lastModified}`).join("|");
+    // const settingsKey = JSON.stringify(state.settings);
 
     // This will only recompute when files or settings change
     setState("loading", true);

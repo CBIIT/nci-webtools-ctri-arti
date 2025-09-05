@@ -11,7 +11,6 @@ import html from "solid-js/html";
 export default function ClassToggle(props) {
   let el = null;
   const resolved = children(() => props.children);
-  const trigger = resolved().find((child) => child.hasAttribute("toggle"));
   const content = resolved().filter((child) => !child.hasAttribute("toggle"));
   const toggle = () => content.forEach((c) => c.classList.toggle(props.activeClass || "show"));
   const hide = () => content.forEach((c) => c.classList.remove(props.activeClass || "show"));

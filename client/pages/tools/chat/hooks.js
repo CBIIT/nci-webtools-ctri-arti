@@ -39,7 +39,7 @@ export function normalizeMessageContent(content) {
       }
       // If parsed but not array, treat as text
       return [{ text: String(parsed) }];
-    } catch (error) {
+    } catch (_error) {
       // Not JSON, treat as plain text
       return [{ text: content }];
     }
@@ -305,8 +305,7 @@ export function useChat() {
         let [name, format] = splitFilename(file.name);
         if (format === "jpg") format = "jpeg"; //bedrock
         name =
-          name.replace(/[^a-zA-Z0-9\s\[\]\(\)\-]/g, "_").replace(/\s{2,}/g, " ") +
-          new Date().getTime();
+          name.replace(/[^a-zA-Z0-9\s[\]()-]/g, "_").replace(/\s{2,}/g, " ") + new Date().getTime();
         const bytes = await fileToBase64(file, true);
         const contentType = imageTypes.includes(format) ? "image" : "document";
         if (!documentTypes.concat(imageTypes).includes(format)) format = "txt";

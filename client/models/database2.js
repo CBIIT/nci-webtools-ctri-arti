@@ -2,7 +2,7 @@
  * Simple, KISS approach to user-scoped database with project-based storage
  */
 import { openDB, deleteDB } from "idb";
-import { DEFAULT_PROJECTS, PROJECT_IDS } from "./seed-data.js";
+import { DEFAULT_PROJECTS } from "./seed-data.js";
 
 /**
  * User-scoped database with project-based storage

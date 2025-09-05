@@ -13,22 +13,14 @@ import Loader from "/components/loader.js";
 import ClassToggle from "/components/class-toggle.js";
 import ScrollTo from "/components/scroll-to.js";
 import { AlertContainer } from "/components/alert.js";
-import { downloadCsv, downloadJson } from "/utils/files.js";
 import { useChat } from "./hooks.js";
 import Message from "./message.js";
 import { alerts, clearAlert } from "/utils/alerts.js";
 
 export default function Page() {
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
-  const {
-    conversation,
-    updateConversation,
-    deleteConversation,
-    conversations,
-    messages,
-    loading,
-    submitMessage,
-  } = useChat();
+  const { conversation, deleteConversation, conversations, messages, loading, submitMessage } =
+    useChat();
   const [toggles, setToggles] = createSignal({ conversations: true });
   const [filenames, setFilenames] = createSignal([]);
   const [isAtBottom, setIsAtBottom] = createSignal(true);

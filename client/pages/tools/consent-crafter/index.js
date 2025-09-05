@@ -1,5 +1,5 @@
 import html from "solid-js/html";
-import { Show, For, createResource, createEffect, createMemo, onMount, on } from "solid-js";
+import { Show, For, createResource, createEffect, createMemo } from "solid-js";
 import { createStore, unwrap } from "solid-js/store";
 // import { trackStore } from "@solid-primitives/deep";
 import { openDB } from "idb";
@@ -252,7 +252,7 @@ export default function Page() {
 
         // Auto-restart any interrupted jobs (documents with "processing" status)
         const interruptedDocs = Object.entries(store.generatedDocuments).filter(
-          ([id, doc]) => doc.status === "processing"
+          ([_id, doc]) => doc.status === "processing"
         );
 
         for (const [templateId] of interruptedDocs) {

@@ -8,7 +8,7 @@ export default function PrivacyNotice() {
     const session = await fetch("/api/session").then((res) => res.json());
     return session.user ? !getCookie("privacyNoticeAccepted") : false;
   });
-  const onSubmit = (e) => setCookie("privacyNoticeAccepted", "true");
+  const onSubmit = () => setCookie("privacyNoticeAccepted", "true");
   const title = html`
     <div class="w-100 text-center">
       <h1 class="font-title fs-4 mb-3">

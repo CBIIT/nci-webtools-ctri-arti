@@ -29,7 +29,7 @@ export default function Modal(props) {
     <dialog
       class="modal modal-lg border-0 show"
       open=${() => props.open}
-      onClose=${(e) => props.setOpen?.(false)}
+      onClose=${() => props.setOpen?.(false)}
       onSubmit=${(e) => props.onSubmit?.(e)}
     >
       <form

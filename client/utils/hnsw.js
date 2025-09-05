@@ -651,7 +651,7 @@ export class HNSWWithDB extends HNSW {
     try {
       await deleteDB(this.dbName);
       this.initDB();
-    } catch (error) {
+    } catch (_error) {
       // console.error('Failed to delete index:', error);
     }
   }

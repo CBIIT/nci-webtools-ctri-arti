@@ -14,7 +14,7 @@ export async function inference(
     { role: "user", content: "Please tell me the meaning of life." },
   ],
   model = "onnx-community/Qwen3-0.6B-ONNX",
-  callback_function = (text) => {},
+  callback_function = (_text) => {},
   max_new_tokens = 512,
   dtype = "q4f16",
   device = navigator.gpu ? "webgpu" : undefined
@@ -71,7 +71,7 @@ export async function createEmbedder(model_name = "minishlab/potion-base-8M", op
    * @param {string[]} texts - Array of texts to embed
    * @returns {Promise<number[][]>} - Text embeddings
    */
-  return async function embed(texts, tokenizer_options = {}) {
+  return async function embed(texts, _tokenizer_options = {}) {
     // Tokenize inputs
     const { input_ids } = await tokenizer(texts, {
       add_special_tokens: false,
