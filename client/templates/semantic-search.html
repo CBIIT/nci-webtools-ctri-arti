@@ -1,11 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Semantic Search with HNSW</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
     <script type="importmap">
       {
         "imports": {
@@ -32,18 +38,19 @@
       import { createEmbedder } from "/utils/similarity.js";
 
       // Utility function to read file as text
-      const readFile = (file) => new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsText(file);
-      });
+      const readFile = (file) =>
+        new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsText(file);
+        });
 
       // Memoizable search pipeline factory
       const createSearchPipeline = async (files, settings) => {
         if (!files.length) return null;
 
         const embedder = await createEmbedder(settings.model, {
-          device: navigator?.gpu ? "webgpu" : undefined
+          device: navigator?.gpu ? "webgpu" : undefined,
         });
 
         const splitter = new RecursiveCharacterTextSplitter({
@@ -57,37 +64,39 @@
         for (const file of files) {
           const content = await readFile(file);
           const fileChunks = await splitter.splitText(content);
-          chunks.push(...fileChunks.map((text, idx) => ({
-            id: `${file.name}-${idx}`,
-            text,
-            source: file.name,
-          })));
+          chunks.push(
+            ...fileChunks.map((text, idx) => ({
+              id: `${file.name}-${idx}`,
+              text,
+              source: file.name,
+            }))
+          );
         }
 
         // Generate embeddings
         const batchSize = 5;
         for (let i = 0; i < chunks.length; i += batchSize) {
           const batch = chunks.slice(i, i + batchSize);
-          const embeddings = await embedder(batch.map(c => c.text));
-          batch.forEach((chunk, j) => chunk.embedding = embeddings[j]);
+          const embeddings = await embedder(batch.map((c) => c.text));
+          batch.forEach((chunk, j) => (chunk.embedding = embeddings[j]));
         }
 
         // Build HNSW index
         const index = new HNSW(
-          settings.hnswParams.M, 
+          settings.hnswParams.M,
           settings.hnswParams.efConstruction,
           chunks[0].embedding.length,
           "cosine"
         );
-        await index.buildIndex(chunks.map(c => ({ id: c.id, vector: c.embedding })));
+        await index.buildIndex(chunks.map((c) => ({ id: c.id, vector: c.embedding })));
 
         // Return search function
         return async (query, limit = 5) => {
           const [queryEmbedding] = await embedder([query]);
           const results = index.searchKNN(queryEmbedding, limit);
-          return results.map(r => ({
-            ...chunks.find(c => c.id === r.id),
-            similarity: r.score
+          return results.map((r) => ({
+            ...chunks.find((c) => c.id === r.id),
+            similarity: r.score,
           }));
         };
       };
@@ -96,27 +105,29 @@
       function App() {
         const [state, setState] = createStore({
           files: [],
-          query: '',
+          query: "",
           results: [],
           loading: false,
-          status: '',
+          status: "",
           settings: {
             chunkSize: 1000,
             chunkOverlap: 200,
             hnswParams: { M: 16, efConstruction: 200 },
             model: "minishlab/potion-retrieval-32M",
-          }
+          },
         });
 
         // Memoized search function
         const searchFn = createMemo(async () => {
-          const filesKey = state.files.map(f => `${f.name}-${f.size}-${f.lastModified}`).join('|');
+          const filesKey = state.files
+            .map((f) => `${f.name}-${f.size}-${f.lastModified}`)
+            .join("|");
           const settingsKey = JSON.stringify(state.settings);
-          
+
           // This will only recompute when files or settings change
           setState("loading", true);
           setState("status", "Indexing");
-          
+
           try {
             const fn = await createSearchPipeline(state.files, state.settings);
             setState("loading", false);
@@ -153,17 +164,18 @@
           e.preventDefault();
           setState({
             files: [],
-            query: '',
+            query: "",
             results: [],
             loading: false,
-            status: ''
+            status: "",
           });
-          e.target.fileInput.value = '';
+          e.target.fileInput.value = "";
         };
 
         const placeholder = createMemo(() => {
           if (!state.files.length) return "Upload documents to search";
-          if (state.files.length <= 5) return `Search in ${state.files.map(f => f.name).join(', ')}`;
+          if (state.files.length <= 5)
+            return `Search in ${state.files.map((f) => f.name).join(", ")}`;
           return `Search in ${state.files.length} files`;
         });
 
@@ -173,14 +185,14 @@
               <h1>Semantic Search</h1>
               <p class="text-muted">Upload documents, then search using natural language queries</p>
             </header>
-            
+
             <div class="container px-4 py-2">
               <div class="mb-4">
                 <form onSubmit=${handleSearch} onReset=${handleReset}>
                   <div class="input-group mb-3">
                     <label for="fileInput" class="btn btn-secondary">Upload</label>
-                    <input 
-                      type="file" 
+                    <input
+                      type="file"
                       id="fileInput"
                       name="fileInput"
                       onInput=${handleFileInput}
@@ -204,7 +216,7 @@
                       <//>
                     </button>
                   </div>
-                  
+
                   <details class="mb-3">
                     <summary class="small mb-2">Settings</summary>
                     <div class="row g-2 mb-3">
@@ -223,7 +235,8 @@
                           type="number"
                           class="form-control form-control-sm"
                           value=${() => state.settings.chunkSize}
-                          onInput=${(e) => setState("settings", "chunkSize", parseInt(e.target.value))}
+                          onInput=${(e) =>
+                            setState("settings", "chunkSize", parseInt(e.target.value))}
                         />
                       </div>
                       <div class="col">
@@ -232,14 +245,15 @@
                           type="number"
                           class="form-control form-control-sm"
                           value=${() => state.settings.chunkOverlap}
-                          onInput=${(e) => setState("settings", "chunkOverlap", parseInt(e.target.value))}
+                          onInput=${(e) =>
+                            setState("settings", "chunkOverlap", parseInt(e.target.value))}
                         />
                       </div>
                     </div>
                   </details>
                 </form>
               </div>
-              
+
               <div class="mb-4">
                 <div class="list-group list-group-flush">
                   <${For} each=${() => state.results}>

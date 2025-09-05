@@ -2,7 +2,8 @@ import dompurify from "dompurify";
 import TurndownService from "turndown";
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@5/build/pdf.worker.min.mjs";
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdn.jsdelivr.net/npm/pdfjs-dist@5/build/pdf.worker.min.mjs";
 
 /**
  * Returns the text content of a document
@@ -10,7 +11,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dis
  * @param {string} mimetype
  * @returns {Promise<string>}
  */
-export async function parseDocument(buffer, mimetype = null) {
+export async function parseDocument(buffer, _mimetype = null) {
   const filetype = detectFileType(buffer);
   const text = new TextDecoder("utf-8").decode(buffer);
   switch (filetype) {
@@ -19,7 +20,9 @@ export async function parseDocument(buffer, mimetype = null) {
     case "DOCX":
       return await parseDocx(buffer);
     case "HTML":
-      return new TurndownService().turndown(dompurify.sanitize(text, {FORBID_TAGS: ['style', 'script']}));
+      return new TurndownService().turndown(
+        dompurify.sanitize(text, { FORBID_TAGS: ["style", "script"] })
+      );
     default:
       return text;
   }
@@ -61,7 +64,7 @@ export function parseStreamingJson(incompleteJson) {
 
   try {
     return JSON.parse(incompleteJson);
-  } catch (e) {
+  } catch (_e) {
     // Continue with auto-completion logic
   }
 
@@ -119,7 +122,7 @@ export function parseStreamingJson(incompleteJson) {
   // Try to parse the fixed JSON string
   try {
     return JSON.parse(str);
-  } catch (e) {
+  } catch (_e) {
     return incompleteJson;
   }
 }
@@ -200,7 +203,6 @@ export function detectFileType(buffer) {
 
   return isTextFile(bytes) ? "TEXT" : "BINARY";
 }
-
 
 /**
  * Helper function to convert a byte array to a string

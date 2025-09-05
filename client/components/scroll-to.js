@@ -1,4 +1,3 @@
-import { splitProps } from "solid-js";
 import html from "solid-js/html";
 
 /**
@@ -48,4 +47,3 @@ export default function ScrollTo(props) {
     </button>
   </div>`;
 }
-

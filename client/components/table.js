@@ -6,36 +6,36 @@ export function DataTable(props) {
   const [internalPage, setInternalPage] = createSignal(1);
   const [internalSort, setInternalSort] = createSignal("");
   const [internalOrder, setInternalOrder] = createSignal("asc");
-  
+
   const isRemote = props.remote || false;
   const rowsPerPage = props.rowsPerPage || 20;
-  
+
   // Use controlled props for remote, internal state for local
-  const currentPage = () => isRemote ? (props.page || 1) : internalPage();
-  const sortColumn = () => isRemote ? (props.sortColumn || "") : internalSort();
-  const sortOrder = () => isRemote ? (props.sortOrder || "asc") : internalOrder();
+  const currentPage = () => (isRemote ? props.page || 1 : internalPage());
+  const sortColumn = () => (isRemote ? props.sortColumn || "" : internalSort());
+  const sortOrder = () => (isRemote ? props.sortOrder || "asc" : internalOrder());
   const searchQuery = () => props.search || "";
-  
+
   const processedData = createMemo(() => {
     if (isRemote) {
       // For remote pagination, data is already processed by server
       return props.data || [];
     }
-    
+
     // Local processing: filter, sort, then paginate
     let data = props.data || [];
-    
+
     // Filter
     if (searchQuery()) {
       const query = searchQuery().toLowerCase();
-      data = data.filter(row => {
-        return props.columns.some(col => {
+      data = data.filter((row) => {
+        return props.columns.some((col) => {
           const value = String(row[col.key] || "").toLowerCase();
           return value.includes(query);
         });
       });
     }
-    
+
     // Sort
     if (sortColumn()) {
       data = [...data].sort((a, b) => {
@@ -43,7 +43,7 @@ export function DataTable(props) {
         const order = sortOrder();
         let valA = a[column];
         let valB = b[column];
-        
+
         // Basic sorting
         let comparison = 0;
         if (typeof valA === "number" && typeof valB === "number") {
@@ -53,17 +53,17 @@ export function DataTable(props) {
           const strB = String(valB || "").toLowerCase();
           comparison = strA.localeCompare(strB);
         }
-        
+
         return order === "asc" ? comparison : -comparison;
       });
     }
-    
+
     // Paginate
     const start = (currentPage() - 1) * rowsPerPage;
     const end = start + rowsPerPage;
     return data.slice(start, end);
   });
-  
+
   const totalPages = createMemo(() => {
     if (isRemote) {
       // For remote pagination, get total from props
@@ -73,8 +73,8 @@ export function DataTable(props) {
       let data = props.data || [];
       if (searchQuery()) {
         const query = searchQuery().toLowerCase();
-        data = data.filter(row => {
-          return props.columns.some(col => {
+        data = data.filter((row) => {
+          return props.columns.some((col) => {
             const value = String(row[col.key] || "").toLowerCase();
             return value.includes(query);
           });
@@ -83,11 +83,10 @@ export function DataTable(props) {
       return Math.ceil(data.length / rowsPerPage);
     }
   });
-  
+
   const handleSort = (columnKey) => {
-    const newOrder = sortColumn() === columnKey ? 
-      (sortOrder() === "asc" ? "desc" : "asc") : "asc";
-    
+    const newOrder = sortColumn() === columnKey ? (sortOrder() === "asc" ? "desc" : "asc") : "asc";
+
     if (isRemote) {
       // For remote, call callback - parent manages state
       if (props.onSort) {
@@ -95,7 +94,7 @@ export function DataTable(props) {
           column: columnKey,
           order: newOrder,
           page: 1,
-          search: searchQuery()
+          search: searchQuery(),
         });
       }
     } else {
@@ -114,7 +113,7 @@ export function DataTable(props) {
           page: newPage,
           search: searchQuery(),
           column: sortColumn(),
-          order: sortOrder()
+          order: sortOrder(),
         });
       }
     } else {
@@ -124,41 +123,50 @@ export function DataTable(props) {
   };
 
   return html`
-    <div class=${() => `table-responsive rounded ${props.className || ''}`}>
+    <div class=${() => `table-responsive rounded ${props.className || ""}`}>
       <table class="table table-striped table-hover mb-0">
         <thead>
           <tr>
             <${For} each=${() => props.columns}>
               ${(col) => html`
-                <th 
+                <th
                   class="user-select-none"
                   classList=${{ [col.className]: true }}
-                  onClick=${() => col.key ? handleSort(col.key) : null}
-                  style=${{ cursor: col.key ? 'pointer' : 'default' }}>
+                  onClick=${() => (col.key ? handleSort(col.key) : null)}
+                  style=${{ cursor: col.key ? "pointer" : "default" }}
+                >
                   ${col.title}
-                  ${() => sortColumn() === col.key ? (sortOrder() === "asc" ? " ↑" : " ↓") : ""}
+                  ${() => (sortColumn() === col.key ? (sortOrder() === "asc" ? " ↑" : " ↓") : "")}
                 </th>
               `}
             <//>
           </tr>
         </thead>
         <tbody>
-          <${For} each=${processedData} fallback=${
-            props.emptyState ? props.emptyState : html`
-              <tr>
-                <td colspan=${props.columns.length} class="text-center py-4">
-                  ${props.loading ? html`
-                    <div class="d-flex justify-content-center align-items-center">
-                      <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                      </div>
-                      ${props.loadingText || "Loading..."}
-                    </div>
-                  ` : "No data available."}
-                </td>
-              </tr>
-            `
-          }>
+          <${For}
+            each=${processedData}
+            fallback=${props.emptyState
+              ? props.emptyState
+              : html`
+                  <tr>
+                    <td colspan=${props.columns.length} class="text-center py-4">
+                      ${props.loading
+                        ? html`
+                            <div class="d-flex justify-content-center align-items-center">
+                              <div
+                                class="spinner-border spinner-border-sm text-primary me-2"
+                                role="status"
+                              >
+                                <span class="visually-hidden">Loading...</span>
+                              </div>
+                              ${props.loadingText || "Loading..."}
+                            </div>
+                          `
+                        : "No data available."}
+                    </td>
+                  </tr>
+                `}
+          >
             ${(row) => html`
               <tr>
                 <${For} each=${() => props.columns}>
@@ -173,20 +181,22 @@ export function DataTable(props) {
           <//>
         </tbody>
       </table>
-      
+
       <div class="d-flex justify-content-between p-2">
         <div>Page ${currentPage} of ${totalPages}</div>
         <div>
-          <button 
-            class="btn btn-sm btn-outline-primary me-2" 
+          <button
+            class="btn btn-sm btn-outline-primary me-2"
             onClick=${() => handlePageChange(Math.max(1, currentPage() - 1))}
-            disabled=${() => currentPage() === 1}>
+            disabled=${() => currentPage() === 1}
+          >
             Previous
           </button>
-          <button 
-            class="btn btn-sm btn-outline-primary" 
+          <button
+            class="btn btn-sm btn-outline-primary"
             onClick=${() => handlePageChange(Math.min(totalPages(), currentPage() + 1))}
-            disabled=${() => currentPage() === totalPages()}>
+            disabled=${() => currentPage() === totalPages()}
+          >
             Next
           </button>
         </div>

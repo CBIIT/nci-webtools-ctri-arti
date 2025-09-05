@@ -49,7 +49,8 @@ export function xmlToJson(xmlString) {
     // Single text/CDATA child case - simple representation
     if (
       node.childNodes.length === 1 &&
-      (node.childNodes[0].nodeType === Node.TEXT_NODE || node.childNodes[0].nodeType === Node.CDATA_SECTION_NODE)
+      (node.childNodes[0].nodeType === Node.TEXT_NODE ||
+        node.childNodes[0].nodeType === Node.CDATA_SECTION_NODE)
     ) {
       const text = node.childNodes[0].nodeValue.trim();
       if (text) {
@@ -87,7 +88,10 @@ export function xmlToJson(xmlString) {
           } else {
             result[childName].push(childJson);
           }
-        } else if (child.nodeType === Node.TEXT_NODE || child.nodeType === Node.CDATA_SECTION_NODE) {
+        } else if (
+          child.nodeType === Node.TEXT_NODE ||
+          child.nodeType === Node.CDATA_SECTION_NODE
+        ) {
           const text = child.nodeValue;
           if (text.trim()) {
             // Preserve original whitespace

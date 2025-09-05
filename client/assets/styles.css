@@ -3,8 +3,11 @@
   font-weight: bold;
   font-style: normal;
   src: url("/assets/fonts/Montserrat-700.eot");
-  src: url("/assets/fonts/Montserrat-700.eot?#iefix") format("embedded-opentype"), url("/assets/fonts/Montserrat-700.woff") format("woff"),
-    url("/assets/fonts/Montserrat-700.ttf") format("truetype"), url("/assets/fonts/Montserrat-700.svg#Montserrat") format("svg");
+  src:
+    url("/assets/fonts/Montserrat-700.eot?#iefix") format("embedded-opentype"),
+    url("/assets/fonts/Montserrat-700.woff") format("woff"),
+    url("/assets/fonts/Montserrat-700.ttf") format("truetype"),
+    url("/assets/fonts/Montserrat-700.svg#Montserrat") format("svg");
 }
 
 @font-face {
@@ -12,8 +15,10 @@
   font-weight: normal;
   font-style: normal;
   src: url("/assets/fonts/Montserrat-regular.eot");
-  src: url("/assets/fonts/Montserrat-regular.eot?#iefix") format("embedded-opentype"),
-    url("/assets/fonts/Montserrat-regular.woff") format("woff"), url("/assets/fonts/Montserrat-regular.ttf") format("truetype"),
+  src:
+    url("/assets/fonts/Montserrat-regular.eot?#iefix") format("embedded-opentype"),
+    url("/assets/fonts/Montserrat-regular.woff") format("woff"),
+    url("/assets/fonts/Montserrat-regular.ttf") format("truetype"),
     url("/assets/fonts/Montserrat-regular.svg#Montserrat") format("svg");
 }
 
@@ -23,7 +28,7 @@
   }
 }
 
-@media (min-width: 576px){
+@media (min-width: 576px) {
   .col-sm-1_5 {
     flex: 0 0 auto;
     width: 12.5%;
@@ -37,16 +42,23 @@
   --bs-secondary-rgb: 68, 68, 68;
   --bs-danger-rgb: 187, 14, 61;
   --bs-info-bg-subtle: #deeaf3;
-  --bs-font-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial,
-    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --bs-font-sans-serif:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans",
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --bs-font-title: "Montserrat", var(--bs-font-sans-serif);
   --bs-border-radius: 0.5rem;
   --bs-border-radius-sm: 0.4rem;
 }
 
-.gray { fill: #606060; }
-.red { fill: #BB0E3D; }
-.textAnchorBlue { color: #036AC5 }
+.gray {
+  fill: #606060;
+}
+.red {
+  fill: #bb0e3d;
+}
+.textAnchorBlue {
+  color: #036ac5;
+}
 
 .btn {
   --bs-btn-font-weight: 500;
@@ -57,7 +69,7 @@
   font-weight: 500;
 }
 
-.btn-primary {  
+.btn-primary {
   --bs-btn-bg: rgb(var(--bs-primary-rgb));
   --bs-btn-hover-bg: rgb(var(--bs-primary-dark-rgb));
   --bs-btn-hover-border-color: rgb(var(--bs-primary-dark-rgb));
@@ -101,7 +113,7 @@
 }
 
 .fs-08 {
-  font-size: 0.80rem !important;
+  font-size: 0.8rem !important;
 }
 
 .no-scroll {
@@ -111,12 +123,12 @@
 
 @keyframes visible-scroll-animation {
   from {
-      opacity: 0;
-      pointer-events: none;
+    opacity: 0;
+    pointer-events: none;
   }
   to {
-      opacity: 0.5;
-      pointer-events: auto;
+    opacity: 0.5;
+    pointer-events: auto;
   }
 }
 
@@ -178,7 +190,12 @@ a.disabled-link {
 
 .bg-primary-dark {
   /* background-color: rgb(var(--bs-primary-dark-rgb));  */
-  background: radial-gradient(circle at center top, rgb(25, 55, 95) 0%, rgb(13, 38, 72) 70%, rgb(20, 35, 80) 100%) !important;
+  background: radial-gradient(
+    circle at center top,
+    rgb(25, 55, 95) 0%,
+    rgb(13, 38, 72) 70%,
+    rgb(20, 35, 80) 100%
+  ) !important;
 }
 
 .bg-lighter {
@@ -190,8 +207,13 @@ a.disabled-link {
 }
 
 .shadow-sm {
-  box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px,
-    rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
+  box-shadow:
+    rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+    rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+    rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+    rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+    rgba(0, 0, 0, 0.1) 0px 4px 6px -1px,
+    rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
 }
 
 .d-flex-center {
@@ -210,7 +232,7 @@ a.disabled-link {
 }
 
 .form-label-user {
-  color: #356AAD;
+  color: #356aad;
 }
 
 .background-object {
@@ -225,8 +247,6 @@ a.disabled-link {
   mask-image: linear-gradient(to right, transparent, black);
   z-index: -1;
 }
-
-
 
 * {
   transition: all 0.1s;
@@ -367,10 +387,11 @@ ul {
   visibility: visible;
 }
 
-.navbar, .nav-link {
+.navbar,
+.nav-link {
   --bs-navbar-padding-y: 0;
-  --bs-navbar-nav-link-padding-x: .5rem;
-  --bs-navbar-nav-link-padding-y: .3rem;
+  --bs-navbar-nav-link-padding-x: 0.5rem;
+  --bs-navbar-nav-link-padding-y: 0.3rem;
 }
 
 .navbar-nav {
@@ -397,7 +418,8 @@ ul {
   border-bottom-color: rgb(58, 117, 189);
 }
 
-.nav-link:hover, .nav-link.active:hover {
+.nav-link:hover,
+.nav-link.active:hover {
   border-bottom-color: var(--bs-warning);
 }
 
@@ -415,18 +437,18 @@ ul {
 }
 
 .navbar-nav > li.login {
-    position: static;
+  position: static;
 }
 .navbar-nav > li.login > div.dropdown-menu.show {
-    display: flex; 
-    width: 100%; 
-    text-align: center; 
-    left: 0; 
-    right: 0;
+  display: flex;
+  width: 100%;
+  text-align: center;
+  left: 0;
+  right: 0;
 }
 
 .navbar-nav > li.login .dropdown-item:hover {
-    background-color: rgba(0, 0, 0, 0.1);   
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .ms-n50 {
@@ -465,7 +487,6 @@ ul {
   width: 50rem;
 }
 
-
 .mvh-25 {
   max-height: 25vh;
 }
@@ -487,7 +508,6 @@ ul {
   height: 1.5rem;
 }
 
-
 .form-label {
   color: #444;
 }
@@ -496,7 +516,8 @@ ul {
   font-weight: 500;
 }
 
-.table th, .table td {
+.table th,
+.table td {
   vertical-align: middle;
 }
 
@@ -512,15 +533,15 @@ ul {
   --bs-table-bg: rgb(8, 58, 80);
   --bs-table-color-type: #fff;
 }
-.users-table tbody>tr:nth-of-type(odd) {
+.users-table tbody > tr:nth-of-type(odd) {
   --bs-table-striped-bg: #fff;
 }
 
-.users-table tbody>tr:nth-of-type(even) {
+.users-table tbody > tr:nth-of-type(even) {
   --bs-table-bg: rgb(227, 238, 249);
 }
 
-.users-table tbody>tr>td {
+.users-table tbody > tr > td {
   border-color: rgb(8, 58, 80);
 }
 
@@ -532,7 +553,6 @@ ul {
   --bs-btn-hover-bg: rgb(172, 217, 227);
   --bs-btn-hover-color: rgb(21, 96, 113);
   --bs-btn-hover-border-color: rgb(132, 180, 190);
-
 }
 .table-pagination {
   border-top: solid 2px rgb(8, 58, 80);
@@ -569,7 +589,9 @@ details[open] {
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.1s, visibility 0.1s;
+  transition:
+    opacity 0.1s,
+    visibility 0.1s;
   pointer-events: none;
   z-index: 1000;
 }
@@ -584,7 +606,9 @@ details[open] {
   border-top-color: #333;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.1s, visibility 0.1s;
+  transition:
+    opacity 0.1s,
+    visibility 0.1s;
   z-index: 1000;
 }
 
@@ -613,7 +637,10 @@ details[open] {
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);
-  transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+  transition:
+    opacity 0.2s,
+    visibility 0.2s,
+    transform 0.2s;
   pointer-events: none;
 }
 
@@ -652,7 +679,9 @@ details[open] {
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
+  transition:
+    opacity 0.2s,
+    visibility 0.2s;
   pointer-events: none;
 }
 .tooltip-top.show {

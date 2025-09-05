@@ -11,7 +11,7 @@ export function Authorized(props) {
 }
 
 export async function getAuthorizedUser(props) {
-  const session = await fetch("/api/session").then(r => r.json());
+  const session = await fetch("/api/session").then((r) => r.json());
   const { user } = session;
   if (!user) {
     location.href = "/api/login?destination=" + encodeURIComponent(location.pathname);
