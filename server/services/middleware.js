@@ -182,14 +182,16 @@ export function requireRole(roleName) {
  * @returns
  */
 export async function proxyMiddleware(req, res, next) {
-  const { headers, method, body } = req;
+  const { headers, method, body, query } = req;
   const host = headers.host?.split(":")[0];
   let urlString = req.path.replace(/^\/[^\/]+\/?/, ""); // remove path prefix
   if (!/^https?:\/\//i.test(urlString)) {
     urlString = "https://" + urlString;
   }
   let url = new URL(urlString);
-
+  for (const key in query) {
+    url.searchParams.set(key, query[key]);
+  }
   // Only allow requests if the hostname matches or is on the whitelist
   if (!WHITELIST.some((regex) => regex.test(url.hostname)) && url.hostname !== host) {
     res.status(403).send("Forbidden: Domain not allowed");
