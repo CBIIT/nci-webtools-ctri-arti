@@ -18,11 +18,15 @@ const readFile = (file) =>
 const createSearchPipeline = async (files, settings) => {
   if (!files.length) return null;
 
-  window.embedder ||= await pipeline("feature-extraction", "onnx-community/Qwen3-Embedding-0.6B-ONNX", {
+  window.embedder ||= await pipeline(
+    "feature-extraction",
+    "onnx-community/Qwen3-Embedding-0.6B-ONNX",
+    {
       revision: "main",
       device: navigator.gpu ? "webgpu" : undefined,
       dtype: "q4f16",
-  });
+    }
+  );
 
   const splitter = new RecursiveCharacterTextSplitter({
     chunkSize: settings.chunkSize,
@@ -53,7 +57,12 @@ const createSearchPipeline = async (files, settings) => {
   }
 
   // Build HNSW index
-  const index = new HNSW(settings.hnswParams.M, settings.hnswParams.efConstruction, chunks[0].embedding.length, "cosine");
+  const index = new HNSW(
+    settings.hnswParams.M,
+    settings.hnswParams.efConstruction,
+    chunks[0].embedding.length,
+    "cosine"
+  );
   await index.buildIndex(chunks.map((c) => ({ id: c.id, vector: c.embedding })));
 
   // Return search function
@@ -154,14 +163,23 @@ export default function Page() {
           <form onSubmit=${handleSearch} onReset=${handleReset}>
             <div class="input-group mb-3">
               <label for="fileInput" class="btn btn-secondary">Upload</label>
-              <input type="file" id="fileInput" name="fileInput" onInput=${handleFileInput} accept="text/*,.docx,.doc,.pdf" multiple hidden />
+              <input
+                type="file"
+                id="fileInput"
+                name="fileInput"
+                onInput=${handleFileInput}
+                accept="text/*,.docx,.doc,.pdf"
+                multiple
+                hidden
+              />
               <input
                 type="search"
                 class="form-control"
                 value=${() => state.query}
                 onInput=${(e) => setState("query", e.target.value)}
                 placeholder=${placeholder}
-                disabled=${() => state.loading} />
+                disabled=${() => state.loading}
+              />
               <button type="reset" class="btn btn-outline-secondary">Reset</button>
               <button type="submit" class="btn btn-primary" disabled=${() => state.loading}>
                 <${Show} when=${() => state.loading} fallback="Search">
@@ -180,7 +198,8 @@ export default function Page() {
                     type="text"
                     class="form-control form-control-sm"
                     value=${() => state.settings.model}
-                    onInput=${(e) => setState("settings", "model", e.target.value)} />
+                    onInput=${(e) => setState("settings", "model", e.target.value)}
+                  />
                 </div>
                 <div class="col">
                   <label class="small">Chunk Size</label>
@@ -188,7 +207,8 @@ export default function Page() {
                     type="number"
                     class="form-control form-control-sm"
                     value=${() => state.settings.chunkSize}
-                    onInput=${(e) => setState("settings", "chunkSize", parseInt(e.target.value))} />
+                    onInput=${(e) => setState("settings", "chunkSize", parseInt(e.target.value))}
+                  />
                 </div>
                 <div class="col">
                   <label class="small">Chunk Overlap</label>
@@ -196,7 +216,8 @@ export default function Page() {
                     type="number"
                     class="form-control form-control-sm"
                     value=${() => state.settings.chunkOverlap}
-                    onInput=${(e) => setState("settings", "chunkOverlap", parseInt(e.target.value))} />
+                    onInput=${(e) => setState("settings", "chunkOverlap", parseInt(e.target.value))}
+                  />
                 </div>
               </div>
             </details>
@@ -210,7 +231,9 @@ export default function Page() {
                 <div class="list-group-item border-0 px-0">
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <h6 class="mb-0 text-truncate">${result.source}</h6>
-                    <span class="badge bg-info text-white"> ${(result.similarity * 100).toFixed(1)}% </span>
+                    <span class="badge bg-info text-white">
+                      ${(result.similarity * 100).toFixed(1)}%
+                    </span>
                   </div>
                   <p class="mb-0 text-muted">${result.text}</p>
                 </div>

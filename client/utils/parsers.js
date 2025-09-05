@@ -2,7 +2,8 @@ import dompurify from "dompurify";
 import TurndownService from "turndown";
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@5/build/pdf.worker.min.mjs";
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdn.jsdelivr.net/npm/pdfjs-dist@5/build/pdf.worker.min.mjs";
 
 /**
  * Returns the text content of a document
@@ -19,7 +20,9 @@ export async function parseDocument(buffer, mimetype = null) {
     case "DOCX":
       return await parseDocx(buffer);
     case "HTML":
-      return new TurndownService().turndown(dompurify.sanitize(text, {FORBID_TAGS: ['style', 'script']}));
+      return new TurndownService().turndown(
+        dompurify.sanitize(text, { FORBID_TAGS: ["style", "script"] })
+      );
     default:
       return text;
   }
@@ -200,7 +203,6 @@ export function detectFileType(buffer) {
 
   return isTextFile(bytes) ? "TEXT" : "BINARY";
 }
-
 
 /**
  * Helper function to convert a byte array to a string

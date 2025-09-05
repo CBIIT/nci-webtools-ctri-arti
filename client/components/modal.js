@@ -15,19 +15,28 @@ import { getMarked } from "/utils/utils.js";
  * @param {function} props.children - Content of the modal
  * @param {function} props.dialogClass - Style class for the modal body (optional)
  * @param {function} props.bodyClass - Style class for the modal body (optional)
- * @returns 
+ * @returns
  */
 export default function Modal(props) {
   createEffect(() => (document.body.style.overflow = props.open ? "hidden" : "auto"));
   const [innerHTML] = createResource(() => {
-    if (!props.url) return Promise.resolve('');
+    if (!props.url) return Promise.resolve("");
     return fetch(props.url)
-      .then(r => r.text())
-      .then(text => getMarked().parse(text));
+      .then((r) => r.text())
+      .then((text) => getMarked().parse(text));
   });
   return html`
-    <dialog class="modal modal-lg border-0 show" open=${() => props.open} onClose=${(e) => props.setOpen?.(false)} onSubmit=${(e) => props.onSubmit?.(e)}>
-      <form method="dialog" class="modal-dialog modal-dialog-scrollable" classList=${() => props.dialogClass || ""}>
+    <dialog
+      class="modal modal-lg border-0 show"
+      open=${() => props.open}
+      onClose=${(e) => props.setOpen?.(false)}
+      onSubmit=${(e) => props.onSubmit?.(e)}
+    >
+      <form
+        method="dialog"
+        class="modal-dialog modal-dialog-scrollable"
+        classList=${() => props.dialogClass || ""}
+      >
         <div class="modal-content">
           <${Show} when=${props.title}>
             <div class="modal-header">${props.title}</div>

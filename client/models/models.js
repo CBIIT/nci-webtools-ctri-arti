@@ -19,7 +19,7 @@ export class BaseModel {
 
   /**
    * Update model with new data
-   * @param {object} data 
+   * @param {object} data
    */
   update(data) {
     Object.assign(this, data);
@@ -36,7 +36,7 @@ export class BaseModel {
 
   /**
    * Create instance from stored data
-   * @param {object} data 
+   * @param {object} data
    * @returns {BaseModel}
    */
   static fromJSON(data) {
@@ -53,35 +53,35 @@ export class Project extends BaseModel {
     this.name = data.name || "Untitled Project";
     this.description = data.description || "";
     this.isDefault = data.isDefault || false;
-    
+
     // Custom context for all conversations in this project
     this.context = data.context || {
       systemPrompt: "",
       files: [], // Array of resource IDs
-      customText: ""
+      customText: "",
     };
-    
+
     // Flexible API configuration
     this.apiConfig = data.apiConfig || {
       baseUrl: "/api/model", // Default to local API
       method: "POST",
       headers: {},
       // Template variables that can be used in requests
-      variables: {}
+      variables: {},
     };
-    
-    // MCP server configuration  
+
+    // MCP server configuration
     this.mcpConfig = data.mcpConfig || {
       enabled: false,
       endpoint: "",
-      tools: []
+      tools: [],
     };
-    
+
     // Project settings
     this.settings = data.settings || {
       model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
       temperature: 0.7,
-      maxContextLength: 100000
+      maxContextLength: 100000,
     };
   }
 }
@@ -97,10 +97,10 @@ export class Conversation extends BaseModel {
     this.summary = data.summary || "";
     this.messageCount = data.messageCount || 0;
     this.lastMessageAt = data.lastMessageAt || this.created;
-    
+
     // Conversation-specific overrides
     this.settings = data.settings || {};
-    
+
     // Metadata for search/organization
     this.tags = data.tags || [];
     this.archived = data.archived || false;
@@ -128,18 +128,18 @@ export class Message extends BaseModel {
     // Content should be Bedrock-compatible array format: [{ text: "..." }, { toolUse: {...} }]
     this.content = data.content || [];
     this.timestamp = data.timestamp || new Date().toISOString();
-    
+
     // Message metadata
     this.metadata = data.metadata || {
       model: null,
       usage: null, // token usage stats
       toolUses: [], // tools called in this message
-      error: null
+      error: null,
     };
-    
+
     // For assistant messages with tool use
     this.toolResults = data.toolResults || [];
-    
+
     // Message state
     this.isStreaming = data.isStreaming || false;
     this.isComplete = data.isComplete !== undefined ? data.isComplete : true;
@@ -157,19 +157,19 @@ export class Resource extends BaseModel {
     this.type = data.type; // "file", "url", "text", "document"
     this.mimeType = data.mimeType || "";
     this.size = data.size || 0;
-    
+
     // Resource content (stored separately for large files)
     this.content = data.content || "";
     this.contentId = data.contentId || null; // Reference to blob storage
-    
+
     // Metadata
     this.metadata = data.metadata || {
       originalName: "",
       uploadedAt: this.created,
       extractedText: "", // For documents/PDFs
-      summary: ""
+      summary: "",
     };
-    
+
     // Organization
     this.tags = data.tags || [];
     this.folder = data.folder || "";
@@ -193,7 +193,9 @@ export class Resource extends BaseModel {
       this.content,
       this.metadata.extractedText,
       this.metadata.summary,
-      this.tags.join(" ")
-    ].filter(Boolean).join(" ");
+      this.tags.join(" "),
+    ]
+      .filter(Boolean)
+      .join(" ");
   }
 }

@@ -33,7 +33,7 @@ This is the development/staging tier of Research Optimizer, a secure platform de
 #### COMPLIANCE REQUIREMENTS
 
 - **Regulatory Compliance**:
-  - Follow HHS and NIH policies including [OCIO Guidance](https://wiki.ocio.nih.gov/wiki/index.php/NIH_Artificial_Intelligence_(AI)_Cybersecurity_Guidance), [HHS policy for Securing Artificial Intelligence (AI) Technology](https://intranet.hhs.gov/policy/hhs-policy-securing-artificial-intelligence-technology), [NOT-OD-23-149 prohibiting Generative AI for NIH Peer Review](https://grants.nih.gov/grants/guide/notice-files/NOT-OD-23-149.html), and any other federal requirements.
+  - Follow HHS and NIH policies including [OCIO Guidance](<https://wiki.ocio.nih.gov/wiki/index.php/NIH_Artificial_Intelligence_(AI)_Cybersecurity_Guidance>), [HHS policy for Securing Artificial Intelligence (AI) Technology](https://intranet.hhs.gov/policy/hhs-policy-securing-artificial-intelligence-technology), [NOT-OD-23-149 prohibiting Generative AI for NIH Peer Review](https://grants.nih.gov/grants/guide/notice-files/NOT-OD-23-149.html), and any other federal requirements.
 
 - **Security Protocols**:
   - Maintain secure access credentials

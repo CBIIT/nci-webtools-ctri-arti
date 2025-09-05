@@ -28,7 +28,9 @@ export async function runTool(toolUse, tools = { search, browse, code, editor, t
  * @returns {Promise<Array>} - Array of search results
  */
 export async function search({ query }) {
-  const response = await fetch("/api/search?" + new URLSearchParams({ q: query })).then((r) => r.json());
+  const response = await fetch("/api/search?" + new URLSearchParams({ q: query })).then((r) =>
+    r.json()
+  );
   const extract = (r) => ({
     url: r.url,
     title: r.title,
@@ -56,22 +58,30 @@ export async function browse({ url, topic }) {
   // urls can be an array of strings
   if (!Array.isArray(url)) url = [url];
   if (url.length === 0) return "No URLs provided";
-  const results = await Promise.all(url.map(async (u) => {
-    const response = await fetch("/api/browse/" + u);
-    const bytes = await response.arrayBuffer();
-    const text = new TextDecoder("utf-8").decode(bytes);
-    if (!response.ok) {
-      return `Failed to read ${u}: ${response.status} ${response.statusText}`;
-    }
-    const mimetype = response.headers.get("content-type") || "text/html";
-    const results = await parseDocument(bytes, mimetype, u);
-    const finalResults = !topic ? results : await queryDocumentWithModel(`<url>${u}</url>\n<text>${results}</text>`, topic);
-    return ['## ' + u, finalResults].join('\n\n');
-  }));
-  return results.join('\n\n---\n\n');
+  const results = await Promise.all(
+    url.map(async (u) => {
+      const response = await fetch("/api/browse/" + u);
+      const bytes = await response.arrayBuffer();
+      const text = new TextDecoder("utf-8").decode(bytes);
+      if (!response.ok) {
+        return `Failed to read ${u}: ${response.status} ${response.statusText}`;
+      }
+      const mimetype = response.headers.get("content-type") || "text/html";
+      const results = await parseDocument(bytes, mimetype, u);
+      const finalResults = !topic
+        ? results
+        : await queryDocumentWithModel(`<url>${u}</url>\n<text>${results}</text>`, topic);
+      return ["## " + u, finalResults].join("\n\n");
+    })
+  );
+  return results.join("\n\n---\n\n");
 }
 
-export async function queryDocumentWithModel(document, topic, model = "us.meta.llama4-maverick-17b-instruct-v1:0") {
+export async function queryDocumentWithModel(
+  document,
+  topic,
+  model = "us.meta.llama4-maverick-17b-instruct-v1:0"
+) {
   if (!topic) return document;
   document = truncate(document, 500_000);
   const system = `You are a research assistant. You will be given a document and a question. 
@@ -244,7 +254,8 @@ export function editor(params, storage = localStorage) {
 
       case "create": {
         // Create the file with the provided content or empty string
-        const fileContent = params.file_text !== undefined ? normalizeNewlines(params.file_text) : "";
+        const fileContent =
+          params.file_text !== undefined ? normalizeNewlines(params.file_text) : "";
         const overwritten = storage.getItem(fileKey) !== null;
         storage.setItem(fileKey, fileContent);
         if (overwritten) {
@@ -332,7 +343,10 @@ export async function code({ language, source, timeout = 5_000 }) {
 
       // wrap user code so we know when it's done
       const workerCode = [bridge, source, 'self.postMessage({type:"done"})'].join(";");
-      const worker = new Worker(URL.createObjectURL(new Blob([workerCode], { type: "text/javascript" })), { type: "module" });
+      const worker = new Worker(
+        URL.createObjectURL(new Blob([workerCode], { type: "text/javascript" })),
+        { type: "module" }
+      );
       const kill = setTimeout(() => (worker.terminate(), res({ logs })), timeout);
 
       worker.onmessage = (e) => {
@@ -350,7 +364,9 @@ export async function code({ language, source, timeout = 5_000 }) {
   if (language === "html") {
     return await new Promise((res) => {
       const logs = [];
-      const frame = Object.assign(document.createElement("iframe"), { style: "position:absolute; left: -9999px;" });
+      const frame = Object.assign(document.createElement("iframe"), {
+        style: "position:absolute; left: -9999px;",
+      });
       const listener = (e) => {
         if (e.source !== frame.contentWindow) return;
         // console.log(e.data);
@@ -361,7 +377,9 @@ export async function code({ language, source, timeout = 5_000 }) {
       document.body.appendChild(frame);
 
       const doc = new DOMParser().parseFromString(source, "text/html");
-      const script = Array.from(doc.querySelectorAll("script:not([src])")).find((s) => ["", "text/javascript", "module"].includes(s.type));
+      const script = Array.from(doc.querySelectorAll("script:not([src])")).find((s) =>
+        ["", "text/javascript", "module"].includes(s.type)
+      );
       if (script) {
         script.innerHTML += `;parent.postMessage({type: "done"});`;
       }
@@ -404,13 +422,21 @@ export function getClientContext(important = {}) {
   const timeFormat = Intl.DateTimeFormat().resolvedOptions();
   const time = new Date().toDateString();
   const memory = deviceMemory >= 8 ? "greater than 8 GB" : `approximately ${deviceMemory} GB`;
-  const getFileContents = (file) => localStorage.getItem("file:" + file) || localStorage.setItem("file:" + file, "") || "";
+  const getFileContents = (file) =>
+    localStorage.getItem("file:" + file) || localStorage.setItem("file:" + file, "") || "";
   const filenames = new Array(localStorage.length)
     .fill(0)
     .map((_, i) => localStorage.key(i))
     .filter((e) => e.startsWith("file:"))
     .map((e) => e.replace("file:", ""));
-  const main = ["_profile.txt", "_memory.txt", "_insights.txt", "_workspace.txt", "_knowledge.txt", "_patterns.txt"].map((file) => ({
+  const main = [
+    "_profile.txt",
+    "_memory.txt",
+    "_insights.txt",
+    "_workspace.txt",
+    "_knowledge.txt",
+    "_patterns.txt",
+  ].map((file) => ({
     file,
     contents: getFileContents(file),
   }));
@@ -422,7 +448,15 @@ export function getClientContext(important = {}) {
   }
   // console.log(main);
   window.jsonToXml = jsonToXml;
-  return { main: JSON.stringify(main), time, language, platform, memory, hardwareConcurrency, timeFormat };
+  return {
+    main: JSON.stringify(main),
+    time,
+    language,
+    platform,
+    memory,
+    hardwareConcurrency,
+    timeFormat,
+  };
 }
 
 // Helper function - need to import or re-implement

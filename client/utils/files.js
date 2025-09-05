@@ -21,8 +21,8 @@ export async function* readStream(response) {
 
 /**
  * Reads a file as text, arrayBuffer, or dataURL
- * @param {File} file 
- * @param {string} type 
+ * @param {File} file
+ * @param {string} type
  * @returns {Promise<string|ArrayBuffer>} - The file content
  */
 export async function readFile(file, type = "text") {
@@ -44,10 +44,11 @@ export async function readFile(file, type = "text") {
  */
 export function toCsv(data = [], headers = null) {
   headers ||= Object.keys(data?.[0] || {});
-  const serialize = value => String(value || '').includes(',') ? `"${value}"` : String(value || '');
-  const rows = data.map(row => headers.map(field => row[field]));
-  const csv = [headers].concat(rows).map(row => row.map(serialize).join(','));
-  return csv.join('\n');
+  const serialize = (value) =>
+    String(value || "").includes(",") ? `"${value}"` : String(value || "");
+  const rows = data.map((row) => headers.map((field) => row[field]));
+  const csv = [headers].concat(rows).map((row) => row.map(serialize).join(","));
+  return csv.join("\n");
 }
 
 /**

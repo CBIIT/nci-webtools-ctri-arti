@@ -20,20 +20,20 @@ function generateAlertId() {
  * @param {number} options.autoDismiss - Auto-dismiss timeout in ms (default: 5000)
  * @returns {string} Alert ID
  */
-export function showAlert({ message, type = 'info', dismissible = true, autoDismiss = 5000 }) {
+export function showAlert({ message, type = "info", dismissible = true, autoDismiss = 5000 }) {
   const id = generateAlertId();
-  
+
   const alert = {
     id,
     message,
     type,
     dismissible,
     autoDismiss,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
-  
-  setAlerts(prev => [...prev, alert]);
-  
+
+  setAlerts((prev) => [...prev, alert]);
+
   return id;
 }
 
@@ -46,9 +46,9 @@ export function showAlert({ message, type = 'info', dismissible = true, autoDism
 export function showError(message, options = {}) {
   return showAlert({
     message,
-    type: 'danger',
+    type: "danger",
     autoDismiss: 8000, // Longer duration for errors
-    ...options
+    ...options,
   });
 }
 
@@ -61,9 +61,9 @@ export function showError(message, options = {}) {
 export function showSuccess(message, options = {}) {
   return showAlert({
     message,
-    type: 'success',
+    type: "success",
     autoDismiss: 3000, // Shorter duration for success
-    ...options
+    ...options,
   });
 }
 
@@ -76,9 +76,9 @@ export function showSuccess(message, options = {}) {
 export function showWarning(message, options = {}) {
   return showAlert({
     message,
-    type: 'warning',
+    type: "warning",
     autoDismiss: 6000,
-    ...options
+    ...options,
   });
 }
 
@@ -91,9 +91,9 @@ export function showWarning(message, options = {}) {
 export function showInfo(message, options = {}) {
   return showAlert({
     message,
-    type: 'info',
+    type: "info",
     autoDismiss: 4000,
-    ...options
+    ...options,
   });
 }
 
@@ -102,7 +102,7 @@ export function showInfo(message, options = {}) {
  * @param {string} id - Alert ID to clear
  */
 export function clearAlert(id) {
-  setAlerts(prev => prev.filter(alert => alert.id !== id));
+  setAlerts((prev) => prev.filter((alert) => alert.id !== id));
 }
 
 /**
@@ -128,7 +128,7 @@ export function getAlerts() {
  */
 export async function handleHttpError(response, context = "request") {
   let errorMessage = `Failed to ${context}`;
-  
+
   try {
     // Try to get error details from response
     const errorData = await response.json();
@@ -162,7 +162,7 @@ export async function handleHttpError(response, context = "request") {
         errorMessage = `${errorMessage} (${response.status})`;
     }
   }
-  
+
   showError(errorMessage);
 }
 
@@ -173,15 +173,15 @@ export async function handleHttpError(response, context = "request") {
  */
 export function handleError(error, context = "operation") {
   let errorMessage = `An error occurred during ${context}`;
-  
+
   if (error.message) {
     errorMessage = error.message;
   } else if (error.toString) {
     errorMessage = error.toString();
   }
-  
+
   showError(errorMessage);
-  
+
   // Still log to console for debugging
   console.error(`Error during ${context}:`, error);
 }

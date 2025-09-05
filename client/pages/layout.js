@@ -1,6 +1,5 @@
 import html from "solid-js/html";
 
-
 import Header from "../components/header.js";
 import PrivacyNotice from "../components/privacy-notice.js";
 import Footer from "../components/footer.js";
@@ -10,10 +9,10 @@ import routes from "./routes.js";
 export default function Layout(props) {
   return html`
     <div class="shadow">
-      <${Header} /> 
+      <${Header} />
       <${Nav} routes=${routes} />
     </div>
-    <${PrivacyNotice}/>
+    <${PrivacyNotice} />
     <main class="d-flex flex-column flex-grow-1 position-relative">${props.children}</main>
     <${Footer} />
   `;

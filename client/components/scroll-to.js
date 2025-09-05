@@ -48,4 +48,3 @@ export default function ScrollTo(props) {
     </button>
   </div>`;
 }
-

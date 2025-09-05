@@ -29,7 +29,8 @@ export const tools = [
               items: {
                 type: "string",
               },
-              description: "Full webpage URLs (including http:// or https://). Provide an array of full URLs to analyze. This tool can handle up to 20 urls at once.",
+              description:
+                "Full webpage URLs (including http:// or https://). Provide an array of full URLs to analyze. This tool can handle up to 20 urls at once.",
             },
             topic: {
               type: "string",
@@ -62,7 +63,8 @@ export const tools = [
             },
             timeout: {
               type: "number",
-              description: "Maximum runtime in milliseconds before the sandbox is terminated (default = 5000).",
+              description:
+                "Maximum runtime in milliseconds before the sandbox is terminated (default = 5000).",
               default: 5000,
             },
           },
@@ -83,7 +85,8 @@ export const tools = [
             command: {
               type: "string",
               enum: ["view", "str_replace", "create", "insert", "undo_edit"],
-              description: "The operation to perform on the file. Required for all commands. View the file, replace a string, create a new file, insert text at a specific line, or undo the last edit.",
+              description:
+                "The operation to perform on the file. Required for all commands. View the file, replace a string, create a new file, insert text at a specific line, or undo the last edit.",
             },
             path: {
               type: "string",
@@ -116,7 +119,8 @@ export const tools = [
             },
             insert_line: {
               type: "integer",
-              description: "The line number after which to insert text (0 for beginning of file). Required for 'insert' command.",
+              description:
+                "The line number after which to insert text (0 for beginning of file). Required for 'insert' command.",
             },
           },
           required: ["command", "path"],

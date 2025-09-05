@@ -1,5 +1,12 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { matmul, pipeline, AutoModel, AutoTokenizer, Tensor, TextStreamer } from "@huggingface/transformers";
+import {
+  matmul,
+  pipeline,
+  AutoModel,
+  AutoTokenizer,
+  Tensor,
+  TextStreamer,
+} from "@huggingface/transformers";
 
 export async function inference(
   messages = [
@@ -10,10 +17,14 @@ export async function inference(
   callback_function = (text) => {},
   max_new_tokens = 512,
   dtype = "q4f16",
-  device = navigator.gpu ? "webgpu" : undefined,
+  device = navigator.gpu ? "webgpu" : undefined
 ) {
   const generator = await pipeline("text-generation", model, { dtype, device });
-  const streamer = new TextStreamer(generator.tokenizer, { skip_prompt: true, skip_special_tokens: true, callback_function });
+  const streamer = new TextStreamer(generator.tokenizer, {
+    skip_prompt: true,
+    skip_special_tokens: true,
+    callback_function,
+  });
   const output = await generator(messages, { max_new_tokens, streamer, do_sample: false });
   return output[0].generated_text.at(-1);
 }
@@ -95,7 +106,9 @@ export async function createEmbedder(model_name = "minishlab/potion-base-8M", op
 export async function getEmbeddings(texts = [], query = "", model = "minishlab/potion-base-8M") {
   if (query) {
     const embeddings = await embed([query].concat(texts), model, { raw: true });
-    const similarities = (await matmul(embeddings.slice([0, 1]), embeddings.slice([1, null]).transpose(1, 0))).mul(100);
+    const similarities = (
+      await matmul(embeddings.slice([0, 1]), embeddings.slice([1, null]).transpose(1, 0))
+    ).mul(100);
     return { embeddings: embeddings.tolist(), similarities: similarities.tolist() };
   }
   return { embeddings: await embed(texts, model) };

@@ -8,7 +8,15 @@ window.TOOLS = TOOLS;
 
 // Re-export functions from tools.js and files.js for backward compatibility
 export { runTool } from "./tools.js";
-export { readStream, readFile, toCsv, downloadText, downloadJson, downloadCsv, downloadBlob } from "./files.js";
+export {
+  readStream,
+  readFile,
+  toCsv,
+  downloadText,
+  downloadJson,
+  downloadCsv,
+  downloadBlob,
+} from "./files.js";
 
 /**
  * Truncates a string to a maximum length and appends a suffix
@@ -24,7 +32,7 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
 /**
  * Capitalizes the first letter of each word in a string while converting the rest to lowercase.
  * Words are separated by spaces.
- * 
+ *
  * @param {String} str - The string to capitalize
  * @returns {String} The string with each word capitalized
  * @example
@@ -32,13 +40,14 @@ export function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)")
  * capitalize("SUPER USER") // returns "Super User"
  */
 export function capitalize(str) {
-  if (!str){
-    console.error('Capitalize function received undefined string');
+  if (!str) {
+    console.error("Capitalize function received undefined string");
     return "";
-  };
-  return str.split(' ').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-  ).join(' ');
+  }
+  return str
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 }
 
 /**
@@ -118,9 +127,9 @@ export function autoscroll(thresholdPercent = 0.8, container = null) {
  */
 export function getMarked() {
   const renderer = new marked.Renderer();
-  renderer.link = function(href, title, text) {
+  renderer.link = function (href, title, text) {
     const defaultLink = marked.Renderer.prototype.link.call(this, href, title, text);
-    return defaultLink.replace('<a', '<a target="_blank" rel="noopener noreferrer"');
+    return defaultLink.replace("<a", '<a target="_blank" rel="noopener noreferrer"');
   };
   marked.use({ renderer });
   return marked;
@@ -159,34 +168,39 @@ export function convertToAccessorOptions(options) {
  */
 export function openInternalLinkInNewTab(e) {
   e.preventDefault();
-  const newWindow = window.open(e.target.href, '_blank'); // takes url from href of anchor tag
-  
-  newWindow.addEventListener('load', function() {
-      // Copy all sessionStorage items
-      for (let i = 0; i < sessionStorage.length; i++) {
-          const key = sessionStorage.key(i);
-          const value = sessionStorage.getItem(key);
-          newWindow.sessionStorage.setItem(key, value);
-      }
+  const newWindow = window.open(e.target.href, "_blank"); // takes url from href of anchor tag
+
+  newWindow.addEventListener("load", function () {
+    // Copy all sessionStorage items
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      const value = sessionStorage.getItem(key);
+      newWindow.sessionStorage.setItem(key, value);
+    }
   });
 }
 
 /**
  * Sets a cookie with the given name, value, expiration time in seconds, and path.
- * @param {string} name 
- * @param {string} value 
- * @param {number} seconds 
- * @param {string} path 
+ * @param {string} name
+ * @param {string} value
+ * @param {number} seconds
+ * @param {string} path
  */
-export function setCookie(name, value, seconds = 60 * 60 * 24, path = '/') {
+export function setCookie(name, value, seconds = 60 * 60 * 24, path = "/") {
   document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${seconds}; path=${path}`;
 }
 
 /**
  * Retrieves the value of a cookie by name.
- * @param {string} name 
+ * @param {string} name
  * @returns {string|null} The cookie value or null if not found
  */
 export function getCookie(name) {
-  return document.cookie.split('; ').find(row => row.startsWith(name + '='))?.split('=')[1] || null;
+  return (
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(name + "="))
+      ?.split("=")[1] || null
+  );
 }
