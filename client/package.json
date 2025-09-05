@@ -4,8 +4,8 @@
     "lint": "eslint . --cache --cache-location ./node_modules/.cache/eslint/ --report-unused-inline-configs error",
     "lint:ci": "eslint . --max-warnings 0 --report-unused-inline-configs error",
     "lint:fix": "eslint . --fix --cache --cache-location ./node_modules/.cache/eslint/",
-    "format": "prettier . --check --cache --cache-strategy metadata",
-    "format:fix": "prettier . --write --cache --cache-strategy metadata"
+    "format": "prettier . --check",
+    "format:fix": "prettier . --write"
   },
   "devDependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
