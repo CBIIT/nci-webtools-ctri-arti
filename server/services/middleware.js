@@ -200,12 +200,13 @@ export async function proxyMiddleware(req, res, next) {
 
   try {
     // remove problematic headers
-    const cleanHeaders = { ...headers, ...getAuthorizedHeaders(url) };
-    ["host", "connection", "content-length"].forEach((h) => delete cleanHeaders[h]);
+    const normalizedHeaders = { ...headers, ...getAuthorizedHeaders(url) };
+    const normalizedBody = headers["content-type"] === "application/json" ? JSON.stringify(body) : body;
+    ["host", "connection", "content-length"].forEach((h) => delete normalizedHeaders[h]);
     const response = await fetch(getAuthorizedUrl(url), {
       method,
-      headers: cleanHeaders,
-      body,
+      headers: normalizedHeaders,
+      body: normalizedBody,
       redirect: "follow",
     });
     res.status(response.status);
