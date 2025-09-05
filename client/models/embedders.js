@@ -1,5 +1,4 @@
 import { HNSW } from "../utils/hnsw.js";
-import { Buffer } from "node:buffer";
 
 /**
  * Base embedder interface
@@ -51,6 +50,7 @@ export class TestEmbedder extends BaseEmbedder {
       const encoder = new TextEncoder();
       bytes = encoder.encode(text);
     } else if (typeof Buffer !== "undefined") {
+      // eslint-disable-next-line no-undef
       bytes = Buffer.from(text, "utf8");
     } else {
       // Fallback: convert to char codes
