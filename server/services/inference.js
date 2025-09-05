@@ -31,7 +31,7 @@ function estimateContentTokens(content) {
  * @param {number} maxTokens - Maximum token limit to consider
  * @returns {Array<number>} Array of token boundaries for cache points
  */
-function calculateCacheBoundaries(maxTokens = 200000) {
+function calculateCacheBoundaries(maxTokens = 2000000) {
   const boundaries = [];
   const scalingFactor = Math.sqrt(2); // ~1.414
   let boundary = 1024;
