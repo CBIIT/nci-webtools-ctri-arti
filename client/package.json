@@ -1,10 +1,11 @@
 {
   "type": "module",
   "scripts": {
-    "lint": "eslint . --ignore-path .gitignore",
-    "lint:ci": "eslint . --ignore-path .gitignore --max-warnings 0",
-    "lint:fix": "eslint --fix . --ignore-path .gitignore",
-    "format:fix": "prettier --ignore-path .gitignore --write \"**/*.{js}\""
+    "lint": "eslint . --cache --cache-location ./node_modules/.cache/eslint/ --concurrency auto --report-unused-inline-configs error",
+    "lint:ci": "eslint . --max-warnings 0 --concurrency auto --report-unused-inline-configs error",
+    "lint:fix": "eslint . --fix --cache --cache-location ./node_modules/.cache/eslint/ --concurrency auto",
+    "format": "prettier . --check --cache --cache-strategy metadata",
+    "format:fix": "prettier . --write \"**/*.{js}\" --cache --cache-strategy metadata"
   },
   "devDependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
