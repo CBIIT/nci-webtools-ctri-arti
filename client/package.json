@@ -1,5 +1,11 @@
 {
   "type": "module",
+  "scripts": {
+    "lint": "eslint . --ignore-path .gitignore",
+    "lint:ci": "eslint . --ignore-path .gitignore --max-warnings 0",
+    "lint:fix": "eslint --fix . --ignore-path .gitignore",
+    "format:fix": "prettier --ignore-path .gitignore --write \"**/*.{js}\""
+  },
   "devDependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
     "@huggingface/transformers": "^3.7.2",
@@ -12,6 +18,7 @@
     "mammoth": "^1.10.0",
     "marked": "^16.2.0",
     "pdfjs-dist": "^5.4.54",
+    "prettier": "3.6.2",
     "solid-js": "^1.9.9",
     "three": "^0.179.1",
     "turndown": "^7.2.1",
