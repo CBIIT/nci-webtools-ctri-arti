@@ -250,7 +250,10 @@ export default class GeminiProvider {
         lastPartWasToolCallForStream = false;
         if (chunk.promptFeedback?.blockReason) {
           if (activeTextContentBlock)
-            yield { type: "contentBlockStop", contentBlockStop: { contentBlockIndex } };
+            yield {
+              type: "contentBlockStop",
+              contentBlockStop: { contentBlockIndex: currentContentBlockIndex },
+            };
           break;
         }
         for (const candidate of chunk.candidates || []) {
@@ -259,18 +262,27 @@ export default class GeminiProvider {
               if (!activeTextContentBlock) {
                 yield {
                   type: "contentBlockStart",
-                  contentBlockStart: { contentBlockIndex, start: { text: {} } },
+                  contentBlockStart: {
+                    contentBlockIndex: currentContentBlockIndex,
+                    start: { text: {} },
+                  },
                 };
                 activeTextContentBlock = true;
               }
               yield {
                 type: "contentBlockDelta",
-                contentBlockDelta: { contentBlockIndex, delta: { text: part.text } },
+                contentBlockDelta: {
+                  contentBlockIndex: currentContentBlockIndex,
+                  delta: { text: part.text },
+                },
               };
               lastPartWasToolCallForStream = false;
             } else if (part.functionCall) {
               if (activeTextContentBlock) {
-                yield { type: "contentBlockStop", contentBlockStop: { contentBlockIndex } };
+                yield {
+                  type: "contentBlockStop",
+                  contentBlockStop: { contentBlockIndex: currentContentBlockIndex },
+                };
                 activeTextContentBlock = false;
                 currentContentBlockIndex++;
               }
@@ -278,18 +290,21 @@ export default class GeminiProvider {
               yield {
                 type: "contentBlockStart",
                 contentBlockStart: {
-                  contentBlockIndex,
+                  contentBlockIndex: currentContentBlockIndex,
                   start: { toolUse: { toolUseId, name: part.functionCall.name } },
                 },
               };
               yield {
                 type: "contentBlockDelta",
                 contentBlockDelta: {
-                  contentBlockIndex,
+                  contentBlockIndex: currentContentBlockIndex,
                   delta: { toolUse: { input: part.functionCall.args || {} } },
                 },
               };
-              yield { type: "contentBlockStop", contentBlockStop: { contentBlockIndex } };
+              yield {
+                type: "contentBlockStop",
+                contentBlockStop: { contentBlockIndex: currentContentBlockIndex },
+              };
               lastPartWasToolCallForStream = true;
               currentContentBlockIndex++;
             }
@@ -297,7 +312,10 @@ export default class GeminiProvider {
         }
       }
       if (activeTextContentBlock)
-        yield { type: "contentBlockStop", contentBlockStop: { contentBlockIndex } };
+        yield {
+          type: "contentBlockStop",
+          contentBlockStop: { contentBlockIndex: currentContentBlockIndex },
+        };
 
       const finalGeminiResponse = await fullResponsePromise;
       let stopReason = "end_turn";
