@@ -1,5 +1,7 @@
 import { createEffect, onCleanup, onMount } from "solid-js";
 import html from "solid-js/html";
+
+// eslint-disable-next-line import/no-unresolved
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js";
 
 export const DEFAULT_CONFIG = {

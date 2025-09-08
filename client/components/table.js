@@ -1,4 +1,4 @@
-import { createSignal, createMemo, For } from "solid-js";
+import { createMemo, createSignal, For } from "solid-js";
 import html from "solid-js/html";
 
 export function DataTable(props) {

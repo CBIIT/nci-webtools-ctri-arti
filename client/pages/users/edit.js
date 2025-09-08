@@ -1,8 +1,9 @@
-import { createSignal, Show } from "solid-js";
+import { createResource, createSignal, Show } from "solid-js";
 import html from "solid-js/html";
-import { useParams, useNavigate } from "@solidjs/router";
-import { createResource } from "solid-js";
-import { capitalize } from "/utils/utils.js";
+
+import { useNavigate, useParams } from "@solidjs/router";
+
+import { capitalize } from "../../utils/utils.js";
 
 function UserEdit() {
   const params = useParams();

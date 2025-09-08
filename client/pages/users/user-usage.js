@@ -1,7 +1,9 @@
-import { createSignal, createResource, createMemo, Show } from "solid-js";
+import { createMemo, createResource, createSignal, Show } from "solid-js";
 import html from "solid-js/html";
+
 import { useParams, useSearchParams } from "@solidjs/router";
-import { formatDate, getDefaultStartDate, calculateDateRange, validateDateRange } from "./usage.js";
+
+import { calculateDateRange, formatDate, getDefaultStartDate, validateDateRange } from "./usage.js";
 
 function UserUsage() {
   const params = useParams();

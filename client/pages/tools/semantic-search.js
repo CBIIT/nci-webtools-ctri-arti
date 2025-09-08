@@ -1,9 +1,11 @@
 import { createMemo, For, Show } from "solid-js";
-import { createStore } from "solid-js/store";
 import html from "solid-js/html";
+
 import { pipeline } from "@huggingface/transformers";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { HNSW } from "/utils/hnsw.js";
+import { createStore } from "solid-js/store";
+
+import { HNSW } from "../../utils/hnsw.js";
 
 // Utility function to read file as text
 const readFile = (file) =>

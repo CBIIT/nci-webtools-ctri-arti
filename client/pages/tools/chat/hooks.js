@@ -1,12 +1,15 @@
 import { createSignal } from "solid-js";
+
 import { createStore } from "solid-js/store";
-import { fileToBase64, splitFilename } from "/utils/parsers.js";
-import { runTool, getClientContext } from "/utils/tools.js";
-import { readStream } from "/utils/files.js";
-import { jsonToXml } from "/utils/xml.js";
+
+import { getDB } from "../../../models/database.js";
+import { handleError, handleHttpError, showError } from "../../../utils/alerts.js";
+import { readStream } from "../../../utils/files.js";
+import { fileToBase64, splitFilename } from "../../../utils/parsers.js";
+import { getClientContext, runTool } from "../../../utils/tools.js";
+import { jsonToXml } from "../../../utils/xml.js";
+
 import { systemPrompt, tools } from "./config.js";
-import { getDB } from "/models/database.js";
-import { showError, handleHttpError, handleError } from "/utils/alerts.js";
 
 /**
  * Normalize message content to array format, handling various edge cases

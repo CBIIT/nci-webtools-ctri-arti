@@ -1,6 +1,5 @@
-import { createSignal, Show } from "solid-js";
+import { createResource, createSignal, Show } from "solid-js";
 import html from "solid-js/html";
-import { createResource } from "solid-js";
 
 function UserProfile() {
   const [saving, setSaving] = createSignal(false);

@@ -1,8 +1,9 @@
 /**
  * Simple, KISS approach to user-scoped database with project-based storage
  */
-import { openDB, deleteDB } from "idb";
-import { DEFAULT_PROJECTS } from "./seed-data.js";
+import { deleteDB, openDB } from "idb";
+
+// import { DEFAULT_PROJECTS } from "./seed-data.js";
 
 /**
  * User-scoped database with project-based storage
@@ -213,6 +214,7 @@ export class Database2 {
     const tx = this.db.transaction("projects", "readwrite");
     const store = tx.objectStore("projects");
 
+    // eslint-disable-next-line no-undef
     for (const projectData of DEFAULT_PROJECTS) {
       const existingProject = await store.get(projectData.id);
 

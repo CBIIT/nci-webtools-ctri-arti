@@ -1,4 +1,4 @@
-import { openDB, deleteDB } from "idb";
+import { deleteDB, openDB } from "idb";
 
 /**
  * Hierarchical Navigable Small World (HNSW) index for approximate nearest neighbor search.

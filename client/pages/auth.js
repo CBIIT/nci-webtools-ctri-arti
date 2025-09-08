@@ -1,4 +1,4 @@
-import { createResource, Show, lazy } from "solid-js";
+import { createResource, lazy, Show } from "solid-js";
 import html from "solid-js/html";
 
 export default function AuthorizedImport(props) {

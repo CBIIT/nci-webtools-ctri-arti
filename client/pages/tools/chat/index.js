@@ -1,21 +1,23 @@
 import {
-  createSignal,
-  createResource,
-  For,
-  Show,
-  Index,
-  onMount,
-  onCleanup,
   createEffect,
+  createResource,
+  createSignal,
+  For,
+  Index,
+  onCleanup,
+  onMount,
+  Show,
 } from "solid-js";
 import html from "solid-js/html";
-import Loader from "/components/loader.js";
-import ClassToggle from "/components/class-toggle.js";
-import ScrollTo from "/components/scroll-to.js";
-import { AlertContainer } from "/components/alert.js";
+
+import { AlertContainer } from "../../../components/alert.js";
+import ClassToggle from "../../../components/class-toggle.js";
+import Loader from "../../../components/loader.js";
+import ScrollTo from "../../../components/scroll-to.js";
+import { alerts, clearAlert } from "../../../utils/alerts.js";
+
 import { useChat } from "./hooks.js";
 import Message from "./message.js";
-import { alerts, clearAlert } from "/utils/alerts.js";
 
 export default function Page() {
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));

@@ -1,10 +1,12 @@
-import test from "./test.js";
-import assert from "./assert.js";
 // Test all patterns from client README.md
-import { createSignal, createMemo, For, Show } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
 import { render } from "solid-js/web";
+
+import { createStore } from "solid-js/store";
+
+import assert from "./assert.js";
+import test from "./test.js";
 
 test("SolidJS README Patterns", async (t) => {
   await t.test("signals auto-wrapped", () => {

@@ -1,6 +1,7 @@
 import { openDB } from "idb";
+
 import { EmbeddingService, TestEmbedder } from "./embedders.js";
-import { Project, Conversation, Message, Resource } from "./models.js";
+import { Conversation, Message, Project, Resource } from "./models.js";
 
 /**
  * Extract searchable text from message content array

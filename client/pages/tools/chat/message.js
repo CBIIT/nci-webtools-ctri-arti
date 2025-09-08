@@ -1,9 +1,11 @@
 import { createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
-import { stringify } from "yaml";
+
 import { parse } from "marked";
-import { downloadText, downloadCsv } from "/utils/files.js";
-import { getMarked } from "/utils/utils.js";
+import { stringify } from "yaml";
+
+import { downloadCsv, downloadText } from "../../../utils/files.js";
+import { getMarked } from "../../../utils/utils.js";
 
 const marked = getMarked();
 

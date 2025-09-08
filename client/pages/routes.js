@@ -1,5 +1,6 @@
 import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
+
 const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
 const ConsentCrafter = AuthorizedImport({ path: "./tools/consent-crafter/index.js" });
 const Translate = AuthorizedImport({ path: "./tools/translate.js" });

@@ -1,8 +1,8 @@
-import { createSignal, createMemo, For, Show } from "solid-js";
-import { createResource } from "solid-js";
+import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
-import { capitalize } from "/utils/utils.js";
-import { DataTable } from "/components/table.js";
+
+import { DataTable } from "../../components/table.js";
+import { capitalize } from "../../utils/utils.js";
 
 // Shared date range utilities
 export const VALID_DATE_RANGES = [

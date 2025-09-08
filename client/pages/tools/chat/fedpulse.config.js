@@ -1,5 +1,6 @@
-import { browse } from "/utils/tools.js";
-import { jsonToXml } from "/utils/xml.js";
+import { browse } from "../../../utils/tools.js";
+import { jsonToXml } from "../../../utils/xml.js";
+
 export const currentExecutiveOrders = jsonToXml(
   JSON.parse(
     await browse({

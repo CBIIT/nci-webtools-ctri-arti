@@ -1,11 +1,12 @@
-import { createSignal, createEffect, createMemo, For, Show } from "solid-js";
-import { createResource } from "solid-js";
+import { createEffect, createMemo, createResource, createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
+
 import { useLocation } from "@solidjs/router";
-import { capitalize } from "/utils/utils.js";
-import { DataTable } from "/components/table.js";
-import { AlertContainer } from "/components/alert.js";
-import { showSuccess, showError, alerts, clearAlert } from "/utils/alerts.js";
+
+import { AlertContainer } from "../../components/alert.js";
+import { DataTable } from "../../components/table.js";
+import { alerts, clearAlert, showError, showSuccess } from "../../utils/alerts.js";
+import { capitalize } from "../../utils/utils.js";
 
 function UsersList() {
   const location = useLocation();

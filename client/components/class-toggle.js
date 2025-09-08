@@ -1,4 +1,4 @@
-import { onMount, onCleanup, children } from "solid-js";
+import { children, onCleanup, onMount } from "solid-js";
 import html from "solid-js/html";
 
 /**

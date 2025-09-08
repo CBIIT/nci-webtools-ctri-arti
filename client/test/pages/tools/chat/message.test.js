@@ -1,8 +1,9 @@
-import test from "../../../test.js";
-import assert from "../../../assert.js";
-import { render } from "solid-js/web";
 import html from "solid-js/html";
+import { render } from "solid-js/web";
+
 import Message from "../../../../pages/tools/chat/message.js";
+import assert from "../../../assert.js";
+import test from "../../../test.js";
 
 test("Chat Message Component Tests", async (t) => {
   await t.test("renders markdown content correctly", () => {

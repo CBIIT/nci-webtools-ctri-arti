@@ -1,17 +1,19 @@
+import { createEffect, createMemo, createResource, For, Show } from "solid-js";
 import html from "solid-js/html";
-import { Show, For, createResource, createEffect, createMemo } from "solid-js";
-import { createStore, unwrap } from "solid-js/store";
-// import { trackStore } from "@solid-primitives/deep";
-import { openDB } from "idb";
-import { parseDocument } from "/utils/parsers.js";
-import { readFile } from "/utils/files.js";
+
 import { createReport } from "docx-templates";
+import { openDB } from "idb";
+import { createStore, unwrap } from "solid-js/store";
 import yaml from "yaml";
-import { templateConfigs, getTemplateConfigsByCategory, getPrompt } from "./config.js";
-import { alerts, clearAlert } from "/utils/alerts.js";
-import { AlertContainer } from "/components/alert.js";
-import Modal from "/components/modal.js";
-import ClassToggle from "/components/class-toggle.js";
+
+import { AlertContainer } from "../../../components/alert.js";
+import ClassToggle from "../../../components/class-toggle.js";
+import Modal from "../../../components/modal.js";
+import { alerts, clearAlert } from "../../../utils/alerts.js";
+import { readFile } from "../../../utils/files.js";
+import { parseDocument } from "../../../utils/parsers.js";
+
+import { getPrompt, getTemplateConfigsByCategory, templateConfigs } from "./config.js";
 
 // ============= Database Layer =============
 

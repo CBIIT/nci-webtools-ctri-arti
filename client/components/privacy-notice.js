@@ -1,6 +1,8 @@
-import html from "solid-js/html";
 import { createResource } from "solid-js";
-import { getCookie, setCookie } from "/utils/utils.js";
+import html from "solid-js/html";
+
+import { getCookie, setCookie } from "../utils/utils.js";
+
 import Modal from "./modal.js";
 
 export default function PrivacyNotice() {

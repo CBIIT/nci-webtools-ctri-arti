@@ -1,12 +1,12 @@
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import {
-  matmul,
-  pipeline,
   AutoModel,
   AutoTokenizer,
+  matmul,
+  pipeline,
   Tensor,
   TextStreamer,
 } from "@huggingface/transformers";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 export async function inference(
   messages = [

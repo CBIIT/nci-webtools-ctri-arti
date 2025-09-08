@@ -1,4 +1,4 @@
-import { For, Show, createResource } from "solid-js";
+import { createResource, For, Show } from "solid-js";
 import html from "solid-js/html";
 
 export default function Page() {

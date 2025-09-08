@@ -1,6 +1,7 @@
+import { createResource, createSignal } from "solid-js";
 import html from "solid-js/html";
-import { createSignal, createResource } from "solid-js";
-import { parseDocument } from "/utils/parsers.js";
+
+import { parseDocument } from "../../utils/parsers.js";
 
 export default function Page() {
   const [languages] = createResource(getLanguages);
