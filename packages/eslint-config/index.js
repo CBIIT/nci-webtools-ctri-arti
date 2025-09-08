@@ -17,6 +17,7 @@ export default defineConfig([
       "import/resolver": {
         node: {
           extensions: [".js", ".jsx", ".ts", ".tsx"],
+          moduleDirectory: ["node_modules", "client/", "server/"],
         },
       },
     },

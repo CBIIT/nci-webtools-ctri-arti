@@ -7,7 +7,7 @@ export default defineConfig([
     files: ["**/*.{js,mjs,cjs}"],
     languageOptions: { globals: { ...globals.browser }, sourceType: "module" },
     settings: {
-      "import/core-modules": ["solid-js", "solid-js/html", "solid-js/web"],
+      "import/core-modules": ["eslint/config", "solid-js", "solid-js/html", "solid-js/web"],
     },
   },
 ]);
