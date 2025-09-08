@@ -30,6 +30,7 @@ export default defineConfig([
           caughtErrorsIgnorePattern: "^_",
         },
       ],
+      "import/no-named-as-default": "off",
       "import/prefer-default-export": "off",
       "import/newline-after-import": [
         "error",
