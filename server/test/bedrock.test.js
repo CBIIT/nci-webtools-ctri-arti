@@ -658,7 +658,6 @@ test.skip("BedrockProvider", async (t) => {
 
       let textContent = "";
       let tokenUsage = null;
-      let cacheMetrics = null;
 
       for await (const chunk of streamResponse.stream) {
         if (
