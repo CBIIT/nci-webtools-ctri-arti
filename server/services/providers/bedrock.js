@@ -1,7 +1,7 @@
 import {
   BedrockRuntimeClient,
   ConverseCommand,
-  ConverseStreamCommand
+  ConverseStreamCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 
 /* Example Usage: ConverseCommand
@@ -1170,7 +1170,7 @@ const response = await client.send(command);
 
 export default class BedrockProvider {
   constructor() {
-      this.client = new BedrockRuntimeClient();
+    this.client = new BedrockRuntimeClient();
   }
 
   /**
@@ -1189,7 +1189,7 @@ export default class BedrockProvider {
    * @returns {AsyncGenerator<import("@aws-sdk/client-bedrock-runtime").ConverseStreamOutput>} An async generator yielding Bedrock ConverseStreamOutput events.
    */
   async converseStream(input) {
-      const command = new ConverseStreamCommand(input);
-      return await this.client.send(command);
+    const command = new ConverseStreamCommand(input);
+    return await this.client.send(command);
   }
 }

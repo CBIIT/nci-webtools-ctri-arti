@@ -16,7 +16,7 @@ api.get("/login", loginMiddleware, async (req, res) => {
   const { session } = req;
   const { email, first_name: firstName, last_name: lastName } = session.userinfo;
   if (!email) return res.redirect("/?error=missing_email");
-  const isFirstUser = await User.count() === 0;
+  const isFirstUser = (await User.count()) === 0;
   const newUser = isFirstUser ? { roleId: 1 } : { roleId: 3, limit: 5 };
   session.user =
     (await User.findOne({ where: { email } })) ||

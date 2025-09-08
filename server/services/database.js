@@ -3,10 +3,14 @@ import { Sequelize } from "sequelize";
 import logger from "./logger.js";
 import { createModels, seedDatabase } from "./schema.js";
 
-const { 
-  DB_DIALECT = 'postgres',
-  DB_STORAGE = ':memory:',
-  PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD 
+const {
+  DB_DIALECT = "postgres",
+  DB_STORAGE = ":memory:",
+  PGHOST,
+  PGPORT,
+  PGDATABASE,
+  PGUSER,
+  PGPASSWORD,
 } = process.env;
 
 const dbConfigs = {
@@ -23,7 +27,7 @@ const dbConfigs = {
     dialect: "sqlite",
     storage: DB_STORAGE,
     logging: (m) => logger.debug(m),
-  }
+  },
 };
 
 // Create database instance with selected dialect

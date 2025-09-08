@@ -25,7 +25,9 @@ export function createLogger(name, level = "info") {
     format: format.combine(
       format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
       format.label({ label: name }),
-      format.printf((e) => `[${e.label}] [${e.timestamp}] [${e.level}] - ${formatObject(e.message)}`)
+      format.printf(
+        (e) => `[${e.label}] [${e.timestamp}] [${e.level}] - ${formatObject(e.message)}`
+      )
     ),
     transports: [new transports.Console()],
     exitOnError: false,

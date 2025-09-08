@@ -14,24 +14,19 @@ export const modelDefinitions = {
       remaining: DataTypes.FLOAT,
     },
     options: {
-      indexes: [
-        { fields: ['email'] },
-        { fields: ['roleId'] }
-      ]
-    }
+      indexes: [{ fields: ["email"] }, { fields: ["roleId"] }],
+    },
   },
 
   Role: {
     attributes: {
       name: DataTypes.STRING,
       policy: DataTypes.JSON,
-      order: DataTypes.INTEGER
+      order: DataTypes.INTEGER,
     },
     options: {
-      indexes: [
-        { fields: ['order'] }
-      ]
-    }
+      indexes: [{ fields: ["order"] }],
+    },
   },
 
   Provider: {
@@ -39,7 +34,7 @@ export const modelDefinitions = {
       name: DataTypes.STRING,
       apiKey: DataTypes.STRING,
     },
-    options: {}
+    options: {},
   },
 
   Model: {
@@ -56,11 +51,8 @@ export const modelDefinitions = {
       cost1kCacheWrite: DataTypes.FLOAT,
     },
     options: {
-      indexes: [
-        { fields: ['value'] },
-        { fields: ['providerId'] }
-      ]
-    }
+      indexes: [{ fields: ["value"] }, { fields: ["providerId"] }],
+    },
   },
 
   Usage: {
@@ -76,23 +68,23 @@ export const modelDefinitions = {
     },
     options: {
       indexes: [
-        { fields: ['userId'] },
-        { fields: ['modelId'] },
-        { fields: ['createdAt'] },
-        { fields: ['userId', 'createdAt'] }
-      ]
-    }
-  }
+        { fields: ["userId"] },
+        { fields: ["modelId"] },
+        { fields: ["createdAt"] },
+        { fields: ["userId", "createdAt"] },
+      ],
+    },
+  },
 };
 
 // Association definitions
 export const associations = [
-  { source: 'User', target: 'Role', type: 'belongsTo', options: { foreignKey: 'roleId' } },
-  { source: 'Model', target: 'Provider', type: 'belongsTo', options: { foreignKey: 'providerId' } },
-  { source: 'Usage', target: 'User', type: 'belongsTo', options: { foreignKey: 'userId' } },
-  { source: 'Usage', target: 'Model', type: 'belongsTo', options: { foreignKey: 'modelId' } },
-  { source: 'User', target: 'Usage', type: 'hasMany', options: { foreignKey: 'userId' } },
-  { source: 'Model', target: 'Usage', type: 'hasMany', options: { foreignKey: 'modelId' } },
+  { source: "User", target: "Role", type: "belongsTo", options: { foreignKey: "roleId" } },
+  { source: "Model", target: "Provider", type: "belongsTo", options: { foreignKey: "providerId" } },
+  { source: "Usage", target: "User", type: "belongsTo", options: { foreignKey: "userId" } },
+  { source: "Usage", target: "Model", type: "belongsTo", options: { foreignKey: "modelId" } },
+  { source: "User", target: "Usage", type: "hasMany", options: { foreignKey: "userId" } },
+  { source: "Model", target: "Usage", type: "hasMany", options: { foreignKey: "modelId" } },
 ];
 
 // Default seed data
@@ -184,7 +176,7 @@ export const seedData = {
       maxOutput: 64_000,
       maxReasoning: 60_000,
     },
-    
+
     {
       id: 10,
       providerId: 2,
@@ -220,25 +212,25 @@ export const seedData = {
       maxOutput: 100_000,
       maxReasoning: 500_000,
     },
-  ]
+  ],
 };
 
 // Helper function to create models from definitions
 export function createModels(sequelize) {
   const models = {};
-  
+
   // Create all models
   for (const [modelName, definition] of Object.entries(modelDefinitions)) {
     models[modelName] = sequelize.define(modelName, definition.attributes, definition.options);
   }
-  
+
   // Set up associations
   for (const association of associations) {
     const sourceModel = models[association.source];
     const targetModel = models[association.target];
     sourceModel[association.type](targetModel, association.options);
   }
-  
+
   return models;
 }
 
@@ -248,8 +240,16 @@ export async function seedDatabase(models) {
   await models.Provider.bulkCreate(seedData.providers, { updateOnDuplicate: ["name"] });
   await models.Model.bulkCreate(seedData.models, {
     updateOnDuplicate: [
-      "providerId", "label", "value", "cost1kInput", "cost1kOutput",
-      "cost1kCacheRead", "cost1kCacheWrite", "maxContext", "maxOutput", "maxReasoning"
-    ]
+      "providerId",
+      "label",
+      "value",
+      "cost1kInput",
+      "cost1kOutput",
+      "cost1kCacheRead",
+      "cost1kCacheWrite",
+      "maxContext",
+      "maxOutput",
+      "maxReasoning",
+    ],
   });
 }
