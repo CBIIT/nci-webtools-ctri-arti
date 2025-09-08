@@ -45,6 +45,7 @@
     "@arti/eslint-config": "file:../packages/eslint-config",
     "eslint": "^9.35.0",
     "playwright": "^1.55.0",
+    "prettier": "3.6.2",
     "sqlite3": "^5.1.7",
     "supertest": "^7.1.4"
   }

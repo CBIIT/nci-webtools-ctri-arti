@@ -21,6 +21,7 @@
     "mammoth": "^1.10.0",
     "marked": "^16.2.0",
     "pdfjs-dist": "^5.4.54",
+    "prettier": "3.6.2",
     "solid-js": "^1.9.9",
     "three": "^0.179.1",
     "turndown": "^7.2.1",
