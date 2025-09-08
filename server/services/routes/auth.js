@@ -1,6 +1,8 @@
-import { Router, json } from "express";
-import { oauthMiddleware, loginMiddleware } from "../middleware.js";
-import { User, Role } from "../database.js";
+import { json, Router } from "express";
+
+import { Role, User } from "../database.js";
+import { loginMiddleware, oauthMiddleware } from "../middleware.js";
+
 const { OAUTH_PROVIDER_ENABLED } = process.env;
 
 const api = Router();

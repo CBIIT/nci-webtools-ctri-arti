@@ -1,7 +1,8 @@
 import { inspect } from "util";
-import { createLogger as createWinstonLogger, format, transports } from "winston";
-import pick from "lodash/pick.js";
+
 import isEmpty from "lodash/isEmpty.js";
+import pick from "lodash/pick.js";
+import { createLogger as createWinstonLogger, format, transports } from "winston";
 
 const logger = createLogger("research-optimizer", process.env.LOG_LEVEL);
 

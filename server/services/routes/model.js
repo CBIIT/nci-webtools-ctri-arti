@@ -1,7 +1,8 @@
-import { Router, json } from "express";
+import { json, Router } from "express";
+
+import { Model, Usage, User } from "../database.js";
 import { runModel } from "../inference.js";
 import { requireRole } from "../middleware.js";
-import { User, Model, Usage } from "../database.js";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB

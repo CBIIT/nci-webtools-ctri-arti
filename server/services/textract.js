@@ -1,6 +1,6 @@
 // textract.js
+import { DetectDocumentTextCommand, TextractClient } from "@aws-sdk/client-textract";
 import { PDFDocument } from "pdf-lib";
-import { TextractClient, DetectDocumentTextCommand } from "@aws-sdk/client-textract";
 
 const textractClient = new TextractClient();
 
@@ -28,7 +28,7 @@ async function splitPages(pdfBytes) {
       pages.push(pageBytes);
     }
     return pages;
-  } catch (error) {
+  } catch (_error) {
     return [pdfBytes];
   }
 }

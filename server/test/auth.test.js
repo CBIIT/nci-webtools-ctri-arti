@@ -1,5 +1,6 @@
-import { test, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert';
+import { after, before, beforeEach, test } from 'node:test';
+
 import { requireRole } from '../services/middleware.js';
 
 test('requireRole', async (t) => {
