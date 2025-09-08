@@ -1,4 +1,4 @@
-import { For, Show, createResource } from "solid-js";
+import { createResource, For, Show } from "solid-js";
 import html from "solid-js/html";
 
 export default function Page() {
@@ -31,17 +31,31 @@ export default function Page() {
         <div class="col-lg-6">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
             <h1 class="text-gradient display-5 font-title fw-normal mb-1">Welcome to ARTI</h1>
-            <h2 class="text-gradient fs-3 font-title fw-normal mb-4">AI Research & Translational Informatics</h2>
+            <h2 class="text-gradient fs-3 font-title fw-normal mb-4">
+              AI Research & Translational Informatics
+            </h2>
             <div class="text-secondary">
               <p class="mb-3">
-                Powering the Research Optimizer platform with intelligent tools that address documentation challenges throughout the clinical trial lifecycle.
-                <br/>
-                ARTI enables researchers to focus on scientific advancement rather than administrative burdens.
+                Powering the Research Optimizer platform with intelligent tools that address
+                documentation challenges throughout the clinical trial lifecycle.
+                <br />
+                ARTI enables researchers to focus on scientific advancement rather than
+                administrative burdens.
               </p>
-              <p class="mb-3">Developed by clinical research professionals for clinical research professionals.</p>
-              <p class="mb-3">An initiative of the National Cancer Institute – Center for Biomedical Informatics and Information Technology</p>
+              <p class="mb-3">
+                Developed by clinical research professionals for clinical research professionals.
+              </p>
+              <p class="mb-3">
+                An initiative of the National Cancer Institute – Center for Biomedical Informatics
+                and Information Technology
+              </p>
               <${Show} when=${() => !session()?.user}>
-                <a class="btn btn-primary rounded-pill text-decoration-none" href="/api/login" target="_self">Login</a>
+                <a
+                  class="btn btn-primary rounded-pill text-decoration-none"
+                  href="/api/login"
+                  target="_self"
+                  >Login</a
+                >
               <//>
             </div>
           </div>
@@ -50,13 +64,20 @@ export default function Page() {
           <div class="py-3 d-flex flex-column justify-content-center h-100">
             <${For} each=${links}>
               ${(link) => html`
-                <a class="d-flex align-items-center my-3 text-decoration-none link-primary" 
-                   classList=${{ "disabled-link": link.disabled }} 
-                   href="${link.href}">
+                <a
+                  class="d-flex align-items-center my-3 text-decoration-none link-primary"
+                  classList=${{ "disabled-link": link.disabled }}
+                  href="${link.href}"
+                >
                   <div class="p-2 text-gradient">${link.icon}</div>
                   <div class="p-2 border-start">
                     <div class="font-title fs-5 textAnchorBlue">${link.title}</div>
-                    <div class="fw-normal" classList=${{ "text-primary": !link.disabled, "text-muted": link.disabled }}>${link.description}</div>
+                    <div
+                      class="fw-normal"
+                      classList=${{ "text-primary": !link.disabled, "text-muted": link.disabled }}
+                    >
+                      ${link.description}
+                    </div>
                   </div>
                 </a>
               `}

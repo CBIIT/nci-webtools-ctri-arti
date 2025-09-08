@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -53,17 +53,32 @@
 
       const ThemeSwitch = () => {
         const theme = useContext(ThemeCtx);
-        return html`<button onClick=${theme.toggle}>${() => (theme.mode() === "light" ? "🌙" : "☀️")}</button>`;
+        return html`<button onClick=${theme.toggle}>
+          ${() => (theme.mode() === "light" ? "🌙" : "☀️")}
+        </button>`;
       };
 
       const [path, setPath] = createSignal("/");
       const Router = (p) => {
         const Layout = p.root || ((p) => html`<div>${p.children}</div>`);
-        const Active = createMemo(() => p.children.find((r) => r.path === path() || r.path === "/*")?.component);
+        const Active = createMemo(
+          () => p.children.find((r) => r.path === path() || r.path === "/*")?.component
+        );
         return html`<${Layout}>${Active}<//>`;
       };
-      const A = (p) => html`<a href=${p.href} onClick=${e => {e.preventDefault(); setPath(p.href);}}>${p.children}</a>`;
-      const Nav = (p) => html`<nav><${For} each=${p.routes}> ${(r) => html`<${A} href=${r.path}>${r.title}<//> | `} <//></nav>`;
+      const A = (p) =>
+        html`<a
+          href=${p.href}
+          onClick=${(e) => {
+            e.preventDefault();
+            setPath(p.href);
+          }}
+          >${p.children}</a
+        >`;
+      const Nav = (p) =>
+        html`<nav>
+          <${For} each=${p.routes}> ${(r) => html`<${A} href=${r.path}>${r.title}<//> | `} <//>
+        </nav>`;
 
       const [todos, setTodos] = createStore([]);
 
@@ -89,7 +104,8 @@
       createEffect(() => (document.title = `${left()} task(s) left`));
 
       /*  actions using store helpers  */
-      const addTodo = (text) => setTodos(produce((d) => d.push({ id: Date.now(), text, completed: false })));
+      const addTodo = (text) =>
+        setTodos(produce((d) => d.push({ id: Date.now(), text, completed: false })));
 
       const toggleTodo = (id) =>
         setTodos(
@@ -142,7 +158,10 @@
             <${ErrorBoundary}
               fallback=${(err, reset) =>
                 html`<p data-testid="error">Error: ${err.message}</p>
-                  <button data-testid="clear-error" onClick=${(e) => onReset(e, reset)}>Clear</button>`}>
+                  <button data-testid="clear-error" onClick=${(e) => onReset(e, reset)}>
+                    Clear
+                  </button>`}
+            >
               <${Suspense} fallback=${html`<p>Loading...</p>`}>
                 <table>
                   <${For} each=${todos}>
@@ -151,7 +170,11 @@
                       <tr>
                         <td>
                           <label>
-                            <input type="checkbox" checked=${() => t.completed} onChange=${() => toggleTodo(t.id)} />
+                            <input
+                              type="checkbox"
+                              checked=${() => t.completed}
+                              onChange=${() => toggleTodo(t.id)}
+                            />
                             ${t.text}
                           </label>
                         </td>
@@ -195,7 +218,7 @@
         if (!condition) {
           throw new Error(message || "Assertion failed");
         }
-      }
+      };
 
       async function runTests(tests, setup = async () => {}, teardown = async () => {}) {
         let passed = 0,
@@ -213,7 +236,9 @@
             passed++;
           } catch (e) {
             error = e;
-            console.error(`FAIL: ${testName}\n   Error: ${error.message}\n   Stack: ${error.stack?.split("\n").slice(1).join("\n   ")}`);
+            console.error(
+              `FAIL: ${testName}\n   Error: ${error.message}\n   Stack: ${error.stack?.split("\n").slice(1).join("\n   ")}`
+            );
             failed++;
           } finally {
             try {
@@ -267,12 +292,21 @@
 
       async function testRouting() {
         await setPath("/");
-        assert(document.querySelector("main h1")?.textContent.includes("Home"), "Home component not rendered under /");
+        assert(
+          document.querySelector("main h1")?.textContent.includes("Home"),
+          "Home component not rendered under /"
+        );
         await document.querySelector('nav a[href="/todos"]')?.click(); // Simulate click
         await wait(20);
-        assert(document.querySelector("section h1")?.textContent.includes("Todos"), "Todos component not rendered under /todos");
+        assert(
+          document.querySelector("section h1")?.textContent.includes("Todos"),
+          "Todos component not rendered under /todos"
+        );
         await setPath("/nonexistent");
-        assert(document.querySelector("main h1")?.textContent.includes("404"), "404 component not rendered under /nonexistent");
+        assert(
+          document.querySelector("main h1")?.textContent.includes("404"),
+          "404 component not rendered under /nonexistent"
+        );
       }
 
       async function testThemeSwitching() {
@@ -280,7 +314,10 @@
         const colors = { light: "rgb(238, 238, 238)", dark: "rgb(34, 34, 34)" };
         const themeButton = await waitFor(() => body.querySelector("header h1 button"));
         assert(themeButton?.textContent.includes("🌙"), "Initial icon not: 🌙");
-        assert(body.style.backgroundColor === colors.light, `Initial background not: ${colors.light}`);
+        assert(
+          body.style.backgroundColor === colors.light,
+          `Initial background not: ${colors.light}`
+        );
 
         await themeButton?.click();
         await waitFor(() => body.style.backgroundColor === colors.dark);

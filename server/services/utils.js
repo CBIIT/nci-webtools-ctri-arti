@@ -1,9 +1,9 @@
-import fs from "fs";
-import path from "path";
-import forge from "node-forge";
 import { inspect } from "util";
 
-export const log = (value) => console.log(inspect(value, { depth: null, colors: true, compact: false, breakLength: 120 }));
+import forge from "node-forge";
+
+export const log = (value) =>
+  console.log(inspect(value, { depth: null, colors: true, compact: false, breakLength: 120 }));
 
 async function fetchJson(url, opts = {}) {
   const response = await fetch(url, {
@@ -40,7 +40,9 @@ export async function braveSearch(opts, apiKey = process.env.BRAVE_SEARCH_API_KE
   if (results.web.summarizer) {
     const opts = results.web.summarizer;
     const summarizerUrl = `https://api.search.brave.com/res/v1/summarizer/search?${new URLSearchParams(opts)}`;
-    results.summary = await fetchJson(summarizerUrl, { headers: { "X-Subscription-Token": apiKey } });
+    results.summary = await fetchJson(summarizerUrl, {
+      headers: { "X-Subscription-Token": apiKey },
+    });
   }
 
   return results;
@@ -68,7 +70,7 @@ export async function govSearch(opts, key = process.env.DATA_GOV_API_KEY) {
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      "Accept": "application/json",
+      Accept: "application/json",
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
@@ -126,16 +128,9 @@ export async function retry(fn, maxAttempts = 3, initialDelay = 0) {
  * @param {any} opts - Options for certificate generation
  * @returns {{key: string, cert: string}}
  */
-export function createCertificate(
-  opts = {}
-) {
+export function createCertificate(opts = {}) {
   const pki = forge.pki;
-  const {
-    attrs: customAttrs = {},
-    keySize = 2048,
-    days = 365,
-    altNames,
-  } = opts;
+  const { attrs: customAttrs = {}, keySize = 2048, days = 365, altNames } = opts;
 
   // Attributes & Key Pair
   const defaultAttrs = { C: "US", ST: "State", L: "City", O: "Organization", CN: "localhost" };
@@ -157,15 +152,25 @@ export function createCertificate(
 
   // Extensions (Basic + SAN)
   const cnValue = finalAttrsMap.CN;
-  const sanToAdd = altNames && altNames.length > 0
-    ? altNames
-    : (cnValue === "localhost"
-      ? [{ type: 2, value: "localhost" }, { type: 7, ip: "127.0.0.1" }]
-      : []);
+  const sanToAdd =
+    altNames && altNames.length > 0
+      ? altNames
+      : cnValue === "localhost"
+        ? [
+            { type: 2, value: "localhost" },
+            { type: 7, ip: "127.0.0.1" },
+          ]
+        : [];
 
   cert.setExtensions([
     { name: "basicConstraints", cA: true },
-    { name: "keyUsage", keyCertSign: true, digitalSignature: true, nonRepudiation: true, keyEncipherment: true },
+    {
+      name: "keyUsage",
+      keyCertSign: true,
+      digitalSignature: true,
+      nonRepudiation: true,
+      keyEncipherment: true,
+    },
     ...(sanToAdd.length > 0 ? [{ name: "subjectAltName", altNames: sanToAdd }] : []),
   ]);
 
@@ -178,14 +183,14 @@ export function createCertificate(
 
 export function getDateRange(startDateParam, endDateParam) {
   const now = new Date();
-  
-  const startDate = startDateParam ? 
-    new Date(new Date(startDateParam).setHours(0, 0, 0, 0)) :
-    new Date(new Date(now).setDate(now.getDate() - 30)).setHours(0, 0, 0, 0);
-    
-  const endDate = endDateParam ?
-    new Date(new Date(endDateParam).setHours(23, 59, 59, 999)) :
-    new Date(new Date(now).setHours(23, 59, 59, 999));
-    
+
+  const startDate = startDateParam
+    ? new Date(new Date(startDateParam).setHours(0, 0, 0, 0))
+    : new Date(new Date(now).setDate(now.getDate() - 30)).setHours(0, 0, 0, 0);
+
+  const endDate = endDateParam
+    ? new Date(new Date(endDateParam).setHours(23, 59, 59, 999))
+    : new Date(new Date(now).setHours(23, 59, 59, 999));
+
   return { startDate: new Date(startDate), endDate: new Date(endDate) };
 }

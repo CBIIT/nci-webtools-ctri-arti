@@ -1,42 +1,44 @@
+import { createEffect, createMemo, createResource, For, Show } from "solid-js";
 import html from "solid-js/html";
-import { Show, For, createResource, createEffect, createMemo, onMount, on } from "solid-js";
-import { createStore, unwrap } from "solid-js/store";
-// import { trackStore } from "@solid-primitives/deep";
-import { openDB } from "idb";
-import { parseDocument } from "/utils/parsers.js";
-import { readFile } from "/utils/files.js";
+
 import { createReport } from "docx-templates";
+import { openDB } from "idb";
+import { createStore, unwrap } from "solid-js/store";
 import yaml from "yaml";
-import { templateConfigs, getTemplateConfigsByCategory, getPrompt } from "./config.js";
-import { alerts, clearAlert } from "/utils/alerts.js";
-import { AlertContainer } from "/components/alert.js";
-import Modal from "/components/modal.js";
-import ClassToggle from "/components/class-toggle.js";
+
+import { AlertContainer } from "../../../components/alert.js";
+import ClassToggle from "../../../components/class-toggle.js";
+import Modal from "../../../components/modal.js";
+import { alerts, clearAlert } from "../../../utils/alerts.js";
+import { readFile } from "../../../utils/files.js";
+import { parseDocument } from "../../../utils/parsers.js";
+
+import { getPrompt, getTemplateConfigsByCategory, templateConfigs } from "./config.js";
 
 // ============= Database Layer =============
 
 function sanitizeEmail(email) {
-  if (!email || typeof email !== 'string') {
-    return 'anonymous';
+  if (!email || typeof email !== "string") {
+    return "anonymous";
   }
   return email
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, '-')
-    .replace(/--+/g, '-')
-    .replace(/^-|-$/g, '');
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/--+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 async function getDatabase(userEmail) {
   const dbName = `arti-consent-crafter-${sanitizeEmail(userEmail)}`;
-  
+
   return await openDB(dbName, 1, {
     upgrade(db) {
-      const store = db.createObjectStore('sessions', { 
-        keyPath: 'id', 
-        autoIncrement: true 
+      const store = db.createObjectStore("sessions", {
+        keyPath: "id",
+        autoIncrement: true,
       });
-      store.createIndex('createdAt', 'createdAt');
-    }
+      store.createIndex("createdAt", "createdAt");
+    },
   });
 }
 
@@ -44,12 +46,15 @@ async function getDatabase(userEmail) {
 async function blobToBase64(blob) {
   return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onloadend = () => resolve(reader.result.split(",")[1]);
     reader.readAsDataURL(blob);
   });
 }
 
-function base64ToBlob(base64, type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+function base64ToBlob(
+  base64,
+  type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+) {
   const binary = atob(base64);
   const array = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -61,9 +66,7 @@ function base64ToBlob(base64, type = "application/vnd.openxmlformats-officedocum
 async function documentsToBase64(documents) {
   const result = {};
   for (const [id, doc] of Object.entries(documents)) {
-    result[id] = doc.blob 
-      ? { ...doc, content: await blobToBase64(doc.blob), blob: null }
-      : doc;
+    result[id] = doc.blob ? { ...doc, content: await blobToBase64(doc.blob), blob: null } : doc;
   }
   return result;
 }
@@ -71,9 +74,8 @@ async function documentsToBase64(documents) {
 function base64ToDocuments(documents) {
   const result = {};
   for (const [id, doc] of Object.entries(documents)) {
-    result[id] = doc.content && doc.status === "completed"
-      ? { ...doc, blob: base64ToBlob(doc.content) }
-      : doc;
+    result[id] =
+      doc.content && doc.status === "completed" ? { ...doc, blob: base64ToBlob(doc.content) } : doc;
   }
   return result;
 }
@@ -104,8 +106,11 @@ function TreeSelect(props) {
                   />
                   <label
                     class=${() =>
-                      ["form-check-label cursor-pointer", option.disabled ? "text-muted" : ""].filter(Boolean).join(" ")}
-                    for=${() => option.value}>
+                      ["form-check-label cursor-pointer", option.disabled ? "text-muted" : ""]
+                        .filter(Boolean)
+                        .join(" ")}
+                    for=${() => option.value}
+                  >
                     ${() => templateConfigs[option.value].label}
                   </label>
                 </div>
@@ -122,25 +127,28 @@ function TreeSelect(props) {
 
 function FileInputWithDisplay(props) {
   const { filename, inputId, inputName, accept, onFileSelect, onClear } = props;
-  
+
   return html`
-    <${Show} when=${filename} fallback=${html`
-      <input 
-        type="file" 
-        id=${inputId} 
-        name=${inputName}
-        class="form-control form-control-sm mb-3"
-        accept=${accept} 
-        onChange=${onFileSelect} 
-      />
-    `}>
+    <${Show}
+      when=${filename}
+      fallback=${html`
+        <input
+          type="file"
+          id=${inputId}
+          name=${inputName}
+          class="form-control form-control-sm mb-3"
+          accept=${accept}
+          onChange=${onFileSelect}
+        />
+      `}
+    >
       <div class="d-flex align-items-center gap-2 mb-3">
         <div class="form-control form-control-sm d-flex justify-content-between align-items-center">
           <span class="text-truncate" title=${filename}>${filename}</span>
-          <button 
-            type="button" 
-            class="btn-close btn-close-sm" 
-            aria-label="Clear file" 
+          <button
+            type="button"
+            class="btn-close btn-close-sm"
+            aria-label="Clear file"
             onClick=${onClear}
           ></button>
         </div>
@@ -159,28 +167,28 @@ export default function Page() {
   const [store, setStore] = createStore({
     // Session
     id: null,
-    
+
     // Input state
     inputText: "",
     inputTextFilename: "",
-    
-    // Template state  
+
+    // Template state
     selectedTemplates: [],
     customTemplate: null, // ArrayBuffer for custom template
     customTemplateFilename: "",
     customSystemPrompt: "",
-    
+
     // Advanced options (keep exact same UI)
     model: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
     templateSourceType: "predefined",
     selectedPredefinedTemplate: "",
     advancedOptionsOpen: false,
-    
+
     // Output state
     generatedDocuments: {},
-    
+
     // UI state
-    expandModalOpen: false
+    expandModalOpen: false,
   });
 
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
@@ -189,45 +197,47 @@ export default function Page() {
 
   async function saveSession(createNew = false) {
     if (!db || !session()?.user?.email) return;
-    
+
     const storeData = unwrap(store);
     const sessionData = {
       ...storeData,
       generatedDocuments: await documentsToBase64(storeData.generatedDocuments),
-      customTemplate: storeData.customTemplate ? await blobToBase64(new Blob([storeData.customTemplate])) : null,
-      createdAt: Date.now()
+      customTemplate: storeData.customTemplate
+        ? await blobToBase64(new Blob([storeData.customTemplate]))
+        : null,
+      createdAt: Date.now(),
     };
-    
-    const id = createNew 
-      ? await db.add('sessions', sessionData)
-      : await db.put('sessions', sessionData);
-    
+
+    const id = createNew
+      ? await db.add("sessions", sessionData)
+      : await db.put("sessions", sessionData);
+
     if (createNew) {
-      setStore('id', id);
+      setStore("id", id);
       const url = new URL(window.location);
-      url.searchParams.set('id', id);
-      window.history.replaceState(null, '', url);
+      url.searchParams.set("id", id);
+      window.history.replaceState(null, "", url);
     }
-    
+
     return id;
   }
 
   async function loadSession(id) {
     if (!db) return;
-    
+
     try {
-      const sessionData = await db.get('sessions', parseInt(id));
+      const sessionData = await db.get("sessions", parseInt(id));
       if (sessionData) {
         setStore({
           ...sessionData,
           generatedDocuments: base64ToDocuments(sessionData.generatedDocuments || {}),
-          customTemplate: sessionData.customTemplate 
+          customTemplate: sessionData.customTemplate
             ? await base64ToBlob(sessionData.customTemplate).arrayBuffer()
-            : null
+            : null,
         });
       }
     } catch (error) {
-      console.error('Failed to load session:', error);
+      console.error("Failed to load session:", error);
     }
   }
 
@@ -236,15 +246,16 @@ export default function Page() {
     const user = session()?.user;
     if (user?.email) {
       db = await getDatabase(user.email);
-      
+
       // Load session from URL if present
-      const sessionId = new URLSearchParams(window.location.search).get('id');
+      const sessionId = new URLSearchParams(window.location.search).get("id");
       if (sessionId) {
         await loadSession(sessionId);
-        
+
         // Auto-restart any interrupted jobs (documents with "processing" status)
-        const interruptedDocs = Object.entries(store.generatedDocuments)
-          .filter(([id, doc]) => doc.status === "processing");
+        const interruptedDocs = Object.entries(store.generatedDocuments).filter(
+          ([_id, doc]) => doc.status === "processing"
+        );
 
         for (const [templateId] of interruptedDocs) {
           retryTemplate(templateId);
@@ -254,7 +265,7 @@ export default function Page() {
   });
 
   // ============= Computed Properties =============
-  
+
   // Get template groups from config
   const templateGroups = () => getTemplateConfigsByCategory();
 
@@ -263,38 +274,42 @@ export default function Page() {
     const docs = store.generatedDocuments;
     const docKeys = Object.keys(docs);
     if (docKeys.length === 0) return true;
-    return docKeys.every(key => docs[key].status === "completed" || docs[key].status === "error");
+    return docKeys.every((key) => docs[key].status === "completed" || docs[key].status === "error");
   });
 
   // Check if Generate button should be disabled
   const isGenerateDisabled = createMemo(() => {
     // Always need input text
     if (!store.inputText) return true;
-    
+
     // Check if we have either basic templates OR fully configured advanced options
     const hasBasicTemplates = store.selectedTemplates.length > 0;
-    
-    const hasValidAdvancedOptions = store.advancedOptionsOpen && (
-      (store.templateSourceType === 'predefined' && store.selectedPredefinedTemplate && store.customSystemPrompt.trim()) ||
-      (store.templateSourceType === 'custom' && store.customTemplate && store.customSystemPrompt.trim())
-    );
-    
+
+    const hasValidAdvancedOptions =
+      store.advancedOptionsOpen &&
+      ((store.templateSourceType === "predefined" &&
+        store.selectedPredefinedTemplate &&
+        store.customSystemPrompt.trim()) ||
+        (store.templateSourceType === "custom" &&
+          store.customTemplate &&
+          store.customSystemPrompt.trim()));
+
     // Enable if we have either basic templates OR valid advanced options
     return !(hasBasicTemplates || hasValidAdvancedOptions);
   });
 
   // ============= Event Handlers =============
-  
+
   // Load the predefined template's prompt when selected
   createEffect(async () => {
     const templateId = store.selectedPredefinedTemplate;
     if (templateId && store.templateSourceType === "predefined") {
       try {
         const prompt = await getPrompt(templateId);
-        setStore('customSystemPrompt', prompt);
+        setStore("customSystemPrompt", prompt);
       } catch (error) {
         console.error("Failed to load template prompt:", error);
-        setStore('customSystemPrompt', "");
+        setStore("customSystemPrompt", "");
       }
     }
   });
@@ -309,20 +324,20 @@ export default function Page() {
     const bytes = await readFile(file, "arrayBuffer");
 
     if (name === "outputTemplateFile") {
-      setStore('customTemplate', bytes);
-      setStore('customTemplateFilename', file.name);
+      setStore("customTemplate", bytes);
+      setStore("customTemplateFilename", file.name);
     } else if (name === "inputTextFile") {
-      setStore('inputText', "Reading file...");
-      setStore('inputTextFilename', file.name);
-      setStore('generatedDocuments', {});
+      setStore("inputText", "Reading file...");
+      setStore("inputTextFilename", file.name);
+      setStore("generatedDocuments", {});
       const text = await parseDocument(bytes, file.type, file.name);
-      setStore('inputText', text);
+      setStore("inputText", text);
     }
   }
 
   function handleTemplateSelectionChange(value, isChecked) {
-    setStore('selectedTemplates', prev => 
-      isChecked ? [...prev, value] : prev.filter(v => v !== value)
+    setStore("selectedTemplates", (prev) =>
+      isChecked ? [...prev, value] : prev.filter((v) => v !== value)
     );
   }
 
@@ -330,11 +345,11 @@ export default function Page() {
 
   async function processSingleTemplate(templateId, text) {
     // Set status to processing
-    setStore('generatedDocuments', templateId, { 
-      status: "processing", 
-      blob: null, 
+    setStore("generatedDocuments", templateId, {
+      status: "processing",
+      blob: null,
       content: null,
-      error: null 
+      error: null,
     });
 
     // Save state immediately after setting processing status
@@ -351,7 +366,8 @@ export default function Page() {
       } else if (templateId === "predefined-custom") {
         // Handle predefined template with optional custom prompt
         const config = templateConfigs[store.selectedPredefinedTemplate];
-        systemPrompt = store.customSystemPrompt.trim() || (await getPrompt(store.selectedPredefinedTemplate));
+        systemPrompt =
+          store.customSystemPrompt.trim() || (await getPrompt(store.selectedPredefinedTemplate));
         defaultOutputData = config.defaultOutput;
         templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
       } else {
@@ -362,18 +378,23 @@ export default function Page() {
         templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
       }
 
-      const system = "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
+      const system =
+        "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
 
       // Extract data using AI
       const params = {
         model: store.model,
-        messages: [{ role: "user", content: [{ text: systemPrompt.replace("{{document}}", "see above") }] }],
+        messages: [
+          { role: "user", content: [{ text: systemPrompt.replace("{{document}}", "see above") }] },
+        ],
         system: system.replace("{{document}}", text),
         stream: false,
       };
       const output = await runModel(params);
-      const jsonOutput = output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || 
-        output.match(/{\s*[\s\S]*?}/)?.[0] || "{}";
+      const jsonOutput =
+        output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] ||
+        output.match(/{\s*[\s\S]*?}/)?.[0] ||
+        "{}";
 
       const data = { ...defaultOutputData, ...yaml.parse(jsonOutput) };
 
@@ -384,19 +405,19 @@ export default function Page() {
       const blob = new Blob([buffer], { type });
 
       // Update status to completed
-      setStore('generatedDocuments', templateId, { 
-        status: "completed", 
-        blob, 
+      setStore("generatedDocuments", templateId, {
+        status: "completed",
+        blob,
         content: await blobToBase64(blob),
-        error: null 
+        error: null,
       });
     } catch (error) {
       console.error(`Error processing ${templateId}:`, error);
-      setStore('generatedDocuments', templateId, { 
-        status: "error", 
-        blob: null, 
+      setStore("generatedDocuments", templateId, {
+        status: "error",
+        blob: null,
         content: null,
-        error: error.message 
+        error: error.message,
       });
     } finally {
       // Update session after processing completes
@@ -407,12 +428,12 @@ export default function Page() {
   async function retryTemplate(templateId) {
     const text = store.inputText;
     if (!text) {
-      console.error('No input text available for retry');
+      console.error("No input text available for retry");
       return;
     }
     await processSingleTemplate(templateId, text);
   }
-  
+
   async function processSelectedTemplates(text) {
     const selected = store.selectedTemplates;
 
@@ -420,7 +441,11 @@ export default function Page() {
     const templatesToProcess = [...selected];
 
     // Add custom template if in custom mode with template and prompt
-    if (store.templateSourceType === "custom" && store.customTemplate && store.customSystemPrompt.trim()) {
+    if (
+      store.templateSourceType === "custom" &&
+      store.customTemplate &&
+      store.customSystemPrompt.trim()
+    ) {
       templatesToProcess.push("custom");
     }
 
@@ -436,7 +461,7 @@ export default function Page() {
     templatesToProcess.forEach((templateId) => {
       initialStatus[templateId] = { status: "processing", blob: null, content: null, error: null };
     });
-    setStore('generatedDocuments', initialStatus);
+    setStore("generatedDocuments", initialStatus);
 
     // Save state immediately after setting initial processing status
     await saveSession(false);
@@ -448,14 +473,14 @@ export default function Page() {
   }
 
   // ============= Utility Functions =============
-  
+
   function formatDate(date = new Date()) {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
     return `${year}${month}${day}-${hours}${minutes}${seconds}`;
   }
 
@@ -498,18 +523,22 @@ export default function Page() {
     event?.preventDefault();
     const text = store.inputText;
     if (!text) return;
-    
+
     // Check if we have either basic templates OR fully configured advanced options
     const hasBasicTemplates = store.selectedTemplates.length > 0;
-    const hasValidAdvancedOptions = store.advancedOptionsOpen && (
-      (store.templateSourceType === 'predefined' && store.selectedPredefinedTemplate && store.customSystemPrompt.trim()) ||
-      (store.templateSourceType === 'custom' && store.customTemplate && store.customSystemPrompt.trim())
-    );
-    
+    const hasValidAdvancedOptions =
+      store.advancedOptionsOpen &&
+      ((store.templateSourceType === "predefined" &&
+        store.selectedPredefinedTemplate &&
+        store.customSystemPrompt.trim()) ||
+        (store.templateSourceType === "custom" &&
+          store.customTemplate &&
+          store.customSystemPrompt.trim()));
+
     if (!(hasBasicTemplates || hasValidAdvancedOptions)) return;
-    
+
     // Create a new session on submit
-    setStore('id', undefined);
+    setStore("id", undefined);
     await saveSession(true);
     await processSelectedTemplates(text);
   }
@@ -536,11 +565,11 @@ export default function Page() {
       model: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
       customSystemPrompt: "",
     });
-    
+
     // Clear URL parameter
     const url = new URL(window.location);
-    url.searchParams.delete('id');
-    window.history.replaceState(null, '', url);
+    url.searchParams.delete("id");
+    window.history.replaceState(null, "", url);
   }
 
   /**
@@ -566,7 +595,7 @@ export default function Page() {
   }
 
   // ============= UI Component =============
-  
+
   return html`
     <div class="bg-info-subtle h-100 position-relative">
       <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
@@ -575,7 +604,9 @@ export default function Page() {
           <div class="row align-items-stretch">
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
               <div class="bg-white shadow rounded p-3">
-                <label for="inputText" class="form-label text-info fs-5 mb-1">Source Document<span class="text-danger">*</span></label>
+                <label for="inputText" class="form-label text-info fs-5 mb-1"
+                  >Source Document<span class="text-danger">*</span></label
+                >
                 <${FileInputWithDisplay}
                   filename=${() => store.inputTextFilename}
                   inputId="inputTextFile"
@@ -583,16 +614,18 @@ export default function Page() {
                   accept=".txt, .docx, .pdf"
                   onFileSelect=${handleFileSelect}
                   onClear=${() => {
-                    setStore('inputTextFilename', '');
-                    setStore('inputText', '');
-                    setStore('generatedDocuments', {});
+                    setStore("inputTextFilename", "");
+                    setStore("inputText", "");
+                    setStore("generatedDocuments", {});
                   }}
                 />
 
                 <!-- Template Selection -->
                 <div class="mb-3">
-                  <label class="form-label text-info fs-5 mb-1">Form Templates<span class="text-danger">*</span></label>
-                  <${TreeSelect} 
+                  <label class="form-label text-info fs-5 mb-1"
+                    >Form Templates<span class="text-danger">*</span></label
+                  >
+                  <${TreeSelect}
                     groups=${templateGroups}
                     selected=${() => store.selectedTemplates}
                     onChange=${handleTemplateSelectionChange}
@@ -601,7 +634,11 @@ export default function Page() {
 
                 <div class="d-flex flex-wrap justify-content-between align-items-center">
                   <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
-                    <details class="small text-secondary mt-2" open=${() => store.advancedOptionsOpen} onToggle=${(e) => setStore('advancedOptionsOpen', e.target.open)}>
+                    <details
+                      class="small text-secondary mt-2"
+                      open=${() => store.advancedOptionsOpen}
+                      onToggle=${(e) => setStore("advancedOptionsOpen", e.target.open)}
+                    >
                       <summary class="form-label text-info fs-5 mb-1">Advanced Options</summary>
                       <div class="border rounded p-2">
                         <label for="model" class="form-label">Model</label>
@@ -610,12 +647,23 @@ export default function Page() {
                           name="model"
                           id="model"
                           value=${() => store.model}
-                          onChange=${(e) => setStore('model', e.target.value)}>
-                          <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
-                          <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Sonnet 4.0</option>
-                          <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">Sonnet 3.7</option>
-                          <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
-                          <option value="us.meta.llama4-maverick-17b-instruct-v1:0">Maverick</option>
+                          onChange=${(e) => setStore("model", e.target.value)}
+                        >
+                          <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">
+                            Opus 4.1
+                          </option>
+                          <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">
+                            Sonnet 4.0
+                          </option>
+                          <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">
+                            Sonnet 3.7
+                          </option>
+                          <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">
+                            Haiku 3.5
+                          </option>
+                          <option value="us.meta.llama4-maverick-17b-instruct-v1:0">
+                            Maverick
+                          </option>
                         </select>
 
                         <div class="d-flex justify-content-between">
@@ -629,8 +677,11 @@ export default function Page() {
                                 id="templateSourcePredefined"
                                 value="predefined"
                                 checked=${() => store.templateSourceType === "predefined"}
-                                onChange=${(e) => setStore('templateSourceType', e.target.value)} />
-                              <label class="form-check-label" for="templateSourcePredefined"> Predefined template </label>
+                                onChange=${(e) => setStore("templateSourceType", e.target.value)}
+                              />
+                              <label class="form-check-label" for="templateSourcePredefined">
+                                Predefined template
+                              </label>
                             </div>
                             <div class="form-check form-check-inline">
                               <input
@@ -640,8 +691,11 @@ export default function Page() {
                                 id="templateSourceCustom"
                                 value="custom"
                                 checked=${() => store.templateSourceType === "custom"}
-                                onChange=${(e) => setStore('templateSourceType', e.target.value)} />
-                              <label class="form-check-label" for="templateSourceCustom"> Custom template </label>
+                                onChange=${(e) => setStore("templateSourceType", e.target.value)}
+                              />
+                              <label class="form-check-label" for="templateSourceCustom">
+                                Custom template
+                              </label>
                             </div>
                           </div>
                         </div>
@@ -653,15 +707,21 @@ export default function Page() {
                               name="predefinedTemplate"
                               id="predefinedTemplate"
                               value=${() => store.selectedPredefinedTemplate}
-                              onChange=${(e) => setStore('selectedPredefinedTemplate', e.target.value)}>
+                              onChange=${(e) =>
+                                setStore("selectedPredefinedTemplate", e.target.value)}
+                            >
                               <option value="">[No Template]</option>
                               <${For} each=${templateGroups}>
                                 ${(group) => html`
                                   <optgroup label=${() => group.label}>
                                     <${For} each=${() => group.options}>
                                       ${(option) => html`
-                                        <option value=${() => option.value} disabled=${() => option.disabled}>
-                                          ${() => `${templateConfigs[option.value].prefix} - ${templateConfigs[option.value].label}`}
+                                        <option
+                                          value=${() => option.value}
+                                          disabled=${() => option.disabled}
+                                        >
+                                          ${() =>
+                                            `${templateConfigs[option.value].prefix} - ${templateConfigs[option.value].label}`}
                                         </option>
                                       `}
                                     <//>
@@ -680,20 +740,25 @@ export default function Page() {
                             accept=".txt, .docx, .pdf"
                             onFileSelect=${handleFileSelect}
                             onClear=${() => {
-                              setStore('customTemplateFilename', '');
-                              setStore('customTemplate', null);
+                              setStore("customTemplateFilename", "");
+                              setStore("customTemplate", null);
                             }}
                           />
 
                           <div class="position-relative">
                             <${ClassToggle} activeClass="show">
-                              <label
-                                class="form-label"
-                                toggle>
-                                Custom Prompt${() => store.advancedOptionsOpen && store.customTemplate ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info" />
+                              <label class="form-label" toggle>
+                                Custom
+                                Prompt${() =>
+                                  store.advancedOptionsOpen && store.customTemplate
+                                    ? html`<span class="text-danger">*</span>`
+                                    : ""}
+                                <img src="/assets/images/icon-circle-info.svg" alt="Info" />
                               </label>
                               <div class="clickover">
-                                Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
+                                Use this field to provide your own instructions for generating a
+                                form. The system will follow your prompt instead of a predefined
+                                template.
                               </div>
                             <//>
                           </div>
@@ -706,13 +771,15 @@ export default function Page() {
                               style="resize: none; padding-right: 20px;"
                               placeholder="Enter a custom prompt to generate your form."
                               value=${() => store.customSystemPrompt}
-                              onInput=${(e) => setStore('customSystemPrompt', e.target.value)} />
+                              onInput=${(e) => setStore("customSystemPrompt", e.target.value)}
+                            />
                             <button
                               type="button"
                               class="position-absolute d-flex align-items-center justify-content-center"
                               style="bottom: 4px; right: 4px; width: 20px; height: 20px; padding: 0; border: none; background: transparent;"
                               title="Expand Custom Prompt"
-                              onClick=${() => setStore('expandModalOpen', true)}>
+                              onClick=${() => setStore("expandModalOpen", true)}
+                            >
                               <img src="/assets/images/icon-expand.svg" alt="Expand" height="12" />
                             </button>
                           </div>
@@ -721,13 +788,18 @@ export default function Page() {
                         <${Show} when=${() => store.templateSourceType === "predefined"}>
                           <div class="position-relative">
                             <${ClassToggle} activeClass="show">
-                              <label
-                                class="form-label"
-                                toggle>
-                                Custom Prompt${() => store.advancedOptionsOpen && store.selectedPredefinedTemplate ? html`<span class="text-danger">*</span>` : ''} <img src="/assets/images/icon-circle-info.svg" alt="Info" />
+                              <label class="form-label" toggle>
+                                Custom
+                                Prompt${() =>
+                                  store.advancedOptionsOpen && store.selectedPredefinedTemplate
+                                    ? html`<span class="text-danger">*</span>`
+                                    : ""}
+                                <img src="/assets/images/icon-circle-info.svg" alt="Info" />
                               </label>
                               <div class="clickover">
-                                Use this field to provide your own instructions for generating a form. The system will follow your prompt instead of a predefined template.
+                                Use this field to provide your own instructions for generating a
+                                form. The system will follow your prompt instead of a predefined
+                                template.
                               </div>
                             <//>
                           </div>
@@ -740,13 +812,15 @@ export default function Page() {
                               style="resize: none; padding-right: 20px;"
                               placeholder="Enter a custom prompt to generate your form."
                               value=${() => store.customSystemPrompt}
-                              onInput=${(e) => setStore('customSystemPrompt', e.target.value)} />
+                              onInput=${(e) => setStore("customSystemPrompt", e.target.value)}
+                            />
                             <button
                               type="button"
                               class="position-absolute d-flex align-items-center justify-content-center"
                               style="bottom: 4px; right: 4px; width: 20px; height: 20px; padding: 0; border: none; background: transparent;"
                               title="Expand Custom Prompt"
-                              onClick=${() => setStore('expandModalOpen', true)}>
+                              onClick=${() => setStore("expandModalOpen", true)}
+                            >
                               <img src="/assets/images/icon-expand.svg" alt="Expand" height="12" />
                             </button>
                           </div>
@@ -765,14 +839,19 @@ export default function Page() {
                     <div class="text-center py-5">
                       <h1 class="text-info mb-3">Welcome to Consent Crafter</h1>
                       <div>
-                        To get started, upload your source document, select one or more form templates from the list, and click Generate to
-                        create tailored consent documents.
+                        To get started, upload your source document, select one or more form
+                        templates from the list, and click Generate to create tailored consent
+                        documents.
                       </div>
                     </div>
-                  </div>`}>
+                  </div>`}
+                >
                   <div class="d-flex flex-column gap-2">
                     <div class="text-muted small fw-semibold">
-                      <${Show} when=${allDocumentsProcessed} fallback="We are generating your forms now. This may take a few moments.">
+                      <${Show}
+                        when=${allDocumentsProcessed}
+                        fallback="We are generating your forms now. This may take a few moments."
+                      >
                         All processing is complete. The generated forms are available for download.
                       <//>
                     </div>
@@ -782,7 +861,11 @@ export default function Page() {
                         const doc = () => store.generatedDocuments[templateId];
                         const documentInfo = () => {
                           if (templateId === "custom") {
-                            return { prefix: "Custom Document", label: "", filename: "custom-document.docx" };
+                            return {
+                              prefix: "Custom Document",
+                              label: "",
+                              filename: "custom-document.docx",
+                            };
                           } else if (templateId === "predefined-custom") {
                             const config = templateConfigs[store.selectedPredefinedTemplate];
                             return {
@@ -792,33 +875,56 @@ export default function Page() {
                             };
                           } else {
                             const config = templateConfigs[templateId];
-                            return { prefix: config.prefix || "", label: config.label, filename: config.filename };
+                            return {
+                              prefix: config.prefix || "",
+                              label: config.label,
+                              filename: config.filename,
+                            };
                           }
                         };
 
                         return html`
-                          <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                          <div
+                            class="d-flex justify-content-between align-items-center p-2 border rounded"
+                          >
                             <div class="flex-grow-1">
                               <div class="fw-medium">
                                 <span>${() => documentInfo().prefix}</span>
-                                <span class="text-muted fw-normal"> : ${() => documentInfo().label}</span>
+                                <span class="text-muted fw-normal">
+                                  : ${() => documentInfo().label}</span
+                                >
                               </div>
                               <div class="small text-muted">${() => documentInfo().filename}</div>
                             </div>
                             <${Show} when=${() => doc()?.status === "processing"}>
-                              <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                              <div
+                                class="spinner-border spinner-border-sm text-primary me-2"
+                                role="status"
+                              >
                                 <span class="visually-hidden">Processing...</span>
                               </div>
                             <//>
                             <${Show} when=${() => doc()?.status === "completed"}>
-                              <button type="button" class="btn btn-outline-light" onClick=${() => downloadDocument(templateId)}>
-                                <img src="/assets/images/icon-download.svg" height="16" alt="Download" />
+                              <button
+                                type="button"
+                                class="btn btn-outline-light"
+                                onClick=${() => downloadDocument(templateId)}
+                              >
+                                <img
+                                  src="/assets/images/icon-download.svg"
+                                  height="16"
+                                  alt="Download"
+                                />
                               </button>
                             <//>
                             <${Show} when=${() => doc()?.status === "error"}>
                               <div class="d-flex align-items-center gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-danger"  title=${() => doc().error} 
-                                  onClick=${() => retryTemplate(templateId)}>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-outline-danger"
+                                  title=${() => doc().error}
+                                  onClick=${() => retryTemplate(templateId)}
+                                >
                                   Retry
                                 </button>
                               </div>
@@ -831,13 +937,25 @@ export default function Page() {
                   <${Show} when=${allDocumentsProcessed}>
                     <div class="h-100 d-flex flex-column justify-content-between">
                       <div class="text-end">
-                        <button type="button" class="btn btn-sm btn-link fw-semibold p-0" onClick=${downloadAll}>Download All</button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-link fw-semibold p-0"
+                          onClick=${downloadAll}
+                        >
+                          Download All
+                        </button>
                       </div>
                       <div class="mt-auto d-flex align-items-center">
-                        <img src="/assets/images/icon-star.svg" alt="Star" class="me-2" height="16" />
+                        <img
+                          src="/assets/images/icon-star.svg"
+                          alt="Star"
+                          class="me-2"
+                          height="16"
+                        />
                         <div>
                           <span class="me-1">We would love your feedback!</span>
-                          <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a> to help us improve.
+                          <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a>
+                          to help us improve.
                         </div>
                       </div>
                     </div>
@@ -855,13 +973,12 @@ export default function Page() {
                     toggle
                     type="submit"
                     class="btn btn-primary rounded-pill"
-                    disabled=${() => isGenerateDisabled() || !allDocumentsProcessed()}>
+                    disabled=${() => isGenerateDisabled() || !allDocumentsProcessed()}
+                  >
                     Generate
                   </button>
                   <${Show} when=${() => isGenerateDisabled()}>
-                    <div class="tooltip-top">
-                      Not all required fields are provided. 
-                    </div>
+                    <div class="tooltip-top">Not all required fields are provided.</div>
                   <//>
                 <//>
               </div>
@@ -869,12 +986,12 @@ export default function Page() {
           </div>
         </form>
       </div>
-      
+
       <${Modal}
         open=${() => store.expandModalOpen}
-        setOpen=${(open) => setStore('expandModalOpen', open)}
-        dialogClass=${{"modal-xl": true}}
-        bodyClass=${{"px-4": true}}
+        setOpen=${(open) => setStore("expandModalOpen", open)}
+        dialogClass=${{ "modal-xl": true }}
+        bodyClass=${{ "px-4": true }}
         children=${html`
           <div class="p-3">
             <textarea
@@ -883,13 +1000,14 @@ export default function Page() {
               style="resize: none;"
               placeholder="Enter a custom prompt to generate your form."
               value=${() => store.customSystemPrompt}
-              onInput=${(e) => setStore('customSystemPrompt', e.target.value)}
+              onInput=${(e) => setStore("customSystemPrompt", e.target.value)}
             />
             <div class="d-flex justify-content-end">
               <button
                 type="button"
                 class="btn btn-light border rounded-pill"
-                onClick=${() => setStore('expandModalOpen', false)}>
+                onClick=${() => setStore("expandModalOpen", false)}
+              >
                 Close
               </button>
             </div>

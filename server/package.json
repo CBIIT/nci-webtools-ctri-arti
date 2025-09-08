@@ -9,7 +9,12 @@
     "test:setup": "npx playwright install chromium",
     "test": "node --env-file test.env --test --test-reporter=tap && npm run test:integration",
     "test:integration": "node --env-file test.env integration.js",
-    "cert": "openssl req -x509 -newkey rsa:2048 -nodes -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost' -keyout key.tmp -out cert.tmp && cat key.tmp cert.tmp > key.pem && rm key.tmp cert.tmp"
+    "cert": "openssl req -x509 -newkey rsa:2048 -nodes -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost' -keyout key.tmp -out cert.tmp && cat key.tmp cert.tmp > key.pem && rm key.tmp cert.tmp",
+    "lint": "eslint . --cache --cache-location ./node_modules/.cache/eslint/ --report-unused-inline-configs error",
+    "lint:ci": "eslint . --max-warnings 0 --report-unused-inline-configs error",
+    "lint:fix": "eslint . --fix --cache --cache-location ./node_modules/.cache/eslint/",
+    "format": "prettier . --check",
+    "format:fix": "prettier . --write"
   },
   "author": "",
   "license": "ISC",
@@ -37,7 +42,10 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "@arti/eslint-config": "file:../packages/eslint-config",
+    "eslint": "^9.35.0",
     "playwright": "^1.55.0",
+    "prettier": "3.6.2",
     "sqlite3": "^5.1.7",
     "supertest": "^7.1.4"
   }

@@ -1,9 +1,9 @@
-import { createSignal, createEffect, onCleanup, Show, For } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import html from "solid-js/html";
 
 /**
  * Alert component for displaying dismissible alerts
- * 
+ *
  * @param {object} props
  * @param {string} props.type - Alert type: 'danger', 'warning', 'success', 'info'
  * @param {string} props.message - Alert message text
@@ -14,7 +14,7 @@ import html from "solid-js/html";
  */
 export default function Alert(props) {
   const [visible, setVisible] = createSignal(true);
-  
+
   const dismiss = () => {
     setVisible(false);
     props.onDismiss?.();
@@ -28,14 +28,14 @@ export default function Alert(props) {
           dismiss();
         }
       }, props.autoDismiss);
-      
+
       onCleanup(() => clearTimeout(timer));
     }
   });
 
   const alertClass = () => {
     const baseClass = "alert";
-    const typeClass = `alert-${props.type || 'info'}`;
+    const typeClass = `alert-${props.type || "info"}`;
     const dismissibleClass = props.dismissible ? "alert-dismissible" : "";
     return [baseClass, typeClass, dismissibleClass].filter(Boolean).join(" ");
   };
@@ -45,12 +45,7 @@ export default function Alert(props) {
       <div class=${alertClass} role="alert">
         ${() => props.message}
         <${Show} when=${props.dismissible}>
-          <button 
-            type="button" 
-            class="btn-close" 
-            aria-label="Close"
-            onClick=${dismiss}>
-          </button>
+          <button type="button" class="btn-close" aria-label="Close" onClick=${dismiss}></button>
         <//>
       </div>
     <//>
@@ -59,7 +54,7 @@ export default function Alert(props) {
 
 /**
  * Alert container component for displaying multiple alerts
- * 
+ *
  * @param {object} props
  * @param {Array} props.alerts - Array of alert objects
  * @param {function} props.onDismiss - Callback when an alert is dismissed

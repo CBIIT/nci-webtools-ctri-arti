@@ -39,7 +39,7 @@ export default class MockProvider {
    * @param {object} input - Bedrock-style input
    * @returns {Promise<object>} Bedrock-style response
    */
-  async converse(input) {
+  async converse(_input) {
     if (this.mockError) {
       throw this.mockError;
     }
@@ -53,18 +53,18 @@ export default class MockProvider {
       output: {
         message: {
           role: "assistant",
-          content: [{ text: "Test response from mock provider" }]
-        }
+          content: [{ text: "Test response from mock provider" }],
+        },
       },
       stopReason: "end_turn",
       usage: {
         inputTokens: 100,
         outputTokens: 50,
-        totalTokens: 150
+        totalTokens: 150,
       },
       metrics: {
-        latencyMs: 50
-      }
+        latencyMs: 50,
+      },
     };
   }
 
@@ -73,7 +73,7 @@ export default class MockProvider {
    * @param {object} input - Bedrock-style input
    * @returns {AsyncGenerator<object>} Bedrock-style stream events
    */
-  async converseStream(input) {
+  async converseStream(_input) {
     if (this.mockError) {
       throw this.mockError;
     }
@@ -85,18 +85,27 @@ export default class MockProvider {
     // Default mock stream
     return this.createMockStream([
       { type: "messageStart", messageStart: { role: "assistant" } },
-      { type: "contentBlockStart", contentBlockStart: { contentBlockIndex: 0, start: { text: {} } } },
-      { type: "contentBlockDelta", contentBlockDelta: { contentBlockIndex: 0, delta: { text: "Test " } } },
-      { type: "contentBlockDelta", contentBlockDelta: { contentBlockIndex: 0, delta: { text: "streaming response" } } },
+      {
+        type: "contentBlockStart",
+        contentBlockStart: { contentBlockIndex: 0, start: { text: {} } },
+      },
+      {
+        type: "contentBlockDelta",
+        contentBlockDelta: { contentBlockIndex: 0, delta: { text: "Test " } },
+      },
+      {
+        type: "contentBlockDelta",
+        contentBlockDelta: { contentBlockIndex: 0, delta: { text: "streaming response" } },
+      },
       { type: "contentBlockStop", contentBlockStop: { contentBlockIndex: 0 } },
       { type: "messageStop", messageStop: { stopReason: "end_turn" } },
-      { 
-        type: "metadata", 
-        metadata: { 
+      {
+        type: "metadata",
+        metadata: {
           usage: { inputTokens: 50, outputTokens: 25, totalTokens: 75 },
-          metrics: { latencyMs: 100 }
-        }
-      }
+          metrics: { latencyMs: 100 },
+        },
+      },
     ]);
   }
 

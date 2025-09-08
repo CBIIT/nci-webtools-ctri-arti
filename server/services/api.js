@@ -1,9 +1,10 @@
-import { Router, json } from "express";
+import { json, Router } from "express";
+
+import { logErrors, logRequests } from "./middleware.js";
 import adminRoutes from "./routes/admin.js";
 import authRoutes from "./routes/auth.js";
 import modelRoutes from "./routes/model.js";
 import toolRoutes from "./routes/tools.js";
-import { logRequests, logErrors } from "./middleware.js";
 
 const api = Router();
 

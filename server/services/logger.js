@@ -1,7 +1,8 @@
 import { inspect } from "util";
-import { createLogger as createWinstonLogger, format, transports } from "winston";
-import pick from "lodash/pick.js";
+
 import isEmpty from "lodash/isEmpty.js";
+import pick from "lodash/pick.js";
+import { createLogger as createWinstonLogger, format, transports } from "winston";
 
 const logger = createLogger("research-optimizer", process.env.LOG_LEVEL);
 
@@ -24,7 +25,9 @@ export function createLogger(name, level = "info") {
     format: format.combine(
       format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
       format.label({ label: name }),
-      format.printf((e) => `[${e.label}] [${e.timestamp}] [${e.level}] - ${formatObject(e.message)}`)
+      format.printf(
+        (e) => `[${e.label}] [${e.timestamp}] [${e.level}] - ${formatObject(e.message)}`
+      )
     ),
     transports: [new transports.Console()],
     exitOnError: false,

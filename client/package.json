@@ -1,6 +1,14 @@
 {
   "type": "module",
+  "scripts": {
+    "lint": "eslint . --cache --cache-location ./node_modules/.cache/eslint/ --report-unused-inline-configs error",
+    "lint:ci": "eslint . --max-warnings 0 --report-unused-inline-configs error",
+    "lint:fix": "eslint . --fix --cache --cache-location ./node_modules/.cache/eslint/",
+    "format": "prettier . --check",
+    "format:fix": "prettier . --write"
+  },
   "devDependencies": {
+    "@arti/eslint-config": "file:../packages/eslint-config",
     "@duckdb/duckdb-wasm": "^1.29.0",
     "@huggingface/transformers": "^3.7.2",
     "@langchain/textsplitters": "^0.1.0",
@@ -8,10 +16,12 @@
     "docx": "^9.5.1",
     "docx-templates": "^4.14.1",
     "dompurify": "^3.2.6",
+    "eslint": "^9.35.0",
     "idb": "^8.0.3",
     "mammoth": "^1.10.0",
     "marked": "^16.2.0",
     "pdfjs-dist": "^5.4.54",
+    "prettier": "3.6.2",
     "solid-js": "^1.9.9",
     "three": "^0.179.1",
     "turndown": "^7.2.1",

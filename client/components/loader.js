@@ -1,5 +1,7 @@
 import { createEffect, onCleanup, onMount } from "solid-js";
 import html from "solid-js/html";
+
+// eslint-disable-next-line import/no-unresolved
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js";
 
 export const DEFAULT_CONFIG = {
@@ -142,7 +144,13 @@ export default function DNASpinner(props) {
     const curve = new THREE.Curve();
     curve.getPoint = (t) => helixFunction(t, phase);
 
-    const tubeGeometry = new THREE.TubeGeometry(curve, numPoints, config.dna.backboneThickness, 8, false);
+    const tubeGeometry = new THREE.TubeGeometry(
+      curve,
+      numPoints,
+      config.dna.backboneThickness,
+      8,
+      false
+    );
     return new THREE.Mesh(tubeGeometry, createBackboneMaterial(color));
   }
 
@@ -178,7 +186,10 @@ export default function DNASpinner(props) {
 
       const alignToCenter = (mesh, start, end) => {
         const direction = new THREE.Vector3().subVectors(end, start).normalize();
-        const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+        const quaternion = new THREE.Quaternion().setFromUnitVectors(
+          new THREE.Vector3(0, 1, 0),
+          direction
+        );
         mesh.setRotationFromQuaternion(quaternion);
       };
 
@@ -227,7 +238,8 @@ export default function DNASpinner(props) {
     const rect = containerRef.getBoundingClientRect();
     const offsetX = event.clientX - rect.left;
     const offsetY = event.clientY - rect.top;
-    targetRotation.x = (offsetX / rect.width - 0.5) * Math.PI * 2 + (offsetY / rect.height - 0.5) * Math.PI * 3.5;
+    targetRotation.x =
+      (offsetX / rect.width - 0.5) * Math.PI * 2 + (offsetY / rect.height - 0.5) * Math.PI * 3.5;
   };
 
   function cleanupDNA() {
@@ -277,10 +289,15 @@ export default function DNASpinner(props) {
     createDNA();
   });
 
-  return html`<div ref=${(el) => (containerRef = el)} style=${props.style || "width:100%; height:100%;"} class=${props.class || ""}>
+  return html`<div
+    ref=${(el) => (containerRef = el)}
+    style=${props.style || "width:100%; height:100%;"}
+    class=${props.class || ""}
+  >
     <canvas
       ref=${(el) => (canvasRef = el)}
       style=${props.canvasStyle ||
-      "width:100%; height:100%; mask-image: radial-gradient(ellipse at center, black 0%, transparent 100%);"} />
+      "width:100%; height:100%; mask-image: radial-gradient(ellipse at center, black 0%, transparent 100%);"}
+    />
   </div>`;
 }

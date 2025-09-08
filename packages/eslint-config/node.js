@@ -1,0 +1,12 @@
+import globals from "globals";
+import { defineConfig } from "eslint/config";
+
+export default defineConfig([
+  {
+    files: ["**/*.{js,mjs,cjs}"],
+    languageOptions: { globals: { ...globals.node }, sourceType: "module" },
+    settings: {
+      "import/core-modules": ["eslint/config"],
+    },
+  },
+]);

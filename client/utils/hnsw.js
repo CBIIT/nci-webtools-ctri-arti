@@ -1,4 +1,4 @@
-import { openDB, deleteDB } from "idb";
+import { deleteDB, openDB } from "idb";
 
 /**
  * Hierarchical Navigable Small World (HNSW) index for approximate nearest neighbor search.
@@ -80,7 +80,8 @@ export class HNSW {
     // Optimization: Track nodes by level for faster entry point selection
     this.nodesByLevel = new Map();
 
-    this.distFunc = metric === "cosine" ? (a, b) => 1 - this.cosine(a, b) : (a, b) => this.euclidean(a, b);
+    this.distFunc =
+      metric === "cosine" ? (a, b) => 1 - this.cosine(a, b) : (a, b) => this.euclidean(a, b);
   }
 
   cosine(a, b) {
@@ -215,7 +216,10 @@ export class HNSW {
       for (let i = 0; i < remaining.length; i++) {
         let minDist = Infinity;
         for (const sel of selected) {
-          const dist = this.distFunc(this.nodes.get(remaining[i].id).vector, this.nodes.get(sel.id).vector);
+          const dist = this.distFunc(
+            this.nodes.get(remaining[i].id).vector,
+            this.nodes.get(sel.id).vector
+          );
           minDist = Math.min(minDist, dist);
         }
 
@@ -513,7 +517,7 @@ export class HNSW {
   /**
    * Serializes the index to JSON
    * @returns {Object} JSON representation of the index
-   * 
+   *
    * @example
    * const data = index.toJSON();
    */
@@ -543,7 +547,7 @@ export class HNSW {
    * @param {Object} data - JSON representation of the index
    * @returns {HNSW} Restored index instance
    * @static
-   * 
+   *
    * @example
    * const data = JSON.parse(fs.readFileSync('index.json'));
    * const index = HNSW.fromJSON(data);
@@ -576,12 +580,24 @@ export class HNSW {
 export class HNSWWithDB extends HNSW {
   db = null;
 
-  constructor({ M = 16, efConstruction = 200, efSearch = 50, metric = "cosine", dbName = "hnsw-db" } = {}) {
+  constructor({
+    M = 16,
+    efConstruction = 200,
+    efSearch = 50,
+    metric = "cosine",
+    dbName = "hnsw-db",
+  } = {}) {
     super({ M, efConstruction, efSearch, metric });
     this.dbName = dbName;
   }
 
-  static async create({ M = 16, efConstruction = 200, efSearch = 50, metric = "cosine", dbName = "hnsw-db" } = {}) {
+  static async create({
+    M = 16,
+    efConstruction = 200,
+    efSearch = 50,
+    metric = "cosine",
+    dbName = "hnsw-db",
+  } = {}) {
     const instance = new HNSWWithDB({ M, efConstruction, efSearch, metric, dbName });
     await instance.initDB();
     return instance;
@@ -635,7 +651,7 @@ export class HNSWWithDB extends HNSW {
     try {
       await deleteDB(this.dbName);
       this.initDB();
-    } catch (error) {
+    } catch (_error) {
       // console.error('Failed to delete index:', error);
     }
   }

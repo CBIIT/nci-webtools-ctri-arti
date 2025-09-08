@@ -1,11 +1,12 @@
-import { Router, json } from "express";
+import { json, Router } from "express";
 import { QueryTypes } from "sequelize";
-import { requireRole, proxyMiddleware } from "../middleware.js";
-import { search } from "../utils.js";
-import { translate, getLanguages } from "../translate.js";
-import { textract } from "../textract.js";
-import { sendFeedback } from "../email.js";
+
 import db from "../database.js";
+import { sendFeedback } from "../email.js";
+import { proxyMiddleware, requireRole } from "../middleware.js";
+import { textract } from "../textract.js";
+import { getLanguages, translate } from "../translate.js";
+import { search } from "../utils.js";
 
 const { VERSION } = process.env;
 const api = Router();

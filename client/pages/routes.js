@@ -1,5 +1,6 @@
 import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
+
 const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
 const ConsentCrafter = AuthorizedImport({ path: "./tools/consent-crafter/index.js" });
 const Translate = AuthorizedImport({ path: "./tools/translate.js" });
@@ -57,7 +58,7 @@ const routes = [
   {
     path: "/_",
     rawPath: !user ? "/api/login" : undefined,
-    title: user ? (user.firstName || "User") : "Login",
+    title: user ? user.firstName || "User" : "Login",
     class: "ms-lg-auto",
     children: user && [
       {

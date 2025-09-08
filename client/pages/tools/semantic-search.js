@@ -1,10 +1,11 @@
 import { createMemo, For, Show } from "solid-js";
-import { createStore } from "solid-js/store";
 import html from "solid-js/html";
+
 import { pipeline } from "@huggingface/transformers";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { HNSW } from "/utils/hnsw.js";
-import { createEmbedder } from "/utils/similarity.js";
+import { createStore } from "solid-js/store";
+
+import { HNSW } from "../../utils/hnsw.js";
 
 // Utility function to read file as text
 const readFile = (file) =>
@@ -18,11 +19,16 @@ const readFile = (file) =>
 const createSearchPipeline = async (files, settings) => {
   if (!files.length) return null;
 
-  window.embedder ||= await pipeline("feature-extraction", "onnx-community/Qwen3-Embedding-0.6B-ONNX", {
+  // Always use window.embedder
+  window.embedder ||= await pipeline(
+    "feature-extraction",
+    settings.model || "onnx-community/Qwen3-Embedding-0.6B-ONNX",
+    {
       revision: "main",
       device: navigator.gpu ? "webgpu" : undefined,
       dtype: "q4f16",
-  });
+    }
+  );
 
   const splitter = new RecursiveCharacterTextSplitter({
     chunkSize: settings.chunkSize,
@@ -48,17 +54,22 @@ const createSearchPipeline = async (files, settings) => {
   const batchSize = 5;
   for (let i = 0; i < chunks.length; i += batchSize) {
     const batch = chunks.slice(i, i + batchSize);
-    const embeddings = await embedder(batch.map((c) => c.text));
+    const embeddings = await window.embedder(batch.map((c) => c.text));
     batch.forEach((chunk, j) => (chunk.embedding = embeddings[j]));
   }
 
   // Build HNSW index
-  const index = new HNSW(settings.hnswParams.M, settings.hnswParams.efConstruction, chunks[0].embedding.length, "cosine");
+  const index = new HNSW(
+    settings.hnswParams.M,
+    settings.hnswParams.efConstruction,
+    chunks[0].embedding.length,
+    "cosine"
+  );
   await index.buildIndex(chunks.map((c) => ({ id: c.id, vector: c.embedding })));
 
   // Return search function
   return async (query, limit = 5) => {
-    const [queryEmbedding] = await embedder([query]);
+    const [queryEmbedding] = await window.embedder([query]);
     const results = index.searchKNN(queryEmbedding, limit);
     return results.map((r) => ({
       ...chunks.find((c) => c.id === r.id),
@@ -85,8 +96,8 @@ export default function Page() {
 
   // Memoized search function
   const searchFn = createMemo(async () => {
-    const filesKey = state.files.map((f) => `${f.name}-${f.size}-${f.lastModified}`).join("|");
-    const settingsKey = JSON.stringify(state.settings);
+    // const filesKey = state.files.map((f) => `${f.name}-${f.size}-${f.lastModified}`).join("|");
+    // const settingsKey = JSON.stringify(state.settings);
 
     // This will only recompute when files or settings change
     setState("loading", true);
@@ -154,14 +165,23 @@ export default function Page() {
           <form onSubmit=${handleSearch} onReset=${handleReset}>
             <div class="input-group mb-3">
               <label for="fileInput" class="btn btn-secondary">Upload</label>
-              <input type="file" id="fileInput" name="fileInput" onInput=${handleFileInput} accept="text/*,.docx,.doc,.pdf" multiple hidden />
+              <input
+                type="file"
+                id="fileInput"
+                name="fileInput"
+                onInput=${handleFileInput}
+                accept="text/*,.docx,.doc,.pdf"
+                multiple
+                hidden
+              />
               <input
                 type="search"
                 class="form-control"
                 value=${() => state.query}
                 onInput=${(e) => setState("query", e.target.value)}
                 placeholder=${placeholder}
-                disabled=${() => state.loading} />
+                disabled=${() => state.loading}
+              />
               <button type="reset" class="btn btn-outline-secondary">Reset</button>
               <button type="submit" class="btn btn-primary" disabled=${() => state.loading}>
                 <${Show} when=${() => state.loading} fallback="Search">
@@ -180,7 +200,8 @@ export default function Page() {
                     type="text"
                     class="form-control form-control-sm"
                     value=${() => state.settings.model}
-                    onInput=${(e) => setState("settings", "model", e.target.value)} />
+                    onInput=${(e) => setState("settings", "model", e.target.value)}
+                  />
                 </div>
                 <div class="col">
                   <label class="small">Chunk Size</label>
@@ -188,7 +209,8 @@ export default function Page() {
                     type="number"
                     class="form-control form-control-sm"
                     value=${() => state.settings.chunkSize}
-                    onInput=${(e) => setState("settings", "chunkSize", parseInt(e.target.value))} />
+                    onInput=${(e) => setState("settings", "chunkSize", parseInt(e.target.value))}
+                  />
                 </div>
                 <div class="col">
                   <label class="small">Chunk Overlap</label>
@@ -196,7 +218,8 @@ export default function Page() {
                     type="number"
                     class="form-control form-control-sm"
                     value=${() => state.settings.chunkOverlap}
-                    onInput=${(e) => setState("settings", "chunkOverlap", parseInt(e.target.value))} />
+                    onInput=${(e) => setState("settings", "chunkOverlap", parseInt(e.target.value))}
+                  />
                 </div>
               </div>
             </details>
@@ -210,7 +233,9 @@ export default function Page() {
                 <div class="list-group-item border-0 px-0">
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <h6 class="mb-0 text-truncate">${result.source}</h6>
-                    <span class="badge bg-info text-white"> ${(result.similarity * 100).toFixed(1)}% </span>
+                    <span class="badge bg-info text-white">
+                      ${(result.similarity * 100).toFixed(1)}%
+                    </span>
                   </div>
                   <p class="mb-0 text-muted">${result.text}</p>
                 </div>

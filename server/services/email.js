@@ -17,7 +17,7 @@ export async function sendEmail(params, env = process.env) {
   return await transporter.sendMail(params);
 }
 
-export async function sendFeedback({feedback, context}, env = process.env) {
+export async function sendFeedback({ feedback, context }, env = process.env) {
   const { EMAIL_ADMIN, EMAIL_SENDER } = env;
   return await sendEmail({
     from: EMAIL_SENDER || EMAIL_ADMIN,

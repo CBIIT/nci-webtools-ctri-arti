@@ -1,32 +1,33 @@
-import { createSignal, createResource, createMemo, Show, For } from "solid-js";
+import { createMemo, createResource, createSignal, Show } from "solid-js";
 import html from "solid-js/html";
+
 import { useParams, useSearchParams } from "@solidjs/router";
-import { formatDate, getDefaultStartDate, calculateDateRange, validateDateRange } from "./usage.js";
+
+import { calculateDateRange, formatDate, getDefaultStartDate, validateDateRange } from "./usage.js";
 
 function UserUsage() {
   const params = useParams();
   const userId = params.id;
   const [searchParams] = useSearchParams();
-  
+
   console.log(JSON.stringify(searchParams));
-  
+
   // Initialize from URL params or default
   const initialDateRange = searchParams.dateRange || "Last 30 Days";
   const initialStartDate = searchParams.startDate || getDefaultStartDate();
   const initialEndDate = searchParams.endDate || formatDate(new Date());
   console.log("Initial Date Range:", initialDateRange);
-  
+
   // Validate the initial date range exists in options
   const validDateRange = validateDateRange(initialDateRange, "Last 30 Days");
   console.log("Valid Date Range:", validDateRange);
-  
+
   const [selectedDateRange, setSelectedDateRange] = createSignal(validDateRange);
   const [customDates, setCustomDates] = createSignal({
     startDate: initialStartDate,
-    endDate: initialEndDate
+    endDate: initialEndDate,
   });
-  
-  
+
   // Get current date range (either from preset or custom)
   const currentDateRange = createMemo(() => {
     if (selectedDateRange() === "Custom") {
@@ -34,49 +35,59 @@ function UserUsage() {
     }
     return calculateDateRange(selectedDateRange());
   });
-  
+
   // Create resources for fetching data
-  const [userResource] = createResource(() => fetch(`/api/admin/users/${userId}`).then(res => res.json()));
-  
-  const [analyticsData, { refetch }] = createResource(
-    () => currentDateRange(),
-    ({ startDate, endDate }) => fetch(`/api/admin/analytics?groupBy=user&startDate=${startDate}&endDate=${endDate}&userId=${userId}`)
-        .then(res => res.json())
+  const [userResource] = createResource(() =>
+    fetch(`/api/admin/users/${userId}`).then((res) => res.json())
   );
-  
+
+  const [analyticsData] = createResource(
+    () => currentDateRange(),
+    ({ startDate, endDate }) =>
+      fetch(
+        `/api/admin/analytics?groupBy=user&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
+      ).then((res) => res.json())
+  );
+
   const [dailyAnalytics] = createResource(
     () => currentDateRange(),
-    ({ startDate, endDate }) => fetch(`/api/admin/analytics?groupBy=day&startDate=${startDate}&endDate=${endDate}&userId=${userId}`)
-        .then(res => res.json())
+    ({ startDate, endDate }) =>
+      fetch(
+        `/api/admin/analytics?groupBy=day&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
+      ).then((res) => res.json())
   );
-  
+
   const [modelAnalytics] = createResource(
     () => currentDateRange(),
-    ({ startDate, endDate }) => fetch(`/api/admin/analytics?groupBy=model&startDate=${startDate}&endDate=${endDate}&userId=${userId}`)
-        .then(res => res.json())
+    ({ startDate, endDate }) =>
+      fetch(
+        `/api/admin/analytics?groupBy=model&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
+      ).then((res) => res.json())
   );
-  
+
   const [rawUsageData] = createResource(
     () => currentDateRange(),
-    ({ startDate, endDate }) => fetch(`/api/admin/usage?startDate=${startDate}&endDate=${endDate}&userId=${userId}&limit=20`)
-        .then(res => res.json())
+    ({ startDate, endDate }) =>
+      fetch(
+        `/api/admin/usage?startDate=${startDate}&endDate=${endDate}&userId=${userId}&limit=20`
+      ).then((res) => res.json())
   );
-  
+
   // Format currency
   function formatCurrency(value) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(value);
   }
-  
+
   // Format numbers with commas
   function formatNumber(value) {
-    return new Intl.NumberFormat('en-US').format(value);
+    return new Intl.NumberFormat("en-US").format(value);
   }
-  
+
   // Create computed values for display
   const userStats = createMemo(() => {
     const data = analyticsData()?.data?.[0];
@@ -85,45 +96,58 @@ function UserUsage() {
       totalRequests: data.totalRequests || 0,
       totalInputTokens: data.totalInputTokens || 0,
       totalOutputTokens: data.totalOutputTokens || 0,
-      totalCost: data.totalCost || 0
+      totalCost: data.totalCost || 0,
     };
   });
-  
+
   return html`
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="font-title text-gradient fw-bold my-3">Usage Statistics</h1>
         <div class="d-flex gap-2">
-          <a 
-            href="/_/usage"
-            class="btn btn-outline-primary btn-sm text-decoration-none">
+          <a href="/_/usage" class="btn btn-outline-primary btn-sm text-decoration-none">
             Back to Usage Dashboard
           </a>
         </div>
       </div>
-      
+
       <!-- User Info Card -->
       <div class="card shadow-sm mb-4">
         <div class="card-body">
           <div class="row">
             <div class="col-md-6">
-              <h5>${() => userResource() ? `${userResource().firstName || ''} ${userResource().lastName || ''}` : ''}</h5>
-              <p class="text-muted mb-0">${() => userResource()?.email || 'No email'}</p>
+              <h5>
+                ${() =>
+                  userResource()
+                    ? `${userResource().firstName || ""} ${userResource().lastName || ""}`
+                    : ""}
+              </h5>
+              <p class="text-muted mb-0">${() => userResource()?.email || "No email"}</p>
             </div>
             <div class="col-md-6 text-md-end">
               <div class="mb-1">
-                <span class="fw-bold">Limit: </span> 
-                <span>${() => userResource()?.limit === null ? 'Unlimited' : formatCurrency(userResource()?.limit || 0)}</span>
+                <span class="fw-bold">Limit: </span>
+                <span
+                  >${() =>
+                    userResource()?.limit === null
+                      ? "Unlimited"
+                      : formatCurrency(userResource()?.limit || 0)}</span
+                >
               </div>
               <div>
-                <span class="fw-bold">Remaining: </span> 
-                <span>${() => userResource()?.remaining === null ? 'Unlimited' : formatCurrency(userResource()?.remaining || 0)}</span>
+                <span class="fw-bold">Remaining: </span>
+                <span
+                  >${() =>
+                    userResource()?.remaining === null
+                      ? "Unlimited"
+                      : formatCurrency(userResource()?.remaining || 0)}</span
+                >
               </div>
             </div>
           </div>
         </div>
       </div>
-      
+
       <!-- Date Range Filter -->
       <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -131,11 +155,12 @@ function UserUsage() {
           <div class="row g-3 align-items-end">
             <div class="col-md-6">
               <label for="date-range-filter" class="form-label">Date Range</label>
-              <select 
-                class="form-select" 
-                id="date-range-filter" 
+              <select
+                class="form-select"
+                id="date-range-filter"
                 value=${() => selectedDateRange()}
-                onInput=${e => setSelectedDateRange(e.target.value)}>
+                onInput=${(e) => setSelectedDateRange(e.target.value)}
+              >
                 <option>This Week</option>
                 <option>Last 30 Days</option>
                 <option>Last 60 Days</option>
@@ -145,42 +170,45 @@ function UserUsage() {
               </select>
             </div>
 
-           <!-- Custom Date Range (shown when Custom is selected) -->
+            <!-- Custom Date Range (shown when Custom is selected) -->
             <${Show} when=${() => selectedDateRange() === "Custom"}>
               <div class="col-md-3">
                 <label for="custom-startDate" class="form-label">Start Date</label>
-                <input 
-                  type="date" 
-                  id="custom-startDate" 
-                  class="form-control" 
+                <input
+                  type="date"
+                  id="custom-startDate"
+                  class="form-control"
                   value=${() => customDates().startDate}
                   max=${() => customDates().endDate}
-                  onInput=${e => setCustomDates(prev => ({ ...prev, startDate: e.target.value }))} />
+                  onInput=${(e) =>
+                    setCustomDates((prev) => ({ ...prev, startDate: e.target.value }))}
+                />
               </div>
               <div class="col-md-3">
                 <label for="custom-endDate" class="form-label">End Date</label>
-                <input 
-                  type="date" 
-                  id="custom-endDate" 
-                  class="form-control" 
+                <input
+                  type="date"
+                  id="custom-endDate"
+                  class="form-control"
                   value=${() => customDates().endDate}
                   min=${() => customDates().startDate}
                   max=${formatDate(new Date())}
-                  onInput=${e => setCustomDates(prev => ({ ...prev, endDate: e.target.value }))} />
+                  onInput=${(e) => setCustomDates((prev) => ({ ...prev, endDate: e.target.value }))}
+                />
               </div>
             <//>
           </div>
-          
         </div>
       </div>
-      
+
       <!-- Error Alert -->
       <${Show} when=${() => analyticsData.error || userResource.error}>
         <div class="alert alert-danger" role="alert">
-          ${() => analyticsData.error || userResource.error || "An error occurred while fetching data"}
+          ${() =>
+            analyticsData.error || userResource.error || "An error occurred while fetching data"}
         </div>
       <//>
-      
+
       <!-- Loading State -->
       <${Show} when=${() => analyticsData.loading || userResource.loading}>
         <div class="d-flex justify-content-center my-5">
@@ -189,7 +217,7 @@ function UserUsage() {
           </div>
         </div>
       <//>
-      
+
       <!-- Usage Summary -->
       <${Show} when=${() => !analyticsData.loading && userStats()}>
         <div class="row mb-4">
@@ -238,7 +266,7 @@ function UserUsage() {
             </div>
           </div>
         </div>
-          
+
         <div class="row mb-4">
           <!-- Model Breakdown -->
           <div class="col-md-6 mb-3">
@@ -257,20 +285,27 @@ function UserUsage() {
                     </tr>
                   </thead>
                   <tbody>
-                    ${() => (modelAnalytics()?.data || []).map(model => html`
-                      <tr>
-                        <td>${model.Model?.label || 'Unknown'}</td>
-                        <td class="text-end">${formatNumber(model.totalRequests)}</td>
-                        <td class="text-end">${formatNumber((model.totalInputTokens || 0) + (model.totalOutputTokens || 0))}</td>
-                        <td class="text-end">${formatCurrency(model.totalCost)}</td>
-                      </tr>
-                    `)}
+                    ${() =>
+                      (modelAnalytics()?.data || []).map(
+                        (model) => html`
+                          <tr>
+                            <td>${model.Model?.label || "Unknown"}</td>
+                            <td class="text-end">${formatNumber(model.totalRequests)}</td>
+                            <td class="text-end">
+                              ${formatNumber(
+                                (model.totalInputTokens || 0) + (model.totalOutputTokens || 0)
+                              )}
+                            </td>
+                            <td class="text-end">${formatCurrency(model.totalCost)}</td>
+                          </tr>
+                        `
+                      )}
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-          
+
           <!-- Daily Usage -->
           <div class="col-md-6 mb-3">
             <div class="card shadow-sm h-100">
@@ -278,71 +313,81 @@ function UserUsage() {
                 <h5 class="card-title mb-0">Daily Usage</h5>
               </div>
               <div class="card-body">
-                ${() => dailyAnalytics()?.data && dailyAnalytics().data.length > 0 ? html`
-                  <table class="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th class="text-end">Requests</th>
-                        <th class="text-end">Cost</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${() => dailyAnalytics().data.map(day => html`
-                        <tr>
-                          <td>${day.period}</td>
-                          <td class="text-end">${formatNumber(day.totalRequests)}</td>
-                          <td class="text-end">${formatCurrency(day.totalCost)}</td>
-                        </tr>
-                      `)}
-                    </tbody>
-                  </table>
-                ` : html`
-                  <p class="text-muted text-center my-4">No daily usage data available</p>
-                `}
+                ${() =>
+                  dailyAnalytics()?.data && dailyAnalytics().data.length > 0
+                    ? html`
+                        <table class="table table-sm">
+                          <thead>
+                            <tr>
+                              <th>Date</th>
+                              <th class="text-end">Requests</th>
+                              <th class="text-end">Cost</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            ${() =>
+                              dailyAnalytics().data.map(
+                                (day) => html`
+                                  <tr>
+                                    <td>${day.period}</td>
+                                    <td class="text-end">${formatNumber(day.totalRequests)}</td>
+                                    <td class="text-end">${formatCurrency(day.totalCost)}</td>
+                                  </tr>
+                                `
+                              )}
+                          </tbody>
+                        </table>
+                      `
+                    : html`
+                        <p class="text-muted text-center my-4">No daily usage data available</p>
+                      `}
               </div>
             </div>
           </div>
         </div>
-        
+
         <!-- Recent Requests -->
         <div class="card shadow-sm mb-4">
           <div class="card-header bg-light">
             <h5 class="card-title mb-0">Recent Requests</h5>
           </div>
           <div class="card-body">
-            ${() => rawUsageData()?.data && rawUsageData().data.length > 0 ? html`
-              <div class="table-responsive">
-                <table class="table table-sm table-hover">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Model</th>
-                      <th class="text-end">Input Tokens</th>
-                      <th class="text-end">Output Tokens</th>
-                      <th class="text-end">Cost</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${() => rawUsageData().data.map(entry => html`
-                      <tr>
-                        <td>${new Date(entry.createdAt).toLocaleString()}</td>
-                        <td>${entry.modelName || 'Unknown'}</td>
-                        <td class="text-end">${formatNumber(entry.inputTokens || 0)}</td>
-                        <td class="text-end">${formatNumber(entry.outputTokens || 0)}</td>
-                        <td class="text-end">${formatCurrency(entry.cost || 0)}</td>
-                      </tr>
-                    `)}
-                  </tbody>
-                </table>
-              </div>
-            ` : html`
-              <p class="text-muted text-center my-4">No recent requests found</p>
-            `}
+            ${() =>
+              rawUsageData()?.data && rawUsageData().data.length > 0
+                ? html`
+                    <div class="table-responsive">
+                      <table class="table table-sm table-hover">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Model</th>
+                            <th class="text-end">Input Tokens</th>
+                            <th class="text-end">Output Tokens</th>
+                            <th class="text-end">Cost</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${() =>
+                            rawUsageData().data.map(
+                              (entry) => html`
+                                <tr>
+                                  <td>${new Date(entry.createdAt).toLocaleString()}</td>
+                                  <td>${entry.modelName || "Unknown"}</td>
+                                  <td class="text-end">${formatNumber(entry.inputTokens || 0)}</td>
+                                  <td class="text-end">${formatNumber(entry.outputTokens || 0)}</td>
+                                  <td class="text-end">${formatCurrency(entry.cost || 0)}</td>
+                                </tr>
+                              `
+                            )}
+                        </tbody>
+                      </table>
+                    </div>
+                  `
+                : html` <p class="text-muted text-center my-4">No recent requests found</p> `}
           </div>
         </div>
       <//>
-      
+
       <!-- No Data Message -->
       <${Show} when=${() => !analyticsData.loading && !userStats()}>
         <div class="alert alert-info">

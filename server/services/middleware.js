@@ -1,15 +1,18 @@
 import { Readable } from "stream";
-import * as client from "openid-client";
+
 import Provider from "oidc-provider";
+import * as client from "openid-client";
+
+import { Role, User } from "./database.js";
 import logger, { formatObject } from "./logger.js";
-import { User, Role } from "./database.js";
-const { 
+
+const {
   HOSTNAME,
   PORT,
-  OAUTH_CALLBACK_URL, 
-  OAUTH_DISCOVERY_URL, 
-  OAUTH_CLIENT_ID, 
-  OAUTH_CLIENT_SECRET
+  OAUTH_CALLBACK_URL,
+  OAUTH_DISCOVERY_URL,
+  OAUTH_CLIENT_ID,
+  OAUTH_CLIENT_SECRET,
 } = process.env;
 export const WHITELIST = [/.*/i];
 
@@ -32,7 +35,7 @@ export function logRequests(formatter = (request) => [request.path]) {
  * @returns (error, request, response, next) => void
  */
 export function logErrors(formatter = (e) => ({ error: e.message })) {
-  return (error, request, response, next) => {
+  return (error, request, response, _next) => {
     logger.error(formatObject(error));
     response.status(400).json(formatter(error));
   };
@@ -86,7 +89,11 @@ export async function loginMiddleware(req, res, next) {
     const tokenSet = await client.authorizationCodeGrant(oidcConfig, redirectUrl, checks);
 
     // Fetch user info using the access token and store it in the session
-    const userinfo = await client.fetchUserInfo(oidcConfig, tokenSet.access_token, tokenSet.claims().sub);
+    const userinfo = await client.fetchUserInfo(
+      oidcConfig,
+      tokenSet.access_token,
+      tokenSet.claims().sub
+    );
     sess.tokenSet = tokenSet;
     sess.userinfo = userinfo;
     next();
@@ -100,35 +107,33 @@ export async function loginMiddleware(req, res, next) {
  * @returns {Function} Middleware function
  */
 export function oauthMiddleware() {
-  const hostname = HOSTNAME || 'localhost';
-  const port = PORT !== '443' ? ':' +PORT : '';
+  const hostname = HOSTNAME || "localhost";
+  const port = PORT !== "443" ? ":" + PORT : "";
   const issuer = `https://${hostname}${port}`;
   const provider = new Provider(issuer, {
     clients: [
       {
         client_id: OAUTH_CLIENT_ID,
         client_secret: OAUTH_CLIENT_SECRET,
-        redirect_uris: [
-          OAUTH_CALLBACK_URL || 'https://localhost/api/login'
-        ],
-      }
+        redirect_uris: [OAUTH_CALLBACK_URL || "https://localhost/api/login"],
+      },
     ],
     claims: {
-      profile: ['given_name', 'family_name', 'name'],
-      email: ['email', 'email_verified']
+      profile: ["given_name", "family_name", "name"],
+      email: ["email", "email_verified"],
     },
-    async findAccount(ctx, subject, token) {
+    async findAccount(ctx, subject, _token) {
       return {
         accountId: subject,
-        async claims(use, scope) {
-          return { 
+        async claims(_use, _scope) {
+          return {
             sub: subject,
             email: subject,
             email_verified: true,
-            given_name: 'Local',
-            family_name: 'User',
-            name: 'Local User'
-           };
+            given_name: "Local",
+            family_name: "User",
+            name: "Local User",
+          };
         },
       };
     },
@@ -136,7 +141,6 @@ export function oauthMiddleware() {
   provider.proxy = true;
   return provider.callback();
 }
-
 
 /**
  * Middleware that requires user to have a specific role
@@ -146,14 +150,14 @@ export function oauthMiddleware() {
 export function requireRole(roleName) {
   return async (req, res, next) => {
     try {
-      const apiKey = req.headers['x-api-key'];
+      const apiKey = req.headers["x-api-key"];
       const id = req.session?.user?.id;
       if (!apiKey && !id) {
         return res.status(401).json({ error: "Authentication required" });
       }
-      const user = await User.findOne({ 
-        where: apiKey ? { apiKey }: { id },
-        include: [{ model: Role }] 
+      const user = await User.findOne({
+        where: apiKey ? { apiKey } : { id },
+        include: [{ model: Role }],
       });
       if (!user) {
         return res.status(401).json({ error: "Authentication required" });
@@ -181,10 +185,10 @@ export function requireRole(roleName) {
  * @param {Function} next
  * @returns
  */
-export async function proxyMiddleware(req, res, next) {
+export async function proxyMiddleware(req, res, _next) {
   const { headers, method, body, query } = req;
   const host = headers.host?.split(":")[0];
-  let urlString = req.path.replace(/^\/[^\/]+\/?/, ""); // remove path prefix
+  let urlString = req.path.replace(/^\/[^/]+\/?/, ""); // remove path prefix
   if (!/^https?:\/\//i.test(urlString)) {
     urlString = "https://" + urlString;
   }
@@ -201,7 +205,8 @@ export async function proxyMiddleware(req, res, next) {
   try {
     // remove problematic headers
     const normalizedHeaders = { ...headers, ...getAuthorizedHeaders(url) };
-    const normalizedBody = headers["content-type"] === "application/json" ? JSON.stringify(body) : body;
+    const normalizedBody =
+      headers["content-type"] === "application/json" ? JSON.stringify(body) : body;
     ["host", "connection", "content-length"].forEach((h) => delete normalizedHeaders[h]);
     const response = await fetch(getAuthorizedUrl(url), {
       method,

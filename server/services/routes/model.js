@@ -1,7 +1,8 @@
-import { Router, json } from "express";
+import { json, Router } from "express";
+
+import { Model, Usage, User } from "../database.js";
 import { runModel } from "../inference.js";
 import { requireRole } from "../middleware.js";
-import { User, Model, Usage } from "../database.js";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
@@ -14,7 +15,10 @@ api.post("/model", requireRole(), async (req, res) => {
   try {
     // Check if user has remaining balance before processing
     if (user && user.limit !== null && user.remaining !== null && user.remaining <= 0) {
-      return res.status(429).json({ error: "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov." });
+      return res.status(429).json({
+        error:
+          "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.",
+      });
     }
 
     // Run the model
@@ -28,7 +32,8 @@ api.post("/model", requireRole(), async (req, res) => {
 
     for await (const message of results.stream) {
       try {
-        if (message.metadata) await trackModelUsage(user.id, modelValue, ip, message.metadata.usage);
+        if (message.metadata)
+          await trackModelUsage(user.id, modelValue, ip, message.metadata.usage);
         res.write(JSON.stringify(message) + "\n");
       } catch (err) {
         console.error("Error processing stream message:", err);

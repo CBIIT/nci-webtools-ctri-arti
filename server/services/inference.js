@@ -1,7 +1,7 @@
+import { Model, Provider } from "./database.js";
 import bedrock from "./providers/bedrock.js";
 import gemini from "./providers/gemini.js";
 import mock from "./providers/mock.js";
-import { Model, Provider } from "./database.js";
 
 export async function getModelProvider(value) {
   const providers = { bedrock, gemini, mock };
@@ -19,7 +19,8 @@ function estimateContentTokens(content) {
   let tokens = 0;
   if (content.text) tokens += Math.ceil(content.text.length / 8);
   if (content.document?.source?.text) tokens += Math.ceil(content.document.source.text.length / 8);
-  if (content.document?.source?.bytes) tokens += Math.ceil(content.document.source.bytes.length / 3);
+  if (content.document?.source?.bytes)
+    tokens += Math.ceil(content.document.source.bytes.length / 3);
   if (content.image?.source?.bytes) tokens += Math.ceil(content.image.source.bytes.length / 3);
   if (content.toolUse) tokens += Math.ceil(JSON.stringify(content.toolUse).length / 8);
   if (content.toolResult) tokens += Math.ceil(JSON.stringify(content.toolResult).length / 8);
@@ -35,12 +36,12 @@ function calculateCacheBoundaries(maxTokens = 2000000) {
   const boundaries = [];
   const scalingFactor = Math.sqrt(2); // ~1.414
   let boundary = 1024;
-  
+
   while (boundary <= maxTokens) {
     boundaries.push(Math.round(boundary));
     boundary *= scalingFactor;
   }
-  
+
   return boundaries;
 }
 
@@ -52,52 +53,52 @@ function calculateCacheBoundaries(maxTokens = 2000000) {
  */
 function addCachePointsToMessages(messages, hasCache) {
   if (!hasCache || !messages?.length) return messages;
-  
+
   const cachePoint = { cachePoint: { type: "default" } };
   const boundaries = calculateCacheBoundaries();
   const result = [];
   let totalTokens = 0;
   const cachePositions = [];
-  
+
   // First pass: find where to place cache points
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i];
     const messageTokens = message.content.reduce((sum, c) => sum + estimateContentTokens(c), 0);
     const previousTotal = totalTokens;
     totalTokens += messageTokens;
-    
+
     // Check if we crossed any boundary
     for (const boundary of boundaries) {
       if (previousTotal < boundary && totalTokens >= boundary) {
         cachePositions.push({
           index: i,
           boundary,
-          tokensBeforeMessage: previousTotal
+          tokensBeforeMessage: previousTotal,
         });
         break;
       }
     }
   }
-  
+
   // Keep only the last 2 cache positions
   const selectedPositions = cachePositions.slice(-2);
-  
+
   // Second pass: build result with cache points
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i];
-    const shouldAddCache = selectedPositions.some(pos => pos.index === i);
-    
+    const shouldAddCache = selectedPositions.some((pos) => pos.index === i);
+
     if (shouldAddCache) {
       // Clone the message and add cache point to its content
       result.push({
         ...message,
-        content: [...message.content, cachePoint]
+        content: [...message.content, cachePoint],
       });
     } else {
       result.push(message);
     }
   }
-  
+
   return result;
 }
 
@@ -111,7 +112,14 @@ function addCachePointsToMessages(messages, hasCache) {
  * @param {Array} tools - Array of tools the model can use during the conversation
  * @returns {Promise<import("@aws-sdk/client-bedrock-runtime").ConverseStreamCommandOutput|import("@aws-sdk/client-bedrock-runtime").ConverseCommandOutput>} A promise that resolves to a stream of model responses
  */
-export async function runModel({ model, messages, system: systemPrompt, tools = [], thoughtBudget = 0, stream = false }) {
+export async function runModel({
+  model,
+  messages,
+  system: systemPrompt,
+  tools = [],
+  thoughtBudget = 0,
+  stream = false,
+}) {
   if (!model || !messages || messages?.length === 0) {
     return null;
   }
@@ -122,7 +130,7 @@ export async function runModel({ model, messages, system: systemPrompt, tools = 
     if (!message.content.filter(Boolean).length) {
       message.content.push({ text: "_" });
     }
-    const contents = message.content.filter(c => {
+    const contents = message.content.filter((c) => {
       if (thoughtBudget <= 0 && c.reasoningContent) {
         return false;
       }
@@ -157,7 +165,7 @@ export async function runModel({ model, messages, system: systemPrompt, tools = 
     }
   }
   const {
-    model: { maxOutput, cost1kInput, cost1kOutput, cost1kCacheRead, cost1kCacheWrite },
+    model: { maxOutput, cost1kInput, _cost1kOutput, cost1kCacheRead, _cost1kCacheWrite },
     provider,
   } = await getModelProvider(model);
   const hasCache = !!cost1kCacheRead;
@@ -165,34 +173,44 @@ export async function runModel({ model, messages, system: systemPrompt, tools = 
 
   // Add cache points to messages
   messages = addCachePointsToMessages(messages, hasCache);
-  
+
   // Cache point for system and tools
   const cachePoint = hasCache ? { cachePoint: { type: "default" } } : undefined;
   const system = systemPrompt ? [{ text: systemPrompt }, cachePoint].filter(Boolean) : undefined;
-  const toolConfig = tools.length > 0 ? { tools: [...tools, cachePoint].filter(Boolean) } : undefined;
+  const toolConfig =
+    tools.length > 0 ? { tools: [...tools, cachePoint].filter(Boolean) } : undefined;
   const inferenceConfig = thoughtBudget > 0 ? { maxTokens } : undefined;
   const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
   const additionalModelRequestFields = thoughtBudget > 0 ? { thinking } : undefined;
-  const input = { modelId: model, messages, system, toolConfig, inferenceConfig, additionalModelRequestFields };
+  const input = {
+    modelId: model,
+    messages,
+    system,
+    toolConfig,
+    inferenceConfig,
+    additionalModelRequestFields,
+  };
   const response = stream ? provider.converseStream(input) : provider.converse(input);
   const result = await response;
-  
+
   // Debug logging for cache behavior
   if (hasCache && !stream && result.usage) {
-    const totalEstimatedTokens = messages.reduce((sum, m) => 
-      sum + m.content.reduce((s, c) => s + estimateContentTokens(c), 0), 0
+    const totalEstimatedTokens = messages.reduce(
+      (sum, m) => sum + m.content.reduce((s, c) => s + estimateContentTokens(c), 0),
+      0
     );
-    const messagesWithCache = messages.filter(m => m.content.some(c => c.cachePoint)).length;
+    const messagesWithCache = messages.filter((m) => m.content.some((c) => c.cachePoint)).length;
     const cacheRead = result.usage.cacheReadInputTokens || 0;
     const cacheWrite = result.usage.cacheWriteInputTokens || 0;
-    
+
     // Calculate cost savings using actual model costs
     const totalInputTokens = result.usage.inputTokens + cacheRead;
-    const regularCost = (totalInputTokens * cost1kInput) / 1000;  // Cost without cache
-    const actualCost = ((result.usage.inputTokens * cost1kInput) + (cacheRead * cost1kCacheRead)) / 1000;  // Cost with cache
+    const regularCost = (totalInputTokens * cost1kInput) / 1000; // Cost without cache
+    const actualCost =
+      (result.usage.inputTokens * cost1kInput + cacheRead * cost1kCacheRead) / 1000; // Cost with cache
     const savings = regularCost - actualCost;
-    
-    console.log('[Cache Debug]', {
+
+    console.log("[Cache Debug]", {
       model,
       estimatedTotalTokens: totalEstimatedTokens,
       actualInputTokens: result.usage.inputTokens,
@@ -200,17 +218,18 @@ export async function runModel({ model, messages, system: systemPrompt, tools = 
       cache: {
         read: cacheRead,
         write: cacheWrite,
-        hitRate: totalInputTokens > 0 ? `${((cacheRead / totalInputTokens) * 100).toFixed(1)}%` : '0%'
+        hitRate:
+          totalInputTokens > 0 ? `${((cacheRead / totalInputTokens) * 100).toFixed(1)}%` : "0%",
       },
       cost: {
         withoutCache: `$${regularCost.toFixed(6)}`,
         withCache: `$${actualCost.toFixed(6)}`,
         savings: `$${savings.toFixed(6)}`,
-        percentSaved: regularCost > 0 ? `${((savings / regularCost) * 100).toFixed(1)}%` : '0%'
-      }
+        percentSaved: regularCost > 0 ? `${((savings / regularCost) * 100).toFixed(1)}%` : "0%",
+      },
     });
   }
-  
+
   return result;
 }
 

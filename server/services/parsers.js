@@ -3,7 +3,7 @@ import { getDocument as loadPdf } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 /**
  * Retrieves and parses a document from a URL
- * @param {string} url 
+ * @param {string} url
  * @returns {Promise<string>} extracted text
  */
 export async function parseUrl(url) {

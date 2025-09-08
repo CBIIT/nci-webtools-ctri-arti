@@ -1,8 +1,9 @@
-import { createSignal, Show } from "solid-js";
+import { createResource, createSignal, Show } from "solid-js";
 import html from "solid-js/html";
-import { useParams, useNavigate } from "@solidjs/router";
-import { createResource } from "solid-js";
-import { capitalize } from "/utils/utils.js";
+
+import { useNavigate, useParams } from "@solidjs/router";
+
+import { capitalize } from "../../utils/utils.js";
 
 function UserEdit() {
   const params = useParams();
@@ -18,7 +19,7 @@ function UserEdit() {
     noLimit: false,
   });
   const [originalLimit, setOriginalLimit] = createSignal(0);
-  const [generateApiKey, setGenerateApiKey] = createSignal(false);
+  const [generateApiKey] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
 
   // Default value mapping based on role ID
@@ -83,15 +84,14 @@ function UserEdit() {
         const data = await response.json();
         throw new Error(data.error || "Failed to save user");
       }
-      
-      // Navigate with success message in state
-      navigate("/_/users", { 
-        state: { 
-          alertMessage: "User successfully updated!",
-          alertType: "success"
-        }
-      });
 
+      // Navigate with success message in state
+      navigate("/_/users", {
+        state: {
+          alertMessage: "User successfully updated!",
+          alertType: "success",
+        },
+      });
     } catch (err) {
       console.error("Error saving user:", err);
       alert(err.message || "An error occurred while saving the user");
@@ -102,7 +102,7 @@ function UserEdit() {
 
   function handleRoleChange(roleId) {
     // Simply update the role ID without changing limit settings
-    setUser((prev) => ({ ...prev, roleId, ...DEFAULT_ROLE_LIMITS[roleId] || {} }));
+    setUser((prev) => ({ ...prev, roleId, ...(DEFAULT_ROLE_LIMITS[roleId] || {}) }));
   }
 
   function handleInputChange(field, value) {
@@ -117,27 +117,19 @@ function UserEdit() {
     }));
   }
 
-  function copyToClipboard(text) {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        alert("API Key copied to clipboard!");
-      })
-      .catch((err) => {
-        console.error("Could not copy text: ", err);
-      });
-  }
-
   return html`
     <img
       src="assets/images/users/profile_banner.png"
       alt="Profile Management Banner"
       class="img-fluid object-fit-cover w-100"
-      style="height:153px;" />
+      style="height:153px;"
+    />
     <div class="container pb-4">
       <!-- Error Alert -->
       <${Show} when=${() => roles.error || userData.error}>
-        <div class="alert alert-danger" role="alert">${() => roles.error || userData.error || "An error occurred while fetching data"}</div>
+        <div class="alert alert-danger" role="alert">
+          ${() => roles.error || userData.error || "An error occurred while fetching data"}
+        </div>
       <//>
 
       <!-- Loading State -->
@@ -151,10 +143,16 @@ function UserEdit() {
 
       <!-- User Form -->
       <div class="row position-relative mb-5" style="margin-top:-80px">
-        <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto font-title text-white fw-bold display-5">Edit User</h1>
+        <h1
+          class="offset-sm-2 offset-md-3 offset-xl-4 col-auto font-title text-white fw-bold display-5"
+        >
+          Edit User
+        </h1>
       </div>
       <div class="row mt-4 mb-5">
-        <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto fs-3">${() => user().email || ""}</h1>
+        <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto fs-3">
+          ${() => user().email || ""}
+        </h1>
         <div class="position-relative offset-sm-2 offset-md-3 offset-xl-4">
           <img
             class="position-absolute"
@@ -167,7 +165,8 @@ function UserEdit() {
                   transform: translateX(-50%); /* Center the icon at the 'left' point */
                   filter: drop-shadow(10px 13px 9px rgba(0, 0, 0, 0.35));
                   z-index: 10; /* Ensure it's above other content */
-                " />
+                "
+          />
         </div>
       </div>
       <${Show} when=${() => !roles.loading && !userData.loading}>
@@ -207,7 +206,8 @@ function UserEdit() {
                 id="firstName"
                 value=${() => user().firstName || ""}
                 onInput=${(e) => handleInputChange("firstName", e.target.value)}
-                placeholder="Enter first name" />
+                placeholder="Enter first name"
+              />
             </div>
           </div>
           <div class="row align-items-center mb-2">
@@ -224,7 +224,8 @@ function UserEdit() {
                 id="lastName"
                 value=${() => user().lastName || ""}
                 onInput=${(e) => handleInputChange("lastName", e.target.value)}
-                placeholder="Enter last name" />
+                placeholder="Enter last name"
+              />
             </div>
           </div>
           <div class="row align-items-center mb-2">
@@ -239,7 +240,8 @@ function UserEdit() {
                 class="form-select"
                 id="status"
                 value=${() => user().status || "active"}
-                onChange=${(e) => handleInputChange("status", e.target.value)}>
+                onChange=${(e) => handleInputChange("status", e.target.value)}
+              >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
@@ -257,10 +259,15 @@ function UserEdit() {
                 class="form-select"
                 id="roleId"
                 value=${() => user().roleId || ""}
-                onChange=${(e) => handleRoleChange(parseInt(e.target.value))}>
+                onChange=${(e) => handleRoleChange(parseInt(e.target.value))}
+              >
                 ${() =>
                   roles()?.map(
-                    (role) => html` <option value=${role.id} selected=${() => role.id === user().roleId}>${capitalize(role.name)}</option> `
+                    (role) => html`
+                      <option value=${role.id} selected=${() => role.id === user().roleId}>
+                        ${capitalize(role.name)}
+                      </option>
+                    `
                   )}
               </select>
             </div>
@@ -280,7 +287,8 @@ function UserEdit() {
                   id="noLimitCheckbox"
                   checked=${() => user().noLimit}
                   onChange=${(e) => handleNoLimitChange(e.target.checked)}
-                  aria-label="Unlimited checkbox" />
+                  aria-label="Unlimited checkbox"
+                />
                 <label class="form-check-label" for="noLimitCheckbox">Unlimited</label>
               </div>
 
@@ -295,15 +303,21 @@ function UserEdit() {
                   id="limit"
                   value=${() => user().limit || 0}
                   onInput=${(e) => handleInputChange("limit", parseInt(e.target.value) || 0)}
-                  aria-label="Weekly cost limit" />
+                  aria-label="Weekly cost limit"
+                />
                 <${Show} when=${() => params.id}>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     disabled=${() => user().noLimit}
                     class="btn btn-outline-primary"
                     onClick=${() => {
-                      setUser((prev) => ({ ...prev, limit: DEFAULT_ROLE_LIMITS[prev.roleId]?.limit, noLimit: DEFAULT_ROLE_LIMITS[prev.roleId]?.noLimit }));
-                    }}>
+                      setUser((prev) => ({
+                        ...prev,
+                        limit: DEFAULT_ROLE_LIMITS[prev.roleId]?.limit,
+                        noLimit: DEFAULT_ROLE_LIMITS[prev.roleId]?.noLimit,
+                      }));
+                    }}
+                  >
                     Reset
                   </button>
                 <//>
@@ -311,13 +325,19 @@ function UserEdit() {
             </div>
           </div>
 
-          
           <div class="row">
             <!-- Form Buttons -->
             <div class="col-12 mt-4">
               <div class="d-flex gap-2 justify-content-center">
-                <a href="/_/users" class="btn btn-outline-secondary text-decoration-none btn-uniform"> Cancel </a>
-                <button type="submit" class="btn btn-primary btn-uniform" disabled=${saving}>${() => (saving() ? "Saving..." : "Save")}</button>
+                <a
+                  href="/_/users"
+                  class="btn btn-outline-secondary text-decoration-none btn-uniform"
+                >
+                  Cancel
+                </a>
+                <button type="submit" class="btn btn-primary btn-uniform" disabled=${saving}>
+                  ${() => (saving() ? "Saving..." : "Save")}
+                </button>
               </div>
             </div>
           </div>

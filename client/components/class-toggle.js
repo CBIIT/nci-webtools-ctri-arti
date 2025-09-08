@@ -1,17 +1,16 @@
-import { onMount, onCleanup, children } from "solid-js";
+import { children, onCleanup, onMount } from "solid-js";
 import html from "solid-js/html";
 
 /**
  * Toggles classes on child elements based on click or hover events.
  * The component expects children with a `toggle` attribute to act as the trigger.
  * Other children will have the active class toggled (default is "show").
- * @param {*} props 
- * @returns 
+ * @param {*} props
+ * @returns
  */
 export default function ClassToggle(props) {
   let el = null;
   const resolved = children(() => props.children);
-  const trigger = resolved().find((child) => child.hasAttribute("toggle"));
   const content = resolved().filter((child) => !child.hasAttribute("toggle"));
   const toggle = () => content.forEach((c) => c.classList.toggle(props.activeClass || "show"));
   const hide = () => content.forEach((c) => c.classList.remove(props.activeClass || "show"));
@@ -26,7 +25,8 @@ export default function ClassToggle(props) {
       class=${props.class}
       onClick=${toggle}
       onMouseOver=${onMouseOver}
-      onMouseOut=${onMouseOut}>
+      onMouseOut=${onMouseOut}
+    >
       ${resolved}
     </div>
   `;

@@ -1,6 +1,17 @@
-import { TranslateClient, TranslateTextCommand, paginateListLanguages } from "@aws-sdk/client-translate"; // ES Modules import
+import {
+  paginateListLanguages,
+  TranslateClient,
+  TranslateTextCommand,
+} from "@aws-sdk/client-translate";
 
-export async function translate({text, sourceLanguage = "en", targetLanguage = "es", settings = {}}) {
+// ES Modules import
+
+export async function translate({
+  text,
+  sourceLanguage = "en",
+  targetLanguage = "es",
+  settings = {},
+}) {
   const client = new TranslateClient();
   const input = {
     Text: text,
@@ -26,6 +37,9 @@ export async function getLanguages() {
       languages.push(...page.Languages);
     }
   }
-  const compareOptions = (a, b) => (a.value === "auto" ? -1 : b.value === "auto" ? 1 : a.label.localeCompare(b.label));
-  return languages.map((lang) => ({ value: lang.LanguageCode, label: lang.LanguageName })).sort(compareOptions);
+  const compareOptions = (a, b) =>
+    a.value === "auto" ? -1 : b.value === "auto" ? 1 : a.label.localeCompare(b.label);
+  return languages
+    .map((lang) => ({ value: lang.LanguageCode, label: lang.LanguageName }))
+    .sort(compareOptions);
 }

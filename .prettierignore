@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+build/
+.out/
+
+# Caches & tooling
+.cache/
+.eslintcache
+
+# Tests
+coverage/
+**/__snapshots__/**
+
+# Generated code
+**/generated/**
+**/__generated__/**
+
+# Logs & env
+*.log
+.env*
+!.env.example
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store

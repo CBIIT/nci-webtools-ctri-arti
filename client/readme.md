@@ -19,12 +19,14 @@ client/
 ## Chat System
 
 The chat interface (`pages/tools/chat/`) handles:
+
 - Conversation persistence (IndexedDB)
 - File uploads (PDF, images, docs)
 - Streaming AI responses
 - Tool calling for research tasks
 
 Key files:
+
 - `index.js` - Main UI component
 - `hooks.js` - State management and API calls
 - `message.js` - Message rendering
@@ -39,6 +41,7 @@ Key files:
 ### Development
 
 **Key patterns:**
+
 - Components use SolidJS tagged templates (`html` from `solid-js/html`)
 - State with `createSignal`/`createStore`
 - No bundler - dependencies via import maps in `index.html`
@@ -51,9 +54,7 @@ Key files:
 - **Client-heavy**: ML processing happens locally for privacy
 - **Reactive**: SolidJS for efficient UI updates
 
-
 ---
-
 
 # SolidJS Development Guide
 
@@ -62,6 +63,7 @@ A comprehensive guide for developing with SolidJS using tagged template literals
 ## Quick Reference
 
 ### Template Syntax Rules
+
 - **Signals**: `${signal}` (auto-wrapped)
 - **Store Properties**: `${() => store.property}` (always wrap)
 - **Signal Properties**: `${() => signal().property}` (manual wrap)
@@ -71,29 +73,29 @@ A comprehensive guide for developing with SolidJS using tagged template literals
 
 ## COMMON MISTAKES TO AVOID
 
-| Mistake | Wrong | Correct | Why |
-|---------|-------|---------|-----|
-| **Signal Usage** | `${signal()}` | `${signal}` or `${() => signal()}` | Calling `signal()` immediately breaks reactivity. SolidJS needs the function reference to track changes. |
-| **String Interpolation in Attributes** | `<div class="base ${props.className}">` | `<div class=${() => ["base", props.className].join(" ")}>` | Template literals inside attributes don't work. Use a function that returns the complete string. |
-| **Alternative: classList** | `<div class="base ${props.className}">` | `<div classList=${{ base: true, [props.className]: true }}>` | classList syntax handles conditional classes reactively and is more maintainable. |
-| **Store Properties** | `${store.property}` | `${() => store.property}` | Store properties return values, not functions. Wrap them so SolidJS can track changes. |
-| **Props Destructuring** | `function Component({ name, age })` | `function Component(props)` then `${() => props.name}` | Destructuring breaks reactivity by extracting values at creation time. Access via props object. |
-| **Signal Properties** | `${user().name}` | `${() => user().name}` | Accessing properties of signal values needs manual wrapping for reactivity tracking. |
-| **Event Handlers** | `onClick=${() => handler()}` | `onClick=${e => handler(e)}` or `onClick=${handler}` | Zero-argument functions get auto-wrapped, breaking event handling. Include event parameter. |
-| **JSX Syntax** | `<Component prop={value} />` | `<${Component} prop=${value} />` | This is HTML template syntax, not JSX. Components need `${}` interpolation. |
-| **Component Closing** | `<${Component}></${Component}>` | `<${Component} />` or `<${Component}>children<//>` | Use self-closing syntax or SolidJS's `<//>` closing tag, not JSX-style closing. |
+| Mistake                                | Wrong                                   | Correct                                                      | Why                                                                                                      |
+| -------------------------------------- | --------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| **Signal Usage**                       | `${signal()}`                           | `${signal}` or `${() => signal()}`                           | Calling `signal()` immediately breaks reactivity. SolidJS needs the function reference to track changes. |
+| **String Interpolation in Attributes** | `<div class="base ${props.className}">` | `<div class=${() => ["base", props.className].join(" ")}>`   | Template literals inside attributes don't work. Use a function that returns the complete string.         |
+| **Alternative: classList**             | `<div class="base ${props.className}">` | `<div classList=${{ base: true, [props.className]: true }}>` | classList syntax handles conditional classes reactively and is more maintainable.                        |
+| **Store Properties**                   | `${store.property}`                     | `${() => store.property}`                                    | Store properties return values, not functions. Wrap them so SolidJS can track changes.                   |
+| **Props Destructuring**                | `function Component({ name, age })`     | `function Component(props)` then `${() => props.name}`       | Destructuring breaks reactivity by extracting values at creation time. Access via props object.          |
+| **Signal Properties**                  | `${user().name}`                        | `${() => user().name}`                                       | Accessing properties of signal values needs manual wrapping for reactivity tracking.                     |
+| **Event Handlers**                     | `onClick=${() => handler()}`            | `onClick=${e => handler(e)}` or `onClick=${handler}`         | Zero-argument functions get auto-wrapped, breaking event handling. Include event parameter.              |
+| **JSX Syntax**                         | `<Component prop={value} />`            | `<${Component} prop=${value} />`                             | This is HTML template syntax, not JSX. Components need `${}` interpolation.                              |
+| **Component Closing**                  | `<${Component}></${Component}>`         | `<${Component} />` or `<${Component}>children<//>`           | Use self-closing syntax or SolidJS's `<//>` closing tag, not JSX-style closing.                          |
 
 ### Key Concepts
+
 - Functions with 0 arguments are auto-wrapped for reactivity
 - Store properties return values, not functions - always wrap them
 - Don't destructure props - breaks reactivity
 - Use `createSignal` for simple state, `createStore` for complex objects
 
-
-
 ## Table of Contents
+
 - [Setup & Import Maps](#setup--import-maps)
-- [Reactivity Fundamentals](#reactivity-fundamentals)  
+- [Reactivity Fundamentals](#reactivity-fundamentals)
 - [Component Basics](#component-basics)
 - [State Management](#state-management)
 - [Control Flow](#control-flow)
@@ -108,14 +110,14 @@ Dependencies are loaded via import maps in HTML:
 
 ```html
 <script type="importmap">
-{
-  "imports": {
-    "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1.9.7/dist/solid.min.js",
-    "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1.9.7/html/dist/html.min.js",
-    "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1.9.7/store/dist/store.min.js",
-    "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1.9.7/web/dist/web.min.js"
+  {
+    "imports": {
+      "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1.9.7/dist/solid.min.js",
+      "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1.9.7/html/dist/html.min.js",
+      "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1.9.7/store/dist/store.min.js",
+      "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1.9.7/web/dist/web.min.js"
+    }
   }
-}
 </script>
 ```
 
@@ -138,12 +140,12 @@ const [count, setCount] = createSignal(0);
 const [user, setUser] = createSignal({ name: "John" });
 
 // Auto-wrapped (0 arguments)
-html`<div>${count}</div>`;                    // Works - signal getter
-html`<div>${() => count() * 2}</div>`;        // Works - computation
+html`<div>${count}</div>`; // Works - signal getter
+html`<div>${() => count() * 2}</div>`; // Works - computation
 
-// Manual wrapping needed  
-html`<div>${() => user().name}</div>`;        // Required - accessing property
-html`<button onClick=${e => handler(e)}>`;   // Required - event handler (1+ args)
+// Manual wrapping needed
+html`<div>${() => user().name}</div>`; // Required - accessing property
+html`<button onClick=${(e) => handler(e)}></button>`; // Required - event handler (1+ args)
 ```
 
 ### Signals
@@ -153,9 +155,9 @@ Basic reactive state:
 ```js
 function Counter() {
   const [count, setCount] = createSignal(0);
-  
+
   const increment = () => setCount(count() + 1);
-  const decrement = () => setCount(prev => prev - 1);
+  const decrement = () => setCount((prev) => prev - 1);
 
   return html`
     <div>
@@ -175,15 +177,15 @@ function Counter() {
 function StoreExample() {
   const [store, setStore] = createStore({
     name: "John",
-    todos: [{ text: "Buy milk", done: false }]
+    todos: [{ text: "Buy milk", done: false }],
   });
-  
+
   return html`
     <div>
       <!-- CORRECT: Store properties must be wrapped -->
       <p>Name: ${() => store.name}</p>
       <p>First todo: ${() => store.todos[0].text}</p>
-      
+
       <!-- WRONG: Direct access is not reactive -->
       <!-- <p>Name: ${store.name}</p> -->
     </div>
@@ -200,11 +202,11 @@ Cached computations:
 ```js
 function ExpensiveComponent() {
   const [data, setData] = createSignal([]);
-  
+
   const processedData = createMemo(() => {
-    return data().map(item => ({ ...item, processed: true }));
+    return data().map((item) => ({ ...item, processed: true }));
   });
-  
+
   return html`<div>Items: ${() => processedData().length}</div>`;
 }
 ```
@@ -216,14 +218,12 @@ Side effects:
 ```js
 function DocumentTitle() {
   const [title, setTitle] = createSignal("Default");
-  
+
   createEffect(() => {
     document.title = title();
   });
-  
-  return html`
-    <input onInput=${e => setTitle(e.target.value)} />
-  `;
+
+  return html` <input onInput=${(e) => setTitle(e.target.value)} /> `;
 }
 ```
 
@@ -245,13 +245,10 @@ export default function MyComponent() {
 
 ```js
 export default function Button(props) {
-  const buttonClass = () => `btn ${props.variant || 'primary'}`;
-  
+  const buttonClass = () => `btn ${props.variant || "primary"}`;
+
   return html`
-    <button 
-      class=${buttonClass}
-      onClick=${e => props.onClick?.(e)}
-    >
+    <button class=${buttonClass} onClick=${(e) => props.onClick?.(e)}>
       ${() => props.children}
     </button>
   `;
@@ -267,16 +264,12 @@ import { mergeProps, splitProps } from "solid-js";
 
 function Component(props) {
   // Set defaults while maintaining reactivity
-  const merged = mergeProps({ variant: 'primary' }, props);
-  
+  const merged = mergeProps({ variant: "primary" }, props);
+
   // Split props by category
-  const [buttonProps, otherProps] = splitProps(props, ['onClick', 'disabled']);
-  
-  return html`
-    <button ...${buttonProps}>
-      ${() => merged.children}
-    </button>
-  `;
+  const [buttonProps, otherProps] = splitProps(props, ["onClick", "disabled"]);
+
+  return html` <button ...${buttonProps}>${() => merged.children}</button> `;
 }
 ```
 
@@ -288,7 +281,7 @@ function Component(props) {
 Template Expression:
 ├── Store property? → ${() => store.property} (always wrap)
 ├── Signal? → ${signal} (auto-wrapped)
-├── Memo? → ${memo} (auto-wrapped)  
+├── Memo? → ${memo} (auto-wrapped)
 ├── Computation? → ${() => calculation()} (manual wrap)
 └── Static value? → ${value} (direct)
 ```
@@ -299,20 +292,22 @@ Template Expression:
 function TodoForm() {
   const [todo, setTodo] = createSignal("");
   const [todos, setTodos] = createSignal([]);
-  
+
   const addTodo = () => {
     if (todo().trim()) {
-      setTodos(prev => [...prev, { id: Date.now(), text: todo() }]);
+      setTodos((prev) => [...prev, { id: Date.now(), text: todo() }]);
       setTodo("");
     }
   };
 
   return html`
-    <form onSubmit=${e => { e.preventDefault(); addTodo(); }}>
-      <input 
-        value=${todo}
-        onInput=${e => setTodo(e.target.value)}
-      />
+    <form
+      onSubmit=${(e) => {
+        e.preventDefault();
+        addTodo();
+      }}
+    >
+      <input value=${todo} onInput=${(e) => setTodo(e.target.value)} />
       <button type="submit">Add</button>
     </form>
   `;
@@ -326,20 +321,26 @@ import { createStore, produce } from "solid-js/store";
 
 function TodoApp() {
   const [todos, setTodos] = createStore([]);
-  
+
   const addTodo = (text) => {
-    setTodos(produce(d => d.push({ 
-      id: Date.now(), 
-      text, 
-      completed: false 
-    })));
+    setTodos(
+      produce((d) =>
+        d.push({
+          id: Date.now(),
+          text,
+          completed: false,
+        })
+      )
+    );
   };
-  
+
   const toggleTodo = (id) => {
-    setTodos(produce(d => {
-      const todo = d.find(t => t.id === id);
-      if (todo) todo.completed = !todo.completed;
-    }));
+    setTodos(
+      produce((d) => {
+        const todo = d.find((t) => t.id === id);
+        if (todo) todo.completed = !todo.completed;
+      })
+    );
   };
 
   return html`
@@ -347,8 +348,8 @@ function TodoApp() {
       <${For} each=${() => todos}>
         ${(todo) => html`
           <div>
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked=${() => todo.completed}
               onChange=${() => toggleTodo(todo.id)}
             />
@@ -370,22 +371,16 @@ const ThemeContext = createContext();
 
 function ThemeProvider(props) {
   const [mode, setMode] = createSignal("light");
-  const toggle = () => setMode(m => m === "light" ? "dark" : "light");
+  const toggle = () => setMode((m) => (m === "light" ? "dark" : "light"));
 
-  return html`
-    <${ThemeContext.Provider} value=${{ mode, toggle }}>
-      ${() => props.children}
-    <//>
-  `;
+  return html` <${ThemeContext.Provider} value=${{ mode, toggle }}> ${() => props.children} <//> `;
 }
 
 function ThemeSwitch() {
   const theme = useContext(ThemeContext);
-  
+
   return html`
-    <button onClick=${theme.toggle}>
-      ${() => theme.mode() === "light" ? "🌙" : "☀️"}
-    </button>
+    <button onClick=${theme.toggle}>${() => (theme.mode() === "light" ? "🌙" : "☀️")}</button>
   `;
 }
 ```
@@ -399,7 +394,7 @@ import { Show } from "solid-js";
 
 function UserGreeting() {
   const [user, setUser] = createSignal(null);
-  
+
   return html`
     <${Show} when=${user} fallback=${html`<p>Please log in</p>`}>
       <p>Welcome, ${() => user().name}!</p>
@@ -415,7 +410,7 @@ import { Switch, Match } from "solid-js";
 
 function StatusDisplay() {
   const [status, setStatus] = createSignal("loading");
-  
+
   return html`
     <${Switch} fallback=${html`<p>Unknown status</p>`}>
       <${Match} when=${() => status() === "loading"}>
@@ -441,16 +436,12 @@ import { For, Index } from "solid-js";
 function TodoList() {
   const [todos, setTodos] = createSignal([
     { id: 1, text: "Learn SolidJS" },
-    { id: 2, text: "Build app" }
+    { id: 2, text: "Build app" },
   ]);
-  
+
   return html`
     <ul>
-      <${For} each=${todos}>
-        ${(todo, index) => html`
-          <li>${() => todo.text}</li>
-        `}
-      <//>
+      <${For} each=${todos}> ${(todo, index) => html` <li>${() => todo.text}</li> `} <//>
     </ul>
   `;
 }
@@ -458,13 +449,11 @@ function TodoList() {
 // Use Index when order matters more than identity
 function NumberList() {
   const [numbers, setNumbers] = createSignal([1, 2, 3]);
-  
+
   return html`
     <ul>
       <${Index} each=${numbers}>
-        ${(number, index) => html`
-          <li>Position ${() => index()}: ${() => number()}</li>
-        `}
+        ${(number, index) => html` <li>Position ${() => index()}: ${() => number()}</li> `}
       <//>
     </ul>
   `;
@@ -478,13 +467,15 @@ import { ErrorBoundary } from "solid-js";
 
 function App() {
   return html`
-    <${ErrorBoundary} fallback=${(error, reset) => html`
-      <div class="alert alert-danger">
-        <h3>Something went wrong</h3>
-        <p>${error.message}</p>
-        <button onClick=${reset}>Try Again</button>
-      </div>
-    `}>
+    <${ErrorBoundary}
+      fallback=${(error, reset) => html`
+        <div class="alert alert-danger">
+          <h3>Something went wrong</h3>
+          <p>${error.message}</p>
+          <button onClick=${reset}>Try Again</button>
+        </div>
+      `}
+    >
       <${RiskyComponent} />
     <//>
   `;
@@ -498,11 +489,11 @@ function App() {
 ```js
 function EventExample() {
   const [message, setMessage] = createSignal("");
-  
+
   const handleClick = (e) => {
     setMessage("Button clicked!");
   };
-  
+
   const handleInput = (e) => {
     setMessage(e.target.value);
   };
@@ -524,18 +515,18 @@ function ContactForm() {
   const [formData, setFormData] = createStore({
     name: "",
     email: "",
-    message: ""
+    message: "",
   });
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const response = await fetch("/api/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData)
+      body: JSON.stringify(formData),
     });
-    
+
     if (response.ok) {
       setFormData({ name: "", email: "", message: "" });
     }
@@ -573,14 +564,10 @@ function ContactForm() {
 function StyledComponent() {
   const [isActive, setIsActive] = createSignal(false);
   const [theme, setTheme] = createSignal("light");
-  
+
   const componentClass = () => `component ${theme()} ${isActive() ? "active" : ""}`;
-  
-  return html`
-    <div class=${componentClass}>
-      Content
-    </div>
-  `;
+
+  return html` <div class=${componentClass}>Content</div> `;
 }
 ```
 
@@ -590,14 +577,14 @@ function StyledComponent() {
 function ConditionalClasses() {
   const [isLoading, setIsLoading] = createSignal(false);
   const [hasError, setHasError] = createSignal(false);
-  
+
   return html`
-    <button 
+    <button
       classList=${{
-        "btn": true,
+        btn: true,
         "btn-primary": () => !hasError(),
         "btn-danger": hasError,
-        "loading": isLoading
+        loading: isLoading,
       }}
     >
       Submit
@@ -612,13 +599,13 @@ function ConditionalClasses() {
 function InlineStyles() {
   const [width, setWidth] = createSignal(100);
   const [color, setColor] = createSignal("blue");
-  
+
   return html`
-    <div 
+    <div
       style=${{
         width: () => `${width()}px`,
         height: "50px",
-        "background-color": color
+        "background-color": color,
       }}
     >
       Styled content
@@ -636,7 +623,7 @@ import { createResource, Suspense } from "solid-js";
 
 function UserProfile() {
   const [userId, setUserId] = createSignal(1);
-  
+
   const [user] = createResource(userId, async (id) => {
     const response = await fetch(`/api/users/${id}`);
     return response.json();
@@ -664,19 +651,17 @@ function DataComponent() {
     if (!response.ok) throw new Error("Failed to fetch");
     return response.json();
   });
-  
+
   return html`
     <div>
       <button onClick=${refetch}>Refresh</button>
-      
+
       <${Suspense} fallback=${html`<div>Loading...</div>`}>
-        <${Show} 
-          when=${() => !data.error} 
+        <${Show}
+          when=${() => !data.error}
           fallback=${html`<div>Error: ${() => data.error?.message}</div>`}
         >
-          <${For} each=${data}>
-            ${(item) => html`<div>${() => item.name}</div>`}
-          <//>
+          <${For} each=${data}> ${(item) => html`<div>${() => item.name}</div>`} <//>
         <//>
       <//>
     </div>
@@ -709,20 +694,20 @@ function UserList() {
     if (!response.ok) throw new Error(`Failed to fetch users: ${response.status}`);
     return response.json();
   });
-  
+
   return html`
-    <${ErrorBoundary} fallback=${(error, reset) => html`
-      <div class="alert alert-danger">
-        <h4>Error loading users</h4>
-        <p>${error.message}</p>
-        <button onClick=${reset}>Try Again</button>
-      </div>
-    `}>
+    <${ErrorBoundary}
+      fallback=${(error, reset) => html`
+        <div class="alert alert-danger">
+          <h4>Error loading users</h4>
+          <p>${error.message}</p>
+          <button onClick=${reset}>Try Again</button>
+        </div>
+      `}
+    >
       <${Suspense} fallback=${html`<div class="loading">Loading users...</div>`}>
         <div class="user-list">
-          <${For} each=${users}>
-            ${(user) => html`<${UserCard} user=${user} />`}
-          <//>
+          <${For} each=${users}> ${(user) => html`<${UserCard} user=${user} />`} <//>
         </div>
       <//>
     <//>
@@ -741,19 +726,21 @@ function DataComponent() {
     if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
     return response.json();
   });
-  
+
   const onReset = async (e, callback) => {
     await refetch();
     callback?.();
   };
-  
+
   return html`
-    <${ErrorBoundary} fallback=${(err, reset) => html`
-      <div class="alert alert-danger">
-        <h4>Error: ${err.message}</h4>
-        <button onClick=${(e) => onReset(e, reset)}>Clear Error</button>
-      </div>
-    `}>
+    <${ErrorBoundary}
+      fallback=${(err, reset) => html`
+        <div class="alert alert-danger">
+          <h4>Error: ${err.message}</h4>
+          <button onClick=${(e) => onReset(e, reset)}>Clear Error</button>
+        </div>
+      `}
+    >
       <${Suspense} fallback=${html`<div>Loading...</div>`}>
         <div>
           <h3>Data loaded successfully!</h3>
@@ -774,7 +761,7 @@ import { batch, untrack } from "solid-js";
 function OptimizedComponent() {
   const [firstName, setFirstName] = createSignal("John");
   const [lastName, setLastName] = createSignal("Doe");
-  
+
   // Batch multiple updates
   const updateUser = (userData) => {
     batch(() => {
@@ -782,14 +769,14 @@ function OptimizedComponent() {
       setLastName(userData.lastName);
     });
   };
-  
+
   // Prevent tracking in specific cases
   createEffect(() => {
     const name = firstName(); // This creates dependency
     const untracked = untrack(() => lastName()); // This doesn't
     console.log(`Effect: ${name}, ${untracked}`);
   });
-  
+
   return html`<div>Performance optimized</div>`;
 }
 ```
@@ -797,6 +784,7 @@ function OptimizedComponent() {
 ### Common Mistakes
 
 1. **Don't destructure props**:
+
 ```js
 // Wrong
 function Component({ name, age }) {
@@ -810,23 +798,25 @@ function Component(props) {
 ```
 
 2. **Store properties need wrapping**:
+
 ```js
 const [store, setStore] = createStore({ name: "John" });
 
 // Wrong
-html`<div>${store.name}</div>`
+html`<div>${store.name}</div>`;
 
 // Correct
-html`<div>${() => store.name}</div>`
+html`<div>${() => store.name}</div>`;
 ```
 
 3. **Event handlers need parameters**:
+
 ```js
 // Wrong - gets auto-wrapped
-html`<button onClick=${() => handleClick()}>Click</button>`
+html`<button onClick=${() => handleClick()}>Click</button>`;
 
 // Correct - explicit parameter
-html`<button onClick=${e => handleClick(e)}>Click</button>`
+html`<button onClick=${(e) => handleClick(e)}>Click</button>`;
 ```
 
 ### File Organization

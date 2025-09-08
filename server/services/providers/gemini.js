@@ -19,7 +19,7 @@ export default class GeminiProvider {
   uint8ArrayToBase64(bytes) {
     return Buffer.from(bytes).toString("base64");
   }
-  
+
   base64ToUint8Array(base64) {
     return new Uint8Array(Buffer.from(base64, "base64"));
   }
@@ -49,11 +49,15 @@ export default class GeminiProvider {
           geminiParts.push({ text: content.text });
         } else if (content.image?.source?.bytes) {
           const mimeType = `image/${content.image.format || "png"}`;
-          geminiParts.push({ inlineData: { mimeType, data: this.uint8ArrayToBase64(content.image.source.bytes) } });
+          geminiParts.push({
+            inlineData: { mimeType, data: this.uint8ArrayToBase64(content.image.source.bytes) },
+          });
         } else if (content.document?.source?.bytes) {
           const format = content.document.format || "octet-stream";
           const mimeType = `application/${format}`; // Basic mapping
-          geminiParts.push({ inlineData: { mimeType, data: this.uint8ArrayToBase64(content.document.source.bytes) } });
+          geminiParts.push({
+            inlineData: { mimeType, data: this.uint8ArrayToBase64(content.document.source.bytes) },
+          });
         } else if (content.toolResult && brMsg.role === "user") {
           const toolName = this.activeToolCallNames.get(content.toolResult.toolUseId);
           if (toolName) {
@@ -61,17 +65,24 @@ export default class GeminiProvider {
               content.toolResult.content?.find((c) => c.json !== undefined)?.json ??
               content.toolResult.content?.find((c) => c.text !== undefined)?.text ??
               "";
-            geminiParts.push({ functionResponse: { name: toolName, response: { output: resultOutput } } });
+            geminiParts.push({
+              functionResponse: { name: toolName, response: { output: resultOutput } },
+            });
           }
         } else if (content.toolUse && brMsg.role === "assistant") {
-          geminiParts.push({ functionCall: { name: content.toolUse.name, args: content.toolUse.input || {} } });
+          geminiParts.push({
+            functionCall: { name: content.toolUse.name, args: content.toolUse.input || {} },
+          });
         }
       });
-      if (geminiParts.length > 0) geminiRequest.contents.push({ role: geminiRole, parts: geminiParts });
+      if (geminiParts.length > 0)
+        geminiRequest.contents.push({ role: geminiRole, parts: geminiParts });
     });
 
     if (bedrockConverseInput.system?.length > 0) {
-      const systemTextParts = bedrockConverseInput.system.filter((block) => block.text !== undefined).map((block) => block.text);
+      const systemTextParts = bedrockConverseInput.system
+        .filter((block) => block.text !== undefined)
+        .map((block) => block.text);
       if (systemTextParts.length > 0) {
         geminiRequest.systemInstruction = { parts: [{ text: systemTextParts.join("\n") }] };
       }
@@ -82,7 +93,8 @@ export default class GeminiProvider {
       if (ic.maxTokens !== undefined) geminiRequest.generationConfig.maxOutputTokens = ic.maxTokens;
       if (ic.temperature !== undefined) geminiRequest.generationConfig.temperature = ic.temperature;
       if (ic.topP !== undefined) geminiRequest.generationConfig.topP = ic.topP;
-      if (ic.stopSequences?.length > 0) geminiRequest.generationConfig.stopSequences = ic.stopSequences;
+      if (ic.stopSequences?.length > 0)
+        geminiRequest.generationConfig.stopSequences = ic.stopSequences;
     }
 
     if (bedrockConverseInput.toolConfig?.tools) {
@@ -102,7 +114,9 @@ export default class GeminiProvider {
           else if (choice.any) geminiRequest.toolConfig.functionCallingConfig.mode = "ANY";
           else if (choice.tool?.name) {
             geminiRequest.toolConfig.functionCallingConfig.mode = "ANY";
-            geminiRequest.toolConfig.functionCallingConfig.allowedFunctionNames = [choice.tool.name];
+            geminiRequest.toolConfig.functionCallingConfig.allowedFunctionNames = [
+              choice.tool.name,
+            ];
           }
         }
       }
@@ -145,12 +159,19 @@ export default class GeminiProvider {
   }
 
   _extractUsage(geminiUsageMetadata, candidateTokenCount = 0) {
-    if (!geminiUsageMetadata) return { inputTokens: 0, outputTokens: candidateTokenCount, totalTokens: candidateTokenCount };
+    if (!geminiUsageMetadata)
+      return {
+        inputTokens: 0,
+        outputTokens: candidateTokenCount,
+        totalTokens: candidateTokenCount,
+      };
     return {
       inputTokens: geminiUsageMetadata.promptTokenCount || 0,
       outputTokens: candidateTokenCount || geminiUsageMetadata.candidatesTokenCount || 0,
       totalTokens: geminiUsageMetadata.totalTokenCount || 0,
-      ...(geminiUsageMetadata.cachedContentTokenCount && { cacheReadInputTokens: geminiUsageMetadata.cachedContentTokenCount }),
+      ...(geminiUsageMetadata.cachedContentTokenCount && {
+        cacheReadInputTokens: geminiUsageMetadata.cachedContentTokenCount,
+      }),
     };
   }
 
@@ -163,7 +184,9 @@ export default class GeminiProvider {
     };
     if (geminiFullResponse?.promptFeedback?.blockReason) {
       bedrockResponse.stopReason = "guardrail_intervened";
-      bedrockResponse.output.message.content.push({ text: `Request blocked by Gemini: ${geminiFullResponse.promptFeedback.blockReason}` });
+      bedrockResponse.output.message.content.push({
+        text: `Request blocked by Gemini: ${geminiFullResponse.promptFeedback.blockReason}`,
+      });
       bedrockResponse.usage = this._extractUsage(geminiFullResponse.usageMetadata, 0);
       return bedrockResponse;
     }
@@ -189,64 +212,110 @@ export default class GeminiProvider {
         lastPartWasToolCall = true;
       } else if (part.inlineData?.mimeType?.startsWith("image/")) {
         bedrockResponse.output.message.content.push({
-          image: { format: part.inlineData.mimeType.split("/")[1] || "png", source: { bytes: this.base64ToUint8Array(part.inlineData.data) } },
+          image: {
+            format: part.inlineData.mimeType.split("/")[1] || "png",
+            source: { bytes: this.base64ToUint8Array(part.inlineData.data) },
+          },
         });
       }
     });
     if (bedrockResponse.output.message.content.length === 0 && !lastPartWasToolCall) {
       bedrockResponse.output.message.content.push({ text: "" });
     }
-    bedrockResponse.stopReason = this._mapGeminiFinishReason(candidate.finishReason, lastPartWasToolCall);
-    bedrockResponse.usage = this._extractUsage(geminiFullResponse.usageMetadata, candidate.tokenCount);
+    bedrockResponse.stopReason = this._mapGeminiFinishReason(
+      candidate.finishReason,
+      lastPartWasToolCall
+    );
+    bedrockResponse.usage = this._extractUsage(
+      geminiFullResponse.usageMetadata,
+      candidate.tokenCount
+    );
     return bedrockResponse;
   }
 
-  async *toBedrockConverseStreamOutput(geminiStreamResultPromise, bedrockModelId, metricsStartTime) {
+  async *toBedrockConverseStreamOutput(
+    geminiStreamResultPromise,
+    bedrockModelId,
+    metricsStartTime
+  ) {
     const messageId = `gemini-msg-${Date.now()}`;
     let currentContentBlockIndex = 0;
     let activeTextContentBlock = false;
     let lastPartWasToolCallForStream = false;
     try {
-      const { stream: geminiStream, response: fullResponsePromise } = await geminiStreamResultPromise;
+      const { stream: geminiStream, response: fullResponsePromise } =
+        await geminiStreamResultPromise;
       yield { type: "messageStart", messageStart: { role: "assistant", messageId } };
       for await (const chunk of geminiStream) {
         lastPartWasToolCallForStream = false;
         if (chunk.promptFeedback?.blockReason) {
-          if (activeTextContentBlock) yield { type: "contentBlockStop", contentBlockStop: { contentBlockIndex } };
+          if (activeTextContentBlock)
+            yield {
+              type: "contentBlockStop",
+              contentBlockStop: { contentBlockIndex: currentContentBlockIndex },
+            };
           break;
         }
         for (const candidate of chunk.candidates || []) {
           for (const part of candidate.content?.parts || []) {
             if (part.text !== undefined) {
               if (!activeTextContentBlock) {
-                yield { type: "contentBlockStart", contentBlockStart: { contentBlockIndex, start: { text: {} } } };
+                yield {
+                  type: "contentBlockStart",
+                  contentBlockStart: {
+                    contentBlockIndex: currentContentBlockIndex,
+                    start: { text: {} },
+                  },
+                };
                 activeTextContentBlock = true;
               }
-              yield { type: "contentBlockDelta", contentBlockDelta: { contentBlockIndex, delta: { text: part.text } } };
+              yield {
+                type: "contentBlockDelta",
+                contentBlockDelta: {
+                  contentBlockIndex: currentContentBlockIndex,
+                  delta: { text: part.text },
+                },
+              };
               lastPartWasToolCallForStream = false;
             } else if (part.functionCall) {
               if (activeTextContentBlock) {
-                yield { type: "contentBlockStop", contentBlockStop: { contentBlockIndex } };
+                yield {
+                  type: "contentBlockStop",
+                  contentBlockStop: { contentBlockIndex: currentContentBlockIndex },
+                };
                 activeTextContentBlock = false;
                 currentContentBlockIndex++;
               }
               const toolUseId = `gemini_tool_${Date.now()}_${currentContentBlockIndex}`;
               yield {
                 type: "contentBlockStart",
-                contentBlockStart: { contentBlockIndex, start: { toolUse: { toolUseId, name: part.functionCall.name } } },
+                contentBlockStart: {
+                  contentBlockIndex: currentContentBlockIndex,
+                  start: { toolUse: { toolUseId, name: part.functionCall.name } },
+                },
               };
               yield {
                 type: "contentBlockDelta",
-                contentBlockDelta: { contentBlockIndex, delta: { toolUse: { input: part.functionCall.args || {} } } },
+                contentBlockDelta: {
+                  contentBlockIndex: currentContentBlockIndex,
+                  delta: { toolUse: { input: part.functionCall.args || {} } },
+                },
               };
-              yield { type: "contentBlockStop", contentBlockStop: { contentBlockIndex } };
+              yield {
+                type: "contentBlockStop",
+                contentBlockStop: { contentBlockIndex: currentContentBlockIndex },
+              };
               lastPartWasToolCallForStream = true;
               currentContentBlockIndex++;
             }
           }
         }
       }
-      if (activeTextContentBlock) yield { type: "contentBlockStop", contentBlockStop: { contentBlockIndex } };
+      if (activeTextContentBlock)
+        yield {
+          type: "contentBlockStop",
+          contentBlockStop: { contentBlockIndex: currentContentBlockIndex },
+        };
 
       const finalGeminiResponse = await fullResponsePromise;
       let stopReason = "end_turn";
@@ -256,7 +325,10 @@ export default class GeminiProvider {
       } else if (finalGeminiResponse.candidates?.length) {
         const finalCandidate = finalGeminiResponse.candidates[0];
         finalCandidateTokenCount = finalCandidate.tokenCount || 0;
-        stopReason = this._mapGeminiFinishReason(finalCandidate.finishReason, lastPartWasToolCallForStream);
+        stopReason = this._mapGeminiFinishReason(
+          finalCandidate.finishReason,
+          lastPartWasToolCallForStream
+        );
       }
       yield { type: "messageStop", messageStop: { stopReason } };
       yield {
@@ -268,8 +340,17 @@ export default class GeminiProvider {
       };
     } catch (error) {
       console.error("GeminiProvider Stream Conversion Error:", error.message, error.stack);
-      yield { type: "error", error: { internalServerError: { message: `Stream Conversion Error: ${error.message}` } } };
-      yield { type: "metadata", metadata: { usage: this._extractUsage(null), metrics: { latencyMs: Date.now() - metricsStartTime } } };
+      yield {
+        type: "error",
+        error: { internalServerError: { message: `Stream Conversion Error: ${error.message}` } },
+      };
+      yield {
+        type: "metadata",
+        metadata: {
+          usage: this._extractUsage(null),
+          metrics: { latencyMs: Date.now() - metricsStartTime },
+        },
+      };
     }
   }
 
@@ -297,7 +378,12 @@ export default class GeminiProvider {
       console.error("AwsBedrockGeminiProvider 'converse' error:", error);
       // Return a Bedrock-like error structure
       return {
-        output: { message: { role: "assistant", content: [{ text: `Error calling Gemini: ${error.message}` }] } },
+        output: {
+          message: {
+            role: "assistant",
+            content: [{ text: `Error calling Gemini: ${error.message}` }],
+          },
+        },
         stopReason: "error", // Or more specific if discernible from Gemini error
         usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
         metrics: { latencyMs: Date.now() - startTime },
@@ -322,14 +408,26 @@ export default class GeminiProvider {
     try {
       const geminiStreamResultPromise = geminiModel.generateContentStream(geminiRequestPayload);
       // toBedrockConverseStreamOutput handles awaiting the promise and then iterating the stream
-      return this.toBedrockConverseStreamOutput(geminiStreamResultPromise, bedrockInput.modelId, startTime);
+      return this.toBedrockConverseStreamOutput(
+        geminiStreamResultPromise,
+        bedrockInput.modelId,
+        startTime
+      );
     } catch (error) {
       console.error("AwsBedrockGeminiProvider 'converseStream' setup error:", error);
       // This catch is for errors in *initiating* the stream with Gemini.
       // Errors during streaming are handled inside toBedrockConverseStreamOutput.
       async function* errorStream() {
-        yield { type: "error", error: { internalServerError: { message: `Gemini stream initiation error: ${error.message}` } } };
-        yield { type: "metadata", metadata: { usage: {}, metrics: { latencyMs: Date.now() - startTime } } };
+        yield {
+          type: "error",
+          error: {
+            internalServerError: { message: `Gemini stream initiation error: ${error.message}` },
+          },
+        };
+        yield {
+          type: "metadata",
+          metadata: { usage: {}, metrics: { latencyMs: Date.now() - startTime } },
+        };
       }
       return errorStream();
     }

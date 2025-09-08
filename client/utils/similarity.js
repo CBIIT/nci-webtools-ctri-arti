@@ -1,5 +1,12 @@
+import {
+  AutoModel,
+  AutoTokenizer,
+  matmul,
+  pipeline,
+  Tensor,
+  TextStreamer,
+} from "@huggingface/transformers";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { matmul, pipeline, AutoModel, AutoTokenizer, Tensor, TextStreamer } from "@huggingface/transformers";
 
 export async function inference(
   messages = [
@@ -7,13 +14,17 @@ export async function inference(
     { role: "user", content: "Please tell me the meaning of life." },
   ],
   model = "onnx-community/Qwen3-0.6B-ONNX",
-  callback_function = (text) => {},
+  callback_function = (_text) => {},
   max_new_tokens = 512,
   dtype = "q4f16",
-  device = navigator.gpu ? "webgpu" : undefined,
+  device = navigator.gpu ? "webgpu" : undefined
 ) {
   const generator = await pipeline("text-generation", model, { dtype, device });
-  const streamer = new TextStreamer(generator.tokenizer, { skip_prompt: true, skip_special_tokens: true, callback_function });
+  const streamer = new TextStreamer(generator.tokenizer, {
+    skip_prompt: true,
+    skip_special_tokens: true,
+    callback_function,
+  });
   const output = await generator(messages, { max_new_tokens, streamer, do_sample: false });
   return output[0].generated_text.at(-1);
 }
@@ -60,7 +71,7 @@ export async function createEmbedder(model_name = "minishlab/potion-base-8M", op
    * @param {string[]} texts - Array of texts to embed
    * @returns {Promise<number[][]>} - Text embeddings
    */
-  return async function embed(texts, tokenizer_options = {}) {
+  return async function embed(texts, _tokenizer_options = {}) {
     // Tokenize inputs
     const { input_ids } = await tokenizer(texts, {
       add_special_tokens: false,
@@ -95,7 +106,9 @@ export async function createEmbedder(model_name = "minishlab/potion-base-8M", op
 export async function getEmbeddings(texts = [], query = "", model = "minishlab/potion-base-8M") {
   if (query) {
     const embeddings = await embed([query].concat(texts), model, { raw: true });
-    const similarities = (await matmul(embeddings.slice([0, 1]), embeddings.slice([1, null]).transpose(1, 0))).mul(100);
+    const similarities = (
+      await matmul(embeddings.slice([0, 1]), embeddings.slice([1, null]).transpose(1, 0))
+    ).mul(100);
     return { embeddings: embeddings.tolist(), similarities: similarities.tolist() };
   }
   return { embeddings: await embed(texts, model) };

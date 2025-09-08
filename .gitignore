@@ -7,3 +7,4 @@ venv
 /tmp
 database.sqlite
 .DS_Store
+.vscode
