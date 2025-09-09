@@ -537,6 +537,9 @@ export default function Page() {
 
     if (!(hasBasicTemplates || hasValidAdvancedOptions)) return;
 
+    // Clear previous outputs immediately
+    setStore("generatedDocuments", {});
+
     // Create a new session on submit
     setStore("id", undefined);
     await saveSession(true);
