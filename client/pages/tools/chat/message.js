@@ -69,7 +69,7 @@ export default function Message(p) {
     }
   }
 
-  onCleanup(() => clearInterval(resetTimer));
+  onCleanup(() => clearTimeout(resetTimer));
 
   return html` <dialog
       ref=${(el) => setDialog(el)}
