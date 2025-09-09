@@ -702,3 +702,88 @@ details[open] {
   border: 6px solid transparent;
   border-top-color: #333;
 }
+
+.s-tooltip-wrapper {
+  position: relative;
+}
+
+.s-tooltip {
+  --tt-bg: #FFFFFF;
+  --tt-fg: #333333;
+  --tt-radius: 8px;
+  --tt-pad-x: 8px;
+  --tt-pad-y: 6px;
+  --tt-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  --tt-max-w: 300px;
+
+  position: absolute;
+  z-index: 1080;
+  display: block;
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(0, 0, 0);
+  transition: opacity 120ms ease;
+  background: var(--tt-bg);
+  color: var(--tt-fg);
+  border-radius: var(--tt-radius);
+}
+
+.s-tooltip[data-show] {
+  visibility: visible;
+  opacity: 1;
+}
+
+.s-tooltip .s-tooltip-inner {
+  background: inherit;
+  color: inherit;
+  border-radius: var(--tt-radius);
+  box-shadow: var(--tt-shadow);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+
+.s-tooltip .s-tooltip-content {
+  padding: var(--tt-pad-y) var(--tt-pad-x);
+  max-width: var(--tt-max-w);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.s-tooltip .s-tooltip-arrow,
+.s-tooltip .s-tooltip-arrow::before {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  transition: none !important;
+}
+
+.s-tooltip .s-tooltip-arrow {
+  visibility: hidden;
+}
+
+.s-tooltip .s-tooltip-arrow::before {
+  content: "";
+  visibility: visible;
+  transform: rotate(45deg);
+  box-shadow: var(--tt-shadow);
+}
+
+.s-tooltip[data-popper-placement^="top"] .s-tooltip-arrow {
+  bottom: -4px;
+}
+
+.s-tooltip[data-popper-placement^="bottom"] .s-tooltip-arrow {
+  top: -4px;
+}
+
+.s-tooltip[data-popper-placement^="left"] .s-tooltip-arrow {
+  right: -4px;
+}
+
+.s-tooltip[data-popper-placement^="right"] .s-tooltip-arrow {
+  left: -4px;
+}
