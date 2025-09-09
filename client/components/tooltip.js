@@ -67,7 +67,7 @@ export default function Tooltip(rawProps) {
   /**
    * Unique ID for the tooltip element
    */
-  const tooltipId = props.id || `tt-${Math.random().toString(36).slice(2, 8)}`;
+  const tooltipId = props.id || `tt-${crypto.randomUUID()}`;
 
   /**
    * Timer for enter delay
