@@ -1,9 +1,12 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For, onCleanup, Show } from "solid-js";
 import html from "solid-js/html";
 
+// eslint-disable-next-line import/no-unresolved
+import { Check, Copy, Download, ThumbsDown, ThumbsUp } from "lucide-solid";
 import { parse } from "marked";
 import { stringify } from "yaml";
 
+import Tooltip from "../../../components/tooltip.js";
 import { downloadCsv, downloadText } from "../../../utils/files.js";
 import { getMarked } from "../../../utils/utils.js";
 
@@ -12,11 +15,13 @@ const marked = getMarked();
 export default function Message(p) {
   const [dialog, setDialog] = createSignal(null);
   const [visible, setVisible] = createSignal({});
+  const [copied, setCopied] = createSignal(false);
   const toggleVisible = (key) => setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
   const getToolResult = (toolUse) =>
     p.messages?.find((m) => m.content?.find((c) => c?.toolResult?.toolUseId === toolUse?.toolUseId))
       ?.content[0].toolResult?.content[0]?.json?.results;
   const getSearchResults = (results) => results?.web && [...results.web, ...results.news];
+  let resetTimer;
 
   function openFeedback(feedback, comment) {
     let d = dialog();
@@ -51,6 +56,21 @@ export default function Message(p) {
       }),
     }).then((e) => e.json());
   }
+
+  async function handleCopy(text) {
+    const RESET_MS = 2500;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => setCopied(false), RESET_MS);
+    } catch (err) {
+      console.error("Error copying text: ", err);
+    }
+  }
+
+  onCleanup(() => clearInterval(resetTimer));
 
   return html` <dialog
       ref=${(el) => setDialog(el)}
@@ -117,49 +137,85 @@ export default function Message(p) {
                 when=${() => p.message?.role !== "user" && p.index === p.messages.length - 1}
               >
                 <div>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light border-0"
+                  <${Tooltip}
                     title="Mark as helpful"
-                    onClick=${() => openFeedback(true)}
+                    placement="top"
+                    arrow=${true}
+                    class="text-white bg-primary"
                   >
-                    👍
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light border-0"
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-light border-0"
+                      title="Mark as helpful"
+                      onClick=${() => openFeedback(true)}
+                    >
+                      <${ThumbsUp} size="16" color="black" />
+                    </button>
+                  <//>
+                  <${Tooltip}
                     title="Mark as not helpful"
-                    onClick=${() => openFeedback(false)}
+                    placement="top"
+                    arrow=${true}
+                    class="text-white bg-primary"
                   >
-                    👎
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light border-0"
-                    title="Copy response to clipboard"
-                    onClick=${() => navigator.clipboard.writeText(c.text)}
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-light border-0"
+                      title="Mark as not helpful"
+                      onClick=${() => openFeedback(false)}
+                    >
+                      <${ThumbsDown} size="16" color="black" />
+                    </button>
+                  <//>
+                  <${Tooltip}
+                    title=${() => (copied() ? "Copied!" : "Copy response to clipboard")}
+                    placement="top"
+                    arrow=${true}
+                    class="text-white bg-primary"
                   >
-                    📃
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light border-0"
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-light border-0"
+                      aria-label=${() => (copied() ? "Copied!" : "Copy response to clipboard")}
+                      aria-live="polite"
+                      onClick=${() => handleCopy(c.text)}
+                    >
+                      <span class="copy-swap">
+                        <span class=${() => (copied() ? "icon hide" : "icon show")}>
+                          <${Copy} size="16" color="black" />
+                        </span>
+                        <span class=${() => (copied() ? "icon show" : "icon hide")}>
+                          <${Check} size="16" color="black" />
+                        </span>
+                      </span>
+                    </button>
+                  <//>
+                  <${Tooltip}
                     title="Export the entire conversation as CSV file"
-                    onClick=${() =>
-                      downloadCsv(
-                        "conversation.csv",
-                        p.messages.map((m) => ({
-                          role: m.role,
-                          content: m.content
-                            ?.map((c) => c.text)
-                            .filter(Boolean)
-                            .map((e) => e.trim())
-                            .join("\n"),
-                        }))
-                      )}
+                    placement="top"
+                    arrow=${true}
+                    class="text-white bg-primary"
                   >
-                    💾
-                  </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-light border-0"
+                      title="Export the entire conversation as CSV file"
+                      onClick=${() =>
+                        downloadCsv(
+                          "conversation.csv",
+                          p.messages.map((m) => ({
+                            role: m.role,
+                            content: m.content
+                              ?.map((c) => c.text)
+                              .filter(Boolean)
+                              .map((e) => e.trim())
+                              .join("\n"),
+                          }))
+                        )}
+                    >
+                      <${Download} size="16" color="black" />
+                    </button>
+                  <//>
                 </div>
               <//>
             </div>
