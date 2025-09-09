@@ -189,18 +189,20 @@ export default function Page() {
                     ${() =>
                       new URLSearchParams(location.search).get("fedpulse") ? "FedPulse" : "Chat"}
                   </div>
-                  <select
-                    class="form-select form-select-sm border-0 bg-light cursor-pointer"
-                    name="model"
-                    id="model"
-                    required
-                  >
-                    <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
-                    <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>
-                      Sonnet 4.0
-                    </option>
-                    <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
-                  </select>
+                  <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
+                    <select
+                      class="form-select form-select-sm border-0 bg-light cursor-pointer"
+                      name="model"
+                      id="model"
+                      required
+                    >
+                      <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
+                      <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>
+                        Sonnet 4.0
+                      </option>
+                      <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
+                    </select>
+                  <//>
                 </div>
 
                 <${Show} when=${() => conversation?.id}>
