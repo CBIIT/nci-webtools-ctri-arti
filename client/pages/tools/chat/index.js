@@ -14,6 +14,7 @@ import { AlertContainer } from "../../../components/alert.js";
 import ClassToggle from "../../../components/class-toggle.js";
 import Loader from "../../../components/loader.js";
 import ScrollTo from "../../../components/scroll-to.js";
+import Tooltip from "../../../components/tooltip.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 
 import { useChat } from "./hooks.js";
@@ -95,7 +96,7 @@ export default function Page() {
       <div class="row min-vh-100 position-relative">
         <div
           class="col-sm-auto shadow-sm border-end px-0 position-sticky"
-          classList=${() => ({ "w-20r": toggles().conversations })}
+          classList=${() => ({ "w-20": toggles().conversations })}
         >
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
@@ -189,18 +190,20 @@ export default function Page() {
                     ${() =>
                       new URLSearchParams(location.search).get("fedpulse") ? "FedPulse" : "Chat"}
                   </div>
-                  <select
-                    class="form-select form-select-sm border-0 bg-light cursor-pointer"
-                    name="model"
-                    id="model"
-                    required
-                  >
-                    <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
-                    <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>
-                      Sonnet 4.0
-                    </option>
-                    <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
-                  </select>
+                  <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
+                    <select
+                      class="form-select form-select-sm border-0 bg-light cursor-pointer"
+                      name="model"
+                      id="model"
+                      required
+                    >
+                      <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
+                      <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>
+                        Sonnet 4.0
+                      </option>
+                      <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
+                    </select>
+                  <//>
                 </div>
 
                 <${Show} when=${() => conversation?.id}>
@@ -276,33 +279,46 @@ export default function Page() {
 
                   <div class="d-flex justify-content-between py-1 px-2">
                     <div class="d-flex w-auto align-items-center">
-                      <label class="btn btn-light btn-sm rounded-pill m-0" for="inputFiles">
-                        <input
-                          onChange=${handleFileChange}
-                          type="file"
-                          id="inputFiles"
-                          name="inputFiles"
-                          aria-label="Input files"
-                          class="visually-hidden"
-                          accept="image/*,text/*,.pdf,.xls,.xlsx,.doc,.docx"
-                          multiple
-                        />
-                        <img
-                          src="assets/images/icon-paperclip.svg"
-                          alt="Upload"
-                          width="16"
-                          class="me-1"
-                        />
-                        ${() => filenames().join(", ") || "Attach"}
-                      </label>
+                      <${Tooltip}
+                        title="Upload file(s) from your device"
+                        placement="top"
+                        arrow=${true}
+                        class="text-white bg-primary"
+                      >
+                        <label class="btn btn-light btn-sm rounded-pill m-0" for="inputFiles">
+                          <input
+                            onChange=${handleFileChange}
+                            type="file"
+                            id="inputFiles"
+                            name="inputFiles"
+                            aria-label="Input files"
+                            class="visually-hidden"
+                            accept="image/*,text/*,.pdf,.xls,.xlsx,.doc,.docx"
+                            multiple
+                          />
+                          <img
+                            src="assets/images/icon-paperclip.svg"
+                            alt="Upload"
+                            width="16"
+                            class="me-1"
+                          />
+                          ${() => filenames().join(", ") || "Attach"}
+                        </label>
+                      <//>
 
-                      <${ClassToggle} class="position-relative" activeClass="show" event="hover">
+                      <${Tooltip}
+                        title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources."
+                        placement="top"
+                        arrow=${true}
+                        class="text-white bg-primary"
+                      >
                         <div class="form-check form-switch form-control-sm my-0 mx-2" toggle>
                           <input
                             class="form-check-input p-0 cursor-pointer"
                             type="checkbox"
                             id="reasoningMode"
                             name="reasoningMode"
+                            checked
                           />
                           <label
                             toggle
@@ -312,12 +328,6 @@ export default function Page() {
                           >
                             Research Mode
                           </label>
-                        </div>
-                        <div
-                          class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-200 ms-n50 text-muted text-center"
-                        >
-                          Enable this mode for more thorough responses to complex problems. Please
-                          note this requires additional time and resources.
                         </div>
                       <//>
                     </div>
@@ -349,7 +359,7 @@ export default function Page() {
         </div>
         <div
           class="col-sm-auto shadow-sm border-end px-0 position-sticky d-none"
-          classList=${() => ({ "w-20r": toggles().files })}
+          classList=${() => ({ "w-20": toggles().files })}
         >
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
