@@ -180,8 +180,13 @@ export async function runModel({
   const toolConfig =
     tools.length > 0 ? { tools: [...tools, cachePoint].filter(Boolean) } : undefined;
   const inferenceConfig = thoughtBudget > 0 ? { maxTokens } : undefined;
-  const thinking = { type: "enabled", budget_tokens: +thoughtBudget };
-  const additionalModelRequestFields = thoughtBudget > 0 ? { thinking } : undefined;
+  const additionalModelRequestFields = {};
+  if (thoughtBudget > 0) {
+    additionalModelRequestFields.thinking = { type: "enabled", budget_tokens: +thoughtBudget };
+  }
+  if (model.includes("sonnet-4")) {
+    additionalModelRequestFields.anthropic_beta = ["context-1m-2025-08-07"];
+  }
   const input = {
     modelId: model,
     messages,

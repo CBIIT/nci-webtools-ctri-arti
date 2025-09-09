@@ -124,7 +124,7 @@ export const seedData = {
       cost1kOutput: 0.015,
       cost1kCacheRead: 0.0003,
       cost1kCacheWrite: 0.00375,
-      maxContext: 200_000,
+      maxContext: 1_000_000,
       maxOutput: 64_000,
       maxReasoning: 60_000,
     },
