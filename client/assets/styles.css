@@ -455,6 +455,10 @@ ul {
   margin-left: -50% !important;
 }
 
+.w-20 {
+  width: 20%;
+}
+
 .w-200 {
   width: 200%;
 }

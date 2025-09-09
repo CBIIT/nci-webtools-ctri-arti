@@ -95,7 +95,7 @@ export default function Page() {
       <div class="row min-vh-100 position-relative">
         <div
           class="col-sm-auto shadow-sm border-end px-0 position-sticky"
-          classList=${() => ({ "w-20r": toggles().conversations })}
+          classList=${() => ({ "w-20": toggles().conversations })}
         >
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
@@ -349,7 +349,7 @@ export default function Page() {
         </div>
         <div
           class="col-sm-auto shadow-sm border-end px-0 position-sticky d-none"
-          classList=${() => ({ "w-20r": toggles().files })}
+          classList=${() => ({ "w-20": toggles().files })}
         >
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
