@@ -708,7 +708,7 @@ details[open] {
 }
 
 .s-tooltip {
-  --tt-bg: #FFFFFF;
+  --tt-bg: #ffffff;
   --tt-fg: #333333;
   --tt-radius: 8px;
   --tt-pad-x: 8px;
@@ -793,7 +793,7 @@ details[open] {
   width: 16px;
   height: 16px;
   display: inline-block;
-  vertical-align: middle; 
+  vertical-align: middle;
   line-height: 0;
 }
 
@@ -802,13 +802,15 @@ details[open] {
   inset: 0;
   display: grid;
   place-items: center;
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
 }
 
 .copy-swap .icon svg {
   width: 100%;
   height: 100%;
-  display: block; 
+  display: block;
 }
 
 .copy-swap .show {
@@ -828,6 +830,6 @@ dialog .close-btn {
   top: 11px;
   padding: 10px !important;
   & svg {
-    color: #44627C;
+    color: #44627c;
   }
 }
