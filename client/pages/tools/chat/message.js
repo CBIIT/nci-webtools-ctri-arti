@@ -2,7 +2,7 @@ import { createSignal, For, onCleanup, Show } from "solid-js";
 import html from "solid-js/html";
 
 // eslint-disable-next-line import/no-unresolved
-import { Check, Copy, Download, ThumbsDown, ThumbsUp } from "lucide-solid";
+import { Check, Copy, Download, ThumbsDown, ThumbsUp, X } from "lucide-solid";
 import { parse } from "marked";
 import { stringify } from "yaml";
 
@@ -74,43 +74,80 @@ export default function Message(p) {
 
   return html` <dialog
       ref=${(el) => setDialog(el)}
-      class="z-3 border-0 shadow-sm rounded-3"
-      style="width: 400px; max-width: 100vw; max-height: 100vh; overflow: auto;"
+      class="z-3 border-0 rounded-3 shadow-lg p-0 bg-white"
+      style="width: min(520px, calc(100vw - 2rem));"
+      aria-labelledby=${`fb-title-${p.index}`}
     >
-      <form onSubmit=${submitFeedback}>
-        <p class="fw-semibold">Submit Feedback</p>
-        <div class="mb-2">
-          <div class="form-check form-check-inline">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="feedback"
-              id=${`feedback-positive-${p.index}`}
-              value="Positive Feedback"
-            />
-            <label class="form-check-label" for=${`feedback-positive-${p.index}`}>👍</label>
+      <form onSubmit=${submitFeedback} class="d-flex flex-column">
+        <div class="d-flex align-items-center justify-content-between p-4">
+          <h2 id=${`fb-title-${p.index}`} class="h5 fw-semibold mb-0">Submit Feedback</h2>
+          <button
+            type="reset"
+            class="close-btn btn btn-sm d-inline-flex align-items-center justify-content-center rounded"
+            aria-label="Close"
+            onClick=${() => dialog()?.close()}
+          >
+            <${X} size="18" />
+          </button>
+        </div>
+
+        <div class="pb-3 px-4 d-grid gap-3">
+          <div>
+            <span id=${`thumbs-label-${p.index}`} class="visually-hidden">Feedback sentiment</span>
+            <div class="d-flex gap-2" role="group" aria-labelledby=${`thumbs-label-${p.index}`}>
+              <input
+                class="btn-check"
+                type="radio"
+                name="feedback"
+                id=${`feedback-positive-${p.index}`}
+                value="Positive Feedback"
+                autocomplete="off"
+              />
+              <label
+                class="btn btn-light btn-outline-success d-inline-flex align-items-center gap-2 rounded-2 p-2"
+                for=${`feedback-positive-${p.index}`}
+                title="Thumbs up"
+              >
+                <${ThumbsUp} size="18" />
+                <span>Positive</span>
+              </label>
+
+              <input
+                class="btn-check"
+                type="radio"
+                name="feedback"
+                id=${`feedback-negative-${p.index}`}
+                value="Negative Feedback"
+                autocomplete="off"
+              />
+              <label
+                class="btn btn-outline-danger d-inline-flex align-items-center gap-2 rounded-2 p-2"
+                for=${`feedback-negative-${p.index}`}
+                title="Thumbs down"
+              >
+                <${ThumbsDown} size="18" />
+                <span>Negative</span>
+              </label>
+            </div>
           </div>
-          <div class="form-check form-check-inline">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="feedback"
-              id=${`feedback-negative-${p.index}`}
-              value="Negative Feedback"
+
+          <div class="mt-2">
+            <textarea
+              id=${`feedback-comment-${p.index}`}
+              name="comment"
+              placeholder="Comment..."
+              rows="4"
+              class="form-control"
             />
-            <label class="form-check-label" for=${`feedback-negative-${p.index}`}>👎</label>
           </div>
         </div>
-        <textarea
-          name="comment"
-          placeholder="Comment..."
-          rows="3"
-          class="form-control form-control-sm mb-2"
-        ></textarea>
-        <button type="reset" class="btn btn-secondary me-2" onClick=${() => dialog()?.close()}>
-          Cancel
-        </button>
-        <button type="submit" class="btn btn-primary">Submit</button>
+
+        <div class="d-flex justify-content-end gap-2 p-4">
+          <button type="reset" class="btn btn-light border" onClick=${() => dialog()?.close()}>
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
       </form>
     </dialog>
 

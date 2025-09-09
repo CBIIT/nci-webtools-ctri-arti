@@ -821,3 +821,13 @@ details[open] {
   transform: scale(0.5);
   pointer-events: none;
 }
+
+dialog .close-btn {
+  position: absolute !important;
+  right: 21px;
+  top: 11px;
+  padding: 10px !important;
+  & svg {
+    color: #44627C;
+  }
+}
