@@ -1,7 +1,6 @@
 import { createSignal, For, onCleanup, Show } from "solid-js";
 import html from "solid-js/html";
 
-// eslint-disable-next-line import/no-unresolved
 import { Check, Copy, Download, ThumbsDown, ThumbsUp, X } from "lucide-solid";
 import { parse } from "marked";
 import { stringify } from "yaml";

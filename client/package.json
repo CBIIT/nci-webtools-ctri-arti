@@ -26,5 +26,8 @@
     "three": "^0.179.1",
     "turndown": "^7.2.1",
     "yaml": "^2.8.1"
+  },
+  "dependencies": {
+    "lucide-solid": "^0.543.0"
   }
 }
