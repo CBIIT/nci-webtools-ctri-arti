@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Minimal Cognito User Pool with Client Secret'
+
+Parameters:
+  AppName:
+    Type: String
+    Default: 'my-app'
+    Description: 'Name prefix for resources'
+
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub '${AppName}-user-pool'
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub '${AppName}-client'
+      UserPoolId: !Ref UserPool
+      GenerateSecret: true  # This generates the client secret
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+    Description: User Pool ID
+
+  ClientId:
+    Value: !Ref UserPoolClient
+    Description: Client ID
+
+  GetClientSecretCommand:
+    Value: !Sub |
+      aws cognito-idp describe-user-pool-client --user-pool-id ${UserPool} --client-id ${UserPoolClient} --query UserPoolClient.ClientSecret --output text
+    Description: Run this command to get the client secret
