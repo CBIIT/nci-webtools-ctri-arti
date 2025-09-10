@@ -10,6 +10,8 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
+import { Trash } from "lucide-solid";
+
 import { AlertContainer } from "../../../components/alert.js";
 import ClassToggle from "../../../components/class-toggle.js";
 import Loader from "../../../components/loader.js";
@@ -162,14 +164,17 @@ export default function Page() {
                       ? `/tools/chat?fedpulse=1&id=${conv.id}`
                       : `/tools/chat?id=${conv.id}`;
                     return html`<li class="small w-100 mb-2">
-                      <a
-                        class="link-primary text-decoration-none fw-normal text-truncate w-100 d-inline-block"
-                        href=${href}
-                        target="_self"
-                        classList=${() => ({ active: conv.id === conversation?.id })}
-                      >
-                        ${conv.title}
-                      </a>
+                      <div class="d-flex justify-content-between align-items-center gap-2">
+                        <a
+                          class="link-primary text-decoration-none fw-normal text-truncate w-100 d-inline-block"
+                          href=${href}
+                          target="_self"
+                          classList=${() => ({ active: conv.id === conversation?.id })}
+                        >
+                          ${conv.title}
+                        </a>
+                        <${Trash} size="16" color="black" />
+                      </div>
                     </li>`;
                   }}
                 <//>
