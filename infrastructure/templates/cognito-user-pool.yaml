@@ -1,17 +1,43 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Minimal Cognito User Pool with Client Secret'
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Minimal Cognito User Pool with Client Secret"
 
 Parameters:
   AppName:
     Type: String
-    Default: 'my-app'
-    Description: 'Name prefix for resources'
+    Default: "my-app"
+    Description: "Name prefix for resources"
+  DomainPrefix:
+    Type: String
+    Description: "Cognito domain prefix (unique in region)"
+    Default: "my-app"
+  CallbackURLs:
+    Type: CommaDelimitedList
+    Description: "Allowed callback URLs (exact match). e.g., https://app.example.com/auth/callback"
+    Default: "https://localhost/api/login"
+  LogoutURLs:
+    Type: CommaDelimitedList
+    Description: "Allowed sign-out URLs. e.g., https://app.example.com/signed-out"
+    Default: "https://localhost"
+  DefaultRedirectURI:
+    Type: String
+    Description: "Default redirect URI if redirect_uri omitted"
+    Default: "https://localhost/api/login"
+  OAuthScopes:
+    Type: CommaDelimitedList
+    Default: "openid,profile,email"
+  OAuthFlows:
+    Type: CommaDelimitedList
+    Default: "code,implicit" # use "code" with PKCE for SPAs, optionally "implicit" or "client_credentials" for machine-to-machine
+  GenerateSecret:
+    Type: String
+    AllowedValues: [true, false]
+    Default: "true" # SPAs should be false (use PKCE). Server apps can be true.
 
 Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub '${AppName}-user-pool'
+      UserPoolName: !Sub "${AppName}-user-pool"
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:
@@ -23,12 +49,33 @@ Resources:
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub '${AppName}-client'
       UserPoolId: !Ref UserPool
-      GenerateSecret: true  # This generates the client secret
-      ExplicitAuthFlows:
-        - ALLOW_USER_PASSWORD_AUTH
-        - ALLOW_REFRESH_TOKEN_AUTH
+      ClientName: !Sub "${AppName}-client"
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: !Ref OAuthFlows
+      AllowedOAuthScopes: !Ref OAuthScopes
+      CallbackURLs: !Ref CallbackURLs
+      LogoutURLs: !Ref LogoutURLs
+      DefaultRedirectURI: !Ref DefaultRedirectURI
+      SupportedIdentityProviders:
+        - COGNITO # add others like Google, Facebook, <your-saml-idp-name> after configuring them
+      GenerateSecret: !Ref GenerateSecret
+      PreventUserExistenceErrors: ENABLED
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref DomainPrefix
+      UserPoolId: !Ref UserPool
+
+  # Optional: style the Hosted UI (classic) via CSS string
+  HostedUICss:
+    Type: AWS::Cognito::UserPoolUICustomizationAttachment
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientId: !Ref UserPoolClient
+      CSS: |
+        .label-customizable { font-weight:600; }
 
 Outputs:
   UserPoolId:
