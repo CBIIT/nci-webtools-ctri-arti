@@ -10,7 +10,7 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-import { Trash } from "lucide-solid";
+import { PanelLeft, Trash2 } from "lucide-solid";
 
 import { AlertContainer } from "../../../components/alert.js";
 import ClassToggle from "../../../components/class-toggle.js";
@@ -19,6 +19,7 @@ import ScrollTo from "../../../components/scroll-to.js";
 import Tooltip from "../../../components/tooltip.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 
+import DeleteConversation from "./delete-conversation.js";
 import { useChat } from "./hooks.js";
 import Message from "./message.js";
 
@@ -30,6 +31,7 @@ export default function Page() {
   const [filenames, setFilenames] = createSignal([]);
   const [isAtBottom, setIsAtBottom] = createSignal(true);
   const [chatHeight, setChatHeight] = createSignal(0);
+  const [deleteConversationOpen, setDeleteConversationOpen] = createSignal(false);
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   let bottomEl;
   let chatRef;
@@ -107,7 +109,7 @@ export default function Page() {
                 class="btn btn-sm btn-light d-flex-center rounded-5 wh-2 p-0"
                 onClick=${toggle("conversations")}
               >
-                <img src="assets/images/icon-bars.svg" alt="Menu" width="16" />
+                <${PanelLeft} alt="Menu" size="16" />
               </button>
               <${Show} when=${() => toggles().conversations}>
                 <div class="btn btn-sm m-0 p-0 border-0">ARTI Chat</div>
@@ -163,22 +165,40 @@ export default function Page() {
                     const href = isFedPulse
                       ? `/tools/chat?fedpulse=1&id=${conv.id}`
                       : `/tools/chat?id=${conv.id}`;
-                    return html`<li class="small w-100 mb-2">
-                      <div class="d-flex justify-content-between align-items-center gap-2">
-                        <a
-                          class="link-primary text-decoration-none fw-normal text-truncate w-100 d-inline-block"
-                          href=${href}
-                          target="_self"
+                    return html`<li class="convo-item small w-100 mb-2">
+                      <a
+                        href=${href}
+                        target="_self"
+                        class="convo-hitbox d-flex align-items-center px-3 py-2 text-decoration-none"
+                      >
+                        <div
+                          class="convo-title link-primary fw-normal text-truncate flex-grow-1 min-w-0"
                           classList=${() => ({ active: conv.id === conversation?.id })}
                         >
                           ${conv.title}
-                        </a>
-                        <${Trash} size="16" color="black" />
-                      </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          class="action-btn btn btn-sm link-primary text-body-secondary p-1 border-0 rounded-pill"
+                          aria-label="Delete conversation"
+                          title="Delete"
+                          onClick=${(e) => {
+                            e.preventDefault();
+                            setDeleteConversationOpen(true);
+                          }}
+                        >
+                          <${Trash2} size="18" color="currentColor" />
+                        </button>
+                      </a>
                     </li>`;
                   }}
                 <//>
               </ul>
+            <//>
+
+            <${Show} when=${() => deleteConversationOpen()}>
+              <${DeleteConversation} onClose=${() => setDeleteConversationOpen(false)} />
             <//>
           </div>
         </div>

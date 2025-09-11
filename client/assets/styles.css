@@ -833,3 +833,43 @@ dialog .close-btn {
     color: #44627c;
   }
 }
+
+.convo-item {
+  --action-pad: 1.25rem;
+}
+.convo-hitbox {
+  position: relative;
+  border-radius: var(--bs-border-radius-pill);
+  text-decoration: none;
+  transition:
+    background-color 0.10s ease,
+}
+.convo-item:hover .convo-hitbox,
+.convo-item:focus-within .convo-hitbox {
+  background-color: var(--bs-tertiary-bg);
+}
+.convo-title {
+  transition: padding-right 0.10s ease;
+}
+.convo-item:hover .convo-title,
+.convo-item:focus-within .convo-title {
+  padding-right: var(--action-pad);
+}
+.action-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.10s ease,
+    visibility 0.10s ease;
+}
+.convo-item:hover .action-btn,
+.convo-item:focus-within .action-btn {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
