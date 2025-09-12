@@ -10,6 +10,8 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
+import { PanelLeft, Trash2 } from "lucide-solid";
+
 import { AlertContainer } from "../../../components/alert.js";
 import ClassToggle from "../../../components/class-toggle.js";
 import Loader from "../../../components/loader.js";
@@ -17,6 +19,7 @@ import ScrollTo from "../../../components/scroll-to.js";
 import Tooltip from "../../../components/tooltip.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 
+import DeleteConversation from "./delete-conversation.js";
 import { useChat } from "./hooks.js";
 import Message from "./message.js";
 
@@ -28,6 +31,7 @@ export default function Page() {
   const [filenames, setFilenames] = createSignal([]);
   const [isAtBottom, setIsAtBottom] = createSignal(true);
   const [chatHeight, setChatHeight] = createSignal(0);
+  const [deleteConversationId, setDeleteConversationId] = createSignal(null);
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   let bottomEl;
   let chatRef;
@@ -92,6 +96,20 @@ export default function Page() {
     await submitMessage({ message, inputFiles, reasoningMode, model, reset });
   }
 
+  function handleOnDeleteConversationClick(e, conversationId) {
+    e.preventDefault();
+    setDeleteConversationId(conversationId);
+  }
+
+  async function handleDeleteConversation() {
+    if (!deleteConversationId()?.length) {
+      return;
+    }
+
+    await deleteConversation(deleteConversationId(), { skipWindowConfirm: true });
+    setDeleteConversationId(null);
+  }
+
   return html`
     <div class="container-fluid">
       <div class="row min-vh-100 position-relative">
@@ -106,7 +124,7 @@ export default function Page() {
                 class="btn btn-sm btn-light d-flex-center rounded-5 wh-2 p-0"
                 onClick=${toggle("conversations")}
               >
-                <img src="assets/images/icon-bars.svg" alt="Menu" width="16" />
+                <${PanelLeft} alt="Menu" size="16" />
               </button>
               <${Show} when=${() => toggles().conversations}>
                 <div class="btn btn-sm m-0 p-0 border-0">ARTI Chat</div>
@@ -162,19 +180,41 @@ export default function Page() {
                     const href = isFedPulse
                       ? `/tools/chat?fedpulse=1&id=${conv.id}`
                       : `/tools/chat?id=${conv.id}`;
-                    return html`<li class="small w-100 mb-2">
+                    return html`<li class="convo-item small w-100 mb-2">
                       <a
-                        class="link-primary text-decoration-none fw-normal text-truncate w-100 d-inline-block"
                         href=${href}
                         target="_self"
-                        classList=${() => ({ active: conv.id === conversation?.id })}
+                        class="convo-hitbox d-flex align-items-center px-3 py-2 text-decoration-none"
                       >
-                        ${conv.title}
+                        <div
+                          class="convo-title text-primary fw-normal text-truncate flex-grow-1 min-w-0"
+                          classList=${() => ({ active: conv.id === conversation?.id })}
+                        >
+                          ${conv.title}
+                        </div>
+
+                        <button
+                          type="button"
+                          class="action-btn btn btn-sm link-danger text-primary p-1 border-0 rounded-pill"
+                          aria-label="Delete conversation"
+                          title="Delete"
+                          onClick=${(e) => handleOnDeleteConversationClick(e, conv.id)}
+                        >
+                          <${Trash2} size="18" color="currentColor" />
+                        </button>
                       </a>
                     </li>`;
                   }}
                 <//>
               </ul>
+            <//>
+
+            <${Show} when=${() => deleteConversationId()?.length > 0}>
+              <${DeleteConversation}
+                conversationId=${() => deleteConversationId()}
+                onClose=${() => setDeleteConversationId(null)}
+                onDelete=${handleDeleteConversation}
+              />
             <//>
           </div>
         </div>
@@ -211,7 +251,7 @@ export default function Page() {
                   <button
                     type="button"
                     class="btn btn-sm btn-outline-danger ms-2"
-                    onClick=${deleteConversation}
+                    onClick=${(e) => handleOnDeleteConversationClick(e, conversation?.id)}
                     title="Delete conversation"
                   >
                     Delete
