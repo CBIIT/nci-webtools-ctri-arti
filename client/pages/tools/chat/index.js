@@ -251,7 +251,7 @@ export default function Page() {
                   <button
                     type="button"
                     class="btn btn-sm btn-outline-danger ms-2"
-                    onClick=${deleteConversation}
+                    onClick=${(e) => handleOnDeleteConversationClick(e, conversation?.id)}
                     title="Delete conversation"
                   >
                     Delete
