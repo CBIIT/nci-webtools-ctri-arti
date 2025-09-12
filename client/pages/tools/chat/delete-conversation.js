@@ -21,10 +21,9 @@ export default function DeleteConversation(props) {
 
     if (typeof el.showModal === "function") {
       try {
-        console.log("showModal");
         el.showModal();
-      } catch (_) {
-        // Do nothing
+      } catch (e) {
+        console.error("Failed to show modal.", e);
       }
     } else {
       console.log("open");
@@ -36,10 +35,10 @@ export default function DeleteConversation(props) {
     });
   });
 
-  function onSubmit(event) {
+  async function onSubmit(event) {
     event.preventDefault();
+    typeof props.onDelete === "function" && props.onDelete();
     closeDialog();
-    props?.onDelete?.();
   }
 
   return html`<dialog
