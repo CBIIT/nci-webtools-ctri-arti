@@ -26,7 +26,6 @@ export default function DeleteConversation(props) {
         console.error("Failed to show modal.", e);
       }
     } else {
-      console.log("open");
       el.open = true;
     }
 
