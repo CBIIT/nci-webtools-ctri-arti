@@ -187,7 +187,7 @@ export default function Page() {
                         class="convo-hitbox d-flex align-items-center px-3 py-2 text-decoration-none"
                       >
                         <div
-                          class="convo-title link-primary fw-normal text-truncate flex-grow-1 min-w-0"
+                          class="convo-title text-primary fw-normal text-truncate flex-grow-1 min-w-0"
                           classList=${() => ({ active: conv.id === conversation?.id })}
                         >
                           ${conv.title}
@@ -195,7 +195,7 @@ export default function Page() {
 
                         <button
                           type="button"
-                          class="action-btn btn btn-sm link-primary text-body-secondary p-1 border-0 rounded-pill"
+                          class="action-btn btn btn-sm link-danger text-primary p-1 border-0 rounded-pill"
                           aria-label="Delete conversation"
                           title="Delete"
                           onClick=${(e) => handleOnDeleteConversationClick(e, conv.id)}
