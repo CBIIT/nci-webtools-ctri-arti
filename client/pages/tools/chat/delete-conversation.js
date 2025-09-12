@@ -30,6 +30,8 @@ export default function DeleteConversation(props) {
       el.open = true;
     }
 
+    queueMicrotask(() => el.focus({ preventScroll: true }));
+
     onCleanup(() => {
       el.removeEventListener("close", closeDialog);
     });
@@ -52,7 +54,7 @@ export default function DeleteConversation(props) {
         <h2 id="delete-conversation-title" class="h5 fw-semibold mb-0">Delete Chat</h2>
         <button
           type="reset"
-          class="close-btn btn btn-sm d-inline-flex align-items-center justify-content-center rounded"
+          class="close-btn btn btn-sm d-inline-flex align-items-center justify-content-center rounded focus-ring"
           aria-label="Close"
           onClick=${() => closeDialog()}
         >
