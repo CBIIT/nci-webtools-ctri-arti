@@ -186,7 +186,6 @@ export function useChat() {
   const deleteConversation = async (conversationId = "", opts = { skipWindowConfirm: false }) => {
     const database = db();
     const targetConversationId = conversationId || conversation?.id;
-    console.log({ database, targetConversationId });
     if (!database || !targetConversationId) return;
 
     if (!opts?.skipWindowConfirm) {
