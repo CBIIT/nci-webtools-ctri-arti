@@ -31,7 +31,7 @@ export default function Page() {
   const [filenames, setFilenames] = createSignal([]);
   const [isAtBottom, setIsAtBottom] = createSignal(true);
   const [chatHeight, setChatHeight] = createSignal(0);
-  const [deleteConversationOpen, setDeleteConversationOpen] = createSignal(false);
+  const [deleteConversationId, setDeleteConversationId] = createSignal(null);
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   let bottomEl;
   let chatRef;
@@ -94,6 +94,20 @@ export default function Page() {
       form.inputFiles.value = "";
     };
     await submitMessage({ message, inputFiles, reasoningMode, model, reset });
+  }
+
+  function handleOnDeleteConversationClick(e, conversationId) {
+    e.preventDefault();
+    setDeleteConversationId(conversationId);
+  }
+
+  async function handleDeleteConversation() {
+    if (!deleteConversationId()?.length) {
+      return;
+    }
+
+    await deleteConversation(deleteConversationId(), { skipWindowConfirm: true });
+    setDeleteConversationId(null);
   }
 
   return html`
@@ -184,10 +198,7 @@ export default function Page() {
                           class="action-btn btn btn-sm link-primary text-body-secondary p-1 border-0 rounded-pill"
                           aria-label="Delete conversation"
                           title="Delete"
-                          onClick=${(e) => {
-                            e.preventDefault();
-                            setDeleteConversationOpen(true);
-                          }}
+                          onClick=${(e) => handleOnDeleteConversationClick(e, conv.id)}
                         >
                           <${Trash2} size="18" color="currentColor" />
                         </button>
@@ -198,8 +209,12 @@ export default function Page() {
               </ul>
             <//>
 
-            <${Show} when=${() => deleteConversationOpen()}>
-              <${DeleteConversation} onClose=${() => setDeleteConversationOpen(false)} />
+            <${Show} when=${() => deleteConversationId()?.length > 0}>
+              <${DeleteConversation}
+                conversationId=${() => deleteConversationId()}
+                onClose=${() => setDeleteConversationId(null)}
+                onDelete=${handleDeleteConversation}
+              />
             <//>
           </div>
         </div>
