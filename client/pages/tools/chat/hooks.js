@@ -175,19 +175,37 @@ export function useChat() {
     }
   };
 
-  // Delete conversation
-  const deleteConversation = async () => {
+  /**
+   * Deletes a conversation by ID.
+   *
+   * @param {string} conversationId - The optional ID of the conversation to delete. Otherwise, deletes the current conversation.
+   * @param {Object} opts - Options for deleting the conversation.
+   * @param {boolean} opts.skipWindowConfirm - If true, skips the window confirmation dialog. False by default.
+   * @returns {Promise<void>}
+   */
+  const deleteConversation = async (conversationId = "", opts = { skipWindowConfirm: false }) => {
     const database = db();
-    if (!database || !conversation?.id) return;
+    const targetConversationId = conversationId || conversation?.id;
+    console.log({ database, targetConversationId });
+    if (!database || !targetConversationId) return;
 
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this conversation? This action cannot be undone."
-    );
-    if (!confirmDelete) return;
+    if (!opts?.skipWindowConfirm) {
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete this conversation? This action cannot be undone."
+      );
+      if (!confirmDelete) return;
+    }
 
     try {
-      await database.deleteConversation(conversation.id);
+      await database.deleteConversation(targetConversationId);
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+      showError("Failed to delete conversation. Please try again.");
+    }
 
+    // If deleting current conversation, clear state
+    const isCurrentConversation = targetConversationId === conversation?.id;
+    if (conversation?.id?.length > 0 && (!conversationId?.length || isCurrentConversation)) {
       // Clear current conversation
       setConversation({ id: null, title: "", messages: [] });
       setMessages([]);
@@ -196,13 +214,10 @@ export function useChat() {
       const url = new URL(window.location);
       url.searchParams.delete("id");
       window.history.replaceState({}, "", url);
-
-      // Refresh conversations list
-      await loadRecentConversations();
-    } catch (error) {
-      console.error("Failed to delete conversation:", error);
-      showError("Failed to delete conversation. Please try again.");
     }
+
+    // Refresh conversations list
+    await loadRecentConversations();
   };
 
   // Update URL with conversation ID
