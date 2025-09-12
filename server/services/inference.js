@@ -165,7 +165,7 @@ export async function runModel({
     }
   }
   const {
-    model: { maxOutput, cost1kInput, _cost1kOutput, cost1kCacheRead, _cost1kCacheWrite },
+    model: { maxOutput, maxReasoning, cost1kInput, _cost1kOutput, cost1kCacheRead, _cost1kCacheWrite },
     provider,
   } = await getModelProvider(model);
   const hasCache = !!cost1kCacheRead;
@@ -181,7 +181,7 @@ export async function runModel({
     tools.length > 0 ? { tools: [...tools, cachePoint].filter(Boolean) } : undefined;
   const inferenceConfig = thoughtBudget > 0 ? { maxTokens } : undefined;
   const additionalModelRequestFields = {};
-  if (thoughtBudget > 0) {
+  if (thoughtBudget > 0 && maxReasoning > 0) {
     additionalModelRequestFields.thinking = { type: "enabled", budget_tokens: +thoughtBudget };
   }
   if (model.includes("sonnet-4")) {

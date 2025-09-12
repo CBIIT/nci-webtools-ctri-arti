@@ -87,7 +87,8 @@ export default function Page() {
     const message = form.message.value;
     const inputFiles = form.inputFiles.files;
     const reasoningMode = form.reasoningMode.checked;
-    const model = form.model.value;
+    const defaultModel = "us.anthropic.claude-sonnet-4-20250514-v1:0";
+    const model = form.model?.value || defaultModel;
     const reset = () => {
       form.message.value = "";
       form.inputFiles.value = "";

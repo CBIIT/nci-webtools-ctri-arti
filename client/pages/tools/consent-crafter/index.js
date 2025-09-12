@@ -1,36 +1,26 @@
 import { createEffect, createMemo, createResource, For, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { createReport } from "docx-templates";
+import { createReport, listCommands } from "docx-templates";
 import { openDB } from "idb";
-import { createStore, unwrap } from "solid-js/store";
+import { createStore, reconcile, unwrap } from "solid-js/store";
 import yaml from "yaml";
 
 import { AlertContainer } from "../../../components/alert.js";
 import ClassToggle from "../../../components/class-toggle.js";
-import Modal from "../../../components/modal.js";
+import FileInput from "../../../components/file-input.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
-import { readFile } from "../../../utils/files.js";
 import { parseDocument } from "../../../utils/parsers.js";
 
 import { getPrompt, getTemplateConfigsByCategory, templateConfigs } from "./config.js";
 
 // ============= Database Layer =============
-
-function sanitizeEmail(email) {
-  if (!email || typeof email !== "string") {
-    return "anonymous";
-  }
-  return email
-    .toLowerCase()
+async function getDatabase(userEmail = "anonymous") {
+  const userName = userEmail.toLowerCase()
     .replace(/[^a-z0-9]/g, "-")
     .replace(/--+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-async function getDatabase(userEmail) {
-  const dbName = `arti-consent-crafter-${sanitizeEmail(userEmail)}`;
-
+    .replace(/^-|-$/g, "")
+  const dbName = `arti-consent-crafter-${userName}`;
   return await openDB(dbName, 1, {
     upgrade(db) {
       const store = db.createObjectStore("sessions", {
@@ -42,550 +32,368 @@ async function getDatabase(userEmail) {
   });
 }
 
-// Base64 conversion helpers
-async function blobToBase64(blob) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(",")[1]);
-    reader.readAsDataURL(blob);
-  });
-}
-
-function base64ToBlob(
-  base64,
-  type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-) {
-  const binary = atob(base64);
-  const array = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    array[i] = binary.charCodeAt(i);
-  }
-  return new Blob([array], { type });
-}
-
-async function documentsToBase64(documents) {
-  const result = {};
-  for (const [id, doc] of Object.entries(documents)) {
-    result[id] = doc.blob ? { ...doc, content: await blobToBase64(doc.blob), blob: null } : doc;
-  }
-  return result;
-}
-
-function base64ToDocuments(documents) {
-  const result = {};
-  for (const [id, doc] of Object.entries(documents)) {
-    result[id] =
-      doc.content && doc.status === "completed" ? { ...doc, blob: base64ToBlob(doc.content) } : doc;
-  }
-  return result;
-}
-
-// ============= TreeSelect Component =============
-
-function TreeSelect(props) {
-  return html`
-    <div class="border rounded p-2">
-      <${For} each=${props.groups}>
-        ${(group) => html`
-          <div class="mb-2">
-            <div class="fw-bold text-muted small">${() => group.label}</div>
-            <${For} each=${() => group.options}>
-              ${(option) => html`
-                <div class="form-check form-control-sm min-height-auto py-0 ms-1">
-                  <input
-                    class="form-check-input cursor-pointer"
-                    type="checkbox"
-                    id=${() => option.value}
-                    disabled=${() => option.disabled}
-                    checked=${() => props.selected.includes(option.value)}
-                    onChange=${(e) => {
-                      const value = option.value;
-                      const isChecked = e.target.checked;
-                      props.onChange(value, isChecked);
-                    }}
-                  />
-                  <label
-                    class=${() =>
-                      ["form-check-label cursor-pointer", option.disabled ? "text-muted" : ""]
-                        .filter(Boolean)
-                        .join(" ")}
-                    for=${() => option.value}
-                  >
-                    ${() => templateConfigs[option.value].label}
-                  </label>
-                </div>
-              `}
-            <//>
-          </div>
-        `}
-      <//>
-    </div>
-  `;
-}
-
-// ============= FileInputWithDisplay Component =============
-
-function FileInputWithDisplay(props) {
-  const { filename, inputId, inputName, accept, onFileSelect, onClear } = props;
-
-  return html`
-    <${Show}
-      when=${filename}
-      fallback=${html`
-        <input
-          type="file"
-          id=${inputId}
-          name=${inputName}
-          class="form-control form-control-sm mb-3"
-          accept=${accept}
-          onChange=${onFileSelect}
-        />
-      `}
-    >
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <div class="form-control form-control-sm d-flex justify-content-between align-items-center">
-          <span class="text-truncate" title=${filename}>${filename}</span>
-          <button
-            type="button"
-            class="btn-close btn-close-sm"
-            aria-label="Clear file"
-            onClick=${onClear}
-          ></button>
-        </div>
-      </div>
-    <//>
-  `;
-}
-
 // ============= Main Component =============
-
 export default function Page() {
-  // ============= Database Handle =============
   let db = null;
 
   // ============= Store & State =============
-  const [store, setStore] = createStore({
+  const defaultStore = {
     // Session
     id: null,
 
-    // Input state
+    // Input - single File blob
+    inputFile: null,
     inputText: "",
-    inputTextFilename: "",
 
-    // Template state
+    // Basic template selection - array of template IDs
     selectedTemplates: [],
-    customTemplate: null, // ArrayBuffer for custom template
-    customTemplateFilename: "",
-    customSystemPrompt: "",
 
-    // Advanced options (keep exact same UI)
+    // Advanced options
     model: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    advancedOptionsOpen: false,
     templateSourceType: "predefined",
     selectedPredefinedTemplate: "",
-    advancedOptionsOpen: false,
+    customTemplateFile: null,
+    customPrompt: "",
 
-    // Output state
+    // Job results - each job stores complete config for easy retry
     generatedDocuments: {},
+    // Structure: { [jobId]: { 
+    //   status, blob, error, 
+    //   config: { inputFile, templateFile, prompt, model, displayInfo }
+    // }}
 
-    // UI state
-    expandModalOpen: false,
-  });
+    // Template cache - fetched templates stored as Files
+    templateCache: {},
+
+    // Timestamps
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }
+  const [store, setStore] = createStore(structuredClone(defaultStore));
 
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
 
   // ============= Session Persistence =============
 
-  async function saveSession(createNew = false) {
-    if (!db || !session()?.user?.email) return;
+  function setParam(key, value) {
+    const url = new URL(window.location);
+    value 
+      ? url.searchParams.set(key, value) 
+      : url.searchParams.delete(key);
+    window.history.replaceState(null, "", url);
+  }
 
-    const storeData = unwrap(store);
-    const sessionData = {
-      ...storeData,
-      generatedDocuments: await documentsToBase64(storeData.generatedDocuments),
-      customTemplate: storeData.customTemplate
-        ? await blobToBase64(new Blob([storeData.customTemplate]))
-        : null,
-      createdAt: Date.now(),
-    };
-
-    const id = createNew
-      ? await db.add("sessions", sessionData)
-      : await db.put("sessions", sessionData);
-
-    if (createNew) {
-      setStore("id", id);
-      const url = new URL(window.location);
-      url.searchParams.set("id", id);
-      window.history.replaceState(null, "", url);
-    }
-
+  async function createSession() {
+    const session = { ...unwrap(store), createdAt: Date.now(), updatedAt: Date.now() };
+    delete session.id; // allow auto-increment
+    const id = await db.add("sessions", session);
     return id;
   }
 
-  async function loadSession(id) {
-    if (!db) return;
+  async function saveSession() {
+    const session = { ...unwrap(store), updatedAt: Date.now() };
+    return await db.put("sessions", session);
+  }
 
-    try {
-      const sessionData = await db.get("sessions", parseInt(id));
-      if (sessionData) {
-        setStore({
-          ...sessionData,
-          generatedDocuments: base64ToDocuments(sessionData.generatedDocuments || {}),
-          customTemplate: sessionData.customTemplate
-            ? await base64ToBlob(sessionData.customTemplate).arrayBuffer()
-            : null,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to load session:", error);
-    }
+  async function loadSession(id) {
+    const session = await db.get("sessions", +id);
+    setStore(session)
   }
 
   // Initialize database and load session on mount
   createEffect(async () => {
     const user = session()?.user;
-    if (user?.email) {
-      db = await getDatabase(user.email);
+    if (!user?.email) return;
+    db = await getDatabase(user.email);
 
-      // Load session from URL if present
-      const sessionId = new URLSearchParams(window.location.search).get("id");
-      if (sessionId) {
-        await loadSession(sessionId);
+    const sessionId = new URLSearchParams(window.location.search).get("id");
+    if (sessionId) {
+      await loadSession(sessionId);
 
-        // Auto-restart any interrupted jobs (documents with "processing" status)
-        const interruptedDocs = Object.entries(store.generatedDocuments).filter(
-          ([_id, doc]) => doc.status === "processing"
-        );
+      // Auto-retry interrupted jobs
+      const interruptedJobs = Object.entries(store.generatedDocuments).filter(
+        ([_id, job]) => job.status === "processing"
+      );
 
-        for (const [templateId] of interruptedDocs) {
-          retryTemplate(templateId);
-        }
+      for (const [jobId] of interruptedJobs) {
+        retryJob(jobId);
+      }
+    }
+  });
+
+  // ============= Template Handling =============
+
+  async function fetchAndCacheTemplate(templateId) {
+    if (store.templateCache[templateId]) {
+      return store.templateCache[templateId];
+    }
+
+    const config = templateConfigs[templateId];
+    const response = await fetch(config.templateUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const file = new File([arrayBuffer], `${templateId}.docx`, {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    });
+
+    setStore("templateCache", templateId, file);
+    return file;
+  }
+
+  // Pre-fetch templates when selected
+  createEffect(async () => {
+    for (const templateId of store.selectedTemplates) {
+      try {
+        await fetchAndCacheTemplate(templateId);
+      } catch (error) {
+        console.error(`Failed to fetch template ${templateId}:`, error);
+      }
+    }
+  });
+
+  // Pre-fetch advanced template when selected
+  createEffect(async () => {
+    if (store.selectedPredefinedTemplate && store.templateSourceType === "predefined") {
+      try {
+        await fetchAndCacheTemplate(store.selectedPredefinedTemplate);
+        const prompt = await getPrompt(store.selectedPredefinedTemplate);
+        setStore("customPrompt", prompt);
+      } catch (error) {
+        console.error("Failed to load template or prompt:", error);
+        setStore("customPrompt", "");
       }
     }
   });
 
   // ============= Computed Properties =============
 
-  // Get template groups from config
-  const templateGroups = () => getTemplateConfigsByCategory();
-
-  // Check if all documents are done processing
-  const allDocumentsProcessed = createMemo(() => {
-    const docs = store.generatedDocuments;
-    const docKeys = Object.keys(docs);
-    if (docKeys.length === 0) return true;
-    return docKeys.every((key) => docs[key].status === "completed" || docs[key].status === "error");
+  const allJobsProcessed = createMemo(() => {
+    const jobs = store.generatedDocuments;
+    const jobKeys = Object.keys(jobs);
+    if (jobKeys.length === 0) return true;
+    return jobKeys.every((key) => jobs[key].status === "completed" || jobs[key].status === "error");
   });
 
-  // Check if Generate button should be disabled
-  const isGenerateDisabled = createMemo(() => {
-    // Always need input text
-    if (!store.inputText) return true;
+  const submitDisabled = createMemo(() => {
+    // Must have input file
+    if (!store.inputFile) return true;
 
-    // Check if we have either basic templates OR fully configured advanced options
+    // Check if we have either basic templates OR valid advanced options
     const hasBasicTemplates = store.selectedTemplates.length > 0;
 
     const hasValidAdvancedOptions =
       store.advancedOptionsOpen &&
       ((store.templateSourceType === "predefined" &&
         store.selectedPredefinedTemplate &&
-        store.customSystemPrompt.trim()) ||
+        store.customPrompt.trim()) ||
         (store.templateSourceType === "custom" &&
-          store.customTemplate &&
-          store.customSystemPrompt.trim()));
+          store.customTemplateFile &&
+          store.customPrompt.trim()));
 
-    // Enable if we have either basic templates OR valid advanced options
     return !(hasBasicTemplates || hasValidAdvancedOptions);
   });
 
-  // ============= Event Handlers =============
+  // ============= Job Processing =============
 
-  // Load the predefined template's prompt when selected
-  createEffect(async () => {
-    const templateId = store.selectedPredefinedTemplate;
-    if (templateId && store.templateSourceType === "predefined") {
-      try {
-        const prompt = await getPrompt(templateId);
-        setStore("customSystemPrompt", prompt);
-      } catch (error) {
-        console.error("Failed to load template prompt:", error);
-        setStore("customSystemPrompt", "");
-      }
-    }
-  });
-
-  // No auto-save - only save explicitly on submit and after document generation
-
-  async function handleFileSelect(event) {
-    const input = event.target;
-    const name = input.name;
-    const file = input.files?.[0];
-    if (!file) return;
-    const bytes = await readFile(file, "arrayBuffer");
-
-    if (name === "outputTemplateFile") {
-      setStore("customTemplate", bytes);
-      setStore("customTemplateFilename", file.name);
-    } else if (name === "inputTextFile") {
-      setStore("inputText", "Reading file...");
-      setStore("inputTextFilename", file.name);
-      setStore("generatedDocuments", {});
-      const text = await parseDocument(bytes, file.type, file.name);
-      setStore("inputText", text);
-    }
-  }
-
-  function handleTemplateSelectionChange(value, isChecked) {
-    setStore("selectedTemplates", (prev) =>
-      isChecked ? [...prev, value] : prev.filter((v) => v !== value)
-    );
-  }
-
-  // ============= Template Processing =============
-
-  async function processSingleTemplate(templateId, text) {
-    // Set status to processing
-    setStore("generatedDocuments", templateId, {
+  async function processJob(jobId, jobConfig) {
+    // 1. Set job status to processing
+    setStore("generatedDocuments", jobId, {
       status: "processing",
       blob: null,
-      content: null,
       error: null,
+      config: jobConfig,
     });
 
-    // Save state immediately after setting processing status
-    await saveSession(false);
+    await saveSession();
 
     try {
-      let templateFile, systemPrompt, defaultOutputData;
+      // 2. AI extraction
+      const systemPrompt = "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
 
-      if (templateId === "custom") {
-        // Handle custom template
-        systemPrompt = store.customSystemPrompt;
-        defaultOutputData = templateConfigs["nih-cc-adult-healthy"].defaultOutput; // Use NIH consent output structure for custom
-        templateFile = store.customTemplate;
-      } else if (templateId === "predefined-custom") {
-        // Handle predefined template with optional custom prompt
-        const config = templateConfigs[store.selectedPredefinedTemplate];
-        systemPrompt =
-          store.customSystemPrompt.trim() || (await getPrompt(store.selectedPredefinedTemplate));
-        defaultOutputData = config.defaultOutput;
-        templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
-      } else {
-        // Handle predefined templates
-        const config = templateConfigs[templateId];
-        systemPrompt = await getPrompt(templateId);
-        defaultOutputData = config.defaultOutput;
-        templateFile = await fetch(config.templateUrl).then((res) => res.arrayBuffer());
-      }
-
-      const system =
-        "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
-
-      // Extract data using AI
       const params = {
-        model: store.model,
+        model: jobConfig.model,
         messages: [
-          { role: "user", content: [{ text: systemPrompt.replace("{{document}}", "see above") }] },
+          { role: "user", content: [{ text: jobConfig.prompt.replace("{{document}}", "see above") }] },
         ],
-        system: system.replace("{{document}}", text),
+        system: systemPrompt.replace("{{document}}", jobConfig.inputText),
+        thoughtBudget: 8000,
         stream: false,
       };
+
       const output = await runModel(params);
       const jsonOutput =
         output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] ||
         output.match(/{\s*[\s\S]*?}/)?.[0] ||
         "{}";
 
-      const data = { ...defaultOutputData, ...yaml.parse(jsonOutput) };
+      const data = yaml.parse(jsonOutput);
 
-      // Generate document
-      const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      const cmdDelimiter = ["{{", "}}"];
-      const buffer = await createReport({ template: templateFile, data, cmdDelimiter });
-      const blob = new Blob([buffer], { type });
-
-      // Update status to completed
-      setStore("generatedDocuments", templateId, {
+      // 3. Update job status to completed with JSON data
+      setStore("generatedDocuments", jobId, {
         status: "completed",
-        blob,
-        content: await blobToBase64(blob),
+        data,
         error: null,
+        config: jobConfig,
       });
     } catch (error) {
-      console.error(`Error processing ${templateId}:`, error);
-      setStore("generatedDocuments", templateId, {
+      console.error(`Error processing job ${jobId}:`, error);
+      setStore("generatedDocuments", jobId, {
         status: "error",
-        blob: null,
-        content: null,
+        data: null,
         error: error.message,
+        config: jobConfig,
       });
     } finally {
-      // Update session after processing completes
-      await saveSession(false);
+      await saveSession();
     }
   }
 
-  async function retryTemplate(templateId) {
-    const text = store.inputText;
-    if (!text) {
-      console.error("No input text available for retry");
-      return;
-    }
-    await processSingleTemplate(templateId, text);
+  async function retryJob(jobId) {
+    const job = store.generatedDocuments[jobId];
+    if (!job?.config) return;
+
+    await processJob(jobId, job.config);
   }
 
-  async function processSelectedTemplates(text) {
-    const selected = store.selectedTemplates;
+  async function generateDocument(data, templateFile) {
+    try {
+      const templateBuffer = await templateFile.arrayBuffer();
+      const cmdDelimiter = ["{{", "}}"];
 
-    // Build list of templates to process (selected + custom if available)
-    const templatesToProcess = [...selected];
-
-    // Add custom template if in custom mode with template and prompt
-    if (
-      store.templateSourceType === "custom" &&
-      store.customTemplate &&
-      store.customSystemPrompt.trim()
-    ) {
-      templatesToProcess.push("custom");
-    }
-
-    // Add predefined template if in predefined mode with valid selection
-    if (store.templateSourceType === "predefined" && store.selectedPredefinedTemplate) {
-      templatesToProcess.push("predefined-custom");
-    }
-
-    if (templatesToProcess.length === 0) return;
-
-    // Initialize processing status for each template
-    const initialStatus = {};
-    templatesToProcess.forEach((templateId) => {
-      initialStatus[templateId] = { status: "processing", blob: null, content: null, error: null };
-    });
-    setStore("generatedDocuments", initialStatus);
-
-    // Save state immediately after setting initial processing status
-    await saveSession(false);
-
-    // Process all templates in parallel
-    for (const templateId of templatesToProcess) {
-      processSingleTemplate(templateId, text);
-    }
-  }
-
-  // ============= Utility Functions =============
-
-  function formatDate(date = new Date()) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
-    return `${year}${month}${day}-${hours}${minutes}${seconds}`;
-  }
-
-  function downloadDocument(templateId) {
-    const doc = store.generatedDocuments[templateId];
-    if (!doc?.blob) return;
-    const timestamp = formatDate(new Date());
-
-    let filename;
-    if (templateId === "custom") {
-      filename = `custom-document-${timestamp}.docx`;
-    } else if (templateId === "predefined-custom") {
-      const config = templateConfigs[store.selectedPredefinedTemplate];
-      filename = config.filename.replace(".docx", `-${timestamp}.docx`);
-    } else {
-      const config = templateConfigs[templateId];
-      filename = config.filename.replace(".docx", `-${timestamp}.docx`);
-    }
-
-    const url = URL.createObjectURL(doc.blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function downloadAll() {
-    const docs = store.generatedDocuments;
-    Object.keys(docs).forEach((templateId) => {
-      if (docs[templateId].status === "completed") {
-        downloadDocument(templateId);
+      // Try to ensure variables in template are present in data
+      const commands = await listCommands(templateBuffer, cmdDelimiter);
+      const variables = commands.filter(c => ['INS', 'FOR'].includes(c.type)).map(c => c.code.split(' ').pop()).filter(v => !v.startsWith('$'))
+      for (const variable of variables) {
+        data[variable] ||= "";
       }
-    });
+
+      const buffer = await createReport({ template: templateBuffer, data, cmdDelimiter });
+      const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      return new Blob([buffer], { type });
+    } catch (error) {
+      console.error("Error generating document:", error);
+      throw error;
+    }
   }
+
+  // ============= Submit Handler =============
 
   async function handleSubmit(event) {
     event?.preventDefault();
-    const text = store.inputText;
-    if (!text) return;
+    
+    if (submitDisabled()) return;
 
-    // Check if we have either basic templates OR fully configured advanced options
-    const hasBasicTemplates = store.selectedTemplates.length > 0;
-    const hasValidAdvancedOptions =
-      store.advancedOptionsOpen &&
-      ((store.templateSourceType === "predefined" &&
-        store.selectedPredefinedTemplate &&
-        store.customSystemPrompt.trim()) ||
-        (store.templateSourceType === "custom" &&
-          store.customTemplate &&
-          store.customSystemPrompt.trim()));
+    const inputText = await parseDocument(
+      await store.inputFile.arrayBuffer(), 
+      store.inputFile.type, 
+      store.inputFile.name
+    );
 
-    if (!(hasBasicTemplates || hasValidAdvancedOptions)) return;
+    const jobs = [];
 
-    // Clear previous outputs immediately
-    setStore("generatedDocuments", {});
+    // Create jobs for basic template selections
+    for (const templateId of store.selectedTemplates) {
+      const jobId = crypto.randomUUID();
+      const config = templateConfigs[templateId];
+      const templateFile = store.templateCache[templateId];
+      
+      if (!templateFile) {
+        console.error(`Template ${templateId} not cached`);
+        continue;
+      }
 
-    // Create a new session on submit
-    setStore("id", undefined);
-    await saveSession(true);
-    await processSelectedTemplates(text);
+      const prompt = await getPrompt(templateId);
+      
+      const jobConfig = {
+        inputFile: store.inputFile,
+        inputText,
+        templateFile,
+        prompt,
+        model: store.model,
+        displayInfo: {
+          prefix: config.prefix || "",
+          label: config.label,
+          filename: config.filename,
+        },
+      };
+
+      jobs.push({ jobId, jobConfig });
+    }
+
+    // Create job for advanced options if configured
+    if (store.advancedOptionsOpen) {
+      if (store.templateSourceType === "predefined" && 
+          store.selectedPredefinedTemplate && 
+          store.customPrompt.trim()) {
+        
+        const jobId = crypto.randomUUID();
+        const config = templateConfigs[store.selectedPredefinedTemplate];
+        const templateFile = store.templateCache[store.selectedPredefinedTemplate];
+        
+        if (templateFile) {
+          const jobConfig = {
+            inputFile: store.inputFile,
+            inputText,
+            templateFile,
+            prompt: store.customPrompt,
+            model: store.model,
+            displayInfo: {
+              prefix: config.prefix || "",
+              label: config.label + " (Custom)",
+              filename: config.filename.replace(".docx", "-custom.docx"),
+            },
+          };
+
+          jobs.push({ jobId, jobConfig });
+        }
+      } else if (store.templateSourceType === "custom" && 
+                 store.customTemplateFile && 
+                 store.customPrompt.trim()) {
+        
+        const jobId = crypto.randomUUID();
+        
+        const jobConfig = {
+          inputFile: store.inputFile,
+          inputText,
+          templateFile: store.customTemplateFile,
+          prompt: store.customPrompt,
+          model: store.model,
+          displayInfo: {
+            prefix: "Custom",
+            label: "Custom Document",
+            filename: "custom-document.docx",
+          },
+        };
+
+        jobs.push({ jobId, jobConfig });
+      }
+    }
+
+    if (jobs.length === 0) return;
+
+    // Clear previous results (merge to replace nested object)
+    setStore("generatedDocuments", reconcile({}, { merge: true }));
+    setStore("id", await createSession());
+    setParam("id", store.id);
+
+    // Start all jobs in parallel
+    for (const { jobId, jobConfig } of jobs) {
+      processJob(jobId, jobConfig);
+    }
   }
 
   async function handleReset(event) {
     event?.preventDefault();
-    const form = event?.target;
-    form.inputTextFile.value = "";
-    if (form.outputTemplateFile) {
-      form.outputTemplateFile.value = "";
-    }
-
-    // Clear all state
-    setStore({
-      id: null,
-      inputText: "",
-      inputTextFilename: "",
-      customTemplate: null,
-      customTemplateFilename: "",
-      selectedTemplates: [],
-      generatedDocuments: {},
-      selectedPredefinedTemplate: "",
-      templateSourceType: "predefined",
-      model: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-      customSystemPrompt: "",
-    });
-
-    // Clear URL parameter
-    const url = new URL(window.location);
-    url.searchParams.delete("id");
-    window.history.replaceState(null, "", url);
+    setStore(structuredClone(defaultStore));
+    setParam("id", null);
   }
 
-  /**
-   * Runs an AI model with the given parameters and returns the output text.
-   * @param {any} params
-   * @returns {Promise<string>} The output text from the model
-   */
+  // ============= Utility Functions =============
+
   async function runModel(params) {
     const response = await fetch("/api/model", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
     });
 
@@ -594,7 +402,52 @@ export default function Page() {
     }
 
     const data = await response.json();
-    return data?.output?.message?.content?.[0]?.text || "";
+    const text = data.output?.message?.content?.map(c => c.text || "").join(" ") || "";
+    return text;
+  }
+
+  async function downloadJob(jobId) {
+    const job = store.generatedDocuments[jobId];
+    if (!job?.data || job.status !== "completed") return;
+    
+    try {
+      // Generate document on-demand
+      const blob = await generateDocument(job.data, job.config.templateFile);
+      
+      // Create timestamp for filename
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+      const seconds = String(date.getSeconds()).padStart(2, "0");
+      const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+
+      const baseFilename = job.config.displayInfo.filename;
+      const filename = baseFilename.replace(".docx", `-${timestamp}.docx`);
+
+      // Trigger download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(`Error downloading job ${jobId}:`, error);
+      // Could add user notification here
+    }
+  }
+
+  function downloadAll() {
+    Object.keys(store.generatedDocuments).forEach((jobId) => {
+      if (store.generatedDocuments[jobId].status === "completed") {
+        downloadJob(jobId);
+      }
+    });
   }
 
   // ============= UI Component =============
@@ -607,32 +460,51 @@ export default function Page() {
           <div class="row align-items-stretch">
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
               <div class="bg-white shadow rounded p-3">
-                <label for="inputText" class="form-label text-info fs-5 mb-1"
-                  >Source Document<span class="text-danger">*</span></label
-                >
-                <${FileInputWithDisplay}
-                  filename=${() => store.inputTextFilename}
-                  inputId="inputTextFile"
-                  inputName="inputTextFile"
-                  accept=".txt, .docx, .pdf"
-                  onFileSelect=${handleFileSelect}
-                  onClear=${() => {
-                    setStore("inputTextFilename", "");
-                    setStore("inputText", "");
-                    setStore("generatedDocuments", {});
-                  }}
+                <label class="form-label required text-info fs-5 mb-1">Source Document</label>
+                <${FileInput}
+                  value=${() => [store.inputFile]}
+                  onChange=${ev => setStore("inputFile", ev.target.files[0] || null)}
+                  accept="text/*,.doc,.docx,.pdf"
+                  class="form-control form-control-sm mb-3"
                 />
 
                 <!-- Template Selection -->
                 <div class="mb-3">
-                  <label class="form-label text-info fs-5 mb-1"
-                    >Form Templates<span class="text-danger">*</span></label
-                  >
-                  <${TreeSelect}
-                    groups=${templateGroups}
-                    selected=${() => store.selectedTemplates}
-                    onChange=${handleTemplateSelectionChange}
-                  />
+                  <label class="form-label required text-info fs-5 mb-1">Form Templates</label>
+                  <div class="border rounded p-2">
+                    <${For} each=${getTemplateConfigsByCategory}>
+                      ${(group) => html`
+                        <div class="mb-2">
+                          <div class="fw-bold text-muted small">${() => group.label}</div>
+                          <${For} each=${() => group.options}>
+                            ${(option) => html`
+                              <div class="form-check form-control-sm min-height-auto py-0 ms-1">
+                                <input
+                                  class="form-check-input cursor-pointer"
+                                  type="checkbox"
+                                  id=${() => option.value}
+                                  disabled=${() => option.disabled}
+                                  checked=${() => store.selectedTemplates.includes(option.value)}
+                                  onChange=${(e) => setStore(
+                                    "selectedTemplates", 
+                                    (prev) => e.target.checked 
+                                      ? prev.concat([option.value]) 
+                                      : prev.filter((v) => v !== option.value)
+                                  )}
+                                />
+                                <label
+                                  class="form-check-label cursor-pointer"
+                                  classList=${() => ({ "text-muted": option.disabled })}
+                                  for=${() => option.value}>
+                                  ${() => templateConfigs[option.value].label}
+                                </label>
+                              </div>
+                            `}
+                          <//>
+                        </div>
+                      `}
+                    <//>
+                  </div>
                 </div>
 
                 <div class="d-flex flex-wrap justify-content-between align-items-center">
@@ -644,7 +516,7 @@ export default function Page() {
                     >
                       <summary class="form-label text-info fs-5 mb-1">Advanced Options</summary>
                       <div class="border rounded p-2">
-                        <label for="model" class="form-label">Model</label>
+                        <label for="model" class="form-label required">Default Model</label>
                         <select
                           class="form-select form-select-sm cursor-pointer mb-2"
                           name="model"
@@ -714,7 +586,7 @@ export default function Page() {
                                 setStore("selectedPredefinedTemplate", e.target.value)}
                             >
                               <option value="">[No Template]</option>
-                              <${For} each=${templateGroups}>
+                              <${For} each=${getTemplateConfigsByCategory}>
                                 ${(group) => html`
                                   <optgroup label=${() => group.label}>
                                     <${For} each=${() => group.options}>
@@ -736,98 +608,37 @@ export default function Page() {
                         <//>
 
                         <${Show} when=${() => store.templateSourceType === "custom"}>
-                          <${FileInputWithDisplay}
-                            filename=${() => store.customTemplateFilename}
-                            inputId="outputTemplateFile"
-                            inputName="outputTemplateFile"
-                            accept=".txt, .docx, .pdf"
-                            onFileSelect=${handleFileSelect}
-                            onClear=${() => {
-                              setStore("customTemplateFilename", "");
-                              setStore("customTemplate", null);
-                            }}
+                          <${FileInput}
+                            value=${() => [store.customTemplateFile]}
+                            onChange=${ev => setStore("customTemplateFile", ev.target.files[0] || null)}
+                            accept=".docx"
+                            class="form-control form-control-sm mb-2"
                           />
-
-                          <div class="position-relative">
-                            <${ClassToggle} activeClass="show">
-                              <label class="form-label" toggle>
-                                Custom
-                                Prompt${() =>
-                                  store.advancedOptionsOpen && store.customTemplate
-                                    ? html`<span class="text-danger">*</span>`
-                                    : ""}
-                                <img src="/assets/images/icon-circle-info.svg" alt="Info" />
-                              </label>
-                              <div class="clickover">
-                                Use this field to provide your own instructions for generating a
-                                form. The system will follow your prompt instead of a predefined
-                                template.
-                              </div>
-                            <//>
-                          </div>
-                          <div class="position-relative">
-                            <textarea
-                              class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                              id="systemPromptCustom"
-                              name="systemPromptCustom"
-                              rows="10"
-                              style="resize: none; padding-right: 20px;"
-                              placeholder="Enter a custom prompt to generate your form."
-                              value=${() => store.customSystemPrompt}
-                              onInput=${(e) => setStore("customSystemPrompt", e.target.value)}
-                            />
-                            <button
-                              type="button"
-                              class="position-absolute d-flex align-items-center justify-content-center"
-                              style="bottom: 4px; right: 4px; width: 20px; height: 20px; padding: 0; border: none; background: transparent;"
-                              title="Expand Custom Prompt"
-                              onClick=${() => setStore("expandModalOpen", true)}
-                            >
-                              <img src="/assets/images/icon-expand.svg" alt="Expand" height="12" />
-                            </button>
-                          </div>
                         <//>
 
-                        <${Show} when=${() => store.templateSourceType === "predefined"}>
-                          <div class="position-relative">
-                            <${ClassToggle} activeClass="show">
-                              <label class="form-label" toggle>
-                                Custom
-                                Prompt${() =>
-                                  store.advancedOptionsOpen && store.selectedPredefinedTemplate
-                                    ? html`<span class="text-danger">*</span>`
-                                    : ""}
-                                <img src="/assets/images/icon-circle-info.svg" alt="Info" />
-                              </label>
-                              <div class="clickover">
-                                Use this field to provide your own instructions for generating a
-                                form. The system will follow your prompt instead of a predefined
-                                template.
-                              </div>
-                            <//>
-                          </div>
-                          <div class="position-relative">
-                            <textarea
-                              class="form-control form-control-sm rounded-top-0 flex-grow-1"
-                              id="systemPromptPredefined"
-                              name="systemPromptPredefined"
-                              rows="10"
-                              style="resize: none; padding-right: 20px;"
-                              placeholder="Enter a custom prompt to generate your form."
-                              value=${() => store.customSystemPrompt}
-                              onInput=${(e) => setStore("customSystemPrompt", e.target.value)}
-                            />
-                            <button
-                              type="button"
-                              class="position-absolute d-flex align-items-center justify-content-center"
-                              style="bottom: 4px; right: 4px; width: 20px; height: 20px; padding: 0; border: none; background: transparent;"
-                              title="Expand Custom Prompt"
-                              onClick=${() => setStore("expandModalOpen", true)}
-                            >
-                              <img src="/assets/images/icon-expand.svg" alt="Expand" height="12" />
-                            </button>
-                          </div>
-                        <//>
+                        <!-- Custom Prompt -->
+                        <div class="mb-2">
+                          <${ClassToggle} class="position-relative" activeClass="show" event="hover">
+                            <label class="form-label" classList=${() => ({required: store.selectedPredefinedTemplate || store.customTemplateFile })} toggle>
+                              Custom Prompt
+                            </label>
+                            <img class="ms-1" src="/assets/images/icon-circle-info.svg" alt="Info" toggle />
+                            <div class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-50 text-muted text-center">
+                              Use this field to provide your own instructions for generating a
+                              form. The system will follow your prompt instead of a predefined
+                              template.
+                            </div>
+                          <//>
+                        </div>
+                        <textarea
+                          class="form-control form-control-sm resize-vertical"
+                          id="systemPrompt"
+                          name="systemPrompt"
+                          rows="8"
+                          placeholder="Enter a custom prompt to generate your form."
+                          value=${() => store.customPrompt}
+                          onInput=${(e) => setStore("customPrompt", e.target.value)}
+                        />
                       </div>
                     </details>
                   <//>
@@ -852,7 +663,7 @@ export default function Page() {
                   <div class="d-flex flex-column gap-2">
                     <div class="text-muted small fw-semibold">
                       <${Show}
-                        when=${allDocumentsProcessed}
+                        when=${allJobsProcessed}
                         fallback="We are generating your forms now. This may take a few moments."
                       >
                         All processing is complete. The generated forms are available for download.
@@ -860,31 +671,8 @@ export default function Page() {
                     </div>
 
                     <${For} each=${() => Object.keys(store.generatedDocuments)}>
-                      ${(templateId) => {
-                        const doc = () => store.generatedDocuments[templateId];
-                        const documentInfo = () => {
-                          if (templateId === "custom") {
-                            return {
-                              prefix: "Custom Document",
-                              label: "",
-                              filename: "custom-document.docx",
-                            };
-                          } else if (templateId === "predefined-custom") {
-                            const config = templateConfigs[store.selectedPredefinedTemplate];
-                            return {
-                              prefix: config.prefix || "",
-                              label: config.label + " (Custom)",
-                              filename: config.filename.replace(".docx", "-custom.docx"),
-                            };
-                          } else {
-                            const config = templateConfigs[templateId];
-                            return {
-                              prefix: config.prefix || "",
-                              label: config.label,
-                              filename: config.filename,
-                            };
-                          }
-                        };
+                      ${(jobId) => {
+                        const job = () => store.generatedDocuments[jobId];
 
                         return html`
                           <div
@@ -892,14 +680,14 @@ export default function Page() {
                           >
                             <div class="flex-grow-1">
                               <div class="fw-medium">
-                                <span>${() => documentInfo().prefix}</span>
+                                <span>${() => job().config?.displayInfo?.prefix || ""}</span>
                                 <span class="text-muted fw-normal">
-                                  : ${() => documentInfo().label}</span
+                                  : ${() => job().config?.displayInfo?.label || "Unknown"}</span
                                 >
                               </div>
-                              <div class="small text-muted">${() => documentInfo().filename}</div>
+                              <div class="small text-muted">${() => job().config?.displayInfo?.filename || "document.docx"}</div>
                             </div>
-                            <${Show} when=${() => doc()?.status === "processing"}>
+                            <${Show} when=${() => job()?.status === "processing"}>
                               <div
                                 class="spinner-border spinner-border-sm text-primary me-2"
                                 role="status"
@@ -907,11 +695,11 @@ export default function Page() {
                                 <span class="visually-hidden">Processing...</span>
                               </div>
                             <//>
-                            <${Show} when=${() => doc()?.status === "completed"}>
+                            <${Show} when=${() => job()?.status === "completed"}>
                               <button
                                 type="button"
                                 class="btn btn-outline-light"
-                                onClick=${() => downloadDocument(templateId)}
+                                onClick=${() => downloadJob(jobId)}
                               >
                                 <img
                                   src="/assets/images/icon-download.svg"
@@ -920,13 +708,13 @@ export default function Page() {
                                 />
                               </button>
                             <//>
-                            <${Show} when=${() => doc()?.status === "error"}>
+                            <${Show} when=${() => job()?.status === "error"}>
                               <div class="d-flex align-items-center gap-2">
                                 <button
                                   type="button"
                                   class="btn btn-sm btn-outline-danger"
-                                  title=${() => doc().error}
-                                  onClick=${() => retryTemplate(templateId)}
+                                  title=${() => job().error}
+                                  onClick=${() => retryJob(jobId)}
                                 >
                                   Retry
                                 </button>
@@ -937,7 +725,7 @@ export default function Page() {
                       }}
                     <//>
                   </div>
-                  <${Show} when=${allDocumentsProcessed}>
+                  <${Show} when=${allJobsProcessed}>
                     <div class="h-100 d-flex flex-column justify-content-between">
                       <div class="text-end">
                         <button
@@ -957,8 +745,7 @@ export default function Page() {
                         />
                         <div>
                           <span class="me-1">We would love your feedback!</span>
-                          <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a>
-                          to help us improve.
+                          <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a> to help us improve.
                         </div>
                       </div>
                     </div>
@@ -971,52 +758,24 @@ export default function Page() {
             <div class="col-md-6">
               <div class="d-flex-center mt-1 gap-1">
                 <button type="reset" class="btn btn-light border rounded-pill">Reset</button>
-                <${ClassToggle} class="position-relative" activeClass="show" event="hover">
+                <${ClassToggle} class="position-relative" activeClass="show" event="hover" disabled=${() => !submitDisabled()}>
                   <button
                     toggle
                     type="submit"
                     class="btn btn-primary rounded-pill"
-                    disabled=${() => isGenerateDisabled() || !allDocumentsProcessed()}
+                    disabled=${submitDisabled}
                   >
                     Generate
                   </button>
-                  <${Show} when=${() => isGenerateDisabled()}>
-                    <div class="tooltip-top">Not all required fields are provided.</div>
-                  <//>
+                  <div class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-200 ms-n50 text-muted text-center">
+                    Not all required fields are provided.
+                  </div>
                 <//>
               </div>
             </div>
           </div>
         </form>
       </div>
-
-      <${Modal}
-        open=${() => store.expandModalOpen}
-        setOpen=${(open) => setStore("expandModalOpen", open)}
-        dialogClass=${{ "modal-xl": true }}
-        bodyClass=${{ "px-4": true }}
-        children=${html`
-          <div class="p-3">
-            <textarea
-              class="form-control form-control-sm mb-3"
-              rows="25"
-              style="resize: none;"
-              placeholder="Enter a custom prompt to generate your form."
-              value=${() => store.customSystemPrompt}
-              onInput=${(e) => setStore("customSystemPrompt", e.target.value)}
-            />
-            <div class="d-flex justify-content-end">
-              <button
-                type="button"
-                class="btn btn-light border rounded-pill"
-                onClick=${() => setStore("expandModalOpen", false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        `}
-      />
     </div>
   `;
 }

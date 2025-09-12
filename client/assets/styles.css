@@ -260,6 +260,12 @@ a.disabled-link {
   box-shadow: none;
 }
 
+.required::after {
+  content: "*";
+  color: red;
+  margin-left: 0.1rem;
+}
+
 /* textarea::-webkit-resizer {
   display: none;
 }
