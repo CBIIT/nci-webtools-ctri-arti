@@ -847,15 +847,14 @@ dialog .close-btn {
   position: relative;
   border-radius: var(--bs-border-radius-pill);
   text-decoration: none;
-  transition:
-    background-color 0.10s ease,
+  transition: background-color 0.1s ease;
 }
 .convo-item:hover .convo-hitbox,
 .convo-item:focus-within .convo-hitbox {
   background-color: var(--bs-tertiary-bg);
 }
 .convo-title {
-  transition: padding-right 0.10s ease;
+  transition: padding-right 0.1s ease;
 }
 .convo-item:hover .convo-title,
 .convo-item:focus-within .convo-title {
@@ -870,12 +869,36 @@ dialog .close-btn {
   visibility: hidden;
   pointer-events: none;
   transition:
-    opacity 0.10s ease,
-    visibility 0.10s ease;
+    opacity 0.1s ease,
+    visibility 0.1s ease;
 }
 .convo-item:hover .action-btn,
 .convo-item:focus-within .action-btn {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+}
+
+.model-dropdown {
+  padding-right: 2rem;
+}
+
+.bg-chat {
+  background-color: #f6f7fc;
+}
+
+.rounded-full {
+  border-radius: 9999px !important;
+}
+
+.scroll-down-btn {
+  border: 0.5px solid rgba(31, 30, 29, 0.15);
+  padding: 7px;
+  opacity: 0.8;
+  background-color: rgba(255, 255, 255, 0.8);
+
+  &:hover {
+    border: 0.5px solid rgba(31, 30, 29, 0.15);
+    background-color: rgba(255, 255, 255, 1);
+  }
 }
