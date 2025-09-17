@@ -33,6 +33,7 @@ export default function Page() {
   const [chatHeight, setChatHeight] = createSignal(0);
   const [deleteConversationId, setDeleteConversationId] = createSignal(null);
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+  const isFedPulse = new URLSearchParams(location.search).get("fedpulse") === "1";
   let bottomEl;
   let chatRef;
 
@@ -176,7 +177,6 @@ export default function Page() {
               <ul class="list-unstyled">
                 <${For} each=${conversations}>
                   ${(conv) => {
-                    const isFedPulse = new URLSearchParams(location.search).get("fedpulse") === "1";
                     const href = isFedPulse
                       ? `/tools/chat?fedpulse=1&id=${conv.id}`
                       : `/tools/chat?id=${conv.id}`;
@@ -218,47 +218,34 @@ export default function Page() {
             <//>
           </div>
         </div>
-        <div class="col-sm">
-          <form
-            onSubmit=${handleSubmit}
-            class="container d-flex flex-column flex-grow-1 mb-3 position-relative"
+        <div class="col-sm bg-chat p-0">
+          <div
+            class="col d-flex align-items-center justify-content-between py-3 px-4 bg-chat border-bottom"
           >
-            <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
-            <div class="row">
-              <div class="col d-flex align-items-center justify-content-between py-3">
-                <div class="d-flex align-items-center">
-                  <div class="fw-semibold me-2">
-                    ${() =>
-                      new URLSearchParams(location.search).get("fedpulse") ? "FedPulse" : "Chat"}
-                  </div>
-                  <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
-                    <select
-                      class="form-select form-select-sm border-0 bg-light cursor-pointer"
-                      name="model"
-                      id="model"
-                      required
-                    >
-                      <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
-                      <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>
-                        Sonnet 4.0
-                      </option>
-                      <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
-                    </select>
-                  <//>
-                </div>
-
-                <${Show} when=${() => conversation?.id}>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-danger ms-2"
-                    onClick=${(e) => handleOnDeleteConversationClick(e, conversation?.id)}
-                    title="Delete conversation"
-                  >
-                    Delete
-                  </button>
-                <//>
+            <div class="d-flex align-items-center">
+              <div class="fw-semibold me-2">
+                ${() => (isFedPulse ? "FedPulse" : "Standard Chat")}:${" "}
+                <span>${() => conversation?.title || "Untitled"}</span>
               </div>
             </div>
+
+            <${Show} when=${() => conversation?.id}>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger ms-2"
+                onClick=${(e) => handleOnDeleteConversationClick(e, conversation?.id)}
+                title="Delete conversation"
+              >
+                Delete
+              </button>
+            <//>
+          </div>
+
+          <form
+            onSubmit=${handleSubmit}
+            class="container d-flex flex-column flex-grow-1 mb-3 px-4 position-relative"
+          >
+            <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
 
             <div class="flex-grow-1 py-3" classList=${() => ({ "x-mvh-100": messages.length > 0 })}>
               <div class="text-center my-5 font-serif" hidden=${() => messages.length > 0}>
@@ -304,15 +291,14 @@ export default function Page() {
                 ref=${(el) => {
                   chatRef = el;
                 }}
-                class="bg-white"
               >
-                <div class="bg-light shadow-sm rounded">
+                <div class="bg-white border shadow-sm rounded">
                   <textarea
                     onKeyDown=${handleKeyDown}
                     class="form-control form-control-sm border-0 bg-transparent shadow-0 p-3"
                     id="message"
                     name="message"
-                    placeholder="Ask me (Shift + Enter for new line)"
+                    placeholder="Ask me a question. (Shift + Enter for new line)"
                     rows="3"
                     autofocus
                     required
@@ -326,7 +312,10 @@ export default function Page() {
                         arrow=${true}
                         class="text-white bg-primary"
                       >
-                        <label class="btn btn-light btn-sm rounded-pill m-0" for="inputFiles">
+                        <label
+                          class="btn bg-transparent border-0 btn-sm rounded-pill m-0"
+                          for="inputFiles"
+                        >
                           <input
                             onChange=${handleFileChange}
                             type="file"
@@ -366,13 +355,31 @@ export default function Page() {
                             for="reasoningMode"
                             title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources."
                           >
-                            Research Mode
+                            Deep Research Mode
                           </label>
                         </div>
                       <//>
                     </div>
 
                     <div class="d-flex w-auto align-items-center">
+                      <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
+                        <select
+                          class="model-dropdown form-select form-select-sm border-0 bg-transparent cursor-pointer"
+                          name="model"
+                          id="model"
+                          required
+                        >
+                          <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">
+                            Opus 4.1
+                          </option>
+                          <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>
+                            Sonnet 4.0
+                          </option>
+                          <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">
+                            Haiku 3.5
+                          </option>
+                        </select>
+                      <//>
                       <button
                         class="btn btn-primary btn-sm rounded-pill px-3"
                         type="submit"
@@ -384,7 +391,8 @@ export default function Page() {
                     </div>
                   </div>
                 </div>
-                <div class="text-center text-muted small py-1">
+
+                <div class="text-center bg-chat text-muted small py-1">
                   <span
                     class="me-1"
                     title="Your conversations are stored only on your personal device."
