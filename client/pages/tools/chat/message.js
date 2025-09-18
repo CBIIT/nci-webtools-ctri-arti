@@ -29,15 +29,19 @@ export default function Message(p) {
   const [visible, setVisible] = createSignal({});
   const [copied, setCopied] = createSignal(false);
   const toggleVisible = (key) => setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
+
   const getToolResult = (toolUse) =>
     p.messages?.find((m) => m.content?.find((c) => c?.toolResult?.toolUseId === toolUse?.toolUseId))
-      ?.content[0].toolResult?.content[0]?.json?.results;
-  const getSearchResults = (results) => results?.web && [...results.web, ...results.news];
+      ?.content[0].toolResult?.content?.[0]?.json?.results;
+
+  const getSearchResults = (results) =>
+    results?.web ? [...(results.web || []), ...(results.news || [])] : [];
+
   let resetTimer;
 
   function openFeedback(feedback, comment) {
-    let d = dialog();
-    let f = d.querySelector("form");
+    const d = dialog();
+    const f = d.querySelector("form");
     f.feedback.value = feedback ? "Positive Feedback" : "Negative Feedback";
     f.comment.value = comment || "";
     d.showModal();
@@ -47,13 +51,11 @@ export default function Message(p) {
     e.preventDefault();
     e.stopPropagation();
     await dialog()?.close();
-    let feedback = e.target.feedback.value;
-    let comment = e.target.comment.value;
+    const feedback = e.target.feedback.value;
+    const comment = e.target.comment.value;
     await fetch("/api/feedback", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         feedback: [
           feedback,
@@ -66,12 +68,11 @@ export default function Message(p) {
           .join("\n"),
         context: p.messages,
       }),
-    }).then((e) => e.json());
+    }).then((r) => r.json());
   }
 
   async function handleCopy(text) {
     const RESET_MS = 2500;
-
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -83,6 +84,11 @@ export default function Message(p) {
   }
 
   onCleanup(() => clearTimeout(resetTimer));
+
+  const typeOfContent = (c) =>
+    c?.toolUse?.name || (c?.reasoningContent ? "reason" : c?.text !== undefined ? "text" : "misc");
+
+  const safeId = (s) => s.replace(/[^A-Za-z0-9_-]/g, "_");
 
   return html` <dialog
       ref=${(el) => setDialog(el)}
@@ -164,9 +170,14 @@ export default function Message(p) {
     </dialog>
 
     <${For} each=${p.message?.content}>
-      ${(c) => {
+      ${(c, i) => {
+        const base = c?.toolUse?.toolUseId || `${p.index}-${i()}`;
+        const type = typeOfContent(c);
+        const key = `${type}:${base}`;
+        const isOpen = () => !!visible()[key];
+        const bodyId = `${type}-acc-body-${safeId(base)}`;
+
         if (c.text !== undefined) {
-          // include empty text to start message
           return html`
             <div
               class="position-relative hover-visible-parent min-w-0"
@@ -272,17 +283,14 @@ export default function Message(p) {
         } else if (c.toolUse?.name === "search") {
           return html`<article
             class="search-accordion border rounded-3 my-3 min-w-0"
-            classList=${() => ({
-              "is-open": !!visible()[p.index],
-              "shadow-sm bg-light": !!visible()[p.index],
-            })}
+            classList=${() => ({ "is-open": isOpen(), "shadow-sm bg-light": isOpen() })}
           >
             <button
               type="button"
               class="search-accordion__toggle btn-reset w-100 d-flex flex-row align-items-center justify-content-between px-3 py-2 text-body-secondary rounded-3 min-w-0"
-              aria-expanded=${() => !!visible()[p.index]}
-              aria-controls=${`search-acc-body-${p.index}`}
-              onClick=${() => toggleVisible(p.index)}
+              aria-expanded=${isOpen}
+              aria-controls=${bodyId}
+              onClick=${() => toggleVisible(key)}
             >
               <div class="d-flex flex-row align-items-center gap-2 flex-grow-1 min-w-0">
                 <span
@@ -305,9 +313,9 @@ export default function Message(p) {
             </button>
 
             <div
-              id=${`search-acc-body-${p.index}`}
+              id=${bodyId}
               class="search-accordion__body"
-              classList=${() => ({ show: !!visible()[p.index] })}
+              classList=${() => ({ show: isOpen() })}
             >
               <div class="mask-fade-bottom">
                 <div class="overflow-auto pe-1 search-accordion__scroll">
@@ -331,9 +339,9 @@ export default function Message(p) {
                             </span>
 
                             <div class="d-flex flex-row align-items-center gap-2 min-w-0 w-100">
-                              <span class="text-truncate small text-body-emphasis">
-                                ${result.title}
-                              </span>
+                              <span class="text-truncate small text-body-emphasis"
+                                >${result.title}</span
+                              >
                               <small class="text-body-tertiary flex-shrink-0">${hostname}</small>
                             </div>
                           </a>
@@ -348,17 +356,14 @@ export default function Message(p) {
         } else if (c.toolUse?.name === "browse") {
           return html`<article
             class="search-accordion browse-accordion border rounded-3 my-3 min-w-0"
-            classList=${() => ({
-              "is-open": !!visible()[p.index],
-              "shadow-sm bg-light": !!visible()[p.index],
-            })}
+            classList=${() => ({ "is-open": isOpen(), "shadow-sm bg-light": isOpen() })}
           >
             <button
               type="button"
               class="search-accordion__toggle btn-reset w-100 d-flex flex-row align-items-center justify-content-between px-3 py-2 text-body-secondary rounded-3 min-w-0"
-              aria-expanded=${() => !!visible()[p.index]}
-              aria-controls=${`browse-acc-body-${p.index}`}
-              onClick=${() => toggleVisible(p.index)}
+              aria-expanded=${isOpen}
+              aria-controls=${bodyId}
+              onClick=${() => toggleVisible(key)}
             >
               <div class="d-flex flex-row align-items-center gap-2 flex-grow-1 min-w-0">
                 <span
@@ -375,19 +380,19 @@ export default function Message(p) {
               </div>
 
               <div class="d-flex flex-row align-items-center gap-2 flex-shrink-0 min-w-0">
-                <small class="text-body-tertiary">
-                  ${() => c.toolUse?.input?.url?.length || 0} sources
-                </small>
-                <span class="chevron d-inline-flex">
-                  <${ChevronDown} size="20" class="text-body-tertiary" />
-                </span>
+                <small class="text-body-tertiary"
+                  >${() => c.toolUse?.input?.url?.length || 0} sources</small
+                >
+                <span class="chevron d-inline-flex"
+                  ><${ChevronDown} size="20" class="text-body-tertiary"
+                /></span>
               </div>
             </button>
 
             <div
-              id=${`browse-acc-body-${p.index}`}
+              id=${bodyId}
               class="search-accordion__body"
-              classList=${() => ({ show: !!visible()[p.index] })}
+              classList=${() => ({ show: isOpen() })}
             >
               <div class="mask-fade-bottom">
                 <div class="overflow-auto pe-1 search-accordion__scroll">
@@ -407,17 +412,14 @@ export default function Message(p) {
         } else if (c.toolUse?.name === "code") {
           return html`<article
             class="search-accordion code-accordion border rounded-3 my-3 min-w-0"
-            classList=${() => ({
-              "is-open": !!visible()[p.index],
-              "shadow-sm bg-light": !!visible()[p.index],
-            })}
+            classList=${() => ({ "is-open": isOpen(), "shadow-sm bg-light": isOpen() })}
           >
             <button
               type="button"
               class="search-accordion__toggle btn-reset w-100 d-flex flex-row align-items-center justify-content-between px-3 py-2 text-body-secondary rounded-3 min-w-0"
-              aria-expanded=${() => !!visible()[p.index]}
-              aria-controls=${`code-acc-body-${p.index}`}
-              onClick=${() => toggleVisible(p.index)}
+              aria-expanded=${isOpen}
+              aria-controls=${bodyId}
+              onClick=${() => toggleVisible(key)}
             >
               <div class="d-flex flex-row align-items-center gap-2 flex-grow-1 min-w-0">
                 <span
@@ -429,16 +431,14 @@ export default function Message(p) {
                 <span class="text-truncate fw-normal">Writing code…</span>
               </div>
 
-              <div class="d-flex flex-row align-items-center gap-2 flex-shrink-0 min-w-0">
-                <small class="text-body-tertiary text-uppercase">
-                  ${() => c.toolUse?.input?.language || "text"}
-                </small>
-
-                <div
-                  class="btn-group btn-group-sm"
-                  role="group"
-                  onClick=${(e) => e.stopPropagation()}
+              <div
+                class="d-flex flex-row align-items-center gap-2 flex-shrink-0 min-w-0"
+                onClick=${(e) => e.stopPropagation()}
+              >
+                <small class="text-body-tertiary text-uppercase"
+                  >${() => c.toolUse?.input?.language || "text"}</small
                 >
+                <div class="btn-group btn-group-sm" role="group">
                   <${Show}
                     when=${() =>
                       typeof c?.toolUse?.input?.source === "string" &&
@@ -465,17 +465,16 @@ export default function Message(p) {
                     </button>
                   <//>
                 </div>
-
-                <span class="chevron d-inline-flex">
-                  <${ChevronDown} size="20" class="text-body-tertiary" />
-                </span>
+                <span class="chevron d-inline-flex"
+                  ><${ChevronDown} size="20" class="text-body-tertiary"
+                /></span>
               </div>
             </button>
 
             <div
-              id=${`code-acc-body-${p.index}`}
+              id=${bodyId}
               class="search-accordion__body"
-              classList=${() => ({ show: !!visible()[p.index] })}
+              classList=${() => ({ show: isOpen() })}
             >
               <div class="mask-fade-bottom">
                 <div class="overflow-auto pe-1 search-accordion__scroll">
@@ -519,17 +518,14 @@ export default function Message(p) {
 
           return html`<article
             class="search-accordion editor-accordion border rounded-3 my-3 min-w-0"
-            classList=${() => ({
-              "is-open": !!visible()[p.index],
-              "shadow-sm bg-light": !!visible()[p.index],
-            })}
+            classList=${() => ({ "is-open": isOpen(), "shadow-sm bg-light": isOpen() })}
           >
             <button
               type="button"
               class="search-accordion__toggle btn-reset w-100 d-flex flex-row align-items-center justify-content-between px-3 py-2 text-body-secondary rounded-3 min-w-0"
-              aria-expanded=${() => !!visible()[p.index]}
-              aria-controls=${`editor-acc-body-${p.index}`}
-              onClick=${() => toggleVisible(p.index)}
+              aria-expanded=${isOpen}
+              aria-controls=${bodyId}
+              onClick=${() => toggleVisible(key)}
             >
               <div class="d-flex flex-row align-items-center gap-2 flex-grow-1 min-w-0">
                 <span
@@ -574,15 +570,15 @@ export default function Message(p) {
                     </button>
                   <//>
                 </div>
-                <span class="chevron d-inline-flex">
-                  <${ChevronDown} size="20" class="text-body-tertiary" />
-                </span>
+                <span class="chevron d-inline-flex"
+                  ><${ChevronDown} size="20" class="text-body-tertiary"
+                /></span>
               </div>
             </button>
             <div
-              id=${`editor-acc-body-${p.index}`}
+              id=${bodyId}
               class="search-accordion__body"
-              classList=${() => ({ show: !!visible()[p.index] })}
+              classList=${() => ({ show: isOpen() })}
             >
               <div class="mask-fade-bottom">
                 <div class="overflow-auto pe-1 search-accordion__scroll">
@@ -609,20 +605,16 @@ export default function Message(p) {
             </div>
           </article>`;
         } else if (c.reasoningContent || c.toolUse) {
-          console.log(c.toolUse, stringify(getToolResult(c.toolUse)));
           return html`<article
             class="search-accordion reasoning-accordion border rounded-3 my-3 min-w-0"
-            classList=${() => ({
-              "is-open": !!visible()[p.index],
-              "shadow-sm bg-light": !!visible()[p.index],
-            })}
+            classList=${() => ({ "is-open": isOpen(), "shadow-sm bg-light": isOpen() })}
           >
             <button
               type="button"
               class="search-accordion__toggle btn-reset w-100 d-flex flex-row align-items-center justify-content-between px-3 py-2 text-body-secondary rounded-3 min-w-0"
-              aria-expanded=${() => !!visible()[p.index]}
-              aria-controls=${`reason-acc-body-${p.index}`}
-              onClick=${() => toggleVisible(p.index)}
+              aria-expanded=${isOpen}
+              aria-controls=${bodyId}
+              onClick=${() => toggleVisible(key)}
             >
               <div class="d-flex flex-row align-items-center gap-2 flex-grow-1 min-w-0">
                 <span
@@ -640,19 +632,19 @@ export default function Message(p) {
               </div>
 
               <div class="d-flex flex-row align-items-center gap-2 flex-shrink-0 min-w-0">
-                <small class="text-body-tertiary text-capitalize">
-                  ${() => c?.toolUse?.name || "internal"}
-                </small>
-                <span class="chevron d-inline-flex">
-                  <${ChevronDown} size="20" class="text-body-tertiary" />
-                </span>
+                <small class="text-body-tertiary text-capitalize"
+                  >${() => c?.toolUse?.name || "internal"}</small
+                >
+                <span class="chevron d-inline-flex"
+                  ><${ChevronDown} size="20" class="text-body-tertiary"
+                /></span>
               </div>
             </button>
 
             <div
-              id=${`reason-acc-body-${p.index}`}
+              id=${bodyId}
               class="search-accordion__body"
-              classList=${() => ({ show: !!visible()[p.index] })}
+              classList=${() => ({ show: isOpen() })}
             >
               <div class="mask-fade-bottom">
                 <div class="overflow-auto pe-1 search-accordion__scroll">
