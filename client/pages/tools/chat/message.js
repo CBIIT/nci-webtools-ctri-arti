@@ -10,6 +10,7 @@ import {
   Download,
   File,
   Globe,
+  Search,
   ThumbsDown,
   ThumbsUp,
   X,
@@ -288,7 +289,7 @@ export default function Message(p) {
                   class="d-inline-flex align-items-center justify-content-center"
                   style="width:20px;height:20px;"
                 >
-                  <${Globe} size="16" class="text-body-tertiary" />
+                  <${Search} size="16" class="text-body-tertiary" />
                 </span>
                 <span class="text-truncate fw-normal"> ${() => c.toolUse?.input?.query} </span>
               </div>
@@ -345,21 +346,64 @@ export default function Message(p) {
             </div>
           </article>`;
         } else if (c.toolUse?.name === "browse") {
-          return html`<details
-            class="w-100 overflow-auto p-2 rounded mvh-25 min-w-0"
-            classList=${() => ({ "shadow-sm bg-light": visible()[p.index] })}
-            open=${() => visible()[p.index]}
+          return html`<article
+            class="search-accordion browse-accordion border rounded-3 my-3 min-w-0"
+            classList=${() => ({
+              "is-open": !!visible()[p.index],
+              "shadow-sm bg-light": !!visible()[p.index],
+            })}
           >
-            <summary
-              class="fw-semibold px-1 mb-2"
-              onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}
+            <button
+              type="button"
+              class="search-accordion__toggle btn-reset w-100 d-flex flex-row align-items-center justify-content-between px-3 py-2 text-body-secondary rounded-3 min-w-0"
+              aria-expanded=${() => !!visible()[p.index]}
+              aria-controls=${`browse-acc-body-${p.index}`}
+              onClick=${() => toggleVisible(p.index)}
             >
-              Researching:
-              ${() => c.toolUse?.input?.url?.map((e) => new URL(e).hostname).join(", ")}...
-            </summary>
-            <div class="fw-semibold mb-2 text-muted">${() => c.toolUse?.input?.topic}</div>
-            <div class="markdown" innerHTML=${() => parse(getToolResult(c.toolUse) || "")} />
-          </details>`;
+              <div class="d-flex flex-row align-items-center gap-2 flex-grow-1 min-w-0">
+                <span
+                  class="d-inline-flex align-items-center justify-content-center"
+                  style="width:20px;height:20px;"
+                >
+                  <${Globe} size="16" class="text-body-tertiary" />
+                </span>
+                <span class="text-truncate fw-normal">
+                  Researching:
+                  ${() =>
+                    (c.toolUse?.input?.url || []).map((u) => new URL(u).hostname).join(", ") || "—"}
+                </span>
+              </div>
+
+              <div class="d-flex flex-row align-items-center gap-2 flex-shrink-0 min-w-0">
+                <small class="text-body-tertiary">
+                  ${() => c.toolUse?.input?.url?.length || 0} sources
+                </small>
+                <span class="chevron d-inline-flex">
+                  <${ChevronDown} size="20" class="text-body-tertiary" />
+                </span>
+              </div>
+            </button>
+
+            <div
+              id=${`browse-acc-body-${p.index}`}
+              class="search-accordion__body"
+              classList=${() => ({ show: !!visible()[p.index] })}
+            >
+              <div class="mask-fade-bottom">
+                <div class="overflow-auto pe-1 search-accordion__scroll">
+                  <div class="p-2">
+                    <div class="text-body-tertiary mb-2 small fw-semibold">
+                      ${() => c.toolUse?.input?.topic || ""}
+                    </div>
+                    <div
+                      class="markdown"
+                      innerHTML=${() => parse(getToolResult(c.toolUse) || "")}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>`;
         } else if (c.toolUse?.name === "code") {
           return html`<article
             class="search-accordion code-accordion border rounded-3 my-3 min-w-0"
