@@ -237,7 +237,7 @@ export default function Page() {
                     ? "badge rounded-pill text-bg-primary text-uppercase fw-semibold"
                     : "badge rounded-pill bg-secondary-subtle text-secondary text-uppercase fw-semibold"}
               >
-                ${() => (isFedPulse ? "FedPulse" : "Standard")}
+                ${() => (isFedPulse ? "FedPulse Chat" : "Standard Chat")}
               </span>
 
               <div class="vr d-none d-sm-block" aria-hidden="true"></div>
