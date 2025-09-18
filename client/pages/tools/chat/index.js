@@ -378,6 +378,7 @@ export default function Page() {
                             type="checkbox"
                             id="reasoningMode"
                             name="reasoningMode"
+                            checked
                           />
                           <label
                             toggle
