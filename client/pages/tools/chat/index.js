@@ -120,13 +120,20 @@ export default function Page() {
         >
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
-              <button
-                type="button"
-                class="btn btn-sm btn-light d-flex-center rounded-5 wh-2 p-0"
-                onClick=${toggle("conversations")}
+              <${Tooltip}
+                title=${() => (toggles().conversations ? "Close Sidebar" : "Open Sidebar")}
+                placement="right"
+                arrow=${true}
+                class="text-white bg-primary"
               >
-                <${PanelLeft} alt="Menu" size="16" />
-              </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-light d-flex-center rounded-5 wh-2 p-0"
+                  onClick=${toggle("conversations")}
+                >
+                  <${PanelLeft} alt="Menu" size="16" />
+                </button>
+              <//>
               <${Show} when=${() => toggles().conversations}>
                 <div class="btn btn-sm m-0 p-0 border-0">ARTI Chat</div>
               <//>
@@ -219,27 +226,47 @@ export default function Page() {
           </div>
         </div>
         <div class="col-sm bg-chat p-0 d-flex flex-column min-vh-100 min-w-0">
-          <div
-            class="col d-flex align-items-center justify-content-between py-3 px-4 bg-chat border-bottom"
+          <header
+            class="chat-titlebar d-flex align-items-center justify-content-between gap-2 px-3 py-2 bg-white"
+            role="banner"
           >
-            <div class="d-flex align-items-center">
-              <div class="fw-semibold me-2">
-                ${() => (isFedPulse ? "FedPulse" : "Standard Chat")}:${" "}
-                <span>${() => conversation?.title || "Untitled"}</span>
-              </div>
+            <div class="d-flex align-items-center gap-2 min-w-0 text-body-secondary">
+              <span
+                class=${() =>
+                  isFedPulse
+                    ? "badge rounded-pill text-bg-primary text-uppercase fw-semibold"
+                    : "badge rounded-pill bg-secondary-subtle text-secondary text-uppercase fw-semibold"}
+              >
+                ${() => (isFedPulse ? "FedPulse" : "Standard")}
+              </span>
+
+              <div class="vr d-none d-sm-block" aria-hidden="true"></div>
+
+              <${Tooltip}
+                title=${() => conversation?.title || "Untitled"}
+                placement="bottom"
+                arrow=${true}
+                class="text-white bg-primary"
+              >
+                <div class="chat-title fw-semibold text-truncate">
+                  ${() => conversation?.title || "Untitled"}
+                </div>
+              <//>
             </div>
 
             <${Show} when=${() => conversation?.id}>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-danger ms-2"
-                onClick=${(e) => handleOnDeleteConversationClick(e, conversation?.id)}
-                title="Delete conversation"
-              >
-                Delete
-              </button>
+              <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  onClick=${(e) => handleOnDeleteConversationClick(e, conversation?.id)}
+                  title="Delete conversation"
+                >
+                  Delete
+                </button>
+              </div>
             <//>
-          </div>
+          </header>
 
           <form
             onSubmit=${handleSubmit}

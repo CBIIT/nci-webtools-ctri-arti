@@ -885,6 +885,7 @@ dialog .close-btn {
 
 .bg-chat {
   background-color: #f6f7fc;
+  min-width: 0;
 }
 
 .rounded-full {
@@ -1006,4 +1007,15 @@ dialog .close-btn {
 .editor-accordion .content-render .prose img {
   max-width: 100%;
   height: auto;
+}
+.chat-titlebar {
+  background: var(--bs-body-bg);
+  box-shadow: inset 0px 11px 8px -10px #ccc;
+}
+.chat-titlebar .vr {
+  opacity: 0.15;
+}
+.chat-title {
+  min-width: 0;
+  max-width: 100%;
 }
