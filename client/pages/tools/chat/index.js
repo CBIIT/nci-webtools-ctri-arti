@@ -113,7 +113,7 @@ export default function Page() {
 
   return html`
     <div class="container-fluid">
-      <div class="row min-vh-100 position-relative">
+      <div class="row flex-nowrap min-vh-100 position-relative">
         <div
           class="col-sm-auto shadow-sm border-end px-0 position-sticky"
           classList=${() => ({ "w-20": toggles().conversations })}
@@ -218,7 +218,7 @@ export default function Page() {
             <//>
           </div>
         </div>
-        <div class="col-sm bg-chat p-0">
+        <div class="col-sm bg-chat p-0 d-flex flex-column min-vh-100 min-w-0">
           <div
             class="col d-flex align-items-center justify-content-between py-3 px-4 bg-chat border-bottom"
           >
@@ -243,11 +243,14 @@ export default function Page() {
 
           <form
             onSubmit=${handleSubmit}
-            class="container d-flex flex-column flex-grow-1 mb-3 px-4 position-relative"
+            class="container d-flex flex-column flex-grow-1 mb-3 px-4 position-relative min-w-0"
           >
             <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
 
-            <div class="flex-grow-1 py-3" classList=${() => ({ "x-mvh-100": messages.length > 0 })}>
+            <div
+              class="flex-grow-1 py-3 min-width-0"
+              classList=${() => ({ "x-mvh-100": messages.length > 0 })}
+            >
               <div class="text-center my-5 font-serif" hidden=${() => messages.length > 0}>
                 <h1 class="text-gradient fw-bold font-title mb-2">
                   Welcome, ${() => session()?.user?.firstName || ""}

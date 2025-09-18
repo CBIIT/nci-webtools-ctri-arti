@@ -1,7 +1,19 @@
 import { createSignal, For, onCleanup, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { Check, Copy, Download, ThumbsDown, ThumbsUp, X } from "lucide-solid";
+import {
+  Brain,
+  Check,
+  ChevronDown,
+  CodeXml,
+  Copy,
+  Download,
+  File,
+  Globe,
+  ThumbsDown,
+  ThumbsUp,
+  X,
+} from "lucide-solid";
 import { parse } from "marked";
 import { stringify } from "yaml";
 
@@ -156,11 +168,11 @@ export default function Message(p) {
           // include empty text to start message
           return html`
             <div
-              class="position-relative hover-visible-parent"
+              class="position-relative hover-visible-parent min-w-0"
               classList=${{ "text-end": p.message.role === "user" }}
             >
               <div
-                class="p-2 markdown"
+                class="p-2 markdown min-w-0"
                 classList=${{
                   "d-inline-block p-3 bg-secondary-subtle rounded my-2": p.message.role === "user",
                 }}
@@ -257,40 +269,84 @@ export default function Message(p) {
             </div>
           `;
         } else if (c.toolUse?.name === "search") {
-          return html`<details
-            class="w-100 overflow-auto p-2 rounded mvh-25"
-            classList=${() => ({ "shadow-sm bg-light": visible()[p.index] })}
-            open=${() => visible()[p.index]}
+          return html`<article
+            class="search-accordion border rounded-3 my-3 min-w-0"
+            classList=${() => ({
+              "is-open": !!visible()[p.index],
+              "shadow-sm bg-light": !!visible()[p.index],
+            })}
           >
-            <summary
-              class="fw-semibold px-1 mb-2"
-              onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}
+            <button
+              type="button"
+              class="search-accordion__toggle btn-reset w-100 d-flex flex-row align-items-center justify-content-between px-3 py-2 text-body-secondary rounded-3 min-w-0"
+              aria-expanded=${() => !!visible()[p.index]}
+              aria-controls=${`search-acc-body-${p.index}`}
+              onClick=${() => toggleVisible(p.index)}
             >
-              Searching: ${() => c.toolUse?.input?.query}...
-            </summary>
-            <div class="list-group">
-              <${For} each=${() => getSearchResults(getToolResult(c.toolUse))}>
-                ${(result) =>
-                  html`<a
-                    class="list-group-item list-group-item-action border-0"
-                    href=${result.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <span>${result.title}</span>
-                    <small class="ms-2 text-muted">${new URL(result.url).hostname}</small>
-                    <ul class="small fw-normal">
-                      <${For} each=${result.extra_snippets}>
-                        ${(snippet) => html`<li>${snippet}</li>`}
-                      <//>
-                    </ul>
-                  </a>`}
-              <//>
+              <div class="d-flex flex-row align-items-center gap-2 flex-grow-1 min-w-0">
+                <span
+                  class="d-inline-flex align-items-center justify-content-center"
+                  style="width:20px;height:20px;"
+                >
+                  <${Globe} size="16" class="text-body-tertiary" />
+                </span>
+                <span class="text-truncate fw-normal"> ${() => c.toolUse?.input?.query} </span>
+              </div>
+
+              <div class="d-flex flex-row align-items-center gap-2 flex-shrink-0 min-w-0">
+                <small class="text-body-tertiary">
+                  ${() => (getSearchResults(getToolResult(c.toolUse)) || []).length} results
+                </small>
+                <span class="chevron d-inline-flex">
+                  <${ChevronDown} size="20" class="text-body-tertiary" />
+                </span>
+              </div>
+            </button>
+
+            <div
+              id=${`search-acc-body-${p.index}`}
+              class="search-accordion__body"
+              classList=${() => ({ show: !!visible()[p.index] })}
+            >
+              <div class="mask-fade-bottom">
+                <div class="overflow-auto pe-1 search-accordion__scroll">
+                  <div class="list-group list-group-flush">
+                    <${For} each=${() => getSearchResults(getToolResult(c.toolUse))}>
+                      ${(result) => {
+                        const hostname = new URL(result.url).hostname;
+                        const favicon = `https://www.google.com/s2/favicons?sz=64&domain=${hostname}`;
+                        return html`
+                          <a
+                            class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-1 px-2 border-0"
+                            href=${result.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <span
+                              class="d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                              style="width:16px;height:16px;"
+                            >
+                              <img src=${favicon} width="16" height="16" alt="favicon" />
+                            </span>
+
+                            <div class="d-flex flex-row align-items-center gap-2 min-w-0 w-100">
+                              <span class="text-truncate small text-body-emphasis">
+                                ${result.title}
+                              </span>
+                              <small class="text-body-tertiary flex-shrink-0">${hostname}</small>
+                            </div>
+                          </a>
+                        `;
+                      }}
+                    <//>
+                  </div>
+                </div>
+              </div>
             </div>
-          </details>`;
+          </article>`;
         } else if (c.toolUse?.name === "browse") {
           return html`<details
-            class="w-100 overflow-auto p-2 rounded mvh-25"
+            class="w-100 overflow-auto p-2 rounded mvh-25 min-w-0"
             classList=${() => ({ "shadow-sm bg-light": visible()[p.index] })}
             open=${() => visible()[p.index]}
           >
@@ -305,46 +361,110 @@ export default function Message(p) {
             <div class="markdown" innerHTML=${() => parse(getToolResult(c.toolUse) || "")} />
           </details>`;
         } else if (c.toolUse?.name === "code") {
-          return html`<details
-            class="w-100 overflow-auto p-2 rounded hover-visible-parent position-relative"
-            classList=${() => ({ "shadow-sm bg-light": visible()[p.index] })}
-            open=${() => visible()[p.index]}
+          return html`<article
+            class="search-accordion code-accordion border rounded-3 my-3 min-w-0"
+            classList=${() => ({
+              "is-open": !!visible()[p.index],
+              "shadow-sm bg-light": !!visible()[p.index],
+            })}
           >
-            <summary
-              class="fw-semibold  px-1 mb-2"
-              onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}
+            <button
+              type="button"
+              class="search-accordion__toggle btn-reset w-100 d-flex flex-row align-items-center justify-content-between px-3 py-2 text-body-secondary rounded-3 min-w-0"
+              aria-expanded=${() => !!visible()[p.index]}
+              aria-controls=${`code-acc-body-${p.index}`}
+              onClick=${() => toggleVisible(p.index)}
             >
-              Writing Code...
-            </summary>
-            <${Show} when=${() => getToolResult(c.toolUse)?.html}>
-              <iframe
-                srcdoc=${() => c.toolUse?.input?.source}
-                height=${() => getToolResult(c.toolUse)?.height + 20 || "auto"}
-                class="border-0 w-100 mvh-100"
-              ></iframe>
-            <//>
-            <div class="text-end end-0 top-0 opacity-50 position-absolute">
-              <button
-                class="btn btn-sm btn-outline-light border-0 hover-visible"
-                onClick=${() =>
-                  downloadText(
-                    "code" +
-                      ({
-                        javascript: ".js",
-                        html: ".html",
-                      }[c.toolUse?.input?.language] || ".txt"),
-                    c.toolUse?.input?.source
-                  )}
-              >
-                💾
-              </button>
+              <div class="d-flex flex-row align-items-center gap-2 flex-grow-1 min-w-0">
+                <span
+                  class="d-inline-flex align-items-center justify-content-center"
+                  style="width:20px;height:20px;"
+                >
+                  <${CodeXml} size="16" class="text-body-tertiary" />
+                </span>
+                <span class="text-truncate fw-normal">Writing code…</span>
+              </div>
+
+              <div class="d-flex flex-row align-items-center gap-2 flex-shrink-0 min-w-0">
+                <small class="text-body-tertiary text-uppercase">
+                  ${() => c.toolUse?.input?.language || "text"}
+                </small>
+
+                <div
+                  class="btn-group btn-group-sm"
+                  role="group"
+                  onClick=${(e) => e.stopPropagation()}
+                >
+                  <${Show}
+                    when=${() =>
+                      typeof c?.toolUse?.input?.source === "string" &&
+                      c?.toolUse?.input?.source.length > 0}
+                  >
+                    <button
+                      type="button"
+                      class="btn btn-unstyled text-body-tertiary"
+                      title="Download"
+                      onClick=${() => {
+                        const lang = c?.toolUse?.input?.language || "";
+                        const ext =
+                          {
+                            javascript: ".js",
+                            typescript: ".ts",
+                            html: ".html",
+                            css: ".css",
+                            json: ".json",
+                          }[lang] || ".txt";
+                        downloadText("code" + ext, c?.toolUse?.input?.source || "");
+                      }}
+                    >
+                      <${Download} size="16" />
+                    </button>
+                  <//>
+                </div>
+
+                <span class="chevron d-inline-flex">
+                  <${ChevronDown} size="20" class="text-body-tertiary" />
+                </span>
+              </div>
+            </button>
+
+            <div
+              id=${`code-acc-body-${p.index}`}
+              class="search-accordion__body"
+              classList=${() => ({ show: !!visible()[p.index] })}
+            >
+              <div class="mask-fade-bottom">
+                <div class="overflow-auto pe-1 search-accordion__scroll">
+                  <div class="p-2">
+                    <${Show}
+                      when=${() =>
+                        c.toolUse?.input?.language === "html" && getToolResult(c.toolUse)?.html}
+                    >
+                      <div class="mb-2">
+                        <iframe
+                          class="border rounded-2 w-100"
+                          style=${() => `height:220px`}
+                          srcdoc=${() => c.toolUse?.input?.source || ""}
+                        ></iframe>
+                      </div>
+                    <//>
+
+                    <pre class="code-block font-monospace mb-0"><code class="d-block">${() =>
+                      c.toolUse?.input?.source || ""}</code></pre>
+
+                    <${Show} when=${() => (getToolResult(c.toolUse)?.logs?.length ?? 0) > 0}>
+                      <div class="mt-3">
+                        <div class="text-body-tertiary mb-1 small">Logs</div>
+                        <pre class="code-block font-monospace mb-0">
+                          ${() => (getToolResult(c.toolUse)?.logs || []).join("\n")}</pre
+                        >
+                      </div>
+                    <//>
+                  </div>
+                </div>
+              </div>
             </div>
-            <${Show} when=${() => getToolResult(c.toolUse)?.logs?.length}>
-              <pre class="small mb-3 text-muted">${() => c.toolUse?.input?.source}</pre>
-              <hr />
-              <pre class="small mb-0">${() => getToolResult(c.toolUse)?.logs?.join?.("\n")}</pre>
-            <//>
-          </details>`;
+          </article>`;
         } else if (c.toolUse?.name === "editor") {
           const filename = () => c.toolUse?.input?.path || "untitled.txt";
           const contents = () =>
@@ -353,64 +473,171 @@ export default function Message(p) {
             c.toolUse?.input?.new_str ||
             "";
 
-          return html`<details
-            class="w-100 overflow-auto p-2 rounded hover-visible-parent position-relative"
-            classList=${() => ({ "shadow-sm": visible()[p.index] })}
-            open=${() => true}
+          return html`<article
+            class="search-accordion editor-accordion border rounded-3 my-3 min-w-0"
+            classList=${() => ({
+              "is-open": !!visible()[p.index],
+              "shadow-sm bg-light": !!visible()[p.index],
+            })}
           >
-            <summary
-              class="fw-semibold px-1 mb-2"
-              onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}
+            <button
+              type="button"
+              class="search-accordion__toggle btn-reset w-100 d-flex flex-row align-items-center justify-content-between px-3 py-2 text-body-secondary rounded-3 min-w-0"
+              aria-expanded=${() => !!visible()[p.index]}
+              aria-controls=${`editor-acc-body-${p.index}`}
+              onClick=${() => toggleVisible(p.index)}
             >
-              ${() =>
-                ({
-                  view: "Viewing",
-                  str_replace: "Updating",
-                  create: "Creating",
-                  insert: "Updating",
-                  undo_edit: "Undoing Edit",
-                })[c.toolUse?.input?.command]}
-              File: ${filename}
-            </summary>
-            <div class="text-end end-0 top-0 opacity-50 position-absolute">
-              <button
-                class="btn btn-sm btn-outline-light border-0 hover-visible"
-                onClick=${() => downloadText(filename(), contents())}
+              <div class="d-flex flex-row align-items-center gap-2 flex-grow-1 min-w-0">
+                <span
+                  class="d-inline-flex align-items-center justify-content-center"
+                  style="width:20px;height:20px;"
+                >
+                  <${File} size="16" class="text-body-tertiary" />
+                </span>
+                <span class="text-truncate fw-normal">
+                  ${() =>
+                    ({
+                      view: "Viewing",
+                      str_replace: "Updating",
+                      create: "Creating",
+                      insert: "Updating",
+                      undo_edit: "Undoing Edit",
+                    })[c.toolUse?.input?.command] || "Editing"}
+                </span>
+                <small class="text-body-tertiary ms-2 text-truncate d-none d-sm-inline">
+                  ${() => `File: ${filename?.() || filename || "untitled"}`}
+                </small>
+              </div>
+              <div
+                class="d-flex flex-row align-items-center gap-2 flex-shrink-0 min-w-0"
+                onClick=${(e) => e.stopPropagation()}
               >
-                💾
-              </button>
-            </div>
-            <div class="text-prewrap">${contents}</div>
+                <div class="btn-group btn-group-sm" role="group">
+                  <${Show}
+                    when=${() => typeof contents?.() === "string" && contents?.().length > 0}
+                  >
+                    <button
+                      type="button"
+                      class="btn btn-unstyled text-body-tertiary"
+                      title="Download"
+                      onClick=${() =>
+                        downloadText(
+                          filename?.() || filename || "file.txt",
+                          contents?.() || contents || ""
+                        )}
+                    >
+                      <${Download} size="16" />
+                    </button>
+                  <//>
+                </div>
+                <span class="chevron d-inline-flex">
+                  <${ChevronDown} size="20" class="text-body-tertiary" />
+                </span>
+              </div>
+            </button>
             <div
-              class="text-prewrap"
-              innerHTML=${() => parse(getToolResult(c.toolUse) || "")?.trim()}
-            />
-          </details>`;
-        } else if (c.reasoningContent || c.toolUse) {
-          return html`<details
-            class="w-100 overflow-auto p-2 rounded mvh-25"
-            classList=${() => ({ "shadow-sm bg-light": visible()[p.index] })}
-            open=${() => visible()[p.index]}
-          >
-            <summary
-              class="fw-semibold px-1 mb-2"
-              onClick=${(e) => (e.preventDefault(), toggleVisible(p.index))}
+              id=${`editor-acc-body-${p.index}`}
+              class="search-accordion__body"
+              classList=${() => ({ show: !!visible()[p.index] })}
             >
-              ${() =>
-                c.reasoningContent || c.toolUse?.name === "think"
-                  ? "Reasoning..."
-                  : c?.toolUse?.name}
-            </summary>
-            <div class="text-prewrap">
-              <${Show} when=${() => c.reasoningContent?.reasoningText?.text}>
-                ${() => c.reasoningContent.reasoningText.text}
-              <//>
-              <${Show} when=${() => c.toolUse}>
-                ${() =>
-                  html`${stringify(c?.toolUse?.input)} ${stringify(getToolResult(c.toolUse))}`}
-              <//>
+              <div class="mask-fade-bottom">
+                <div class="overflow-auto pe-1 search-accordion__scroll">
+                  <div class="p-2">
+                    <div class="mb-3">
+                      <div class="text-body-tertiary mb-1 small">Contents</div>
+                      <pre class="content-block font-monospace mb-0"><code class="d-block">${() =>
+                        contents?.() || contents || ""}</code></pre>
+                    </div>
+                    <${Show} when=${() => !!(getToolResult(c.toolUse) || "").trim()}>
+                      <div class="mt-3">
+                        <div class="text-body-tertiary mb-1 small">Rendered</div>
+                        <div class="content-render border rounded-2 p-2">
+                          <div
+                            class="prose"
+                            innerHTML=${() => (parse(getToolResult(c.toolUse) || "") || "").trim()}
+                          />
+                        </div>
+                      </div>
+                    <//>
+                  </div>
+                </div>
+              </div>
             </div>
-          </details>`;
+          </article>`;
+        } else if (c.reasoningContent || c.toolUse) {
+          console.log(c.toolUse, stringify(getToolResult(c.toolUse)));
+          return html`<article
+            class="search-accordion reasoning-accordion border rounded-3 my-3 min-w-0"
+            classList=${() => ({
+              "is-open": !!visible()[p.index],
+              "shadow-sm bg-light": !!visible()[p.index],
+            })}
+          >
+            <button
+              type="button"
+              class="search-accordion__toggle btn-reset w-100 d-flex flex-row align-items-center justify-content-between px-3 py-2 text-body-secondary rounded-3 min-w-0"
+              aria-expanded=${() => !!visible()[p.index]}
+              aria-controls=${`reason-acc-body-${p.index}`}
+              onClick=${() => toggleVisible(p.index)}
+            >
+              <div class="d-flex flex-row align-items-center gap-2 flex-grow-1 min-w-0">
+                <span
+                  class="d-inline-flex align-items-center justify-content-center"
+                  style="width:20px;height:20px;"
+                >
+                  <${Brain} size="16" class="text-body-tertiary" />
+                </span>
+                <span class="text-truncate fw-normal">
+                  ${() =>
+                    c.reasoningContent || c.toolUse?.name === "think"
+                      ? "Reasoning…"
+                      : c?.toolUse?.name || "Internal"}
+                </span>
+              </div>
+
+              <div class="d-flex flex-row align-items-center gap-2 flex-shrink-0 min-w-0">
+                <small class="text-body-tertiary text-capitalize">
+                  ${() => c?.toolUse?.name || "internal"}
+                </small>
+                <span class="chevron d-inline-flex">
+                  <${ChevronDown} size="20" class="text-body-tertiary" />
+                </span>
+              </div>
+            </button>
+
+            <div
+              id=${`reason-acc-body-${p.index}`}
+              class="search-accordion__body"
+              classList=${() => ({ show: !!visible()[p.index] })}
+            >
+              <div class="mask-fade-bottom">
+                <div class="overflow-auto pe-1 search-accordion__scroll">
+                  <div class="p-2 small">
+                    <${Show} when=${() => c.reasoningContent?.reasoningText?.text}>
+                      <pre class="mb-2 reasoning-pre text-prewrap font-monospace">
+                        ${() => c.reasoningContent.reasoningText.text}
+                      </pre
+                      >
+                    <//>
+
+                    <${Show} when=${() => c.toolUse}>
+                      <div class="mt-2">
+                        <div class="text-body-tertiary mb-1">Input</div>
+                        <pre class="reasoning-pre font-monospace mb-2">
+                          ${() => stringify(c?.toolUse?.input)}</pre
+                        >
+
+                        <div class="text-body-tertiary mb-1">Result</div>
+                        <pre class="reasoning-pre font-monospace mb-0">
+                          ${() => stringify(getToolResult(c.toolUse))}</pre
+                        >
+                      </div>
+                    <//>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>`;
         }
       }}
     <//>`;

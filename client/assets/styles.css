@@ -902,3 +902,108 @@ dialog .close-btn {
     background-color: rgba(255, 255, 255, 1);
   }
 }
+
+.search-accordion {
+  border-width: 0.5px;
+  border-color: var(--bs-border-color);
+}
+.btn-reset {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+.search-accordion__toggle {
+  min-height: 2.625rem;
+  transition:
+    color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.search-accordion__toggle:hover {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+.chevron {
+  transition: transform 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.search-accordion.is-open .chevron {
+  transform: rotate(180deg);
+}
+.search-accordion__body {
+  overflow: hidden;
+  height: 0;
+  opacity: 0;
+  transition:
+    height 0.2s ease,
+    opacity 0.2s ease;
+}
+.search-accordion__body.show {
+  height: auto;
+  opacity: 1;
+}
+.search-accordion__scroll {
+  max-height: 238px;
+  scrollbar-gutter: stable;
+}
+.mask-fade-bottom {
+  -webkit-mask-image: linear-gradient(
+    transparent 0%,
+    #000 0px,
+    #000 calc(100% - 16px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(transparent 0%, #000 0px, #000 calc(100% - 16px), transparent 100%);
+}
+.min-w-0 {
+  min-width: 0 !important;
+}
+.search-accordion,
+.code-accordion,
+.editor-accordion,
+.reasoning-accordion {
+  min-width: 0;
+}
+.reasoning-accordion .reasoning-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+.reasoning-accordion.is-open .reasoning-pre:hover {
+  background: var(--bs-tertiary-bg);
+}
+.code-accordion .code-block {
+  background: var(--bs-tertiary-bg);
+  border: 0.5px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  overflow: auto;
+  max-width: 100%;
+  white-space: pre;
+  tab-size: 2;
+  -moz-tab-size: 2;
+}
+.code-accordion.is-open .code-block:hover {
+  background: color-mix(in oklch, var(--bs-tertiary-bg) 90%, var(--bs-body-bg));
+}
+.editor-accordion .content-block {
+  background: var(--bs-tertiary-bg);
+  border: 0.5px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  overflow: auto;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  tab-size: 2;
+  -moz-tab-size: 2;
+}
+.editor-accordion .content-render {
+  background: var(--bs-body-bg);
+  border: 0.5px solid var(--bs-border-color);
+}
+.editor-accordion .content-render .prose img {
+  max-width: 100%;
+  height: auto;
+}
