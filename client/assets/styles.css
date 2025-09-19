@@ -1016,7 +1016,6 @@ dialog .close-btn {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: var(--bs-body-bg);
   box-shadow:
     inset 0px 11px 8px -10px #ccc,
     var(--bs-box-shadow-sm) !important;
@@ -1120,4 +1119,44 @@ dialog .close-btn {
   position: absolute;
   width: 8px;
   height: 8px;
+}
+
+.btn-unstyled {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.header-icon-btn {
+  --_fg: var(--bs-secondary-color, #6c757d);
+  --_hover-bg: rgba(var(--bs-body-color-rgb, 33, 37, 41), 0.06);
+  --_focus-ring: 0 0 0 0.2rem rgba(var(--bs-primary-rgb, 13, 110, 253), 0.25);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  color: var(--_fg);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease;
+}
+.header-icon-btn:hover {
+  background: var(--_hover-bg);
+  color: var(--bs-body-color, #212529);
+}
+.header-icon-btn:active {
+  transform: translateY(1px);
+}
+.header-icon-btn:focus-visible {
+  outline: 0;
+  box-shadow: var(--_focus-ring);
+}
+.header-icon-btn--danger {
+  --_fg: var(--bs-danger, #dc3545);
+  --_hover-bg: rgba(var(--bs-danger-rgb, 220, 53, 69), 0.08);
+  --_focus-ring: 0 0 0 0.2rem rgba(var(--bs-danger-rgb, 220, 53, 69), 0.25);
 }

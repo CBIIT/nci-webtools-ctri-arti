@@ -231,7 +231,7 @@ export default function Page() {
         </div>
         <div class="col-sm bg-chat p-0 d-flex flex-column min-vh-100 min-w-0">
           <header
-            class="chat-titlebar d-flex align-items-center justify-content-between gap-2 px-3 py-2 bg-white"
+            class="chat-titlebar d-flex align-items-center justify-content-between gap-2 px-3 py-2 bg-chat"
             role="banner"
           >
             <div class="d-flex align-items-center gap-2 min-w-0 text-body-secondary">
@@ -260,14 +260,21 @@ export default function Page() {
 
             <${Show} when=${() => conversation?.id}>
               <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-danger"
-                  onClick=${(e) => handleOnDeleteConversationClick(e, conversation?.id)}
-                  title="Delete conversation"
+                <${Tooltip}
+                  title="Delete chat"
+                  placement="left"
+                  arrow=${true}
+                  class="text-white bg-primary"
                 >
-                  Delete
-                </button>
+                  <button
+                    type="button"
+                    class="btn-unstyled header-icon-btn header-icon-btn--danger"
+                    onClick=${(e) => handleOnDeleteConversationClick(e, conversation?.id)}
+                    title="Delete chat"
+                  >
+                    <${Trash2} size="20" color="currentColor" />
+                  </button>
+                <//>
               </div>
             <//>
           </header>
