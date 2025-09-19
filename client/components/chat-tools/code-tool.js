@@ -1,15 +1,22 @@
-import { Show } from "solid-js";
+import { createMemo, createSignal, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { CodeXml, Download } from "lucide-solid";
+import { CodeXml, Download, Eye, EyeOff } from "lucide-solid";
 
 import { downloadText } from "../../utils/files.js";
 import { getToolResult } from "../../utils/tools.js";
+import Tooltip from "../tooltip.js";
 
 import ToolHeader from "./tool-header.js";
 
 export default function CodeTool(props) {
   const lang = props.message?.toolUse?.input?.language || "";
+  const source = props.message?.toolUse?.input?.source || "";
+  const results = () => getToolResult(props.message.toolUse, props.messages) || {};
+
+  const hasPreview = createMemo(() => lang === "html" && !!results()?.html && source.length > 0);
+  const [showPreview, setShowPreview] = createSignal(hasPreview());
+
   const ext =
     {
       javascript: ".js",
@@ -19,6 +26,12 @@ export default function CodeTool(props) {
       json: ".json",
     }[lang] || ".txt";
 
+  function togglePreview(e) {
+    e?.stopPropagation();
+    if (!hasPreview()) return;
+    setShowPreview((v) => !v);
+  }
+
   return html`<article
     class="search-accordion code-accordion border rounded-3 my-3 min-w-0"
     classList=${() => ({ "is-open": props.isOpen(), "shadow-sm bg-light": props.isOpen() })}
@@ -27,18 +40,50 @@ export default function CodeTool(props) {
       icon: html`<${CodeXml} size="16" class="text-body-tertiary" />`,
       title: "Writing code…",
       right: html`
-        <small class="text-body-tertiary text-uppercase">${props.message?.input?.language}</small>
-        <div class="btn-group btn-group-sm" role="group">
-          ${props.message?.input?.source.length > 0
+        <div class="d-inline-flex align-items-center gap-2" onClick=${(e) => e.stopPropagation()}>
+          <small class="text-body-tertiary text-uppercase me-1">${lang || "text"}</small>
+
+          ${hasPreview()
             ? html`
-                <button
-                  type="button"
-                  class="btn btn-unstyled text-body-tertiary"
-                  title="Download"
-                  onClick=${() => downloadText("code" + ext, props.message?.toolUse?.input?.source)}
+                <${Tooltip}
+                  title=${() => (showPreview() ? "Show code" : "Show preview")}
+                  placement="top"
+                  arrow=${true}
+                  class="text-white bg-primary"
                 >
-                  <${Download} size="16" />
-                </button>
+                  <button
+                    type="button"
+                    class="btn btn-unstyled text-body-tertiary btn-sm"
+                    aria-pressed=${showPreview()}
+                    title=${() => (showPreview() ? "Show code" : "Show preview")}
+                    onClick=${togglePreview}
+                  >
+                    ${() =>
+                      showPreview() ? html`<${Eye} size="16" />` : html`<${EyeOff} size="16" />`}
+                  </button>
+                <//>
+              `
+            : ""}
+          ${source.length > 0
+            ? html`
+                <${Tooltip}
+                  title="Download code"
+                  placement="top"
+                  arrow=${true}
+                  class="text-white bg-primary"
+                >
+                  <button
+                    type="button"
+                    class="btn btn-unstyled text-body-tertiary btn-sm ms-1"
+                    title="Download"
+                    onClick=${(e) => {
+                      e.stopPropagation();
+                      downloadText("code" + ext, source);
+                    }}
+                  >
+                    <${Download} size="16" />
+                  </button>
+                <//>
               `
             : ""}
         </div>
@@ -53,41 +98,30 @@ export default function CodeTool(props) {
       class="search-accordion__body"
       classList=${() => ({ show: props.isOpen() })}
     >
-      <div class="mask-fade-bottom">
-        <div class="overflow-auto pe-1 search-accordion__scroll">
-          <div class="p-2">
-            <${Show}
-              when=${() =>
-                props.message.toolUse?.input?.language === "html" &&
-                getToolResult(props.message.toolUse, props.messages)?.html}
-            >
-              <div class="mb-2">
-                <iframe
-                  class="border rounded-2 w-100"
-                  style=${() => `height:220px`}
-                  srcdoc=${() => props.message.toolUse?.input?.source || ""}
-                ></iframe>
-              </div>
-            <//>
-
-            <pre class="code-block font-monospace mb-0"><code class="d-block">${() =>
-              props.message.toolUse?.input?.source || ""}</code></pre>
-
-            <${Show}
-              when=${() =>
-                (getToolResult(props.message.toolUse, props.messages)?.logs?.length ?? 0) > 0}
-            >
-              <div class="mt-3">
-                <div class="text-body-tertiary mb-1 small">Logs</div>
-                <pre class="code-block font-monospace mb-0">
-                  ${() =>
-                    (getToolResult(props.message.toolUse, props.messages)?.logs || []).join("\n")}
-                </pre
-                >
-              </div>
-            <//>
+      <div class="p-2">
+        <${Show} when=${() => hasPreview() && showPreview()}>
+          <div class="mb-2">
+            <div class="ratio ratio-16x9 border rounded-2">
+              <iframe title="Preview" class="border-0 w-100 h-100" srcdoc=${() => source}></iframe>
+            </div>
           </div>
-        </div>
+        <//>
+
+        <${Show} when=${() => !showPreview() || !hasPreview()}>
+          <pre class="code-block font-monospace mb-0">
+            <code class="d-block">${() => source}</code>
+          </pre>
+
+          <${Show} when=${() => (results()?.logs?.length ?? 0) > 0}>
+            <div class="mt-3">
+              <div class="text-body-tertiary mb-1 small">Logs</div>
+              <pre class="code-block font-monospace mb-0">
+                ${() => (results()?.logs || []).join("\n")}
+              </pre
+              >
+            </div>
+          <//>
+        <//>
       </div>
     </div>
   </article>`;
