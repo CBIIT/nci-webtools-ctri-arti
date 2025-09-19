@@ -1009,6 +1009,9 @@ dialog .close-btn {
   height: auto;
 }
 .chat-titlebar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   background: var(--bs-body-bg);
   box-shadow: inset 0px 11px 8px -10px #ccc;
 }
