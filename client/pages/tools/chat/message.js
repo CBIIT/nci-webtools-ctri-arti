@@ -136,6 +136,7 @@ export default function Message(p) {
       ${(c, i) => {
         if (c.text !== undefined) {
           return TextContent({
+            role: p?.message?.role,
             message: c,
             messages: p?.messages,
             isLast: p?.index === p?.messages?.length - 1,
@@ -160,6 +161,7 @@ export default function Message(p) {
         const bodyId = `${type}-acc-body-${safeId(base)}`;
 
         return Component({
+          role: p?.message?.role,
           message: c,
           messages: p?.messages,
           isOpen,

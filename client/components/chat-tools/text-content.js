@@ -15,6 +15,7 @@ import Tooltip from "../tooltip.js";
  * used inside the chat message renderer.
  *
  * @param {Object} props - Component props
+ * @param {string} props.role - Role of the message sender (user or assistant)
  * @param {Object} props.message - Message object (should contain role and text)
  * @param {string} [props.text] - Optional text to render instead of message.text
  * @param {boolean} [props.isLast=false] - True when this message is the last model response (controls feedback visibility)
@@ -28,19 +29,19 @@ export default function TextContent(props) {
   return html`
     <div
       class="position-relative hover-visible-parent min-w-0"
-      classList=${{ "text-end": props.message.role === "user" }}
+      classList=${{ "text-end": props.role === "user" }}
     >
       <div
         class="p-2 markdown min-w-0"
         classList=${{
-          "d-inline-block p-3 bg-secondary-subtle rounded my-2": props.message.role === "user",
+          "d-inline-block p-3 bg-secondary-subtle rounded my-2": props.role === "user",
         }}
         innerHTML=${() =>
           marked.parse(props.message?.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, "")}
       ></div>
 
       <!-- Show feedback only for last message from model -->
-      <${Show} when=${() => props.message?.role !== "user" && props.isLast}>
+      <${Show} when=${() => props.role !== "user" && props.isLast}>
         <div>
           <${Tooltip}
             title="Mark as helpful"

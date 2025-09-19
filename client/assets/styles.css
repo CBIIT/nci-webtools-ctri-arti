@@ -1085,3 +1085,8 @@ dialog .close-btn {
 .markdown a {
   color: #0b6ed7 !important;
 }
+
+.alert-container {
+  z-index: 99999 !important;
+  top: 60px;
+}
