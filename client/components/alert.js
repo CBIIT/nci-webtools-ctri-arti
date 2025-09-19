@@ -63,7 +63,7 @@ export default function Alert(props) {
 export function AlertContainer(props) {
   return html`
     <${Show} when=${() => props.alerts && props.alerts.length > 0}>
-      <div class="alert-container w-100 position-sticky top-0 py-3 z-2">
+      <div class="alert-container w-100 position-sticky pb-3">
         <${For} each=${() => props.alerts || []}>
           ${(alert) => html`
             <${Alert}
