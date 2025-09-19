@@ -1,0 +1,91 @@
+import { Show } from "solid-js";
+import html from "solid-js/html";
+
+import { Download, File } from "lucide-solid";
+import { parse } from "marked";
+
+import { downloadText } from "../../utils/files.js";
+import { getToolResult } from "../../utils/tools.js";
+
+import ToolHeader from "./tool-header.js";
+
+export default function EditorTool(props) {
+  const getFilename = () => props.message?.toolUse?.input?.path || "untitled.txt";
+  const contents = () =>
+    localStorage.getItem(`file:${getFilename()}`) ||
+    props.message?.toolUse?.input?.file_text ||
+    props.message?.toolUse?.input?.new_str ||
+    "";
+  const title =
+    {
+      view: "Viewing",
+      str_replace: "Updating",
+      create: "Creating",
+      insert: "Updating",
+      undo_edit: "Undoing Edit",
+    }[props.message?.toolUse?.input?.command] || "Editing";
+
+  return html`<article
+    class="search-accordion editor-accordion border rounded-3 my-3 min-w-0"
+    classList=${() => ({ "is-open": props.isOpen(), "shadow-sm bg-light": props.isOpen() })}
+  >
+    ${ToolHeader({
+      icon: html`<${File} size="16" class="text-body-tertiary" />`,
+      title: html` ${title}
+        <small class="text-body-tertiary ms-2 text-truncate d-none d-sm-inline">
+          File: ${getFilename() || "untitled"}
+        </small>`,
+      right: html`
+        <div class="btn-group btn-group-sm" role="group">
+          <${Show} when=${() => typeof contents() === "string" && contents().length > 0}>
+            <button
+              type="button"
+              class="btn btn-unstyled text-body-tertiary"
+              title="Download"
+              onClick=${() => downloadText(getFilename() || "file.txt", contents() || "")}
+            >
+              <${Download} size="16" />
+            </button>
+          <//>
+        </div>
+      `,
+      isOpen: props.isOpen,
+      onToggle: props.onToggle,
+      bodyId: props.bodyId,
+    })}
+
+    <div
+      id=${props.bodyId}
+      class="search-accordion__body"
+      classList=${() => ({ show: props.isOpen() })}
+    >
+      <div class="mask-fade-bottom">
+        <div class="overflow-auto pe-1 search-accordion__scroll">
+          <div class="p-2">
+            <div class="mb-3">
+              <div class="text-body-tertiary mb-1 small">Contents</div>
+              <pre class="content-block font-monospace mb-0"><code class="d-block">${() =>
+                contents?.() || contents || ""}</code></pre>
+            </div>
+            <${Show}
+              when=${() => !!(getToolResult(props.message?.toolUse, props.messages) || "").trim()}
+            >
+              <div class="mt-3">
+                <div class="text-body-tertiary mb-1 small">Rendered</div>
+                <div class="content-render border rounded-2 p-2">
+                  <div
+                    class="prose"
+                    innerHTML=${() =>
+                      (
+                        parse(getToolResult(props.message?.toolUse, props.messages) || "") || ""
+                      ).trim()}
+                  />
+                </div>
+              </div>
+            <//>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>`;
+}
