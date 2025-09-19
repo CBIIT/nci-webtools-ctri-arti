@@ -1,7 +1,7 @@
 import { createSignal, For, onCleanup } from "solid-js";
 import html from "solid-js/html";
 
-import { ThumbsDown, ThumbsUp, X } from "lucide-solid";
+import { X } from "lucide-solid";
 
 import BrowseTool from "../../../components/chat-tools/browse-tool.js";
 import CodeTool from "../../../components/chat-tools/code-tool.js";
@@ -10,10 +10,19 @@ import ReasoningTool from "../../../components/chat-tools/reasoning-tool.js";
 import SearchTool from "../../../components/chat-tools/search-tool.js";
 import TextContent from "../../../components/chat-tools/text-content.js";
 
+const TOOL_COMPONENTS = {
+  search: SearchTool,
+  browse: BrowseTool,
+  code: CodeTool,
+  editor: EditorTool,
+  think: ReasoningTool,
+};
+
 export default function Message(p) {
   const [dialog, setDialog] = createSignal(null);
   const [visible, setVisible] = createSignal({});
   const [copied, setCopied] = createSignal(false);
+  const [feedback, setFeedback] = createSignal(null);
   const toggleVisible = (key) => setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const getToolResult = (toolUse) =>
@@ -27,8 +36,8 @@ export default function Message(p) {
 
   function openFeedback(feedback, comment) {
     const d = dialog();
+    setFeedback(feedback ? "Positive Feedback" : "Negative Feedback");
     const f = d.querySelector("form");
-    f.feedback.value = feedback ? "Positive Feedback" : "Negative Feedback";
     f.comment.value = comment || "";
     d.showModal();
   }
@@ -36,15 +45,19 @@ export default function Message(p) {
   async function submitFeedback(e) {
     e.preventDefault();
     e.stopPropagation();
+
     await dialog()?.close();
-    const feedback = e.target.feedback.value;
+    if (!feedback) {
+      return;
+    }
+
     const comment = e.target.comment.value;
     await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         feedback: [
-          feedback,
+          feedback(),
           "\ncomment:",
           comment,
           "\noriginal message:",
@@ -54,7 +67,9 @@ export default function Message(p) {
           .join("\n"),
         context: p.messages,
       }),
-    }).then((r) => r.json());
+    })
+      .then((r) => r.json())
+      .finally(() => setFeedback(null));
   }
 
   async function handleCopy(text) {
@@ -96,45 +111,6 @@ export default function Message(p) {
         </div>
 
         <div class="pb-3 px-4 d-grid gap-3">
-          <div>
-            <span id=${`thumbs-label-${p.index}`} class="visually-hidden">Feedback sentiment</span>
-            <div class="d-flex gap-2" role="group" aria-labelledby=${`thumbs-label-${p.index}`}>
-              <input
-                class="btn-check"
-                type="radio"
-                name="feedback"
-                id=${`feedback-positive-${p.index}`}
-                value="Positive Feedback"
-                autocomplete="off"
-              />
-              <label
-                class="btn btn-light btn-outline-success d-inline-flex align-items-center gap-2 rounded-2 p-2"
-                for=${`feedback-positive-${p.index}`}
-                title="Thumbs up"
-              >
-                <${ThumbsUp} size="18" />
-                <span>Positive</span>
-              </label>
-
-              <input
-                class="btn-check"
-                type="radio"
-                name="feedback"
-                id=${`feedback-negative-${p.index}`}
-                value="Negative Feedback"
-                autocomplete="off"
-              />
-              <label
-                class="btn btn-outline-danger d-inline-flex align-items-center gap-2 rounded-2 p-2"
-                for=${`feedback-negative-${p.index}`}
-                title="Thumbs down"
-              >
-                <${ThumbsDown} size="18" />
-                <span>Negative</span>
-              </label>
-            </div>
-          </div>
-
           <div class="mt-2">
             <textarea
               id=${`feedback-comment-${p.index}`}
@@ -157,12 +133,6 @@ export default function Message(p) {
 
     <${For} each=${p.message?.content}>
       ${(c, i) => {
-        const base = c?.toolUse?.toolUseId || `${p.index}-${i()}`;
-        const type = typeOfContent(c);
-        const key = `${type}:${base}`;
-        const isOpen = () => !!visible()[key];
-        const bodyId = `${type}-acc-body-${safeId(base)}`;
-
         if (c.text !== undefined) {
           return TextContent({
             message: c,
@@ -172,48 +142,30 @@ export default function Message(p) {
             onCopy: handleCopy,
             onFeedback: (result) => openFeedback(result),
           });
-        } else if (c.toolUse?.name === "search") {
-          return SearchTool({
-            message: c,
-            messages: p?.messages,
-            isOpen,
-            bodyId,
-            results: getSearchResults(getToolResult(c.toolUse, p?.messages)),
-            onToggle: () => toggleVisible(key),
-          });
-        } else if (c.toolUse?.name === "browse") {
-          return BrowseTool({
-            message: c,
-            messages: p?.messages,
-            isOpen,
-            bodyId,
-            onToggle: () => toggleVisible(key),
-          });
-        } else if (c.toolUse?.name === "code") {
-          return CodeTool({
-            message: c,
-            messages: p?.messages,
-            isOpen,
-            bodyId,
-            onToggle: () => toggleVisible(key),
-          });
-        } else if (c.toolUse?.name === "editor") {
-          return EditorTool({
-            message: c,
-            messages: p?.messages,
-            isOpen,
-            bodyId,
-            onToggle: () => toggleVisible(key),
-          });
-        } else if (c.reasoningContent || c.toolUse) {
-          return ReasoningTool({
-            message: c,
-            messages: p?.messages,
-            isOpen,
-            bodyId,
-            onToggle: () => toggleVisible(key),
-          });
         }
+
+        const name = c?.toolUse?.name || (c?.reasoningContent ? "think" : "unknown");
+        const Component =
+          TOOL_COMPONENTS[name] || (c?.reasoningContent ? ReasoningTool : undefined);
+
+        if (!Component) {
+          return null;
+        }
+
+        const base = c?.toolUse?.toolUseId || `${p.index}-${i()}`;
+        const type = typeOfContent(c);
+        const key = `${type}:${base}`;
+        const isOpen = () => !!visible()[key];
+        const bodyId = `${type}-acc-body-${safeId(base)}`;
+
+        return Component({
+          message: c,
+          messages: p?.messages,
+          isOpen,
+          bodyId,
+          results: getSearchResults(getToolResult(c.toolUse, p?.messages)),
+          onToggle: () => toggleVisible(key),
+        });
       }}
     <//>`;
 }
