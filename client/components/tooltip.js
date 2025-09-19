@@ -2,23 +2,34 @@ import { createEffect, createMemo, createSignal, mergeProps, onCleanup, onMount 
 import html from "solid-js/html";
 import { Portal } from "solid-js/web";
 
+function getFloatRoot() {
+  const ID = "ui-floats-root";
+  let el = document.getElementById(ID);
+  if (!el) {
+    el = document.createElement("div");
+    el.id = ID;
+    el.className = "ui-floats";
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
 /**
  * Tooltip component
  *
- * @param {object} props - Component properties
- * @param {string|Node} props.title - Text or DOM Node to render inside the tooltip.
- * @param {"top" | "bottom" | "left" | "right"} [props.placement='top'] - Preferred placement of the tooltip.
- * @param {boolean} [props.arrow=false] - Whether to render an arrow pointing to the trigger.
- * @param {boolean} [props.disableHoverListener=false] - If true, disables hover/focus show/hide behavior.
- * @param {boolean} props.open - Controlled open state; when provided the component is controlled.
- * @param {number} [props.enterDelay=100] - Milliseconds to wait before showing on hover/focus.
- * @param {number} [props.leaveDelay=100] - Milliseconds to wait before hiding on blur/mouseleave.
- * @param {number} props.offset - Pixel offset between trigger and tooltip; defaults depend on `arrow`.
- * @param {string} props.wrapperClass - Additional class name(s) applied to the trigger wrapper.
- * @param {string} props.id - ID for the tooltip element (used for aria-describedby).
- * @param {(e: Event) => void} props.onClick - Optional click handler forwarded from the trigger wrapper.
- * @param {any} props.children - The trigger element(s) wrapped by the tooltip.
- * @returns {any} Rendered tooltip output (framework-specific)
+ * @param {object} props
+ * @param {string|Node|Function} props.title
+ * @param {"top" | "bottom" | "left" | "right"} [props.placement='top']
+ * @param {boolean} [props.arrow=false]
+ * @param {boolean} [props.disableHoverListener=false]
+ * @param {boolean} [props.open]
+ * @param {number} [props.enterDelay=100]
+ * @param {number} [props.leaveDelay=100]
+ * @param {number} [props.offset]
+ * @param {string} [props.wrapperClass]
+ * @param {string} [props.id]
+ * @param {(e: Event) => void} [props.onClick]
+ * @param {any} props.children
  */
 export default function Tooltip(rawProps) {
   const props = mergeProps(
@@ -34,169 +45,52 @@ export default function Tooltip(rawProps) {
     },
     rawProps
   );
+
   const [internalOpen, setInternalOpen] = createSignal(false);
   const isControlled = () => typeof props.open === "boolean";
-  /**
-   * Reference to the trigger element
-   */
-  let triggerEl = null;
-  /**
-   * Reference to the tooltip element
-   */
-  let tooltipEl = null;
-
-  /**
-   * Whether the tooltip is currently open
-   */
   const isOpen = createMemo(() => (isControlled() ? !!props.open : internalOpen()));
 
-  /**
-   * Effective offset between trigger and tooltip
-   */
+  let triggerEl = null;
+  let tooltipEl = null;
+  let enterTimer, leaveTimer;
+
+  let popper = null;
+  let resizeObserver = null;
+
   const effectiveOffset = createMemo(() =>
     typeof props.offset === "number" ? props.offset : props.arrow ? 8 : 6
   );
 
-  /**
-   * Memoized value for the tooltip title
-   */
   const titleValue = createMemo(() =>
     typeof props.title === "function" ? props.title() : props.title
   );
 
-  /**
-   * Unique ID for the tooltip element
-   */
   const tooltipId = props.id || `tt-${crypto.randomUUID()}`;
 
-  /**
-   * Timer for enter delay
-   */
-  let enterTimer = undefined;
-  /**
-   * Timer for leave delay
-   */
-  let leaveTimer = undefined;
-
-  /**
-   * Popper instance
-   */
-  let popper = null;
-
-  /**
-   * Resize observer to detect content size changes and trigger popper update
-   */
-  let resizeObserver = null;
-
-  /**
-   * Show the tooltip when the trigger is hovered or focused
-   *
-   * @returns {void}
-   */
   const show = () => {
-    if (isControlled()) {
-      return;
-    }
-
+    if (isControlled()) return;
     clearTimeout(leaveTimer);
-    enterTimer = window.setTimeout(() => {
-      setInternalOpen(true);
-    }, props.enterDelay);
+    enterTimer = window.setTimeout(() => setInternalOpen(true), props.enterDelay);
   };
-
-  /**
-   * Hide the tooltip when the trigger is no longer hovered or focused
-   *
-   * @returns {void}
-   */
   const hide = () => {
-    if (isControlled()) {
-      return;
-    }
-
+    if (isControlled()) return;
     clearTimeout(enterTimer);
-    leaveTimer = window.setTimeout(() => {
-      setInternalOpen(false);
-    }, props.leaveDelay);
+    leaveTimer = window.setTimeout(() => setInternalOpen(false), props.leaveDelay);
   };
 
-  /**
-   * Show the tooltip when the trigger is hovered or focused
-   *
-   * @returns {void}
-   */
-  const onMouseEnter = () => {
-    if (!props.disableHoverListener) {
-      show();
-    }
-  };
-
-  /**
-   * Hide the tooltip when the trigger is no longer hovered or focused
-   *
-   * @returns {void}
-   */
-  const onMouseLeave = () => {
-    if (!props.disableHoverListener) {
-      hide();
-    }
-  };
-
-  /**
-   * Show the tooltip when the trigger is focused
-   *
-   * @returns {void}
-   */
-  const onFocus = () => {
-    if (!props.disableHoverListener) {
-      show();
-    }
-  };
-
-  /**
-   * Hide the tooltip when the trigger is blurred
-   *
-   * @returns {void}
-   */
-  const onBlur = () => {
-    if (!props.disableHoverListener) {
-      hide();
-    }
-  };
-
-  /**
-   * Show the tooltip when the trigger is clicked
-   *
-   * @param {*} e - The click event
-   */
-  const onClick = (e) => {
-    props.onClick?.(e);
-  };
-
-  /**
-   * Hide the tooltip when the trigger is blurred
-   * @param {*} e - The blur event
-   */
+  const onMouseEnter = () => !props.disableHoverListener && show();
+  const onMouseLeave = () => !props.disableHoverListener && hide();
+  const onFocus = () => !props.disableHoverListener && show();
+  const onBlur = () => !props.disableHoverListener && hide();
+  const onClick = (e) => props.onClick?.(e);
   const onKeyDown = (e) => {
-    if (e.key === "Escape" && !isControlled()) {
-      setInternalOpen(false);
-    }
+    if (e.key === "Escape" && !isControlled()) setInternalOpen(false);
   };
 
-  /**
-   * Update Popper modifiers
-   *
-   * @param {Array} mods - Array of Popper modifiers
-   * @returns {Array} - Updated array of Popper modifiers
-   */
   const updateModifiers = (mods = []) =>
     (mods || []).map((m) => {
-      if (m.name === "offset") {
-        return { ...m, options: { offset: [0, effectiveOffset()] } };
-      }
-      if (m.name === "arrow") {
-        return { ...m, enabled: !!props.arrow };
-      }
+      if (m.name === "offset") return { ...m, options: { offset: [0, effectiveOffset()] } };
+      if (m.name === "arrow") return { ...m, enabled: !!props.arrow };
       return m;
     });
 
@@ -204,17 +98,19 @@ export default function Tooltip(rawProps) {
     const PopperCore = window.Popper;
     if (!PopperCore?.createPopper) {
       console.warn(
-        "[Tooltip] Popper not found. Ensure you include Bootstrap bundle (with Popper) or @popperjs/core."
+        "[Tooltip] Popper not found. Include Bootstrap bundle (with Popper) or @popperjs/core."
       );
       return;
     }
 
     popper = PopperCore.createPopper(triggerEl, tooltipEl, {
       placement: props.placement,
+      /** KEY CHANGE: prevent scroll-height inflation */
+      strategy: "fixed",
       modifiers: [
         { name: "offset", options: { offset: [0, effectiveOffset()] } },
         { name: "flip", options: { fallbackPlacements: ["top", "right", "bottom", "left"] } },
-        { name: "preventOverflow", options: { padding: 8 } },
+        { name: "preventOverflow", options: { padding: 8, boundary: "viewport" } },
         { name: "arrow", enabled: !!props.arrow },
         { name: "eventListeners", enabled: false },
       ],
@@ -222,41 +118,30 @@ export default function Tooltip(rawProps) {
 
     if (typeof ResizeObserver !== "undefined") {
       resizeObserver = new ResizeObserver(() => popper?.update());
-      if (tooltipEl) {
-        resizeObserver.observe(tooltipEl);
-      }
+      tooltipEl && resizeObserver.observe(tooltipEl);
     }
   });
 
   createEffect(() => {
     titleValue();
-
     if (popper && isOpen()) {
       popper.update();
     }
   });
 
   createEffect(() => {
-    if (!popper) {
-      return;
-    }
-
+    if (!popper) return;
     popper.setOptions((opts) => ({
       ...opts,
       placement: props.placement,
+      strategy: "fixed",
       modifiers: updateModifiers(opts.modifiers),
     }));
-
-    if (isOpen()) {
-      popper.update();
-    }
+    if (isOpen()) popper.update();
   });
 
   createEffect(() => {
-    if (!popper) {
-      return;
-    }
-
+    if (!popper) return;
     const open = isOpen();
     popper.setOptions((opts) => ({
       ...opts,
@@ -265,10 +150,7 @@ export default function Tooltip(rawProps) {
         { name: "eventListeners", enabled: open },
       ],
     }));
-
-    if (open) {
-      popper.update();
-    }
+    if (open) popper.update();
   });
 
   onCleanup(() => {
@@ -294,7 +176,7 @@ export default function Tooltip(rawProps) {
     >
       ${props.children}
 
-      <${Portal} mount=${document.body}>
+      <${Portal} mount=${getFloatRoot()}>
         <div
           ref=${(el) => (tooltipEl = el)}
           id=${tooltipId}
