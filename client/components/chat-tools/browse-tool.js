@@ -27,7 +27,7 @@ export default function BrowseTool(props) {
       icon: html`<${Globe} size="16" class="text-muted-contrast" />`,
       title: () =>
         (props.message?.toolUse?.input?.url || []).map((u) => new URL(u).hostname).join(", ") ||
-        "—",
+        "Browsing...",
       right: () =>
         html`<small class="text-muted-contrast">
           ${props.message?.toolUse?.input?.url?.length || 0} sources
@@ -42,16 +42,19 @@ export default function BrowseTool(props) {
       class="search-accordion__body"
       classList=${() => ({ show: props.isOpen() })}
     >
-      <div class="mask-fade-bottom">
-        <div class="overflow-auto pe-1 search-accordion__scroll">
-          <div class="p-2">
-            <div class="text-muted-contrast mb-2 small fw-semibold">
-              ${() => props.message?.toolUse?.input?.topic || ""}
+      <div class="accordion-inner">
+        <div class="mask-fade-bottom">
+          <div class="overflow-auto pe-1 search-accordion__scroll">
+            <div class="p-2">
+              <div class="text-muted-contrast mb-2 small fw-semibold">
+                ${() => props.message?.toolUse?.input?.topic || ""}
+              </div>
+              <div
+                class="markdown"
+                innerHTML=${() =>
+                  parse(getToolResult(props.message?.toolUse, props.messages) || "")}
+              />
             </div>
-            <div
-              class="markdown"
-              innerHTML=${() => parse(getToolResult(props.message?.toolUse, props.messages) || "")}
-            />
           </div>
         </div>
       </div>

@@ -933,16 +933,20 @@ dialog .close-btn {
   transform: rotate(180deg);
 }
 .search-accordion__body {
-  overflow: hidden;
-  height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   opacity: 0;
   transition:
+    grid-template-rows 0.2s ease,
     height 0.2s ease,
     opacity 0.2s ease;
 }
 .search-accordion__body.show {
-  height: auto;
+  grid-template-rows: 1fr;
   opacity: 1;
+}
+.search-accordion__body > .accordion-inner {
+  overflow: hidden;
 }
 .search-accordion__scroll {
   max-height: 238px;
@@ -1089,4 +1093,31 @@ dialog .close-btn {
 .alert-container {
   z-index: 99999 !important;
   top: 60px;
+}
+
+.ui-floats {
+  position: fixed;
+  inset: 0 0 auto 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: var(--bs-tooltip-zindex, 1080);
+}
+.ui-floats .s-tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: auto;
+}
+.ui-floats .s-tooltip[data-show] {
+  visibility: visible;
+  opacity: 1;
+}
+.ui-floats .s-tooltip .s-tooltip-arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
 }

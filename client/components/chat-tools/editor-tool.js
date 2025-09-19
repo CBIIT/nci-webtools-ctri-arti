@@ -70,23 +70,25 @@ export default function EditorTool(props) {
       class="search-accordion__body"
       classList=${() => ({ show: props.isOpen() })}
     >
-      <div class="mask-fade-bottom">
-        <div class="overflow-auto pe-1 search-accordion__scroll">
-          <div class="p-2">
-            <div class="mb-3">
-              <div class="text-muted-contrast mb-1 small">Contents</div>
-              <pre
-                class="content-block font-monospace mb-0"
-              ><code class="d-block">${contents}</code></pre>
-            </div>
-            <${Show} when=${() => !!rendered()}>
-              <div class="mt-3">
-                <div class="text-muted-contrast mb-1 small">Rendered</div>
-                <div class="content-render border rounded-2 p-2">
-                  <div class="prose" innerHTML=${rendered} />
-                </div>
+      <div class="accordion-inner">
+        <div class="mask-fade-bottom">
+          <div class="overflow-auto pe-1 search-accordion__scroll">
+            <div class="p-2">
+              <div class="mb-3">
+                <div class="text-muted-contrast mb-1 small">Contents</div>
+                <pre
+                  class="content-block font-monospace mb-0"
+                ><code class="d-block">${contents}</code></pre>
               </div>
-            <//>
+              <${Show} when=${() => !!rendered()}>
+                <div class="mt-3">
+                  <div class="text-muted-contrast mb-1 small">Rendered</div>
+                  <div class="content-render border rounded-2 p-2">
+                    <div class="prose" innerHTML=${rendered} />
+                  </div>
+                </div>
+              <//>
+            </div>
           </div>
         </div>
       </div>

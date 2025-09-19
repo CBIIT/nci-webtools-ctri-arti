@@ -104,34 +104,35 @@ export default function CodeTool(props) {
       class="search-accordion__body"
       classList=${() => ({ show: props.isOpen() })}
     >
-      <div class="p-2">
-        <${Show} when=${() => hasPreview() && showPreview()}>
-          <div class="mb-2">
-            <div class="ratio ratio-16x9 border rounded-2">
-              <iframe
-                title="Preview"
-                class="border-0 w-100 h-100"
-                srcdoc=${() => source()}
-              ></iframe>
+      <div class="accordion-inner">
+        <div class="p-2">
+          <${Show} when=${() => hasPreview() && showPreview()}>
+            <div class="mb-2">
+              <div class="ratio ratio-16x9 border rounded-2">
+                <iframe
+                  title="Preview"
+                  class="border-0 w-100 h-100"
+                  srcdoc=${() => source()}
+                ></iframe>
+              </div>
             </div>
-          </div>
-        <//>
+          <//>
 
-        <${Show} when=${() => !showPreview() || !hasPreview()}>
-          <pre class="code-block font-monospace mb-0">
+          <${Show} when=${() => !showPreview() || !hasPreview()}>
+            <pre class="code-block font-monospace mb-0">
             <code class="d-block">${() => source()}</code>
           </pre>
 
-          <${Show} when=${() => (results()?.logs?.length ?? 0) > 0}>
-            <div class="mt-3">
-              <div class="text-muted-contrast mb-1 small">Logs</div>
-              <pre class="code-block font-monospace mb-0">
+            <${Show} when=${() => (results()?.logs?.length ?? 0) > 0}>
+              <div class="mt-3">
+                <div class="text-muted-contrast mb-1 small">Logs</div>
+                <pre class="code-block font-monospace mb-0">
                 ${() => (results()?.logs || []).join("\n")}
-              </pre
-              >
-            </div>
+              </pre>
+              </div>
+            <//>
           <//>
-        <//>
+        </div>
       </div>
     </div>
   </article>`;
