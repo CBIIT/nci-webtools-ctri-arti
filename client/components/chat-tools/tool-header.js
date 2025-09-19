@@ -16,6 +16,7 @@ import { ChevronDown } from "lucide-solid";
  */
 export default function ToolHeader(props) {
   const isOpen = props.isOpen || (() => false);
+  const render = (v) => (typeof v === "function" ? v() : v);
 
   return html`
     <div
@@ -39,9 +40,9 @@ export default function ToolHeader(props) {
           class="d-inline-flex align-items-center justify-content-center"
           style="width:20px;height:20px;"
         >
-          ${props.icon}
+          ${() => render(props.icon)}
         </span>
-        <span class="text-truncate fw-normal">${props.title}</span>
+        <span class="text-truncate fw-normal">${() => render(props.title)}</span>
       </div>
 
       <div
@@ -49,7 +50,7 @@ export default function ToolHeader(props) {
         onClick=${(e) => e.stopPropagation()}
         onMouseDown=${(e) => e.stopPropagation()}
       >
-        ${props.right}
+        ${() => render(props.right)}
       </div>
 
       <button

@@ -10,21 +10,23 @@ import Tooltip from "../tooltip.js";
 import ToolHeader from "./tool-header.js";
 
 export default function CodeTool(props) {
-  const lang = props.message?.toolUse?.input?.language || "";
-  const source = props.message?.toolUse?.input?.source || "";
+  const lang = () => props.message?.toolUse?.input?.language || "";
+  const source = () => props.message?.toolUse?.input?.source || "";
   const results = () => getToolResult(props.message.toolUse, props.messages) || {};
 
-  const hasPreview = createMemo(() => lang === "html" && !!results()?.html && source.length > 0);
+  const hasPreview = createMemo(
+    () => lang() === "html" && !!results()?.html && source().length > 0
+  );
   const [showPreview, setShowPreview] = createSignal(hasPreview());
 
-  const ext =
-    {
+  const ext = () =>
+    ({
       javascript: ".js",
       typescript: ".ts",
       html: ".html",
       css: ".css",
       json: ".json",
-    }[lang] || ".txt";
+    })[lang()] || ".txt";
 
   function togglePreview(e) {
     e?.stopPropagation();
@@ -41,10 +43,10 @@ export default function CodeTool(props) {
   >
     ${ToolHeader({
       icon: html`<${CodeXml} size="16" class="text-muted-contrast" />`,
-      title: "Writing code…",
-      right: html`
+      title: () => "Writing code…",
+      right: () => html`
         <div class="d-inline-flex align-items-center gap-2" onClick=${(e) => e.stopPropagation()}>
-          <small class="text-muted-contrast text-uppercase me-1">${lang || "text"}</small>
+          <small class="text-muted-contrast text-uppercase me-1">${lang() || "text"}</small>
 
           ${hasPreview()
             ? html`
@@ -67,28 +69,29 @@ export default function CodeTool(props) {
                 <//>
               `
             : ""}
-          ${source.length > 0
-            ? html`
-                <${Tooltip}
-                  title="Download code"
-                  placement="top"
-                  arrow=${true}
-                  class="text-white bg-primary"
-                >
-                  <button
-                    type="button"
-                    class="btn btn-unstyled text-muted-contrast btn-sm tool-btn-icon ms-1"
-                    title="Download"
-                    onClick=${(e) => {
-                      e.stopPropagation();
-                      downloadText("code" + ext, source);
-                    }}
+          ${() =>
+            source().length > 0
+              ? html`
+                  <${Tooltip}
+                    title="Download code"
+                    placement="top"
+                    arrow=${true}
+                    class="text-white bg-primary"
                   >
-                    <${Download} size="16" />
-                  </button>
-                <//>
-              `
-            : ""}
+                    <button
+                      type="button"
+                      class="btn btn-unstyled text-muted-contrast btn-sm tool-btn-icon ms-1"
+                      title="Download"
+                      onClick=${(e) => {
+                        e.stopPropagation();
+                        downloadText("code" + ext, source());
+                      }}
+                    >
+                      <${Download} size="16" />
+                    </button>
+                  <//>
+                `
+              : ""}
         </div>
       `,
       isOpen: props.isOpen,
@@ -105,14 +108,18 @@ export default function CodeTool(props) {
         <${Show} when=${() => hasPreview() && showPreview()}>
           <div class="mb-2">
             <div class="ratio ratio-16x9 border rounded-2">
-              <iframe title="Preview" class="border-0 w-100 h-100" srcdoc=${() => source}></iframe>
+              <iframe
+                title="Preview"
+                class="border-0 w-100 h-100"
+                srcdoc=${() => source()}
+              ></iframe>
             </div>
           </div>
         <//>
 
         <${Show} when=${() => !showPreview() || !hasPreview()}>
           <pre class="code-block font-monospace mb-0">
-            <code class="d-block">${() => source}</code>
+            <code class="d-block">${() => source()}</code>
           </pre>
 
           <${Show} when=${() => (results()?.logs?.length ?? 0) > 0}>

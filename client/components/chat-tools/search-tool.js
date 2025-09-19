@@ -20,16 +20,17 @@ import ToolHeader from "./tool-header.js";
  * @returns {JSX.Element}
  */
 export default function SearchTool(props) {
+  const results = () =>
+    getSearchResults(getToolResult(props.message?.toolUse, props.messages)) || [];
+
   return html`<article
     class="search-accordion border rounded-3 my-3 min-w-0"
     classList=${() => ({ "is-open": props.isOpen(), "shadow-sm bg-light": props.isOpen() })}
   >
     ${ToolHeader({
       icon: html`<${Search} size="16" class="text-muted-contrast" />`,
-      title: props.message?.toolUse?.input?.query || "Search",
-      right: html`<small class="text-muted-contrast">
-        ${(props.results || []).length} results
-      </small>`,
+      title: () => props.message?.toolUse?.input?.query || "Search",
+      right: () => html`<small class="text-muted-contrast"> ${results().length} results </small>`,
       isOpen: props.isOpen,
       onToggle: props.onToggle,
       bodyId: props.bodyId,

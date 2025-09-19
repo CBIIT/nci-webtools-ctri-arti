@@ -26,6 +26,9 @@ export default function EditorTool(props) {
       undo_edit: "Undoing Edit",
     })[props.message?.toolUse?.input?.command] || "Editing";
 
+  const rendered = () =>
+    (parse(getToolResult(props.message?.toolUse, props.messages) || "") || "").trim();
+
   return html`<article
     class="search-accordion editor-accordion border rounded-3 my-3 min-w-0"
     classList=${() => ({ "is-open": props.isOpen(), "shadow-sm bg-light": props.isOpen() })}
@@ -72,22 +75,15 @@ export default function EditorTool(props) {
           <div class="p-2">
             <div class="mb-3">
               <div class="text-muted-contrast mb-1 small">Contents</div>
-              <pre class="content-block font-monospace mb-0"><code class="d-block">${() =>
-                contents?.() || contents || ""}</code></pre>
+              <pre
+                class="content-block font-monospace mb-0"
+              ><code class="d-block">${contents}</code></pre>
             </div>
-            <${Show}
-              when=${() => !!(getToolResult(props.message?.toolUse, props.messages) || "").trim()}
-            >
+            <${Show} when=${() => !!rendered()}>
               <div class="mt-3">
                 <div class="text-muted-contrast mb-1 small">Rendered</div>
                 <div class="content-render border rounded-2 p-2">
-                  <div
-                    class="prose"
-                    innerHTML=${() =>
-                      (
-                        parse(getToolResult(props.message?.toolUse, props.messages) || "") || ""
-                      ).trim()}
-                  />
+                  <div class="prose" innerHTML=${rendered} />
                 </div>
               </div>
             <//>
