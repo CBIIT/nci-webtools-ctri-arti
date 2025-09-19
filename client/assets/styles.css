@@ -1019,3 +1019,56 @@ dialog .close-btn {
   min-width: 0;
   max-width: 100%;
 }
+
+.tool-btn-icon {
+  --btn-size: 28px;
+  --btn-radius: var(--bs-border-radius);
+  --btn-hover-bg: color-mix(in oklch, var(--bs-tertiary-bg) 85%, transparent);
+  --btn-active-bg: color-mix(in oklch, var(--bs-tertiary-bg) 100%, transparent);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--btn-size);
+  height: var(--btn-size);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--btn-radius);
+  background: transparent;
+  color: var(--bs-body-color);
+  opacity: 0.8;
+  line-height: 1;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease,
+    opacity 0.15s ease;
+}
+.tool-btn-icon:hover {
+  background: var(--btn-hover-bg);
+  border-color: var(--bs-border-color);
+  opacity: 1;
+}
+.tool-btn-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.2);
+}
+.tool-btn-icon:active {
+  background: var(--btn-active-bg);
+  transform: translateY(0.5px);
+}
+.tool-btn-icon:disabled,
+.tool-btn-icon[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.tool-btn-icon :where(svg) {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.12s ease;
+}
+.tool-btn-icon:hover :where(svg) {
+  transform: translateY(-1px);
+}

@@ -6,6 +6,7 @@ import { parse } from "marked";
 
 import { downloadText } from "../../utils/files.js";
 import { getToolResult } from "../../utils/tools.js";
+import Tooltip from "../tooltip.js";
 
 import ToolHeader from "./tool-header.js";
 
@@ -38,14 +39,21 @@ export default function EditorTool(props) {
       right: html`
         <div class="btn-group btn-group-sm" role="group">
           <${Show} when=${() => typeof contents() === "string" && contents().length > 0}>
-            <button
-              type="button"
-              class="btn btn-unstyled text-body-tertiary"
-              title="Download"
-              onClick=${() => downloadText(getFilename() || "file.txt", contents() || "")}
+            <${Tooltip}
+              title="Download file"
+              placement="top"
+              arrow=${true}
+              class="text-white bg-primary"
             >
-              <${Download} size="16" />
-            </button>
+              <button
+                type="button"
+                class="btn btn-unstyled tool-btn-icon text-body-tertiary"
+                title="Download"
+                onClick=${() => downloadText(getFilename() || "file.txt", contents() || "")}
+              >
+                <${Download} size="16" />
+              </button>
+            <//>
           <//>
         </div>
       `,

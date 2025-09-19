@@ -74,7 +74,7 @@ export default function CodeTool(props) {
                 >
                   <button
                     type="button"
-                    class="btn btn-unstyled text-body-tertiary btn-sm ms-1"
+                    class="btn btn-unstyled text-body-tertiary btn-sm tool-btn-icon ms-1"
                     title="Download"
                     onClick=${(e) => {
                       e.stopPropagation();
