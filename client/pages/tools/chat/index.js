@@ -227,7 +227,7 @@ export default function Page() {
         </div>
         <div class="col-sm bg-chat p-0 d-flex flex-column min-vh-100 min-w-0">
           <header
-            class="chat-titlebar shadow-sm d-flex align-items-center justify-content-between gap-2 px-3 py-2 bg-white"
+            class="chat-titlebar d-flex align-items-center justify-content-between gap-2 px-3 py-2 bg-white"
             role="banner"
           >
             <div class="d-flex align-items-center gap-2 min-w-0 text-body-secondary">

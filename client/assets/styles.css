@@ -1013,7 +1013,9 @@ dialog .close-btn {
   top: 0;
   z-index: 5;
   background: var(--bs-body-bg);
-  box-shadow: inset 0px 11px 8px -10px #ccc;
+  box-shadow:
+    inset 0px 11px 8px -10px #ccc,
+    var(--bs-box-shadow-sm) !important;
 }
 .chat-titlebar .vr {
   opacity: 0.15;
