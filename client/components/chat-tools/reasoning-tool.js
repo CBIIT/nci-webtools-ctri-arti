@@ -15,9 +15,32 @@ export default function ReasoningTool(props) {
       : props.message?.toolUse?.name || "Internal";
 
   const toolName = () => props.message?.toolUse?.name || "internal";
-  const inputStr = () => stringify(props.message?.toolUse?.input);
-  const resultStr = () => stringify(getToolResult(props.message?.toolUse, props.messages));
   const reasonText = () => props.message?.reasoningContent?.reasoningText?.text;
+
+  const rawInput = () => props.message?.toolUse?.input;
+  const rawResult = () => getToolResult(props.message?.toolUse, props.messages);
+
+  const isEmpty = (v) => {
+    if (v == null) {
+      return true;
+    }
+    if (typeof v === "string") {
+      return v.trim() === "";
+    }
+    if (Array.isArray(v)) {
+      return v.length === 0;
+    }
+    if (typeof v === "object") {
+      return Object.keys(v).length === 0;
+    }
+    return false;
+  };
+
+  const showInput = () => !isEmpty(rawInput());
+  const showResult = () => !isEmpty(rawResult());
+
+  const inputStr = () => (showInput() ? stringify(rawInput()) : "");
+  const resultStr = () => (showResult() ? stringify(rawResult()) : "");
 
   return html`<article
     class="search-accordion reasoning-accordion border rounded-3 my-3 min-w-0"
@@ -45,13 +68,13 @@ export default function ReasoningTool(props) {
                 <pre class="mb-2 reasoning-pre text-prewrap font-monospace">${reasonText}</pre>
               <//>
 
-              <${Show} when=${() => props.message?.toolUse}>
+              <${Show} when=${() => showInput() || showResult()}>
                 <div class="mt-2">
                   <div class="text-muted-contrast mb-1">Input</div>
-                  <pre class="reasoning-pre font-monospace mb-2">${inputStr || null}</pre>
+                  <pre class="reasoning-pre font-monospace mb-2">${inputStr}</pre>
 
                   <div class="text-muted-contrast mb-1">Result</div>
-                  <pre class="reasoning-pre font-monospace mb-0">${resultStr || null}</pre>
+                  <pre class="reasoning-pre font-monospace mb-0">${resultStr}</pre>
                 </div>
               <//>
             </div>
