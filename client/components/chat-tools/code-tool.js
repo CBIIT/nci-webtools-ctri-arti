@@ -28,7 +28,10 @@ export default function CodeTool(props) {
 
   function togglePreview(e) {
     e?.stopPropagation();
-    if (!hasPreview()) return;
+    if (!hasPreview()) {
+      return;
+    }
+
     setShowPreview((v) => !v);
   }
 

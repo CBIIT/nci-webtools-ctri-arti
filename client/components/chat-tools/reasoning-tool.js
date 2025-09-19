@@ -19,9 +19,9 @@ export default function ReasoningTool(props) {
         props.message?.reasoningContent || props.message?.toolUse?.name === "think"
           ? "Reasoning…"
           : props.message?.toolUse?.name || "Internal",
-      right: html`<small class="text-muted-contrast text-capitalize"
-        >${() => props.message?.toolUse?.name || "internal"}</small
-      >`,
+      right: html`<small class="text-muted-contrast text-capitalize">
+        ${() => props.message?.toolUse?.name || "internal"}
+      </small>`,
       isOpen: props.isOpen,
       onToggle: props.onToggle,
       bodyId: props.bodyId,
@@ -37,8 +37,8 @@ export default function ReasoningTool(props) {
           <div class="p-2 small">
             <${Show} when=${() => props.message?.reasoningContent?.reasoningText?.text}>
               <pre class="mb-2 reasoning-pre text-prewrap font-monospace">
-                        ${() => props.message?.reasoningContent.reasoningText.text}
-                      </pre
+                ${() => props.message?.reasoningContent.reasoningText.text}
+              </pre
               >
             <//>
 
@@ -46,13 +46,14 @@ export default function ReasoningTool(props) {
               <div class="mt-2">
                 <div class="text-muted-contrast mb-1">Input</div>
                 <pre class="reasoning-pre font-monospace mb-2">
-                          ${() => stringify(props.message?.toolUse?.input)}</pre
+                  ${() => stringify(props.message?.toolUse?.input)}
+                </pre
                 >
 
                 <div class="text-muted-contrast mb-1">Result</div>
                 <pre class="reasoning-pre font-monospace mb-0">
-                          ${() =>
-                    stringify(getToolResult(props.message?.toolUse, props.messages))}</pre
+                  ${() => stringify(getToolResult(props.message?.toolUse, props.messages))}
+                </pre
                 >
               </div>
             <//>

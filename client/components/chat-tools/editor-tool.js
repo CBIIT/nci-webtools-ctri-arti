@@ -17,14 +17,14 @@ export default function EditorTool(props) {
     props.message?.toolUse?.input?.file_text ||
     props.message?.toolUse?.input?.new_str ||
     "";
-  const title =
-    {
+  const title = () =>
+    ({
       view: "Viewing",
       str_replace: "Updating",
       create: "Creating",
       insert: "Updating",
       undo_edit: "Undoing Edit",
-    }[props.message?.toolUse?.input?.command] || "Editing";
+    })[props.message?.toolUse?.input?.command] || "Editing";
 
   return html`<article
     class="search-accordion editor-accordion border rounded-3 my-3 min-w-0"
@@ -32,7 +32,7 @@ export default function EditorTool(props) {
   >
     ${ToolHeader({
       icon: html`<${File} size="16" class="text-muted-contrast" />`,
-      title: html` ${title}
+      title: html` ${title()}
         <small class="text-muted-contrast ms-2 text-truncate d-none d-sm-inline">
           File: ${getFilename() || "untitled"}
         </small>`,

@@ -28,9 +28,9 @@ export default function BrowseTool(props) {
       title:
         (props.message?.toolUse?.input?.url || []).map((u) => new URL(u).hostname).join(", ") ||
         "—",
-      right: html`<small class="text-muted-contrast"
-        >${props.message?.toolUse?.input?.url?.length || 0} sources</small
-      >`,
+      right: html`<small class="text-muted-contrast">
+        ${props.message?.toolUse?.input?.url?.length || 0} sources
+      </small>`,
       isOpen: props.isOpen,
       onToggle: () => props.onToggle(props.bodyId),
       bodyId: props.bodyId,
