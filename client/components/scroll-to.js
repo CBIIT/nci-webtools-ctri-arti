@@ -1,5 +1,7 @@
 import html from "solid-js/html";
 
+import { ArrowDown } from "lucide-solid";
+
 /**
  * Scrolls the target element into view.
  *
@@ -11,12 +13,13 @@ import html from "solid-js/html";
  */
 export default function ScrollTo(props) {
   function scrollToElement() {
-    if (!props.targetRef) {
+    const target = typeof props.targetRef === "function" ? props.targetRef() : props.targetRef;
+    if (!target) {
       return;
     }
 
     requestAnimationFrame(() => {
-      props.targetRef.scrollIntoView({ behavior: "smooth", block: "end" });
+      target.scrollIntoView({ behavior: "smooth", block: "end" });
     });
   }
 
@@ -27,23 +30,11 @@ export default function ScrollTo(props) {
     <button
       type="button"
       onClick=${scrollToElement}
-      class="btn btn-primary d-flex justify-content-center align-items-center text-nowrap fw-semibold pe-auto gap-2 rounded-pill px-[12px] ps-3 fs-08 focus-ring text-white"
+      class="scroll-down-btn bg-white rounded-full d-flex justify-content-center align-items-center focus-ring shadow-lg"
+      aria-label=${() => props.label || "Scroll to bottom"}
     >
-      <span class="pb-0">${props.label}</span>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="w-1r h-1r"
-      >
-        <path d="m6 9 6 6 6-6" />
-      </svg>
+      <span class="visually-hidden">${() => props.label || "Scroll to bottom"}</span>
+      <${ArrowDown} size="20" color="black" />
     </button>
   </div>`;
 }

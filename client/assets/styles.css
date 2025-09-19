@@ -839,3 +839,285 @@ dialog .close-btn {
     color: #44627c;
   }
 }
+
+.convo-item {
+  --action-pad: 1.25rem;
+}
+.convo-hitbox {
+  position: relative;
+  border-radius: var(--bs-border-radius-pill);
+  text-decoration: none;
+  transition: background-color 0.1s ease;
+}
+.convo-item:hover .convo-hitbox,
+.convo-item:focus-within .convo-hitbox {
+  background-color: var(--bs-tertiary-bg);
+}
+.convo-title {
+  transition: padding-right 0.1s ease;
+}
+.convo-item:hover .convo-title,
+.convo-item:focus-within .convo-title {
+  padding-right: var(--action-pad);
+}
+.action-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.1s ease,
+    visibility 0.1s ease;
+}
+.convo-item:hover .action-btn,
+.convo-item:focus-within .action-btn {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.model-dropdown {
+  padding-right: 2rem;
+}
+
+.bg-chat {
+  background-color: #f6f7fc;
+  min-width: 0;
+}
+
+.rounded-full {
+  border-radius: 9999px !important;
+}
+
+.scroll-down-btn {
+  border: 0.5px solid rgba(31, 30, 29, 0.15);
+  padding: 7px;
+  opacity: 0.8;
+  background-color: rgba(255, 255, 255, 0.8);
+
+  &:hover {
+    border: 0.5px solid rgba(31, 30, 29, 0.15);
+    background-color: rgba(255, 255, 255, 1);
+  }
+}
+
+.search-accordion {
+  border-width: 0.5px;
+  border-color: var(--bs-border-color);
+}
+.btn-reset {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+.search-accordion__toggle {
+  min-height: 2.625rem;
+  transition:
+    color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.search-accordion__toggle:hover {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+.chevron {
+  transition: transform 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.search-accordion.is-open .chevron {
+  transform: rotate(180deg);
+}
+.search-accordion__body {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.2s ease,
+    height 0.2s ease,
+    opacity 0.2s ease;
+}
+.search-accordion__body.show {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.search-accordion__body > .accordion-inner {
+  overflow: hidden;
+}
+.search-accordion__scroll {
+  max-height: 238px;
+  scrollbar-gutter: stable;
+}
+.mask-fade-bottom {
+  -webkit-mask-image: linear-gradient(
+    transparent 0%,
+    #000 0px,
+    #000 calc(100% - 16px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(transparent 0%, #000 0px, #000 calc(100% - 16px), transparent 100%);
+}
+.min-w-0 {
+  min-width: 0 !important;
+}
+.search-accordion,
+.code-accordion,
+.editor-accordion,
+.reasoning-accordion {
+  min-width: 0;
+}
+.reasoning-accordion .reasoning-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+.reasoning-accordion.is-open .reasoning-pre:hover {
+  background: var(--bs-tertiary-bg);
+}
+.code-accordion .code-block {
+  background: var(--bs-tertiary-bg);
+  border: 0.5px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  overflow: auto;
+  max-width: 100%;
+  white-space: pre;
+  tab-size: 2;
+  -moz-tab-size: 2;
+}
+.code-accordion.is-open .code-block:hover {
+  background: color-mix(in oklch, var(--bs-tertiary-bg) 90%, var(--bs-body-bg));
+}
+.editor-accordion .content-block {
+  background: var(--bs-tertiary-bg);
+  border: 0.5px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  overflow: auto;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  tab-size: 2;
+  -moz-tab-size: 2;
+}
+.editor-accordion .content-render {
+  background: var(--bs-body-bg);
+  border: 0.5px solid var(--bs-border-color);
+}
+.editor-accordion .content-render .prose img {
+  max-width: 100%;
+  height: auto;
+}
+.chat-titlebar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bs-body-bg);
+  box-shadow:
+    inset 0px 11px 8px -10px #ccc,
+    var(--bs-box-shadow-sm) !important;
+}
+.chat-titlebar .vr {
+  opacity: 0.15;
+}
+.chat-title {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tool-btn-icon {
+  --btn-size: 28px;
+  --btn-radius: var(--bs-border-radius);
+  --btn-hover-bg: color-mix(in oklch, var(--bs-tertiary-bg) 85%, transparent);
+  --btn-active-bg: color-mix(in oklch, var(--bs-tertiary-bg) 100%, transparent);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--btn-size);
+  height: var(--btn-size);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--btn-radius);
+  background: transparent;
+  color: var(--bs-body-color);
+  opacity: 0.8;
+  line-height: 1;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease,
+    opacity 0.15s ease;
+}
+.tool-btn-icon:hover {
+  background: var(--btn-hover-bg);
+  border-color: var(--bs-border-color);
+  opacity: 1;
+}
+.tool-btn-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.2);
+}
+.tool-btn-icon:active {
+  background: var(--btn-active-bg);
+  transform: translateY(0.5px);
+}
+.tool-btn-icon:disabled,
+.tool-btn-icon[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.tool-btn-icon :where(svg) {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.12s ease;
+}
+.tool-btn-icon:hover :where(svg) {
+  transform: translateY(-1px);
+}
+
+.text-muted-contrast {
+  color: rgba(33, 37, 41, 0.65) !important;
+}
+
+.markdown a {
+  color: #0b6ed7 !important;
+}
+
+.alert-container {
+  z-index: 99999 !important;
+  top: 60px;
+}
+
+.ui-floats {
+  position: fixed;
+  inset: 0 0 auto 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: var(--bs-tooltip-zindex, 1080);
+}
+.ui-floats .s-tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: auto;
+}
+.ui-floats .s-tooltip[data-show] {
+  visibility: visible;
+  opacity: 1;
+}
+.ui-floats .s-tooltip .s-tooltip-arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+}

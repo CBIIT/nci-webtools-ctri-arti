@@ -10,6 +10,8 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
+import { PanelLeft, Trash2 } from "lucide-solid";
+
 import { AlertContainer } from "../../../components/alert.js";
 import ClassToggle from "../../../components/class-toggle.js";
 import Loader from "../../../components/loader.js";
@@ -17,6 +19,7 @@ import ScrollTo from "../../../components/scroll-to.js";
 import Tooltip from "../../../components/tooltip.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 
+import DeleteConversation from "./delete-conversation.js";
 import { useChat } from "./hooks.js";
 import Message from "./message.js";
 
@@ -28,7 +31,10 @@ export default function Page() {
   const [filenames, setFilenames] = createSignal([]);
   const [isAtBottom, setIsAtBottom] = createSignal(true);
   const [chatHeight, setChatHeight] = createSignal(0);
+  const [deleteConversationId, setDeleteConversationId] = createSignal(null);
+  const [isStreaming, setIsStreaming] = createSignal(false);
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+  const isFedPulse = new URLSearchParams(location.search).get("fedpulse") === "1";
   let bottomEl;
   let chatRef;
 
@@ -89,25 +95,49 @@ export default function Page() {
       form.message.value = "";
       form.inputFiles.value = "";
     };
-    await submitMessage({ message, inputFiles, reasoningMode, model, reset });
+    setIsStreaming(true);
+    await submitMessage({ message, inputFiles, reasoningMode, model, reset }).finally(() =>
+      setIsStreaming(false)
+    );
+  }
+
+  function handleOnDeleteConversationClick(e, conversationId) {
+    e.preventDefault();
+    setDeleteConversationId(conversationId);
+  }
+
+  async function handleDeleteConversation() {
+    if (!deleteConversationId()?.length) {
+      return;
+    }
+
+    await deleteConversation(deleteConversationId(), { skipWindowConfirm: true });
+    setDeleteConversationId(null);
   }
 
   return html`
     <div class="container-fluid">
-      <div class="row min-vh-100 position-relative">
+      <div class="row flex-nowrap min-vh-100 position-relative">
         <div
           class="col-sm-auto shadow-sm border-end px-0 position-sticky"
           classList=${() => ({ "w-20": toggles().conversations })}
         >
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
-              <button
-                type="button"
-                class="btn btn-sm btn-light d-flex-center rounded-5 wh-2 p-0"
-                onClick=${toggle("conversations")}
+              <${Tooltip}
+                title=${() => (toggles().conversations ? "Close Sidebar" : "Open Sidebar")}
+                placement="right"
+                arrow=${true}
+                class="text-white bg-primary"
               >
-                <img src="assets/images/icon-bars.svg" alt="Menu" width="16" />
-              </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-light d-flex-center rounded-5 wh-2 p-0"
+                  onClick=${toggle("conversations")}
+                >
+                  <${PanelLeft} alt="Menu" size="16" />
+                </button>
+              <//>
               <${Show} when=${() => toggles().conversations}>
                 <div class="btn btn-sm m-0 p-0 border-0">ARTI Chat</div>
               <//>
@@ -158,69 +188,100 @@ export default function Page() {
               <ul class="list-unstyled">
                 <${For} each=${conversations}>
                   ${(conv) => {
-                    const isFedPulse = new URLSearchParams(location.search).get("fedpulse") === "1";
                     const href = isFedPulse
                       ? `/tools/chat?fedpulse=1&id=${conv.id}`
                       : `/tools/chat?id=${conv.id}`;
-                    return html`<li class="small w-100 mb-2">
+                    return html`<li class="convo-item small w-100 mb-2">
                       <a
-                        class="link-primary text-decoration-none fw-normal text-truncate w-100 d-inline-block"
                         href=${href}
                         target="_self"
-                        classList=${() => ({ active: conv.id === conversation?.id })}
+                        class="convo-hitbox d-flex align-items-center px-3 py-2 text-decoration-none"
                       >
-                        ${conv.title}
+                        <div
+                          class="convo-title text-primary fw-normal text-truncate flex-grow-1 min-w-0"
+                          classList=${() => ({ active: conv.id === conversation?.id })}
+                        >
+                          ${conv.title}
+                        </div>
+
+                        <button
+                          type="button"
+                          class="action-btn btn btn-sm link-danger text-primary p-1 border-0 rounded-pill"
+                          aria-label="Delete conversation"
+                          title="Delete"
+                          onClick=${(e) => handleOnDeleteConversationClick(e, conv.id)}
+                        >
+                          <${Trash2} size="18" color="currentColor" />
+                        </button>
                       </a>
                     </li>`;
                   }}
                 <//>
               </ul>
             <//>
+
+            <${Show} when=${() => deleteConversationId()?.length > 0}>
+              <${DeleteConversation}
+                conversationId=${() => deleteConversationId()}
+                onClose=${() => setDeleteConversationId(null)}
+                onDelete=${handleDeleteConversation}
+              />
+            <//>
           </div>
         </div>
-        <div class="col-sm">
-          <form
-            onSubmit=${handleSubmit}
-            class="container d-flex flex-column flex-grow-1 mb-3 position-relative"
+        <div class="col-sm bg-chat p-0 d-flex flex-column min-vh-100 min-w-0">
+          <header
+            class="chat-titlebar d-flex align-items-center justify-content-between gap-2 px-3 py-2 bg-white"
+            role="banner"
           >
-            <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
-            <div class="row">
-              <div class="col d-flex align-items-center justify-content-between py-3">
-                <div class="d-flex align-items-center">
-                  <div class="fw-semibold me-2">
-                    ${() =>
-                      new URLSearchParams(location.search).get("fedpulse") ? "FedPulse" : "Chat"}
-                  </div>
-                  <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
-                    <select
-                      class="form-select form-select-sm border-0 bg-light cursor-pointer"
-                      name="model"
-                      id="model"
-                      required
-                    >
-                      <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
-                      <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>
-                        Sonnet 4.0
-                      </option>
-                      <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">Haiku 3.5</option>
-                    </select>
-                  <//>
-                </div>
+            <div class="d-flex align-items-center gap-2 min-w-0 text-body-secondary">
+              <span
+                class=${() =>
+                  isFedPulse
+                    ? "badge rounded-pill text-bg-primary text-uppercase fw-semibold"
+                    : "badge rounded-pill bg-secondary-subtle text-secondary text-uppercase fw-semibold"}
+              >
+                ${() => (isFedPulse ? "FedPulse Chat" : "Standard Chat")}
+              </span>
 
-                <${Show} when=${() => conversation?.id}>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-danger ms-2"
-                    onClick=${deleteConversation}
-                    title="Delete conversation"
-                  >
-                    Delete
-                  </button>
-                <//>
-              </div>
+              <div class="vr d-none d-sm-block" aria-hidden="true"></div>
+
+              <${Tooltip}
+                title=${() => conversation?.title || "Untitled"}
+                placement="bottom"
+                arrow=${true}
+                class="text-white bg-primary"
+              >
+                <div class="chat-title fw-semibold text-truncate">
+                  ${() => conversation?.title || "Untitled"}
+                </div>
+              <//>
             </div>
 
-            <div class="flex-grow-1 py-3" classList=${() => ({ "x-mvh-100": messages.length > 0 })}>
+            <${Show} when=${() => conversation?.id}>
+              <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  onClick=${(e) => handleOnDeleteConversationClick(e, conversation?.id)}
+                  title="Delete conversation"
+                >
+                  Delete
+                </button>
+              </div>
+            <//>
+          </header>
+
+          <form
+            onSubmit=${handleSubmit}
+            class="container d-flex flex-column flex-grow-1 mb-3 px-4 position-relative min-w-0"
+          >
+            <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
+
+            <div
+              class="flex-grow-1 py-3 min-width-0"
+              classList=${() => ({ "x-mvh-100": messages.length > 0 })}
+            >
               <div class="text-center my-5 font-serif" hidden=${() => messages.length > 0}>
                 <h1 class="text-gradient fw-bold font-title mb-2">
                   Welcome, ${() => session()?.user?.firstName || ""}
@@ -238,6 +299,7 @@ export default function Page() {
                     message=${message}
                     index=${index}
                     messages=${messages}
+                    isStreaming=${() => isStreaming}
                     class="small markdown shadow-sm rounded mb-3 p-2 position-relative"
                   />
                 `}
@@ -264,15 +326,15 @@ export default function Page() {
                 ref=${(el) => {
                   chatRef = el;
                 }}
-                class="bg-white"
               >
-                <div class="bg-light shadow-sm rounded">
+                <div class="bg-white border shadow-sm rounded">
+                  <label for="message" class="visually-hidden">Chat Message</label>
                   <textarea
                     onKeyDown=${handleKeyDown}
                     class="form-control form-control-sm border-0 bg-transparent shadow-0 p-3"
                     id="message"
                     name="message"
-                    placeholder="Ask me (Shift + Enter for new line)"
+                    placeholder="Ask me a question. (Shift + Enter for new line)"
                     rows="3"
                     autofocus
                     required
@@ -286,7 +348,10 @@ export default function Page() {
                         arrow=${true}
                         class="text-white bg-primary"
                       >
-                        <label class="btn btn-light btn-sm rounded-pill m-0" for="inputFiles">
+                        <label
+                          class="btn bg-transparent border-0 btn-sm rounded-pill m-0"
+                          for="inputFiles"
+                        >
                           <input
                             onChange=${handleFileChange}
                             type="file"
@@ -319,6 +384,7 @@ export default function Page() {
                             type="checkbox"
                             id="reasoningMode"
                             name="reasoningMode"
+                            checked
                           />
                           <label
                             toggle
@@ -326,13 +392,32 @@ export default function Page() {
                             for="reasoningMode"
                             title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources."
                           >
-                            Research Mode
+                            Deep Research Mode
                           </label>
                         </div>
                       <//>
                     </div>
 
                     <div class="d-flex w-auto align-items-center">
+                      <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
+                        <label for="model" class="visually-hidden">Model Selection</label>
+                        <select
+                          class="model-dropdown form-select form-select-sm border-0 bg-transparent cursor-pointer"
+                          name="model"
+                          id="model"
+                          required
+                        >
+                          <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">
+                            Opus 4.1
+                          </option>
+                          <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>
+                            Sonnet 4.0
+                          </option>
+                          <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">
+                            Haiku 3.5
+                          </option>
+                        </select>
+                      <//>
                       <button
                         class="btn btn-primary btn-sm rounded-pill px-3"
                         type="submit"
@@ -344,7 +429,8 @@ export default function Page() {
                     </div>
                   </div>
                 </div>
-                <div class="text-center text-muted small py-1">
+
+                <div class="text-center bg-chat text-muted small py-1">
                   <span
                     class="me-1"
                     title="Your conversations are stored only on your personal device."
