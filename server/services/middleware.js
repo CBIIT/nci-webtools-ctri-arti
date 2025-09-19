@@ -41,6 +41,17 @@ export function logErrors(formatter = (e) => ({ error: e.message })) {
   };
 }
 
+export function nocache(req, res, next) {
+  res.set({
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, private", 
+    "Expires": "0",
+    "Pragma": "no-cache",
+    "Surrogate-Control": "no-store",
+    "Vary": "*",
+  });
+  next();
+}
+
 /**
  * Login middleware for handling OpenID Connect authentication
  * @param {Express.Request} req
