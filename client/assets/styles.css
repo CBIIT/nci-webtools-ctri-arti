@@ -1077,3 +1077,11 @@ dialog .close-btn {
 .tool-btn-icon:hover :where(svg) {
   transform: translateY(-1px);
 }
+
+.text-muted-contrast {
+  color: rgba(33, 37, 41, 0.65) !important;
+}
+
+.markdown a {
+  color: #0b6ed7 !important;
+}

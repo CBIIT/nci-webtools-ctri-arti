@@ -61,7 +61,7 @@ export default function ToolHeader(props) {
         onClick=${props.onToggle}
       >
         <span class="chevron d-inline-flex">
-          <${ChevronDown} size="20" class="text-body-tertiary" />
+          <${ChevronDown} size="20" class="text-muted-contrast" />
         </span>
       </button>
     </div>

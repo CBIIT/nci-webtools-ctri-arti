@@ -37,11 +37,11 @@ export default function CodeTool(props) {
     classList=${() => ({ "is-open": props.isOpen(), "shadow-sm bg-light": props.isOpen() })}
   >
     ${ToolHeader({
-      icon: html`<${CodeXml} size="16" class="text-body-tertiary" />`,
+      icon: html`<${CodeXml} size="16" class="text-muted-contrast" />`,
       title: "Writing code…",
       right: html`
         <div class="d-inline-flex align-items-center gap-2" onClick=${(e) => e.stopPropagation()}>
-          <small class="text-body-tertiary text-uppercase me-1">${lang || "text"}</small>
+          <small class="text-muted-contrast text-uppercase me-1">${lang || "text"}</small>
 
           ${hasPreview()
             ? html`
@@ -53,7 +53,7 @@ export default function CodeTool(props) {
                 >
                   <button
                     type="button"
-                    class="btn btn-unstyled text-body-tertiary btn-sm"
+                    class="btn btn-unstyled text-muted-contrast btn-sm"
                     aria-pressed=${showPreview()}
                     title=${() => (showPreview() ? "Show code" : "Show preview")}
                     onClick=${togglePreview}
@@ -74,7 +74,7 @@ export default function CodeTool(props) {
                 >
                   <button
                     type="button"
-                    class="btn btn-unstyled text-body-tertiary btn-sm tool-btn-icon ms-1"
+                    class="btn btn-unstyled text-muted-contrast btn-sm tool-btn-icon ms-1"
                     title="Download"
                     onClick=${(e) => {
                       e.stopPropagation();
@@ -114,7 +114,7 @@ export default function CodeTool(props) {
 
           <${Show} when=${() => (results()?.logs?.length ?? 0) > 0}>
             <div class="mt-3">
-              <div class="text-body-tertiary mb-1 small">Logs</div>
+              <div class="text-muted-contrast mb-1 small">Logs</div>
               <pre class="code-block font-monospace mb-0">
                 ${() => (results()?.logs || []).join("\n")}
               </pre

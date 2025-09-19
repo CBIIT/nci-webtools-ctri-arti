@@ -31,9 +31,9 @@ export default function EditorTool(props) {
     classList=${() => ({ "is-open": props.isOpen(), "shadow-sm bg-light": props.isOpen() })}
   >
     ${ToolHeader({
-      icon: html`<${File} size="16" class="text-body-tertiary" />`,
+      icon: html`<${File} size="16" class="text-muted-contrast" />`,
       title: html` ${title}
-        <small class="text-body-tertiary ms-2 text-truncate d-none d-sm-inline">
+        <small class="text-muted-contrast ms-2 text-truncate d-none d-sm-inline">
           File: ${getFilename() || "untitled"}
         </small>`,
       right: html`
@@ -47,7 +47,7 @@ export default function EditorTool(props) {
             >
               <button
                 type="button"
-                class="btn btn-unstyled tool-btn-icon text-body-tertiary"
+                class="btn btn-unstyled tool-btn-icon text-muted-contrast"
                 title="Download"
                 onClick=${() => downloadText(getFilename() || "file.txt", contents() || "")}
               >
@@ -71,7 +71,7 @@ export default function EditorTool(props) {
         <div class="overflow-auto pe-1 search-accordion__scroll">
           <div class="p-2">
             <div class="mb-3">
-              <div class="text-body-tertiary mb-1 small">Contents</div>
+              <div class="text-muted-contrast mb-1 small">Contents</div>
               <pre class="content-block font-monospace mb-0"><code class="d-block">${() =>
                 contents?.() || contents || ""}</code></pre>
             </div>
@@ -79,7 +79,7 @@ export default function EditorTool(props) {
               when=${() => !!(getToolResult(props.message?.toolUse, props.messages) || "").trim()}
             >
               <div class="mt-3">
-                <div class="text-body-tertiary mb-1 small">Rendered</div>
+                <div class="text-muted-contrast mb-1 small">Rendered</div>
                 <div class="content-render border rounded-2 p-2">
                   <div
                     class="prose"

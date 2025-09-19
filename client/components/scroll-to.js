@@ -13,12 +13,13 @@ import { ArrowDown } from "lucide-solid";
  */
 export default function ScrollTo(props) {
   function scrollToElement() {
-    if (!props.targetRef) {
+    const target = typeof props.targetRef === "function" ? props.targetRef() : props.targetRef;
+    if (!target) {
       return;
     }
 
     requestAnimationFrame(() => {
-      props.targetRef.scrollIntoView({ behavior: "smooth", block: "end" });
+      target.scrollIntoView({ behavior: "smooth", block: "end" });
     });
   }
 
@@ -30,7 +31,9 @@ export default function ScrollTo(props) {
       type="button"
       onClick=${scrollToElement}
       class="scroll-down-btn bg-white rounded-full d-flex justify-content-center align-items-center focus-ring shadow-lg"
+      aria-label=${() => props.label || "Scroll to bottom"}
     >
+      <span class="visually-hidden">${() => props.label || "Scroll to bottom"}</span>
       <${ArrowDown} size="20" color="black" />
     </button>
   </div>`;

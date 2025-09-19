@@ -25,9 +25,9 @@ export default function SearchTool(props) {
     classList=${() => ({ "is-open": props.isOpen(), "shadow-sm bg-light": props.isOpen() })}
   >
     ${ToolHeader({
-      icon: html`<${Search} size="16" class="text-body-tertiary" />`,
+      icon: html`<${Search} size="16" class="text-muted-contrast" />`,
       title: props.message?.toolUse?.input?.query || "Search",
-      right: html`<small class="text-body-tertiary"
+      right: html`<small class="text-muted-contrast"
         >${(props.results || []).length} results</small
       >`,
       isOpen: props.isOpen,
@@ -60,12 +60,12 @@ export default function SearchTool(props) {
                       class="d-inline-flex align-items-center justify-content-center flex-shrink-0"
                       style="width:16px;height:16px;"
                     >
-                      <img src=${favicon} width="16" height="16" alt="favicon" />
+                      <img src=${favicon} width="16" height="16" alt="" aria-hidden="true" />
                     </span>
 
                     <div class="d-flex flex-row align-items-center gap-2 min-w-0 w-100">
                       <span class="text-truncate small text-body-emphasis">${result?.title}</span>
-                      <small class="text-body-tertiary flex-shrink-0">${hostname}</small>
+                      <small class="text-muted-contrast flex-shrink-0">${hostname}</small>
                     </div>
                   </a>
                 `;

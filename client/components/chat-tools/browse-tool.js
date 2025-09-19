@@ -24,11 +24,11 @@ export default function BrowseTool(props) {
     classList=${() => ({ "is-open": props.isOpen(), "shadow-sm bg-light": props.isOpen() })}
   >
     ${ToolHeader({
-      icon: html`<${Globe} size="16" class="text-body-tertiary" />`,
+      icon: html`<${Globe} size="16" class="text-muted-contrast" />`,
       title:
         (props.message?.toolUse?.input?.url || []).map((u) => new URL(u).hostname).join(", ") ||
         "—",
-      right: html`<small class="text-body-tertiary"
+      right: html`<small class="text-muted-contrast"
         >${props.message?.toolUse?.input?.url?.length || 0} sources</small
       >`,
       isOpen: props.isOpen,
@@ -44,7 +44,7 @@ export default function BrowseTool(props) {
       <div class="mask-fade-bottom">
         <div class="overflow-auto pe-1 search-accordion__scroll">
           <div class="p-2">
-            <div class="text-body-tertiary mb-2 small fw-semibold">
+            <div class="text-muted-contrast mb-2 small fw-semibold">
               ${() => props.message?.toolUse?.input?.topic || ""}
             </div>
             <div

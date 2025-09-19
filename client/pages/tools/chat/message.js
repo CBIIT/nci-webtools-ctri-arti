@@ -114,6 +114,7 @@ export default function Message(p) {
           <div class="mt-2">
             <textarea
               id=${`feedback-comment-${p.index}`}
+              aria-labelledby=${`fb-title-${p.index}`}
               name="comment"
               placeholder="Comment..."
               rows="4"

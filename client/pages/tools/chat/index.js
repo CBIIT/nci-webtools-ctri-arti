@@ -323,6 +323,7 @@ export default function Page() {
                 }}
               >
                 <div class="bg-white border shadow-sm rounded">
+                  <label for="message" class="visually-hidden">Chat Message</label>
                   <textarea
                     onKeyDown=${handleKeyDown}
                     class="form-control form-control-sm border-0 bg-transparent shadow-0 p-3"
@@ -394,6 +395,7 @@ export default function Page() {
 
                     <div class="d-flex w-auto align-items-center">
                       <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
+                        <label for="model" class="visually-hidden">Model Selection</label>
                         <select
                           class="model-dropdown form-select form-select-sm border-0 bg-transparent cursor-pointer"
                           name="model"
