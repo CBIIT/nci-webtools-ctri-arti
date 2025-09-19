@@ -2,14 +2,13 @@ import { createEffect, createMemo, createSignal, mergeProps, onCleanup, onMount 
 import html from "solid-js/html";
 import { Portal } from "solid-js/web";
 
-/** Get or create a single floating root attached to <body> */
 function getFloatRoot() {
   const ID = "ui-floats-root";
   let el = document.getElementById(ID);
   if (!el) {
     el = document.createElement("div");
     el.id = ID;
-    el.className = "ui-floats"; // styled below
+    el.className = "ui-floats";
     document.body.appendChild(el);
   }
   return el;
@@ -124,9 +123,10 @@ export default function Tooltip(rawProps) {
   });
 
   createEffect(() => {
-    // Reposition when content changes and tooltip is shown
     titleValue();
-    if (popper && isOpen()) popper.update();
+    if (popper && isOpen()) {
+      popper.update();
+    }
   });
 
   createEffect(() => {
@@ -134,7 +134,7 @@ export default function Tooltip(rawProps) {
     popper.setOptions((opts) => ({
       ...opts,
       placement: props.placement,
-      strategy: "fixed", // keep fixed on updates
+      strategy: "fixed",
       modifiers: updateModifiers(opts.modifiers),
     }));
     if (isOpen()) popper.update();
