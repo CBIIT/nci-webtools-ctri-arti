@@ -41,7 +41,7 @@ export default function TextContent(props) {
       ></div>
 
       <!-- Show feedback only for last message from model -->
-      <${Show} when=${() => props.role !== "user" && props.isLast}>
+      <${Show} when=${() => props.role !== "user" && props.isLast()}>
         <div>
           <${Tooltip}
             title="Mark as helpful"

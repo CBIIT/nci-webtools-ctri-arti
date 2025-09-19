@@ -32,6 +32,7 @@ export default function Page() {
   const [isAtBottom, setIsAtBottom] = createSignal(true);
   const [chatHeight, setChatHeight] = createSignal(0);
   const [deleteConversationId, setDeleteConversationId] = createSignal(null);
+  const [isStreaming, setIsStreaming] = createSignal(false);
   const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   const isFedPulse = new URLSearchParams(location.search).get("fedpulse") === "1";
   let bottomEl;
@@ -94,7 +95,10 @@ export default function Page() {
       form.message.value = "";
       form.inputFiles.value = "";
     };
-    await submitMessage({ message, inputFiles, reasoningMode, model, reset });
+    setIsStreaming(true);
+    await submitMessage({ message, inputFiles, reasoningMode, model, reset }).finally(() =>
+      setIsStreaming(false)
+    );
   }
 
   function handleOnDeleteConversationClick(e, conversationId) {
@@ -295,6 +299,7 @@ export default function Page() {
                     message=${message}
                     index=${index}
                     messages=${messages}
+                    isStreaming=${() => isStreaming}
                     class="small markdown shadow-sm rounded mb-3 p-2 position-relative"
                   />
                 `}

@@ -135,11 +135,13 @@ export default function Message(p) {
     <${For} each=${p.message?.content}>
       ${(c, i) => {
         if (c.text !== undefined) {
+          const isLast = () => !p.isStreaming() && p?.index === p?.messages?.length - 1;
+
           return TextContent({
             role: p?.message?.role,
             message: c,
             messages: p?.messages,
-            isLast: p?.index === p?.messages?.length - 1,
+            isLast,
             copied,
             onCopy: handleCopy,
             onFeedback: (result) => openFeedback(result),
