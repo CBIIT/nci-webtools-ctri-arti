@@ -1,4 +1,5 @@
 import {
+  BookOpenText,
   FileArchive,
   FileAudio,
   FileCode,
@@ -105,6 +106,8 @@ export const attachmentFileTypes = {
     ],
   },
   doc: {
+    label: "Document",
+    icon: BookOpenText,
     extension: ["doc", "docx", "rtf", "odt", "pages"],
     mime: [
       "application/msword",
