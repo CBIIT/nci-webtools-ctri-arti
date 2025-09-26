@@ -13,6 +13,7 @@ import html from "solid-js/html";
 import { PanelLeft, Trash2 } from "lucide-solid";
 
 import { AlertContainer } from "../../../components/alert.js";
+import AttachmentsPreview from "../../../components/attachments-preview.js";
 import ClassToggle from "../../../components/class-toggle.js";
 import Loader from "../../../components/loader.js";
 import ScrollTo from "../../../components/scroll-to.js";
@@ -28,7 +29,6 @@ export default function Page() {
   const { conversation, deleteConversation, conversations, messages, loading, submitMessage } =
     useChat();
   const [toggles, setToggles] = createSignal({ conversations: true });
-  const [filenames, setFilenames] = createSignal([]);
   const [isAtBottom, setIsAtBottom] = createSignal(true);
   const [chatHeight, setChatHeight] = createSignal(0);
   const [deleteConversationId, setDeleteConversationId] = createSignal(null);
@@ -37,6 +37,8 @@ export default function Page() {
   const isFedPulse = new URLSearchParams(location.search).get("fedpulse") === "1";
   let bottomEl;
   let chatRef;
+  let inputFilesEl;
+  let attachmentsReset;
 
   onMount(() => {
     const resizeObserver = new ResizeObserver(() => setChatHeight(chatRef.offsetHeight || 0));
@@ -71,11 +73,6 @@ export default function Page() {
     }
   });
 
-  function handleFileChange(event) {
-    let files = Array.from(event.target.files || []);
-    setFilenames(files.map((file) => file.name));
-  }
-
   function handleKeyDown(event) {
     if (event.key === "Enter" && !event.shiftKey && !loading()) {
       event.preventDefault();
@@ -94,6 +91,7 @@ export default function Page() {
     const reset = () => {
       form.message.value = "";
       form.inputFiles.value = "";
+      attachmentsReset && attachmentsReset();
     };
     setIsStreaming(true);
     await submitMessage({ message, inputFiles, reasoningMode, model, reset }).finally(() =>
@@ -335,6 +333,10 @@ export default function Page() {
                 }}
               >
                 <div class="bg-white border shadow-sm rounded">
+                  <${AttachmentsPreview}
+                    inputRef=${() => inputFilesEl}
+                    onResetRef=${(fn) => (attachmentsReset = fn)}
+                  />
                   <label for="message" class="visually-hidden">Chat Message</label>
                   <textarea
                     onKeyDown=${handleKeyDown}
@@ -360,7 +362,7 @@ export default function Page() {
                           for="inputFiles"
                         >
                           <input
-                            onChange=${handleFileChange}
+                            ref=${(el) => (inputFilesEl = el)}
                             type="file"
                             id="inputFiles"
                             name="inputFiles"
@@ -375,7 +377,7 @@ export default function Page() {
                             width="16"
                             class="me-1"
                           />
-                          ${() => filenames().join(", ") || "Attach"}
+                          Attach
                         </label>
                       <//>
 
