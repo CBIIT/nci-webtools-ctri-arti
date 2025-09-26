@@ -24,7 +24,7 @@ export default function AttachmentsPreview(props) {
     ext = (ext || "").toLowerCase();
 
     for (const [k, v] of Object.entries(attachmentFileTypes)) {
-      if (v.extension.includes(ext) || v.mime.includes(mime)) {
+      if (v.extension?.includes(ext) || v.mime?.includes(mime)) {
         return k;
       }
     }
