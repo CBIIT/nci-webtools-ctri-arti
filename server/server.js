@@ -11,6 +11,7 @@ import db from "./services/database.js";
 import logger from "./services/logger.js";
 import { startScheduler } from "./services/scheduler.js";
 import { createCertificate } from "./services/utils.js";
+import { nocache } from "./services/middleware.js";
 
 const { PORT = 8080, SESSION_MAX_AGE = 24 * 60 * 60 * 1000 } = process.env;
 
@@ -27,6 +28,8 @@ export function createApp(env = process.env) {
   const { CLIENT_FOLDER = "../client", SESSION_SECRET } = env;
   const app = express();
   app.set("trust proxy", true);
+  app.disable("x-powered-by");
+  app.use(nocache);
   const SessionStore = SequelizeStore(session.Store);
   const store = new SessionStore({ db });
   store.sync({ force: true });
@@ -40,13 +43,8 @@ export function createApp(env = process.env) {
     })
   );
   app.use("/api", api);
-
-  // serve uncached static files, with 404 fallback for index.html
-  const setHeaders = (res) =>
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  app.use(express.static(CLIENT_FOLDER, { setHeaders }));
+  app.use(express.static(CLIENT_FOLDER));
   app.get(/.*/, (req, res) => res.sendFile("index.html", { root: CLIENT_FOLDER }));
-
   return app;
 }
 
