@@ -86,7 +86,7 @@ export default function Page() {
     const message = form.message.value;
     const inputFiles = form.inputFiles.files;
     const reasoningMode = form.reasoningMode.checked;
-    const defaultModel = "us.anthropic.claude-sonnet-4-20250514-v1:0";
+    const defaultModel = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
     const model = form.model?.value || defaultModel;
     const reset = () => {
       form.message.value = "";
@@ -393,7 +393,6 @@ export default function Page() {
                             type="checkbox"
                             id="reasoningMode"
                             name="reasoningMode"
-                            checked
                           />
                           <label
                             toggle
@@ -419,8 +418,8 @@ export default function Page() {
                           <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">
                             Opus 4.1
                           </option>
-                          <option value="us.anthropic.claude-sonnet-4-20250514-v1:0" selected>
-                            Sonnet 4.0
+                          <option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0" selected>
+                            Sonnet 4.5
                           </option>
                           <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">
                             Haiku 3.5
