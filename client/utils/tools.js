@@ -466,3 +466,13 @@ function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)") {
 
 // Export tools object for backward compatibility
 export const TOOLS = { search, browse, code, editor, think };
+
+export function getSearchResults(results) {
+  return [...(results?.web || []), ...(results?.news || [])];
+}
+
+export function getToolResult(toolUse, messages) {
+  return messages?.find((m) =>
+    m.content?.find((c) => c?.toolResult?.toolUseId === toolUse?.toolUseId)
+  )?.content?.[0].toolResult?.content?.[0]?.json?.results;
+}

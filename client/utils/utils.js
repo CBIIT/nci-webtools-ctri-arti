@@ -131,7 +131,10 @@ export function getMarked() {
   const renderer = new marked.Renderer();
   renderer.link = function (href, title, text) {
     const defaultLink = marked.Renderer.prototype.link.call(this, href, title, text);
-    return defaultLink.replace("<a", '<a target="_blank" rel="noopener noreferrer"');
+    return defaultLink.replace(
+      "<a",
+      '<a target="_blank" rel="noopener noreferrer" aria-hidden="true" '
+    );
   };
   marked.use({ renderer });
   return marked;

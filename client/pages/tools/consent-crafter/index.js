@@ -527,8 +527,8 @@ export default function Page() {
                           <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">
                             Opus 4.1
                           </option>
-                          <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">
-                            Sonnet 4.0
+                          <option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0">
+                            Sonnet 4.5
                           </option>
                           <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">
                             Sonnet 3.7
