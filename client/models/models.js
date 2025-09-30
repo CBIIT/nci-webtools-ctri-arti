@@ -79,7 +79,7 @@ export class Project extends BaseModel {
 
     // Project settings
     this.settings = data.settings || {
-      model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
       temperature: 0.7,
       maxContextLength: 100000,
     };

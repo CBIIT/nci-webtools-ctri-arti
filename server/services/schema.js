@@ -118,8 +118,8 @@ export const seedData = {
     {
       id: 2,
       providerId: 1,
-      label: "Sonnet 4.0",
-      value: "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      label: "Sonnet 4.5",
+      value: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
       cost1kInput: 0.003,
       cost1kOutput: 0.015,
       cost1kCacheRead: 0.0003,
