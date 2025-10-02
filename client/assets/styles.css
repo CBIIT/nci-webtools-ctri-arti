@@ -1015,7 +1015,7 @@ dialog .close-btn {
 .chat-titlebar {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 2;
   box-shadow:
     inset 0px 11px 8px -10px #ccc,
     var(--bs-box-shadow-sm) !important;
