@@ -3,7 +3,7 @@ import { json, Router } from "express";
 import { Role, User } from "../database.js";
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
 
-const { OAUTH_PROVIDER_ENABLED } = process.env;
+const { OAUTH_PROVIDER_ENABLED, SESSION_TTL_POLL_MS } = process.env;
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
@@ -37,6 +37,25 @@ api.get("/session", async (req, res) => {
     session.user = await User.findByPk(session.user.id, { include: [{ model: Role }] });
   }
   res.json({ user: session.user, expires: session.expires });
+});
+
+api.get("/session-ttl", async (req, res) => {
+  const { session } = req;
+
+  if (!session || !session.cookie || !session.cookie.expires) {
+    return res.json({ ttl: null, error: "No session is found." });
+  }
+
+  const expiresDate = new Date(session.cookie.expires);
+  const ttl = Math.round((expiresDate.valueOf() - Date.now()) / 1000);
+
+  res.json({ ttl: ttl > 0 ? ttl : 0 });
+});
+
+api.get("/config", async (req, res) => {
+  const defaultSessionTtlPollMs = 10 * 1000;
+
+  res.json({ sessionTtlPollMs: parseInt(SESSION_TTL_POLL_MS) ?? defaultSessionTtlPollMs });
 });
 
 export default api;
