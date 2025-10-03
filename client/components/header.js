@@ -1,5 +1,7 @@
 import html from "solid-js/html";
 
+import Logo from "../assets/images/logo.js";
+
 export default function Header() {
   function handleSubmit(event) {
     event.preventDefault();
@@ -24,7 +26,7 @@ export default function Header() {
         class="container d-none d-lg-flex flex-wrap justify-content-between align-items-center py-3"
       >
         <a href="/" title="Home" class="d-inline-block">
-          <object height="50" data="assets/images/logo.svg" alt="Logo" class="pe-none" />
+          <${Logo} alt="Logo" class="pe-none" />
         </a>
         <form
           class="input-group w-auto"
