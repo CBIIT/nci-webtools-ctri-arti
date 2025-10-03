@@ -209,3 +209,24 @@ export function getCookie(name) {
       ?.split("=")[1] || null
   );
 }
+
+/**
+ * Converts seconds to a formatted string in mm:ss format
+ *
+ * @param {number} seconds - The number of seconds to convert
+ * @returns {string} Formatted time string in mm:ss format
+ */
+export function secondsToMinuteString(seconds) {
+  if (seconds < 0 || !Number.isFinite(seconds)) {
+    return "00:00";
+  }
+
+  const totalSeconds = Math.floor(seconds);
+  const minutes = Math.floor(totalSeconds / 60);
+  const remainingSeconds = totalSeconds % 60;
+
+  const formattedMinutes = minutes.toString().padStart(2, "0");
+  const formattedSeconds = remainingSeconds.toString().padStart(2, "0");
+
+  return `${formattedMinutes}:${formattedSeconds}`;
+}

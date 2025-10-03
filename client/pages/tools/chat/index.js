@@ -1,16 +1,7 @@
-import {
-  createEffect,
-  createResource,
-  createSignal,
-  For,
-  Index,
-  onCleanup,
-  onMount,
-  Show,
-} from "solid-js";
+import { createEffect, createSignal, For, Index, onCleanup, onMount, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { PanelLeft, Trash2 } from "lucide-solid";
+import { Trash2 } from "lucide-solid";
 
 import { AlertContainer } from "../../../components/alert.js";
 import AttachmentsPreview from "../../../components/attachments-preview.js";
@@ -18,6 +9,7 @@ import ClassToggle from "../../../components/class-toggle.js";
 import Loader from "../../../components/loader.js";
 import ScrollTo from "../../../components/scroll-to.js";
 import Tooltip from "../../../components/tooltip.js";
+import { useAuthContext } from "../../../contexts/auth-context.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 
 import DeleteConversation from "./delete-conversation.js";
@@ -25,7 +17,7 @@ import { useChat } from "./hooks.js";
 import Message from "./message.js";
 
 export default function Page() {
-  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
+  const { user } = useAuthContext();
   const { conversation, deleteConversation, conversations, messages, loading, submitMessage } =
     useChat();
   const [toggles, setToggles] = createSignal({ conversations: true });
@@ -33,7 +25,6 @@ export default function Page() {
   const [chatHeight, setChatHeight] = createSignal(0);
   const [deleteConversationId, setDeleteConversationId] = createSignal(null);
   const [isStreaming, setIsStreaming] = createSignal(false);
-  const toggle = (key) => () => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   const isFedPulse = new URLSearchParams(location.search).get("fedpulse") === "1";
   let bottomEl;
   let chatRef;
@@ -80,6 +71,11 @@ export default function Page() {
     }
   }
 
+  const toggle = (key) => (event) => {
+    event.target.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   async function handleSubmit(event) {
     event.preventDefault();
     const form = event.target;
@@ -118,10 +114,12 @@ export default function Page() {
       <div class="row flex-nowrap min-vh-100 position-relative">
         <div
           class="col-sm-auto shadow-sm border-end px-0 position-sticky"
-          classList=${() => ({ "w-20": toggles().conversations })}
+          classList=${() => ({ "w-20 mw-20r": toggles().conversations })}
         >
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
-            <div class="d-flex align-items-center gap-2 text-dark mb-3 fw-semibold">
+            <div
+              class="d-flex justify-content-end align-items-center gap-2 text-dark mb-3 fw-semibold"
+            >
               <${Tooltip}
                 title=${() => (toggles().conversations ? "Close Sidebar" : "Open Sidebar")}
                 placement="right"
@@ -133,11 +131,19 @@ export default function Page() {
                   class="btn btn-sm btn-light d-flex-center rounded-5 wh-2 p-0"
                   onClick=${toggle("conversations")}
                 >
-                  <${PanelLeft} alt="Menu" size="16" />
+                  ${() =>
+                    toggles().conversations
+                      ? html`<img
+                          src="assets/images/icon-panel-left-close.svg"
+                          alt="Close Sidebar"
+                          width="20"
+                        />`
+                      : html`<img
+                          src="assets/images/icon-panel-left-open.svg"
+                          alt="Open Sidebar"
+                          width="20"
+                        />`}
                 </button>
-              <//>
-              <${Show} when=${() => toggles().conversations}>
-                <div class="btn btn-sm m-0 p-0 border-0">ARTI Chat</div>
               <//>
             </div>
             <div
@@ -160,7 +166,7 @@ export default function Page() {
                     <li>
                       <a
                         title="General chat"
-                        class="dropdown-item text-decoration-none small fw-semibold"
+                        class="dropdown-item text-decoration-none small fw-normal"
                         href="/tools/chat"
                         target="_self"
                         >Standard Chat</a
@@ -169,7 +175,7 @@ export default function Page() {
                     <li>
                       <a
                         title="Search U.S. federal websites for policies, guidelines, executive orders, and other official content."
-                        class="dropdown-item text-decoration-none small fw-semibold"
+                        class="dropdown-item text-decoration-none small fw-normal"
                         href="/tools/chat?fedpulse=1"
                         target="_self"
                         >FedPulse</a
@@ -181,7 +187,9 @@ export default function Page() {
             </div>
 
             <${Show} when=${() => toggles().conversations}>
-              <small class="mb-2 fw-normal text-muted fs-08"> Recent </small>
+              <small class="mb-2 fw-normal text-muted fs-08">
+                Recent ${isFedPulse ? "FedPulse" : "Standard"} Chats</small
+              >
 
               <ul class="list-unstyled">
                 <${For} each=${conversations}>
@@ -229,20 +237,13 @@ export default function Page() {
         </div>
         <div class="col-sm bg-chat p-0 d-flex flex-column min-vh-100 min-w-0">
           <header
-            class="chat-titlebar d-flex align-items-center justify-content-between gap-2 px-3 py-2 bg-chat"
+            class="chat-titlebar d-flex align-items-center justify-content-between border-bottom gap-2 px-3 py-2 bg-chat"
             role="banner"
           >
             <div class="d-flex align-items-center gap-2 min-w-0 text-body-secondary">
-              <span
-                class=${() =>
-                  isFedPulse
-                    ? "badge rounded-pill text-bg-primary text-uppercase fw-semibold"
-                    : "badge rounded-pill bg-secondary-subtle text-secondary text-uppercase fw-semibold"}
-              >
+              <span class="badge rounded-pill text-bg-primary text-uppercase fw-semibold">
                 ${() => (isFedPulse ? "FedPulse Chat" : "Standard Chat")}
               </span>
-
-              <div class="vr d-none d-sm-block" aria-hidden="true"></div>
 
               <${Tooltip}
                 title=${() => conversation?.title || "Untitled"}
@@ -289,7 +290,7 @@ export default function Page() {
             >
               <div class="text-center my-5 font-serif" hidden=${() => messages.length > 0}>
                 <h1 class="text-gradient fw-bold font-title mb-2">
-                  Welcome, ${() => session()?.user?.firstName || ""}
+                  Welcome, ${() => user?.()?.firstName || ""}
                 </h1>
                 <div class="text-secondary fw-semibold small">
                   ${() =>
@@ -407,7 +408,7 @@ export default function Page() {
                     </div>
 
                     <div class="d-flex w-auto align-items-center">
-                      <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
+                      <${Show} when=${() => user?.()?.Role?.name === "admin"}>
                         <label for="model" class="visually-hidden">Model Selection</label>
                         <select
                           class="model-dropdown form-select form-select-sm border-0 bg-transparent cursor-pointer"

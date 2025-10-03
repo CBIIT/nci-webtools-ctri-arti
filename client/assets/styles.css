@@ -469,6 +469,10 @@ ul {
   width: 200%;
 }
 
+.mw-20r {
+  max-width: 20rem;
+}
+
 .mw-50 {
   max-width: 50%;
 }
@@ -884,8 +888,12 @@ dialog .close-btn {
 }
 
 .bg-chat {
-  background-color: #f6f7fc;
+  background-color: #f7f9fb;
   min-width: 0;
+}
+
+.bg-chat form.container {
+  font-size: 15px;
 }
 
 .rounded-full {
@@ -1016,9 +1024,6 @@ dialog .close-btn {
   position: sticky;
   top: 0;
   z-index: 2;
-  box-shadow:
-    inset 0px 11px 8px -10px #ccc,
-    var(--bs-box-shadow-sm) !important;
 }
 .chat-titlebar .vr {
   opacity: 0.15;
@@ -1026,6 +1031,9 @@ dialog .close-btn {
 .chat-title {
   min-width: 0;
   max-width: 100%;
+}
+.user-message {
+  background-color: #e2e9f5;
 }
 
 .tool-btn-icon {
@@ -1159,4 +1167,130 @@ dialog .close-btn {
   --_fg: var(--bs-danger, #dc3545);
   --_hover-bg: rgba(var(--bs-danger-rgb, 220, 53, 69), 0.08);
   --_focus-ring: 0 0 0 0.2rem rgba(var(--bs-danger-rgb, 220, 53, 69), 0.25);
+}
+
+.inactivity-warning-modal .modal-content {
+  width: 550px;
+  min-width: 550px;
+  height: 320px;
+  border-radius: 8px;
+  border: 2px solid #0b7f99;
+  background: linear-gradient(0deg, #f2f6fa 0%, #f2f6fa 100%), #2e4d7b;
+  box-shadow: 0px 4px 45px 0px rgba(0, 0, 0, 0.4);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+.inactivity-warning-header {
+  margin: 0;
+  padding-left: 30px;
+  background-color: #6d89a2;
+  border-bottom: none;
+}
+.inactivity-warning-title {
+  margin: 0;
+  color: #ffffff;
+  font-family: Lato;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 32px;
+}
+.inactivity-warning-body {
+  margin: 50px auto;
+  padding: 0;
+  color: #000000;
+  font-family: "Nunito", "Rubik", sans-serif;
+  font-size: 17px;
+  font-weight: 300;
+  letter-spacing: 0;
+  line-height: 24px;
+}
+.inactivity-warning-text {
+  margin-bottom: 30px;
+}
+.session-timeout-modal .modal-content {
+  width: 550px;
+  min-width: 550px;
+  height: 320px;
+  border-radius: 8px;
+  border: 2px solid #0b7f99;
+  background: linear-gradient(0deg, #f2f6fa 0%, #f2f6fa 100%), #2e4d7b;
+  box-shadow: 0px 4px 45px 0px rgba(0, 0, 0, 0.4);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+.session-timeout-header {
+  border-bottom: none;
+  padding: 16px 24px;
+  line-height: 32px;
+}
+.close-icon {
+  cursor: pointer;
+  text-align: end;
+  margin-left: auto;
+}
+.close-icon-img {
+  margin-bottom: 2px;
+}
+.session-timeout-body {
+  justify-content: space-between;
+  padding: 10px 33px 33px 33px;
+  font-family: Lato;
+  text-align: center;
+}
+.session-timeout-title {
+  font-size: 25px;
+  font-weight: bold;
+  font-family: Lato;
+  padding-bottom: 12px;
+  color: #566672;
+}
+.session-timeout-message {
+  font-size: 17px;
+  padding-bottom: 14px;
+}
+.button-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  margin-top: 30px;
+}
+.button-group {
+  color: #ffffff;
+  font-family: Lato;
+  font-size: 11px;
+  line-height: 22px;
+  width: 150px;
+  border: 1px solid #626262;
+  border-radius: 4px;
+  font-weight: 500;
+  box-shadow:
+    0px 3px 1px -2px rgba(0, 0, 0, 0.2),
+    0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+}
+.session-timeout-modal .button-group {
+  width: 90px;
+}
+.extend-button,
+.close-button {
+  background-color: #566672 !important;
+  border-color: #566672 !important;
+}
+.logout-button,
+.login-button {
+  margin-left: 20px;
+  background-color: #437bbe !important;
+  border: 1px solid #626262;
+}
+.extend-button:hover,
+.close-button:hover {
+  background: linear-gradient(rgba(0, 0, 0, 0.15) 0px, rgba(0, 0, 0, 0.15) 0px) rgb(26, 129, 153);
+  border: 1.5px solid rgb(8, 89, 108);
+}
+.logout-button:hover,
+.login-button:hover {
+  background: linear-gradient(rgba(0, 0, 0, 0.15) 0px, rgba(0, 0, 0, 0.15) 0px) rgb(26, 129, 153);
+  border: 1.5px solid rgb(8, 89, 108);
 }
