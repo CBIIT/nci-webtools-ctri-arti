@@ -1,7 +1,6 @@
 import { createEffect, createResource, createSignal, onCleanup, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { useNavigate } from "@solidjs/router";
 import { X } from "lucide-solid";
 
 import { useAuthContext } from "../contexts/auth-context.js";
@@ -19,9 +18,10 @@ export default function InactivityDialog() {
   const [env] = createResource(() => fetch("/api/config").then((res) => res.json()));
   const { isLoggedIn, logout } = useAuthContext() || {};
 
-  const navigate = useNavigate();
   const [warning, setWarning] = createSignal(false);
-  const [timedOut, setTimedOut] = createSignal(false);
+  const [timedOut, setTimedOut] = createSignal(
+    sessionStorage.getItem("sessionTimedOut") === "true" || false
+  );
   const [timeLeft, setTimeLeft] = createSignal(timeoutThresholdSeconds);
 
   const extendSession = async () => {
@@ -56,9 +56,8 @@ export default function InactivityDialog() {
       const { ttl } = data;
 
       if (ttl <= 0) {
-        // Session expired
+        sessionStorage.setItem("sessionTimedOut", "true");
         handleSignOut();
-        setTimedOut(true);
       } else if (ttl > 0 && ttl <= timeoutThresholdSeconds) {
         // Session expiring soon
         setTimeLeft(ttl);
@@ -67,6 +66,7 @@ export default function InactivityDialog() {
     } catch (e) {
       console.error("Error in fetching session ttl", e);
       // On error, assume session might be expired
+      sessionStorage.setItem("sessionTimedOut", "true");
       setTimedOut(true);
       setWarning(false);
     }
@@ -77,6 +77,10 @@ export default function InactivityDialog() {
     if (isLoggedIn()) {
       const pollInterval = env()?.sessionTtlPollMs || 10 * 1000;
       intervalId = setInterval(loadData, pollInterval);
+    } else {
+      if (sessionStorage.getItem("sessionTimedOut") === "true") {
+        sessionStorage.removeItem("sessionTimedOut");
+      }
     }
 
     onCleanup(() => {
@@ -171,7 +175,7 @@ export default function InactivityDialog() {
                     class="btn btn-primary button-group login-button"
                     onClick=${() => {
                       setTimedOut(false);
-                      navigate("/login");
+                      window.location.href = "/api/login";
                     }}
                   >
                     LOGIN
