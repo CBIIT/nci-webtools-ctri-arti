@@ -93,9 +93,9 @@ export async function loginMiddleware(req, res, next) {
     // After we receive the authorization code, we need to exchange it for an access token.
     const redirectUrl = new URL(req.originalUrl, `${req.protocol}://${req.get("host")}`);
     const checks = {
-      expectedState: sess.oidc.state,
-      expectedNonce: sess.oidc.nonce,
-      pkceCodeVerifier: sess.oidc.codeVerifier,
+      expectedState: sess?.oidc?.state,
+      expectedNonce: sess?.oidc?.nonce,
+      pkceCodeVerifier: sess?.oidc?.codeVerifier,
     };
     const tokenSet = await client.authorizationCodeGrant(oidcConfig, redirectUrl, checks);
 
