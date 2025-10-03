@@ -9,11 +9,12 @@ import session from "express-session";
 import api from "./services/api.js";
 import db from "./services/database.js";
 import logger from "./services/logger.js";
+import { nocache } from "./services/middleware.js";
 import { startScheduler } from "./services/scheduler.js";
 import { createCertificate } from "./services/utils.js";
-import { nocache } from "./services/middleware.js";
 
-const { PORT = 8080, SESSION_MAX_AGE = 24 * 60 * 60 * 1000 } = process.env;
+const { PORT = 8080, SESSION_MAX_AGE } = process.env;
+const sessionMaxAge = parseInt(SESSION_MAX_AGE, 10) || 30 * 60 * 1000;
 
 // Only start server if this file is run directly (not imported)
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -33,11 +34,13 @@ export function createApp(env = process.env) {
   const SessionStore = SequelizeStore(session.Store);
   const store = new SessionStore({ db });
   store.sync({ force: true });
+
   app.use(
     session({
-      cookie: { maxAge: SESSION_MAX_AGE },
+      cookie: { maxAge: sessionMaxAge },
+      rolling: true,
       resave: false,
-      saveUninitialized: true,
+      saveUninitialized: false,
       secret: SESSION_SECRET,
       store,
     })

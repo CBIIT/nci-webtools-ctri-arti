@@ -1,8 +1,11 @@
-import { createResource, For, Show } from "solid-js";
+import { For, Show } from "solid-js";
 import html from "solid-js/html";
 
+import { useAuthContext } from "../contexts/auth-context.js";
+
 export default function Page() {
-  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
+  const { user } = useAuthContext();
+
   const links = [
     {
       title: "Chat",
@@ -49,7 +52,7 @@ export default function Page() {
                 An initiative of the National Cancer Institute – Center for Biomedical Informatics
                 and Information Technology
               </p>
-              <${Show} when=${() => !session()?.user}>
+              <${Show} when=${() => !user()}>
                 <a
                   class="btn btn-primary rounded-pill text-decoration-none"
                   href="/api/login"

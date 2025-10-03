@@ -1,14 +1,15 @@
 import { createResource } from "solid-js";
 import html from "solid-js/html";
 
+import { useAuthContext } from "../contexts/auth-context.js";
 import { getCookie, setCookie } from "../utils/utils.js";
 
 import Modal from "./modal.js";
 
 export default function PrivacyNotice() {
-  const [open, { mutate: setOpen }] = createResource(async () => {
-    const session = await fetch("/api/session").then((res) => res.json());
-    return session.user ? !getCookie("privacyNoticeAccepted") : false;
+  const { user } = useAuthContext();
+  const [open, { mutate: setOpen }] = createResource(() => {
+    return user() ? !getCookie("privacyNoticeAccepted") : false;
   });
   const onSubmit = () => setCookie("privacyNoticeAccepted", "true");
   const title = html`

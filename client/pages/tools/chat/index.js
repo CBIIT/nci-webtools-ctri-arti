@@ -1,13 +1,4 @@
-import {
-  createEffect,
-  createResource,
-  createSignal,
-  For,
-  Index,
-  onCleanup,
-  onMount,
-  Show,
-} from "solid-js";
+import { createEffect, createSignal, For, Index, onCleanup, onMount, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { PanelLeft, Trash2 } from "lucide-solid";
@@ -18,6 +9,7 @@ import ClassToggle from "../../../components/class-toggle.js";
 import Loader from "../../../components/loader.js";
 import ScrollTo from "../../../components/scroll-to.js";
 import Tooltip from "../../../components/tooltip.js";
+import { useAuthContext } from "../../../contexts/auth-context.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 
 import DeleteConversation from "./delete-conversation.js";
@@ -25,7 +17,7 @@ import { useChat } from "./hooks.js";
 import Message from "./message.js";
 
 export default function Page() {
-  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
+  const { user } = useAuthContext();
   const { conversation, deleteConversation, conversations, messages, loading, submitMessage } =
     useChat();
   const [toggles, setToggles] = createSignal({ conversations: true });
@@ -289,7 +281,7 @@ export default function Page() {
             >
               <div class="text-center my-5 font-serif" hidden=${() => messages.length > 0}>
                 <h1 class="text-gradient fw-bold font-title mb-2">
-                  Welcome, ${() => session()?.user?.firstName || ""}
+                  Welcome, ${() => user?.()?.firstName || ""}
                 </h1>
                 <div class="text-secondary fw-semibold small">
                   ${() =>
@@ -407,7 +399,7 @@ export default function Page() {
                     </div>
 
                     <div class="d-flex w-auto align-items-center">
-                      <${Show} when=${() => session()?.user?.Role?.name === "admin"}>
+                      <${Show} when=${() => user?.()?.Role?.name === "admin"}>
                         <label for="model" class="visually-hidden">Model Selection</label>
                         <select
                           class="model-dropdown form-select form-select-sm border-0 bg-transparent cursor-pointer"
