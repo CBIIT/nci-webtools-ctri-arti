@@ -3,10 +3,15 @@ import { render } from "solid-js/web";
 
 import { Router } from "@solidjs/router";
 
-import Layout from "./layout.js";
-import routes from "./routes.js";
+import { AuthProvider } from "../contexts/auth-context.js";
 
-render(() => html`<${Router} root=${Layout}>${routes}<//>`, window.app);
+import Layout from "./layout.js";
+import getRoutes from "./routes.js";
+
+render(
+  () => html` <${AuthProvider}> ${() => html`<${Router} root=${Layout}>${getRoutes()}<//>`} <//> `,
+  window.app
+);
 
 const { search, hostname } = window.location;
 const params = new URLSearchParams(search);
