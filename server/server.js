@@ -14,7 +14,7 @@ import { startScheduler } from "./services/scheduler.js";
 import { createCertificate } from "./services/utils.js";
 
 const { PORT = 8080, SESSION_MAX_AGE } = process.env;
-const sessionMaxAge = parseInt(SESSION_MAX_AGE, 10) || 24 * 60 * 60 * 1000;
+const sessionMaxAge = parseInt(SESSION_MAX_AGE, 10) || 30 * 60 * 1000;
 
 // Only start server if this file is run directly (not imported)
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

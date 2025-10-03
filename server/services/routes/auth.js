@@ -55,7 +55,7 @@ api.get("/session-ttl", async (req, res) => {
 api.get("/config", async (req, res) => {
   const defaultSessionTtlPollMs = 10 * 1000;
 
-  res.json({ sessionTtlPollMs: parseInt(SESSION_TTL_POLL_MS) ?? defaultSessionTtlPollMs });
+  res.json({ sessionTtlPollMs: parseInt(SESSION_TTL_POLL_MS, 10) || defaultSessionTtlPollMs });
 });
 
 export default api;
