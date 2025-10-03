@@ -3,7 +3,7 @@ import html from "solid-js/html";
 
 import { createStore } from "solid-js/store";
 
-import { safeParse } from "../utils/utils.js";
+import { safeParseJson } from "../utils/parsers.js";
 
 export const Status = {
   LOADING: "LOADING", // Retrieving user data
@@ -52,7 +52,7 @@ export const useAuthContext = () => {
  * @returns Auth context provider
  */
 export const AuthProvider = (props) => {
-  const cachedUser = safeParse(localStorage.getItem("userDetails"), null);
+  const cachedUser = safeParseJson(localStorage.getItem("userDetails"), null);
   const cachedState = cachedUser
     ? {
         isLoggedIn: true,
