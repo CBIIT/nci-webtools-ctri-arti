@@ -34,7 +34,7 @@ export default function TextContent(props) {
       <div
         class="p-2 markdown min-w-0"
         classList=${{
-          "d-inline-block p-3 bg-secondary-subtle rounded my-2": props.role === "user",
+          "user-message d-inline-block p-3 rounded my-2": props.role === "user",
         }}
         innerHTML=${() =>
           marked.parse(props.message?.text || "")?.replace(/<metadata[\s\S]*?<\/metadata>/gi, "")}

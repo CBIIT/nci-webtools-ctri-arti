@@ -469,6 +469,10 @@ ul {
   width: 200%;
 }
 
+.mw-20r {
+  max-width: 20rem;
+}
+
 .mw-50 {
   max-width: 50%;
 }
@@ -884,8 +888,12 @@ dialog .close-btn {
 }
 
 .bg-chat {
-  background-color: #f6f7fc;
+  background-color: #f7f9fb;
   min-width: 0;
+}
+
+.bg-chat form.container {
+  font-size: 15px;
 }
 
 .rounded-full {
@@ -1016,9 +1024,6 @@ dialog .close-btn {
   position: sticky;
   top: 0;
   z-index: 2;
-  box-shadow:
-    inset 0px 11px 8px -10px #ccc,
-    var(--bs-box-shadow-sm) !important;
 }
 .chat-titlebar .vr {
   opacity: 0.15;
@@ -1026,6 +1031,9 @@ dialog .close-btn {
 .chat-title {
   min-width: 0;
   max-width: 100%;
+}
+.user-message {
+  background-color: #e2e9f5;
 }
 
 .tool-btn-icon {

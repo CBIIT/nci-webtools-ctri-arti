@@ -77,10 +77,9 @@ export default function InactivityDialog() {
     if (isLoggedIn()) {
       const pollInterval = env()?.sessionTtlPollMs || 10 * 1000;
       intervalId = setInterval(loadData, pollInterval);
-    } else {
-      if (sessionStorage.getItem("sessionTimedOut") === "true") {
-        sessionStorage.removeItem("sessionTimedOut");
-      }
+    } else if (sessionStorage.getItem("sessionTimedOut") === "true") {
+      setTimedOut(true);
+      sessionStorage.removeItem("sessionTimedOut");
     }
 
     onCleanup(() => {
@@ -139,7 +138,7 @@ export default function InactivityDialog() {
           </div>
         </div>
       <//>
-      <${Show} when=${() => timedOut()}>
+      <${Show} when=${() => !isLoggedIn() && timedOut()}>
         <div
           class="modal fade show session-timeout-modal"
           tabindex="-1"
