@@ -1,8 +1,6 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+FROM public.ecr.aws/docker/library/almalinux:10
 
 RUN dnf -y update \
-    && dnf -y install curl-minimal \
-    && curl -fsSL https://rpm.nodesource.com/setup_22.x | bash \
     && dnf -y install nodejs \
     && dnf clean all
 
