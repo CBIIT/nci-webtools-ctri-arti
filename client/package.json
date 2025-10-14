@@ -9,25 +9,25 @@
   },
   "devDependencies": {
     "@arti/eslint-config": "file:../packages/eslint-config",
-    "@duckdb/duckdb-wasm": "^1.29.0",
-    "@huggingface/transformers": "^3.7.2",
+    "@duckdb/duckdb-wasm": "^1.30.0",
+    "@floating-ui/dom": "^1.7.4",
+    "@huggingface/transformers": "^3.7.4",
     "@langchain/textsplitters": "^0.1.0",
     "@solidjs/router": "^0.15.3",
+    "bootstrap": "^5.3.8",
     "docx": "^9.5.1",
     "docx-templates": "^4.14.1",
-    "dompurify": "^3.2.6",
-    "eslint": "^9.35.0",
+    "dompurify": "^3.2.7",
+    "eslint": "^9.36.0",
     "idb": "^8.0.3",
-    "mammoth": "^1.10.0",
-    "marked": "^16.2.0",
-    "pdfjs-dist": "^5.4.54",
+    "lucide-solid": "^0.545.0",
+    "mammoth": "^1.11.0",
+    "marked": "^16.3.0",
+    "pdfjs-dist": "^5.4.149",
     "prettier": "3.6.2",
     "solid-js": "^1.9.9",
-    "three": "^0.179.1",
+    "three": "^0.180.0",
     "turndown": "^7.2.1",
     "yaml": "^2.8.1"
-  },
-  "dependencies": {
-    "lucide-solid": "^0.543.0"
   }
 }
