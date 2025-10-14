@@ -27,6 +27,9 @@ export default function Float(props) {
   const toggleActive = () => setActive((a) => !a);
   const onMouseOut = () => props.trigger === "hover" && setActive(false);
   const onMouseOver = () => props.trigger === "hover" && setActive(true);
+  const onClickOutside = (event) => !floatingRef?.contains(event.target) && setActive(false);
+  onMount(() => document.addEventListener("click", onClickOutside, true));
+  onCleanup(() => document.removeEventListener("click", onClickOutside, true));
 
   createEffect(() => {
     const targetEl = targetRef();
@@ -52,8 +55,6 @@ export default function Float(props) {
       onClick=${toggleActive}
       onMouseOut=${onMouseOut}
       onMouseOver=${onMouseOver}
-      onFocus=${onMouseOver}
-      onBlur=${onMouseOut}
     >
       ${props.children}
     </span>
