@@ -1,4 +1,4 @@
-import { Show, createSignal, createEffect, onCleanup } from "solid-js";
+import { Show, createSignal, createEffect, onMount, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
 import html from "solid-js/html";
 import { computePosition, autoUpdate, arrow, flip, shift, offset } from "@floating-ui/dom";
@@ -27,7 +27,7 @@ export default function Float(props) {
   const toggleActive = () => setActive((a) => !a);
   const onMouseOut = () => props.trigger === "hover" && setActive(false);
   const onMouseOver = () => props.trigger === "hover" && setActive(true);
-  const onClickOutside = (event) => !floatingRef?.contains(event.target) && setActive(false);
+  const onClickOutside = (event) => !floatingRef()?.contains?.(event.target) && setActive(false);
   onMount(() => document.addEventListener("click", onClickOutside, true));
   onCleanup(() => document.removeEventListener("click", onClickOutside, true));
 
@@ -115,4 +115,38 @@ export function Tooltip(props) {
       ${props.children}
     <//>
   `;
+}
+
+/**
+ * Bootstrap popover component using Float
+ * @param {any} props - object with reactive getters for the following properties (don't destructure):
+ * @param {string} props.title - Popover title (string or element)
+ * @param {string} props.content - Popover content (string or element)
+ * @param {string} props.placement - Popover placement: "top" (default), "right", "bottom", "left"
+ * @param {string} props.trigger - Trigger event: "click" (default) or "hover"
+ * @param {any} props.children - Element that triggers the popover
+ * @returns 
+ */
+export function Popover(props) {
+  const placementClass =
+    {
+      left: "bs-popover-start",
+      right: "bs-popover-end",
+      top: "bs-popover-top",
+      bottom: "bs-popover-bottom",
+    }[props.placement] || "bs-popover-top";
+  return html`
+    <${Float}
+      arrowClass="popover-arrow"
+      class=${() => `show fade popover bs-popover-auto ${placementClass}`}
+      content=${() => html`
+        <div class="popover-header">${props.title}</div>
+        <div class="popover-body">${props.content}</div>
+      `}
+      placement=${() => props.placement || "top"}
+      trigger=${() => props.trigger || "click"}
+    >
+      ${props.children}
+    <//>
+  `;  
 }
