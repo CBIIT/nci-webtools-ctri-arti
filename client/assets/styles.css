@@ -1462,7 +1462,8 @@ dialog .close-btn {
 .btn-wide-primary:hover,
 .btn-wide-primary:focus,
 .btn-wide-primary:active,
-.btn-wide-primary:focus-visible {
+.btn-wide-primary:focus-visible,
+.btn-wide-primary:disabled {
   background: #7740a4 !important;
   border: 0.5px solid #373737 !important;
   color: #ffffff !important;
@@ -1478,7 +1479,8 @@ dialog .close-btn {
 .btn-wide-info:hover,
 .btn-wide-info:focus,
 .btn-wide-info:active,
-.btn-wide-info:focus-visible {
+.btn-wide-info:focus-visible,
+.btn-wide-info:disabled {
   background: #ffffff !important;
   border: 1.25px solid #a5a5a5 !important;
   color: #3c3c3c !important;
