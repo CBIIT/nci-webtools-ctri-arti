@@ -29,32 +29,37 @@ export default function Page() {
   ];
 
   return html`
-    <div class="container h-100 d-flex flex-column justify-content-center">
-      <div class="row gx-5 p-5 my-5">
-        <div class="col-lg-6">
+    <div class="container h-100 d-flex flex-column justify-content-center font-smooth">
+      <div class="row gx-5 p-24 mt-136 mb-140">
+        <div class="col-lg-6 pl-88">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
-            <h1 class="text-gradient display-5 font-title fw-normal mb-1">Welcome to ARTI</h1>
-            <h2 class="text-gradient fs-3 font-title fw-normal mb-4">
+            <h1
+              class="font-manrope fw-semibold fs-75 lh-60 ls--2 minh-138 text-clip text-gradient-blue-teal mb-12"
+            >
+              Research Optimizer
+            </h1>
+            <h2 class="font-inter fw-medium fs-30 lh-35 ls-00025em text-black mb-5 mw-510">
               AI Research & Translational Informatics
             </h2>
-            <div class="text-secondary">
-              <p class="mb-3">
-                Powering the Research Optimizer platform with intelligent tools that address
-                documentation challenges throughout the clinical trial lifecycle.
-                <br />
-                ARTI enables researchers to focus on scientific advancement rather than
-                administrative burdens.
-              </p>
-              <p class="mb-3">
-                Developed by clinical research professionals for clinical research professionals.
-              </p>
-              <p class="mb-3">
-                An initiative of the National Cancer Institute – Center for Biomedical Informatics
-                and Information Technology
-              </p>
+            <div class="font-inter fw-light fs-18 lh-27 ls-00025em text-black">
+              <div class="mw-510 mb-35">
+                <p class="mb-3">
+                  Powering the Research Optimizer platform with intelligent tools that address
+                  documentation challenges throughout the clinical trial lifecycle. AI Research &
+                  Translational Informatics enables researchers to focus on scientific advancement
+                  rather than administrative burdens.
+                </p>
+                <p class="mb-3">
+                  Developed by clinical research professionals for clinical research professionals.
+                </p>
+                <p class="">
+                  An initiative of the National Cancer Institute – Center for Biomedical Informatics
+                  and Information Technology
+                </p>
+              </div>
               <${Show} when=${() => !user()}>
                 <a
-                  class="btn btn-primary rounded-pill text-decoration-none"
+                  class="btn btn-wide btn-wide-primary text-decoration-none"
                   href="/api/login"
                   target="_self"
                   >Login</a
@@ -63,7 +68,7 @@ export default function Page() {
             </div>
           </div>
         </div>
-        <div class="col-lg-5 offset-lg-1">
+        <div class="col-lg-4 offset-lg-2">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
             <${For} each=${links}>
               ${(link) => html`
