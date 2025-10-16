@@ -1,4 +1,13 @@
-import { createEffect, createSignal, For, Index, onCleanup, onMount, Show } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  Index,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
 import html from "solid-js/html";
 
 import { Trash2 } from "lucide-solid";
@@ -18,6 +27,7 @@ import Message from "./message.js";
 
 export default function Page() {
   const { user } = useAuthContext();
+
   const { conversation, deleteConversation, conversations, messages, loading, submitMessage } =
     useChat();
   const [toggles, setToggles] = createSignal({ conversations: true });
@@ -30,6 +40,10 @@ export default function Page() {
   let chatRef;
   let inputFilesEl;
   let attachmentsReset;
+  let formRef;
+
+  const chatId = createMemo(() => new URLSearchParams(location.search).get("id") || "");
+  const hasChatId = createMemo(() => chatId()?.length > 0 || conversation?.id?.length > 0);
 
   onMount(() => {
     const resizeObserver = new ResizeObserver(() => setChatHeight(chatRef.offsetHeight || 0));
@@ -84,14 +98,9 @@ export default function Page() {
     const reasoningMode = form.reasoningMode.checked;
     const defaultModel = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
     const model = form.model?.value || defaultModel;
-    const reset = () => {
-      form.message.value = "";
-      form.inputFiles.value = "";
-      attachmentsReset && attachmentsReset();
-    };
     setIsStreaming(true);
-    await submitMessage({ message, inputFiles, reasoningMode, model, reset }).finally(() =>
-      setIsStreaming(false)
+    await submitMessage({ message, inputFiles, reasoningMode, model, reset: clearChat() }).finally(
+      () => setIsStreaming(false)
     );
   }
 
@@ -107,6 +116,16 @@ export default function Page() {
 
     await deleteConversation(deleteConversationId(), { skipWindowConfirm: true });
     setDeleteConversationId(null);
+  }
+
+  function clearChat() {
+    if (!formRef) {
+      return;
+    }
+
+    formRef.message.value = "";
+    formRef.inputFiles.value = "";
+    attachmentsReset && attachmentsReset();
   }
 
   return html`
@@ -187,7 +206,7 @@ export default function Page() {
             </div>
 
             <${Show} when=${() => toggles().conversations}>
-              <small class="mb-2 fw-normal text-muted fs-08">
+              <small class="mb-2 fw-normal text-muted fs-08r">
                 Recent ${isFedPulse ? "FedPulse" : "Standard"} Chats</small
               >
 
@@ -279,6 +298,7 @@ export default function Page() {
           </header>
 
           <form
+            ref=${(el) => (formRef = el)}
             onSubmit=${handleSubmit}
             class="container d-flex flex-column flex-grow-1 mb-3 px-4 position-relative min-w-0"
           >
@@ -288,17 +308,6 @@ export default function Page() {
               class="flex-grow-1 py-3 min-width-0"
               classList=${() => ({ "x-mvh-100": messages.length > 0 })}
             >
-              <div class="text-center my-5 font-serif" hidden=${() => messages.length > 0}>
-                <h1 class="text-gradient fw-bold font-title mb-2">
-                  Welcome, ${() => user?.()?.firstName || ""}
-                </h1>
-                <div class="text-secondary fw-semibold small">
-                  ${() =>
-                    new URLSearchParams(location.search).get("fedpulse")
-                      ? "Search U.S. federal websites for policies, guidelines, executive orders, and other official content."
-                      : "How can I help you today?"}
-                </div>
-              </div>
               <${Index} each=${messages}>
                 ${(message, index) => html`
                   <${Message}
@@ -322,10 +331,24 @@ export default function Page() {
                 style=${() => `scroll-margin-bottom: ${chatHeight()}px`}
               />
             </div>
-            <div class="position-sticky bottom-0">
+            <div
+              class=${() =>
+                `${hasChatId() ? "bottom-0 position-sticky" : "bottom-50 position-relative"}`}
+            >
+              <div class="text-center my-2 font-serif" hidden=${() => hasChatId()}>
+                <h1 class="font-poppins fw-medium fs-40 lh-35 text-deep-violet mb-2">
+                  Welcome, ${() => user?.()?.firstName || ""}
+                </h1>
+                <div class="font-inter fw-medium fs-18 lh-35 ls-00025em text-black small">
+                  ${() =>
+                    new URLSearchParams(location.search).get("fedpulse")
+                      ? "Search U.S. federal websites for policies, guidelines, executive orders, and other official content."
+                      : "How can I help you today?"}
+                </div>
+              </div>
               <${ScrollTo}
                 targetRef=${() => bottomEl}
-                hidden=${isAtBottom}
+                hidden=${() => isAtBottom || messages.length === 0}
                 label="Scroll to bottom"
               />
               <div
@@ -333,7 +356,9 @@ export default function Page() {
                   chatRef = el;
                 }}
               >
-                <div class="bg-white border shadow-sm rounded">
+                <div
+                  class="bg-white position-relative border-gray border-1.25 border-solid shadow-md rounded"
+                >
                   <${AttachmentsPreview}
                     inputRef=${() => inputFilesEl}
                     onResetRef=${(fn) => (attachmentsReset = fn)}
@@ -341,16 +366,16 @@ export default function Page() {
                   <label for="message" class="visually-hidden">Chat Message</label>
                   <textarea
                     onKeyDown=${handleKeyDown}
-                    class="form-control form-control-sm border-0 bg-transparent shadow-0 p-3"
+                    class="form-control form-control-sm font-inter fw-normal fs-6 lh-28 text-black resize-none border-0 bg-transparent shadow-0 p-3 pt-4 px-34"
                     id="message"
                     name="message"
                     placeholder="Ask me a question. (Shift + Enter for new line)"
-                    rows="3"
+                    rows="2"
                     autofocus
                     required
                   />
 
-                  <div class="d-flex justify-content-between py-1 px-2">
+                  <div class="d-flex justify-content-between pt-1 pb-20 px-34">
                     <div class="d-flex w-auto align-items-center">
                       <${Tooltip}
                         title="Upload file(s) from your device"
@@ -358,10 +383,7 @@ export default function Page() {
                         arrow=${true}
                         class="text-white bg-primary"
                       >
-                        <label
-                          class="btn bg-transparent border-0 btn-sm rounded-pill m-0"
-                          for="inputFiles"
-                        >
+                        <label class="btn btn-wide btn-wide-info px-21 py-12" for="inputFiles">
                           <input
                             ref=${(el) => (inputFilesEl = el)}
                             type="file"
@@ -375,7 +397,8 @@ export default function Page() {
                           <img
                             src="assets/images/icon-paperclip.svg"
                             alt="Upload"
-                            width="16"
+                            width="27"
+                            height="29"
                             class="me-1"
                           />
                           Attach
@@ -388,18 +411,18 @@ export default function Page() {
                         arrow=${true}
                         class="text-white bg-primary"
                       >
-                        <div class="form-check form-switch form-control-sm my-0 mx-2" toggle>
+                        <div
+                          class="form-check form-switch form-switch-lg d-flex align-items-center gap-2 my-0 mx-2"
+                        >
                           <input
-                            class="form-check-input p-0 cursor-pointer"
+                            class="form-check-input form-check-input-lg mt-0 cursor-pointer"
                             type="checkbox"
                             id="reasoningMode"
                             name="reasoningMode"
                           />
                           <label
-                            toggle
-                            class="form-check-label text-secondary fw-semibold cursor-pointer"
+                            class="form-check-label text-secondary fw-semibold cursor-pointer fs-16"
                             for="reasoningMode"
-                            title="Enable this mode for more thorough responses to complex problems. Please note this requires additional time and resources."
                           >
                             Deep Research Mode
                           </label>
@@ -407,11 +430,11 @@ export default function Page() {
                       <//>
                     </div>
 
-                    <div class="d-flex w-auto align-items-center">
+                    <div class="d-flex w-auto align-items-center gap-2">
                       <${Show} when=${() => user?.()?.Role?.name === "admin"}>
                         <label for="model" class="visually-hidden">Model Selection</label>
                         <select
-                          class="model-dropdown form-select form-select-sm border-0 bg-transparent cursor-pointer"
+                          class="model-dropdown form-select form-select-lg fs-16 h-100 border-0 bg-primary-hover cursor-pointer"
                           name="model"
                           id="model"
                           required
@@ -427,14 +450,24 @@ export default function Page() {
                           </option>
                         </select>
                       <//>
-                      <button
-                        class="btn btn-primary btn-sm rounded-pill px-3"
-                        type="submit"
-                        disabled=${loading}
-                        style="border-radius: 0 0 var(--bs-border-radius-sm) 0"
-                      >
-                        Send
-                      </button>
+
+                      <div class="d-flex flex-row gap-2">
+                        <button
+                          class="btn btn-wide btn-wide-info px-25"
+                          type="button"
+                          onClick=${() => clearChat()}
+                        >
+                          <img src="assets/images/icon-clear.svg" alt="Clear" />
+                          Clear
+                        </button>
+                        <button
+                          class="btn btn-wide btn-wide-primary"
+                          type="submit"
+                          disabled=${loading}
+                        >
+                          Send
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -484,7 +517,7 @@ export default function Page() {
             </a>
 
             <${Show} when=${() => toggles().files}>
-              <small class="mb-2 fw-normal text-muted fs-08"> Files </small>
+              <small class="mb-2 fw-normal text-muted fs-08r"> Files </small>
 
               <ul class="list-unstyled">
                 <${For} each=${() => [{ name: "test.txt" }]}>
