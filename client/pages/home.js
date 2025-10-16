@@ -39,14 +39,22 @@ export default function Page() {
               Research Optimizer
             </h1>
             <h2 class="font-inter fw-medium fs-30 lh-35 ls-00025em text-black mb-5 mw-510">
-              Manage, query, transform, and analyze biomedical and regulatory information.
+              AI Research & Translational Informatics
             </h2>
             <div class="font-inter fw-light fs-18 lh-27 ls-00025em text-black">
-              <div class="mw-510">
-                <p class="mb-35">
-                  Supporting the Clinical & Translational Research Informatics Branch (CTRIB)
-                  mission, the NCI Research Optimizer streamlines workflow and makes insights
-                  accessible for clinical, research, and regulatory work.
+              <div class="mw-510 mb-35">
+                <p class="mb-3">
+                  Powering the Research Optimizer platform with intelligent tools that address
+                  documentation challenges throughout the clinical trial lifecycle. AI Research &
+                  Translational Informatics enables researchers to focus on scientific advancement
+                  rather than administrative burdens.
+                </p>
+                <p class="mb-3">
+                  Developed by clinical research professionals for clinical research professionals.
+                </p>
+                <p class="">
+                  An initiative of the National Cancer Institute – Center for Biomedical Informatics
+                  and Information Technology
                 </p>
               </div>
               <${Show} when=${() => !user()}>
