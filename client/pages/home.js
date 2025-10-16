@@ -42,11 +42,13 @@ export default function Page() {
               Manage, query, transform, and analyze biomedical and regulatory information.
             </h2>
             <div class="font-inter fw-light fs-18 lh-27 ls-00025em text-black">
-              <p class="mb-35 mw-510">
-                Supporting the Clinical & Translational Research Informatics Branch (CTRIB) mission,
-                the NCI Research Optimizer streamlines workflow and makes insights accessible for
-                clinical, research, and regulatory work.
-              </p>
+              <div class="mw-510">
+                <p class="mb-35">
+                  Supporting the Clinical & Translational Research Informatics Branch (CTRIB)
+                  mission, the NCI Research Optimizer streamlines workflow and makes insights
+                  accessible for clinical, research, and regulatory work.
+                </p>
+              </div>
               <${Show} when=${() => !user()}>
                 <a
                   class="btn btn-wide btn-wide-primary text-decoration-none"
