@@ -9,6 +9,7 @@ import yaml from "yaml";
 import { AlertContainer } from "../../../components/alert.js";
 import ClassToggle from "../../../components/class-toggle.js";
 import FileInput from "../../../components/file-input.js";
+import Tooltip from "../../../components/tooltip.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 import { parseDocument } from "../../../utils/parsers.js";
 
@@ -16,10 +17,11 @@ import { getPrompt, getTemplateConfigsByCategory, templateConfigs } from "./conf
 
 // ============= Database Layer =============
 async function getDatabase(userEmail = "anonymous") {
-  const userName = userEmail.toLowerCase()
+  const userName = userEmail
+    .toLowerCase()
     .replace(/[^a-z0-9]/g, "-")
     .replace(/--+/g, "-")
-    .replace(/^-|-$/g, "")
+    .replace(/^-|-$/g, "");
   const dbName = `arti-consent-crafter-${userName}`;
   return await openDB(dbName, 1, {
     upgrade(db) {
@@ -58,8 +60,8 @@ export default function Page() {
 
     // Job results - each job stores complete config for easy retry
     generatedDocuments: {},
-    // Structure: { [jobId]: { 
-    //   status, blob, error, 
+    // Structure: { [jobId]: {
+    //   status, blob, error,
     //   config: { inputFile, templateFile, prompt, model, displayInfo }
     // }}
 
@@ -69,7 +71,7 @@ export default function Page() {
     // Timestamps
     createdAt: Date.now(),
     updatedAt: Date.now(),
-  }
+  };
   const [store, setStore] = createStore(structuredClone(defaultStore));
 
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
@@ -78,9 +80,7 @@ export default function Page() {
 
   function setParam(key, value) {
     const url = new URL(window.location);
-    value 
-      ? url.searchParams.set(key, value) 
-      : url.searchParams.delete(key);
+    value ? url.searchParams.set(key, value) : url.searchParams.delete(key);
     window.history.replaceState(null, "", url);
   }
 
@@ -98,7 +98,7 @@ export default function Page() {
 
   async function loadSession(id) {
     const session = await db.get("sessions", +id);
-    setStore(session)
+    setStore(session);
   }
 
   // Initialize database and load session on mount
@@ -133,7 +133,7 @@ export default function Page() {
     const response = await fetch(config.templateUrl);
     const arrayBuffer = await response.arrayBuffer();
     const file = new File([arrayBuffer], `${templateId}.docx`, {
-      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     });
 
     setStore("templateCache", templateId, file);
@@ -208,12 +208,16 @@ export default function Page() {
 
     try {
       // 2. AI extraction
-      const systemPrompt = "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
+      const systemPrompt =
+        "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
 
       const params = {
         model: jobConfig.model,
         messages: [
-          { role: "user", content: [{ text: jobConfig.prompt.replace("{{document}}", "see above") }] },
+          {
+            role: "user",
+            content: [{ text: jobConfig.prompt.replace("{{document}}", "see above") }],
+          },
         ],
         system: systemPrompt.replace("{{document}}", jobConfig.inputText),
         thoughtBudget: 8000,
@@ -262,7 +266,10 @@ export default function Page() {
 
       // Try to ensure variables in template are present in data
       const commands = await listCommands(templateBuffer, cmdDelimiter);
-      const variables = commands.filter(c => ['INS', 'FOR'].includes(c.type)).map(c => c.code.split(' ').pop()).filter(v => !v.startsWith('$'))
+      const variables = commands
+        .filter((c) => ["INS", "FOR"].includes(c.type))
+        .map((c) => c.code.split(" ").pop())
+        .filter((v) => !v.startsWith("$"));
       for (const variable of variables) {
         data[variable] ||= "";
       }
@@ -280,12 +287,12 @@ export default function Page() {
 
   async function handleSubmit(event) {
     event?.preventDefault();
-    
+
     if (submitDisabled()) return;
 
     const inputText = await parseDocument(
-      await store.inputFile.arrayBuffer(), 
-      store.inputFile.type, 
+      await store.inputFile.arrayBuffer(),
+      store.inputFile.type,
       store.inputFile.name
     );
 
@@ -296,14 +303,14 @@ export default function Page() {
       const jobId = crypto.randomUUID();
       const config = templateConfigs[templateId];
       const templateFile = store.templateCache[templateId];
-      
+
       if (!templateFile) {
         console.error(`Template ${templateId} not cached`);
         continue;
       }
 
       const prompt = await getPrompt(templateId);
-      
+
       const jobConfig = {
         inputFile: store.inputFile,
         inputText,
@@ -322,14 +329,15 @@ export default function Page() {
 
     // Create job for advanced options if configured
     if (store.advancedOptionsOpen) {
-      if (store.templateSourceType === "predefined" && 
-          store.selectedPredefinedTemplate && 
-          store.customPrompt.trim()) {
-        
+      if (
+        store.templateSourceType === "predefined" &&
+        store.selectedPredefinedTemplate &&
+        store.customPrompt.trim()
+      ) {
         const jobId = crypto.randomUUID();
         const config = templateConfigs[store.selectedPredefinedTemplate];
         const templateFile = store.templateCache[store.selectedPredefinedTemplate];
-        
+
         if (templateFile) {
           const jobConfig = {
             inputFile: store.inputFile,
@@ -346,12 +354,13 @@ export default function Page() {
 
           jobs.push({ jobId, jobConfig });
         }
-      } else if (store.templateSourceType === "custom" && 
-                 store.customTemplateFile && 
-                 store.customPrompt.trim()) {
-        
+      } else if (
+        store.templateSourceType === "custom" &&
+        store.customTemplateFile &&
+        store.customPrompt.trim()
+      ) {
         const jobId = crypto.randomUUID();
-        
+
         const jobConfig = {
           inputFile: store.inputFile,
           inputText,
@@ -402,18 +411,18 @@ export default function Page() {
     }
 
     const data = await response.json();
-    const text = data.output?.message?.content?.map(c => c.text || "").join(" ") || "";
+    const text = data.output?.message?.content?.map((c) => c.text || "").join(" ") || "";
     return text;
   }
 
   async function downloadJob(jobId) {
     const job = store.generatedDocuments[jobId];
     if (!job?.data || job.status !== "completed") return;
-    
+
     try {
       // Generate document on-demand
       const blob = await generateDocument(job.data, job.config.templateFile);
-      
+
       // Create timestamp for filename
       const date = new Date();
       const year = date.getFullYear();
@@ -463,7 +472,7 @@ export default function Page() {
                 <label class="form-label required text-info fs-5 mb-1">Source Document</label>
                 <${FileInput}
                   value=${() => [store.inputFile]}
-                  onChange=${ev => setStore("inputFile", ev.target.files[0] || null)}
+                  onChange=${(ev) => setStore("inputFile", ev.target.files[0] || null)}
                   accept="text/*,.doc,.docx,.pdf"
                   class="form-control form-control-sm mb-3"
                 />
@@ -485,17 +494,18 @@ export default function Page() {
                                   id=${() => option.value}
                                   disabled=${() => option.disabled}
                                   checked=${() => store.selectedTemplates.includes(option.value)}
-                                  onChange=${(e) => setStore(
-                                    "selectedTemplates", 
-                                    (prev) => e.target.checked 
-                                      ? prev.concat([option.value]) 
-                                      : prev.filter((v) => v !== option.value)
-                                  )}
+                                  onChange=${(e) =>
+                                    setStore("selectedTemplates", (prev) =>
+                                      e.target.checked
+                                        ? prev.concat([option.value])
+                                        : prev.filter((v) => v !== option.value)
+                                    )}
                                 />
                                 <label
                                   class="form-check-label cursor-pointer"
                                   classList=${() => ({ "text-muted": option.disabled })}
-                                  for=${() => option.value}>
+                                  for=${() => option.value}
+                                >
                                   ${() => templateConfigs[option.value].label}
                                 </label>
                               </div>
@@ -610,7 +620,8 @@ export default function Page() {
                         <${Show} when=${() => store.templateSourceType === "custom"}>
                           <${FileInput}
                             value=${() => [store.customTemplateFile]}
-                            onChange=${ev => setStore("customTemplateFile", ev.target.files[0] || null)}
+                            onChange=${(ev) =>
+                              setStore("customTemplateFile", ev.target.files[0] || null)}
                             accept=".docx"
                             class="form-control form-control-sm mb-2"
                           />
@@ -618,15 +629,32 @@ export default function Page() {
 
                         <!-- Custom Prompt -->
                         <div class="mb-2">
-                          <${ClassToggle} class="position-relative" activeClass="show" event="hover">
-                            <label class="form-label" classList=${() => ({required: store.selectedPredefinedTemplate || store.customTemplateFile })} toggle>
+                          <${ClassToggle}
+                            class="position-relative"
+                            activeClass="show"
+                            event="hover"
+                          >
+                            <label
+                              class="form-label"
+                              classList=${() => ({
+                                required:
+                                  store.selectedPredefinedTemplate || store.customTemplateFile,
+                              })}
+                              toggle
+                            >
                               Custom Prompt
                             </label>
-                            <img class="ms-1" src="/assets/images/icon-circle-info.svg" alt="Info" toggle />
-                            <div class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-50 text-muted text-center">
-                              Use this field to provide your own instructions for generating a
-                              form. The system will follow your prompt instead of a predefined
-                              template.
+                            <img
+                              class="ms-1"
+                              src="/assets/images/icon-circle-info.svg"
+                              alt="Info"
+                              toggle
+                            />
+                            <div
+                              class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-50 text-muted text-center"
+                            >
+                              Use this field to provide your own instructions for generating a form.
+                              The system will follow your prompt instead of a predefined template.
                             </div>
                           <//>
                         </div>
@@ -685,7 +713,9 @@ export default function Page() {
                                   : ${() => job().config?.displayInfo?.label || "Unknown"}</span
                                 >
                               </div>
-                              <div class="small text-muted">${() => job().config?.displayInfo?.filename || "document.docx"}</div>
+                              <div class="small text-muted">
+                                ${() => job().config?.displayInfo?.filename || "document.docx"}
+                              </div>
                             </div>
                             <${Show} when=${() => job()?.status === "processing"}>
                               <div
@@ -745,7 +775,8 @@ export default function Page() {
                         />
                         <div>
                           <span class="me-1">We would love your feedback!</span>
-                          <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a> to help us improve.
+                          <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a>
+                          &nbsp;to help us improve.
                         </div>
                       </div>
                     </div>
@@ -757,19 +788,22 @@ export default function Page() {
           <div class="row">
             <div class="col-md-6">
               <div class="d-flex-center mt-1 gap-1">
-                <button type="reset" class="btn btn-light border rounded-pill">Reset</button>
-                <${ClassToggle} class="position-relative" activeClass="show" event="hover" disabled=${() => !submitDisabled()}>
+                <button type="reset" class="btn btn-wide btn-wide-info">Reset</button>
+                <${Tooltip}
+                  title="Not all required fields are provided."
+                  placement="top"
+                  arrow=${true}
+                  class="text-white bg-primary"
+                  disableHoverListener=${() => !submitDisabled()}
+                >
                   <button
                     toggle
                     type="submit"
-                    class="btn btn-primary rounded-pill"
+                    class="btn btn-wide btn-wide-primary"
                     disabled=${submitDisabled}
                   >
                     Generate
                   </button>
-                  <div class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-200 ms-n50 text-muted text-center">
-                    Not all required fields are provided.
-                  </div>
                 <//>
               </div>
             </div>
