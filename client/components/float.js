@@ -88,6 +88,28 @@ export default function Float(props) {
 }
 
 /**
+ * Bootstrap dropdown component using Float
+ * @param {any} props - object with reactive getters for the following properties (don't destructure):
+ * @param {string} props.content - Dropdown menu content (.dropdown-item elements)
+ * @param {string} props.placement - Dropdown placement: "bottom-start" (default), "bottom-end", "top-start", "top-end", etc.
+ * @param {string} props.trigger - Trigger event: "click" (default) or "hover"
+ * @param {any} props.children - Element that triggers the dropdown
+ * @returns {any} Dropdown component wrapped around children
+ */
+export function Dropdown(props) {
+  return html`
+    <${Float}
+      class="show dropdown-menu"
+      content=${props.content}
+      placement=${() => props.placement || "bottom-start"}
+      trigger=${() => props.trigger || "click"}
+    >
+      ${props.children}
+    <//>
+  `;  
+}
+
+/**
  * Bootstrap tooltip component using Float
  * @param {any} props - object with reactive getters for the following properties (don't destructure):
  * @param {string} props.title - Tooltip content (string or element)
@@ -125,7 +147,7 @@ export function Tooltip(props) {
  * @param {string} props.placement - Popover placement: "top" (default), "right", "bottom", "left"
  * @param {string} props.trigger - Trigger event: "click" (default) or "hover"
  * @param {any} props.children - Element that triggers the popover
- * @returns 
+ * @returns {any} Popover component wrapped around children
  */
 export function Popover(props) {
   const placementClass =
