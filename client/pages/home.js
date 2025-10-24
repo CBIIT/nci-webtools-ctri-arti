@@ -30,29 +30,29 @@ export default function Page() {
 
   return html`
     <div class="container h-100 d-flex flex-column justify-content-center font-smooth">
-      <div class="row gx-5 p-24 mt-136 mb-140">
-        <div class="col-lg-6 pl-88">
+      <div class="row gx-5 p-4 mt-10 mb-9">
+        <div class="col-lg-5  ps-5">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
             <h1
-              class="font-manrope fw-semibold fs-75 lh-60 ls--2 minh-138 text-clip text-gradient-blue-teal mb-12"
+              class="font-manrope display-2 fw-semibold lh-1 text-clip text-gradient-blue-teal mb-3"
             >
               Research Optimizer
             </h1>
-            <h2 class="font-inter fw-medium fs-30 lh-35 ls-00025em text-black mb-5 mw-510">
+            <h2 class="font-inter fw-semibold fs-3 lh-sm text-black mb-5">
               AI Research & Translational Informatics
             </h2>
-            <div class="font-inter fw-light fs-18 lh-27 ls-00025em text-black">
-              <div class="mw-510 mb-35">
-                <p class="mb-3">
+            <div class="font-inter fw-light lh-base text-black">
+              <div class=" mb-4">
+                <p class="mb-3 fs-5">
                   Powering the Research Optimizer platform with intelligent tools that address
                   documentation challenges throughout the clinical trial lifecycle. AI Research &
                   Translational Informatics enables researchers to focus on scientific advancement
                   rather than administrative burdens.
                 </p>
-                <p class="mb-3">
+                <p class="mb-3 fs-5">
                   Developed by clinical research professionals for clinical research professionals.
                 </p>
-                <p class="">
+                <p class="fs-5">
                   An initiative of the National Cancer Institute – Center for Biomedical Informatics
                   and Information Technology
                 </p>
@@ -68,7 +68,7 @@ export default function Page() {
             </div>
           </div>
         </div>
-        <div class="col-lg-4 offset-lg-2">
+        <div class="col-lg-4 offset-lg-3">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
             <${For} each=${links}>
               ${(link) => html`

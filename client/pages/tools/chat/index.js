@@ -206,7 +206,7 @@ export default function Page() {
             </div>
 
             <${Show} when=${() => toggles().conversations}>
-              <small class="mb-2 fw-normal text-muted fs-08r">
+              <small class="mb-2 fw-normal text-muted fs-6">
                 Recent ${isFedPulse ? "FedPulse" : "Standard"} Chats</small
               >
 
@@ -336,10 +336,10 @@ export default function Page() {
                 `${hasChatId() ? "bottom-0 position-sticky" : "bottom-50 position-relative"}`}
             >
               <div class="text-center my-2 font-serif" hidden=${() => hasChatId()}>
-                <h1 class="font-poppins fw-medium fs-40 lh-35 text-deep-violet mb-2">
+                <h1 class="font-poppins fw-medium fs-1 lh-md text-deep-violet mb-2">
                   Welcome, ${() => user?.()?.firstName || ""}
                 </h1>
-                <div class="font-inter fw-medium fs-18 lh-35 ls-00025em text-black small">
+                <div class="font-inter fw-medium fs-5 lh-md text-black small">
                   ${() =>
                     new URLSearchParams(location.search).get("fedpulse")
                       ? "Search U.S. federal websites for policies, guidelines, executive orders, and other official content."
@@ -357,7 +357,7 @@ export default function Page() {
                 }}
               >
                 <div
-                  class="bg-white position-relative border-gray border-1.25 border-solid shadow-md rounded"
+                  class="bg-white position-relative border-gray border-1 border-solid shadow-md rounded"
                 >
                   <${AttachmentsPreview}
                     inputRef=${() => inputFilesEl}
@@ -366,7 +366,7 @@ export default function Page() {
                   <label for="message" class="visually-hidden">Chat Message</label>
                   <textarea
                     onKeyDown=${handleKeyDown}
-                    class="form-control form-control-sm font-inter fw-normal fs-6 lh-28 text-black resize-none border-0 bg-transparent shadow-0 p-3 pt-4 px-34"
+                    class="form-control form-control-sm font-inter fw-normal fs-6 lh-md text-black resize-none border-0 bg-transparent shadow-0 p-3 pt-4 px-4"
                     id="message"
                     name="message"
                     placeholder="Ask me a question. (Shift + Enter for new line)"
@@ -375,7 +375,7 @@ export default function Page() {
                     required
                   />
 
-                  <div class="d-flex justify-content-between pt-1 pb-20 px-34">
+                  <div class="d-flex justify-content-between pt-1 pb-4 px-4">
                     <div class="d-flex w-auto align-items-center">
                       <${Tooltip}
                         title="Upload file(s) from your device"
@@ -383,7 +383,7 @@ export default function Page() {
                         arrow=${true}
                         class="text-white bg-primary"
                       >
-                        <label class="btn btn-wide btn-wide-info px-21 py-12" for="inputFiles">
+                        <label class="btn btn-wide btn-wide-info px-3 py-3" for="inputFiles">
                           <input
                             ref=${(el) => (inputFilesEl = el)}
                             type="file"
@@ -394,13 +394,7 @@ export default function Page() {
                             accept="image/*,text/*,.pdf,.xls,.xlsx,.doc,.docx"
                             multiple
                           />
-                          <img
-                            src="assets/images/icon-paperclip.svg"
-                            alt="Upload"
-                            width="27"
-                            height="29"
-                            class="me-1"
-                          />
+                          <img src="assets/images/icon-paperclip.svg" alt="Upload" height="19" />
                           Attach
                         </label>
                       <//>
@@ -421,7 +415,7 @@ export default function Page() {
                             name="reasoningMode"
                           />
                           <label
-                            class="form-check-label text-secondary fw-semibold cursor-pointer fs-16"
+                            class="form-check-label text-secondary fw-semibold cursor-pointer fs-6"
                             for="reasoningMode"
                           >
                             Deep Research Mode
@@ -434,7 +428,7 @@ export default function Page() {
                       <${Show} when=${() => user?.()?.Role?.name === "admin"}>
                         <label for="model" class="visually-hidden">Model Selection</label>
                         <select
-                          class="model-dropdown form-select form-select-lg fs-16 h-100 border-0 bg-primary-hover cursor-pointer"
+                          class="model-dropdown form-select form-select-lg fs-6 h-100 border-0 bg-primary-hover cursor-pointer"
                           name="model"
                           id="model"
                           required
@@ -453,7 +447,7 @@ export default function Page() {
 
                       <div class="d-flex flex-row gap-2">
                         <button
-                          class="btn btn-wide btn-wide-info px-25"
+                          class="btn btn-wide btn-wide-info px-3 py-3"
                           type="button"
                           onClick=${() => clearChat()}
                         >
@@ -461,7 +455,7 @@ export default function Page() {
                           Clear
                         </button>
                         <button
-                          class="btn btn-wide btn-wide-primary"
+                          class="btn btn-wide px-3 py-3 btn-wide-primary"
                           type="submit"
                           disabled=${loading}
                         >
@@ -517,7 +511,7 @@ export default function Page() {
             </a>
 
             <${Show} when=${() => toggles().files}>
-              <small class="mb-2 fw-normal text-muted fs-08r"> Files </small>
+              <small class="mb-2 fw-normal text-muted"> Files </small>
 
               <ul class="list-unstyled">
                 <${For} each=${() => [{ name: "test.txt" }]}>

@@ -133,34 +133,6 @@
   height: 90% !important;
 }
 
-.minh-138 {
-  min-height: 138px !important;
-}
-
-.fs-08r {
-  font-size: 0.8rem !important;
-}
-
-.fs-16 {
-  font-size: 16px !important;
-}
-
-.fs-18 {
-  font-size: 18px !important;
-}
-
-.fs-30 {
-  font-size: 30px !important;
-}
-
-.fs-40 {
-  font-size: 40px !important;
-}
-
-.fs-75 {
-  font-size: 75px !important;
-}
-
 .no-scroll {
   overflow: hidden !important;
   padding-right: var(--bs-gutter-x, 0) !important;
@@ -443,30 +415,6 @@ ul {
   background: linear-gradient(90deg, #51a9fe 0%, #2beda9 100%);
 }
 
-.lh-27 {
-  line-height: 27px !important;
-}
-
-.lh-28 {
-  line-height: 28px !important;
-}
-
-.lh-35 {
-  line-height: 35px !important;
-}
-
-.lh-60 {
-  line-height: 60px !important;
-}
-
-.ls--2 {
-  letter-spacing: -2px !important;
-}
-
-.ls-00025em {
-  letter-spacing: 0.0025em !important;
-}
-
 .text-clip {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -549,48 +497,12 @@ ul {
   bottom: 50% !important;
 }
 
-.p-24 {
-  padding: 24px !important;
+.mt-10 {
+  margin-top: 10.5rem !important;
 }
 
-.py-12 {
-  padding-top: 12px !important;
-  padding-bottom: 12px !important;
-}
-
-.px-21 {
-  padding-left: 21px !important;
-  padding-right: 21px !important;
-}
-.px-25 {
-  padding-left: 25px !important;
-  padding-right: 25px !important;
-}
-.px-34 {
-  padding-left: 34px !important;
-  padding-right: 34px !important;
-}
-
-.pb-20 {
-  padding-bottom: 20px !important;
-}
-
-.pl-88 {
-  padding-left: 88px !important;
-}
-
-.mt-136 {
-  margin-top: 136px !important;
-}
-
-.mb-12 {
-  margin-bottom: 12px !important;
-}
-.mb-35 {
-  margin-bottom: 35px !important;
-}
-.mb-140 {
-  margin-bottom: 140px !important;
+.mb-9 {
+  margin-bottom: 9rem !important;
 }
 
 .ms-n50 {
@@ -608,14 +520,8 @@ ul {
 .mw-20r {
   max-width: 20rem;
 }
-.mw-50p {
-  max-width: 50%;
-}
 .mw-60p {
   max-width: 60%;
-}
-.mw-510 {
-  max-width: 510px !important;
 }
 
 .w-1r {
@@ -1491,9 +1397,6 @@ dialog .close-btn {
 }
 .border-gray {
   border-color: #cfcfcf !important;
-}
-.border-1\.25 {
-  border-width: 1.25px !important;
 }
 
 .resize-none {

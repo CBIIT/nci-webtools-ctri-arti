@@ -788,7 +788,7 @@ export default function Page() {
           <div class="row">
             <div class="col-md-6">
               <div class="d-flex-center mt-1 gap-1">
-                <button type="reset" class="btn btn-wide btn-wide-info">Reset</button>
+                <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">Reset</button>
                 <${Tooltip}
                   title="Not all required fields are provided."
                   placement="top"
@@ -799,7 +799,7 @@ export default function Page() {
                   <button
                     toggle
                     type="submit"
-                    class="btn btn-wide btn-wide-primary"
+                    class="btn btn-wide px-3 py-3 btn-wide-primary"
                     disabled=${submitDisabled}
                   >
                     Generate
