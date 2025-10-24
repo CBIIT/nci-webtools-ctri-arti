@@ -15,7 +15,7 @@ export default function Nav(props) {
   return html`
     <nav class="navbar navbar-expand-lg font-title z-3">
       <div class="container">
-        <a href="/" class="navbar-brand d-inline-block d-lg-none" class="mw-60 " aria-label="Home">
+        <a href="/" class="navbar-brand d-inline-block d-lg-none" class="mw-60p " aria-label="Home">
           <object height="50" data="assets/images/logo.svg" alt="Logo" class="pe-none py-1" />
           <span class="visually-hidden">Home</span>
         </a>

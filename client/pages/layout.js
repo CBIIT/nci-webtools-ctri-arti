@@ -10,7 +10,7 @@ import getRoutes from "./routes.js";
 
 export default function Layout(props) {
   return html`
-    <div class="shadow">
+    <div class="shadow position-relative z-3">
       <${Header} />
       <${Nav} routes=${getRoutes} />
     </div>
