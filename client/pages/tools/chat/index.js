@@ -335,7 +335,7 @@ export default function Page() {
               class=${() =>
                 `${hasChatId() ? "bottom-0 position-sticky" : "bottom-50 position-relative"}`}
             >
-              <div class="text-center my-2 font-serif" hidden=${() => hasChatId()}>
+              <div class="text-center my-3 font-serif" hidden=${() => hasChatId()}>
                 <h1 class="font-poppins fw-medium fs-1 lh-md text-deep-violet mb-2">
                   Welcome, ${() => user?.()?.firstName || ""}
                 </h1>
@@ -428,7 +428,7 @@ export default function Page() {
                       <${Show} when=${() => user?.()?.Role?.name === "admin"}>
                         <label for="model" class="visually-hidden">Model Selection</label>
                         <select
-                          class="model-dropdown form-select form-select-lg fs-6 h-100 border-0 bg-primary-hover cursor-pointer"
+                          class="model-dropdown form-select form-select-lg fw-semibold fs-6 h-100 border-0 bg-primary-hover cursor-pointer"
                           name="model"
                           id="model"
                           required
