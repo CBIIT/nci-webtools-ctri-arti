@@ -30,29 +30,29 @@ export default function Page() {
 
   return html`
     <div class="container h-100 d-flex flex-column justify-content-center font-smooth">
-      <div class="row gx-5 p-4 mt-10 mb-9">
+      <div class="row gx-5 px-5 mt-10 mb-9">
         <div class="col-lg-5  ps-5">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
             <h1
-              class="font-manrope display-2 fw-semibold lh-1 text-clip text-gradient-blue-teal mb-3"
+              class="font-manrope display-2 fw-semibold lh-xs text-clip text-spacing--1 text-gradient-blue-teal pb-4"
             >
               Research Optimizer
             </h1>
-            <h2 class="font-inter fw-semibold fs-3 lh-sm text-black mb-5">
+            <h2 class="font-inter fw-medium fs-2 lh-sm text-black mb-5">
               AI Research & Translational Informatics
             </h2>
-            <div class="font-inter fw-light lh-base text-black">
-              <div class=" mb-4">
-                <p class="mb-3 fs-5">
+            <div class="font-inter lead">
+              <div class="mb-4">
+                <p class="mb-3">
                   Powering the Research Optimizer platform with intelligent tools that address
                   documentation challenges throughout the clinical trial lifecycle. AI Research &
                   Translational Informatics enables researchers to focus on scientific advancement
                   rather than administrative burdens.
                 </p>
-                <p class="mb-3 fs-5">
+                <p class="mb-3">
                   Developed by clinical research professionals for clinical research professionals.
                 </p>
-                <p class="fs-5">
+                <p class="mb-3">
                   An initiative of the National Cancer Institute – Center for Biomedical Informatics
                   and Information Technology
                 </p>

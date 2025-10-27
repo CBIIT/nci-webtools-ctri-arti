@@ -352,6 +352,14 @@ ul {
   margin-bottom: 0;
 }
 
+.lead {
+  font-size: 1.15rem;
+}
+
+.lh-xs {
+  line-height: 0.85 !important;
+}
+
 .markdown h1,
 .markdown h2,
 .markdown h3,
@@ -428,6 +436,10 @@ ul {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.text-spacing--1 {
+  letter-spacing: -0.1rem;
 }
 
 .hover-visible-parent .hover-visible {
@@ -507,7 +519,7 @@ ul {
 }
 
 .mt-10 {
-  margin-top: 10.5rem !important;
+  margin-top: 10rem !important;
 }
 
 .mb-9 {
