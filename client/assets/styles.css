@@ -69,6 +69,13 @@
   color: #036ac5;
 }
 
+.text-black {
+  color: #000000 !important;
+}
+.text-deep-violet {
+  color: #391084 !important;
+}
+
 .btn {
   --bs-btn-font-weight: 500;
 }
@@ -76,6 +83,20 @@
 .font-title {
   font-family: var(--bs-font-title);
   font-weight: 500;
+}
+
+.font-manrope {
+  font-family: "Manrope";
+}
+.font-inter {
+  font-family: "Inter" !important;
+}
+.font-poppins {
+  font-family: "Poppins" !important;
+}
+
+.font-smooth {
+  -webkit-font-smoothing: antialiased !important;
 }
 
 .btn-primary {
@@ -119,10 +140,6 @@
 
 .h-90 {
   height: 90% !important;
-}
-
-.fs-08 {
-  font-size: 0.8rem !important;
 }
 
 .no-scroll {
@@ -225,6 +242,10 @@ a.disabled-link {
     rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
 }
 
+.shadow-md {
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
 .d-flex-center {
   display: flex;
   justify-content: center;
@@ -267,6 +288,11 @@ a.disabled-link {
 
 .form-control:focus {
   box-shadow: none;
+}
+
+.form-check-input-lg {
+  width: 4em !important;
+  height: 2em !important;
 }
 
 .required::after {
@@ -324,6 +350,14 @@ ol,
 ul {
   margin-top: 0;
   margin-bottom: 0;
+}
+
+.lead {
+  font-size: 1.15rem;
+}
+
+.lh-xs {
+  line-height: 0.85 !important;
 }
 
 .markdown h1,
@@ -392,6 +426,20 @@ ul {
   background-repeat: repeat;
   background-size: 400% 100%;
   color: rgba(0, 0, 0, 0);
+}
+
+.text-gradient-blue-teal {
+  background: linear-gradient(90deg, #51a9fe 0%, #2beda9 100%);
+}
+
+.text-clip {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-spacing--1 {
+  letter-spacing: -0.1rem;
 }
 
 .hover-visible-parent .hover-visible {
@@ -466,6 +514,18 @@ ul {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
+.bottom-50 {
+  bottom: 50% !important;
+}
+
+.mt-10 {
+  margin-top: 10rem !important;
+}
+
+.mb-9 {
+  margin-bottom: 9rem !important;
+}
+
 .ms-n50 {
   margin-left: -50% !important;
 }
@@ -481,12 +541,7 @@ ul {
 .mw-20r {
   max-width: 20rem;
 }
-
-.mw-50 {
-  max-width: 50%;
-}
-
-.mw-60 {
+.mw-60p {
   max-width: 60%;
 }
 
@@ -1181,4 +1236,69 @@ dialog .close-btn {
 .login-button:hover {
   background: linear-gradient(rgba(0, 0, 0, 0.15) 0px, rgba(0, 0, 0, 0.15) 0px) rgb(26, 129, 153);
   border: 1.5px solid rgb(8, 89, 108);
+}
+
+.btn-wide {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px;
+  gap: 10px;
+  border-radius: 60px !important;
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 16px;
+  text-align: center;
+  letter-spacing: 0.02em;
+  padding: 17px 42px;
+  width: fit-content;
+  min-width: 128px;
+}
+
+.btn-wide-primary {
+  background: #7740a4;
+  border: 0.5px solid #373737;
+  color: #ffffff;
+}
+
+.btn-wide-primary:hover,
+.btn-wide-primary:focus,
+.btn-wide-primary:active,
+.btn-wide-primary:focus-visible,
+.btn-wide-primary:disabled {
+  background: #7740a4 !important;
+  border: 0.5px solid #373737 !important;
+  color: #ffffff !important;
+}
+
+.btn-wide-info {
+  background: #ffffff;
+  border: 1.25px solid #a5a5a5;
+  color: #3c3c3c;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.btn-wide-info:hover,
+.btn-wide-info:focus,
+.btn-wide-info:active,
+.btn-wide-info:focus-visible,
+.btn-wide-info:disabled {
+  background: #ffffff !important;
+  border: 1.25px solid #a5a5a5 !important;
+  color: #3c3c3c !important;
+}
+
+.border-solid {
+  border-style: solid !important;
+}
+.border-gray {
+  border-color: #cfcfcf !important;
+}
+
+.resize-none {
+  resize: none !important;
 }
