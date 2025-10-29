@@ -439,8 +439,8 @@ export default function Page() {
                           <option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0" selected>
                             Sonnet 4.5
                           </option>
-                          <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">
-                            Haiku 3.5
+                          <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">
+                            Haiku 4.5
                           </option>
                         </select>
                       <//>

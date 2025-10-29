@@ -543,8 +543,8 @@ export default function Page() {
                           <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">
                             Sonnet 3.7
                           </option>
-                          <option value="us.anthropic.claude-3-5-haiku-20241022-v1:0">
-                            Haiku 3.5
+                          <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">
+                            Haiku 4.5
                           </option>
                           <option value="us.meta.llama4-maverick-17b-instruct-v1:0">
                             Maverick
