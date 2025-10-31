@@ -1,218 +1,430 @@
-import { createResource, createSignal } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
 
+import { createStore } from "solid-js/store";
+
+import FileInput from "../../components/file-input.js";
 import { parseDocument } from "../../utils/parsers.js";
 
-export default function Page() {
-  const [languages] = createResource(getLanguages);
-  const [sourceText, setSourceText] = createSignal("");
-  const [targetText, setTargetText] = createSignal("");
-  const [sourceLanguage, setSourceLanguage] = createSignal("en");
-  const [targetLanguage, setTargetLanguage] = createSignal("es");
+const AUTO_LANGUAGE = { value: "auto", label: "Auto" };
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "zh", label: "Chinese" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
+  { value: "de", label: "German" },
+  { value: "it", label: "Italian" },
+];
 
-  async function getLanguages() {
-    const response = await fetch("/api/translate/languages");
-    return await response.json();
+export default function Page() {
+  const [sourceText, setSourceText] = createSignal("");
+  const [targetLanguages, setTargetLanguages] = createSignal([]);
+  const [inputFile, setInputFile] = createSignal(null);
+  const [store, setStore] = createStore({
+    generatedDocuments: {},
+  });
+
+  const allJobsProcessed = createMemo(() => {
+    const jobs = store.generatedDocuments;
+    const keys = Object.keys(jobs);
+    if (keys.length === 0) return true;
+    return keys.every((k) => ["completed", "error"].includes(jobs[k]?.status));
+  });
+
+  function getLanguageLabel(code) {
+    return LANGUAGES.find((l) => l.value === code)?.label || code.toUpperCase();
   }
 
-  async function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async function (e) {
-        const bytes = e.target.result;
-        const text = await parseDocument(bytes, file.type, file.name);
-        setSourceText(text);
-      };
-      reader.readAsArrayBuffer(file);
+  function makeFilename(originalName, langCode) {
+    const base = (originalName || "translated_text").replace(/\.[^/.]+$/, "");
+    return `${base}-${langCode}.txt`;
+  }
+
+  async function translateRequest({ text, sourceLanguage, targetLanguage }) {
+    const response = await fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, sourceLanguage, targetLanguage }),
+    });
+    if (!response.ok) {
+      throw new Error(`Translate failed (${response.status})`);
+    }
+    const data = await response.json();
+
+    if (typeof data !== "string") {
+      return "";
+    }
+
+    return data;
+  }
+
+  async function processJob(jobId, jobConfig) {
+    setStore("generatedDocuments", jobId, {
+      status: "processing",
+      blob: null,
+      error: null,
+      config: jobConfig,
+    });
+
+    try {
+      const translated = await translateRequest({
+        text: jobConfig.inputText,
+        sourceLanguage: jobConfig.sourceLanguage,
+        targetLanguage: jobConfig.languageCode,
+      });
+
+      const blob = new Blob([translated], { type: "text/plain" });
+
+      setStore("generatedDocuments", jobId, {
+        status: "completed",
+        blob,
+        error: null,
+        config: jobConfig,
+      });
+    } catch (error) {
+      setStore("generatedDocuments", jobId, {
+        status: "error",
+        blob: null,
+        error: error?.message || "Translation error",
+        config: jobConfig,
+      });
     }
   }
 
-  async function handleDownload() {
-    const blob = new Blob([targetText()], { type: "text/plain" });
+  async function retryJob(jobId) {
+    const job = store.generatedDocuments[jobId];
+    if (!job?.config) return;
+
+    await processJob(jobId, job.config);
+  }
+
+  function triggerDownload(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "translated_text.txt";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 
-  async function handleSwap() {
-    let tempSourceLanguage = sourceLanguage();
-    let tempTargetLanguage = targetLanguage();
-    if (tempSourceLanguage === "auto") {
-      tempSourceLanguage = "en";
+  async function downloadJob(jobId) {
+    const job = store.generatedDocuments[jobId];
+    if (!job || job.status !== "completed" || !job.blob) return;
+
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+
+    const baseFilename = job.config.displayInfo.filename.replace(/\.txt$/i, "");
+    const filename = `${baseFilename}-${timestamp}.txt`;
+
+    triggerDownload(job.blob, filename);
+  }
+
+  function downloadAll() {
+    Object.keys(store.generatedDocuments).forEach((jobId) => {
+      const job = store.generatedDocuments[jobId];
+      if (job?.status === "completed" && job.blob) {
+        downloadJob(jobId);
+      }
+    });
+  }
+
+  async function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) {
+      return;
     }
-    setSourceLanguage(tempTargetLanguage);
-    setTargetLanguage(tempSourceLanguage);
-    setSourceText(targetText());
-    setTargetText("");
+
+    setInputFile(file);
+
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+      const bytes = e.target.result;
+      const text = await parseDocument(bytes, file.type, file.name);
+      setSourceText(text || "");
+    };
+    reader.readAsArrayBuffer(file);
   }
 
   async function handleReset(event) {
     event.preventDefault();
     setSourceText("");
-    setTargetText("");
-    setSourceLanguage("en");
-    setTargetLanguage("es");
+    setTargetLanguages([]);
+    setInputFile(null);
+    setStore("generatedDocuments", {});
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setTargetText("Translating...");
 
-    // Call the translation API
-    try {
-      const params = {
-        text: sourceText(),
-        sourceLanguage: sourceLanguage(),
-        targetLanguage: targetLanguage(),
-      };
+    if (!inputFile() || targetLanguages().length === 0) {
+      console.log(inputFile(), targetLanguages());
+      return;
+    }
 
-      const response = await fetch("/api/translate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    let inputText = sourceText();
+    if (!inputText) {
+      const bytes = await inputFile().arrayBuffer();
+      inputText = await parseDocument(bytes, inputFile().type, inputFile().name);
+      setSourceText(inputText || "");
+    }
+
+    setStore("generatedDocuments", {});
+
+    for (const langCode of targetLanguages()) {
+      const jobId = crypto.randomUUID();
+      const jobConfig = {
+        languageCode: langCode,
+        languageLabel: getLanguageLabel(langCode),
+        sourceLanguage: AUTO_LANGUAGE.value || "en",
+        inputText: inputText || "",
+        displayInfo: {
+          prefix: langCode.toUpperCase(),
+          label: getLanguageLabel(langCode),
+          filename: makeFilename(inputFile()?.name, langCode),
         },
-        body: JSON.stringify(params),
-      });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
-      setTargetText(data);
-    } catch (error) {
-      console.error(error);
-      setTargetText("An error occurred while translating the text.");
+      };
+      processJob(jobId, jobConfig);
     }
   }
+
+  function onTargetLanguageChange(e, option) {
+    const checked = e?.target?.checked || false;
+    setTargetLanguages((prev) =>
+      checked ? prev.concat([option.value]) : prev.filter((v) => v !== option.value)
+    );
+  }
+
+  const ROWS_PER_COLUMN = 4;
+  const languageColumns = () => {
+    const cols = [];
+    for (let i = 0; i < LANGUAGES.length; i += ROWS_PER_COLUMN) {
+      cols.push(LANGUAGES.slice(i, i + ROWS_PER_COLUMN));
+    }
+    return cols;
+  };
+
   return html`
-    <form
-      id="translateForm"
-      onSubmit=${(ev) => handleSubmit(ev)}
-      onReset=${handleReset}
-      class="container"
-    >
-      <h1 class="fw-bold text-gradient my-3">Translator</h1>
-
-      <div class="row align-items-stretch">
-        <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-          <label for="inputText" class="form-label">Source Text</label>
-          <input
-            type="file"
-            id="fileInput"
-            class="form-control form-control-sm border-bottom-0 rounded-bottom-0"
-            accept=".txt, .docx, .pdf"
-            onChange=${handleFileSelect}
-          />
-          <textarea
-            class="form-control form-control-sm rounded-top-0 flex-grow-1"
-            id="inputText"
-            rows="8"
-            placeholder="Enter text to translate or choose a file above"
-            value=${sourceText}
-            onChange=${(e) => setSourceText(e.target.value)}
-            required
-          />
-        </div>
-        <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-          <label for="translationResult" class="form-label">Translated Text</label>
-          <textarea
-            class="form-control form-control-sm flex-grow-1"
-            id="translationResult"
-            rows="10"
-            placeholder="Submit text to view translation results"
-            value=${targetText}
-            readonly
-          />
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-2">
-          <label for="sourceLanguage" class="form-label">Select Source Language</label>
-          <select
-            class="form-select form-select-sm"
-            id="sourceLanguage"
-            name="sourceLanguage"
-            value=${sourceLanguage}
-            onChange=${(e) => setSourceLanguage(e.target.value)}
-            required
-          >
-            <option value="" hidden>Select a source language</option>
-            ${() =>
-              languages()?.map(
-                (lang) =>
-                  html`<option
-                    value=${lang.value}
-                    selected=${() => lang.value === sourceLanguage()}
-                  >
-                    ${lang.label}
-                  </option>`
-              )}
-          </select>
-        </div>
-
-        <div class="col-md-6 mb-2">
-          <label for="targetLanguage" class="form-label">Select Target Language</label>
-          <select
-            class="form-select form-select-sm"
-            id="targetLanguage"
-            name="targetLanguage"
-            value=${targetLanguage}
-            onChange=${(e) => setTargetLanguage(e.target.value)}
-            required
-          >
-            <option value="" hidden>Select a target language</option>
-            ${() =>
-              languages()
-                ?.filter((lang) => lang.value !== "auto")
-                ?.map(
-                  (lang) =>
-                    html`<option
-                      value=${lang.value}
-                      selected=${() => lang.value === targetLanguage()}
-                    >
-                      ${lang.label}
-                    </option>`
-                )}
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col mb-2">
-          <div class="text-end">
-            <button class="btn btn-sm btn-outline-danger me-1" id="clearButton" type="reset">
-              Clear
-            </button>
-            <button
-              class="btn btn-sm btn-outline-secondary me-1"
-              id="swapButton"
-              type="button"
-              onClick=${handleSwap}
-            >
-              Swap
-            </button>
-            <button class="btn btn-sm btn-outline-primary me-1" id="translateButton" type="submit">
-              Translate
-            </button>
-            <button
-              class="btn btn-sm btn-outline-dark"
-              id="downloadButton"
-              type="button"
-              onClick=${handleDownload}
-            >
-              Download
-            </button>
+    <div class="bg-info-subtle h-100 position-relative">
+      <div class="container py-3">
+        <form
+          id="translateForm"
+          onSubmit=${(ev) => handleSubmit(ev)}
+          onReset=${handleReset}
+          class="container"
+        >
+          <div class="row align-items-stretch my-3 text-center">
+            <div class="col">
+              <div class="bg-white shadow border rounded p-3">
+                <h1 class="fw-bold fs-3 form-label mt-3 mb-2">Document Translator</h1>
+                <p class="mb-4 text-body-secondary">
+                  Easily translate your documents into multiple languages and generate accurate
+                  translations in seconds.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <div class="row align-items-stretch">
+            <div class="col-md-6 mb-2">
+              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1">
+                <div class="row">
+                  <div class="col-sm-12 mb-2">
+                    <label for="inputText" class="form-label required text-info fs-5 mb-1"
+                      >Source Document</label
+                    >
+                    <${FileInput}
+                      id="fileInput"
+                      value=${() => [inputFile()]}
+                      onChange=${handleFileSelect}
+                      accept=".txt, .docx, .pdf"
+                      class="form-control form-control-sm mb-3"
+                    />
+                  </div>
+
+                  <div class="col-sm-12 mb-4">
+                    <label for="targetLanguage" class="form-label required text-info fs-5 mb-1"
+                      >Target Languages</label
+                    >
+
+                    <div class="border rounded p-3 pb-5">
+                      <div class="row">
+                        <${For} each=${languageColumns()}>
+                          ${(col) => html`
+                            <div class="col-sm-3">
+                              <${For} each=${col}>
+                                ${(option) => html`
+                                  <div class="mb-1">
+                                    <div
+                                      class="form-check form-control-sm min-height-auto py-0 ms-1"
+                                    >
+                                      <input
+                                        class="form-check-input cursor-pointer"
+                                        type="checkbox"
+                                        id=${() => option.value}
+                                        checked=${() => targetLanguages()?.includes(option.value)}
+                                        onChange=${(e) => onTargetLanguageChange(e, option)}
+                                      />
+                                      <label
+                                        class="form-check-label cursor-pointer"
+                                        classList=${() => ({ "text-muted": option.disabled })}
+                                        for=${() => option.value}
+                                      >
+                                        ${() => option.label}
+                                      </label>
+                                    </div>
+                                  </div>
+                                `}
+                              <//>
+                            </div>
+                          `}
+                        <//>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-sm-12 mb-4">
+                    <div class="d-flex justify-content-center gap-2">
+                      <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">
+                        Cancel
+                      </button>
+
+                      <button
+                        class="btn btn-wide px-3 py-3 btn-wide-primary"
+                        id="translateButton"
+                        type="submit"
+                      >
+                        Translate
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
+              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1">
+                <${Show}
+                  when=${() => Object.keys(store.generatedDocuments).length > 0}
+                  fallback=${html`<div class="d-flex h-100 py-5">
+                    <div class="text-center py-5">
+                      <h1 class="text-info mb-3">Welcome to Document Translator</h1>
+                      <div>
+                        To get started, upload your source document, select one or more target
+                        languages from the list, and click Generate to create translated versions.
+                      </div>
+                    </div>
+                  </div>`}
+                >
+                  <div class="d-flex flex-column gap-2">
+                    <div class="text-muted small fw-semibold">
+                      <${Show}
+                        when=${allJobsProcessed}
+                        fallback="We are generating your documents now. This may take a few moments."
+                      >
+                        All processing is complete. The generated documents are available for
+                        download.
+                      <//>
+                    </div>
+
+                    <${For} each=${() => Object.keys(store.generatedDocuments)}>
+                      ${(jobId) => {
+                        const job = () => store.generatedDocuments[jobId];
+
+                        return html`
+                          <div
+                            class="d-flex justify-content-between align-items-center p-2 border rounded"
+                          >
+                            <div class="flex-grow-1">
+                              <div class="fw-medium">
+                                <span>${() => job().config?.displayInfo?.prefix || ""}</span>
+                                <span class="text-muted fw-normal">
+                                  : ${() => job().config?.displayInfo?.label || "Unknown"}</span
+                                >
+                              </div>
+                              <div class="small text-muted">
+                                ${() =>
+                                  job().config?.displayInfo?.filename || "translated_text.txt"}
+                              </div>
+                            </div>
+                            <${Show} when=${() => job()?.status === "processing"}>
+                              <div
+                                class="spinner-border spinner-border-sm text-primary me-2"
+                                role="status"
+                              >
+                                <span class="visually-hidden">Processing...</span>
+                              </div>
+                            <//>
+                            <${Show} when=${() => job()?.status === "completed"}>
+                              <button
+                                type="button"
+                                class="btn btn-outline-light"
+                                onClick=${() => downloadJob(jobId)}
+                              >
+                                <img
+                                  src="/assets/images/icon-download.svg"
+                                  height="16"
+                                  alt="Download"
+                                />
+                              </button>
+                            <//>
+                            <${Show} when=${() => job()?.status === "error"}>
+                              <div class="d-flex align-items-center gap-2">
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-outline-danger"
+                                  title=${() => job().error}
+                                  onClick=${() => retryJob(jobId)}
+                                >
+                                  Retry
+                                </button>
+                              </div>
+                            <//>
+                          </div>
+                        `;
+                      }}
+                    <//>
+                  </div>
+                  <${Show} when=${allJobsProcessed}>
+                    <div class="h-100 d-flex flex-column justify-content-between">
+                      <div class="text-end">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-link fw-semibold p-0"
+                          onClick=${downloadAll}
+                        >
+                          Download All
+                        </button>
+                      </div>
+                      <div class="mt-auto d-flex align-items-center">
+                        <img
+                          src="/assets/images/icon-star.svg"
+                          alt="Star"
+                          class="me-2"
+                          height="16"
+                        />
+                        <div>
+                          <span class="me-1">We would love your feedback!</span>
+                          <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a>
+                          &nbsp;to help us improve.
+                        </div>
+                      </div>
+                    </div>
+                  <//>
+                <//>
+              </div>
+            </div>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
   `;
 }
