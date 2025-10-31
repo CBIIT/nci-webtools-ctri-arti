@@ -8,6 +8,56 @@ import { For, Switch, Match } from "solid-js";
 import { createStore, produce } from "solid-js/store";
 import html from "solid-js/html";
 
+const AGENT_CONFIG = {
+  modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+  reasoningMode: false,
+  systemPrompt: "You are a helpful assistant.",
+  loading: false,
+  tools: [
+    {
+      toolSpec: {
+        name: "code",
+        description: "Execute JavaScript or HTML code snippets.",
+        inputSchema: {
+          json: {
+            type: "object",
+            properties: {
+              code: { type: "string", description: "The JavaScript code to execute. Eg: 2+2" },
+              language: {
+                type: "string",
+                description: "The programming language of the code (e.g., 'javascript', 'html').",
+                default: "javascript",
+              },
+            },
+            required: ["code"],
+          },
+        },
+      },
+    },
+    {
+      toolSpec: {
+        name: "think",
+        description:
+          "Use this tool to create a dedicated thinking space for complex reasoning. Use it when you need to analyze information, plan steps, or work through problems before providing a final answer.",
+        inputSchema: {
+          json: {
+            type: "object",
+            properties: {
+              thought: {
+                type: "string",
+                description: "Your detailed thought process, analysis, or reasoning steps.",
+              },
+            },
+            required: ["thought"],
+          },
+        },
+      },
+    },
+  ],
+  messages: [],
+};
+
+
 render(App, document.getElementById("app"));
 
 // =================================================================================
@@ -56,18 +106,32 @@ function MessageContent(props) {
 }
 
 function App() {
-  const { store, handleSubmit } = useChat();
+  const { agent, sendMessage } = useAgent(AGENT_CONFIG);
 
   function handleKeyDown(event) {
-    if (event.key === "Enter" && !event.shiftKey && !store.loading) {
+    if (event.key === "Enter" && !event.shiftKey && !agent.loading) {
       event.preventDefault();
       event.target?.closest("form")?.requestSubmit();
     }
   }
 
+  async function handleSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const text = form.userMessage.value;
+    const files = Array.from(form.userFiles.files || []);
+    const modelId = form.modelId.value;
+    const reasoningMode = form.reasoningMode.checked;
+
+    form.userMessage.value = "";
+    form.userFiles.value = "";
+
+    await sendMessage(text, files, modelId, reasoningMode);
+  }
+
   return html`
     <div class="container my-5">
-      <${For} each=${() => store.messages}>
+      <${For} each=${() => agent.messages}>
         ${(message) => html`<${For} each=${() => message.content}>
           ${(content) => html`<${MessageContent} role=${message.role} content=${content} />`}
         <//>`}
@@ -128,159 +192,24 @@ function App() {
 }
 
 // =================================================================================
-// 4. CORE LOGIC & STATE (Original "useChat" Hook)
+// 4. CORE LOGIC & STATE
 // =================================================================================
 
-function useChat() {
-  const cachePoint = { type: "default" };
-  const [store, setStore] = createStore({
-    modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    reasoningMode: false,
-    systemPrompt: "You are a helpful assistant.",
-    loading: false,
-    tools: [
-      {
-        toolSpec: {
-          name: "code",
-          description: "Execute JavaScript or HTML code snippets.",
-          inputSchema: {
-            json: {
-              type: "object",
-              properties: {
-                code: { type: "string", description: "The JavaScript code to execute. Eg: 2+2" },
-                language: {
-                  type: "string",
-                  description: "The programming language of the code (e.g., 'javascript', 'html').",
-                  default: "javascript",
-                },
-              },
-              required: ["code"],
-            },
-          },
-        },
-      },
-      {
-        toolSpec: {
-          name: "think",
-          description:
-            "Use this tool to create a dedicated thinking space for complex reasoning. Use it when you need to analyze information, plan steps, or work through problems before providing a final answer.",
-          inputSchema: {
-            json: {
-              type: "object",
-              properties: {
-                thought: {
-                  type: "string",
-                  description: "Your detailed thought process, analysis, or reasoning steps.",
-                },
-              },
-              required: ["thought"],
-            },
-          },
-        },
-      },
-    ],
-    messages: [],
-  });
+function useAgent(config = AGENT_CONFIG, tools = { code, think }) {
+  const [agent, setAgent] = createStore(config);
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    let isComplete = false;
-    const form = event.target;
-
-    const content = [{ text: form.userMessage.value }];
-    const userFiles = form.userFiles.files;
-    if (userFiles.length > 0) {
-      for (const file of userFiles) {
-        const fileContent = await getContentBlock(file);
-        if (fileContent) {
-          content.push(fileContent);
-        }
-      }
-    }
-
+  async function sendMessage(text, files = [], modelId, reasoningMode) {
+    setAgent("loading", true);
+    const content = await getMessageContent(text, files);
     const userMessage = { role: "user", content };
-    form.userMessage.value = "";
-    form.userFiles.value = "";
-    setStore("loading", true);
-    setStore("modelId", form.modelId.value);
-    setStore("reasoningMode", form.reasoningMode.checked);
-    setStore("messages", store.messages.length, userMessage);
-
-    const client = new BedrockRuntimeClient(await getAwsConfig(localStorage, "aws-config"));
-
-    while (!isComplete) {
-      const output = await client.send(getConverseCommand(store));
-
-      const assistantMessage = { role: "assistant", content: [] };
-      setStore("messages", store.messages.length, assistantMessage);
-
-      for await (const message of output.stream) {
-        await sleep(50);
-
-        // using immer to simplify nested state updates
-        setStore(
-          produce(async (s) => {
-            const { contentBlockStart, contentBlockDelta, contentBlockStop, messageStop } = message;
-            const toolUse = contentBlockStart?.start?.toolUse;
-            const stopReason = messageStop?.stopReason;
-            const messageContent = s.messages.at(-1).content;
-
-            if (toolUse) {
-              toolUse.input = "";
-              const { contentBlockIndex } = contentBlockStart;
-              messageContent[contentBlockIndex] = { toolUse };
-            } else if (contentBlockDelta) {
-              const { contentBlockIndex, delta } = contentBlockDelta;
-              const { reasoningContent, text, toolUse } = delta;
-              messageContent[contentBlockIndex] ||= {};
-              const block = messageContent[contentBlockIndex];
-
-              if (reasoningContent) {
-                block.reasoningContent ||= { reasoningText: {} };
-                const reasoning = block.reasoningContent;
-                const { text, signature, redactedContent } = reasoningContent;
-                if (text) {
-                  reasoning.reasoningText.text ||= "";
-                  reasoning.reasoningText.text += text;
-                } else if (signature) {
-                  reasoning.reasoningText.signature ||= "";
-                  reasoning.reasoningText.signature += signature;
-                } else if (redactedContent) {
-                  reasoning.redactedContent ||= "";
-                  reasoning.redactedContent += redactedContent;
-                }
-              } else if (text) {
-                block.text ||= "";
-                block.text += text;
-              } else if (toolUse) {
-                block.toolUse ||= { input: "" };
-                block.toolUse.input += toolUse.input;
-              }
-            } else if (contentBlockStop) {
-              const { contentBlockIndex } = contentBlockStop;
-              const block = messageContent[contentBlockIndex];
-              if (block.toolUse) {
-                block.toolUse.input = parseJSON(block.toolUse.input);
-              }
-            } else if (stopReason) {
-              if (stopReason === "tool_use") {
-                const toolUses = messageContent.map((c) => c.toolUse).filter(Boolean);
-                const toolResults = await Promise.all(toolUses.map((t) => runTool(t)));
-                const content = toolResults.map((toolResult) => ({ toolResult }));
-                const toolResultsMessage = { role: "user", content };
-                s.messages.push(toolResultsMessage);
-              } else {
-                isComplete = true;
-              }
-            }
-          })
-        );
-      }
-    }
-    setStore("loading", false);
+    setAgent("modelId", modelId);
+    setAgent("reasoningMode", reasoningMode);
+    setAgent("messages", agent.messages.length, userMessage);
+    await runAgent(agent, setAgent, tools);
+    setAgent("loading", false);
   }
 
-  return { store, setStore, handleSubmit };
+  return { agent, setAgent, sendMessage };
 }
 
 // =================================================================================
@@ -321,6 +250,92 @@ function getConverseCommand(store) {
   });
 }
 
+async function runAgent(store, setStore, tools = { code, think }, client = null) {
+  client ||= new BedrockRuntimeClient(await getAwsConfig(localStorage, "aws-config"));
+
+  let isComplete = false;
+  while (!isComplete) {
+    const output = await client.send(getConverseCommand(store));
+    const assistantMessage = { role: "assistant", content: [] };
+    setStore("messages", store.messages.length, assistantMessage);
+
+    for await (const message of output.stream) {
+      await sleep(50);
+
+      // using immer to simplify nested state updates
+      setStore(
+        produce(async (s) => {
+          const { contentBlockStart, contentBlockDelta, contentBlockStop, messageStop } = message;
+          const toolUse = contentBlockStart?.start?.toolUse;
+          const stopReason = messageStop?.stopReason;
+          const messageContent = s.messages.at(-1).content;
+
+          if (toolUse) {
+            const { contentBlockIndex } = contentBlockStart;
+            messageContent[contentBlockIndex] = { toolUse };
+          } else if (contentBlockDelta) {
+            const { contentBlockIndex, delta } = contentBlockDelta;
+            const { reasoningContent, text, toolUse } = delta;
+            messageContent[contentBlockIndex] ||= {};
+            const block = messageContent[contentBlockIndex];
+
+            if (reasoningContent) {
+              block.reasoningContent ||= { reasoningText: {} };
+              const reasoning = block.reasoningContent;
+              const { text, signature, redactedContent } = reasoningContent;
+              if (text) {
+                reasoning.reasoningText.text ||= "";
+                reasoning.reasoningText.text += text;
+              } else if (signature) {
+                reasoning.reasoningText.signature ||= "";
+                reasoning.reasoningText.signature += signature;
+              } else if (redactedContent) {
+                reasoning.redactedContent ||= "";
+                reasoning.redactedContent += redactedContent;
+              }
+            } else if (text) {
+              block.text ||= "";
+              block.text += text;
+            } else if (toolUse) {
+              block.toolUse.input ||= "";
+              block.toolUse.input += toolUse.input;
+            }
+          } else if (contentBlockStop) {
+            const { contentBlockIndex } = contentBlockStop;
+            const block = messageContent[contentBlockIndex];
+            if (block.toolUse) {
+              block.toolUse.input = parseJSON(block.toolUse.input);
+            }
+          } else if (stopReason) {
+            if (stopReason === "tool_use") {
+              const toolUses = messageContent.map((c) => c.toolUse).filter(Boolean);
+              const toolResults = await Promise.all(toolUses.map((t) => runTool(t, tools)));
+              const content = toolResults.map((toolResult) => ({ toolResult }));
+              const toolResultsMessage = { role: "user", content };
+              s.messages.push(toolResultsMessage);
+            } else {
+              isComplete = true;
+            }
+          }
+        })
+      );
+    }
+  }
+}
+
+async function getMessageContent(text, files) {
+  const content = [{ text }];
+  if (files.length > 0) {
+    for (const file of userFiles) {
+      const fileContent = await getContentBlock(file);
+      if (fileContent) {
+        content.push(fileContent);
+      }
+    }
+  }
+  return content;
+}
+
 async function getContentBlock(file) {
   console.log(file);
   const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
@@ -339,7 +354,7 @@ async function getContentBlock(file) {
   const bytes = new Uint8Array(arrayBuffer);
   const name = file.name.replace(/[^A-Z0-9 _\-\(\)\[\]]/gi, "_").replace(/\s+/g, " ").trim();
   if (type) {
-    return { 
+    return {
       [type]: {
         format,
         name,
