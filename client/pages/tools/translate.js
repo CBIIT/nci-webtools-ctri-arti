@@ -290,22 +290,6 @@ export default function Page() {
                       </div>
                     </div>
                   </div>
-
-                  <div class="col-sm-12 mb-4">
-                    <div class="d-flex justify-content-center gap-2">
-                      <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">
-                        Cancel
-                      </button>
-
-                      <button
-                        class="btn btn-wide px-3 py-3 btn-wide-primary"
-                        id="translateButton"
-                        type="submit"
-                      >
-                        Translate
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -422,6 +406,20 @@ export default function Page() {
                     </div>
                   <//>
                 <//>
+              </div>
+            </div>
+
+            <div class="col-sm-6 mb-4">
+              <div class="d-flex-center mt-1 gap-1">
+                <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">Cancel</button>
+
+                <button
+                  class="btn btn-wide px-3 py-3 btn-wide-primary"
+                  id="translateButton"
+                  type="submit"
+                >
+                  Generate
+                </button>
               </div>
             </div>
           </div>
