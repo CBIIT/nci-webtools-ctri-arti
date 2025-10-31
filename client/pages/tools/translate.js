@@ -328,10 +328,12 @@ export default function Page() {
                     <div class="text-muted small fw-semibold">
                       <${Show}
                         when=${allJobsProcessed}
-                        fallback="We are generating your documents now. This may take a few moments."
+                        fallback="We are generating your forms now. This may take a few moments."
                       >
-                        All processing is complete. The generated documents are available for
-                        download.
+                        <span>
+                          All processing is complete. The generated documents are available for
+                          download.
+                        </span>
                       <//>
                     </div>
 
