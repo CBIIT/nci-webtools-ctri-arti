@@ -6,6 +6,8 @@ import { createStore } from "solid-js/store";
 import FileInput from "../../components/file-input.js";
 import { parseDocument } from "../../utils/parsers.js";
 
+import { useSessionPersistence } from "./translate/hooks.js";
+
 const AUTO_LANGUAGE = { value: "auto", label: "Auto" };
 const LANGUAGES = [
   { value: "en", label: "English" },
@@ -16,12 +18,30 @@ const LANGUAGES = [
   { value: "it", label: "Italian" },
 ];
 
+const defaultStore = { id: null, generatedDocuments: {} };
+
 export default function Page() {
   const [sourceText, setSourceText] = createSignal("");
   const [targetLanguages, setTargetLanguages] = createSignal([]);
   const [inputFile, setInputFile] = createSignal(null);
-  const [store, setStore] = createStore({
-    generatedDocuments: {},
+  const [store, setStore] = createStore(structuredClone(defaultStore));
+
+  const { setParam, createSession, saveSession } = useSessionPersistence({
+    dbPrefix: "arti-translator",
+    store,
+    setStore,
+    defaultStore,
+    getSnapshot: () => ({
+      inputFile: inputFile(),
+      inputText: sourceText(),
+      targetLanguages: targetLanguages(),
+    }),
+    restoreSnapshot: (snap) => {
+      setInputFile(snap.inputFile || null);
+      setSourceText(snap.inputText || "");
+      setTargetLanguages(Array.isArray(snap.targetLanguages) ? snap.targetLanguages : []);
+    },
+    onRetryJob: retryJob,
   });
 
   const allJobsProcessed = createMemo(() => {
@@ -66,6 +86,8 @@ export default function Page() {
       config: jobConfig,
     });
 
+    await saveSession();
+
     try {
       const translated = await translateRequest({
         text: jobConfig.inputText,
@@ -88,6 +110,8 @@ export default function Page() {
         error: error?.message || "Translation error",
         config: jobConfig,
       });
+    } finally {
+      await saveSession();
     }
   }
 
@@ -150,6 +174,7 @@ export default function Page() {
       const bytes = e.target.result;
       const text = await parseDocument(bytes, file.type, file.name);
       setSourceText(text || "");
+      setStore("generatedDocuments", store.generatedDocuments);
     };
     reader.readAsArrayBuffer(file);
   }
@@ -159,14 +184,14 @@ export default function Page() {
     setSourceText("");
     setTargetLanguages([]);
     setInputFile(null);
-    setStore("generatedDocuments", {});
+    setStore(structuredClone(defaultStore));
+    setParam("id", null);
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
 
     if (!inputFile() || targetLanguages().length === 0) {
-      console.log(inputFile(), targetLanguages());
       return;
     }
 
@@ -177,7 +202,13 @@ export default function Page() {
       setSourceText(inputText || "");
     }
 
+    // Clear previous results
     setStore("generatedDocuments", {});
+
+    const id = await createSession();
+    setStore("id", id);
+    setParam("id", id);
+    await saveSession();
 
     for (const langCode of targetLanguages()) {
       const jobId = crypto.randomUUID();
