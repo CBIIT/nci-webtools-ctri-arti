@@ -8,25 +8,35 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css"
     />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1/font/bootstrap-icons.min.css">
     <style>
-      .cursor-pointer {
+      body {
+        min-width: var(--bs-breakpoint-sm);
+      }
+      input, button, label, select, .btn, .form-control[type="file"], .form-select, .form-check-label {
+        font-weight: 500;
+      }
+      .form-select, .form-check-input, .form-check-label {
         cursor: pointer;
+      }
+      .border-transparent {
+        border-color: transparent !important;
       }
     </style>
     <script type="importmap">
       {
         "imports": {
-          "@aws-sdk/client-bedrock-runtime": "https://cdn.jsdelivr.net/npm/@aws-sdk/client-bedrock-runtime@3.920.0/+esm",
-          "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1.9.9/dist/solid.min.js",
-          "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1.9.9/html/dist/html.min.js",
-          "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1.9.9/store/dist/store.min.js",
-          "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1.9.9/web/dist/web.min.js"
+          "@aws-sdk/client-bedrock-runtime": "https://cdn.jsdelivr.net/npm/@aws-sdk/client-bedrock-runtime@3/+esm",
+          "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1/dist/solid.min.js",
+          "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1/html/dist/html.min.js",
+          "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1/store/dist/store.min.js",
+          "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1/web/dist/web.min.js"
         }
       }
     </script>
   </head>
-  <body>
-    <div id="app"></div>
+  <body class="vh-100 bg-light d-flex flex-column">
+    <div id="app" class="h-100"></div>
     <script type="module" src="./bedrock.js"></script>
   </body>
 </html>
