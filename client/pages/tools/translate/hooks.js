@@ -10,9 +10,9 @@ export function useSessionPersistence({
   defaultStore,
   getSnapshot,
   restoreSnapshot,
+  onRetryJob,
 }) {
   let db = null;
-  let onRetryJob = null;
   const pendingRetries = [];
 
   const [session] = createResource(() => fetch("/api/session").then((r) => r.json()));
@@ -90,18 +90,10 @@ export function useSessionPersistence({
       .filter(([_id, job]) => job?.status === "processing")
       .map(([_id]) => _id);
 
-    if (onRetryJob) {
+    if (typeof onRetryJob === "function") {
       interrupted.forEach(onRetryJob);
     } else {
       pendingRetries.push(...interrupted);
-    }
-  }
-
-  function setOnRetryJob(callback) {
-    onRetryJob = callback;
-    if (pendingRetries.length) {
-      const ids = pendingRetries.splice(0);
-      ids.forEach(onRetryJob);
     }
   }
 
@@ -124,6 +116,5 @@ export function useSessionPersistence({
     createSession,
     saveSession,
     loadSession,
-    setOnRetryJob,
   };
 }
