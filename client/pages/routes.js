@@ -54,7 +54,6 @@ export default function getRoutes() {
           path: "translate",
           title: "Translate",
           component: Translate,
-          hidden: true,
         },
         {
           path: "semantic-search",
