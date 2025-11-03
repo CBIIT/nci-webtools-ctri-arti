@@ -319,9 +319,9 @@ export default function Page() {
           id="translateForm"
           onSubmit=${(ev) => handleSubmit(ev)}
           onReset=${handleReset}
-          class="container"
+          class="container p-0"
         >
-          <div class="row align-items-stretch my-3 text-center">
+          <div class="row align-items-stretch mb-3 text-center">
             <div class="col">
               <div class="bg-white shadow border rounded p-3">
                 <h1 class="fw-bold fs-3 form-label mt-3 mb-2">Document Translator</h1>
@@ -335,81 +335,98 @@ export default function Page() {
 
           <div class="row align-items-stretch">
             <div class="col-md-6 mb-2">
-              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1">
-                <div class="row">
-                  <div class="col-sm-12 mb-2">
-                    <label for="inputText" class="form-label required text-info fs-5 mb-1"
-                      >Source Document</label
-                    >
-                    <${FileInput}
-                      id="fileInput"
-                      value=${() => [inputFile()]}
-                      onChange=${handleFileSelect}
-                      accept=".txt, .docx, .pdf"
-                      class="form-control form-control-sm mb-3"
-                    />
-                  </div>
-
-                  <div class="col-sm-12 mb-4">
-                    <div class="d-flex justify-content-start align-items-center gap-2">
-                      <label for="targetLanguage" class="form-label required text-info fs-5 mb-1">
-                        Target Languages
-                      </label>
-
-                      <${Show} when=${() => user?.()?.Role?.name === "admin"}>
-                        <select
-                          class="form-select form-select-sm w-auto"
-                          aria-label="Translation engine"
-                          value=${() => engine()}
-                          onChange=${(e) => setEngine(e.target.value)}
-                        >
-                          <option value="aws">AWS Translate</option>
-                          ${MODELS.map((m) => html`<option value=${m.value}>${m.label}</option>`)}
-                        </select>
-                      <//>
+              <div class="position-relative w-100">
+                <div class="bg-white shadow border rounded p-3">
+                  <div class="row">
+                    <div class="col-sm-12 mb-2">
+                      <label for="inputText" class="form-label required text-info fs-5 mb-1"
+                        >Source Document</label
+                      >
+                      <${FileInput}
+                        id="fileInput"
+                        value=${() => [inputFile()]}
+                        onChange=${handleFileSelect}
+                        accept=".txt, .docx, .pdf"
+                        class="form-control form-control-sm mb-3"
+                      />
                     </div>
 
-                    <div class="border rounded p-3 pb-5">
-                      <div class="row">
-                        <${For} each=${languageColumns()}>
-                          ${(col) => html`
-                            <div class="col-sm-3">
-                              <${For} each=${col}>
-                                ${(option) => html`
-                                  <div class="mb-1">
-                                    <div
-                                      class="form-check form-control-sm min-height-auto py-0 ms-1"
-                                    >
-                                      <input
-                                        class="form-check-input cursor-pointer"
-                                        type="checkbox"
-                                        id=${() => option.value}
-                                        checked=${() => targetLanguages()?.includes(option.value)}
-                                        onChange=${(e) => onTargetLanguageChange(e, option)}
-                                      />
-                                      <label
-                                        class="form-check-label cursor-pointer"
-                                        classList=${() => ({ "text-muted": option.disabled })}
-                                        for=${() => option.value}
-                                      >
-                                        ${() => option.label}
-                                      </label>
-                                    </div>
-                                  </div>
-                                `}
-                              <//>
-                            </div>
-                          `}
+                    <div class="col-sm-12 mb-4">
+                      <div class="d-flex justify-content-start align-items-center gap-2">
+                        <label for="targetLanguage" class="form-label required text-info fs-5 mb-1">
+                          Target Languages
+                        </label>
+
+                        <${Show} when=${() => user?.()?.Role?.name === "admin"}>
+                          <select
+                            class="form-select form-select-sm w-auto"
+                            aria-label="Translation engine"
+                            value=${() => engine()}
+                            onChange=${(e) => setEngine(e.target.value)}
+                          >
+                            <option value="aws">AWS Translate</option>
+                            ${MODELS.map((m) => html`<option value=${m.value}>${m.label}</option>`)}
+                          </select>
                         <//>
                       </div>
+
+                      <div class="border rounded p-3 pb-5">
+                        <div class="row">
+                          <${For} each=${languageColumns()}>
+                            ${(col) => html`
+                              <div class="col-sm-3">
+                                <${For} each=${col}>
+                                  ${(option) => html`
+                                    <div class="mb-1">
+                                      <div
+                                        class="form-check form-control-sm min-height-auto py-0 ms-1"
+                                      >
+                                        <input
+                                          class="form-check-input cursor-pointer"
+                                          type="checkbox"
+                                          id=${() => option.value}
+                                          checked=${() => targetLanguages()?.includes(option.value)}
+                                          onChange=${(e) => onTargetLanguageChange(e, option)}
+                                        />
+                                        <label
+                                          class="form-check-label cursor-pointer"
+                                          classList=${() => ({ "text-muted": option.disabled })}
+                                          for=${() => option.value}
+                                        >
+                                          ${() => option.label}
+                                        </label>
+                                      </div>
+                                    </div>
+                                  `}
+                                <//>
+                              </div>
+                            `}
+                          <//>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                </div>
+
+                <div class="position-absolute top-100 start-50 translate-middle-x mt-2">
+                  <div class="d-flex-center gap-1">
+                    <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">
+                      Cancel
+                    </button>
+                    <button
+                      class="btn btn-wide px-3 py-3 btn-wide-primary"
+                      id="translateButton"
+                      type="submit"
+                    >
+                      Generate
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1">
+            <div class="col-md-6 mb-2 d-flex">
+              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-fill h-100">
                 <${Show}
                   when=${() => Object.keys(store.generatedDocuments).length > 0}
                   fallback=${html`<div class="d-flex h-100 py-5">
@@ -445,10 +462,7 @@ export default function Page() {
                           >
                             <div class="flex-grow-1">
                               <div class="fw-medium">
-                                <span>${() => job().config?.displayInfo?.prefix || ""}</span>
-                                <span class="text-muted fw-normal">
-                                  : ${() => job().config?.displayInfo?.label || "Unknown"}</span
-                                >
+                                <span>${() => job().config?.displayInfo?.label || "Unknown"}</span>
                               </div>
                               <div class="small text-muted">
                                 ${() =>
@@ -520,20 +534,6 @@ export default function Page() {
                     </div>
                   <//>
                 <//>
-              </div>
-            </div>
-
-            <div class="col-sm-6 mb-4">
-              <div class="d-flex-center mt-1 gap-1">
-                <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">Cancel</button>
-
-                <button
-                  class="btn btn-wide px-3 py-3 btn-wide-primary"
-                  id="translateButton"
-                  type="submit"
-                >
-                  Generate
-                </button>
               </div>
             </div>
           </div>
