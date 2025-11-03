@@ -4,6 +4,8 @@ import html from "solid-js/html";
 import { createStore } from "solid-js/store";
 
 import FileInput from "../../components/file-input.js";
+import { useAuthContext } from "../../contexts/auth-context.js";
+import { MODEL_OPTIONS } from "../../models/model-options.js";
 import { parseDocument } from "../../utils/parsers.js";
 
 import { useSessionPersistence } from "./translate/hooks.js";
@@ -18,12 +20,22 @@ const LANGUAGES = [
   { value: "it", label: "Italian" },
 ];
 
+const MODELS = [
+  { value: MODEL_OPTIONS.AWS_BEDROCK.TITAN.v1_0_lite, label: "Model: Titan" },
+  { value: MODEL_OPTIONS.AWS_BEDROCK.COHERE_COMMAND.v1_0_light, label: "Model: Cohere Command" },
+  { value: MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5, label: "Model: Haiku" },
+  { value: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5, label: "Model: Sonnet" },
+  { value: MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_1, label: "Model: Opus" },
+];
+
 const defaultStore = { id: null, generatedDocuments: {} };
 
 export default function Page() {
+  const { user } = useAuthContext();
   const [sourceText, setSourceText] = createSignal("");
   const [targetLanguages, setTargetLanguages] = createSignal([]);
   const [inputFile, setInputFile] = createSignal(null);
+  const [engine, setEngine] = createSignal("aws");
   const [store, setStore] = createStore(structuredClone(defaultStore));
 
   const { setParam, createSession, saveSession } = useSessionPersistence({
@@ -35,11 +47,13 @@ export default function Page() {
       inputFile: inputFile(),
       inputText: sourceText(),
       targetLanguages: targetLanguages(),
+      engine: engine(),
     }),
     restoreSnapshot: (snap) => {
       setInputFile(snap.inputFile || null);
       setSourceText(snap.inputText || "");
       setTargetLanguages(Array.isArray(snap.targetLanguages) ? snap.targetLanguages : []);
+      setEngine(snap.engine || "aws");
     },
     onRetryJob: retryJob,
   });
@@ -67,7 +81,7 @@ export default function Page() {
       body: JSON.stringify({ text, sourceLanguage, targetLanguage }),
     });
     if (!response.ok) {
-      throw new Error(`Translate failed (${response.status})`);
+      throw new Error(`Translation request failed. (${response.status})`);
     }
     const data = await response.json();
 
@@ -76,6 +90,49 @@ export default function Page() {
     }
 
     return data;
+  }
+
+  async function runModel(params) {
+    const res = await fetch("/api/model", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Translation request failed. (${res.status})`);
+    }
+    const data = await res.json();
+
+    return data?.output?.message?.content?.map((c) => c.text || "").join(" ") || "";
+  }
+
+  async function modelTranslateRequest({ text, sourceLanguage, targetLanguage, model }) {
+    const targetLabel = getLanguageLabel(targetLanguage);
+    const system = [
+      "You are a translation engine emulating Amazon Translate.",
+      sourceLanguage && sourceLanguage !== "auto"
+        ? `Translate from ${sourceLanguage.toUpperCase()} to ${targetLabel}.`
+        : `Detect the source language and translate to ${targetLabel}.`,
+      "Translate confidently translatable words and phrases.",
+      "If a token/segment is untranslatable or nonsensical (e.g., random strings, mixed gibberish, unknown product codes, IDs, URLs/email addresses, emojis, hashtags, or placeholders), LEAVE IT UNCHANGED.",
+      "Preserve punctuation, whitespace, line breaks, capitalization, numerals, units, and any inline placeholders exactly as in the source.",
+      "Do not add, remove, or paraphrase content; do not guess missing words.",
+      "It is acceptable to partially translate a sentence while keeping untranslatable tokens as-is.",
+      "Output ONLY the translated text (plain text), with no quotes or explanations.",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const params = {
+      model,
+      messages: [{ role: "user", content: [{ text }] }],
+      system,
+      stream: false,
+    };
+
+    const output = await runModel(params);
+    return (output || "").trim();
   }
 
   async function processJob(jobId, jobConfig) {
@@ -89,11 +146,21 @@ export default function Page() {
     await saveSession();
 
     try {
-      const translated = await translateRequest({
-        text: jobConfig.inputText,
-        sourceLanguage: jobConfig.sourceLanguage,
-        targetLanguage: jobConfig.languageCode,
-      });
+      let translated = "";
+      if (jobConfig.engine === "aws") {
+        translated = await translateRequest({
+          text: jobConfig.inputText,
+          sourceLanguage: jobConfig.sourceLanguage,
+          targetLanguage: jobConfig.languageCode,
+        });
+      } else {
+        translated = await modelTranslateRequest({
+          text: jobConfig.inputText,
+          sourceLanguage: jobConfig.sourceLanguage,
+          targetLanguage: jobConfig.languageCode,
+          model: jobConfig.engine,
+        });
+      }
 
       const blob = new Blob([translated], { type: "text/plain" });
 
@@ -184,6 +251,7 @@ export default function Page() {
     setSourceText("");
     setTargetLanguages([]);
     setInputFile(null);
+    setEngine("aws");
     setStore(structuredClone(defaultStore));
     setParam("id", null);
   }
@@ -217,6 +285,7 @@ export default function Page() {
         languageLabel: getLanguageLabel(langCode),
         sourceLanguage: AUTO_LANGUAGE.value || "en",
         inputText: inputText || "",
+        engine: engine(),
         displayInfo: {
           prefix: langCode.toUpperCase(),
           label: getLanguageLabel(langCode),
@@ -282,9 +351,23 @@ export default function Page() {
                   </div>
 
                   <div class="col-sm-12 mb-4">
-                    <label for="targetLanguage" class="form-label required text-info fs-5 mb-1"
-                      >Target Languages</label
-                    >
+                    <div class="d-flex justify-content-start align-items-center gap-2">
+                      <label for="targetLanguage" class="form-label required text-info fs-5 mb-1">
+                        Target Languages
+                      </label>
+
+                      <${Show} when=${() => user?.()?.Role?.name === "admin"}>
+                        <select
+                          class="form-select form-select-sm w-auto"
+                          aria-label="Translation engine"
+                          value=${() => engine()}
+                          onChange=${(e) => setEngine(e.target.value)}
+                        >
+                          <option value="aws">AWS Translate</option>
+                          ${MODELS.map((m) => html`<option value=${m.value}>${m.label}</option>`)}
+                        </select>
+                      <//>
+                    </div>
 
                     <div class="border rounded p-3 pb-5">
                       <div class="row">
