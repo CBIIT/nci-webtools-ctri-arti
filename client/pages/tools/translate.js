@@ -6,6 +6,7 @@ import { createStore } from "solid-js/store";
 import FileInput from "../../components/file-input.js";
 import { useAuthContext } from "../../contexts/auth-context.js";
 import { MODEL_OPTIONS } from "../../models/model-options.js";
+import { createTimestamp, downloadBlob } from "../../utils/files.js";
 import { parseDocument } from "../../utils/parsers.js";
 
 import { useSessionPersistence } from "./translate/hooks.js";
@@ -19,6 +20,7 @@ const LANGUAGES = [
   { value: "de", label: "German" },
   { value: "it", label: "Italian" },
 ];
+const ROWS_PER_COLUMN = 4;
 
 const MODELS = [
   { value: MODEL_OPTIONS.AWS_BEDROCK.TITAN.v1_0_lite, label: "Model: Titan" },
@@ -60,9 +62,12 @@ export default function Page() {
 
   const allJobsProcessed = createMemo(() => {
     const jobs = store.generatedDocuments;
-    const keys = Object.keys(jobs);
-    if (keys.length === 0) return true;
-    return keys.every((k) => ["completed", "error"].includes(jobs[k]?.status));
+    const jobKeys = Object.keys(jobs);
+    if (jobKeys.length === 0) {
+      return true;
+    }
+
+    return jobKeys.every((k) => ["completed", "error"].includes(jobs[k]?.status));
   });
 
   function getLanguageLabel(code) {
@@ -80,9 +85,11 @@ export default function Page() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, sourceLanguage, targetLanguage }),
     });
+
     if (!response.ok) {
       throw new Error(`Translation request failed. (${response.status})`);
     }
+
     const data = await response.json();
 
     if (typeof data !== "string") {
@@ -102,6 +109,7 @@ export default function Page() {
     if (!res.ok) {
       throw new Error(`Translation request failed. (${res.status})`);
     }
+
     const data = await res.json();
 
     return data?.output?.message?.content?.map((c) => c.text || "").join(" ") || "";
@@ -184,39 +192,24 @@ export default function Page() {
 
   async function retryJob(jobId) {
     const job = store.generatedDocuments[jobId];
-    if (!job?.config) return;
+    if (!job?.config) {
+      return;
+    }
 
     await processJob(jobId, job.config);
   }
 
-  function triggerDownload(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
   async function downloadJob(jobId) {
     const job = store.generatedDocuments[jobId];
-    if (!job || job.status !== "completed" || !job.blob) return;
+    if (!job || job.status !== "completed" || !job.blob) {
+      return;
+    }
 
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
-    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
-
+    const timestamp = createTimestamp();
     const baseFilename = job.config.displayInfo.filename.replace(/\.txt$/i, "");
     const filename = `${baseFilename}-${timestamp}.txt`;
 
-    triggerDownload(job.blob, filename);
+    downloadBlob(filename, job.blob);
   }
 
   function downloadAll() {
@@ -303,7 +296,6 @@ export default function Page() {
     );
   }
 
-  const ROWS_PER_COLUMN = 4;
   const languageColumns = () => {
     const cols = [];
     for (let i = 0; i < LANGUAGES.length; i += ROWS_PER_COLUMN) {

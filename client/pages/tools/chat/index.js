@@ -19,6 +19,7 @@ import Loader from "../../../components/loader.js";
 import ScrollTo from "../../../components/scroll-to.js";
 import Tooltip from "../../../components/tooltip.js";
 import { useAuthContext } from "../../../contexts/auth-context.js";
+import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 
 import DeleteConversation from "./delete-conversation.js";
@@ -96,7 +97,7 @@ export default function Page() {
     const message = form.message.value;
     const inputFiles = form.inputFiles.files;
     const reasoningMode = form.reasoningMode.checked;
-    const defaultModel = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
+    const defaultModel = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5;
     const model = form.model?.value || defaultModel;
     setIsStreaming(true);
     await submitMessage({ message, inputFiles, reasoningMode, model, reset: clearChat() }).finally(
@@ -433,15 +434,11 @@ export default function Page() {
                           id="model"
                           required
                         >
-                          <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">
-                            Opus 4.1
-                          </option>
-                          <option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0" selected>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_1}>Opus 4.1</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5} selected>
                             Sonnet 4.5
                           </option>
-                          <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">
-                            Haiku 4.5
-                          </option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
                         </select>
                       <//>
 
