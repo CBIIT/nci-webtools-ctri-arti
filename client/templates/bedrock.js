@@ -15,6 +15,7 @@ const AGENT_CONFIG = {
   loading: false,
   tools: [
     {
+      fn: code,
       toolSpec: {
         name: "code",
         description: "Execute JavaScript or HTML code snippets.",
@@ -36,6 +37,7 @@ const AGENT_CONFIG = {
     },
     {
       toolSpec: {
+        fn: think,
         name: "think",
         description:
           "Use this tool to create a dedicated thinking space for complex reasoning. Use it when you need to analyze information, plan steps, or work through problems before providing a final answer.",
@@ -67,9 +69,9 @@ render(App, document.getElementById("app"));
 function MessageContent(props) {
   if (props.content.text !== undefined) {
     if (props.role === "user") {
-      return html`<div style="white-space: pre-wrap;">${() => props.content.text}</div>`;
+      return html`<div class="border rounded p-2 mb-3 text-dark fw-mediume bg-secondary-subtle shadow-sm d-inline-block text-pre">${() => props.content.text}</div>`;
     } else if (props.role === "assistant") {
-      return html`<div style="white-space: pre-wrap; color: #2c3e50;">${() => props.content.text}</div>`;
+      return html`<div class="p-2 mb-3 text-pre">${() => props.content.text}</div>`;
     }
   }
 
@@ -153,6 +155,7 @@ function App() {
               name="userFiles"
               id="userFiles"
               class="visually-hidden"
+              accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.tsv,,.md,.json,text/*"
               multiple />
             
             <label for="userFiles" class="btn btn-sm btn-secondary">
@@ -166,10 +169,11 @@ function App() {
                 type="checkbox"
                 role="switch"
                 id="reasoningMode"
-                name="reasoningMode" />
+                name="reasoningMode"
+                title="Enable extended reasoning mode" />
               <label class="form-check-label" for="reasoningMode">
                 <span class="visually-hidden">Reasoning Mode</span>
-                <i class="bi bi-gear-fill text-secondary"></i>
+                <i class="bi bi-lightbulb-fill text-secondary"></i>
               </label>
             </div>
           </div>
@@ -195,7 +199,7 @@ function App() {
 // 4. CORE LOGIC & STATE
 // =================================================================================
 
-function useAgent(config = AGENT_CONFIG, tools = { code, think }) {
+function useAgent(config = AGENT_CONFIG) {
   const [agent, setAgent] = createStore(config);
 
   async function sendMessage(text, files = [], modelId, reasoningMode) {
@@ -205,7 +209,7 @@ function useAgent(config = AGENT_CONFIG, tools = { code, think }) {
     setAgent("modelId", modelId);
     setAgent("reasoningMode", reasoningMode);
     setAgent("messages", agent.messages.length, userMessage);
-    await runAgent(agent, setAgent, tools);
+    await runAgent(agent, setAgent);
     setAgent("loading", false);
   }
 
@@ -235,23 +239,31 @@ async function getAwsConfig(storage = localStorage, key = "aws-config") {
   }
 }
 
-function getConverseCommand(store) {
+function getConverseCommand(config) {
   const cachePoint = { type: "default" };
   const additionalModelRequestFields = {};
-  if (store.reasoningMode) {
+  if (config.reasoningMode) {
     additionalModelRequestFields.thinking = { type: "enabled", budget_tokens: +32_000 };
   }
+  const tools = config.tools
+    .map(({ toolSpec }) => ({ toolSpec }))
+    .filter(Boolean);
 
   return new ConverseStreamCommand({
-    modelId: store.modelId,
-    messages: store.messages,
-    system: [{ text: store.systemPrompt, cachePoint }],
-    toolConfig: { tools: store.tools },
+    modelId: config.modelId,
+    messages: config.messages,
+    system: [{ text: config.systemPrompt, cachePoint }],
+    toolConfig: { tools: [...tools, { cachePoint }] },
+    additionalModelRequestFields,
   });
 }
 
-async function runAgent(store, setStore, tools = { code, think }, client = null) {
+async function runAgent(store, setStore, client = null) {
   client ||= new BedrockRuntimeClient(await getAwsConfig(localStorage, "aws-config"));
+  const tools = {};
+  for (const tool of store.tools) {
+    tools[tool.toolSpec.name] = tool.fn;
+  }
 
   let isComplete = false;
   while (!isComplete) {
@@ -326,7 +338,7 @@ async function runAgent(store, setStore, tools = { code, think }, client = null)
 async function getMessageContent(text, files) {
   const content = [{ text }];
   if (files.length > 0) {
-    for (const file of userFiles) {
+    for (const file of files) {
       const fileContent = await getContentBlock(file);
       if (fileContent) {
         content.push(fileContent);
@@ -352,14 +364,13 @@ async function getContentBlock(file) {
     documentTypes.includes(format) ? "document" : null;
   const arrayBuffer = await file.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
-  const name = file.name.replace(/[^A-Z0-9 _\-\(\)\[\]]/gi, "_").replace(/\s+/g, " ").trim();
+  const name = file.name
+    .replace(/[^A-Z0-9 _\-\(\)\[\]]/gi, "_")
+    .replace(/\s+/g, " ").trim();
+
   if (type) {
     return {
-      [type]: {
-        format,
-        name,
-        source: { bytes }
-      }
+      [type]: { format, name, source: { bytes } }
     }
   }
 }
@@ -379,7 +390,6 @@ async function runTool(toolUse, tools = { code, think }) {
 }
 
 async function code(input) {
-  // Minor correction from original to fix scope bug: used `input.code`
   return await new Function(input.code)();
 }
 
