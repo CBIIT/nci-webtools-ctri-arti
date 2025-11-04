@@ -410,9 +410,7 @@ export default function Page() {
 
                 <div class="position-absolute top-100 start-50 translate-middle-x mt-2">
                   <div class="d-flex-center gap-1">
-                    <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">
-                      Cancel
-                    </button>
+                    <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">Reset</button>
                     <button
                       class="btn btn-wide px-3 py-3 btn-wide-primary"
                       id="translateButton"
