@@ -75,8 +75,6 @@ export function useSessionPersistence({
       return;
     }
 
-    console.log(getSnapshot());
-
     const snap = {
       ...unwrap(store),
       ...getSnapshot?.(),
