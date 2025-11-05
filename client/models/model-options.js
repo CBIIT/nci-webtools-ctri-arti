@@ -3,12 +3,6 @@
  */
 export const MODEL_OPTIONS = Object.freeze({
   AWS_BEDROCK: {
-    TITAN: {
-      v1_0_lite: "amazon.titan-text-lite-v1",
-    },
-    COHERE_COMMAND: {
-      v1_0_light: "cohere.command-light",
-    },
     SONNET: {
       v4_5: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
       v3_7: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",

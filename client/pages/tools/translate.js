@@ -23,8 +23,6 @@ const LANGUAGES = [
 const ROWS_PER_COLUMN = 4;
 
 const MODELS = [
-  { value: MODEL_OPTIONS.AWS_BEDROCK.TITAN.v1_0_lite, label: "Model: Titan" },
-  { value: MODEL_OPTIONS.AWS_BEDROCK.COHERE_COMMAND.v1_0_light, label: "Model: Cohere Command" },
   { value: MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5, label: "Model: Haiku" },
   { value: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5, label: "Model: Sonnet" },
   { value: MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_1, label: "Model: Opus" },
