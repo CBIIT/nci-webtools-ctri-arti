@@ -455,7 +455,7 @@ export default function Page() {
         <form onSubmit=${handleSubmit} onReset=${handleReset}>
           <div class="row align-items-stretch">
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-              <div class="bg-white shadow rounded p-3">
+              <div class="bg-white shadow rounded p-3 card-lg">
                 <label class="form-label required text-info fs-5 mb-1">Source Document</label>
                 <${FileInput}
                   value=${() => [store.inputFile]}
@@ -653,7 +653,9 @@ export default function Page() {
               </div>
             </div>
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1">
+              <div
+                class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1 card-lg"
+              >
                 <${Show}
                   when=${() => Object.keys(store.generatedDocuments).length > 0}
                   fallback=${html`<div class="d-flex h-100 py-5">

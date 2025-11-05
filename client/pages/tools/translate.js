@@ -306,12 +306,12 @@ export default function Page() {
 
   return html`
     <div class="bg-info-subtle h-100 position-relative">
-      <div class="container py-3 pb-5">
+      <div class="container py-3">
         <form
           id="translateForm"
           onSubmit=${(ev) => handleSubmit(ev)}
           onReset=${handleReset}
-          class="container p-0 mb-5"
+          class="container p-0"
         >
           <div class="row align-items-stretch mb-3 text-center">
             <div class="col">
@@ -328,7 +328,7 @@ export default function Page() {
           <div class="row align-items-stretch">
             <div class="col-md-6 mb-2">
               <div class="position-relative w-100">
-                <div class="bg-white shadow border rounded p-3" style="min-height: 650px;">
+                <div class="bg-white shadow border rounded p-3 card-lg">
                   <div class="row">
                     <div class="col-sm-12 mb-2">
                       <label for="inputText" class="form-label required text-info fs-5 mb-1"
@@ -414,7 +414,9 @@ export default function Page() {
             </div>
 
             <div class="col-md-6 d-flex" style="margin-bottom: 66px !important;">
-              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-fill h-100">
+              <div
+                class="d-flex flex-column bg-white shadow border rounded p-3 flex-fill h-100 card-lg"
+              >
                 <${Show}
                   when=${() => Object.keys(store.generatedDocuments).length > 0}
                   fallback=${html`<div class="d-flex h-100 py-5">
