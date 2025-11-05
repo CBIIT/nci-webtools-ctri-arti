@@ -3,6 +3,18 @@ import { createEffect, createResource } from "solid-js";
 import { openDB } from "idb";
 import { reconcile, unwrap } from "solid-js/store";
 
+/**
+ * A hook to persist session data in IndexedDB.
+ *
+ * @param {string} params.dbPrefix Prefix used to construct the per-user IndexedDB name.
+ * @param {import("solid-js/store").Store} params.store The Solid store holding session data.
+ * @param {import("solid-js/store").SetStoreFunction} params.setStore Setter returned from createStore to update the session store.
+ * @param {Object} params.defaultStore Baseline default values merged when loading a session.
+ * @param {() => Object} [params.getSnapshot] Returns extra transient data to persist with the store.
+ * @param {(snapshot: Object) => void} [params.restoreSnapshot] Rehydrates transient data from a loaded snapshot.
+ * @param {(jobId: string) => void} [params.onRetryJob] Callback invoked for each interrupted job id to retry.
+ * @returns {Object} - The session persistence API.
+ */
 export function useSessionPersistence({
   dbPrefix,
   store,
