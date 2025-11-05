@@ -306,12 +306,12 @@ export default function Page() {
 
   return html`
     <div class="bg-info-subtle h-100 position-relative">
-      <div class="container py-3">
+      <div class="container py-3 pb-5">
         <form
           id="translateForm"
           onSubmit=${(ev) => handleSubmit(ev)}
           onReset=${handleReset}
-          class="container p-0"
+          class="container p-0 mb-5"
         >
           <div class="row align-items-stretch mb-3 text-center">
             <div class="col">
@@ -328,7 +328,7 @@ export default function Page() {
           <div class="row align-items-stretch">
             <div class="col-md-6 mb-2">
               <div class="position-relative w-100">
-                <div class="bg-white shadow border rounded p-3">
+                <div class="bg-white shadow border rounded p-3" style="min-height: 650px;">
                   <div class="row">
                     <div class="col-sm-12 mb-2">
                       <label for="inputText" class="form-label required text-info fs-5 mb-1"
@@ -344,14 +344,14 @@ export default function Page() {
                     </div>
 
                     <div class="col-sm-12 mb-4">
-                      <div class="d-flex justify-content-start align-items-center gap-2">
+                      <div class="d-flex justify-content-start align-items-center flex-wrap gap-2">
                         <label for="targetLanguage" class="form-label required text-info fs-5 mb-1">
                           Target Languages
                         </label>
 
                         <${Show} when=${() => user?.()?.Role?.name === "admin"}>
                           <select
-                            class="form-select form-select-sm w-auto"
+                            class="form-select form-select-sm w-auto mb-1"
                             aria-label="Translation engine"
                             value=${() => engine()}
                             onChange=${(e) => setEngine(e.target.value)}
@@ -400,22 +400,20 @@ export default function Page() {
                   </div>
                 </div>
 
-                <div class="position-absolute top-100 start-50 translate-middle-x mt-2">
-                  <div class="d-flex-center gap-1">
-                    <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">Reset</button>
-                    <button
-                      class="btn btn-wide px-3 py-3 btn-wide-primary"
-                      id="translateButton"
-                      type="submit"
-                    >
-                      Generate
-                    </button>
-                  </div>
+                <div class="d-flex-center gap-1 mt-2">
+                  <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">Reset</button>
+                  <button
+                    class="btn btn-wide px-3 py-3 btn-wide-primary"
+                    id="translateButton"
+                    type="submit"
+                  >
+                    Generate
+                  </button>
                 </div>
               </div>
             </div>
 
-            <div class="col-md-6 mb-2 d-flex">
+            <div class="col-md-6 d-flex" style="margin-bottom: 66px !important;">
               <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-fill h-100">
                 <${Show}
                   when=${() => Object.keys(store.generatedDocuments).length > 0}
