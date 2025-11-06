@@ -40,8 +40,6 @@
   .position-md-relative {
     position: relative !important;
   }
-
-  
 }
 
 :root {
@@ -1301,4 +1299,8 @@ dialog .close-btn {
 
 .resize-none {
   resize: none !important;
+}
+
+.card-lg {
+  min-height: 700px;
 }

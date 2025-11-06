@@ -10,7 +10,9 @@ import { AlertContainer } from "../../../components/alert.js";
 import ClassToggle from "../../../components/class-toggle.js";
 import FileInput from "../../../components/file-input.js";
 import Tooltip from "../../../components/tooltip.js";
+import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
+import { createTimestamp, downloadBlob } from "../../../utils/files.js";
 import { parseDocument } from "../../../utils/parsers.js";
 
 import { getPrompt, getTemplateConfigsByCategory, templateConfigs } from "./config.js";
@@ -51,7 +53,7 @@ export default function Page() {
     selectedTemplates: [],
 
     // Advanced options
-    model: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    model: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v3_7,
     advancedOptionsOpen: false,
     templateSourceType: "predefined",
     selectedPredefinedTemplate: "",
@@ -424,27 +426,12 @@ export default function Page() {
       const blob = await generateDocument(job.data, job.config.templateFile);
 
       // Create timestamp for filename
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
-      const seconds = String(date.getSeconds()).padStart(2, "0");
-      const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
-
+      const timestamp = createTimestamp();
       const baseFilename = job.config.displayInfo.filename;
       const filename = baseFilename.replace(".docx", `-${timestamp}.docx`);
 
       // Trigger download
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadBlob(filename, blob);
     } catch (error) {
       console.error(`Error downloading job ${jobId}:`, error);
       // Could add user notification here
@@ -468,7 +455,7 @@ export default function Page() {
         <form onSubmit=${handleSubmit} onReset=${handleReset}>
           <div class="row align-items-stretch">
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-              <div class="bg-white shadow rounded p-3">
+              <div class="bg-white shadow rounded p-3 card-lg">
                 <label class="form-label required text-info fs-5 mb-1">Source Document</label>
                 <${FileInput}
                   value=${() => [store.inputFile]}
@@ -534,19 +521,11 @@ export default function Page() {
                           value=${() => store.model}
                           onChange=${(e) => setStore("model", e.target.value)}
                         >
-                          <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">
-                            Opus 4.1
-                          </option>
-                          <option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0">
-                            Sonnet 4.5
-                          </option>
-                          <option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">
-                            Sonnet 3.7
-                          </option>
-                          <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">
-                            Haiku 4.5
-                          </option>
-                          <option value="us.meta.llama4-maverick-17b-instruct-v1:0">
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_1}>Opus 4.1</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5}>Sonnet 4.5</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v3_7}>Sonnet 3.7</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.MAVERICK.v4_0_17b}>
                             Maverick
                           </option>
                         </select>
@@ -674,7 +653,9 @@ export default function Page() {
               </div>
             </div>
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1">
+              <div
+                class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1 card-lg"
+              >
                 <${Show}
                   when=${() => Object.keys(store.generatedDocuments).length > 0}
                   fallback=${html`<div class="d-flex h-100 py-5">

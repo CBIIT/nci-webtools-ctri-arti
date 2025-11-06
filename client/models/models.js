@@ -1,3 +1,5 @@
+import { MODEL_OPTIONS } from "./model-options.js";
+
 /**
  * Base model class with common functionality
  */
@@ -79,7 +81,7 @@ export class Project extends BaseModel {
 
     // Project settings
     this.settings = data.settings || {
-      model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      model: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5,
       temperature: 0.7,
       maxContextLength: 100000,
     };
