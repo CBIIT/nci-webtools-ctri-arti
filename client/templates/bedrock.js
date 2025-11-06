@@ -11,7 +11,7 @@ import html from "solid-js/html";
 const AGENT_CONFIG = {
   modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
   reasoningMode: false,
-  systemPrompt: "You are a helpful assistant.",
+  systemPrompt: "You are terse, yet honest, helpful and harmless. You write in prose, without any *markdown* or lists or bullet points or emojis.",
   loading: false,
   tools: [
     {
@@ -36,8 +36,8 @@ const AGENT_CONFIG = {
       },
     },
     {
+      fn: think,
       toolSpec: {
-        fn: think,
         name: "think",
         description:
           "Use this tool to create a dedicated thinking space for complex reasoning. Use it when you need to analyze information, plan steps, or work through problems before providing a final answer.",
@@ -67,44 +67,41 @@ render(App, document.getElementById("app"));
 // =================================================================================
 
 function MessageContent(props) {
-  if (props.content.text !== undefined) {
-    if (props.role === "user") {
-      return html`<div class="border rounded p-2 mb-3 text-dark fw-mediume bg-secondary-subtle shadow-sm d-inline-block text-pre">${() => props.content.text}</div>`;
-    } else if (props.role === "assistant") {
-      return html`<div class="p-2 mb-3 text-pre">${() => props.content.text}</div>`;
+  function findToolResult(messages, toolUseId) {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const { content } = messages[i];
+      for (const c of content) {
+        if (c.toolResult?.toolUseId === toolUseId) {
+          return c.toolResult;
+        }
+      }
     }
   }
-
-  if (props.content.toolUse) {
-    return html`<div class="card mt-2 shadow-sm">
-      <div class="card-header bg-light small">
-        <strong>Tool Call:</strong> <code>${() => props.content.toolUse.name}</code>
-      </div>
-      <div class="card-body">
-        <pre class="bg-dark text-white p-2 rounded small">
-          ${() => JSON.stringify(parseJSON(props.content.toolUse.input || "{}"), null, 2)}
-        </pre>
-      </div>
-    </div>`;
+  if (props.content.text !== undefined) {
+    if (props.role === "user") {
+      return html`<div class="small rounded p-2 mb-3 text-dark bg-secondary-subtle d-inline-block text-pre">
+        ${() => props.content.text}
+      </div>`;
+    } else if (props.role === "assistant") {
+      return html`<div class="small p-2 mb-3 text-pre ">${() => props.content.text}</div>`;
+    }
   }
-  if (props.content.toolResult) {
-    const result = props.content.toolResult.content[0].json?.results;
-    return html` <div class="card mt-2 bg-light shadow-sm">
-      <div class="card-header small"><strong>Tool Result</strong></div>
-      <div class="card-body">
-        <pre>${() => JSON.stringify(result, null, 2)}</pre>
-      </div>
-    </div>`;
-  }
-  if (props.content.reasoningContent) {
-    return html` <details class="mt-2">
-      <summary class="cursor-pointer text-muted small"><em>View Reasoning</em></summary>
-      <p class="p-2 border rounded bg-light small fst-italic" style="white-space: pre-wrap;">
-        ${() => props.content.reasoningContent.reasoningText?.text}
-      </p>
+  else if (props.content.reasoningContent || props.content.toolUse?.name === "think") {
+    return html`<details class="small rounded border p-2 mb-3">
+      <summary class="cursor-pointer text-dark">View Reasoning</summary>
+      <p class="my-2 text-muted">${() => props.content.reasoningContent?.reasoningText?.text || parseJSON(props.content.toolUse?.input)?.thought}</p>
     </details>`;
   }
-  return html`<pre>${() => JSON.stringify(props.content, null, 2)}</pre> `;
+  else if (props.content.toolUse) {
+    return html`<details class="small rounded border p-2 mb-3">
+      <summary class="cursor-pointer text-dark">${() => props.content.toolUse.name}</summary>
+      <div class="my-2 text-muted text-pre">
+        ${() => JSON.stringify(parseJSON(props.content.toolUse.input || "{}"), null, 2)}
+        <hr />
+        ${() => JSON.stringify(findToolResult(props.messages, props.content.toolUse.toolUseId) || {}, null, 2)}
+      </div>
+    </details>`;
+  }
 }
 
 function App() {
@@ -135,7 +132,7 @@ function App() {
     <div class="container my-5">
       <${For} each=${() => agent.messages}>
         ${(message) => html`<${For} each=${() => message.content}>
-          ${(content) => html`<${MessageContent} role=${message.role} content=${content} />`}
+          ${(content) => html`<${MessageContent} role=${message.role} content=${content} messages=${() => agent.messages} />`}
         <//>`}
       <//>
 
@@ -375,11 +372,11 @@ async function getContentBlock(file) {
   }
 }
 
-async function runTool(toolUse, tools = { code, think }) {
+async function runTool(toolUse, tools) {
   let { toolUseId, name, input } = toolUse;
   try {
-    const results = await tools?.[name]?.(input);
-    const content = [{ json: { results } }];
+    const result = await tools?.[name]?.(input);
+    const content = [{ json: { result } }];
     return { toolUseId, content };
   } catch (error) {
     console.error("Tool error:", error);
