@@ -1,7 +1,7 @@
 import { createMemo, createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { createStore } from "solid-js/store";
+import { createStore, reconcile } from "solid-js/store";
 
 import FileInput from "../../components/file-input.js";
 import { useAuthContext } from "../../contexts/auth-context.js";
@@ -261,9 +261,7 @@ export default function Page() {
       setSourceText(inputText || "");
     }
 
-    // Clear previous results
-    setStore("generatedDocuments", {});
-
+    setStore("generatedDocuments", reconcile({}, { merge: true }));
     const id = await createSession();
     setStore("id", id);
     setParam("id", id);
