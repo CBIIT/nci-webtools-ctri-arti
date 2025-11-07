@@ -20,6 +20,12 @@ export default function Page() {
       icon: html`<img src="/assets/images/icon-pen.svg" height="60" alt="ConsentCrafter Icon" />`,
     },
     {
+      title: "Translator",
+      description: "Accurately translate your documents into multiple languages",
+      href: "/tools/translator",
+      icon: html`<img src="/assets/images/icon-translate.svg" height="60" alt="Translator Icon" />`,
+    },
+    {
       title: "New Tools",
       description: "Coming soon",
       href: "/",

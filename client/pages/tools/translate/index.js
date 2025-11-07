@@ -1,15 +1,14 @@
 import { createMemo, createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { createStore } from "solid-js/store";
+import { createStore, reconcile } from "solid-js/store";
 
-import FileInput from "../../components/file-input.js";
-import { useAuthContext } from "../../contexts/auth-context.js";
-import { MODEL_OPTIONS } from "../../models/model-options.js";
-import { createTimestamp, downloadBlob } from "../../utils/files.js";
-import { parseDocument } from "../../utils/parsers.js";
-
-import { useSessionPersistence } from "./translate/hooks.js";
+import FileInput from "../../../components/file-input.js";
+import { useAuthContext } from "../../../contexts/auth-context.js";
+import { MODEL_OPTIONS } from "../../../models/model-options.js";
+import { createTimestamp, downloadBlob } from "../../../utils/files.js";
+import { parseDocument } from "../../../utils/parsers.js";
+import { useSessionPersistence } from "../translate/hooks.js";
 
 const AUTO_LANGUAGE = { value: "auto", label: "Auto" };
 const LANGUAGES = [
@@ -261,9 +260,7 @@ export default function Page() {
       setSourceText(inputText || "");
     }
 
-    // Clear previous results
-    setStore("generatedDocuments", {});
-
+    setStore("generatedDocuments", reconcile({}, { merge: true }));
     const id = await createSession();
     setStore("id", id);
     setParam("id", id);

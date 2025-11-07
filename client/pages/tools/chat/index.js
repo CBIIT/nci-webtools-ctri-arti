@@ -337,10 +337,10 @@ export default function Page() {
                 `${hasChatId() ? "bottom-0 position-sticky" : "bottom-50 position-relative"}`}
             >
               <div class="text-center my-3 font-serif" hidden=${() => hasChatId()}>
-                <h1 class="font-poppins fw-medium fs-1 lh-md text-deep-violet mb-2">
+                <h1 class="font-poppins fw-medium fs-2 lh-md text-deep-violet mb-2">
                   Welcome, ${() => user?.()?.firstName || ""}
                 </h1>
-                <div class="font-inter fw-medium fs-5 lh-md text-black small">
+                <div class="font-inter fw-medium fs-6 lh-md text-black small">
                   ${() =>
                     new URLSearchParams(location.search).get("fedpulse")
                       ? "Search U.S. federal websites for policies, guidelines, executive orders, and other official content."
