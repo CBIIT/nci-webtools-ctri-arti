@@ -257,10 +257,6 @@ function getConverseCommand(config) {
 
 async function runAgent(store, setStore, client = null) {
   client ||= new BedrockRuntimeClient(await getAwsConfig(localStorage, "aws-config"));
-  const tools = {};
-  for (const tool of store.tools) {
-    tools[tool.toolSpec.name] = tool.fn;
-  }
 
   let isComplete = false;
   while (!isComplete) {
@@ -269,67 +265,76 @@ async function runAgent(store, setStore, client = null) {
     setStore("messages", store.messages.length, assistantMessage);
 
     for await (const message of output.stream) {
-      await sleep(50);
-
-      // using immer to simplify nested state updates
-      setStore(
-        produce(async (s) => {
-          const { contentBlockStart, contentBlockDelta, contentBlockStop, messageStop } = message;
-          const toolUse = contentBlockStart?.start?.toolUse;
-          const stopReason = messageStop?.stopReason;
-          const messageContent = s.messages.at(-1).content;
-
-          if (toolUse) {
-            const { contentBlockIndex } = contentBlockStart;
-            messageContent[contentBlockIndex] = { toolUse };
-          } else if (contentBlockDelta) {
-            const { contentBlockIndex, delta } = contentBlockDelta;
-            const { reasoningContent, text, toolUse } = delta;
-            messageContent[contentBlockIndex] ||= {};
-            const block = messageContent[contentBlockIndex];
-
-            if (reasoningContent) {
-              block.reasoningContent ||= { reasoningText: {} };
-              const reasoning = block.reasoningContent;
-              const { text, signature, redactedContent } = reasoningContent;
-              if (text) {
-                reasoning.reasoningText.text ||= "";
-                reasoning.reasoningText.text += text;
-              } else if (signature) {
-                reasoning.reasoningText.signature ||= "";
-                reasoning.reasoningText.signature += signature;
-              } else if (redactedContent) {
-                reasoning.redactedContent ||= "";
-                reasoning.redactedContent += redactedContent;
-              }
-            } else if (text) {
-              block.text ||= "";
-              block.text += text;
-            } else if (toolUse) {
-              block.toolUse.input ||= "";
-              block.toolUse.input += toolUse.input;
-            }
-          } else if (contentBlockStop) {
-            const { contentBlockIndex } = contentBlockStop;
-            const block = messageContent[contentBlockIndex];
-            if (block.toolUse) {
-              block.toolUse.input = parseJSON(block.toolUse.input);
-            }
-          } else if (stopReason) {
-            if (stopReason === "tool_use") {
-              const toolUses = messageContent.map((c) => c.toolUse).filter(Boolean);
-              const toolResults = await Promise.all(toolUses.map((t) => runTool(t, tools)));
-              const content = toolResults.map((toolResult) => ({ toolResult }));
-              const toolResultsMessage = { role: "user", content };
-              s.messages.push(toolResultsMessage);
-            } else {
-              isComplete = true;
-            }
-          }
-        })
-      );
+      await sleep(10);
+      if (message.metadata) continue; // skip parsing metadata messages for now
+      setStore(produce(async (s) => {
+        isComplete = await processMessage(s, message);
+      }));
     }
   }
+}
+
+/**
+ * Stores the message updates and determines if processing is complete.
+ * @param {*} s current store state
+ * @param {*} message message update from the model
+ * @returns {Promise<boolean>} true if the message is complete and no further processing is needed
+ */
+async function processMessage(s, message)  {
+  const { contentBlockStart, contentBlockDelta, contentBlockStop, messageStop, metadata } = message;
+  const toolUse = contentBlockStart?.start?.toolUse;
+  const stopReason = messageStop?.stopReason;
+  const messageContent = s.messages.at(-1).content;
+  const tools = {};
+  for (const tool of s.tools) {
+    tools[tool.toolSpec.name] = tool.fn;
+  }
+
+  if (toolUse) {
+    const { contentBlockIndex } = contentBlockStart;
+    messageContent[contentBlockIndex] = { toolUse };
+  } else if (contentBlockDelta) {
+    const { contentBlockIndex, delta } = contentBlockDelta;
+    const { reasoningContent, text, toolUse } = delta;
+    messageContent[contentBlockIndex] ||= {};
+    const block = messageContent[contentBlockIndex];
+
+    if (reasoningContent) {
+      block.reasoningContent ||= { reasoningText: {} };
+      const reasoning = block.reasoningContent;
+      const { text, signature, redactedContent } = reasoningContent;
+      if (text) {
+        reasoning.reasoningText.text ||= "";
+        reasoning.reasoningText.text += text;
+      } else if (signature) {
+        reasoning.reasoningText.signature ||= "";
+        reasoning.reasoningText.signature += signature;
+      } else if (redactedContent) {
+        reasoning.redactedContent ||= "";
+        reasoning.redactedContent += redactedContent;
+      }
+    } else if (text) {
+      block.text ||= "";
+      block.text += text;
+    } else if (toolUse) {
+      block.toolUse.input ||= "";
+      block.toolUse.input += toolUse.input;
+    }
+  } else if (contentBlockStop) {
+    const { contentBlockIndex } = contentBlockStop;
+    const block = messageContent[contentBlockIndex];
+    if (block.toolUse) {
+      block.toolUse.input = parseJSON(block.toolUse.input);
+    }
+  } else if (stopReason) {
+    if (stopReason === "tool_use") {
+      const toolUses = messageContent.map((c) => c.toolUse).filter(Boolean);
+      s.messages.push(await runTools(toolUses, tools));
+    } else {
+      return true;
+    }
+  }
+  return false;
 }
 
 async function getMessageContent(text, files) {
@@ -370,6 +375,17 @@ async function getContentBlock(file) {
       [type]: { format, name, source: { bytes } }
     }
   }
+}
+
+
+/**
+ * Executes the tools requested by the model and returns a single "user" role message
+ * containing all the results.
+ */
+async function runTools(toolUses, tools) {
+  const toolResults = await Promise.all(toolUses.map((t) => runTool(t, tools)));
+  const content = toolResults.map((toolResult) => ({ toolResult }));
+  return { role: "user", content };
 }
 
 async function runTool(toolUse, tools) {
