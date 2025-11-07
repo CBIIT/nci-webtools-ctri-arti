@@ -51,8 +51,8 @@ export default function getRoutes() {
           component: ConsentCrafter,
         },
         {
-          path: "translate",
-          title: "Translate",
+          path: "translator",
+          title: "Translator",
           component: Translate,
         },
         {
