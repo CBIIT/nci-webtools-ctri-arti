@@ -5,7 +5,7 @@ import Home from "./home.js";
 
 const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
 const ConsentCrafter = AuthorizedImport({ path: "./tools/consent-crafter/index.js" });
-const Translate = AuthorizedImport({ path: "./tools/translate.js" });
+const Translate = AuthorizedImport({ path: "./tools/translate/index.js" });
 const SemanticSearch = AuthorizedImport({ path: "./tools/semantic-search.js" });
 const Users = AuthorizedImport({ path: "./users/index.js", roles: [1] });
 const UserEdit = AuthorizedImport({ path: "./users/edit.js", roles: [1] });
