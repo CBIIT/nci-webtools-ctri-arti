@@ -1,8 +1,6 @@
 import { For, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { Languages } from "lucide-solid";
-
 import { useAuthContext } from "../contexts/auth-context.js";
 
 export default function Page() {
@@ -25,7 +23,7 @@ export default function Page() {
       title: "Translator",
       description: "Accurately translate your documents into multiple languages",
       href: "/tools/translator",
-      icon: html`<${Languages} size="60" color="#005ea2" />`,
+      icon: html`<img src="/assets/images/icon-translate.svg" height="60" alt="Translator Icon" />`,
     },
     {
       title: "New Tools",
