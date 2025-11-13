@@ -32,10 +32,23 @@ const db = await openDB("bedrock-messages", 1, {
   },
 });
 
-if (!await db.count("agents")) {
+async function upsert(db, table, obj, key = "id") {
+  const existing = await db.get(table, obj[key]);
+  if (existing) {
+    const updated = { ...existing, ...obj };
+    await db.put(table, updated);
+    return updated;
+  } else {
+    const id = await db.add(table, obj);
+    return { ...obj, [key]: id };
+  }
+}
+
+if (!(await db.count("agents"))) {
   let r = await db.add("agents", {
     name: "default",
-    systemPrompt: "You are honest. When you are uncertain about something, or if your tools aren't working right, you let the user know. You write in brief, artistic prose, without any *markdown*, lists, bullet points, emojis or em-dashes (—).",
+    systemPrompt:
+      "You are honest. When you are uncertain about something, or if your tools aren't working right, you let the user know. You write in brief, artistic prose, without any *markdown*, lists, bullet points, emojis or em-dashes (—).",
     tools: ["code", "think"],
     resources: [],
   });
@@ -51,14 +64,14 @@ const TOOLS = [
         json: {
           type: "object",
           properties: {
-            code: { type: "string", description: "The JavaScript code to execute. Eg: 2+2" },
+            source: { type: "string", description: "The JavaScript code to execute. Eg: 2+2" },
             language: {
               type: "string",
               description: "The programming language of the code (e.g., 'javascript', 'html').",
               default: "javascript",
             },
           },
-          required: ["code"],
+          required: ["source"],
         },
       },
     },
@@ -67,8 +80,7 @@ const TOOLS = [
     fn: think,
     toolSpec: {
       name: "think",
-      description:
-        "Use this tool to create a dedicated thinking space for complex reasoning. Use it when you need to analyze information, plan steps, or work through problems before providing a final answer.",
+      description: "Use this tool to create a dedicated thinking space for complex reasoning. Use it when you need to analyze information, plan steps, or work through problems before providing a final answer.",
       inputSchema: {
         json: {
           type: "object",
@@ -104,37 +116,40 @@ function MessageContent(props) {
   }
   if (props.content.text !== undefined) {
     if (props.role === "user") {
-      return html`<div class="small rounded p-2 mb-3 text-dark bg-secondary-subtle d-inline-block text-pre">
-        ${() => props.content.text}
-      </div>`;
+      return html`
+        <div class="small rounded p-2 mb-3 text-dark bg-secondary-subtle d-inline-block text-pre">${() => props.content.text}</div>
+      `;
     } else if (props.role === "assistant") {
-      return html`<div class="small p-2 mb-3 text-pre ">${() => props.content.text}</div>`;
+      return html`
+        <div class="small p-2 mb-3 text-pre ">${() => props.content.text}</div>
+      `;
     }
-  }
-  else if (props.content.reasoningContent || props.content.toolUse?.name === "think") {
-    return html`<details class="small rounded border p-2 mb-3">
-      <summary class="cursor-pointer text-dark">View Reasoning</summary>
-      <p class="my-2 text-muted">${() => props.content.reasoningContent?.reasoningText?.text || parseJSON(props.content.toolUse?.input)?.thought}</p>
-    </details>`;
-  }
-  else if (props.content.toolUse) {
-    return html`<details class="small rounded border p-2 mb-3">
-      <summary class="cursor-pointer text-dark">${() => props.content.toolUse.name}</summary>
-      <div class="my-2 text-muted text-pre">
-        ${() => JSON.stringify(parseJSON(props.content.toolUse.input || "{}"), null, 2)}
-        <hr />
-        ${() => JSON.stringify(findToolResult(props.messages, props.content.toolUse.toolUseId) || {}, null, 2)}
-      </div>
-    </details>`;
+  } else if (props.content.reasoningContent || props.content.toolUse?.name === "think") {
+    return html`
+      <details class="small rounded border p-2 mb-3">
+        <summary class="cursor-pointer text-dark">View Reasoning</summary>
+        <p class="my-2 text-muted">${() => props.content.reasoningContent?.reasoningText?.text || parseJSON(props.content.toolUse?.input)?.thought}</p>
+      </details>
+    `;
+  } else if (props.content.toolUse) {
+    return html`
+      <details class="small rounded border p-2 mb-3">
+        <summary class="cursor-pointer text-dark">${() => props.content.toolUse.name}</summary>
+        <div class="my-2 text-muted text-pre">
+          ${() => JSON.stringify(parseJSON(props.content.toolUse.input || "{}"), null, 2)}
+          <hr />
+          ${() => JSON.stringify(findToolResult(props.messages, props.content.toolUse.toolUseId) || {}, null, 2)}
+        </div>
+      </details>
+    `;
   }
 }
 
 function setSearchParams(obj) {
   const searchParams = new URLSearchParams(window.location.search);
   for (let key in obj) {
-    const value = obj[key]
-    if (![null, undefined].includes(value))
-      searchParams.set(key, obj[key]);
+    const value = obj[key];
+    if (![null, undefined].includes(value)) searchParams.set(key, obj[key]);
   }
   const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
   window.history.replaceState({}, "", newUrl);
@@ -170,12 +185,22 @@ function App() {
   return html`
     <div class="container my-5">
       <${For} each=${() => agent.messages}>
-        ${(message) => html`<${For} each=${() => message.content}>
-          ${(content) => html`<${MessageContent} role=${message.role} content=${content} messages=${() => agent.messages} />`}
-        <//>`}
+        ${message => html`
+          <${For} each=${() => message.content}>
+            ${content => html`
+              <${MessageContent}
+                role=${message.role}
+                content=${content}
+                messages=${() => agent.messages} />
+            `}
+          <//>
+        `}
       <//>
 
-      <form id="inputForm" onSubmit=${handleSubmit} class="shadow-sm bg-white border rounded">
+      <form
+        id="inputForm"
+        onSubmit=${handleSubmit}
+        class="shadow-sm bg-white border rounded">
         <textarea
           id="userMessage"
           class="form-control form-control-sm rounded p-2 border-0 shadow-none"
@@ -193,10 +218,12 @@ function App() {
               class="visually-hidden"
               accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.tsv,,.md,.json,text/*"
               multiple />
-            
-            <label for="userFiles" class="btn btn-sm btn-secondary">
+
+            <label
+              for="userFiles"
+              class="btn btn-sm btn-secondary">
               <span class="visually-hidden">Attach Files</span>
-              <i class="bi bi-paperclip"></i> 
+              <i class="bi bi-paperclip"></i>
             </label>
 
             <div class="form-check form-switch form-control-sm">
@@ -207,7 +234,9 @@ function App() {
                 id="reasoningMode"
                 name="reasoningMode"
                 title="Enable extended reasoning mode" />
-              <label class="form-check-label" for="reasoningMode">
+              <label
+                class="form-check-label"
+                for="reasoningMode">
                 <span class="visually-hidden">Reasoning Mode</span>
                 <i class="bi bi-lightbulb-fill text-secondary"></i>
               </label>
@@ -221,9 +250,17 @@ function App() {
               required>
               <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
               <option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0">Sonnet 4.5</option>
-              <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0" selected>Haiku 4.5</option>
+              <option
+                value="us.anthropic.claude-haiku-4-5-20251001-v1:0"
+                selected>
+                Haiku 4.5
+              </option>
             </select>
-            <button type="submit" class="btn btn-sm btn-dark">Send</button>
+            <button
+              type="submit"
+              class="btn btn-sm btn-dark">
+              Send
+            </button>
           </div>
         </div>
       </form>
@@ -235,7 +272,7 @@ function App() {
 // 4. CORE LOGIC & STATE
 // =================================================================================
 
-function useAgent({ agentId, threadId }, db) {
+function useAgent({ agentId, threadId }, db, tools = TOOLS) {
   agentId = +agentId || 1;
   threadId = +threadId || null;
 
@@ -251,9 +288,7 @@ function useAgent({ agentId, threadId }, db) {
     reasoningMode: false,
     systemPrompt: null,
     loading: false,
-    tools: TOOLS,
-    // threadName: null,
-    // threadId: null,
+    tools: [],
     messages: [],
   });
 
@@ -263,8 +298,9 @@ function useAgent({ agentId, threadId }, db) {
     const history = await db.getAllFromIndex("messages", "threadId", params.threadId);
     if (!history?.length) return;
     const thread = await db.get("threads", params.threadId);
-    setAgent("messages", history.map((m) => ({ role: m.role, content: m.content })));
-    setAgent("thread", "name", thread?.name || "Untitled");
+    const name = thread?.name || "Untitled";
+    const messages = history.map(({ role, content }) => ({ role, content }));
+    setAgent({ messages, thread: { name } });
   });
 
   // save changes when store updates
@@ -275,7 +311,7 @@ function useAgent({ agentId, threadId }, db) {
       id: params.agentId,
       name: agent.name,
       systemPrompt: agent.systemPrompt,
-      tools: agent.tools.map((t) => t.toolSpec.name),
+      tools: agent.tools.map(t => t.toolSpec.name),
     });
     // only save thread if we've loaded one
     if (!params.threadId || !agent.thread.id) return;
@@ -284,22 +320,10 @@ function useAgent({ agentId, threadId }, db) {
       agentId: params.agentId,
       name: agent.thread.name,
     });
-  })
-
-  async function upsert(db, table, obj, key = "id") {
-    const existing = await db.get(table, obj[key]);
-    if (existing) {
-      const updated = { ...existing, ...obj };
-      await db.put(table, updated);
-      return updated;
-    } else {
-      const id = await db.add(table, obj);
-      return { ...obj, [key]: id };
-    }
-  }
-
+  });
   async function sendMessage(text, files = [], modelId, reasoningMode) {
     setAgent("loading", true);
+
     if (!params.threadId) {
       setAgent("thread", "name", "Untitled");
       const thread = { agentId, name: agent.thread.name };
@@ -308,21 +332,24 @@ function useAgent({ agentId, threadId }, db) {
     }
 
     const record = await db.get("agents", +params.agentId);
-    const agentTools = TOOLS.filter((t) => record.tools.includes(t.toolSpec.name));
-    console.log(record);
+    const agentTools = tools.filter(t => record.tools.includes(t.toolSpec.name));
 
     const client = await getConverseClient();
     const content = await getMessageContent(text, files);
     const userMessage = { role: "user", content };
-    setAgent("id", record.id);
-    setAgent("thread", "id", params.threadId);
-    setAgent("modelId", modelId);
-    setAgent("reasoningMode", reasoningMode);
-    setAgent("name", record.name);
-    setAgent("systemPrompt", record.systemPrompt);
-    setAgent("resources", record.resources);
-    setAgent("tools", agentTools);
-    setAgent("messages", agent.messages.length, userMessage);
+
+    setAgent({
+      id: record.id,
+      thread: { id: params.threadId },
+      modelId,
+      reasoningMode,
+      name: record.name,
+      systemPrompt: record.systemPrompt,
+      resources: record.resources,
+      tools: agentTools,
+      messages: agent.messages.concat([userMessage]),
+    });
+
     const messages = await runAgent(agent, setAgent, client);
     for (const message of messages) {
       const record = unwrap(message);
@@ -341,9 +368,9 @@ function useAgent({ agentId, threadId }, db) {
 // =================================================================================
 
 async function getConverseClient() {
-  const config = await getAwsConfig(localStorage, "aws-config")
+  const config = await getAwsConfig(localStorage, "aws-config");
   const client = new BedrockRuntimeClient(config);
-  const send = (input) => client.send(getConverseCommand(input));
+  const send = input => client.send(getConverseCommand(input));
   return { client, send };
 }
 
@@ -366,21 +393,18 @@ async function getAwsConfig(storage = localStorage, key = "aws-config") {
   }
 }
 
-
 function getConverseCommand(config) {
   const cachePoint = { type: "default" };
   const additionalModelRequestFields = {};
   if (config.reasoningMode) {
     additionalModelRequestFields.thinking = { type: "enabled", budget_tokens: +32_000 };
   }
-  const tools = config.tools
-    .map(({ toolSpec }) => ({ toolSpec }))
-    .filter(Boolean);
+  const tools = config.tools.map(({ toolSpec }) => ({ toolSpec })).filter(Boolean);
 
   return new ConverseStreamCommand({
     modelId: config.modelId,
     messages: config.messages,
-    system: [{ text: config.systemPrompt, cachePoint }],
+    system: [{ text: config.systemPrompt }, { cachePoint }],
     toolConfig: { tools: [...tools, { cachePoint }] },
     additionalModelRequestFields,
   });
@@ -390,40 +414,47 @@ function getConverseCommand(config) {
  * Runs the agent loop, processing messages until completion.
  * @param {any} store - Agent store with messages and tools
  * @param {any} setStore - Function to update the store
- * @param {any} client - Converse client with send() method 
+ * @param {any} client - Converse client with send() method
  * @returns {Promise<Array>} New messages generated by the agent
  */
 async function runAgent(store, setStore, client) {
+  const startingIndex = store.messages.length - 1;
   const tools = {};
   for (const tool of store.tools) {
     tools[tool.toolSpec.name] = tool.fn;
   }
 
-  let startingIndex = store.messages.length - 1;
-  let isComplete = false;
-  while (!isComplete) {
+  let done = false;
+  while (!done) {
     const output = await client.send(store);
     const assistantMessage = { role: "assistant", content: [] };
     setStore("messages", store.messages.length, assistantMessage);
+
     for await (const message of output.stream) {
-      setStore(produce(async (s) => {
-        isComplete ||= await processMessage(s, message, tools);
-      }));
+      setStore(produce(s => processContentBlock(s, message)));
+
+      const stopReason = message.messageStop?.stopReason;
+      if (stopReason === "end_turn") {
+        done = true;
+      } else if (stopReason === "tool_use") {
+        const toolUses = store.messages.at(-1).content;
+        const toolResultsMessage = await getToolResults(toolUses, tools);
+        setStore("messages", store.messages.length, toolResultsMessage);
+      }
     }
   }
   return store.messages.slice(startingIndex);
 }
 
 /**
- * Stores the message updates and determines if processing is complete.
+ * Parses and updates the current message content block based on the incoming message update.
  * @param {*} s current store state
  * @param {*} message message update from the model
- * @returns {Promise<boolean>} true if the message is complete and no further processing is needed
+ * @returns {string} Stop reason if complete, otherwise false
  */
-async function processMessage(s, message, tools) {
-  const { contentBlockStart, contentBlockDelta, contentBlockStop, messageStop } = message;
+function processContentBlock(s, message) {
+  const { contentBlockStart, contentBlockDelta, contentBlockStop } = message;
   const toolUse = contentBlockStart?.start?.toolUse;
-  const stopReason = messageStop?.stopReason;
   const messageContent = s.messages.at(-1).content;
 
   if (toolUse) {
@@ -460,17 +491,9 @@ async function processMessage(s, message, tools) {
     const { contentBlockIndex } = contentBlockStop;
     const block = messageContent[contentBlockIndex];
     if (block.toolUse) {
-      block.toolUse.input = parseJSON(block.toolUse.input);
-    }
-  } else if (stopReason) {
-    if (stopReason === "tool_use") {
-      const toolUses = messageContent.map((c) => c.toolUse).filter(Boolean);
-      s.messages.push(await runTools(toolUses, tools));
-    } else {
-      return true;
+      block.toolUse.input = JSON.parse(block.toolUse.input);
     }
   }
-  return false;
 }
 
 async function getMessageContent(text, files) {
@@ -497,48 +520,100 @@ async function getContentBlock(file) {
   if (fileExtension === "htm") format = "html";
   if (fileExtension === "jpeg") format = "jpg";
 
-  const type = imageTypes.includes(format) ? "image" :
-    documentTypes.includes(format) ? "document" : null;
+  const type = imageTypes.includes(format) ? "image" : documentTypes.includes(format) ? "document" : null;
   const arrayBuffer = await file.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
   const name = file.name
     .replace(/[^A-Z0-9 _\-\(\)\[\]]/gi, "_")
-    .replace(/\s+/g, " ").trim();
+    .replace(/\s+/g, " ")
+    .trim();
 
   if (type) {
     return {
-      [type]: { format, name, source: { bytes } }
-    }
+      [type]: { format, name, source: { bytes } },
+    };
   }
 }
-
 
 /**
  * Executes the tools requested by the model and returns a single "user" role message
  * containing all the results.
  */
-async function runTools(toolUses, tools) {
-  const toolResults = await Promise.all(toolUses.map((t) => runTool(t, tools)));
-  const content = toolResults.map((toolResult) => ({ toolResult }));
+async function getToolResults(toolUseContent, tools) {
+  const toolUses = toolUseContent.map(c => c.toolUse).filter(Boolean);
+  const content = await Promise.all(toolUses.map(t => getToolResult(t, tools)));
   return { role: "user", content };
 }
 
-async function runTool(toolUse, tools) {
+async function getToolResult(toolUse, tools) {
   let { toolUseId, name, input } = toolUse;
   try {
     const result = await tools?.[name]?.(input);
     const content = [{ json: { result } }];
-    return { toolUseId, content };
+    return { toolResult: { toolUseId, content } };
   } catch (error) {
     console.error("Tool error:", error);
     const result = error.stack || error.message || String(error);
     const content = [{ json: { result } }];
-    return { toolUseId, content };
+    return { toolResult: { toolUseId, content } };
   }
 }
 
-async function code(input) {
-  return await new Function(input.code)();
+function code({ language = "js", source, timeout = 5000 }) {
+  return new Promise(resolve => {
+    const logs = [];
+    const frame = document.createElement("iframe");
+    frame.sandbox = "allow-scripts allow-same-origin"; // isolated; only scripts allowed
+    frame.style.cssText = "position:absolute;left:-9999px;top:-9999px;width:0;height:0;border:0";
+    document.body.appendChild(frame);
+
+    const onMsg = e => {
+      if (e.source !== frame.contentWindow) return;
+      const d = e.data || {};
+      if (d.type === "log") logs.push(String(d.msg));
+      if (d.type === "done") cleanup();
+    };
+    window.addEventListener("message", onMsg);
+
+    const cleanup = () => {
+      clearTimeout(kill);
+      window.removeEventListener("message", onMsg);
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      const b = doc.body,
+        de = doc.documentElement;
+      const height = Math.max(b?.scrollHeight || 0, b?.offsetHeight || 0, de?.clientHeight || 0, de?.scrollHeight || 0, de?.offsetHeight || 0);
+      const html = de?.outerHTML || "";
+      frame.remove();
+      resolve({ logs, height, html });
+    };
+
+    // tiny bridge: forward console + errors
+    const bridge = `
+      (()=>{
+        const send=(t,m)=>parent.postMessage({type:t,msg:m},"*");
+        ["log","warn","error","info","debug"].forEach(k=>{
+          const o=console[k]; console[k]=(...a)=>{try{send("log",a.join(" "))}catch{}; o&&o.apply(console,a);};
+        });
+        addEventListener("error",e=>send("log",String(e.message||e.error||"error")));
+        addEventListener("unhandledrejection",e=>send("log","UnhandledRejection: "+(e?.reason?.message||e?.reason||"")));
+      })();
+    `;
+
+    const jsDoc = `<!doctype html><meta charset=utf-8>
+      <script>${bridge}</script>
+      <script type="module">
+        ${source || ""}
+        ;parent.postMessage({type:"done"},"*");
+      </script>`;
+
+    const htmlDoc = `<!doctype html><meta charset=utf-8>
+      <script>${bridge}</script>
+      ${source || ""}
+      <script async>addEventListener("load",()=>parent.postMessage({type:"done"},"*"));</script>`;
+
+    const kill = setTimeout(cleanup, timeout);
+    frame.srcdoc = !language || ["js", "javascript"].includes(language) ? jsDoc : htmlDoc;
+  });
 }
 
 function think(input) {
@@ -550,7 +625,7 @@ function think(input) {
 // =================================================================================
 
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
