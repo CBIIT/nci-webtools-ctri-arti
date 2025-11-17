@@ -100,9 +100,13 @@ export default function Page() {
     const defaultModel = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5;
     const model = form.model?.value || defaultModel;
     setIsStreaming(true);
-    await submitMessage({ message, inputFiles, reasoningMode, model, reset: clearChat() }).finally(
-      () => setIsStreaming(false)
-    );
+    await submitMessage({
+      message,
+      inputFiles,
+      reasoningMode,
+      model,
+      reset: () => clearChat(),
+    }).finally(() => setIsStreaming(false));
   }
 
   function handleOnDeleteConversationClick(e, conversationId) {
