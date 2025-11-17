@@ -402,7 +402,7 @@ export function useChat() {
       try {
         const currentProjectId = getCurrentProjectId();
         const newConversation = await database.createConversation({
-          title: message.length > 50 ? message.substring(0, 50) + "..." : message,
+          title: "",
           projectId: currentProjectId,
         });
 
@@ -424,7 +424,7 @@ export function useChat() {
         const currentProjectId = getCurrentProjectId();
         setConversation({
           id: Math.random().toString(36).substr(2, 9),
-          title: message,
+          title: "",
           projectId: currentProjectId,
         });
       }
@@ -433,7 +433,7 @@ export function useChat() {
       const currentProjectId = getCurrentProjectId();
       setConversation({
         id: Math.random().toString(36).substr(2, 9),
-        title: message,
+        title: "",
         projectId: currentProjectId,
       });
     }

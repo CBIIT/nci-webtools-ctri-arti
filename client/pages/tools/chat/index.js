@@ -227,7 +227,7 @@ export default function Page() {
                           class="convo-title text-primary fw-normal text-truncate flex-grow-1 min-w-0"
                           classList=${() => ({ active: conv.id === conversation?.id })}
                         >
-                          ${conv.title}
+                          ${conv.title || "Untitled"}
                         </div>
 
                         <button
