@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 
-import { createStore } from "solid-js/store";
+import { createStore, unwrap } from "solid-js/store";
 
 import { getDB } from "../../../models/database.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
@@ -223,7 +223,7 @@ export function useChat() {
     }
 
     try {
-      const baseMessages = structuredClone(messages);
+      const baseMessages = structuredClone(unwrap(messages));
       const titleSystemPrompt = systemPrompt(getClientContext(context));
       const titleInstructionMessage = {
         role: "user",
