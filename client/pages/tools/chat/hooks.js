@@ -3,6 +3,7 @@ import { createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 
 import { getDB } from "../../../models/database.js";
+import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { handleError, handleHttpError, showError } from "../../../utils/alerts.js";
 import { readStream } from "../../../utils/files.js";
 import { fileToBase64, splitFilename } from "../../../utils/parsers.js";
@@ -50,6 +51,34 @@ export function normalizeMessageContent(content) {
 
   // For any other type, convert to string
   return [{ text: String(content) }];
+}
+
+/**
+ * Sanitize generated title to ensure it is in the right format.
+ *
+ * @param {*} rawTitle - The raw title string to sanitize.
+ * @returns {string} - The sanitized title, or empty string if invalid.
+ */
+function sanitizeTitle(rawTitle) {
+  if (!rawTitle || typeof rawTitle !== "string") {
+    return "";
+  }
+
+  // Remove line breaks and trim
+  let title = String(rawTitle).replace(/\r?\n|\r/g, " ");
+  title = title.replace(/\s+/g, " ").trim();
+
+  // Remove all non-alphanumeric characters except spaces
+  title = title.replace(/[^a-zA-Z0-9 ]/g, "");
+
+  // Collapse spaces again after stripping
+  title = title.replace(/\s+/g, " ").trim();
+
+  if (!title) {
+    return "";
+  }
+
+  return title.slice(0, 30);
 }
 
 /**
@@ -176,6 +205,99 @@ export function useChat() {
   };
 
   /**
+   * Generate a conversation title after the first completed exchange.
+   * Uses the existing systemPrompt and full message history.
+   *
+   * @param {Object} params
+   * @param {string} params.model - The model identifier to use.
+   * @param {Object} params.context - Client context object.
+   */
+  const generateConversationTitle = async ({ model, context }) => {
+    if (!conversation?.id) {
+      return;
+    }
+
+    const database = db();
+    if (!database) {
+      return;
+    }
+
+    try {
+      const baseMessages = structuredClone(messages);
+      const titleSystemPrompt = systemPrompt(getClientContext(context));
+      const titleInstructionMessage = {
+        role: "user",
+        content: [
+          {
+            text:
+              "You are helping name this chat between a user and an AI assistant.\n\n" +
+              "Based on the entire conversation so far, respond with ONLY a short title that follows ALL of these rules:\n" +
+              "- Maximum 30 characters (count spaces).\n" +
+              "- Clear, specific, and relevant to what the user and assistant discussed.\n" +
+              "- Use only letters, numbers, and spaces (no punctuation, emojis, or other special characters).\n" +
+              "- No quotation marks.\n" +
+              "- No line breaks.\n" +
+              "- If your draft is longer than 30 characters, shorten it before responding.\n\n" +
+              "Respond with the title text only.",
+          },
+        ],
+      };
+
+      const response = await fetch("/api/model", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model,
+          tools,
+          messages: [...baseMessages, titleInstructionMessage],
+          system: titleSystemPrompt,
+          thoughtBudget: 0,
+          stream: true,
+        }),
+      });
+
+      if (!response.ok) {
+        await handleHttpError(response, "generating conversation title");
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let rawTitle = "";
+
+      for await (const chunk of readStream(response)) {
+        const decoded = decoder.decode(chunk, { stream: true }).trim();
+        if (!decoded) {
+          continue;
+        }
+
+        const lines = decoded.split("\n").filter(Boolean);
+        for (const line of lines) {
+          try {
+            const value = JSON.parse(line);
+            const delta = value?.contentBlockDelta?.delta;
+            const text = delta?.text;
+            if (text) {
+              rawTitle += text;
+            }
+          } catch (e) {
+            console.error("Failed to parse title stream chunk:", e);
+          }
+        }
+      }
+
+      const sanitizedTitle = sanitizeTitle(rawTitle);
+      if (!sanitizedTitle) {
+        return;
+      }
+
+      await updateConversation({ title: sanitizedTitle });
+    } catch (error) {
+      console.error("Failed to generate conversation title:", error);
+      handleError(error, "generating conversation title");
+    }
+  };
+
+  /**
    * Deletes a conversation by ID.
    *
    * @param {string} conversationId - The optional ID of the conversation to delete. Otherwise, deletes the current conversation.
@@ -257,6 +379,8 @@ export function useChat() {
       console.error("Database not initialized after waiting");
       // Continue without database for now, but this should be fixed
     }
+
+    const isFirstUserMessage = messages?.filter((m) => m.role === "user")?.length === 0;
 
     const text = jsonToXml({
       message: {
@@ -565,6 +689,13 @@ export function useChat() {
             }
           }
         }
+      }
+
+      if (isFirstUserMessage) {
+        await generateConversationTitle({
+          model: MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5,
+          context,
+        });
       }
     } catch (error) {
       console.error("Error sending message:", error);
