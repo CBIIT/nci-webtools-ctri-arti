@@ -382,8 +382,13 @@ export class ConversationDB {
 
     // Update embeddings if title changed
     if (updates.title) {
-      await this.embeddingService.remove(`conv:${id}`);
-      await this.embeddingService.add(`conv:${id}`, existing.title, {
+      const key = `conv:${id}`;
+
+      if (this.embeddingService && this.embeddingService.get(key)) {
+        await this.embeddingService.remove(key);
+      }
+
+      await this.embeddingService.add(key, existing.title, {
         type: "conversation",
         id,
         projectId: existing.projectId,
