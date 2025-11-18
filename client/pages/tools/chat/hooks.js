@@ -256,7 +256,7 @@ export function useChat() {
           messages: [...baseMessages, titleInstructionMessage],
           system: titleSystemPrompt,
           thoughtBudget: 0,
-          stream: true,
+          stream: false,
         }),
       });
 
@@ -265,28 +265,16 @@ export function useChat() {
         return;
       }
 
-      const decoder = new TextDecoder();
+      const json = await response.json();
+
+      const contentBlocks = json?.output?.message?.content;
       let rawTitle = "";
 
-      for await (const chunk of readStream(response)) {
-        const decoded = decoder.decode(chunk, { stream: true }).trim();
-        if (!decoded) {
-          continue;
-        }
-
-        const lines = decoded.split("\n").filter(Boolean);
-        for (const line of lines) {
-          try {
-            const value = JSON.parse(line);
-            const delta = value?.contentBlockDelta?.delta;
-            const text = delta?.text;
-            if (text) {
-              rawTitle += text;
-            }
-          } catch (e) {
-            console.error("Failed to parse title stream chunk:", e);
-          }
-        }
+      if (Array.isArray(contentBlocks)) {
+        rawTitle = contentBlocks
+          .map((block) => (typeof block?.text === "string" ? block.text : ""))
+          .join(" ")
+          .trim();
       }
 
       const sanitizedTitle = sanitizeTitle(rawTitle);
