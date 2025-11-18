@@ -263,18 +263,23 @@ export default function Page() {
 
   async function generateDocument(data, templateFile) {
     try {
-      data = unwrap(data);
       const templateBuffer = await templateFile.arrayBuffer();
       const cmdDelimiter = ["{{", "}}"];
 
       // Try to ensure variables in template are present in data
       const commands = await listCommands(templateBuffer, cmdDelimiter);
+
       const variables = commands
         .filter((c) => ["INS", "FOR"].includes(c.type))
-        .map((c) => c.code.split(" ").pop())
-        .filter((v) => !v.startsWith("$"));
+        .map((c) => ({
+          type: c.type === "FOR" ? "array" : "string", 
+          name: c.code.split(" ").pop() 
+        }))
+        .filter((c) => !c.name.startsWith("$"));
+
       for (const variable of variables) {
-        data[variable] ||= "";
+        const defaultValue = variable.type === "array" ? [] : "";
+        data[variable.name] ||= defaultValue;
       }
 
       const buffer = await createReport({ template: templateBuffer, data, cmdDelimiter });
@@ -424,7 +429,7 @@ export default function Page() {
 
     try {
       // Generate document on-demand
-      const blob = await generateDocument(job.data, job.config.templateFile);
+      const blob = await generateDocument(unwrap(job.data), job.config.templateFile);
 
       // Create timestamp for filename
       const timestamp = createTimestamp();
