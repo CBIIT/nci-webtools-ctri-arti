@@ -186,13 +186,17 @@ export function useChat() {
   };
 
   // Update conversation title
-  const updateConversation = async (updates) => {
+  const updateConversation = async (updates, conversationId = null) => {
     const database = db();
-    if (!database || !conversation.id) return;
+    const targetConversationId = conversationId || conversation?.id;
+    if (!database || !targetConversationId) return;
 
     try {
-      await database.updateConversation(conversation.id, updates);
-      setConversation((prev) => ({ ...prev, ...updates }));
+      await database.updateConversation(targetConversationId, updates);
+
+      if (targetConversationId === conversation?.id) {
+        setConversation((prev) => ({ ...prev, ...updates }));
+      }
 
       // Refresh conversations list if title changed
       if (updates.title) {

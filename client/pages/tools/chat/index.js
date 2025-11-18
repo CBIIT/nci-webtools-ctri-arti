@@ -10,7 +10,7 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-import { Trash2 } from "lucide-solid";
+import { EllipsisVertical, Pencil, Trash2 } from "lucide-solid";
 
 import { AlertContainer } from "../../../components/alert.js";
 import AttachmentsPreview from "../../../components/attachments-preview.js";
@@ -26,16 +26,30 @@ import DeleteConversation from "./delete-conversation.js";
 import { useChat } from "./hooks.js";
 import Message from "./message.js";
 
+const MAX_TITLE_LENGTH = 30;
+
 export default function Page() {
   const { user } = useAuthContext();
 
-  const { conversation, deleteConversation, conversations, messages, loading, submitMessage } =
-    useChat();
+  const {
+    conversation,
+    deleteConversation,
+    updateConversation,
+    conversations,
+    messages,
+    loading,
+    submitMessage,
+  } = useChat();
   const [toggles, setToggles] = createSignal({ conversations: true });
   const [isAtBottom, setIsAtBottom] = createSignal(true);
   const [chatHeight, setChatHeight] = createSignal(0);
   const [deleteConversationId, setDeleteConversationId] = createSignal(null);
   const [isStreaming, setIsStreaming] = createSignal(false);
+
+  const [openMenu, setOpenMenu] = createSignal(null);
+  const [editingState, setEditingState] = createSignal({ id: null, context: null, title: "" });
+  let titleInputRef;
+
   const isFedPulse = new URLSearchParams(location.search).get("fedpulse") === "1";
   let bottomEl;
   let chatRef;
@@ -45,6 +59,52 @@ export default function Page() {
 
   const chatId = createMemo(() => new URLSearchParams(location.search).get("id") || "");
   const hasChatId = createMemo(() => chatId()?.length > 0 || conversation?.id?.length > 0);
+
+  const isEditing = (context, conversationId) => {
+    const state = editingState();
+    return state.context === context && state.id === conversationId;
+  };
+
+  const isMenuOpen = (conversationId) => {
+    const menu = openMenu();
+    if (!menu) {
+      return false;
+    }
+
+    return menu.type === "conversation" && menu.id === conversationId;
+  };
+
+  const updateEditingTitle = (value) =>
+    setEditingState((prev) => {
+      const newTitle = (value.trim() || "").slice(0, MAX_TITLE_LENGTH);
+
+      if (newTitle === prev.title) {
+        return prev;
+      }
+
+      return { ...prev, title: newTitle };
+    });
+
+  function stopEditingTitle() {
+    setEditingState({ id: null, context: null, title: "" });
+  }
+
+  const handleDocumentClick = (event) => {
+    const target = event.target;
+
+    const inDropdownOrToggle =
+      target.closest(".dropdown-menu") ||
+      target.closest(".header-icon-btn") ||
+      target.closest(".action-btn");
+
+    const inTitleInput = target.closest(".convo-title input, .chat-title input");
+
+    // On clickaway, close menus and stop editing titles
+    if (!inDropdownOrToggle && !inTitleInput) {
+      setOpenMenu(null);
+      stopEditingTitle();
+    }
+  };
 
   onMount(() => {
     const resizeObserver = new ResizeObserver(() => setChatHeight(chatRef.offsetHeight || 0));
@@ -63,9 +123,12 @@ export default function Page() {
 
     observer.observe(bottomEl);
 
+    document.addEventListener("click", handleDocumentClick, true);
+
     onCleanup(() => {
       observer.disconnect();
       resizeObserver.disconnect();
+      document.removeEventListener("click", handleDocumentClick, true);
     });
   });
 
@@ -129,11 +192,97 @@ export default function Page() {
     attachmentsReset && attachmentsReset();
   }
 
+  function startEditingTitle(conversationId, currentTitle, context) {
+    if (!conversationId) {
+      return;
+    }
+
+    const rawtitle = currentTitle && currentTitle.trim().length > 0 ? currentTitle : "Untitled";
+    const title = rawtitle.slice(0, MAX_TITLE_LENGTH);
+
+    setEditingState({ id: conversationId, context, title });
+    setOpenMenu(null);
+  }
+
+  async function handleTitleKeyDown(event, conversationId) {
+    if (event.key !== "Enter" && event.key !== "Escape") {
+      return;
+    }
+
+    event.preventDefault();
+    if (event.key === "Enter") {
+      onTitleSubmit(conversationId);
+      return;
+    }
+
+    stopEditingTitle();
+  }
+
+  async function onTitleSubmit(conversationId) {
+    const { title } = editingState() || {};
+    const newTitle = title?.trim() || "";
+
+    if (!newTitle || !conversationId) {
+      stopEditingTitle();
+      return;
+    }
+
+    try {
+      await updateConversation({ title: newTitle }, conversationId);
+    } finally {
+      stopEditingTitle();
+    }
+  }
+
+  function handleConversationMenuToggle(event, conversationId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setOpenMenu((prev) =>
+      prev?.type === "conversation" && prev?.id === conversationId
+        ? null
+        : { type: "conversation", id: conversationId }
+    );
+  }
+
+  function handleConversationMenuEdit(event, conv) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    startEditingTitle(conv.id, conv.title, "sidebar");
+  }
+
+  function handleConversationMenuDelete(event, convId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setOpenMenu(null);
+    handleOnDeleteConversationClick(event, convId);
+  }
+
+  function attachAndFocusTitleInput(el) {
+    if (!el) {
+      return;
+    }
+
+    titleInputRef = el;
+    requestAnimationFrame(() => {
+      if (!titleInputRef) {
+        return;
+      }
+
+      titleInputRef.focus();
+      if (typeof titleInputRef.setSelectionRange === "function") {
+        titleInputRef.setSelectionRange(0, titleInputRef.value?.length ?? 0);
+      }
+    });
+  }
+
   return html`
     <div class="container-fluid">
       <div class="row flex-nowrap min-vh-100 position-relative">
         <div
-          class="col-sm-auto shadow-sm border-end px-0 position-sticky"
+          class="col-sm-auto shadow-sm border-end px-0 position-sticky z-3"
           classList=${() => ({ "w-20 mw-20r": toggles().conversations })}
         >
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
@@ -227,18 +376,70 @@ export default function Page() {
                           class="convo-title text-primary fw-normal text-truncate flex-grow-1 min-w-0"
                           classList=${() => ({ active: conv.id === conversation?.id })}
                         >
-                          ${conv.title || "Untitled"}
+                          <${Show}
+                            when=${() => isEditing("sidebar", conv.id)}
+                            fallback=${() => conv.title || "Untitled"}
+                          >
+                            <input
+                              type="text"
+                              class="form-control form-control-sm bg-transparent border-0 shadow-none px-0 py-0 text-primary fw-normal"
+                              value=${() => editingState().title}
+                              maxlength=${MAX_TITLE_LENGTH}
+                              onInput=${(event) =>
+                                updateEditingTitle(event.currentTarget.value || "")}
+                              onKeyDown=${(event) => handleTitleKeyDown(event, conv.id)}
+                              onBlur=${() => stopEditingTitle()}
+                              onClick=${(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }}
+                              ref=${attachAndFocusTitleInput}
+                            />
+                          <//>
                         </div>
 
-                        <button
-                          type="button"
-                          class="action-btn btn btn-sm link-danger text-primary p-1 border-0 rounded-pill"
-                          aria-label="Delete conversation"
-                          title="Delete"
-                          onClick=${(e) => handleOnDeleteConversationClick(e, conv.id)}
-                        >
-                          <${Trash2} size="18" color="currentColor" />
-                        </button>
+                        <${Show} when=${() => !isEditing("sidebar", conv.id)}>
+                          <div class="dropdown ms-2 position-relative">
+                            <button
+                              type="button"
+                              class="action-btn btn btn-sm link-dark text-primary p-1 border-0 rounded-pill"
+                              aria-label="Chat options"
+                              title="Chat options"
+                              onClick=${(event) => handleConversationMenuToggle(event, conv.id)}
+                            >
+                              <${EllipsisVertical} size="18" color="currentColor" />
+                            </button>
+                            <ul
+                              class="dropdown-menu mt-1 show"
+                              hidden=${() => !isMenuOpen(conv.id)}
+                              onClick=${(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }}
+                            >
+                              <li>
+                                <button
+                                  type="button"
+                                  class="dropdown-item small d-flex align-items-center"
+                                  onClick=${(event) => handleConversationMenuEdit(event, conv)}
+                                >
+                                  <${Pencil} size="18" color="black" class="me-2" />
+                                  Edit title
+                                </button>
+                              </li>
+                              <li>
+                                <button
+                                  type="button"
+                                  class="dropdown-item small text-danger d-flex align-items-center"
+                                  onClick=${(event) => handleConversationMenuDelete(event, conv.id)}
+                                >
+                                  <${Trash2} size="18" color="currentColor" class="me-2" />
+                                  Delete
+                                </button>
+                              </li>
+                            </ul>
+                          </div>
+                        <//>
                       </a>
                     </li>`;
                   }}
