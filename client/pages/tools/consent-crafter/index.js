@@ -263,6 +263,7 @@ export default function Page() {
 
   async function generateDocument(data, templateFile) {
     try {
+      data = unwrap(data);
       const templateBuffer = await templateFile.arrayBuffer();
       const cmdDelimiter = ["{{", "}}"];
 
