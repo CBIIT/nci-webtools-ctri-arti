@@ -232,7 +232,17 @@ export class EmbeddingService {
    * @param {string} id
    */
   remove(id) {
-    // Note: HNSW doesn't support removal, would need to rebuild
+    if (!this.hnsw) {
+      this.metadata.delete(id);
+      return;
+    }
+
+    try {
+      this.hnsw.remove(id);
+    } catch (error) {
+      console.error("EmbeddingService: Error removing item from index:", error);
+    }
+
     this.metadata.delete(id);
   }
 

@@ -1,8 +1,9 @@
 import { createSignal } from "solid-js";
 
-import { createStore } from "solid-js/store";
+import { createStore, unwrap } from "solid-js/store";
 
 import { getDB } from "../../../models/database.js";
+import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { handleError, handleHttpError, showError } from "../../../utils/alerts.js";
 import { readStream } from "../../../utils/files.js";
 import { fileToBase64, splitFilename } from "../../../utils/parsers.js";
@@ -50,6 +51,34 @@ export function normalizeMessageContent(content) {
 
   // For any other type, convert to string
   return [{ text: String(content) }];
+}
+
+/**
+ * Sanitize generated title to ensure it is in the right format.
+ *
+ * @param {*} rawTitle - The raw title string to sanitize.
+ * @returns {string} - The sanitized title, or empty string if invalid.
+ */
+function sanitizeTitle(rawTitle) {
+  if (!rawTitle || typeof rawTitle !== "string") {
+    return "";
+  }
+
+  // Remove line breaks and trim
+  let title = String(rawTitle).replace(/\r?\n|\r/g, " ");
+  title = title.replace(/\s+/g, " ").trim();
+
+  // Remove all non-alphanumeric characters except spaces
+  title = title.replace(/[^a-zA-Z0-9 ]/g, "");
+
+  // Collapse spaces again after stripping
+  title = title.replace(/\s+/g, " ").trim();
+
+  if (!title) {
+    return "";
+  }
+
+  return title.slice(0, 30);
 }
 
 /**
@@ -157,13 +186,17 @@ export function useChat() {
   };
 
   // Update conversation title
-  const updateConversation = async (updates) => {
+  const updateConversation = async (updates, conversationId = null) => {
     const database = db();
-    if (!database || !conversation.id) return;
+    const targetConversationId = conversationId || conversation?.id;
+    if (!database || !targetConversationId) return;
 
     try {
-      await database.updateConversation(conversation.id, updates);
-      setConversation((prev) => ({ ...prev, ...updates }));
+      await database.updateConversation(targetConversationId, updates);
+
+      if (targetConversationId === conversation?.id) {
+        setConversation((prev) => ({ ...prev, ...updates }));
+      }
 
       // Refresh conversations list if title changed
       if (updates.title) {
@@ -172,6 +205,87 @@ export function useChat() {
     } catch (error) {
       console.error("Failed to update conversation:", error);
       handleError(error, "updating conversation");
+    }
+  };
+
+  /**
+   * Generate a conversation title after the first completed exchange.
+   * Uses the existing systemPrompt and full message history.
+   *
+   * @param {Object} params
+   * @param {string} params.model - The model identifier to use.
+   * @param {Object} params.context - Client context object.
+   */
+  const generateConversationTitle = async ({ model, context }) => {
+    if (!conversation?.id) {
+      return;
+    }
+
+    const database = db();
+    if (!database) {
+      return;
+    }
+
+    try {
+      const baseMessages = structuredClone(unwrap(messages));
+      const titleSystemPrompt = systemPrompt(getClientContext(context));
+      const titleInstructionMessage = {
+        role: "user",
+        content: [
+          {
+            text:
+              "You are helping name this chat between a user and an AI assistant.\n\n" +
+              "Based on the entire conversation so far, respond with ONLY a short title that follows ALL of these rules:\n" +
+              "- Maximum 30 characters (count spaces).\n" +
+              "- Clear, specific, and relevant to what the user and assistant discussed.\n" +
+              "- Use only letters, numbers, and spaces (no punctuation, emojis, or other special characters).\n" +
+              "- No quotation marks.\n" +
+              "- No line breaks.\n" +
+              "- If your draft is longer than 30 characters, shorten it before responding.\n\n" +
+              "Respond with the title text only.",
+          },
+        ],
+      };
+
+      const response = await fetch("/api/model", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model,
+          tools,
+          messages: [...baseMessages, titleInstructionMessage],
+          system: titleSystemPrompt,
+          thoughtBudget: 0,
+          stream: false,
+        }),
+      });
+
+      if (!response.ok) {
+        await handleHttpError(response, "generating conversation title");
+        return;
+      }
+
+      const json = await response.json();
+
+      const contentBlocks = json?.output?.message?.content;
+      let rawTitle = "";
+
+      if (Array.isArray(contentBlocks)) {
+        rawTitle = contentBlocks
+          .map((block) => (typeof block?.text === "string" ? block.text : ""))
+          .join(" ")
+          .trim();
+      }
+
+      const sanitizedTitle = sanitizeTitle(rawTitle);
+      if (!sanitizedTitle) {
+        return;
+      }
+
+      await updateConversation({ title: sanitizedTitle });
+    } catch (error) {
+      console.error("Failed to generate conversation title:", error);
+      handleError(error, "generating conversation title");
     }
   };
 
@@ -258,6 +372,8 @@ export function useChat() {
       // Continue without database for now, but this should be fixed
     }
 
+    const isFirstUserMessage = messages?.filter((m) => m.role === "user")?.length === 0;
+
     const text = jsonToXml({
       message: {
         text: message,
@@ -278,7 +394,7 @@ export function useChat() {
       try {
         const currentProjectId = getCurrentProjectId();
         const newConversation = await database.createConversation({
-          title: message.length > 50 ? message.substring(0, 50) + "..." : message,
+          title: "",
           projectId: currentProjectId,
         });
 
@@ -300,7 +416,7 @@ export function useChat() {
         const currentProjectId = getCurrentProjectId();
         setConversation({
           id: Math.random().toString(36).substr(2, 9),
-          title: message,
+          title: "",
           projectId: currentProjectId,
         });
       }
@@ -309,7 +425,7 @@ export function useChat() {
       const currentProjectId = getCurrentProjectId();
       setConversation({
         id: Math.random().toString(36).substr(2, 9),
-        title: message,
+        title: "",
         projectId: currentProjectId,
       });
     }
@@ -565,6 +681,13 @@ export function useChat() {
             }
           }
         }
+      }
+
+      if (isFirstUserMessage) {
+        await generateConversationTitle({
+          model: MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5,
+          context,
+        });
       }
     } catch (error) {
       console.error("Error sending message:", error);
