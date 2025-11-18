@@ -425,10 +425,19 @@ export class HNSW {
   }
 
   _pruneConnections(node, layer, m) {
-    const neighbors = node.neighbors[layer].map((neighborId) => ({
-      id: neighborId,
-      distance: this.distFunc(node.vector, this.nodes.get(neighborId).vector),
-    }));
+    const neighbors = node.neighbors[layer]
+      .map((neighborId) => {
+        const neighborNode = this.nodes.get(neighborId);
+        if (!neighborNode) {
+          return null;
+        }
+
+        return {
+          id: neighborId,
+          distance: this.distFunc(node.vector, neighborNode.vector),
+        };
+      })
+      .filter(Boolean);
 
     neighbors.sort((a, b) => a.distance - b.distance);
     node.neighbors[layer] = neighbors.slice(0, m).map((n) => n.id);
