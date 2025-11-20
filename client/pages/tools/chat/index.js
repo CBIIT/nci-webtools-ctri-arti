@@ -286,7 +286,7 @@ export default function Page() {
     <div class="container-fluid">
       <div class="row flex-nowrap min-vh-100 position-relative">
         <div
-          class="col-sm-auto shadow-sm border-end px-0 position-sticky z-3"
+          class="col-sm-auto shadow-sm border-end px-0 position-sticky z-2"
           classList=${() => ({ "w-20 mw-20r": toggles().conversations })}
         >
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
