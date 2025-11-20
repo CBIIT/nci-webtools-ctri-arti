@@ -1,4 +1,6 @@
 import { createSignal, For, onCleanup } from "solid-js";
+import { ErrorBoundary } from "solid-js";
+
 import html from "solid-js/html";
 
 import { X } from "lucide-solid";
@@ -132,45 +134,48 @@ export default function Message(p) {
       </form>
     </dialog>
 
-    <${For} each=${p.message?.content}>
-      ${(c, i) => {
-        if (c.text !== undefined) {
-          const isLast = () => !p.isStreaming() && p?.index === p?.messages?.length - 1;
+    <${ErrorBoundary} fallback=${(error) => console.log(error)}>
+      <${For} each=${p.message?.content}>
+        ${(c, i) => {
+          if (c.text !== undefined) {
+            const isLast = () => !p.isStreaming() && p?.index === p?.messages?.length - 1;
 
-          return TextContent({
+            return TextContent({
+              role: p?.message?.role,
+              message: c,
+              messages: p?.messages,
+              isLast,
+              copied,
+              onCopy: handleCopy,
+              onFeedback: (result) => openFeedback(result),
+            });
+          }
+
+          const name = c?.toolUse?.name || (c?.reasoningContent ? "think" : "unknown");
+          const Component =
+            TOOL_COMPONENTS[name] || (c?.reasoningContent ? ReasoningTool : undefined);
+
+          if (!Component) {
+            return null;
+          }
+
+          const base = c?.toolUse?.toolUseId || `${p.index}-${i()}`;
+          const type = typeOfContent(c);
+          const key = `${type}:${base}`;
+          const isOpen = () => !!visible()[key];
+          const bodyId = `${type}-acc-body-${safeId(base)}`;
+
+          return Component({
             role: p?.message?.role,
             message: c,
             messages: p?.messages,
-            isLast,
-            copied,
-            onCopy: handleCopy,
-            onFeedback: (result) => openFeedback(result),
+            isOpen,
+            bodyId,
+            results: getSearchResults(getToolResult(c.toolUse, p?.messages)),
+            onToggle: () => toggleVisible(key),
           });
-        }
-
-        const name = c?.toolUse?.name || (c?.reasoningContent ? "think" : "unknown");
-        const Component =
-          TOOL_COMPONENTS[name] || (c?.reasoningContent ? ReasoningTool : undefined);
-
-        if (!Component) {
-          return null;
-        }
-
-        const base = c?.toolUse?.toolUseId || `${p.index}-${i()}`;
-        const type = typeOfContent(c);
-        const key = `${type}:${base}`;
-        const isOpen = () => !!visible()[key];
-        const bodyId = `${type}-acc-body-${safeId(base)}`;
-
-        return Component({
-          role: p?.message?.role,
-          message: c,
-          messages: p?.messages,
-          isOpen,
-          bodyId,
-          results: getSearchResults(getToolResult(c.toolUse, p?.messages)),
-          onToggle: () => toggleVisible(key),
-        });
-      }}
+        }}
+      <//>
     <//>`;
 }
+
