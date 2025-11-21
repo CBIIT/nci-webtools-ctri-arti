@@ -130,7 +130,7 @@ export function Tooltip(props) {
     <${Float}
       arrowClass="tooltip-arrow"
       class=${() => `show fade tooltip bs-tooltip-auto ${placementClass}`}
-      content=${() => html`<div class="tooltip-inner">${props.title}</div>`}
+      content=${() => html`<div class="fade show tooltip-inner">${props.title}</div>`}
       placement=${() => props.placement || "top"}
       trigger=${() => props.trigger || "hover"}
     >
