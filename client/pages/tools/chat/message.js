@@ -1,6 +1,4 @@
-import { createSignal, For, onCleanup } from "solid-js";
-import { ErrorBoundary } from "solid-js";
-
+import { createSignal, ErrorBoundary, For, onCleanup } from "solid-js";
 import html from "solid-js/html";
 
 import { X } from "lucide-solid";
@@ -178,4 +176,3 @@ export default function Message(p) {
       <//>
     <//>`;
 }
-

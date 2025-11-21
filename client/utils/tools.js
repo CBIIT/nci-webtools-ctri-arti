@@ -472,7 +472,14 @@ export function getSearchResults(results) {
 }
 
 export function getToolResult(toolUse, messages) {
-  return messages?.find((m) =>
-    m.content?.find((c) => c?.toolResult?.toolUseId === toolUse?.toolUseId)
-  )?.content?.[0].toolResult?.content?.[0]?.json?.results;
+  const messageWithTool = messages?.find((m) =>
+    m.content?.some((c) => c?.toolResult?.toolUseId === toolUse?.toolUseId)
+  );
+  const message = messageWithTool ?? messages?.[0];
+  const matchedContent = message?.content?.find(
+    (c) => c?.toolResult?.toolUseId === toolUse?.toolUseId
+  );
+  const toolContent =
+    matchedContent?.toolResult?.content ?? message?.content?.[0]?.toolResult?.content;
+  return toolContent?.[0]?.json?.results;
 }

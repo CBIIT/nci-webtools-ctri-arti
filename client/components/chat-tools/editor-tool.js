@@ -26,8 +26,14 @@ export default function EditorTool(props) {
       undo_edit: "Undoing Edit",
     })[props.message?.toolUse?.input?.command] || "Editing";
 
-  const rendered = () =>
-    (parse(getToolResult(props.message?.toolUse, props.messages) || "") || "").trim();
+  const rendered = () => {
+    const markdown = getToolResult(props.message?.toolUse, props.messages);
+    if (!markdown || typeof markdown !== "string") {
+      return "";
+    }
+
+    return parse(markdown);
+  };
 
   return html`<article
     class="search-accordion editor-accordion border rounded-3 my-3 min-w-0"
