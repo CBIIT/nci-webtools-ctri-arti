@@ -7,8 +7,9 @@ import { proxyMiddleware, requireRole } from "../middleware.js";
 import { textract } from "../textract.js";
 import { getLanguages, translate } from "../translate.js";
 import { search } from "../utils.js";
+import { getFile, listFiles } from "../s3.js";
 
-const { VERSION } = process.env;
+const { VERSION, S3_BUCKETS } = process.env;
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
 
@@ -43,6 +44,21 @@ api.post("/feedback", requireRole(), async (req, res) => {
   const from = req.session?.user?.email;
   const results = await sendFeedback({ from, feedback, context });
   return res.json(results);
+});
+
+api.get("/data", requireRole(), async (req, res) => {
+  const { bucket, key } = req.query;
+  if (!S3_BUCKETS?.split(',').includes(bucket)) {
+    return res.status(400).json({ error: "Invalid bucket" });
+  }
+
+  if (!key || key?.endsWith("/")) {
+    const files = await listFiles(bucket);
+    return res.json(files);
+  } else {
+    const data = await getFile(bucket, key);
+    return data.Body.pipe(res);
+  }
 });
 
 export default api;
