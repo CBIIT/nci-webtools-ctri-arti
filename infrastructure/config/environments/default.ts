@@ -67,6 +67,8 @@ const config: Config = {
             PGDATABASE: [prefix, "dbname"],
             PGUSER: [prefix, "username"],
             PGPASSWORD: [prefix, "password"],
+            
+            S3_BUCKETS: process.env.S3_BUCKETS || "rh-eagle",
 
             EMAIL_ADMIN: process.env.EMAIL_ADMIN || "",
             SMTP_HOST: process.env.SMTP_HOST || "",
