@@ -72,15 +72,16 @@ export default function Page() {
   }
 
   function makeFilename(originalName, langCode) {
+    const ext = originalName?.split(".").pop() || "txt";
     const base = (originalName || "translated_text").replace(/\.[^/.]+$/, "");
-    return `${base}-${langCode}.txt`;
+    return `${base}-${langCode}.${ext}`;
   }
 
-  async function translateRequest({ text, sourceLanguage, targetLanguage }) {
+  async function translateRequest({ text, content, contentType, sourceLanguage, targetLanguage }) {
     const response = await fetch("/api/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, sourceLanguage, targetLanguage }),
+      body: JSON.stringify({ text, content, contentType, sourceLanguage, targetLanguage }),
     });
 
     if (!response.ok) {
@@ -155,6 +156,8 @@ export default function Page() {
       if (jobConfig.engine === "aws") {
         translated = await translateRequest({
           text: jobConfig.inputText,
+          content: jobConfig.content,
+          contentType: jobConfig.contentType,
           sourceLanguage: jobConfig.sourceLanguage,
           targetLanguage: jobConfig.languageCode,
         });
@@ -167,7 +170,13 @@ export default function Page() {
         });
       }
 
-      const blob = new Blob([translated], { type: "text/plain" });
+      let blob;
+      if (translated.startsWith("data:")) {
+        const base64Response = await fetch(translated);
+        blob = await base64Response.blob();
+      } else {
+        blob = new Blob([translated], { type: "text/plain" });
+      }
 
       setStore("generatedDocuments", jobId, {
         status: "completed",
@@ -203,8 +212,9 @@ export default function Page() {
     }
 
     const timestamp = createTimestamp();
-    const baseFilename = job.config.displayInfo.filename.replace(/\.txt$/i, "");
-    const filename = `${baseFilename}-${timestamp}.txt`;
+    const baseFilename = job.config.displayInfo.filename.replace(/\.[^\.]+$/i, '');
+    const baseExtension = job.config.displayInfo.filename.split('.').pop();
+    const filename = `${baseFilename}-${timestamp}.${baseExtension}`;
 
     downloadBlob(filename, job.blob);
   }
@@ -225,7 +235,6 @@ export default function Page() {
     }
 
     setInputFile(file);
-
     const reader = new FileReader();
     reader.onload = async function (e) {
       const bytes = e.target.result;
@@ -244,6 +253,23 @@ export default function Page() {
     setEngine("aws");
     setStore(structuredClone(defaultStore));
     setParam("id", null);
+  }
+
+  function readFile(file, type = "text") {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      if (type === "arrayBuffer") {
+        reader.readAsArrayBuffer(file);
+      } else if (type === "text") {
+        reader.readAsText(file);
+      } else if (type === "dataURL") {
+        reader.readAsDataURL(file);
+      } else {
+        reject(new Error("Unsupported read type"));
+      }
+    });
   }
 
   async function handleSubmit(event) {
@@ -273,6 +299,8 @@ export default function Page() {
         languageLabel: getLanguageLabel(langCode),
         sourceLanguage: AUTO_LANGUAGE.value || "en",
         inputText: inputText || "",
+        content: await readFile(inputFile(), "dataURL"),
+        contentType: inputFile().type || "text/plain",
         engine: engine(),
         displayInfo: {
           prefix: langCode.toUpperCase(),
@@ -333,7 +361,7 @@ export default function Page() {
                         id="fileInput"
                         value=${() => [inputFile()]}
                         onChange=${handleFileSelect}
-                        accept=".txt, .docx, .pdf"
+                        accept=".txt, .docx, .html"
                         class="form-control form-control-sm mb-3"
                       />
                     </div>
