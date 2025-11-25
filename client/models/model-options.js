@@ -8,6 +8,7 @@ export const MODEL_OPTIONS = Object.freeze({
       v3_7: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
     },
     OPUS: {
+      v4_5: "global.anthropic.claude-opus-4-5-20251101-v1:0",
       v4_1: "us.anthropic.claude-opus-4-1-20250805-v1:0",
     },
     HAIKU: {
