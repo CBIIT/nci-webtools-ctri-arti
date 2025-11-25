@@ -94,6 +94,7 @@ export class EcsServiceStack extends Stack {
       roleName: `power-user-${prefix}-task-role`.slice(0, 64),
     });
 
+    taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSMarketplaceManageSubscriptions"));
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonElasticFileSystemClientFullAccess"));
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonBedrockFullAccess"));
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonPollyReadOnlyAccess"));
