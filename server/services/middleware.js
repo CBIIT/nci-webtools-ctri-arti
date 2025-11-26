@@ -175,7 +175,7 @@ export function requireRole(roleName) {
       }
       const role = user.Role;
       // Check role requirement (1 = admin, always allowed)
-      if (roleName && (role?.name !== roleName || role?.id !== +roleName || role?.id !== 1)) {
+      if (role?.id !== 1 && roleName && (role?.name !== roleName || role?.id !== +roleName)) {
         return res.status(403).json({ error: "Authorization required" });
       }
       // Set user in session for downstream handlers
