@@ -3,6 +3,7 @@
 // =================================================================================
 
 import { BedrockRuntimeClient, ConverseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
+import { GoogleGenAI } from "@google/genai";
 import { openDB, deleteDB } from "idb";
 import { render } from "solid-js/web";
 import { For, Switch, Match, createEffect } from "solid-js";
@@ -248,13 +249,21 @@ function App() {
               id="modelId"
               class="form-select form-select-sm w-auto border-transparent shadow-none"
               required>
-              <option value="us.anthropic.claude-opus-4-1-20250805-v1:0">Opus 4.1</option>
-              <option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0">Sonnet 4.5</option>
-              <option
-                value="us.anthropic.claude-haiku-4-5-20251001-v1:0"
-                selected>
-                Haiku 4.5
-              </option>
+              <optgroup label="AWS Bedrock">
+                <option value="global.anthropic.claude-opus-4-5-20251101-v1:0">Opus 4.5</option>
+                <option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0">Sonnet 4.5</option>
+                <option
+                  value="us.anthropic.claude-haiku-4-5-20251001-v1:0"
+                  selected>
+                  Haiku 4.5
+                </option>
+              </optgroup>
+
+              <optgroup label="Google Vertex">
+                <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+              </optgroup>
             </select>
             <button
               type="submit"
@@ -334,7 +343,7 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     const record = await db.get("agents", +params.agentId);
     const agentTools = tools.filter(t => record.tools.includes(t.toolSpec.name));
 
-    const client = await getConverseClient();
+    const client = await getConverseClient(modelId.includes("gemini") ? "google" : "aws");
     const content = await getMessageContent(text, files);
     const userMessage = { role: "user", content };
 
@@ -367,30 +376,146 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
 // 5. TOOL HANDLING
 // =================================================================================
 
-async function getConverseClient() {
-  const config = await getAwsConfig(localStorage, "aws-config");
-  const client = new BedrockRuntimeClient(config);
-  const send = input => client.send(getConverseCommand(input));
-  return { client, send };
+async function getConverseClient(type = "aws") {
+  if (type === "aws") {
+    const config = await withStorage(getAwsConfig, localStorage, "aws-config");
+    const client = new BedrockRuntimeClient(config);
+    const send = input => client.send(new ConverseStreamCommand(input));
+    return { client, send };
+  }
+
+  if (type === "google") {
+    const config = await withStorage(getGoogleConfig, localStorage, "google-config");
+    return getGeminiClient(new GoogleGenAI(config));
+  }
 }
 
-async function getAwsConfig(storage = localStorage, key = "aws-config") {
+/**
+ * Creates a Gemini client wrapper for use with the agent.
+ * Drop-in replacement: `const { send } = getGeminiClient(geminiClient)`
+ * @param {GoogleGenAI} client - Initialized @google/genai client
+ */
+export function getGeminiClient(client) {
+  const toB64 = b => btoa(b.reduce((s, x) => s + String.fromCharCode(x), ""));
+  const MIME = { png: "image/png", jpeg: "image/jpeg", jpg: "image/jpeg", gif: "image/gif", webp: "image/webp", pdf: "application/pdf" };
+
+  // Map to track toolUseId -> function name for the current request
+  const toolUseIdToName = new Map();
+
+  const toGeminiPart = b => {
+    if (b.text) return { text: b.text };
+    if (b.image) return { inlineData: { data: toB64(b.image.source.bytes), mimeType: MIME[b.image.format] } };
+    if (b.document) return { inlineData: { data: toB64(b.document.source.bytes), mimeType: MIME[b.document.format] || "application/octet-stream" } };
+    if (b.toolUse) {
+      // Track the mapping for later use in toolResult
+      toolUseIdToName.set(b.toolUse.toolUseId, b.toolUse.name);
+      const args = typeof b.toolUse.input === "string" ? JSON.parse(b.toolUse.input) : b.toolUse.input;
+      return { functionCall: { name: b.toolUse.name, args, id: b.toolUse.toolUseId } };
+    }
+    if (b.toolResult) {
+      const c = b.toolResult.content?.[0];
+      const name = toolUseIdToName.get(b.toolResult.toolUseId) || b.toolResult.toolUseId;
+      return { functionResponse: { id: b.toolResult.toolUseId, name, response: c?.json ?? { output: c?.text } } };
+    }
+  };
+
+  async function* stream(input) {
+    // Clear the map for each new request
+    toolUseIdToName.clear();
+
+    const geminiReq = {
+      model: input.modelId,
+      contents: input.messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: m.content.map(toGeminiPart).filter(Boolean) })),
+      config: {
+        systemInstruction: input.system?.find(s => s.text)?.text,
+        tools: input.toolConfig?.tools
+          ?.filter(t => t.toolSpec)
+          .map(t => ({
+            functionDeclarations: [
+              {
+                name: t.toolSpec.name,
+                description: t.toolSpec.description,
+                parametersJsonSchema: t.toolSpec.inputSchema?.json,
+              },
+            ],
+          })),
+        ...(input.additionalModelRequestFields?.thinking && {
+          thinkingConfig: { thinkingBudget: input.additionalModelRequestFields.thinking.budget_tokens },
+        }),
+      },
+    };
+
+    const response = await client.models.generateContentStream(geminiReq);
+    yield { messageStart: { role: "assistant" } };
+
+    let idx = 0,
+      active = null,
+      toolNum = 0;
+
+    for await (const chunk of response) {
+      const parts = chunk.candidates?.[0]?.content?.parts ?? [];
+      const done = chunk.candidates?.[0]?.finishReason;
+
+      for (const p of parts) {
+        let type, start, delta;
+
+        if (p.thought && p.text != null) {
+          type = "reasoning";
+          delta = { reasoningContent: { text: p.text, ...(p.thoughtSignature && { signature: p.thoughtSignature }) } };
+        } else if (p.text != null) {
+          type = "text";
+          delta = { text: p.text };
+        } else if (p.functionCall) {
+          type = "tool";
+          const id = `gemini_${toolNum++}`;
+          start = { toolUse: { toolUseId: id, name: p.functionCall.name } };
+          delta = { toolUse: { input: JSON.stringify(p.functionCall.args ?? {}) } };
+        } else continue;
+
+        if (type !== active) {
+          if (active) yield { contentBlockStop: { contentBlockIndex: idx++ } };
+          if (start) yield { contentBlockStart: { contentBlockIndex: idx, start } };
+          active = type;
+        }
+        yield { contentBlockDelta: { contentBlockIndex: idx, delta } };
+      }
+
+      if (done) {
+        if (active) yield { contentBlockStop: { contentBlockIndex: idx } };
+        yield { messageStop: { stopReason: parts.some(p => p.functionCall) ? "tool_use" : "end_turn" } };
+      }
+    }
+  }
+
+  return { client, send: input => Promise.resolve({ stream: stream(input) }) };
+}
+
+async function withStorage(getConfig, storage, key) {
   try {
     const config = await storage.getItem(key);
     if (!config) throw new Error("No config found");
     return JSON.parse(config);
   } catch (error) {
-    const region = prompt("AWS region [us-east-1]:");
-    const accessKeyId = prompt("AWS Access Key ID:");
-    const secretAccessKey = prompt("AWS Secret Access Key:");
-    const sessionToken = prompt("AWS Session Token [optional]:");
-    const config = {
-      region: region || "us-east-1",
-      credentials: { accessKeyId, secretAccessKey, sessionToken: sessionToken || undefined },
-    };
+    const config = await getConfig();
     await storage.setItem(key, JSON.stringify(config));
     return config;
   }
+}
+
+function getGoogleConfig(prompt = window.prompt) {
+  const apiKey = prompt("Google GenAI API Key:");
+  return { apiKey };
+}
+
+function getAwsConfig(prompt = window.prompt) {
+  const region = prompt("AWS region [us-east-1]:");
+  const accessKeyId = prompt("AWS Access Key ID:");
+  const secretAccessKey = prompt("AWS Secret Access Key:");
+  const sessionToken = prompt("AWS Session Token [optional]:");
+  return {
+    region: region || "us-east-1",
+    credentials: { accessKeyId, secretAccessKey, sessionToken: sessionToken || undefined },
+  };
 }
 
 function getConverseCommand(config) {
@@ -401,13 +526,13 @@ function getConverseCommand(config) {
   }
   const tools = config.tools.map(({ toolSpec }) => ({ toolSpec })).filter(Boolean);
 
-  return new ConverseStreamCommand({
+  return {
     modelId: config.modelId,
     messages: config.messages,
     system: [{ text: config.systemPrompt }, { cachePoint }],
     toolConfig: { tools: [...tools, { cachePoint }] },
     additionalModelRequestFields,
-  });
+  };
 }
 
 /**
@@ -426,7 +551,8 @@ async function runAgent(store, setStore, client) {
 
   let done = false;
   while (!done) {
-    const output = await client.send(store);
+    const input = getConverseCommand(store);
+    const output = await client.send(input);
     const assistantMessage = { role: "assistant", content: [] };
     setStore("messages", store.messages.length, assistantMessage);
 
@@ -491,7 +617,7 @@ function processContentBlock(s, message) {
     const { contentBlockIndex } = contentBlockStop;
     const block = messageContent[contentBlockIndex];
     if (block.toolUse) {
-      block.toolUse.input = JSON.parse(block.toolUse.input);
+      block.toolUse.input = parseJSON(block.toolUse.input);
     }
   }
 }
