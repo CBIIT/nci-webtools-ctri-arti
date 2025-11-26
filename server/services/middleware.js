@@ -155,10 +155,10 @@ export function oauthMiddleware() {
 
 /**
  * Middleware that requires user to have a specific role
- * @param {string} roleName - Name of the required role (e.g., "admin")
+ * @param {string} requiredRole - Name or ID of the required role (e.g., "admin")
  * @returns {Function} Middleware function
  */
-export function requireRole(roleName) {
+export function requireRole(requiredRole) {
   return async (req, res, next) => {
     try {
       const apiKey = req.headers["x-api-key"];
@@ -175,7 +175,7 @@ export function requireRole(roleName) {
       }
       const role = user.Role;
       // Check role requirement (1 = admin, always allowed)
-      if (role?.id !== 1 && roleName && (role?.name !== roleName || role?.id !== +roleName)) {
+      if (requiredRole && role?.id !== 1 && !(role?.name === requiredRole || role?.id === +requiredRole)) {
         return res.status(403).json({ error: "Authorization required" });
       }
       // Set user in session for downstream handlers
