@@ -53,7 +53,7 @@ export default function Page() {
     selectedTemplates: [],
 
     // Advanced options
-    model: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v3_7,
+    model: MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_5,
     advancedOptionsOpen: false,
     templateSourceType: "predefined",
     selectedPredefinedTemplate: "",
@@ -222,7 +222,7 @@ export default function Page() {
           },
         ],
         system: systemPrompt.replace("{{document}}", jobConfig.inputText),
-        thoughtBudget: 8000,
+        thoughtBudget: 24_000,
         stream: false,
       };
 
