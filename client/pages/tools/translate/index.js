@@ -12,7 +12,7 @@ import { useSessionPersistence } from "../translate/hooks.js";
 
 const AUTO_LANGUAGE = { value: "auto", label: "Auto" };
 const LANGUAGES = [
-  { value: "es", label: "Spanish" },
+  { value: "es-MX", label: "Spanish" },
   { value: "ar", label: "Arabic" },
   { value: "fr", label: "French" },
   { value: "am", label: "Amharic" },
