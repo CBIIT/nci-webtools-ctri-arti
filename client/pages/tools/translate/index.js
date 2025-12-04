@@ -12,12 +12,12 @@ import { useSessionPersistence } from "../translate/hooks.js";
 
 const AUTO_LANGUAGE = { value: "auto", label: "Auto" };
 const LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "zh", label: "Chinese" },
   { value: "es", label: "Spanish" },
+  { value: "ar", label: "Arabic" },
   { value: "fr", label: "French" },
-  { value: "de", label: "German" },
-  { value: "it", label: "Italian" },
+  { value: "am", label: "Amharic" },
+  { value: "pt", label: "Portuguese" },
+  { value: "vi", label: "Vietnamese" },
 ];
 const ROWS_PER_COLUMN = 4;
 
