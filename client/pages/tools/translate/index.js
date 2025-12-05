@@ -276,26 +276,30 @@ export default function Page() {
     await saveSession();
 
     for (const file of sourceFiles()) {
-      const bytes = await file.arrayBuffer();
-      const inputText = await parseDocument(bytes, file.type, file.name);
+      try {
+        const bytes = await file.arrayBuffer();
+        const inputText = await parseDocument(bytes, file.type, file.name);
 
-      for (const langCode of targetLanguages()) {
-        const jobId = crypto.randomUUID();
-        const jobConfig = {
-          languageCode: langCode,
-          languageLabel: getLanguageLabel(langCode),
-          sourceLanguage: AUTO_LANGUAGE.value || "en",
-          inputText: inputText || "",
-          content: await readFile(file, "dataURL"),
-          contentType: file.type || "text/plain",
-          engine: engine(),
-          displayInfo: {
-            prefix: langCode.toUpperCase(),
-            label: getLanguageLabel(langCode),
-            filename: makeFilename(file?.name, langCode),
-          },
-        };
-        processJob(jobId, jobConfig);
+        for (const langCode of targetLanguages()) {
+          const jobId = crypto.randomUUID();
+          const jobConfig = {
+            languageCode: langCode,
+            languageLabel: getLanguageLabel(langCode),
+            sourceLanguage: AUTO_LANGUAGE.value || "en",
+            inputText: inputText || "",
+            content: await readFile(file, "dataURL"),
+            contentType: file.type || "text/plain",
+            engine: engine(),
+            displayInfo: {
+              prefix: langCode.toUpperCase(),
+              label: getLanguageLabel(langCode),
+              filename: makeFilename(file?.name, langCode),
+            },
+          };
+          processJob(jobId, jobConfig);
+        }
+      } catch (error) {
+        console.error(`Failed to process file ${file?.name}:`, error);
       }
     }
   }
