@@ -12,12 +12,12 @@ import { useSessionPersistence } from "../translate/hooks.js";
 
 const AUTO_LANGUAGE = { value: "auto", label: "Auto" };
 const LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "zh", label: "Chinese" },
-  { value: "es", label: "Spanish" },
+  { value: "es-MX", label: "Spanish" },
+  { value: "ar", label: "Arabic" },
   { value: "fr", label: "French" },
-  { value: "de", label: "German" },
-  { value: "it", label: "Italian" },
+  { value: "am", label: "Amharic" },
+  { value: "pt", label: "Portuguese" },
+  { value: "vi", label: "Vietnamese" },
 ];
 const ROWS_PER_COLUMN = 4;
 
@@ -31,9 +31,8 @@ const defaultStore = { id: null, generatedDocuments: {} };
 
 export default function Page() {
   const { user } = useAuthContext();
-  const [sourceText, setSourceText] = createSignal("");
+  const [sourceFiles, setSourceFiles] = createSignal([]);
   const [targetLanguages, setTargetLanguages] = createSignal([]);
-  const [inputFile, setInputFile] = createSignal(null);
   const [engine, setEngine] = createSignal("aws");
   const [store, setStore] = createStore(structuredClone(defaultStore));
 
@@ -43,14 +42,12 @@ export default function Page() {
     setStore,
     defaultStore,
     getSnapshot: () => ({
-      inputFile: inputFile(),
-      inputText: sourceText(),
+      sourceFiles: sourceFiles(),
       targetLanguages: targetLanguages(),
       engine: engine(),
     }),
     restoreSnapshot: (snap) => {
-      setInputFile(snap.inputFile || null);
-      setSourceText(snap.inputText || "");
+      setSourceFiles(Array.isArray(snap.sourceFiles) ? snap.sourceFiles : []);
       setTargetLanguages(Array.isArray(snap.targetLanguages) ? snap.targetLanguages : []);
       setEngine(snap.engine || "aws");
     },
@@ -212,8 +209,8 @@ export default function Page() {
     }
 
     const timestamp = createTimestamp();
-    const baseFilename = job.config.displayInfo.filename.replace(/\.[^\.]+$/i, '');
-    const baseExtension = job.config.displayInfo.filename.split('.').pop();
+    const baseFilename = job.config.displayInfo.filename.replace(/\.[^.]+$/i, "");
+    const baseExtension = job.config.displayInfo.filename.split(".").pop();
     const filename = `${baseFilename}-${timestamp}.${baseExtension}`;
 
     downloadBlob(filename, job.blob);
@@ -229,27 +226,20 @@ export default function Page() {
   }
 
   async function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) {
+    const files = event.target.files;
+    if (!files || files.length === 0) {
       return;
     }
 
-    setInputFile(file);
-    const reader = new FileReader();
-    reader.onload = async function (e) {
-      const bytes = e.target.result;
-      const text = await parseDocument(bytes, file.type, file.name);
-      setSourceText(text || "");
-      setStore("generatedDocuments", store.generatedDocuments);
-    };
-    reader.readAsArrayBuffer(file);
+    const fileArray = Array.from(files);
+    setSourceFiles(fileArray);
+    setStore("generatedDocuments", store.generatedDocuments);
   }
 
   async function handleReset(event) {
     event.preventDefault();
-    setSourceText("");
+    setSourceFiles([]);
     setTargetLanguages([]);
-    setInputFile(null);
     setEngine("aws");
     setStore(structuredClone(defaultStore));
     setParam("id", null);
@@ -275,15 +265,8 @@ export default function Page() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!inputFile() || targetLanguages().length === 0) {
+    if (sourceFiles().length === 0 || targetLanguages().length === 0) {
       return;
-    }
-
-    let inputText = sourceText();
-    if (!inputText) {
-      const bytes = await inputFile().arrayBuffer();
-      inputText = await parseDocument(bytes, inputFile().type, inputFile().name);
-      setSourceText(inputText || "");
     }
 
     setStore("generatedDocuments", reconcile({}, { merge: true }));
@@ -292,23 +275,32 @@ export default function Page() {
     setParam("id", id);
     await saveSession();
 
-    for (const langCode of targetLanguages()) {
-      const jobId = crypto.randomUUID();
-      const jobConfig = {
-        languageCode: langCode,
-        languageLabel: getLanguageLabel(langCode),
-        sourceLanguage: AUTO_LANGUAGE.value || "en",
-        inputText: inputText || "",
-        content: await readFile(inputFile(), "dataURL"),
-        contentType: inputFile().type || "text/plain",
-        engine: engine(),
-        displayInfo: {
-          prefix: langCode.toUpperCase(),
-          label: getLanguageLabel(langCode),
-          filename: makeFilename(inputFile()?.name, langCode),
-        },
-      };
-      processJob(jobId, jobConfig);
+    for (const file of sourceFiles()) {
+      try {
+        const bytes = await file.arrayBuffer();
+        const inputText = await parseDocument(bytes, file.type, file.name);
+
+        for (const langCode of targetLanguages()) {
+          const jobId = crypto.randomUUID();
+          const jobConfig = {
+            languageCode: langCode,
+            languageLabel: getLanguageLabel(langCode),
+            sourceLanguage: AUTO_LANGUAGE.value || "en",
+            inputText: inputText || "",
+            content: await readFile(file, "dataURL"),
+            contentType: file.type || "text/plain",
+            engine: engine(),
+            displayInfo: {
+              prefix: langCode.toUpperCase(),
+              label: getLanguageLabel(langCode),
+              filename: makeFilename(file?.name, langCode),
+            },
+          };
+          processJob(jobId, jobConfig);
+        }
+      } catch (error) {
+        console.error(`Failed to process file ${file?.name}:`, error);
+      }
     }
   }
 
@@ -355,12 +347,13 @@ export default function Page() {
                   <div class="row">
                     <div class="col-sm-12 mb-2">
                       <label for="inputText" class="form-label required text-info fs-5 mb-1"
-                        >Source Document</label
+                        >Source Documents</label
                       >
                       <${FileInput}
                         id="fileInput"
-                        value=${() => [inputFile()]}
+                        value=${() => sourceFiles()}
                         onChange=${handleFileSelect}
+                        multiple=${true}
                         accept=".txt, .docx, .html"
                         class="form-control form-control-sm mb-3"
                       />
@@ -446,7 +439,7 @@ export default function Page() {
                     <div class="text-center py-5">
                       <h1 class="text-info mb-3">Welcome to Document Translator</h1>
                       <div>
-                        To get started, upload your source document, select one or more target
+                        To get started, upload your source documents, select one or more target
                         languages from the list, and click Generate to create translated versions.
                       </div>
                     </div>
