@@ -1,6 +1,5 @@
 import { createMemo, createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
-
 import { createStore, reconcile } from "solid-js/store";
 
 import FileInput from "../../../components/file-input.js";
@@ -11,6 +10,7 @@ import { createTimestamp, downloadBlob } from "../../../utils/files.js";
 import { parseDocument } from "../../../utils/parsers.js";
 import { useSessionPersistence } from "../translate/hooks.js";
 
+// #region Constants
 const AUTO_LANGUAGE = { value: "auto", label: "Auto" };
 const LANGUAGES = [
   { value: "es-MX", label: "Spanish" },
@@ -21,25 +21,22 @@ const LANGUAGES = [
   { value: "vi", label: "Vietnamese" },
 ];
 const ROWS_PER_COLUMN = 4;
-
 const MODELS = [
   { value: MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5, label: "Model: Haiku" },
   { value: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5, label: "Model: Sonnet" },
   { value: MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_5, label: "Model: Opus" },
 ];
-
 const DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const SIZE_THRESHOLD = 40 * 1024; // 40KB - use batch translation above this
+const BATCH_DELIMITER = "\r\n";
+const defaultStore = { id: null, generatedDocuments: {} };
+// #endregion
 
-/**
- * Checks if a file is a DOCX based on mime type or extension
- */
+// #region Utilities
 function isDocxFile(contentType, filename) {
   return contentType === DOCX_MIME_TYPE || filename?.toLowerCase().endsWith(".docx");
 }
 
-/**
- * Converts a base64 data URL to an ArrayBuffer
- */
 function base64ToArrayBuffer(dataUrl) {
   const base64 = dataUrl.split(",")[1];
   const binaryString = atob(base64);
@@ -50,8 +47,190 @@ function base64ToArrayBuffer(dataUrl) {
   return bytes.buffer;
 }
 
-const defaultStore = { id: null, generatedDocuments: {} };
+function getDocumentSize(dataUrl) {
+  const base64 = dataUrl.split(",")[1];
+  return Math.floor((base64.length * 3) / 4);
+}
 
+function getLanguageLabel(code) {
+  return LANGUAGES.find((l) => l.value === code)?.label || code.toUpperCase();
+}
+
+function makeFilename(originalName, langCode) {
+  const ext = originalName?.split(".").pop() || "txt";
+  const base = (originalName || "translated_text").replace(/\.[^/.]+$/, "");
+  return `${base}-${langCode}.${ext}`;
+}
+
+function readFile(file, type = "text") {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    if (type === "arrayBuffer") reader.readAsArrayBuffer(file);
+    else if (type === "text") reader.readAsText(file);
+    else if (type === "dataURL") reader.readAsDataURL(file);
+    else reject(new Error("Unsupported read type"));
+  });
+}
+// #endregion
+
+// #region Translation Core
+function buildTranslationPrompt(targetLang, sourceLang, options = {}) {
+  const { formality = "formal", profanityMask = true, brevity = false, isBatch = false } = options;
+  const langDirective =
+    sourceLang && sourceLang !== "auto"
+      ? `Translate from ${sourceLang.toUpperCase()} to ${targetLang}.`
+      : `Detect the source language and translate to ${targetLang}.`;
+
+  const rules = [
+    "You are a translation engine emulating Amazon Translate.",
+    langDirective,
+    formality === "formal" && "Use formal language constructs and formal pronouns.",
+    formality === "informal" && "Use informal language constructs and familiar pronouns.",
+    profanityMask && 'Replace ANY profane words/phrases with "?$#@$".',
+    brevity && "Provide concise translations, reduce length where appropriate.",
+    "Leave untranslatable tokens unchanged (IDs, URLs, emails, placeholders).",
+    "Preserve punctuation, whitespace, line breaks, capitalization, numerals exactly.",
+    "Do not add, remove, or paraphrase content.",
+    isBatch && "Input: JSON array of strings. Output: JSON array of translated strings in EXACT same order. Return ONLY the JSON array, no explanation or markdown.",
+    !isBatch && "Output ONLY the translated text (plain text), with no quotes or explanations.",
+  ].filter(Boolean);
+
+  return isBatch ? rules.join("\n") : rules.join(" ");
+}
+
+async function runModel(params) {
+  const res = await fetch("/api/model", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`Model request failed. (${res.status})`);
+  const data = await res.json();
+  return data?.output?.message?.content?.map((c) => c.text || "").join(" ") || "";
+}
+
+async function translateBatch(texts, engine, options) {
+  const { sourceLang, targetLang, formality, profanityMask, brevity } = options;
+
+  if (engine === "aws") {
+    const joined = texts.join(BATCH_DELIMITER);
+    const res = await fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: joined, sourceLanguage: sourceLang, targetLanguage: targetLang }),
+    });
+    if (!res.ok) throw new Error(`Translation request failed. (${res.status})`);
+    const data = await res.json();
+    if (typeof data !== "string") return texts.map(() => "");
+    const results = data.split(BATCH_DELIMITER);
+    if (results.length !== texts.length) {
+      console.warn(`AWS batch translation count mismatch: expected ${texts.length}, got ${results.length}`);
+    }
+    return results;
+  }
+
+  // LLM engine
+  const targetLabel = getLanguageLabel(targetLang);
+  const prompt = buildTranslationPrompt(targetLabel, sourceLang, { formality, profanityMask, brevity, isBatch: true });
+  const output = await runModel({
+    model: engine,
+    messages: [{ role: "user", content: [{ text: JSON.stringify(texts) }] }],
+    system: prompt,
+    stream: false,
+  });
+
+  try {
+    const parsed = JSON.parse(output.trim());
+    if (Array.isArray(parsed) && parsed.length === texts.length) return parsed;
+    throw new Error("Invalid response format");
+  } catch {
+    const match = output.match(/\[[\s\S]*\]/);
+    if (match) return JSON.parse(match[0]);
+    throw new Error("Failed to parse translation response as JSON array");
+  }
+}
+// #endregion
+
+// #region Translation Strategies
+async function translateDocument(jobConfig) {
+  const isDocx = isDocxFile(jobConfig.contentType, jobConfig.displayInfo?.filename);
+  const docSize = getDocumentSize(jobConfig.content);
+  const isSmallDocx = isDocx && docSize <= SIZE_THRESHOLD;
+
+  // AWS can handle small DOCX natively via translateDocument API
+  if (jobConfig.engine === "aws" && isSmallDocx) {
+    return handleAwsDocument(jobConfig);
+  }
+
+  // DOCX needs batch extraction (LLM or large AWS)
+  if (isDocx) {
+    return handleDocxBatch(jobConfig);
+  }
+
+  // Plain text/HTML - simple translation
+  return handleTextTranslation(jobConfig);
+}
+
+async function handleAwsDocument(jobConfig) {
+  const res = await fetch("/api/translate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content: jobConfig.content,
+      contentType: jobConfig.contentType,
+      sourceLanguage: jobConfig.sourceLanguage,
+      targetLanguage: jobConfig.languageCode,
+    }),
+  });
+  if (!res.ok) throw new Error(`Translation request failed. (${res.status})`);
+  const data = await res.json();
+
+  if (typeof data === "string" && data.startsWith("data:")) {
+    const base64Response = await fetch(data);
+    return await base64Response.blob();
+  }
+  return new Blob([data || ""], { type: "text/plain" });
+}
+
+async function handleDocxBatch(jobConfig) {
+  const docxBuffer = base64ToArrayBuffer(jobConfig.content);
+  const options = {
+    sourceLang: jobConfig.sourceLanguage,
+    targetLang: jobConfig.languageCode,
+    formality: "formal",
+    profanityMask: true,
+    brevity: false,
+  };
+
+  const translateBatchFn = async (texts) => translateBatch(texts, jobConfig.engine, options);
+
+  const translatedDocx = await translateDocx(docxBuffer, translateBatchFn, {
+    batchSize: 50,
+    includeHeaders: true,
+    includeFootnotes: true,
+    includeComments: false,
+  });
+
+  return new Blob([translatedDocx], { type: DOCX_MIME_TYPE });
+}
+
+async function handleTextTranslation(jobConfig) {
+  const options = {
+    sourceLang: jobConfig.sourceLanguage,
+    targetLang: jobConfig.languageCode,
+    formality: "formal",
+    profanityMask: true,
+    brevity: false,
+  };
+
+  const [translated] = await translateBatch([jobConfig.inputText], jobConfig.engine, options);
+  return new Blob([translated || ""], { type: "text/plain" });
+}
+// #endregion
+
+// #region Component
 export default function Page() {
   const { user } = useAuthContext();
   const [sourceFiles, setSourceFiles] = createSignal([]);
@@ -59,6 +238,7 @@ export default function Page() {
   const [engine, setEngine] = createSignal("aws");
   const [store, setStore] = createStore(structuredClone(defaultStore));
 
+  // #region Session Persistence
   const { setParam, createSession, saveSession } = useSessionPersistence({
     dbPrefix: "arti-translator",
     store,
@@ -76,167 +256,24 @@ export default function Page() {
     },
     onRetryJob: retryJob,
   });
+  // #endregion
 
+  // #region Job Processing
   const allJobsProcessed = createMemo(() => {
     const jobs = store.generatedDocuments;
     const jobKeys = Object.keys(jobs);
-    if (jobKeys.length === 0) {
-      return true;
-    }
-
-    return jobKeys.every((k) => ["completed", "error"].includes(jobs[k]?.status));
+    return jobKeys.length === 0 || jobKeys.every((k) => ["completed", "error"].includes(jobs[k]?.status));
   });
 
-  function getLanguageLabel(code) {
-    return LANGUAGES.find((l) => l.value === code)?.label || code.toUpperCase();
-  }
-
-  function makeFilename(originalName, langCode) {
-    const ext = originalName?.split(".").pop() || "txt";
-    const base = (originalName || "translated_text").replace(/\.[^/.]+$/, "");
-    return `${base}-${langCode}.${ext}`;
-  }
-
-  async function translateRequest({ text, content, contentType, sourceLanguage, targetLanguage }) {
-    const response = await fetch("/api/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, content, contentType, sourceLanguage, targetLanguage }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Translation request failed. (${response.status})`);
-    }
-
-    const data = await response.json();
-
-    if (typeof data !== "string") {
-      return "";
-    }
-
-    return data;
-  }
-
-  async function runModel(params) {
-    const res = await fetch("/api/model", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
-    });
-
-    if (!res.ok) {
-      throw new Error(`Translation request failed. (${res.status})`);
-    }
-
-    const data = await res.json();
-
-    return data?.output?.message?.content?.map((c) => c.text || "").join(" ") || "";
-  }
-
-  async function modelTranslateRequest({ text, sourceLanguage, targetLanguage, model }) {
-    const targetLabel = getLanguageLabel(targetLanguage);
-    const system = [
-      "You are a translation engine emulating Amazon Translate.",
-      sourceLanguage && sourceLanguage !== "auto"
-        ? `Translate from ${sourceLanguage.toUpperCase()} to ${targetLabel}.`
-        : `Detect the source language and translate to ${targetLabel}.`,
-      "Translate confidently translatable words and phrases.",
-      "If a token/segment is untranslatable or nonsensical (e.g., random strings, mixed gibberish, unknown product codes, IDs, URLs/email addresses, emojis, hashtags, or placeholders), LEAVE IT UNCHANGED.",
-      "Preserve punctuation, whitespace, line breaks, capitalization, numerals, units, and any inline placeholders exactly as in the source.",
-      "Do not add, remove, or paraphrase content; do not guess missing words.",
-      "It is acceptable to partially translate a sentence while keeping untranslatable tokens as-is.",
-      "Output ONLY the translated text (plain text), with no quotes or explanations.",
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-    const params = {
-      model,
-      messages: [{ role: "user", content: [{ text }] }],
-      system,
-      stream: false,
-    };
-
-    const output = await runModel(params);
-    return (output || "").trim();
-  }
-
   async function processJob(jobId, jobConfig) {
-    setStore("generatedDocuments", jobId, {
-      status: "processing",
-      blob: null,
-      error: null,
-      config: jobConfig,
-    });
-
+    setStore("generatedDocuments", jobId, { status: "processing", blob: null, error: null, config: jobConfig });
     await saveSession();
 
     try {
-      let blob;
-      const useDocxTranslation =
-        jobConfig.engine !== "aws" && isDocxFile(jobConfig.contentType, jobConfig.displayInfo?.filename);
-
-      if (useDocxTranslation) {
-        // DOCX + LLM: Use block-by-block translation preserving formatting
-        const docxBuffer = base64ToArrayBuffer(jobConfig.content);
-
-        const translateFn = async (text) => {
-          return await modelTranslateRequest({
-            text,
-            sourceLanguage: jobConfig.sourceLanguage,
-            targetLanguage: jobConfig.languageCode,
-            model: jobConfig.engine,
-          });
-        };
-
-        const translatedDocx = await translateDocx(docxBuffer, translateFn, {
-          includeHeaders: true,
-          includeFootnotes: true,
-          includeComments: false,
-        });
-
-        blob = new Blob([translatedDocx], { type: DOCX_MIME_TYPE });
-      } else {
-        // Plain text or AWS Translate
-        let translated = "";
-        if (jobConfig.engine === "aws") {
-          translated = await translateRequest({
-            text: jobConfig.inputText,
-            content: jobConfig.content,
-            contentType: jobConfig.contentType,
-            sourceLanguage: jobConfig.sourceLanguage,
-            targetLanguage: jobConfig.languageCode,
-          });
-        } else {
-          translated = await modelTranslateRequest({
-            text: jobConfig.inputText,
-            sourceLanguage: jobConfig.sourceLanguage,
-            targetLanguage: jobConfig.languageCode,
-            model: jobConfig.engine,
-          });
-        }
-
-        if (translated.startsWith("data:")) {
-          const base64Response = await fetch(translated);
-          blob = await base64Response.blob();
-        } else {
-          blob = new Blob([translated], { type: "text/plain" });
-        }
-      }
-
-      setStore("generatedDocuments", jobId, {
-        status: "completed",
-        blob,
-        error: null,
-        config: jobConfig,
-      });
+      const blob = await translateDocument(jobConfig);
+      setStore("generatedDocuments", jobId, { status: "completed", blob, error: null, config: jobConfig });
     } catch (error) {
-      setStore("generatedDocuments", jobId, {
-        status: "error",
-        blob: null,
-        error: error?.message || "Translation error",
-        config: jobConfig,
-      });
+      setStore("generatedDocuments", jobId, { status: "error", blob: null, error: error?.message || "Translation error", config: jobConfig });
     } finally {
       await saveSession();
     }
@@ -244,48 +281,37 @@ export default function Page() {
 
   async function retryJob(jobId) {
     const job = store.generatedDocuments[jobId];
-    if (!job?.config) {
-      return;
-    }
-
-    await processJob(jobId, job.config);
+    if (job?.config) await processJob(jobId, job.config);
   }
 
-  async function downloadJob(jobId) {
+  function downloadJob(jobId) {
     const job = store.generatedDocuments[jobId];
-    if (!job || job.status !== "completed" || !job.blob) {
-      return;
-    }
+    if (!job || job.status !== "completed" || !job.blob) return;
 
     const timestamp = createTimestamp();
     const baseFilename = job.config.displayInfo.filename.replace(/\.[^.]+$/i, "");
     const baseExtension = job.config.displayInfo.filename.split(".").pop();
-    const filename = `${baseFilename}-${timestamp}.${baseExtension}`;
-
-    downloadBlob(filename, job.blob);
+    downloadBlob(`${baseFilename}-${timestamp}.${baseExtension}`, job.blob);
   }
 
   function downloadAll() {
     Object.keys(store.generatedDocuments).forEach((jobId) => {
       const job = store.generatedDocuments[jobId];
-      if (job?.status === "completed" && job.blob) {
-        downloadJob(jobId);
-      }
+      if (job?.status === "completed" && job.blob) downloadJob(jobId);
     });
   }
+  // #endregion
 
-  async function handleFileSelect(event) {
+  // #region Event Handlers
+  function handleFileSelect(event) {
     const files = event.target.files;
-    if (!files || files.length === 0) {
-      return;
+    if (files?.length > 0) {
+      setSourceFiles(Array.from(files));
+      setStore("generatedDocuments", store.generatedDocuments);
     }
-
-    const fileArray = Array.from(files);
-    setSourceFiles(fileArray);
-    setStore("generatedDocuments", store.generatedDocuments);
   }
 
-  async function handleReset(event) {
+  function handleReset(event) {
     event.preventDefault();
     setSourceFiles([]);
     setTargetLanguages([]);
@@ -294,29 +320,9 @@ export default function Page() {
     setParam("id", null);
   }
 
-  function readFile(file, type = "text") {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(reader.error);
-      if (type === "arrayBuffer") {
-        reader.readAsArrayBuffer(file);
-      } else if (type === "text") {
-        reader.readAsText(file);
-      } else if (type === "dataURL") {
-        reader.readAsDataURL(file);
-      } else {
-        reject(new Error("Unsupported read type"));
-      }
-    });
-  }
-
   async function handleSubmit(event) {
     event.preventDefault();
-
-    if (sourceFiles().length === 0 || targetLanguages().length === 0) {
-      return;
-    }
+    if (sourceFiles().length === 0 || targetLanguages().length === 0) return;
 
     setStore("generatedDocuments", reconcile({}, { merge: true }));
     const id = await createSession();
@@ -355,9 +361,7 @@ export default function Page() {
 
   function onTargetLanguageChange(e, option) {
     const checked = e?.target?.checked || false;
-    setTargetLanguages((prev) =>
-      checked ? prev.concat([option.value]) : prev.filter((v) => v !== option.value)
-    );
+    setTargetLanguages((prev) => (checked ? prev.concat([option.value]) : prev.filter((v) => v !== option.value)));
   }
 
   const languageColumns = () => {
@@ -367,23 +371,19 @@ export default function Page() {
     }
     return cols;
   };
+  // #endregion
 
+  // #region Template
   return html`
     <div class="bg-info-subtle h-100 position-relative">
       <div class="container py-3">
-        <form
-          id="translateForm"
-          onSubmit=${(ev) => handleSubmit(ev)}
-          onReset=${handleReset}
-          class="container p-0"
-        >
+        <form id="translateForm" onSubmit=${handleSubmit} onReset=${handleReset} class="container p-0">
           <div class="row align-items-stretch mb-3 text-center">
             <div class="col">
               <div class="bg-white shadow border rounded p-3">
                 <h1 class="fw-bold fs-3 form-label mt-3 mb-2">Document Translator</h1>
                 <p class="mb-4 text-body-secondary">
-                  Easily translate your documents into multiple languages and generate accurate
-                  translations in seconds.
+                  Easily translate your documents into multiple languages and generate accurate translations in seconds.
                 </p>
               </div>
             </div>
@@ -395,9 +395,7 @@ export default function Page() {
                 <div class="bg-white shadow border rounded p-3 card-lg">
                   <div class="row">
                     <div class="col-sm-12 mb-2">
-                      <label for="inputText" class="form-label required text-info fs-5 mb-1"
-                        >Source Documents</label
-                      >
+                      <label for="inputText" class="form-label required text-info fs-5 mb-1">Source Documents</label>
                       <${FileInput}
                         id="fileInput"
                         value=${() => sourceFiles()}
@@ -410,10 +408,7 @@ export default function Page() {
 
                     <div class="col-sm-12 mb-4">
                       <div class="d-flex justify-content-start align-items-center flex-wrap gap-2">
-                        <label for="targetLanguage" class="form-label required text-info fs-5 mb-1">
-                          Target Languages
-                        </label>
-
+                        <label for="targetLanguage" class="form-label required text-info fs-5 mb-1">Target Languages</label>
                         <${Show} when=${() => user?.()?.Role?.name === "admin"}>
                           <select
                             class="form-select form-select-sm w-auto mb-1"
@@ -435,9 +430,7 @@ export default function Page() {
                                 <${For} each=${col}>
                                   ${(option) => html`
                                     <div class="mb-1">
-                                      <div
-                                        class="form-check form-control-sm min-height-auto py-0 ms-1"
-                                      >
+                                      <div class="form-check form-control-sm min-height-auto py-0 ms-1">
                                         <input
                                           class="form-check-input cursor-pointer"
                                           type="checkbox"
@@ -467,82 +460,51 @@ export default function Page() {
 
                 <div class="d-flex-center gap-1 mt-2">
                   <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">Reset</button>
-                  <button
-                    class="btn btn-wide px-3 py-3 btn-wide-primary"
-                    id="translateButton"
-                    type="submit"
-                  >
-                    Generate
-                  </button>
+                  <button class="btn btn-wide px-3 py-3 btn-wide-primary" id="translateButton" type="submit">Generate</button>
                 </div>
               </div>
             </div>
 
             <div class="col-md-6 d-flex" style="margin-bottom: 66px !important;">
-              <div
-                class="d-flex flex-column bg-white shadow border rounded p-3 flex-fill h-100 card-lg"
-              >
+              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-fill h-100 card-lg">
                 <${Show}
                   when=${() => Object.keys(store.generatedDocuments).length > 0}
-                  fallback=${html`<div class="d-flex h-100 py-5">
-                    <div class="text-center py-5">
-                      <h1 class="text-info mb-3">Welcome to Document Translator</h1>
-                      <div>
-                        To get started, upload your source documents, select one or more target
-                        languages from the list, and click Generate to create translated versions.
+                  fallback=${html`
+                    <div class="d-flex h-100 py-5">
+                      <div class="text-center py-5">
+                        <h1 class="text-info mb-3">Welcome to Document Translator</h1>
+                        <div>
+                          To get started, upload your source documents, select one or more target languages from the list, and click
+                          Generate to create translated versions.
+                        </div>
                       </div>
                     </div>
-                  </div>`}
+                  `}
                 >
                   <div class="d-flex flex-column gap-2">
                     <div class="text-muted small fw-semibold">
-                      <${Show}
-                        when=${allJobsProcessed}
-                        fallback="We are generating your forms now. This may take a few moments."
-                      >
-                        <span>
-                          All processing is complete. The generated documents are available for
-                          download.
-                        </span>
+                      <${Show} when=${allJobsProcessed} fallback="We are generating your forms now. This may take a few moments.">
+                        <span>All processing is complete. The generated documents are available for download.</span>
                       <//>
                     </div>
 
                     <${For} each=${() => Object.keys(store.generatedDocuments)}>
                       ${(jobId) => {
                         const job = () => store.generatedDocuments[jobId];
-
                         return html`
-                          <div
-                            class="d-flex justify-content-between align-items-center p-2 border rounded"
-                          >
+                          <div class="d-flex justify-content-between align-items-center p-2 border rounded">
                             <div class="flex-grow-1">
-                              <div class="fw-medium">
-                                <span>${() => job().config?.displayInfo?.label || "Unknown"}</span>
-                              </div>
-                              <div class="small text-muted">
-                                ${() =>
-                                  job().config?.displayInfo?.filename || "translated_text.txt"}
-                              </div>
+                              <div class="fw-medium"><span>${() => job().config?.displayInfo?.label || "Unknown"}</span></div>
+                              <div class="small text-muted">${() => job().config?.displayInfo?.filename || "translated_text.txt"}</div>
                             </div>
                             <${Show} when=${() => job()?.status === "processing"}>
-                              <div
-                                class="spinner-border spinner-border-sm text-primary me-2"
-                                role="status"
-                              >
+                              <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
                                 <span class="visually-hidden">Processing...</span>
                               </div>
                             <//>
                             <${Show} when=${() => job()?.status === "completed"}>
-                              <button
-                                type="button"
-                                class="btn btn-outline-light"
-                                onClick=${() => downloadJob(jobId)}
-                              >
-                                <img
-                                  src="/assets/images/icon-download.svg"
-                                  height="16"
-                                  alt="Download"
-                                />
+                              <button type="button" class="btn btn-outline-light" onClick=${() => downloadJob(jobId)}>
+                                <img src="/assets/images/icon-download.svg" height="16" alt="Download" />
                               </button>
                             <//>
                             <${Show} when=${() => job()?.status === "error"}>
@@ -565,21 +527,10 @@ export default function Page() {
                   <${Show} when=${allJobsProcessed}>
                     <div class="h-100 d-flex flex-column justify-content-between">
                       <div class="text-end">
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-link fw-semibold p-0"
-                          onClick=${downloadAll}
-                        >
-                          Download All
-                        </button>
+                        <button type="button" class="btn btn-sm btn-link fw-semibold p-0" onClick=${downloadAll}>Download All</button>
                       </div>
                       <div class="mt-auto d-flex align-items-center">
-                        <img
-                          src="/assets/images/icon-star.svg"
-                          alt="Star"
-                          class="me-2"
-                          height="16"
-                        />
+                        <img src="/assets/images/icon-star.svg" alt="Star" class="me-2" height="16" />
                         <div>
                           <span class="me-1">We would love your feedback!</span>
                           <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a>
@@ -596,4 +547,6 @@ export default function Page() {
       </div>
     </div>
   `;
+  // #endregion
 }
+// #endregion
