@@ -19,16 +19,20 @@ const xmlBuilder = new XMLBuilder({
 });
 
 /**
- * Translate a DOCX file while preserving formatting
+ * Translate a DOCX file while preserving formatting using batch translation
  * @param {Buffer|Uint8Array|ArrayBuffer} docxBuffer - Input DOCX file
- * @param {Function} translateFn - Function(text) => translatedText
+ * @param {Function} translateBatchFn - Function(texts: string[], options) => Promise<string[]>
  * @param {Object} options - Optional settings
+ * @param {number} options.batchSize - Blocks per batch (default: 50)
  * @param {boolean} options.includeHeaders - Translate headers/footers (default: true)
  * @param {boolean} options.includeFootnotes - Translate footnotes/endnotes (default: true)
  * @param {boolean} options.includeComments - Translate comments (default: false)
+ * @param {string} options.formality - 'formal' | 'informal' | null
+ * @param {boolean} options.profanityMask - Replace profanity with "?$#@$"
+ * @param {boolean} options.brevity - Use concise translations
  * @returns {Promise<Uint8Array>} Translated DOCX file
  */
-export async function translateDocx(docxBuffer, translateFn, options = {}) {
+export async function translateDocx(docxBuffer, translateBatchFn, options = {}) {
   const {
     includeHeaders = true,
     includeFootnotes = true,
@@ -66,7 +70,7 @@ export async function translateDocx(docxBuffer, translateFn, options = {}) {
     const xmlText = await file.async('string');
     const doc = xmlParser.parse(xmlText);
 
-    await translateXmlDoc(doc, translateFn);
+    await translateXmlDocBatched(doc, translateBatchFn, options);
 
     const newXml = xmlBuilder.build(doc);
     zip.file(path, newXml);
@@ -77,27 +81,41 @@ export async function translateDocx(docxBuffer, translateFn, options = {}) {
 }
 
 /**
- * Translate text nodes in an XML document structure
+ * Translate text nodes in an XML document structure using batch processing
  * @param {Object} doc - Parsed XML document
- * @param {Function} translateFn - Async or sync function(text) => translatedText
+ * @param {Function} translateBatchFn - Function(texts: string[], options) => Promise<string[]>
+ * @param {Object} options - Translation options including batchSize
  */
-async function translateXmlDoc(doc, translateFn) {
+async function translateXmlDocBatched(doc, translateBatchFn, options) {
+  const { batchSize = 50 } = options;
+
   // Find all paragraphs (w:p) and table cells (w:tc) - these are our translation blocks
   const blocks = findBlocks(doc);
 
+  // Step 1: Collect all block data upfront
+  const blockData = [];
   for (const block of blocks) {
     const textNodes = collectTextNodes(block);
     if (textNodes.length === 0) continue;
 
-    // Concatenate all text from runs
-    const originalText = textNodes.map(n => n['#text'] || '').join('');
+    const originalText = textNodes.map((n) => n['#text'] || '').join('');
     if (!originalText.trim()) continue;
 
-    // Translate (supports both sync and async translate functions)
-    const translated = await translateFn(originalText);
+    blockData.push({ textNodes, originalText });
+  }
 
-    // Distribute translated text back to runs
-    distributeText(textNodes, translated);
+  // Step 2: Process in batches
+  for (let i = 0; i < blockData.length; i += batchSize) {
+    const batch = blockData.slice(i, i + batchSize);
+    const textsToTranslate = batch.map((b) => b.originalText);
+
+    // Call batch translation (returns array in same order)
+    const translations = await translateBatchFn(textsToTranslate, options);
+
+    // Step 3: Apply translations back to nodes
+    for (let j = 0; j < batch.length; j++) {
+      distributeText(batch[j].textNodes, translations[j]);
+    }
   }
 }
 
