@@ -6,6 +6,7 @@ import { createStore, reconcile } from "solid-js/store";
 import FileInput from "../../../components/file-input.js";
 import { useAuthContext } from "../../../contexts/auth-context.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
+import { translateDocx } from "../../../utils/docx.js";
 import { createTimestamp, downloadBlob } from "../../../utils/files.js";
 import { parseDocument } from "../../../utils/parsers.js";
 import { useSessionPersistence } from "../translate/hooks.js";
@@ -26,6 +27,28 @@ const MODELS = [
   { value: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5, label: "Model: Sonnet" },
   { value: MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_5, label: "Model: Opus" },
 ];
+
+const DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+/**
+ * Checks if a file is a DOCX based on mime type or extension
+ */
+function isDocxFile(contentType, filename) {
+  return contentType === DOCX_MIME_TYPE || filename?.toLowerCase().endsWith(".docx");
+}
+
+/**
+ * Converts a base64 data URL to an ArrayBuffer
+ */
+function base64ToArrayBuffer(dataUrl) {
+  const base64 = dataUrl.split(",")[1];
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
 
 const defaultStore = { id: null, generatedDocuments: {} };
 
@@ -149,30 +172,56 @@ export default function Page() {
     await saveSession();
 
     try {
-      let translated = "";
-      if (jobConfig.engine === "aws") {
-        translated = await translateRequest({
-          text: jobConfig.inputText,
-          content: jobConfig.content,
-          contentType: jobConfig.contentType,
-          sourceLanguage: jobConfig.sourceLanguage,
-          targetLanguage: jobConfig.languageCode,
-        });
-      } else {
-        translated = await modelTranslateRequest({
-          text: jobConfig.inputText,
-          sourceLanguage: jobConfig.sourceLanguage,
-          targetLanguage: jobConfig.languageCode,
-          model: jobConfig.engine,
-        });
-      }
-
       let blob;
-      if (translated.startsWith("data:")) {
-        const base64Response = await fetch(translated);
-        blob = await base64Response.blob();
+      const useDocxTranslation =
+        jobConfig.engine !== "aws" && isDocxFile(jobConfig.contentType, jobConfig.displayInfo?.filename);
+
+      if (useDocxTranslation) {
+        // DOCX + LLM: Use block-by-block translation preserving formatting
+        const docxBuffer = base64ToArrayBuffer(jobConfig.content);
+
+        const translateFn = async (text) => {
+          return await modelTranslateRequest({
+            text,
+            sourceLanguage: jobConfig.sourceLanguage,
+            targetLanguage: jobConfig.languageCode,
+            model: jobConfig.engine,
+          });
+        };
+
+        const translatedDocx = await translateDocx(docxBuffer, translateFn, {
+          includeHeaders: true,
+          includeFootnotes: true,
+          includeComments: false,
+        });
+
+        blob = new Blob([translatedDocx], { type: DOCX_MIME_TYPE });
       } else {
-        blob = new Blob([translated], { type: "text/plain" });
+        // Plain text or AWS Translate
+        let translated = "";
+        if (jobConfig.engine === "aws") {
+          translated = await translateRequest({
+            text: jobConfig.inputText,
+            content: jobConfig.content,
+            contentType: jobConfig.contentType,
+            sourceLanguage: jobConfig.sourceLanguage,
+            targetLanguage: jobConfig.languageCode,
+          });
+        } else {
+          translated = await modelTranslateRequest({
+            text: jobConfig.inputText,
+            sourceLanguage: jobConfig.sourceLanguage,
+            targetLanguage: jobConfig.languageCode,
+            model: jobConfig.engine,
+          });
+        }
+
+        if (translated.startsWith("data:")) {
+          const base64Response = await fetch(translated);
+          blob = await base64Response.blob();
+        } else {
+          blob = new Blob([translated], { type: "text/plain" });
+        }
       }
 
       setStore("generatedDocuments", jobId, {
