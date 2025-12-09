@@ -1,5 +1,6 @@
 import { createMemo, createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
+
 import { createStore, reconcile } from "solid-js/store";
 
 import FileInput from "../../../components/file-input.js";
@@ -13,11 +14,11 @@ import { useSessionPersistence } from "../translate/hooks.js";
 // #region Constants
 const AUTO_LANGUAGE = { value: "auto", label: "Auto" };
 const LANGUAGES = [
-  { value: "es-MX", label: "Spanish" },
+  { value: "am", label: "Amharic" },
   { value: "ar", label: "Arabic" },
   { value: "fr", label: "French" },
-  { value: "am", label: "Amharic" },
   { value: "pt", label: "Portuguese" },
+  { value: "es-MX", label: "Spanish (Mexican)" },
   { value: "vi", label: "Vietnamese" },
 ];
 const ROWS_PER_COLUMN = 4;
@@ -93,7 +94,8 @@ function buildTranslationPrompt(targetLang, sourceLang, options = {}) {
     "Leave untranslatable tokens unchanged (IDs, URLs, emails, placeholders).",
     "Preserve punctuation, whitespace, line breaks, capitalization, numerals exactly.",
     "Do not add, remove, or paraphrase content.",
-    isBatch && "Input: JSON array of strings. Output: JSON array of translated strings in EXACT same order. Return ONLY the JSON array, no explanation or markdown.",
+    isBatch &&
+      "Input: JSON array of strings. Output: JSON array of translated strings in EXACT same order. Return ONLY the JSON array, no explanation or markdown.",
     !isBatch && "Output ONLY the translated text (plain text), with no quotes or explanations.",
   ].filter(Boolean);
 
@@ -119,21 +121,32 @@ async function translateBatch(texts, engine, options) {
     const res = await fetch("/api/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: joined, sourceLanguage: sourceLang, targetLanguage: targetLang }),
+      body: JSON.stringify({
+        text: joined,
+        sourceLanguage: sourceLang,
+        targetLanguage: targetLang,
+      }),
     });
     if (!res.ok) throw new Error(`Translation request failed. (${res.status})`);
     const data = await res.json();
     if (typeof data !== "string") return texts.map(() => "");
     const results = data.split(BATCH_DELIMITER);
     if (results.length !== texts.length) {
-      console.warn(`AWS batch translation count mismatch: expected ${texts.length}, got ${results.length}`);
+      console.warn(
+        `AWS batch translation count mismatch: expected ${texts.length}, got ${results.length}`
+      );
     }
     return results;
   }
 
   // LLM engine
   const targetLabel = getLanguageLabel(targetLang);
-  const prompt = buildTranslationPrompt(targetLabel, sourceLang, { formality, profanityMask, brevity, isBatch: true });
+  const prompt = buildTranslationPrompt(targetLabel, sourceLang, {
+    formality,
+    profanityMask,
+    brevity,
+    isBatch: true,
+  });
   const output = await runModel({
     model: engine,
     messages: [{ role: "user", content: [{ text: JSON.stringify(texts) }] }],
@@ -262,18 +275,35 @@ export default function Page() {
   const allJobsProcessed = createMemo(() => {
     const jobs = store.generatedDocuments;
     const jobKeys = Object.keys(jobs);
-    return jobKeys.length === 0 || jobKeys.every((k) => ["completed", "error"].includes(jobs[k]?.status));
+    return (
+      jobKeys.length === 0 || jobKeys.every((k) => ["completed", "error"].includes(jobs[k]?.status))
+    );
   });
 
   async function processJob(jobId, jobConfig) {
-    setStore("generatedDocuments", jobId, { status: "processing", blob: null, error: null, config: jobConfig });
+    setStore("generatedDocuments", jobId, {
+      status: "processing",
+      blob: null,
+      error: null,
+      config: jobConfig,
+    });
     await saveSession();
 
     try {
       const blob = await translateDocument(jobConfig);
-      setStore("generatedDocuments", jobId, { status: "completed", blob, error: null, config: jobConfig });
+      setStore("generatedDocuments", jobId, {
+        status: "completed",
+        blob,
+        error: null,
+        config: jobConfig,
+      });
     } catch (error) {
-      setStore("generatedDocuments", jobId, { status: "error", blob: null, error: error?.message || "Translation error", config: jobConfig });
+      setStore("generatedDocuments", jobId, {
+        status: "error",
+        blob: null,
+        error: error?.message || "Translation error",
+        config: jobConfig,
+      });
     } finally {
       await saveSession();
     }
@@ -361,7 +391,9 @@ export default function Page() {
 
   function onTargetLanguageChange(e, option) {
     const checked = e?.target?.checked || false;
-    setTargetLanguages((prev) => (checked ? prev.concat([option.value]) : prev.filter((v) => v !== option.value)));
+    setTargetLanguages((prev) =>
+      checked ? prev.concat([option.value]) : prev.filter((v) => v !== option.value)
+    );
   }
 
   const languageColumns = () => {
@@ -377,13 +409,19 @@ export default function Page() {
   return html`
     <div class="bg-info-subtle h-100 position-relative">
       <div class="container py-3">
-        <form id="translateForm" onSubmit=${handleSubmit} onReset=${handleReset} class="container p-0">
+        <form
+          id="translateForm"
+          onSubmit=${handleSubmit}
+          onReset=${handleReset}
+          class="container p-0"
+        >
           <div class="row align-items-stretch mb-3 text-center">
             <div class="col">
               <div class="bg-white shadow border rounded p-3">
                 <h1 class="fw-bold fs-3 form-label mt-3 mb-2">Document Translator</h1>
                 <p class="mb-4 text-body-secondary">
-                  Easily translate your documents into multiple languages and generate accurate translations in seconds.
+                  Easily translate your documents into multiple languages and generate accurate
+                  translations in seconds.
                 </p>
               </div>
             </div>
@@ -395,7 +433,9 @@ export default function Page() {
                 <div class="bg-white shadow border rounded p-3 card-lg">
                   <div class="row">
                     <div class="col-sm-12 mb-2">
-                      <label for="inputText" class="form-label required text-info fs-5 mb-1">Source Documents</label>
+                      <label for="inputText" class="form-label required text-info fs-5 mb-1"
+                        >Source Documents</label
+                      >
                       <${FileInput}
                         id="fileInput"
                         value=${() => sourceFiles()}
@@ -408,7 +448,9 @@ export default function Page() {
 
                     <div class="col-sm-12 mb-4">
                       <div class="d-flex justify-content-start align-items-center flex-wrap gap-2">
-                        <label for="targetLanguage" class="form-label required text-info fs-5 mb-1">Target Languages</label>
+                        <label for="targetLanguage" class="form-label required text-info fs-5 mb-1"
+                          >Target Languages</label
+                        >
                         <${Show} when=${() => user?.()?.Role?.name === "admin"}>
                           <select
                             class="form-select form-select-sm w-auto mb-1"
@@ -430,7 +472,9 @@ export default function Page() {
                                 <${For} each=${col}>
                                   ${(option) => html`
                                     <div class="mb-1">
-                                      <div class="form-check form-control-sm min-height-auto py-0 ms-1">
+                                      <div
+                                        class="form-check form-control-sm min-height-auto py-0 ms-1"
+                                      >
                                         <input
                                           class="form-check-input cursor-pointer"
                                           type="checkbox"
@@ -439,7 +483,7 @@ export default function Page() {
                                           onChange=${(e) => onTargetLanguageChange(e, option)}
                                         />
                                         <label
-                                          class="form-check-label cursor-pointer"
+                                          class="form-check-label cursor-pointer text-nowrap"
                                           classList=${() => ({ "text-muted": option.disabled })}
                                           for=${() => option.value}
                                         >
@@ -460,13 +504,21 @@ export default function Page() {
 
                 <div class="d-flex-center gap-1 mt-2">
                   <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">Reset</button>
-                  <button class="btn btn-wide px-3 py-3 btn-wide-primary" id="translateButton" type="submit">Generate</button>
+                  <button
+                    class="btn btn-wide px-3 py-3 btn-wide-primary"
+                    id="translateButton"
+                    type="submit"
+                  >
+                    Generate
+                  </button>
                 </div>
               </div>
             </div>
 
             <div class="col-md-6 d-flex" style="margin-bottom: 66px !important;">
-              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-fill h-100 card-lg">
+              <div
+                class="d-flex flex-column bg-white shadow border rounded p-3 flex-fill h-100 card-lg"
+              >
                 <${Show}
                   when=${() => Object.keys(store.generatedDocuments).length > 0}
                   fallback=${html`
@@ -474,8 +526,8 @@ export default function Page() {
                       <div class="text-center py-5">
                         <h1 class="text-info mb-3">Welcome to Document Translator</h1>
                         <div>
-                          To get started, upload your source documents, select one or more target languages from the list, and click
-                          Generate to create translated versions.
+                          To get started, upload your source documents, select one or more target
+                          languages from the list, and click Generate to create translated versions.
                         </div>
                       </div>
                     </div>
@@ -483,8 +535,14 @@ export default function Page() {
                 >
                   <div class="d-flex flex-column gap-2">
                     <div class="text-muted small fw-semibold">
-                      <${Show} when=${allJobsProcessed} fallback="We are generating your forms now. This may take a few moments.">
-                        <span>All processing is complete. The generated documents are available for download.</span>
+                      <${Show}
+                        when=${allJobsProcessed}
+                        fallback="We are generating your forms now. This may take a few moments."
+                      >
+                        <span
+                          >All processing is complete. The generated documents are available for
+                          download.</span
+                        >
                       <//>
                     </div>
 
@@ -492,19 +550,37 @@ export default function Page() {
                       ${(jobId) => {
                         const job = () => store.generatedDocuments[jobId];
                         return html`
-                          <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                          <div
+                            class="d-flex justify-content-between align-items-center p-2 border rounded"
+                          >
                             <div class="flex-grow-1">
-                              <div class="fw-medium"><span>${() => job().config?.displayInfo?.label || "Unknown"}</span></div>
-                              <div class="small text-muted">${() => job().config?.displayInfo?.filename || "translated_text.txt"}</div>
+                              <div class="fw-medium">
+                                <span>${() => job().config?.displayInfo?.label || "Unknown"}</span>
+                              </div>
+                              <div class="small text-muted">
+                                ${() =>
+                                  job().config?.displayInfo?.filename || "translated_text.txt"}
+                              </div>
                             </div>
                             <${Show} when=${() => job()?.status === "processing"}>
-                              <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                              <div
+                                class="spinner-border spinner-border-sm text-primary me-2"
+                                role="status"
+                              >
                                 <span class="visually-hidden">Processing...</span>
                               </div>
                             <//>
                             <${Show} when=${() => job()?.status === "completed"}>
-                              <button type="button" class="btn btn-outline-light" onClick=${() => downloadJob(jobId)}>
-                                <img src="/assets/images/icon-download.svg" height="16" alt="Download" />
+                              <button
+                                type="button"
+                                class="btn btn-outline-light"
+                                onClick=${() => downloadJob(jobId)}
+                              >
+                                <img
+                                  src="/assets/images/icon-download.svg"
+                                  height="16"
+                                  alt="Download"
+                                />
                               </button>
                             <//>
                             <${Show} when=${() => job()?.status === "error"}>
@@ -527,10 +603,21 @@ export default function Page() {
                   <${Show} when=${allJobsProcessed}>
                     <div class="h-100 d-flex flex-column justify-content-between">
                       <div class="text-end">
-                        <button type="button" class="btn btn-sm btn-link fw-semibold p-0" onClick=${downloadAll}>Download All</button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-link fw-semibold p-0"
+                          onClick=${downloadAll}
+                        >
+                          Download All
+                        </button>
                       </div>
                       <div class="mt-auto d-flex align-items-center">
-                        <img src="/assets/images/icon-star.svg" alt="Star" class="me-2" height="16" />
+                        <img
+                          src="/assets/images/icon-star.svg"
+                          alt="Star"
+                          class="me-2"
+                          height="16"
+                        />
                         <div>
                           <span class="me-1">We would love your feedback!</span>
                           <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a>
