@@ -4,6 +4,7 @@ import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
 
 const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
+const ChatV2 = AuthorizedImport({ path: "./tools/chat-v2/index.js" });
 const ConsentCrafter = AuthorizedImport({ path: "./tools/consent-crafter/index.js" });
 const Translate = AuthorizedImport({ path: "./tools/translate/index.js" });
 const SemanticSearch = AuthorizedImport({ path: "./tools/semantic-search.js" });
@@ -44,6 +45,11 @@ export default function getRoutes() {
           path: "chat",
           title: "Chat",
           component: Chat,
+        },
+        {
+          path: "chat-v2",
+          title: "Chat v2",
+          component: ChatV2,
         },
         {
           path: "consent-crafter",
