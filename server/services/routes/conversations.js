@@ -44,8 +44,13 @@ api.get("/agents/:id", requireRole(), async (req, res) => {
 api.put("/agents/:id", requireRole(), async (req, res) => {
   try {
     const userId = req.session.user.id;
+    // Check if agent exists and is global (userId is null)
+    const existingAgent = await conversationService.getAgent(userId, req.params.id);
+    if (!existingAgent) return res.status(404).json({ error: "Agent not found" });
+    if (existingAgent.userId === null) {
+      return res.status(403).json({ error: "Cannot modify global agent" });
+    }
     const agent = await conversationService.updateAgent(userId, req.params.id, req.body);
-    if (!agent) return res.status(404).json({ error: "Agent not found" });
     res.json(agent);
   } catch (error) {
     console.error("Error updating agent:", error);
