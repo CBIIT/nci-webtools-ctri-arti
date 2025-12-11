@@ -39,5 +39,5 @@ const syncOptions = DB_DIALECT === "sqlite" ? { force: false } : { alter: true }
 await db.sync(syncOptions);
 await seedDatabase(models);
 
-export const { User, Role, Provider, Model, Usage } = models;
+export const { User, Role, Provider, Model, Usage, Prompt, Agent, Thread, Message, Resource, Vector } = models;
 export default db;
