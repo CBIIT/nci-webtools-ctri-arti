@@ -5,7 +5,7 @@ import mock from "./providers/mock.js";
 
 export async function getModelProvider(value) {
   const providers = { bedrock, gemini, mock };
-  const model = await Model.findOne({ where: { value }, include: Provider });
+  const model = await Model.findOne({ where: { internalName: value }, include: Provider });
   const provider = new providers[model?.Provider?.name]();
   return { model, provider };
 }
