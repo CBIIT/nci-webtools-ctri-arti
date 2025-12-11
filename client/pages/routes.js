@@ -50,6 +50,7 @@ export default function getRoutes() {
           path: "chat-v2",
           title: "Chat v2",
           component: ChatV2,
+          hidden: true,
         },
         {
           path: "consent-crafter",
