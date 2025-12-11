@@ -584,8 +584,8 @@ export async function seedDatabase(models) {
   await models.Model.bulkCreate(seedData.models, {
     updateOnDuplicate: [
       "providerId",
-      "label",
-      "value",
+      "name",
+      "internalName",
       "cost1kInput",
       "cost1kOutput",
       "cost1kCacheRead",

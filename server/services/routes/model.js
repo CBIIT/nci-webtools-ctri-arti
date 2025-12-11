@@ -53,7 +53,7 @@ async function trackModelUsage(userId, modelValue, ip, usageData) {
     if (!userId || !usageData || !modelValue) return;
 
     // Get model info
-    const model = await Model.findOne({ where: { value: modelValue } });
+    const model = await Model.findOne({ where: { internalName: modelValue } });
     if (!model) return;
 
     // Calculate token usage and cost
@@ -91,7 +91,7 @@ async function trackModelUsage(userId, modelValue, ip, usageData) {
 
 api.get("/model/list", requireRole(), async (req, res) => {
   const results = await Model.findAll({
-    attributes: ["label", "value", "maxContext", "maxOutput", "maxReasoning"],
+    attributes: ["name", "internalName", "maxContext", "maxOutput", "maxReasoning"],
     where: { providerId: 1 },
   });
   res.json(results);
