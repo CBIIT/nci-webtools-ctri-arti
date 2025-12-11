@@ -6,6 +6,8 @@ import { openDB } from "idb";
 import { For, createEffect, createResource, Suspense, Show } from "solid-js";
 import { createStore, produce, unwrap } from "solid-js/store";
 import html from "solid-js/html";
+import { Pencil, Trash2, Paperclip, Lightbulb } from "lucide-solid";
+
 import { tools as toolSpecs, systemPrompt } from "../chat/config.js";
 
 // Lazy DB initialization (singleton pattern for router compatibility)
@@ -232,7 +234,7 @@ function ChatApp(props) {
               for="userFiles"
               class="btn btn-sm btn-secondary">
               <span class="visually-hidden">Attach Files</span>
-              <i class="bi bi-paperclip"></i>
+              <${Paperclip} size="14" /> 
             </label>
 
             <div class="form-check form-switch form-control-sm">
@@ -247,7 +249,7 @@ function ChatApp(props) {
                 class="form-check-label"
                 for="reasoningMode">
                 <span class="visually-hidden">Reasoning Mode</span>
-                <i class="bi bi-lightbulb-fill text-secondary"></i>
+                <${Lightbulb} size="14" />
               </label>
             </div>
           </div>
