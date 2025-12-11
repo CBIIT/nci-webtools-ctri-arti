@@ -8,13 +8,22 @@ import { createStore, produce, unwrap } from "solid-js/store";
 import html from "solid-js/html";
 import { Pencil, Trash2, Paperclip, Lightbulb } from "lucide-solid";
 
-import { tools as toolSpecs, systemPrompt } from "../chat/config.js";
+import { tools as toolSpecs } from "../chat/config.js";
 
-// Lazy DB initialization (singleton pattern for router compatibility)
-let dbPromise = null;
-async function getDB() {
-  if (!dbPromise) {
-    dbPromise = openDB("chat-v2-messages", 1, {
+// =================================================================================
+// DATABASE ADAPTER INTERFACE
+// =================================================================================
+
+/**
+ * IndexedDB adapter - stores data locally in the browser
+ */
+class IndexedDBAdapter {
+  constructor(db) {
+    this.db = db;
+  }
+
+  static async create() {
+    const db = await openDB("chat-v2-messages", 1, {
       upgrade(db) {
         const tables = {};
         const tableNames = ["agents", "threads", "messages", "resources"];
@@ -25,7 +34,6 @@ async function getDB() {
             tables[tableName] = store;
           }
         }
-
         tables.messages.createIndex("agentId", "agentId");
         tables.messages.createIndex("threadId", "threadId");
         tables.threads.createIndex("agentId", "agentId");
@@ -35,29 +43,211 @@ async function getDB() {
       },
     });
 
-    // Create default agent if none exists
-    const db = await dbPromise;
-    if (!(await db.count("agents"))) {
-      await db.add("agents", {
+    const adapter = new IndexedDBAdapter(db);
+    await adapter.ensureDefaultAgent();
+    return adapter;
+  }
+
+  async ensureDefaultAgent() {
+    if (!(await this.db.count("agents"))) {
+      await this.db.add("agents", {
         name: "Ada",
         tools: ["search", "browse", "code", "editor", "think"],
+        systemPrompt: "You are Ada, a helpful research assistant. The current date is {{time}}. Your memory: {{memory}}",
         resources: [],
       });
     }
   }
-  return dbPromise;
+
+  // Agents
+  async getAgent(id) {
+    return this.db.get("agents", id);
+  }
+
+  async getAgents() {
+    return this.db.getAll("agents");
+  }
+
+  async createAgent(data) {
+    const id = await this.db.add("agents", data);
+    return { ...data, id };
+  }
+
+  async updateAgent(id, data) {
+    const existing = await this.db.get("agents", id);
+    if (!existing) return null;
+    const updated = { ...existing, ...data, id };
+    await this.db.put("agents", updated);
+    return updated;
+  }
+
+  // Threads
+  async getThread(id) {
+    return this.db.get("threads", id);
+  }
+
+  async getThreads(agentId = null) {
+    if (agentId) {
+      return this.db.getAllFromIndex("threads", "agentId", agentId);
+    }
+    return this.db.getAll("threads");
+  }
+
+  async createThread(data) {
+    const id = await this.db.add("threads", data);
+    return { ...data, id };
+  }
+
+  async updateThread(id, data) {
+    const existing = await this.db.get("threads", id);
+    if (!existing) return null;
+    const updated = { ...existing, ...data, id };
+    await this.db.put("threads", updated);
+    return updated;
+  }
+
+  async deleteThread(id) {
+    // Delete all messages in thread first
+    const messages = await this.db.getAllFromIndex("messages", "threadId", id);
+    for (const msg of messages) {
+      await this.db.delete("messages", msg.id);
+    }
+    await this.db.delete("threads", id);
+  }
+
+  // Messages
+  async getMessages(threadId) {
+    return this.db.getAllFromIndex("messages", "threadId", threadId);
+  }
+
+  async addMessage(threadId, data) {
+    const message = { ...data, threadId };
+    const id = await this.db.add("messages", message);
+    return { ...message, id };
+  }
 }
 
-async function upsert(db, table, obj, key = "id") {
-  const existing = await db.get(table, obj[key]);
-  if (existing) {
-    const updated = { ...existing, ...obj };
-    await db.put(table, updated);
-    return updated;
-  } else {
-    const id = await db.add(table, obj);
-    return { ...obj, [key]: id };
+/**
+ * Server API adapter - stores data on the backend
+ */
+class ServerAdapter {
+  constructor(baseUrl = "/api") {
+    this.baseUrl = baseUrl;
   }
+
+  static async create(baseUrl) {
+    return new ServerAdapter(baseUrl);
+  }
+
+  async #fetch(path, options = {}) {
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      headers: { "Content-Type": "application/json", ...options.headers },
+      ...options,
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(error.error || `API error: ${res.status}`);
+    }
+    return res.json();
+  }
+
+  // Agents
+  async getAgent(id) {
+    return this.#fetch(`/agents/${id}`);
+  }
+
+  async getAgents() {
+    return this.#fetch("/agents");
+  }
+
+  async createAgent(data) {
+    return this.#fetch("/agents", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAgent(id, data) {
+    return this.#fetch(`/agents/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Threads
+  async getThread(id) {
+    return this.#fetch(`/threads/${id}`);
+  }
+
+  async getThreads(agentId = null) {
+    const result = await this.#fetch("/threads");
+    const threads = result.data || result;
+    if (agentId) {
+      return threads.filter(t => t.agentId === agentId);
+    }
+    return threads;
+  }
+
+  async createThread(data) {
+    return this.#fetch("/threads", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateThread(id, data) {
+    return this.#fetch(`/threads/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteThread(id) {
+    return this.#fetch(`/threads/${id}`, { method: "DELETE" });
+  }
+
+  // Messages
+  async getMessages(threadId) {
+    return this.#fetch(`/threads/${threadId}/messages`);
+  }
+
+  async addMessage(threadId, data) {
+    return this.#fetch(`/threads/${threadId}/messages`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+}
+
+/**
+ * Factory function to create database adapter
+ * @param {string} type - "server" (default) or "indexeddb"
+ * @returns {Promise<IndexedDBAdapter|ServerAdapter>}
+ */
+async function createDB(type = "server") {
+  if (type === "indexeddb") {
+    return IndexedDBAdapter.create();
+  }
+
+  // Try server first, fall back to indexeddb on error
+  try {
+    const adapter = await ServerAdapter.create();
+    // Verify server is accessible by fetching agents
+    await adapter.getAgents();
+    return adapter;
+  } catch (error) {
+    console.warn("Server adapter failed, falling back to IndexedDB:", error.message);
+    return IndexedDBAdapter.create();
+  }
+}
+
+// Singleton for router compatibility
+let dbPromise = null;
+async function getDB(type = "server") {
+  if (!dbPromise) {
+    dbPromise = createDB(type);
+  }
+  return dbPromise;
 }
 
 // =================================================================================
@@ -149,7 +339,10 @@ function setSearchParams(obj) {
 // =================================================================================
 
 export default function Page() {
-  const [db] = createResource(getDB);
+  // Support ?db=indexeddb to force local storage, default to server with fallback
+  const searchParams = new URLSearchParams(window.location.search);
+  const dbType = searchParams.get("db") || "server";
+  const [db] = createResource(() => getDB(dbType));
 
   return html`
     <${Suspense} fallback=${html`<div class="container my-5"><p>Loading...</p></div>`}>
@@ -288,6 +481,7 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
   const [agent, setAgent] = createStore({
     id: null,
     name: null,
+    systemPrompt: null, // From server or null for client-side default
     thread: {
       id: null,
       name: null,
@@ -299,12 +493,12 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     messages: [],
   });
 
-  // Load history from IndexedDB
+  // Load history from database adapter
   createEffect(async () => {
     if (!params.threadId) return;
-    const history = await db.getAllFromIndex("messages", "threadId", params.threadId);
+    const history = await db.getMessages(params.threadId);
     if (!history?.length) return;
-    const thread = await db.get("threads", params.threadId);
+    const thread = await db.getThread(params.threadId);
     const name = thread?.name || "Untitled";
     const messages = history.map(({ role, content }) => ({ role, content }));
     setAgent({ messages, thread: { name } });
@@ -313,14 +507,12 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
   // Save changes when store updates
   createEffect(async () => {
     if (!params.agentId || !agent.id) return;
-    await upsert(db, "agents", {
-      id: params.agentId,
+    await db.updateAgent(params.agentId, {
       name: agent.name,
       tools: agent.tools.map(t => t.toolSpec.name),
     });
     if (!params.threadId || !agent.thread.id) return;
-    await upsert(db, "threads", {
-      id: params.threadId,
+    await db.updateThread(params.threadId, {
       agentId: params.agentId,
       name: agent.thread.name,
     });
@@ -331,12 +523,11 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
 
     if (!params.threadId) {
       setAgent("thread", "name", "Untitled");
-      const thread = { agentId, name: agent.thread.name };
-      const threadId = await db.add("threads", thread);
-      setParams("threadId", threadId);
+      const thread = await db.createThread({ agentId, name: agent.thread.name });
+      setParams("threadId", thread.id);
     }
 
-    const record = await db.get("agents", +params.agentId);
+    const record = await db.getAgent(+params.agentId);
     const agentTools = tools.filter(t => record.tools.includes(t.toolSpec.name));
 
     const content = await getMessageContent(text, files);
@@ -348,6 +539,7 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
       modelId,
       reasoningMode,
       name: record.name,
+      systemPrompt: record.systemPrompt || null, // From server or null for fallback
       tools: agentTools,
       messages: agent.messages.concat([userMessage]),
     });
@@ -356,8 +548,7 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     for (const message of messages) {
       const messageRecord = unwrap(message);
       messageRecord.agentId = params.agentId;
-      messageRecord.threadId = params.threadId;
-      await db.add("messages", messageRecord);
+      await db.addMessage(params.threadId, messageRecord);
     }
     setAgent("loading", false);
   }
@@ -413,15 +604,22 @@ async function sendToModel(config) {
     .map(f => `<file name="${f.file}">${f.contents}</file>`)
     .join("\n");
 
-  const system = systemPrompt({
-    time: new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }),
-    main: memoryContent,
+  const time = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
+
+  // Require systemPrompt from server/database
+  if (!config.systemPrompt) {
+    throw new Error("Agent systemPrompt is required. Ensure agent has a valid prompt configured.");
+  }
+
+  // Replace placeholders in server-provided prompt
+  const system = config.systemPrompt
+    .replace(/\{\{time\}\}/g, time)
+    .replace(/\{\{memory\}\}/g, memoryContent);
 
   const tools = config.tools.map(({ toolSpec }) => ({ toolSpec })).filter(Boolean);
   const thoughtBudget = config.reasoningMode ? 32000 : 0;
