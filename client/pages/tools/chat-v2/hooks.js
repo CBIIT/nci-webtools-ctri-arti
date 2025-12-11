@@ -733,7 +733,7 @@ async function getToolResult(toolUse, tools, store, setStore) {
   let { toolUseId, name, input } = toolUse;
   try {
     const result = await tools?.[name]?.(input, store, setStore);
-    const content = [{ json: { result } }];
+    const content = [{ json: { results: result } }];
     return { toolResult: { toolUseId, content } };
   } catch (error) {
     console.error("Tool error:", error);
