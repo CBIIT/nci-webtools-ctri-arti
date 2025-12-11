@@ -173,7 +173,7 @@ api.get("/admin/users/:id/usage", requireRole("admin"), async (req, res) => {
       userId,
       createdAt: { [Op.between]: [startDate, endDate] },
     },
-    include: [{ model: Model, attributes: ["id", "label"] }],
+    include: [{ model: Model, attributes: ["id", "name"] }],
     order: [["createdAt", "DESC"]],
     limit,
     offset,
@@ -184,7 +184,7 @@ api.get("/admin/users/:id/usage", requireRole("admin"), async (req, res) => {
       id: usage.id,
       userId: usage.userId,
       modelId: usage.modelId,
-      modelName: usage.Model?.label,
+      modelName: usage.Model?.name,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
       cost: usage.cost,
@@ -230,7 +230,7 @@ api.get("/admin/usage", requireRole("admin"), async (req, res) => {
   const { count, rows } = await Usage.findAndCountAll({
     where,
     include: [
-      { model: Model, attributes: ["id", "label"] },
+      { model: Model, attributes: ["id", "name"] },
       {
         model: User,
         attributes: ["id", "email", "firstName", "lastName", "limit", "remaining"],
@@ -247,7 +247,7 @@ api.get("/admin/usage", requireRole("admin"), async (req, res) => {
       id: usage.id,
       userId: usage.userId,
       modelId: usage.modelId,
-      modelName: usage.Model?.label,
+      modelName: usage.Model?.name,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
       cost: usage.cost,
@@ -466,8 +466,8 @@ api.get("/admin/analytics", requireRole("admin"), async (req, res) => {
         [fn("SUM", col("outputTokens")), "totalOutputTokens"],
         [fn("COUNT", col("*")), "totalRequests"],
       ],
-      include: [{ model: Model, attributes: ["label"] }],
-      group: ["modelId", "Model.id", "Model.label"],
+      include: [{ model: Model, attributes: ["name"] }],
+      group: ["modelId", "Model.id", "Model.name"],
       order: [[fn("SUM", col("cost")), "DESC"]],
     });
     return res.json({ data, meta: { groupBy } });

@@ -289,7 +289,7 @@ function UserUsage() {
                       (modelAnalytics()?.data || []).map(
                         (model) => html`
                           <tr>
-                            <td>${model.Model?.label || "Unknown"}</td>
+                            <td>${model.Model?.name || "Unknown"}</td>
                             <td class="text-end">${formatNumber(model.totalRequests)}</td>
                             <td class="text-end">
                               ${formatNumber(
