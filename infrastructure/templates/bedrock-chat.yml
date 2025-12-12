@@ -1,0 +1,367 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Self-contained Bedrock Chat Lambda with streaming response'
+
+Parameters:
+  FunctionName:
+    Type: String
+    Default: bedrock-chat
+  DefaultModelId:
+    Type: String
+    Default: us.anthropic.claude-haiku-4-5-20251001-v1:0
+  MemorySize:
+    Type: Number
+    Default: 512
+  Timeout:
+    Type: Number
+    Default: 900
+  PermissionsBoundary:
+    Type: String
+    Default: PermissionBoundary_PowerUser
+    Description: Name of the permissions boundary policy (leave empty to skip)
+
+Conditions:
+  HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'power-user-${FunctionName}-role'
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${PermissionsBoundary}', !Ref 'AWS::NoValue']
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+
+  ChatFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Runtime: nodejs24.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: !Ref MemorySize
+      Timeout: !Ref Timeout
+      Environment:
+        Variables:
+          DEFAULT_MODEL_ID: !Ref DefaultModelId
+          NODE_OPTIONS: --experimental-detect-module
+      Code:
+        ZipFile: |
+          import { BedrockRuntimeClient, ConverseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
+
+          const client = new BedrockRuntimeClient();
+
+          // ============================================================================
+          // HTML Content - Single Page Chat Application
+          // ============================================================================
+          const HTML_CONTENT = `<!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Chat</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css">
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1/font/bootstrap-icons.min.css">
+            <style>
+              :root {
+                --bs-light-rgb: 250, 249, 245;
+                --bs-secondary-bg-subtle: #f0eee6;
+                --bs-border-radius: 0.75rem;
+              }
+              .text-pre { white-space: pre-wrap !important; }
+            </style>
+            <script type="importmap">
+              {
+                "imports": {
+                  "@streamparser/json": "https://cdn.jsdelivr.net/npm/@streamparser/json@0.0.21/+esm",
+                  "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1/dist/solid.min.js",
+                  "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1/html/dist/html.min.js",
+                  "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1/store/dist/store.min.js",
+                  "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1/web/dist/web.min.js"
+                }
+              }
+            </script>
+          </head>
+          <body class="vh-100 bg-light">
+            <div id="app"></div>
+            <script type="module">
+              import { JSONParser } from "@streamparser/json";
+              import { render } from "solid-js/web";
+              import { For } from "solid-js";
+              import { createStore, produce } from "solid-js/store";
+              import html from "solid-js/html";
+
+              // Parse JSON incrementally (handles partial/streaming JSON)
+              function parseJSON(str) {
+                let result = {};
+                const parser = new JSONParser();
+                parser.onValue = ({ value, key, parent }) => {
+                  if (parent) parent[key] = value;
+                  else result = value;
+                };
+                try { parser.write(str); } catch {}
+                return result;
+              }
+
+              // Convert file to Bedrock content block format
+              async function getContentBlock(file) {
+                const docTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
+                const imgTypes = ["png", "jpg", "jpeg", "gif", "webp"];
+                const ext = file.name.split(".").pop().toLowerCase();
+                const format = ext === "jpeg" ? "jpg" : ext;
+                const type = imgTypes.includes(format) ? "image" : docTypes.includes(format) ? "document" : null;
+                if (!type) return null;
+                const bytes = new Uint8Array(await file.arrayBuffer());
+                const base64 = btoa(String.fromCharCode(...bytes));
+                const name = file.name.replace(/[^A-Z0-9 _-]/gi, "_");
+                return { [type]: { format, name, source: { bytes: base64 } } };
+              }
+
+              // Parse NDJSON stream from server
+              async function* parseStream(body) {
+                const reader = body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  buffer += decoder.decode(value, { stream: true });
+                  const lines = buffer.split("\\n");
+                  buffer = lines.pop() || "";
+                  for (const line of lines) {
+                    if (line.trim()) yield JSON.parse(line);
+                  }
+                }
+                if (buffer.trim()) yield JSON.parse(buffer);
+              }
+
+              // Main App Component
+              function App() {
+                const [store, setStore] = createStore({ messages: [], loading: false });
+
+                async function handleSubmit(event) {
+                  event.preventDefault();
+                  const text = event.target.msg.value.trim();
+                  const files = Array.from(event.target.files?.files || []);
+                  if ((!text && !files.length) || store.loading) return;
+
+                  event.target.msg.value = "";
+                  if (event.target.files) event.target.files.value = "";
+                  setStore("loading", true);
+
+                  // Build user message content
+                  const content = [];
+                  for (const file of files) {
+                    const block = await getContentBlock(file);
+                    if (block) content.push(block);
+                  }
+                  if (text) content.push({ text });
+
+                  // Add user message to store
+                  setStore("messages", store.messages.length, { role: "user", content });
+
+                  // Run agent loop
+                  let done = false;
+                  while (!done) {
+                    const response = await fetch("/chat", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ messages: store.messages })
+                    });
+
+                    if (!response.ok) {
+                      alert(await response.text());
+                      break;
+                    }
+
+                    const messageIndex = store.messages.length;
+                    setStore("messages", messageIndex, { role: "assistant", content: [] });
+
+                    // Process streaming response
+                    for await (const event of parseStream(response.body)) {
+                      setStore(produce(state => {
+                        const message = state.messages[messageIndex];
+                        if (event.contentBlockDelta?.delta) {
+                          const { contentBlockIndex, delta } = event.contentBlockDelta;
+                          message.content[contentBlockIndex] = message.content[contentBlockIndex] || {};
+                          if (delta.text) {
+                            message.content[contentBlockIndex].text =
+                              (message.content[contentBlockIndex].text || "") + delta.text;
+                          }
+                        }
+                      }));
+
+                      if (event.messageStop?.stopReason === "end_turn") {
+                        done = true;
+                      }
+                    }
+                  }
+                  setStore("loading", false);
+                }
+
+                function handleKeyDown(event) {
+                  if (event.key === "Enter" && !event.shiftKey && !store.loading) {
+                    event.preventDefault();
+                    event.target.closest("form").requestSubmit();
+                  }
+                }
+
+                return html\`
+                  <div class="container my-5">
+                    <\${For} each=\${() => store.messages}>
+                      \${message => html\`
+                        <\${For} each=\${() => message.content}>
+                          \${content => content.text ? html\`
+                            <div class=\${"small rounded p-2 mb-3 text-pre " +
+                              (message.role === "user" ? "bg-secondary-subtle d-inline-block" : "")}>
+                              \${() => content.text}
+                            </div>
+                          \` : ""}
+                        <//>
+                      \`}
+                    <//>
+
+                    <form onSubmit=\${handleSubmit} class="shadow-sm bg-white border rounded">
+                      <textarea
+                        name="msg"
+                        class="form-control form-control-sm p-2 border-0 shadow-none"
+                        rows="3"
+                        placeholder="Message"
+                        onKeyDown=\${handleKeyDown}>
+                      </textarea>
+                      <div class="d-flex justify-content-between p-2">
+                        <div>
+                          <input type="file" name="files" id="files" class="visually-hidden" multiple/>
+                          <label for="files" class="btn btn-sm btn-secondary">
+                            <i class="bi bi-paperclip"></i>
+                          </label>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-dark" disabled=\${() => store.loading}>
+                          Send
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                \`;
+              }
+
+              render(App, document.getElementById("app"));
+            </script>
+          </body>
+          </html>`;
+
+          // ============================================================================
+          // Lambda Handler
+          // ============================================================================
+          export const handler = awslambda.streamifyResponse(async (event, responseStream) => {
+            const { rawPath, requestContext, body } = event;
+            const method = requestContext?.http?.method;
+
+            // GET / - Serve HTML page
+            if (method === "GET" && (rawPath === "/" || !rawPath)) {
+              responseStream = awslambda.HttpResponseStream.from(responseStream, {
+                statusCode: 200,
+                headers: { "Content-Type": "text/html" }
+              });
+              responseStream.write(HTML_CONTENT);
+              responseStream.end();
+              return;
+            }
+
+            // POST /chat - Stream Bedrock response
+            if (method === "POST" && rawPath === "/chat") {
+              try {
+                const payload = JSON.parse(body || "{}");
+
+                const input = {
+                  modelId: process.env.DEFAULT_MODEL_ID,
+                  messages: payload.messages.map(msg => ({
+                    role: msg.role,
+                    content: msg.content.map(block => {
+                      // Convert base64 strings back to Buffer for images
+                      if (block.image?.source?.bytes && typeof block.image.source.bytes === "string") {
+                        return {
+                          image: {
+                            ...block.image,
+                            source: { bytes: Buffer.from(block.image.source.bytes, "base64") }
+                          }
+                        };
+                      }
+                      // Convert base64 strings back to Buffer for documents
+                      if (block.document?.source?.bytes && typeof block.document.source.bytes === "string") {
+                        return {
+                          document: {
+                            ...block.document,
+                            source: { bytes: Buffer.from(block.document.source.bytes, "base64") }
+                          }
+                        };
+                      }
+                      return block;
+                    })
+                  })),
+                  system: [{ text: "You are helpful and concise." }]
+                };
+
+                responseStream = awslambda.HttpResponseStream.from(responseStream, {
+                  statusCode: 200,
+                  headers: { "Content-Type": "application/x-ndjson" }
+                });
+
+                const response = await client.send(new ConverseStreamCommand(input));
+                for await (const event of response.stream) {
+                  responseStream.write(JSON.stringify(event) + "\n");
+                }
+                responseStream.end();
+
+              } catch (error) {
+                console.error("Chat error:", error);
+                responseStream = awslambda.HttpResponseStream.from(responseStream, {
+                  statusCode: 500,
+                  headers: { "Content-Type": "application/json" }
+                });
+                responseStream.write(JSON.stringify({ error: error.message }));
+                responseStream.end();
+              }
+              return;
+            }
+
+            // 404 Not Found
+            responseStream = awslambda.HttpResponseStream.from(responseStream, {
+              statusCode: 404,
+              headers: { "Content-Type": "text/plain" }
+            });
+            responseStream.write("Not Found");
+            responseStream.end();
+          });
+
+  FunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      TargetFunctionArn: !GetAtt ChatFunction.Arn
+      InvokeMode: RESPONSE_STREAM
+      Cors:
+        AllowOrigins: ['*']
+        AllowMethods: [GET, POST]
+        AllowHeaders: [content-type]
+
+  FunctionUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ChatFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: '*'
+      FunctionUrlAuthType: NONE
+
+Outputs:
+  FunctionUrl:
+    Value: !GetAtt FunctionUrl.FunctionUrl
+  FunctionArn:
+    Value: !GetAtt ChatFunction.Arn
