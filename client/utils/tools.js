@@ -7,7 +7,7 @@ import { jsonToXml } from "./xml.js";
  * @param {any} tools - The tools object with tool names as keys and functions as values.
  * @returns {Promise<any>} - The tool output
  */
-export async function runTool(toolUse, tools = { search, browse, code, editor, think }) {
+export async function runTool(toolUse, tools = { search, browse, code, editor, think, data }) {
   let { toolUseId, name, input } = toolUse;
   try {
     const results = await tools?.[name]?.(input);
@@ -144,6 +144,43 @@ export async function think({ thought }) {
     insert_line: 0,
     new_str: thought,
   });
+}
+
+/**
+ * Accesses data files from S3 buckets
+ * @param {object} params
+ * @param {string} params.bucket - The S3 bucket name to access
+ * @param {string} [params.key] - The file path to fetch. Omit to list all files.
+ * @returns {Promise<any>} - File list (array) or file contents
+ */
+export async function data({ bucket, key }) {
+  const params = new URLSearchParams({ bucket });
+  if (key) params.set("key", key);
+
+  const response = await fetch("/api/data?" + params);
+
+  if (!response.ok) {
+    throw new Error(`Failed to access data: ${response.status} ${response.statusText}`);
+  }
+
+  // If listing files (no key or directory)
+  if (!key || key.endsWith("/")) {
+    return await response.json();
+  }
+
+  // If fetching file content
+  const text = await response.text();
+
+  // Try to parse as JSON if applicable
+  if (key.endsWith(".json")) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  }
+
+  return text;
 }
 
 /**
@@ -465,7 +502,7 @@ function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)") {
 }
 
 // Export tools object for backward compatibility
-export const TOOLS = { search, browse, code, editor, think };
+export const TOOLS = { search, browse, code, editor, think, data };
 
 export function getSearchResults(results) {
   return [...(results?.web || []), ...(results?.news || [])];
