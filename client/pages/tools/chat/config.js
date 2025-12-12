@@ -148,6 +148,30 @@ export const tools = [
       },
     },
   },
+  {
+    toolSpec: {
+      name: "data",
+      description:
+        "Access data files from S3 buckets. List available files by omitting the key parameter, or fetch specific file contents for analysis. Supports CSV, JSON, text, and other file formats.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            bucket: {
+              type: "string",
+              description: "The S3 bucket name to access.",
+            },
+            key: {
+              type: "string",
+              description:
+                "The file path to fetch. Omit to list all available files.",
+            },
+          },
+          required: ["bucket"],
+        },
+      },
+    },
+  },
 ];
 
 export function systemPrompt(context) {
