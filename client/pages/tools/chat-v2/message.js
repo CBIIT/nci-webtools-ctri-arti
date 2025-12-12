@@ -10,6 +10,7 @@ import { X } from "lucide-solid";
 
 import BrowseTool from "../../../components/chat-tools/browse-tool.js";
 import CodeTool from "../../../components/chat-tools/code-tool.js";
+import DataTool from "../../../components/chat-tools/data-tool.js";
 import EditorTool from "../../../components/chat-tools/editor-tool.js";
 import ReasoningTool from "../../../components/chat-tools/reasoning-tool.js";
 import SearchTool from "../../../components/chat-tools/search-tool.js";
@@ -19,6 +20,7 @@ const TOOL_COMPONENTS = {
   search: SearchTool,
   browse: BrowseTool,
   code: CodeTool,
+  data: DataTool,
   editor: EditorTool,
   think: ReasoningTool,
 };
