@@ -76,6 +76,14 @@ function ChatApp(props) {
     generateThreadTitle,
   } = useAgent(urlParams, props.db);
 
+  // Fetch available agents for the dropdown
+  const fetchAgents = async () => {
+    const response = await fetch("/api/agents");
+    if (!response.ok) return [];
+    return response.json();
+  };
+  const [agents] = createResource(fetchAgents);
+
   // UI State (from V1)
   const [toggles, setToggles] = createSignal({ conversations: true });
   const [isAtBottom, setIsAtBottom] = createSignal(true);
@@ -360,22 +368,18 @@ function ChatApp(props) {
                     New Chat
                   </a>
                   <ul class="dropdown-menu top-100 start-0">
-                    <li>
-                      <a
-                        title="General chat"
-                        class="dropdown-item text-decoration-none small fw-normal"
-                        href="/tools/chat-v2?agentId=1"
-                        target="_self"
-                      >Standard Chat</a>
-                    </li>
-                    <li>
-                      <a
-                        title="FedPulse - Search U.S. federal websites"
-                        class="dropdown-item text-decoration-none small fw-normal"
-                        href="/tools/chat-v2?agentId=2"
-                        target="_self"
-                      >FedPulse</a>
-                    </li>
+                    <${For} each=${() => agents() || []}>
+                      ${(agentItem) => html`
+                        <li>
+                          <a
+                            title=${() => agentItem.name}
+                            class="dropdown-item text-decoration-none small fw-normal"
+                            href=${() => `/tools/chat-v2?agentId=${agentItem.id}`}
+                            target="_self"
+                          >${() => agentItem.name}</a>
+                        </li>
+                      `}
+                    <//>
                   </ul>
                 <//>
               <//>

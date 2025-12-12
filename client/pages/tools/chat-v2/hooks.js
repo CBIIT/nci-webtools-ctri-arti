@@ -273,6 +273,10 @@ export const TOOLS = [
     fn: think,
     toolSpec: toolSpecs.find((t) => t.toolSpec.name === "think")?.toolSpec,
   },
+  {
+    fn: data,
+    toolSpec: toolSpecs.find((t) => t.toolSpec.name === "data")?.toolSpec,
+  },
 ].filter((t) => t.toolSpec);
 
 // =================================================================================
@@ -999,6 +1003,37 @@ function think({ thought }) {
     new_str: thought,
   });
   return "Thinking complete.";
+}
+
+// Data tool - access S3 bucket files
+async function data({ bucket, key }) {
+  const params = new URLSearchParams({ bucket });
+  if (key) params.set("key", key);
+
+  const response = await fetch("/api/data?" + params);
+
+  if (!response.ok) {
+    throw new Error(`Failed to access data: ${response.status} ${response.statusText}`);
+  }
+
+  // If listing files (no key or directory)
+  if (!key || key.endsWith("/")) {
+    return await response.json();
+  }
+
+  // If fetching file content
+  const text = await response.text();
+
+  // Try to parse as JSON if applicable
+  if (key.endsWith(".json")) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  }
+
+  return text;
 }
 
 // =================================================================================
