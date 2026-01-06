@@ -172,6 +172,39 @@ export const tools = [
       },
     },
   },
+  {
+    toolSpec: {
+      name: "docxTemplate",
+      description:
+        "Process DOCX templates. Without data: returns template variables as {name: type}. With data: generates document and returns HTML preview. Use this to discover template variables before generating documents. If no variables found with default delimiters, try specifying different delimiters.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            docxUrl: {
+              type: "string",
+              description:
+                "URL to the DOCX template. Supports s3://bucket/key or https:// URLs.",
+            },
+            data: {
+              type: "object",
+              description:
+                "Optional data object to populate the template. Keys must match template variables. String variables expect string values, array variables expect arrays of objects.",
+            },
+            startDelimiter: {
+              type: "string",
+              description: "Opening delimiter for template commands (default: '{{').",
+            },
+            endDelimiter: {
+              type: "string",
+              description: "Closing delimiter for template commands (default: '}}').",
+            },
+          },
+          required: ["docxUrl"],
+        },
+      },
+    },
+  },
 ];
 
 export function systemPrompt(context) {
