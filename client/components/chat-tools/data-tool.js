@@ -1,9 +1,10 @@
 import { For, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { Database } from "lucide-solid";
+import { Database, Download } from "lucide-solid";
 
 import { getToolResult } from "../../utils/tools.js";
+import Tooltip from "../tooltip.js";
 
 import ToolHeader from "./tool-header.js";
 
@@ -49,6 +50,18 @@ export default function DataTool(props) {
     return "loaded";
   };
 
+  const downloadUrl = () => {
+    const { bucket, key } = input();
+    if (!bucket || !key || key.endsWith("/")) return null;
+    return `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`;
+  };
+
+  const filename = () => {
+    const key = input().key;
+    if (!key) return "file";
+    return key.split("/").pop() || "file";
+  };
+
   const contentPreview = () => {
     const r = result();
     if (typeof r === "string") return r.slice(0, 5000);
@@ -63,7 +76,28 @@ export default function DataTool(props) {
     ${ToolHeader({
       icon: html`<${Database} size="16" class="text-muted-contrast" />`,
       title,
-      right: () => html`<small class="text-muted-contrast">${rightText}</small>`,
+      right: html`
+        <div class="d-flex align-items-center gap-2">
+          <${Show} when=${downloadUrl}>
+            <${Tooltip}
+              title="Download file"
+              placement="top"
+              arrow=${true}
+              class="text-white bg-primary"
+            >
+              <a
+                href=${downloadUrl}
+                download=${filename}
+                class="btn btn-unstyled tool-btn-icon text-muted-contrast"
+                title="Download"
+              >
+                <${Download} size="16" />
+              </a>
+            <//>
+          <//>
+          <small class="text-muted-contrast">${rightText}</small>
+        </div>
+      `,
       isOpen: props.isOpen,
       onToggle: props.onToggle,
       bodyId: props.bodyId,

@@ -41,9 +41,9 @@ export default function EditorTool(props) {
   >
     ${ToolHeader({
       icon: html`<${File} size="16" class="text-muted-contrast" />`,
-      title: html` ${title()}
+      title: html` ${title}
         <small class="text-muted-contrast ms-2 text-truncate d-none d-sm-inline">
-          File: ${getFilename() || "untitled"}
+          File: ${() => getFilename() || "untitled"}
         </small>`,
       right: html`
         <div class="btn-group btn-group-sm" role="group">
