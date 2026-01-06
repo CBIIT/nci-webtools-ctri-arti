@@ -261,3 +261,158 @@ export function safeParseJson(unsafeJson, fallback = {}) {
     return fallback;
   }
 }
+
+
+/**
+ * Parse streaming or incomplete JSON strings into JavaScript objects.
+ * @param {string} input
+ * @returns {any}
+ */
+export function parseJSON(input) {
+  if (typeof input !== "string") {
+    return input;
+  }
+  const jsonString = input.trim();
+  if (jsonString === "") {
+    return null;
+  }
+  let index = 0;
+  const LITERALS = {
+    true: true,
+    false: false,
+    null: null,
+    NaN: NaN,
+    Infinity: Infinity,
+    "-Infinity": -Infinity,
+  };
+  function skipWhitespace() {
+    while (index < jsonString.length && " \n\r\t".includes(jsonString[index])) {
+      index++;
+    }
+  }
+  function parseValue() {
+    skipWhitespace();
+    if (index >= jsonString.length) {
+      throw new Error("Unexpected end of input");
+    }
+    const char = jsonString[index];
+    if (char === "{") return parseObject();
+    if (char === "[") return parseArray();
+    if (char === '"') return parseString();
+    const remainingText = jsonString.substring(index);
+    for (const [key, value] of Object.entries(LITERALS)) {
+      if (jsonString.startsWith(key, index)) {
+        const endPos = index + key.length;
+        if (endPos === jsonString.length || ",]} \n\r\t".includes(jsonString[endPos])) {
+          index = endPos;
+          return value;
+        }
+      }
+      if (key.startsWith(remainingText)) {
+        index = jsonString.length;
+        return value;
+      }
+    }
+    if (char === "-" || (char >= "0" && char <= "9")) {
+      return parseNumber();
+    }
+    throw new Error(`Unexpected token '${char}' at position ${index} `);
+  }
+  function parseArray() {
+    index++;
+    const arr = [];
+    while (index < jsonString.length && jsonString[index] !== "]") {
+      try {
+        arr.push(parseValue());
+        skipWhitespace();
+        if (jsonString[index] === ",") {
+          index++;
+        } else if (jsonString[index] !== "]") {
+          break;
+        }
+      } catch (e) {
+        return arr;
+      }
+    }
+    if (index < jsonString.length && jsonString[index] === "]") {
+      index++;
+    }
+    return arr;
+  }
+  function parseObject() {
+    index++; // Skip '{'
+    const obj = {};
+    while (index < jsonString.length && jsonString[index] !== "}") {
+      try {
+        skipWhitespace();
+        if (jsonString[index] !== '"') break;
+        const key = parseString();
+        skipWhitespace();
+        if (index >= jsonString.length || jsonString[index] !== ":") break;
+        index++;
+        obj[key] = parseValue();
+        skipWhitespace();
+        if (jsonString[index] === ",") {
+          index++;
+        } else if (jsonString[index] !== "}") {
+          break;
+        }
+      } catch (e) {
+        return obj;
+      }
+    }
+    if (index < jsonString.length && jsonString[index] === "}") {
+      index++; // Skip '}'
+    }
+    return obj;
+  }
+  function parseString() {
+    if (jsonString[index] !== '"') {
+      throw new Error("Expected '\"' to start a string");
+    }
+    const startIndex = index;
+    index++; // Skip opening quote
+    let escape = false;
+    while (index < jsonString.length) {
+      if (jsonString[index] === '"' && !escape) {
+        const fullString = jsonString.substring(startIndex, ++index);
+        return JSON.parse(fullString);
+      }
+      escape = jsonString[index] === "\\" ? !escape : false;
+      index++;
+    }
+    const partialStr = jsonString.substring(startIndex);
+    try {
+      return JSON.parse(partialStr + '"');
+    } catch (e) {
+      const lastBackslash = partialStr.lastIndexOf("\\");
+      if (lastBackslash > 0) {
+        return JSON.parse(partialStr.substring(0, lastBackslash) + '"');
+      }
+      return partialStr.substring(1);
+    }
+  }
+  function parseNumber() {
+    const startIndex = index;
+    const numberChars = "0123456789eE.+-";
+    while (index < jsonString.length && numberChars.includes(jsonString[index])) {
+      index++;
+    }
+    const numStr = jsonString.substring(startIndex, index);
+    if (!numStr) throw new Error("Empty number literal");
+    try {
+      return parseFloat(numStr);
+    } catch (e) {
+      if (numStr.length > 1) {
+        return parseFloat(numStr.slice(0, -1));
+      }
+      throw e;
+    }
+  }
+  const result = parseValue();
+  skipWhitespace();
+  if (index < jsonString.length) {
+    console.warn(`Extra data found at position ${index}: "${jsonString.substring(index)}"`);
+  }
+  return result;
+}
