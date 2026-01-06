@@ -101,6 +101,7 @@ export class EcsServiceStack extends Stack {
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonRDSDataFullAccess"));
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("SecretsManagerReadWrite"));
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("TranslateFullAccess"));
+    taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonS3FullAccess"));
 
     const logGroup = new logs.LogGroup(this, "log-group", {
       logGroupName: prefix,
