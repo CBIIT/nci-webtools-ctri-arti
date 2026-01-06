@@ -4,6 +4,7 @@ import { QueryTypes } from "sequelize";
 import db from "../database.js";
 import { sendFeedback } from "../email.js";
 import { proxyMiddleware, requireRole } from "../middleware.js";
+import { parseDocument } from "../parsers.js";
 import { textract } from "../textract.js";
 import { getLanguages, translate } from "../translate.js";
 import { search } from "../utils.js";
@@ -46,8 +47,20 @@ api.post("/feedback", requireRole(), async (req, res) => {
   return res.json(results);
 });
 
+function getMimeTypeFromKey(key) {
+  const ext = key.split('.').pop()?.toLowerCase();
+  const mimeTypes = {
+    'pdf': 'application/pdf',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'txt': 'text/plain',
+    'json': 'application/json',
+    'csv': 'text/csv'
+  };
+  return mimeTypes[ext] || 'application/octet-stream';
+}
+
 api.get("/data", requireRole(), async (req, res) => {
-  const { bucket, key } = req.query;
+  const { bucket, key, raw } = req.query;
   if (!S3_BUCKETS?.split(',').includes(bucket)) {
     return res.status(400).json({ error: "Invalid bucket" });
   }
@@ -57,6 +70,32 @@ api.get("/data", requireRole(), async (req, res) => {
     return res.json(files);
   } else {
     const data = await getFile(bucket, key);
+    const contentType = data.ContentType || getMimeTypeFromKey(key);
+
+    // Return raw binary content if raw=true is requested
+    if (raw === "true") {
+      res.setHeader("Content-Type", contentType);
+      return data.Body.pipe(res);
+    }
+
+    // Parse document types that need text extraction
+    const documentTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ];
+
+    if (documentTypes.includes(contentType)) {
+      const chunks = [];
+      for await (const chunk of data.Body) {
+        chunks.push(chunk);
+      }
+      const buffer = Buffer.concat(chunks);
+      const text = await parseDocument(buffer, contentType);
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      return res.send(text);
+    }
+
+    // For other files, pipe raw content
     return data.Body.pipe(res);
   }
 });
