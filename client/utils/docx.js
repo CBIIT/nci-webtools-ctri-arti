@@ -213,3 +213,94 @@ function distributeText(textNodes, translated) {
     }
   }
 }
+
+/**
+ * Replace text strings in a DOCX document
+ * @param {Buffer|Uint8Array|ArrayBuffer} docxBuffer - Input DOCX file
+ * @param {Object} replacements - Map of {"original text": "replacement text"}
+ * @param {Object} options - Optional settings
+ * @param {boolean} options.includeHeaders - Process headers/footers (default: true)
+ * @param {boolean} options.includeFootnotes - Process footnotes/endnotes (default: true)
+ * @returns {Promise<Uint8Array>} Modified DOCX file
+ */
+export async function docxReplace(docxBuffer, replacements, options = {}) {
+  const {
+    includeHeaders = true,
+    includeFootnotes = true,
+  } = options;
+
+  // Load the DOCX file
+  const zip = await JSZip.loadAsync(docxBuffer);
+
+  // Collect XML parts to process
+  const parts = ['word/document.xml'];
+
+  if (includeHeaders) {
+    zip.forEach((path) => {
+      if (/^word\/(header|footer)\d+\.xml$/.test(path)) {
+        parts.push(path);
+      }
+    });
+  }
+
+  if (includeFootnotes) {
+    if (zip.file('word/footnotes.xml')) parts.push('word/footnotes.xml');
+    if (zip.file('word/endnotes.xml')) parts.push('word/endnotes.xml');
+  }
+
+  // Process each part
+  for (const path of parts) {
+    const file = zip.file(path);
+    if (!file) continue;
+
+    const xmlText = await file.async('string');
+    const doc = xmlParser.parse(xmlText);
+
+    replaceXmlDocText(doc, replacements);
+
+    const newXml = xmlBuilder.build(doc);
+    zip.file(path, newXml);
+  }
+
+  // Return the modified DOCX
+  return await zip.generateAsync({ type: 'uint8array' });
+}
+
+/**
+ * Replace text in all blocks of an XML document
+ * @param {Object} doc - Parsed XML document
+ * @param {Object} replacements - Map of {"original text": "replacement text"}
+ */
+function replaceXmlDocText(doc, replacements) {
+  const blocks = findBlocks(doc);
+
+  for (const block of blocks) {
+    const textNodes = collectTextNodes(block);
+    if (textNodes.length === 0) continue;
+
+    const originalText = textNodes.map((n) => n['#text'] || '').join('');
+    if (!originalText) continue;
+
+    // Apply all replacements
+    const replacedText = replaceAllText(originalText, replacements);
+
+    // Only redistribute if text actually changed
+    if (replacedText !== originalText) {
+      distributeText(textNodes, replacedText);
+    }
+  }
+}
+
+/**
+ * Apply multiple string replacements to text
+ * @param {string} text - Original text
+ * @param {Object} replacements - Map of {"find": "replace"}
+ * @returns {string} Text with all replacements applied
+ */
+function replaceAllText(text, replacements) {
+  let result = text;
+  for (const [find, replace] of Object.entries(replacements)) {
+    result = result.split(find).join(replace);
+  }
+  return result;
+}
