@@ -6,7 +6,7 @@ import { openDB } from "idb";
 import { createEffect } from "solid-js";
 import { createStore, produce, unwrap } from "solid-js/store";
 import mammoth from "mammoth";
-import { docxReplace } from "/utils/docx.js";
+import { docxReplace, docxExtractText } from "/utils/docx.js";
 
 import { tools as toolSpecs, systemPrompt as defaultSystemPrompt } from "../chat/config.js";
 
@@ -1064,8 +1064,8 @@ async function docxTemplate({ docxUrl, replacements }) {
 
   // 2. Discovery mode: return document text content
   if (!replacements) {
-    const result = await mammoth.extractRawText({ arrayBuffer: templateBuffer });
-    return { text: result.value };
+    const text = await docxExtractText(templateBuffer);
+    return { text, templateDownloadUrl: docxUrl };
   }
 
   // 3. Replace mode: apply replacements and return HTML preview
