@@ -15,7 +15,7 @@ import { alerts, clearAlert } from "../../../utils/alerts.js";
 import { createTimestamp, downloadBlob } from "../../../utils/files.js";
 import { parseDocument } from "../../../utils/parsers.js";
 
-import { getPrompt, getTemplateConfigsByCategory, templateConfigs } from "./config.js";
+import { getPrompt, getTemplateConfigsByCategory, KEY_GROUPS, templateConfigs } from "./config.js";
 
 // ============= Database Layer =============
 async function getDatabase(userEmail = "anonymous") {
@@ -36,6 +36,414 @@ async function getDatabase(userEmail = "anonymous") {
   });
 }
 
+// ============= Chunked Extraction Functions =============
+
+/**
+ * Split document text into overlapping chunks
+ * @param {string} text - Full document text
+ * @param {number} chunkSize - Target chunk size in characters
+ * @param {number} overlap - Overlap between chunks in characters
+ * @returns {Array<{index: number, text: string, startChar: number, endChar: number}>}
+ */
+function chunkDocument(text, chunkSize = 10000, overlap = 1000) {
+  const chunks = [];
+  const step = chunkSize - overlap;
+  for (let i = 0; i < text.length; i += step) {
+    const endChar = Math.min(i + chunkSize, text.length);
+    chunks.push({
+      index: chunks.length,
+      text: text.slice(i, endChar),
+      startChar: i,
+      endChar,
+    });
+    if (endChar >= text.length) break;
+  }
+  return chunks;
+}
+
+/**
+ * Create key groups with their partial schemas
+ * @param {Object} schema - Full JSON schema
+ * @param {string[][]} keyGroups - Pre-defined key groups from config
+ * @returns {Array<{index: number, keys: string[], schema: Object}>}
+ */
+function createKeyGroupsWithSchema(schema, keyGroups) {
+  return keyGroups.map((keys, index) => {
+    const partialSchema = {
+      type: "object",
+      properties: {},
+    };
+    for (const key of keys) {
+      if (schema.properties?.[key]) {
+        partialSchema.properties[key] = schema.properties[key];
+      }
+    }
+    return { index, keys, schema: partialSchema };
+  });
+}
+
+/**
+ * Build the cache-primed system prompt
+ * @param {Object} chunk - Document chunk
+ * @param {Object|null} procedureLibrary - Procedure library JSON (null for non-NIH-CC templates)
+ * @param {number} totalChunks - Total number of chunks
+ * @returns {string}
+ */
+function buildCacheableSystemPrompt(chunk, procedureLibrary, totalChunks) {
+  let prompt = `## ROLE
+You are a compassionate patient educator at the National Institutes of Health who specializes in identifying key information in research protocols and simplifying information so that patients can understand it.
+
+## LANGUAGE GUIDELINES
+- Target Flesch Reading Ease > 80, Flesch-Kincaid Grade Level < 7.0
+- Use simple words (fewer than 3 syllables when possible), active voice, second person ("you")
+- Keep sentences under 15 words when possible
+- Define technical terms immediately after using them
+- Avoid jargon, acronyms (spell out on first use), and complex medical terminology
+`;
+
+  // Only include procedure library if provided (NIH-CC templates only)
+  if (procedureLibrary) {
+    prompt += `
+## PROCEDURE LIBRARY
+Use standardized text from this library when procedures match. Fill in study-specific variables as needed.
+<procedure_library>
+${JSON.stringify(procedureLibrary, null, 2)}
+</procedure_library>
+`;
+  }
+
+  prompt += `
+## DOCUMENT CHUNK (${chunk.index + 1} of ${totalChunks})
+Character range: ${chunk.startChar}-${chunk.endChar}
+<document_chunk>
+${chunk.text}
+</document_chunk>
+
+You have read the document chunk above. Wait for extraction instructions from the user.`;
+
+  return prompt;
+}
+
+/**
+ * Build extraction prompt for specific key group
+ * @param {Object} keyGroup - The key group with schema
+ * @returns {string}
+ */
+function buildExtractionPrompt(keyGroup) {
+  return `## EXTRACTION TASK
+
+Extract ONLY the following ${keyGroup.keys.length} fields from the document chunk provided in the system prompt above.
+
+### TARGET FIELDS:
+${keyGroup.keys.map((key, i) => `${i + 1}. ${key}`).join("\n")}
+
+### SCHEMA FOR THESE FIELDS:
+\`\`\`json
+${JSON.stringify(keyGroup.schema, null, 2)}
+\`\`\`
+
+### OUTPUT FORMAT:
+Return a JSON object. For EACH field, provide:
+
+\`\`\`json
+{
+  "field_name": {
+    "value": "<extracted value matching schema type - string or array>",
+    "exact_quote": "<verbatim quote from document that supports this extraction>",
+    "confidence": <0-10 integer>
+  }
+}
+\`\`\`
+
+### CONFIDENCE GUIDELINES:
+- 10: Direct quote or explicit statement found in document chunk
+- 7-9: Strongly implied or clearly derivable from the text
+- 4-6: Reasonably inferred but not explicitly stated
+- 1-3: Weak evidence or only partial information found
+- 0: No relevant information found in this chunk (use empty string "" or empty array [])
+
+### RULES:
+1. ONLY extract information found in the document chunk provided
+2. If information is NOT found in this chunk, return confidence 0 with empty value
+3. For array fields, extract all relevant items found in this chunk
+4. The exact_quote MUST be verbatim text from the document chunk
+5. Follow all formatting guidelines from the schema descriptions
+6. Use simple, patient-friendly language following the guidelines above
+
+Return ONLY valid JSON, no explanation or preamble.
+
+BEGIN EXTRACTION:`;
+}
+
+/**
+ * Prime the cache by sending a minimal request with the system prompt
+ * @param {string} systemPrompt - The cacheable system prompt
+ * @param {string} model - Model ID
+ * @param {Function} runModelFn - The runModel function
+ * @returns {Promise<boolean>}
+ */
+async function primeCacheForChunk(systemPrompt, model, runModelFn) {
+  const primingParams = {
+    model,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            text: "Acknowledge you have read the document chunk and procedure library. Reply with only: READY",
+          },
+        ],
+      },
+    ],
+    system: systemPrompt,
+    thoughtBudget: 0,
+    stream: false,
+  };
+
+  try {
+    const response = await runModelFn(primingParams);
+    return response?.includes("READY");
+  } catch (error) {
+    console.error("Cache priming failed:", error);
+    return false;
+  }
+}
+
+/**
+ * Run a single extraction task
+ * @param {Object} keyGroup - The key group with schema
+ * @param {string} systemPrompt - Pre-built system prompt
+ * @param {string} model - Model ID
+ * @param {Function} runModelFn - The runModel function
+ * @param {number} chunkIndex - Index of the document chunk
+ * @returns {Promise<Array>} Extracted candidates
+ */
+async function runExtractionTask(keyGroup, systemPrompt, model, runModelFn, chunkIndex) {
+  const extractionPrompt = buildExtractionPrompt(keyGroup);
+
+  const params = {
+    model,
+    messages: [
+      {
+        role: "user",
+        content: [{ text: extractionPrompt }],
+      },
+    ],
+    system: systemPrompt,
+    thoughtBudget: 8000,
+    stream: false,
+  };
+
+  const response = await runModelFn(params);
+
+  // Parse JSON from response
+  const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) || response.match(/\{[\s\S]*\}/);
+  const jsonStr = jsonMatch?.[1] || jsonMatch?.[0] || "{}";
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch {
+    console.error("Failed to parse extraction response:", jsonStr.substring(0, 200));
+    parsed = {};
+  }
+
+  // Convert to candidates array
+  const candidates = [];
+  for (const key of keyGroup.keys) {
+    const extraction = parsed[key] || {};
+    candidates.push({
+      key,
+      value: extraction.value ?? (keyGroup.schema.properties?.[key]?.type === "array" ? [] : ""),
+      exact_quote: extraction.exact_quote || "",
+      confidence: typeof extraction.confidence === "number" ? extraction.confidence : 0,
+      chunkIndex,
+      keyGroupIndex: keyGroup.index,
+    });
+  }
+
+  return candidates;
+}
+
+/**
+ * Check if a value is non-empty
+ */
+function hasValue(v) {
+  if (v === null || v === undefined) return false;
+  if (typeof v === "string") return v.trim().length > 0;
+  if (Array.isArray(v)) return v.length > 0;
+  return true;
+}
+
+/**
+ * Merge candidates for a single key by highest confidence
+ * @param {Array} candidates - All candidates for one key
+ * @param {string} fieldType - 'array' or 'string'
+ * @returns {*} Merged value
+ */
+function mergeCandidates(candidates, fieldType) {
+  if (!candidates || candidates.length === 0) {
+    return fieldType === "array" ? [] : "";
+  }
+
+  // Filter out zero-confidence candidates with empty values
+  const validCandidates = candidates.filter((c) => c.confidence > 0 || hasValue(c.value));
+
+  if (validCandidates.length === 0) {
+    return fieldType === "array" ? [] : "";
+  }
+
+  if (fieldType === "array") {
+    // For arrays: collect unique elements from high-confidence candidates
+    const elementMap = new Map();
+
+    for (const candidate of validCandidates) {
+      const elements = Array.isArray(candidate.value) ? candidate.value : [candidate.value];
+      for (const element of elements) {
+        if (!hasValue(element)) continue;
+        const key = typeof element === "string" ? element : JSON.stringify(element);
+        const existing = elementMap.get(key);
+        if (!existing || candidate.confidence > existing.maxConfidence) {
+          elementMap.set(key, { value: element, maxConfidence: candidate.confidence });
+        }
+      }
+    }
+
+    // Return elements with confidence >= 3, sorted by confidence
+    return Array.from(elementMap.values())
+      .filter((e) => e.maxConfidence >= 3)
+      .sort((a, b) => b.maxConfidence - a.maxConfidence)
+      .map((e) => e.value);
+  } else {
+    // For strings: take highest confidence candidate
+    const best = validCandidates.reduce((a, b) => (a.confidence > b.confidence ? a : b));
+    return best.value;
+  }
+}
+
+/**
+ * Merge all extraction candidates into final result
+ * @param {Map} allCandidates - All candidates by key
+ * @param {Object} schema - Original schema
+ * @returns {Object} Final merged JSON object
+ */
+function mergeAllExtractions(allCandidates, schema) {
+  const result = {};
+  const properties = schema.properties || {};
+
+  for (const [key, prop] of Object.entries(properties)) {
+    const candidates = allCandidates.get(key) || [];
+    const fieldType = prop.type === "array" ? "array" : "string";
+    result[key] = mergeCandidates(candidates, fieldType);
+  }
+
+  return result;
+}
+
+/**
+ * Main chunked extraction orchestration (fully parallel)
+ * @param {string} inputText - Full document text
+ * @param {Object} schema - JSON schema
+ * @param {Object|null} procedureLibrary - Procedure library (null for non-NIH-CC templates)
+ * @param {string} model - Model ID
+ * @param {Function} runModelFn - The runModel function
+ * @param {Function} onProgress - Progress callback
+ * @returns {Promise<Object>} Extracted and merged data
+ */
+async function runChunkedExtraction(inputText, schema, procedureLibrary, model, runModelFn, onProgress) {
+  const chunks = chunkDocument(inputText);
+  const keyGroups = createKeyGroupsWithSchema(schema, KEY_GROUPS);
+  const allCandidates = new Map();
+  const totalChunks = chunks.length;
+  const totalTasks = chunks.length * keyGroups.length;
+  let failedTasks = 0;
+
+  // Build all system prompts upfront
+  const chunkPrompts = chunks.map((chunk) => ({
+    chunk,
+    systemPrompt: buildCacheableSystemPrompt(chunk, procedureLibrary, totalChunks),
+  }));
+
+  // PHASE 1: Prime ALL caches in parallel
+  onProgress?.({
+    status: "priming",
+    currentChunk: 0,
+    totalChunks,
+    completedTasks: 0,
+    totalTasks,
+    failedTasks: 0,
+  });
+
+  await Promise.all(
+    chunkPrompts.map(({ systemPrompt }) => primeCacheForChunk(systemPrompt, model, runModelFn))
+  );
+
+  // PHASE 2: Run ALL extractions in parallel (chunks × keyGroups)
+  onProgress?.({
+    status: "extracting",
+    currentChunk: 0,
+    totalChunks,
+    completedTasks: 0,
+    totalTasks,
+    failedTasks: 0,
+  });
+
+  const allTasks = [];
+  for (const { chunk, systemPrompt } of chunkPrompts) {
+    for (const keyGroup of keyGroups) {
+      allTasks.push(
+        runExtractionTask(keyGroup, systemPrompt, model, runModelFn, chunk.index).catch((error) => {
+          console.error(`Extraction failed for chunk ${chunk.index}, group ${keyGroup.index}:`, error);
+          failedTasks++;
+          // Return empty candidates on failure
+          return keyGroup.keys.map((key) => ({
+            key,
+            value: keyGroup.schema.properties?.[key]?.type === "array" ? [] : "",
+            exact_quote: "",
+            confidence: 0,
+            chunkIndex: chunk.index,
+            keyGroupIndex: keyGroup.index,
+            error: error.message,
+          }));
+        })
+      );
+    }
+  }
+
+  const results = await Promise.all(allTasks);
+
+  // Collect all candidates
+  for (const candidates of results) {
+    for (const c of candidates) {
+      if (!allCandidates.has(c.key)) allCandidates.set(c.key, []);
+      allCandidates.get(c.key).push(c);
+    }
+  }
+
+  // PHASE 3: Merge all candidates
+  onProgress?.({
+    status: "merging",
+    currentChunk: totalChunks,
+    totalChunks,
+    completedTasks: totalTasks,
+    totalTasks,
+    failedTasks,
+  });
+
+  const mergedData = mergeAllExtractions(allCandidates, schema);
+
+  onProgress?.({
+    status: "completed",
+    currentChunk: totalChunks,
+    totalChunks,
+    completedTasks: totalTasks,
+    totalTasks,
+    failedTasks,
+  });
+
+  return mergedData;
+}
+
 // ============= Main Component =============
 export default function Page() {
   let db = null;
@@ -53,7 +461,7 @@ export default function Page() {
     selectedTemplates: [],
 
     // Advanced options
-    model: MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_5,
+    model: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5,
     advancedOptionsOpen: false,
     templateSourceType: "predefined",
     selectedPredefinedTemplate: "",
@@ -69,6 +477,16 @@ export default function Page() {
 
     // Template cache - fetched templates stored as Files
     templateCache: {},
+
+    // Chunked extraction progress tracking
+    extractionProgress: {
+      status: "idle", // 'idle' | 'priming' | 'extracting' | 'merging' | 'completed' | 'error'
+      currentChunk: 0,
+      totalChunks: 0,
+      completedTasks: 0,
+      totalTasks: 0,
+      failedTasks: 0,
+    },
 
     // Timestamps
     createdAt: Date.now(),
@@ -197,6 +615,9 @@ export default function Page() {
 
   // ============= Job Processing =============
 
+  // Threshold for using chunked extraction (15K characters)
+  const CHUNKED_EXTRACTION_THRESHOLD = 15000;
+
   async function processJob(jobId, jobConfig) {
     // 1. Set job status to processing
     setStore("generatedDocuments", jobId, {
@@ -206,33 +627,78 @@ export default function Page() {
       config: jobConfig,
     });
 
+    // Reset extraction progress
+    setStore("extractionProgress", {
+      status: "idle",
+      currentChunk: 0,
+      totalChunks: 0,
+      completedTasks: 0,
+      totalTasks: 0,
+      failedTasks: 0,
+    });
+
     await saveSession();
 
     try {
-      // 2. AI extraction
-      const systemPrompt =
-        "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
+      let data;
 
-      const params = {
-        model: jobConfig.model,
-        messages: [
-          {
-            role: "user",
-            content: [{ text: jobConfig.prompt.replace("{{document}}", "see above") }],
-          },
-        ],
-        system: systemPrompt.replace("{{document}}", jobConfig.inputText),
-        thoughtBudget: 24_000,
-        stream: false,
-      };
+      // Determine if chunked extraction is needed based on document size
+      const useChunkedExtraction = jobConfig.inputText.length > CHUNKED_EXTRACTION_THRESHOLD;
 
-      const output = await runModel(params);
-      const jsonOutput =
-        output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] ||
-        output.match(/{\s*[\s\S]*?}/)?.[0] ||
-        "{}";
+      if (useChunkedExtraction) {
+        // Get template config to determine schema and procedure library URLs
+        const templateConfig = jobConfig.templateId ? templateConfigs[jobConfig.templateId] : null;
 
-      const data = yaml.parse(jsonOutput);
+        if (!templateConfig?.schemaUrl) {
+          throw new Error(`No schema URL found for template: ${jobConfig.templateId}`);
+        }
+
+        // Load schema and procedure library based on template config
+        const [schema, procedureLibrary] = await Promise.all([
+          fetch(templateConfig.schemaUrl).then((r) => r.json()),
+          templateConfig.procedureLibraryUrl
+            ? fetch(templateConfig.procedureLibraryUrl).then((r) => r.json())
+            : null,
+        ]);
+
+        // Run chunked extraction with progress tracking
+        data = await runChunkedExtraction(
+          jobConfig.inputText,
+          schema,
+          procedureLibrary, // null for templates without procedure library
+          jobConfig.model,
+          runModel,
+          (progress) => {
+            setStore("extractionProgress", progress);
+            saveSession();
+          }
+        );
+      } else {
+        // Use existing single-call approach for smaller documents
+        const systemPrompt =
+          "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
+
+        const params = {
+          model: jobConfig.model,
+          messages: [
+            {
+              role: "user",
+              content: [{ text: jobConfig.prompt.replace("{{document}}", "see above") }],
+            },
+          ],
+          system: systemPrompt.replace("{{document}}", jobConfig.inputText),
+          thoughtBudget: 24_000,
+          stream: false,
+        };
+
+        const output = await runModel(params);
+        const jsonOutput =
+          output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] ||
+          output.match(/{\s*[\s\S]*?}/)?.[0] ||
+          "{}";
+
+        data = yaml.parse(jsonOutput);
+      }
 
       // 3. Update job status to completed with JSON data
       setStore("generatedDocuments", jobId, {
@@ -249,6 +715,7 @@ export default function Page() {
         error: error.message,
         config: jobConfig,
       });
+      setStore("extractionProgress", "status", "error");
     } finally {
       await saveSession();
     }
@@ -323,6 +790,7 @@ export default function Page() {
         inputFile: store.inputFile,
         inputText,
         templateFile,
+        templateId, // Used to determine if procedure library should be loaded
         prompt,
         model: store.model,
         displayInfo: {
@@ -351,6 +819,7 @@ export default function Page() {
             inputFile: store.inputFile,
             inputText,
             templateFile,
+            templateId: store.selectedPredefinedTemplate, // Used to determine if procedure library should be loaded
             prompt: store.customPrompt,
             model: store.model,
             displayInfo: {
@@ -373,6 +842,7 @@ export default function Page() {
           inputFile: store.inputFile,
           inputText,
           templateFile: store.customTemplateFile,
+          templateId: null, // Custom templates don't use procedure library
           prompt: store.customPrompt,
           model: store.model,
           displayInfo: {
@@ -679,11 +1149,37 @@ export default function Page() {
                     <div class="text-muted small fw-semibold">
                       <${Show}
                         when=${allJobsProcessed}
-                        fallback="We are generating your forms now. This may take a few moments."
+                        fallback=${() => {
+                          const progress = store.extractionProgress;
+                          if (progress.status === "idle" || progress.totalTasks === 0) {
+                            return "We are generating your forms now. This may take a few moments.";
+                          }
+                          const statusText = {
+                            priming: `Priming cache for chunk ${progress.currentChunk + 1} of ${progress.totalChunks}...`,
+                            extracting: `Extracting fields (chunk ${progress.currentChunk + 1}/${progress.totalChunks}, ${progress.completedTasks}/${progress.totalTasks} tasks)...`,
+                            merging: "Merging extraction results...",
+                            completed: "Extraction complete.",
+                            error: "An error occurred during extraction.",
+                          };
+                          return statusText[progress.status] || "Processing...";
+                        }}
                       >
                         All processing is complete. The generated forms are available for download.
                       <//>
                     </div>
+                    <!-- Progress bar for chunked extraction -->
+                    <${Show} when=${() => !allJobsProcessed() && store.extractionProgress.totalTasks > 0}>
+                      <div class="progress" style="height: 6px;">
+                        <div
+                          class="progress-bar"
+                          role="progressbar"
+                          style=${() => `width: ${Math.round((store.extractionProgress.completedTasks / store.extractionProgress.totalTasks) * 100)}%`}
+                          aria-valuenow=${() => store.extractionProgress.completedTasks}
+                          aria-valuemin="0"
+                          aria-valuemax=${() => store.extractionProgress.totalTasks}
+                        ></div>
+                      </div>
+                    <//>
 
                     <${For} each=${() => Object.keys(store.generatedDocuments)}>
                       ${(jobId) => {
