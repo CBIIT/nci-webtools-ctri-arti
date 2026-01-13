@@ -116,6 +116,8 @@ function UsersList() {
     }
   });
 
+  const isLoading = createMemo(() => usersResource.loading || rolesResource.loading);
+
   return html`
     <div class="container py-4">
       <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
@@ -201,7 +203,7 @@ function UsersList() {
       <${DataTable}
         remote=${true}
         data=${formattedUsers}
-        loading=${() => usersResource.loading || rolesResource.loading}
+        loading=${() => isLoading()}
         loadingText="Loading users..."
         totalItems=${() => usersResource()?.meta?.total || 0}
         page=${currentPage}

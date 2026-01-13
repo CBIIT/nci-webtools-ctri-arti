@@ -216,6 +216,8 @@ function UsersList() {
     setCurrentPage(page);
   };
 
+  const isLoading = createMemo(() => serverAnalyticsResource.loading || rolesResource.loading);
+
   return html`
     <div class="container py-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -373,7 +375,7 @@ function UsersList() {
       <${DataTable}
         remote=${true}
         data=${formattedUsers}
-        loading=${() => serverAnalyticsResource.loading || rolesResource.loading}
+        loading=${() => isLoading()}
         loadingText="Loading users..."
         totalItems=${() => serverAnalyticsResource()?.meta?.total || 0}
         page=${currentPage}

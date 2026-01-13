@@ -150,19 +150,20 @@ export function DataTable(props) {
               : html`
                   <tr>
                     <td colspan=${props.columns.length} class="text-center py-4">
-                      ${props.loading
-                        ? html`
-                            <div class="d-flex justify-content-center align-items-center">
-                              <div
-                                class="spinner-border spinner-border-sm text-primary me-2"
-                                role="status"
-                              >
-                                <span class="visually-hidden">Loading...</span>
+                      ${() =>
+                        props.loading
+                          ? html`
+                              <div class="d-flex justify-content-center align-items-center">
+                                <div
+                                  class="spinner-border spinner-border-sm text-primary me-2"
+                                  role="status"
+                                >
+                                  <span class="visually-hidden">Loading...</span>
+                                </div>
+                                ${props.loadingText || "Loading..."}
                               </div>
-                              ${props.loadingText || "Loading..."}
-                            </div>
-                          `
-                        : "No data available."}
+                            `
+                          : "No data available."}
                     </td>
                   </tr>
                 `}
@@ -183,7 +184,7 @@ export function DataTable(props) {
       </table>
 
       <div class="d-flex justify-content-between p-2">
-        <div>Page ${currentPage} of ${totalPages}</div>
+        <div>Page ${() => (totalPages() === 0 ? 0 : currentPage())} of ${() => totalPages()}</div>
         <div>
           <button
             class="btn btn-sm btn-outline-primary me-2"
@@ -195,7 +196,7 @@ export function DataTable(props) {
           <button
             class="btn btn-sm btn-outline-primary"
             onClick=${() => handlePageChange(Math.min(totalPages(), currentPage() + 1))}
-            disabled=${() => currentPage() === totalPages()}
+            disabled=${() => totalPages() === 0 || currentPage() === totalPages()}
           >
             Next
           </button>
