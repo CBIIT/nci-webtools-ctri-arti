@@ -23,46 +23,45 @@ export default function DocxTemplateTool(props) {
   const input = () => props.message?.toolUse?.input || {};
   const result = () => getToolResult(props.message?.toolUse, props.messages);
 
-  const isDiscovery = () => !input().data;
+  const isDiscovery = () => !input().replacements;
   const docxUrl = () => input().docxUrl || "";
-  const filename = () => docxUrl().split("/").pop() || "template.docx";
+  const filename = () => docxUrl().split("/").pop() || "document.docx";
 
-  // Collapsible variables state
-  const [showVariables, setShowVariables] = createSignal(false);
-  const variablesData = () => JSON.stringify(input().data, null, 2);
-  const variablesCount = () => Object.keys(input().data || {}).length;
+  // Collapsible replacements state
+  const [showReplacements, setShowReplacements] = createSignal(false);
+  const replacementsData = () => JSON.stringify(input().replacements, null, 2);
+  const replacementsCount = () => Object.keys(input().replacements || {}).length;
 
   // Download handler
   const handleDownload = async () => {
-    const name = filename().replace(/\.docx$/, "") + "_generated.docx";
+    const name = filename().replace(/\.docx$/, "") + "_filled.docx";
     await downloadDocxTemplate({
       docxUrl: docxUrl(),
-      data: input().data,
+      replacements: input().replacements,
       filename: name,
     });
   };
 
   const title = () => {
     if (isDiscovery()) {
-      return `Discovering variables in ${filename()}`;
+      return `Reading ${filename()}`;
     }
-    return `Generating document from ${filename()}`;
+    return `Filling ${filename()}`;
   };
 
   const rightText = () => {
     const r = result();
     if (!r) return "loading...";
     if (isDiscovery()) {
-      const vars = r.variables || {};
-      return `${Object.keys(vars).length} variables`;
+      const textLength = r.text?.length || 0;
+      return `${textLength} characters`;
     }
     return r.warnings?.length ? `${r.warnings.length} warnings` : "ready";
   };
 
-  const variablesJson = () => {
+  const documentText = () => {
     const r = result();
-    if (!r?.variables) return "";
-    return JSON.stringify(r.variables, null, 2);
+    return r?.text || "";
   };
 
   return html`<article
@@ -109,20 +108,20 @@ export default function DocxTemplateTool(props) {
           <${Show}
             when=${isDiscovery}
             fallback=${() => html`
-              <!-- Generation mode: show collapsible variables and HTML preview -->
+              <!-- Replace mode: show collapsible replacements and HTML preview -->
               <div class="mb-2">
                 <button
                   type="button"
                   class="btn btn-sm btn-link text-muted-contrast p-0 text-decoration-none"
-                  onClick=${() => setShowVariables(!showVariables())}
+                  onClick=${(e) => setShowReplacements(!showReplacements())}
                 >
-                  ${() => (showVariables() ? "▼" : "▶")} Variables used (${variablesCount})
+                  ${() => (showReplacements() ? "▼" : "▶")} Replacements (${replacementsCount})
                 </button>
-                <${Show} when=${showVariables}>
+                <${Show} when=${showReplacements}>
                   <pre
                     class="p-2 mt-1 m-0 small text-wrap bg-light rounded"
                     style="max-height: 200px; overflow: auto;"
-                  >${variablesData}</pre>
+                  >${replacementsData}</pre>
                 <//>
               </div>
               <${Show} when=${() => result()?.html}>
@@ -144,8 +143,8 @@ export default function DocxTemplateTool(props) {
               <//>
             `}
           >
-            <!-- Discovery mode: show variables schema -->
-            <pre class="p-2 m-0 small text-wrap bg-light rounded" style="max-height: 300px; overflow: auto;">${variablesJson}</pre>
+            <!-- Discovery mode: show document text content -->
+            <pre class="p-2 m-0 small text-wrap bg-light rounded" style="max-height: 300px; overflow: auto;">${documentText}</pre>
           <//>
         </div>
       </div>

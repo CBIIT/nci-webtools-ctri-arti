@@ -176,7 +176,7 @@ export const tools = [
     toolSpec: {
       name: "docxTemplate",
       description:
-        "Process DOCX templates. Without data: returns template variables as {name: type}. With data: generates document and returns HTML preview. Use this to discover template variables before generating documents. If no variables found with default delimiters, try specifying different delimiters.",
+        "Fill out DOCX documents by finding and replacing text. Without replacements: returns the document's full text content so you can identify what to replace. With replacements: performs batch find-and-replace and returns HTML preview.",
       inputSchema: {
         json: {
           type: "object",
@@ -184,20 +184,12 @@ export const tools = [
             docxUrl: {
               type: "string",
               description:
-                "URL to the DOCX template. Supports s3://bucket/key or https:// URLs.",
+                "URL to the DOCX document. Supports s3://bucket/key or https:// URLs.",
             },
-            data: {
+            replacements: {
               type: "object",
               description:
-                "Optional data object to populate the template. Keys must match template variables. String variables expect string values, array variables expect arrays of objects.",
-            },
-            startDelimiter: {
-              type: "string",
-              description: "Opening delimiter for template commands (default: '{{').",
-            },
-            endDelimiter: {
-              type: "string",
-              description: "Closing delimiter for template commands (default: '}}').",
+                'Optional map of {"text to find": "replacement text"} for batch replacement. Omit to see the document content first.',
             },
           },
           required: ["docxUrl"],

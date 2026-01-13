@@ -1,9 +1,9 @@
-import { createReport, listCommands } from "docx-templates";
 import mammoth from "mammoth";
 
 import { parseDocument } from "./parsers.js";
 import { downloadBlob } from "./files.js";
 import { jsonToXml } from "./xml.js";
+import { docxReplace } from "./docx.js";
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
@@ -187,68 +187,41 @@ export async function data({ bucket, key }) {
   return text;
 }
 
-/** Default delimiter for DOCX templates */
-const DEFAULT_CMD_DELIMITER = ["{{", "}}"];
-
 /**
- * Process DOCX templates - discover variables or generate documents
+ * Fill DOCX documents by finding and replacing text
  * @param {object} params
- * @param {string} params.docxUrl - URL to the DOCX template (s3://bucket/key or https://)
- * @param {object} [params.data] - Optional data to populate the template
- * @param {Array<string>} [params.cmdDelimiter] - Command delimiter pair (default: ["{{", "}}"])
- * @returns {Promise<object>} - Variable schema or generated HTML
+ * @param {string} params.docxUrl - URL to the DOCX document (s3://bucket/key or https://)
+ * @param {object} [params.replacements] - Optional map of {"text to find": "replacement text"}
+ * @returns {Promise<object>} - Document text content or generated HTML
  */
-export async function docxTemplate({ docxUrl, data, cmdDelimiter = DEFAULT_CMD_DELIMITER }) {
-  // 1. Fetch the template based on URL type
+export async function docxTemplate({ docxUrl, replacements }) {
+  // 1. Fetch the document
   let templateBuffer;
 
   if (docxUrl.startsWith("s3://")) {
-    // Parse s3://bucket/key format
     const s3Match = docxUrl.match(/^s3:\/\/([^/]+)\/(.+)$/);
     if (!s3Match) throw new Error("Invalid S3 URL format. Expected: s3://bucket/key");
     const [, bucket, key] = s3Match;
     const response = await fetch(
       `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
     );
-    if (!response.ok) throw new Error(`Failed to fetch template: ${response.status}`);
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   } else {
-    // HTTP/HTTPS URL - use browse endpoint
     const response = await fetch("/api/browse/" + docxUrl);
-    if (!response.ok) throw new Error(`Failed to fetch template: ${response.status}`);
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   }
 
-  // 2. Extract template variables
-  const commands = await listCommands(templateBuffer, cmdDelimiter);
-  const variables = commands
-    .filter((c) => ["INS", "FOR"].includes(c.type))
-    .map((c) => ({
-      type: c.type === "FOR" ? "array" : "string",
-      name: c.code.split(" ").pop(),
-    }))
-    .filter((c) => !c.name.startsWith("$"));
-
-  // 3. If no data provided, return variable schema
-  if (!data) {
-    const schema = {};
-    for (const v of variables) {
-      schema[v.name] = v.type;
-    }
-    return { variables: schema };
+  // 2. Discovery mode: return document text content
+  if (!replacements) {
+    const result = await mammoth.extractRawText({ arrayBuffer: templateBuffer });
+    return { text: result.value };
   }
 
-  // 4. Ensure all template variables have default values
-  for (const variable of variables) {
-    const defaultValue = variable.type === "array" ? [] : "";
-    data[variable.name] ??= defaultValue;
-  }
-
-  // 5. Generate the document
-  const buffer = await createReport({ template: templateBuffer, data, cmdDelimiter });
-
-  // 6. Convert to HTML using mammoth
-  const result = await mammoth.convertToHtml({ arrayBuffer: buffer });
+  // 3. Replace mode: apply replacements and return HTML preview
+  const modifiedBuffer = await docxReplace(templateBuffer, replacements);
+  const result = await mammoth.convertToHtml({ arrayBuffer: modifiedBuffer });
 
   return {
     html: result.value,
@@ -257,29 +230,19 @@ export async function docxTemplate({ docxUrl, data, cmdDelimiter = DEFAULT_CMD_D
 }
 
 /**
- * Download a generated DOCX document from a template
+ * Download a filled DOCX document
  * @param {object} params
- * @param {string} params.docxUrl - URL to the DOCX template (s3://bucket/key or https://)
- * @param {object} params.data - Data to populate the template
+ * @param {string} params.docxUrl - URL to the DOCX document (s3://bucket/key or https://)
+ * @param {object} params.replacements - Map of {"text to find": "replacement text"}
  * @param {string} params.filename - Filename for the downloaded file
- * @param {Array<string>} [params.cmdDelimiter] - Command delimiter pair (default: ["{{", "}}"])
  * @returns {Promise<void>}
  */
 export async function downloadDocxTemplate({
   docxUrl,
-  data,
+  replacements,
   filename,
-  cmdDelimiter = DEFAULT_CMD_DELIMITER,
 }) {
-
-    console.log("Downloading DOCX:", {
-      docxUrl,
-      data,
-      filename,
-      cmdDelimiter
-    });
-
-  // 1. Fetch the template based on URL type
+  // 1. Fetch the document
   let templateBuffer;
 
   if (docxUrl.startsWith("s3://")) {
@@ -289,16 +252,16 @@ export async function downloadDocxTemplate({
     const response = await fetch(
       `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
     );
-    if (!response.ok) throw new Error(`Failed to fetch template: ${response.status}`);
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   } else {
     const response = await fetch("/api/browse/" + docxUrl);
-    if (!response.ok) throw new Error(`Failed to fetch template: ${response.status}`);
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   }
 
-  // 2. Generate the document with data
-  const buffer = await createReport({ template: templateBuffer, data, cmdDelimiter });
+  // 2. Apply replacements
+  const buffer = await docxReplace(templateBuffer, replacements);
 
   // 3. Trigger download
   const blob = new Blob([buffer], {

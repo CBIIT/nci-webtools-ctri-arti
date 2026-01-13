@@ -5,6 +5,8 @@
 import { openDB } from "idb";
 import { createEffect } from "solid-js";
 import { createStore, produce, unwrap } from "solid-js/store";
+import mammoth from "mammoth";
+import { docxReplace } from "/utils/docx.js";
 
 import { tools as toolSpecs, systemPrompt as defaultSystemPrompt } from "../chat/config.js";
 
@@ -1040,12 +1042,9 @@ async function data({ bucket, key }) {
   return text;
 }
 
-// DocxTemplate tool - process DOCX templates
-async function docxTemplate({ docxUrl, data, startDelimiter = "{{", endDelimiter = "}}" }) {
-  const { createReport, listCommands } = await import("docx-templates");
-  const mammoth = await import("mammoth");
-
-  // 1. Fetch the template based on URL type
+// DocxTemplate tool - fill DOCX documents with batch find-and-replace
+async function docxTemplate({ docxUrl, replacements }) {
+  // 1. Fetch the document
   let templateBuffer;
 
   if (docxUrl.startsWith("s3://")) {
@@ -1055,90 +1054,28 @@ async function docxTemplate({ docxUrl, data, startDelimiter = "{{", endDelimiter
     const response = await fetch(
       `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
     );
-    if (!response.ok) throw new Error(`Failed to fetch template: ${response.status}`);
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   } else {
     const response = await fetch("/api/browse/" + docxUrl);
-    if (!response.ok) throw new Error(`Failed to fetch template: ${response.status}`);
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   }
 
-  const cmdDelimiter = [startDelimiter, endDelimiter];
-  const commands = await listCommands(templateBuffer, cmdDelimiter);
-  console.log(commands);
-  const variables = commands
-    .filter((c) => ["INS", "FOR"].includes(c.type))
-    .map((c) => ({
-      type: c.type === "FOR" ? "array" : "string",
-      name: c.type === "FOR" ? c.code.split(" ").pop() : c.code,
-    }))
-    .filter((c) => !c.name.startsWith("$"));
-
-  // Discovery mode (no data provided)
-  if (!data) {
-    // Convert to HTML (needed for preview and delimiter detection)
-    const result = await mammoth.default.convertToHtml({ arrayBuffer: templateBuffer });
-    const html = result.value;
-
-    if (variables.length === 0) {
-      // Detect potential delimiters in the HTML text
-      const suggestedDelimiters = detectDelimiters(html, startDelimiter, endDelimiter);
-
-      return {
-        variables: {},
-        html,
-        suggestion:
-          suggestedDelimiters.length > 0
-            ? `No variables found with delimiters "${startDelimiter}" and "${endDelimiter}". ` +
-              `Detected potential delimiters in document: ${suggestedDelimiters.map((d) => `"${d[0]}...${d[1]}"`).join(", ")}. ` +
-              `Try calling again with startDelimiter and endDelimiter set accordingly.`
-            : `No variables found with delimiters "${startDelimiter}" and "${endDelimiter}". ` +
-              `The document may not contain template variables, or may use different delimiters.`,
-      };
-    }
-
-    const schema = {};
-    for (const v of variables) schema[v.name] = v.type;
-    return { variables: schema };
+  // 2. Discovery mode: return document text content
+  if (!replacements) {
+    const result = await mammoth.extractRawText({ arrayBuffer: templateBuffer });
+    return { text: result.value };
   }
 
-  for (const variable of variables) {
-    data[variable.name] ??= variable.type === "array" ? [] : "";
-  }
-
-  const buffer = await createReport({ template: templateBuffer, data, cmdDelimiter });
-  const result = await mammoth.default.convertToHtml({ arrayBuffer: buffer });
+  // 3. Replace mode: apply replacements and return HTML preview
+  const modifiedBuffer = await docxReplace(templateBuffer, replacements);
+  const result = await mammoth.convertToHtml({ arrayBuffer: modifiedBuffer });
 
   return {
     html: result.value,
     warnings: result.messages.filter((m) => m.type === "warning").map((m) => m.message),
   };
-}
-
-// Detect potential delimiter patterns in document text
-function detectDelimiters(html, currentStart, currentEnd) {
-  const patterns = [
-    { start: "{{", end: "}}", regex: /\{\{[^{}]+\}\}/g },
-    { start: "[", end: "]", regex: /\[[^\[\]]+\]/g },
-    { start: "<%", end: "%>", regex: /<%[^%]+%>/g },
-    { start: "${", end: "}", regex: /\$\{[^}]+\}/g },
-    { start: "<<", end: ">>", regex: /<<[^<>]+>>/g },
-    { start: "{%", end: "%}", regex: /\{%[^%]+%\}/g },
-  ];
-
-  const found = [];
-  for (const p of patterns) {
-    // Skip the currently used delimiter
-    if (p.start === currentStart && p.end === currentEnd) continue;
-
-    const matches = html.match(p.regex);
-    if (matches && matches.length > 0) {
-      found.push([p.start, p.end, matches.length]);
-    }
-  }
-
-  // Sort by match count (most likely delimiter first)
-  return found.sort((a, b) => b[2] - a[2]).map(([start, end]) => [start, end]);
 }
 
 // =================================================================================
