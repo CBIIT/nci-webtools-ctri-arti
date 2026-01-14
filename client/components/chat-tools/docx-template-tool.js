@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js";
+import { Show, For } from "solid-js";
 import html from "solid-js/html";
 
 import { Download, FileText } from "lucide-solid";
@@ -27,10 +27,14 @@ export default function DocxTemplateTool(props) {
   const docxUrl = () => input().docxUrl || "";
   const filename = () => docxUrl().split("/").pop() || "document.docx";
 
-  // Collapsible replacements state
-  const [showReplacements, setShowReplacements] = createSignal(false);
-  const replacementsData = () => JSON.stringify(input().replacements, null, 2);
   const replacementsCount = () => Object.keys(input().replacements || {}).length;
+  const replacementsList = () => {
+    const replacements = input().replacements || {};
+    return Object.entries(replacements).map(([find, replace]) => ({
+      find,
+      replace: Array.isArray(replace) ? replace.join(", ") : replace,
+    }));
+  };
 
   // Download handler
   const handleDownload = async () => {
@@ -53,15 +57,15 @@ export default function DocxTemplateTool(props) {
     const r = result();
     if (!r) return "loading...";
     if (isDiscovery()) {
-      const textLength = r.text?.length || 0;
-      return `${textLength} characters`;
+      const blockCount = r.blocks?.length || 0;
+      return `${blockCount} blocks`;
     }
     return r.warnings?.length ? `${r.warnings.length} warnings` : "ready";
   };
 
-  const documentText = () => {
+  const documentBlocks = () => {
     const r = result();
-    return r?.text || "";
+    return r?.blocks || [];
   };
 
   return html`<article
@@ -109,21 +113,22 @@ export default function DocxTemplateTool(props) {
             when=${isDiscovery}
             fallback=${() => html`
               <!-- Replace mode: show collapsible replacements and HTML preview -->
-              <div class="mb-2">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-link text-muted-contrast p-0 text-decoration-none"
-                  onClick=${(e) => setShowReplacements(!showReplacements())}
-                >
-                  ${() => (showReplacements() ? "▼" : "▶")} Replacements (${replacementsCount})
-                </button>
-                <${Show} when=${showReplacements}>
-                  <pre
-                    class="p-2 mt-1 m-0 small text-wrap bg-light rounded"
-                    style="max-height: 200px; overflow: auto;"
-                  >${replacementsData}</pre>
-                <//>
-              </div>
+              <details class="mb-2 small">
+                <summary class="text-muted-contrast" style="cursor: pointer;">
+                  Replacements (${replacementsCount})
+                </summary>
+                <div class="mt-1 ps-3" style="max-height: 200px; overflow: auto;">
+                  <${For} each=${replacementsList}>
+                    ${(item) => html`
+                      <div class="py-1 border-bottom">
+                        <code class="text-danger">${item.find}</code>
+                        <span class="mx-1">\u2192</span>
+                        <span class="text-success">${item.replace}</span>
+                      </div>
+                    `}
+                  <//>
+                </div>
+              </details>
               <${Show} when=${() => result()?.html}>
                 <div class="ratio ratio-16x9 border rounded-2 mb-2">
                   <iframe
@@ -143,8 +148,23 @@ export default function DocxTemplateTool(props) {
               <//>
             `}
           >
-            <!-- Discovery mode: show document text content -->
-            <pre class="p-2 m-0 small text-wrap bg-light rounded" style="max-height: 300px; overflow: auto;">${documentText}</pre>
+            <!-- Discovery mode: show document blocks with metadata -->
+            <div class="small" style="max-height: 300px; overflow: auto;">
+              <${For} each=${documentBlocks}>
+                ${(block) => html`
+                  <div class="p-2 border-bottom d-flex gap-2 align-items-start">
+                    <span class="badge bg-secondary font-monospace" title="Block index">@${block.index}</span>
+                    <span class="badge ${block.type === 'cell' ? 'bg-info' : 'bg-primary'}" title="Block type">
+                      ${block.type === 'cell' ? `${block.type} [${block.row},${block.col}]` : block.type}
+                    </span>
+                    <span class="badge bg-warning text-dark" title="Style">${block.style}</span>
+                    <span class="text-break flex-grow-1" style="word-break: break-word;">
+                      ${block.text || html`<em class="text-muted">(empty)</em>`}
+                    </span>
+                  </div>
+                `}
+              <//>
+            </div>
           <//>
         </div>
       </div>

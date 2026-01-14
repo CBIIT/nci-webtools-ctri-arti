@@ -367,6 +367,251 @@ function distributeText(textNodes, translated) {
 }
 
 /**
+ * Get the style name from a paragraph element
+ * @param {Object} element - The paragraph element (object containing w:p)
+ * @returns {string} Style name (e.g., 'Title', 'Heading1', 'Normal')
+ */
+function getParagraphStyle(element) {
+  // With preserveOrder: true, w:p contains an array of child elements
+  // Style is in: w:p[{w:pPr: [{w:pStyle: [{':@': {'@_w:val': 'StyleName'}}]}]}]
+  const pContent = element['w:p'];
+  if (!Array.isArray(pContent)) return 'Normal';
+
+  for (const item of pContent) {
+    if (item && typeof item === 'object' && 'w:pPr' in item) {
+      const pPrContent = item['w:pPr'];
+      if (!Array.isArray(pPrContent)) continue;
+
+      for (const prItem of pPrContent) {
+        if (prItem && typeof prItem === 'object' && 'w:pStyle' in prItem) {
+          const attrs = prItem[':@'];
+          if (attrs && attrs['@_w:val']) {
+            return attrs['@_w:val'];
+          }
+        }
+      }
+    }
+  }
+  return 'Normal';
+}
+
+/**
+ * Find all blocks (paragraphs and table cells) in document order with context
+ * @param {Object} node - Parsed XML document
+ * @param {Array} results - Accumulated results
+ * @param {Object} context - Current context (table position, parent info)
+ * @returns {Array<{element: Object, parent: Array, index: number, type: string, row?: number, col?: number, tableIndex?: number}>}
+ */
+function findAllBlocks(node, results = [], context = { inTable: false, tableIndex: -1, rowIndex: -1, colIndex: -1 }, parent = null, index = -1) {
+  if (Array.isArray(node)) {
+    for (let i = 0; i < node.length; i++) {
+      const item = node[i];
+      if (typeof item === 'object' && item !== null) {
+        // Check for table
+        if ('w:tbl' in item) {
+          const tableIndex = context.tableIndex + 1;
+          // Process table rows
+          const tblContent = item['w:tbl'];
+          if (Array.isArray(tblContent)) {
+            let rowIndex = 0;
+            for (const tblItem of tblContent) {
+              if (tblItem && typeof tblItem === 'object' && 'w:tr' in tblItem) {
+                // Process table row
+                const trContent = tblItem['w:tr'];
+                if (Array.isArray(trContent)) {
+                  let colIndex = 0;
+                  for (const trItem of trContent) {
+                    if (trItem && typeof trItem === 'object' && 'w:tc' in trItem) {
+                      // Found table cell - add as block
+                      results.push({
+                        element: trItem,
+                        parent: trContent,
+                        index: trContent.indexOf(trItem),
+                        type: 'cell',
+                        row: rowIndex,
+                        col: colIndex,
+                        tableIndex
+                      });
+                      colIndex++;
+                    }
+                  }
+                }
+                rowIndex++;
+              }
+            }
+          }
+        }
+        // Check for paragraph (not inside a table cell - those are handled above)
+        else if ('w:p' in item && !context.inTable) {
+          results.push({
+            element: item,
+            parent: node,
+            index: i,
+            type: 'paragraph'
+          });
+        }
+        // Recurse into other elements (but not into tables or paragraphs)
+        else if (!('w:p' in item) && !('w:tbl' in item)) {
+          findAllBlocks(item, results, context, node, i);
+        }
+      }
+    }
+  } else if (typeof node === 'object' && node !== null) {
+    for (const key in node) {
+      if (key === 'w:tbl') {
+        const tableIndex = context.tableIndex + 1;
+        // Process table rows
+        const tblContent = node[key];
+        if (Array.isArray(tblContent)) {
+          let rowIndex = 0;
+          for (const tblItem of tblContent) {
+            if (tblItem && typeof tblItem === 'object' && 'w:tr' in tblItem) {
+              const trContent = tblItem['w:tr'];
+              if (Array.isArray(trContent)) {
+                let colIndex = 0;
+                for (const trItem of trContent) {
+                  if (trItem && typeof trItem === 'object' && 'w:tc' in trItem) {
+                    results.push({
+                      element: trItem,
+                      parent: trContent,
+                      index: trContent.indexOf(trItem),
+                      type: 'cell',
+                      row: rowIndex,
+                      col: colIndex,
+                      tableIndex
+                    });
+                    colIndex++;
+                  }
+                }
+              }
+              rowIndex++;
+            }
+          }
+        }
+      } else if (key === 'w:p' && !context.inTable) {
+        // Standalone paragraph in object form - less common with preserveOrder
+        results.push({
+          element: node,
+          parent: parent,
+          index: index,
+          type: 'paragraph'
+        });
+      } else {
+        findAllBlocks(node[key], results, context, null, -1);
+      }
+    }
+  }
+  return results;
+}
+
+/**
+ * Extract text from a block element (paragraph or table cell)
+ * @param {Object} element - The block element
+ * @param {string} type - 'paragraph' or 'cell'
+ * @returns {string} Extracted text
+ */
+function extractBlockText(element, type) {
+  if (type === 'paragraph') {
+    return extractParagraphText(element);
+  } else if (type === 'cell') {
+    // Table cell: extract text from all paragraphs inside
+    const tcContent = element['w:tc'];
+    if (!Array.isArray(tcContent)) return '';
+
+    const parts = [];
+    for (const item of tcContent) {
+      if (item && typeof item === 'object' && 'w:p' in item) {
+        const paraText = extractParagraphText(item);
+        if (paraText) parts.push(paraText);
+      }
+    }
+    return parts.join('\n');
+  }
+  return '';
+}
+
+/**
+ * Extract text from a DOCX file as an array of blocks with metadata
+ * @param {Buffer|Uint8Array|ArrayBuffer} docxBuffer - Input DOCX file
+ * @param {Object} options - Optional settings
+ * @param {boolean} options.includeHeaders - Include headers/footers (default: true)
+ * @param {boolean} options.includeFootnotes - Include footnotes/endnotes (default: true)
+ * @param {boolean} options.includeEmpty - Include empty blocks (default: false)
+ * @returns {Promise<{blocks: Array<{index: number, text: string, type: string, style: string, source: string, row?: number, col?: number}>}>}
+ */
+export async function docxExtractTextBlocks(docxBuffer, options = {}) {
+  const {
+    includeHeaders = true,
+    includeFootnotes = true,
+    includeEmpty = false,
+  } = options;
+
+  // Load the DOCX file
+  const zip = await JSZip.loadAsync(docxBuffer);
+
+  // Collect XML parts to process with their source labels
+  const partsToProcess = [{ path: 'word/document.xml', source: 'document' }];
+
+  if (includeHeaders) {
+    zip.forEach((path) => {
+      if (/^word\/header\d+\.xml$/.test(path)) {
+        partsToProcess.push({ path, source: 'header' });
+      } else if (/^word\/footer\d+\.xml$/.test(path)) {
+        partsToProcess.push({ path, source: 'footer' });
+      }
+    });
+  }
+
+  if (includeFootnotes) {
+    if (zip.file('word/footnotes.xml')) {
+      partsToProcess.push({ path: 'word/footnotes.xml', source: 'footnote' });
+    }
+    if (zip.file('word/endnotes.xml')) {
+      partsToProcess.push({ path: 'word/endnotes.xml', source: 'endnote' });
+    }
+  }
+
+  // Extract blocks from each part
+  const allBlocks = [];
+  let globalIndex = 0;
+
+  for (const { path, source } of partsToProcess) {
+    const file = zip.file(path);
+    if (!file) continue;
+
+    const xmlText = await file.async('string');
+    const doc = xmlParser.parse(xmlText);
+
+    const blocks = findAllBlocks(doc);
+
+    for (const block of blocks) {
+      const text = extractBlockText(block.element, block.type);
+
+      // Skip empty blocks unless includeEmpty is true
+      if (!includeEmpty && !text.trim()) continue;
+
+      const blockInfo = {
+        index: globalIndex++,
+        text,
+        type: block.type,
+        style: block.type === 'paragraph' ? getParagraphStyle(block.element) : 'TableCell',
+        source,
+      };
+
+      // Add row/col for table cells
+      if (block.type === 'cell') {
+        blockInfo.row = block.row;
+        blockInfo.col = block.col;
+      }
+
+      allBlocks.push(blockInfo);
+    }
+  }
+
+  return { blocks: allBlocks };
+}
+
+/**
  * Extract text from a DOCX file
  * Uses the same text extraction as docxReplace for consistency
  * @param {Buffer|Uint8Array|ArrayBuffer} docxBuffer - Input DOCX file
@@ -421,8 +666,11 @@ export async function docxExtractText(docxBuffer, options = {}) {
 
 /**
  * Replace text strings in a DOCX document
+ * Supports two replacement modes:
+ * - Text-based: {"original text": "replacement text"}
+ * - Index-based: {"@0": "replacement for block 0", "@5": "replacement for block 5"}
  * @param {Buffer|Uint8Array|ArrayBuffer} docxBuffer - Input DOCX file
- * @param {Object} replacements - Map of {"original text": "replacement text"}
+ * @param {Object} replacements - Map of replacements (text keys or @index keys)
  * @param {Object} options - Optional settings
  * @param {boolean} options.includeHeaders - Process headers/footers (default: true)
  * @param {boolean} options.includeFootnotes - Process footnotes/endnotes (default: true)
@@ -433,6 +681,21 @@ export async function docxReplace(docxBuffer, replacements, options = {}) {
     includeHeaders = true,
     includeFootnotes = true,
   } = options;
+
+  // Separate index-based replacements from text-based replacements
+  const indexReplacements = {};
+  const textReplacements = {};
+
+  for (const [key, value] of Object.entries(replacements)) {
+    if (key.startsWith('@')) {
+      const blockIndex = parseInt(key.slice(1), 10);
+      if (!isNaN(blockIndex)) {
+        indexReplacements[blockIndex] = value;
+      }
+    } else {
+      textReplacements[key] = value;
+    }
+  }
 
   // Load the DOCX file
   const zip = await JSZip.loadAsync(docxBuffer);
@@ -453,6 +716,10 @@ export async function docxReplace(docxBuffer, replacements, options = {}) {
     if (zip.file('word/endnotes.xml')) parts.push('word/endnotes.xml');
   }
 
+  // If there are index-based replacements, we need to track block indices across all parts
+  const hasIndexReplacements = Object.keys(indexReplacements).length > 0;
+  let globalBlockIndex = 0;
+
   // Process each part
   for (const path of parts) {
     const file = zip.file(path);
@@ -461,7 +728,28 @@ export async function docxReplace(docxBuffer, replacements, options = {}) {
     const xmlText = await file.async('string');
     const doc = xmlParser.parse(xmlText);
 
-    replaceXmlDocText(doc, replacements);
+    // Process index-based replacements if any
+    if (hasIndexReplacements) {
+      const blocks = findAllBlocks(doc);
+      for (const block of blocks) {
+        // Extract text to check if block is empty (matching docxExtractTextBlocks behavior)
+        const text = extractBlockText(block.element, block.type);
+
+        // Skip empty blocks to match docxExtractTextBlocks indexing
+        if (!text.trim()) continue;
+
+        if (globalBlockIndex in indexReplacements) {
+          const newText = indexReplacements[globalBlockIndex];
+          applyTextToBlock(block.element, block.type, newText);
+        }
+        globalBlockIndex++;
+      }
+    }
+
+    // Process text-based replacements
+    if (Object.keys(textReplacements).length > 0) {
+      replaceXmlDocText(doc, textReplacements);
+    }
 
     const newXml = xmlBuilder.build(doc);
     zip.file(path, newXml);
@@ -469,6 +757,45 @@ export async function docxReplace(docxBuffer, replacements, options = {}) {
 
   // Return the modified DOCX
   return await zip.generateAsync({ type: 'uint8array' });
+}
+
+/**
+ * Apply text to a block element (paragraph or table cell)
+ * @param {Object} element - The block element
+ * @param {string} type - 'paragraph' or 'cell'
+ * @param {string} newText - The text to apply
+ */
+function applyTextToBlock(element, type, newText) {
+  if (type === 'paragraph') {
+    applyTextToParagraph({ element }, newText);
+  } else if (type === 'cell') {
+    // For table cells, find the first paragraph and apply text there
+    const tcContent = element['w:tc'];
+    if (!Array.isArray(tcContent)) return;
+
+    // Find first paragraph in the cell
+    for (const item of tcContent) {
+      if (item && typeof item === 'object' && 'w:p' in item) {
+        applyTextToParagraph({ element: item }, newText);
+        // Clear text from other paragraphs in the cell
+        const idx = tcContent.indexOf(item);
+        for (let i = idx + 1; i < tcContent.length; i++) {
+          const otherItem = tcContent[i];
+          if (otherItem && typeof otherItem === 'object' && 'w:p' in otherItem) {
+            const textNodes = collectTextNodes(otherItem);
+            for (const tn of textNodes) {
+              tn['#text'] = '';
+            }
+          }
+        }
+        return;
+      }
+    }
+
+    // If no paragraph exists, we need to create one (rare case)
+    // For now, just log a warning
+    console.warn('Table cell has no paragraph to apply text to');
+  }
 }
 
 /**

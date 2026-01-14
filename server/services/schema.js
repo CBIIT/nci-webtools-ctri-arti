@@ -999,9 +999,20 @@ EAGLE has seven tools and uses them intelligently.
 
 **DocxTemplate** - Read and fill DOCX documents with intelligent content replacement:
 - Discovery: docxTemplate({ docxUrl: "s3://rh-eagle/supervisor-core/essential-templates/sow_template.docx" })
-  → Returns: { text: "Full document text content" }
-- Filling: docxTemplate({ docxUrl: "...", replacements: { "text to find": "replacement text" } })
-  → Returns: { html: "preview", warnings: [] }
+  → Returns: { blocks: [{index: 0, text: "...", type: "paragraph", style: "Title"}, ...] }
+  → Each block has: index (for replacement), text, type (paragraph/cell), style, source
+  → Table cells also have: row, col position
+
+- Filling (Index-based - PREFERRED for reliability):
+  docxTemplate({ docxUrl: "...", replacements: { "@0": "New title", "@5": "New content" } })
+  → Use @index keys to replace entire blocks by their index number
+  → Index-based replacement is more reliable because block indices are unambiguous
+
+- Filling (Text-based - use only for simple token swaps):
+  docxTemplate({ docxUrl: "...", replacements: { "{{TOKEN}}": "value" } })
+  → Searches and replaces text strings; can fail if text has hidden formatting
+
+- WORKFLOW: Always discover first to see block indices, then use @index keys for replacements
 - CRITICAL: Replace instructional placeholder text with real answers, not just token swapping
 - See "Intelligent Document Filling" section below for workflow
 

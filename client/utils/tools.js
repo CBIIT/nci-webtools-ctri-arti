@@ -3,7 +3,7 @@ import mammoth from "mammoth";
 import { parseDocument } from "./parsers.js";
 import { downloadBlob } from "./files.js";
 import { jsonToXml } from "./xml.js";
-import { docxReplace, docxExtractText } from "./docx.js";
+import { docxReplace, docxExtractTextBlocks } from "./docx.js";
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
@@ -213,10 +213,10 @@ export async function docxTemplate({ docxUrl, replacements }) {
     templateBuffer = await response.arrayBuffer();
   }
 
-  // 2. Discovery mode: return document text content
+  // 2. Discovery mode: return document blocks with metadata
   if (!replacements) {
-    const text = await docxExtractText(templateBuffer);
-    return { text, templateDownloadUrl: docxUrl };
+    const { blocks } = await docxExtractTextBlocks(templateBuffer);
+    return { blocks, templateDownloadUrl: docxUrl };
   }
 
   // 3. Replace mode: apply replacements and return HTML preview
