@@ -31,6 +31,36 @@
       .text-pre {
         white-space: pre-wrap !important;
       }
+
+      /* Branch navigation styles */
+      .message-wrapper {
+        position: relative;
+      }
+      .message-wrapper:hover .message-actions {
+        opacity: 1;
+      }
+      .message-actions {
+        opacity: 0;
+        transition: opacity 0.15s ease-in-out;
+      }
+      .message-actions .btn-link {
+        text-decoration: none;
+      }
+      .message-actions .btn-link:hover {
+        color: var(--bs-dark) !important;
+      }
+      .branch-nav .btn-link:disabled {
+        opacity: 0.3;
+      }
+      .branch-counter {
+        min-width: 2.5rem;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .edit-form textarea {
+        min-width: 200px;
+        resize: vertical;
+      }
     </style>
     <script type="importmap">
       {
