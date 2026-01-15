@@ -89,13 +89,6 @@
       import { createStore, produce, unwrap } from "solid-js/store";
       import html from "solid-js/html";
 
-      // Web component for rendering HTML in isolated shadow DOM
-      customElements.define("html-preview", class extends HTMLElement {
-        static observedAttributes = ["content"];
-        constructor() { super(); this.attachShadow({ mode: "open" }); }
-        attributeChangedCallback(name, old, val) { if (name === "content" && val) this.shadowRoot.innerHTML = val; }
-      });
-
       const db = await initDB();
       await ensureDefaultAgent(db);
 
@@ -138,7 +131,7 @@
           fn: editor,
           toolSpec: {
             name: "editor",
-            description: `Create, view, and edit files.
+            description: `Create, view, edit, delete, and rename files.
 
 Examples:
 - View file: {"command": "view", "path": "app.js"}
@@ -146,18 +139,21 @@ Examples:
 - List directory: {"command": "view", "path": "/"}
 - Create file: {"command": "create", "path": "hello.py", "file_text": "print('hello')"}
 - Replace text: {"command": "str_replace", "path": "app.js", "old_str": "foo", "new_str": "bar"}
-- Insert at line 5: {"command": "insert", "path": "app.js", "insert_line": 5, "new_str": "// comment"}`,
+- Insert at line 5: {"command": "insert", "path": "app.js", "insert_line": 5, "new_str": "// comment"}
+- Delete file: {"command": "delete", "path": "old.txt"}
+- Rename file: {"command": "rename", "path": "old.txt", "new_path": "new.txt"}`,
             inputSchema: {
               json: {
                 type: "object",
                 properties: {
-                  command: { type: "string", enum: ["view", "create", "str_replace", "insert"], description: "The operation to perform" },
+                  command: { type: "string", enum: ["view", "create", "str_replace", "insert", "delete", "rename"], description: "The operation to perform" },
                   path: { type: "string", description: "The file or directory path (end with / for directories)" },
                   view_range: { type: "array", items: { type: "integer" }, description: "Optional [start, end] line numbers (1-indexed, -1 for end). Only for view command on files." },
                   old_str: { type: "string", description: "Text to replace (for str_replace command)" },
                   new_str: { type: "string", description: "Replacement text (for str_replace and insert commands)" },
                   file_text: { type: "string", description: "File content (for create command)" },
                   insert_line: { type: "integer", description: "Line number to insert after (0 for beginning, for insert command)" },
+                  new_path: { type: "string", description: "New path for rename command" },
                 },
                 required: ["command", "path"],
               },
@@ -194,7 +190,15 @@ Examples:
         await db.put("agents", {
           id: 1,
           name: "default",
-          systemPrompt: "You are honest. When you are uncertain about something, or if your tools aren't working right, you let the user know. You write in brief, artistic prose, without any *markdown*, lists, bullet points, emojis or em-dashes.",
+          systemPrompt: `You are honest. When you are uncertain about something, or if your tools aren't working right, you let the user know. You write in brief, artistic prose, without any *markdown*, lists, bullet points, emojis or em-dashes.
+
+MEMORY PROTOCOL:
+1. At the START of each conversation, use the editor tool to view /memories/ and check for earlier progress or context.
+2. As you work, record important status, progress, decisions, and context in /memories/ files.
+3. Keep memory files organized and up-to-date. Delete or rename files that are no longer relevant.
+4. ASSUME INTERRUPTION: Your context window might be reset at any moment, so save any progress you don't want to lose.
+
+HTML files created with the editor tool are automatically rendered in the preview - no need to run them with the code tool.`,
           tools: ["code", "think", "editor"],
           resources: [],
         });
@@ -451,6 +455,26 @@ Examples:
       // Presentational components for messages, branching, and input.
       // =============================================================================
 
+      function HtmlPreview(props) {
+        let iframeRef;
+        const resize = () => {
+          try {
+            const doc = iframeRef?.contentDocument;
+            // Use documentElement.scrollHeight (includes body margins) + buffer for edge cases
+            const height = doc?.documentElement?.scrollHeight || doc?.body?.scrollHeight || 0;
+            if (height) iframeRef.style.height = (height + 20) + "px";
+          } catch (e) { /* cross-origin */ }
+        };
+        return html`
+          <iframe
+            ref=${el => iframeRef = el}
+            srcdoc=${() => props.content}
+            onLoad=${resize}
+            style="border:none; width:100%; min-height:50px;"
+          ></iframe>
+        `;
+      }
+
       function InputForm(props) {
         return html`
           <form id="inputForm" onSubmit=${props.onSubmit} class="shadow-sm bg-white border rounded">
@@ -616,7 +640,7 @@ Examples:
               <//>
             </div>
             <${Show} when=${() => isHtml() && r()?.content !== undefined}>
-              <html-preview attr:content=${() => r().content} style="display: block; padding: 1rem;"></html-preview>
+              <${HtmlPreview} content=${() => r().content} />
             <//>
             <${Show} when=${() => !isHtml() && r()?.content !== undefined}>
               <pre class="m-0 p-2 text-pre" style="max-height: 300px; overflow: auto;">${() => r().content}</pre>
@@ -643,7 +667,7 @@ Examples:
               <span>${() => input()?.filename || lang()}</span>
             </div>
             <${Show} when=${() => isHtml() && result()?.html}>
-              <html-preview attr:content=${() => result().html} style="display: block; padding: 1rem;"></html-preview>
+              <${HtmlPreview} content=${() => result().html} />
             <//>
             <${Show} when=${() => !isHtml() && input()?.source}>
               <pre class="m-0 p-2 text-pre bg-light" style="max-height: 300px; overflow: auto;">${() => input().source}</pre>
@@ -948,7 +972,7 @@ Examples:
         return "Thinking complete.";
       }
 
-      async function editor({ command, path, view_range, old_str, new_str, file_text, insert_line }, context = {}) {
+      async function editor({ command, path, view_range, old_str, new_str, file_text, insert_line, new_path }, context = {}) {
         const { db, threadId } = context;
         if (!db) return "Error: Database not available";
 
@@ -1028,6 +1052,24 @@ Examples:
             const newContent = lines.join("\n");
             await saveResource(normPath, newContent);
             return { status: "inserted", path, content: newContent };
+          }
+
+          case "delete": {
+            const resource = await getResource(normPath);
+            if (!resource) return { status: "error", error: `Path not found: ${path}` };
+            await db.delete("resources", resource.id);
+            return { status: "deleted", path };
+          }
+
+          case "rename": {
+            if (!new_path) return { status: "error", error: "new_path is required for rename" };
+            const resource = await getResource(normPath);
+            if (!resource) return { status: "error", error: `Path not found: ${path}` };
+            const newNormPath = new_path.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
+            const existing = await getResource(newNormPath);
+            if (existing) return { status: "error", error: `Destination already exists: ${new_path}` };
+            await db.put("resources", { ...resource, path: newNormPath, updatedAt: Date.now() });
+            return { status: "renamed", old_path: path, new_path };
           }
 
           default:
