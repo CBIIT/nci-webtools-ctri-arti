@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AWS Bedrock Chat</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1/font/bootstrap-icons.min.css" />
+    <style>
+      :root {
+        --bs-light-rgb: 250, 249, 245;
+        --bs-secondary-bg-subtle: #f0eee6;
+        --bs-border-radius: 0.75rem;
+        --bs-border-radius-sm: 0.5rem;
+      }
+      input, button, label, select, .btn, .form-control[type="file"], .form-select, .form-check-label { font-weight: 500; }
+      .form-select, .form-check-input, .form-check-label { cursor: pointer; }
+      .text-pre { white-space: pre-wrap !important; }
+      .message-wrapper:hover .message-actions { opacity: 1; }
+      .message-actions { opacity: 0; transition: opacity 0.15s ease-in-out; }
+      .message-block:hover .message-controls { visibility: visible !important; }
+      .branch-counter { min-width: 2.5rem; font-variant-numeric: tabular-nums; }
+      .edit-form textarea { resize: vertical; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "@aws-sdk/client-bedrock-runtime": "https://cdn.jsdelivr.net/npm/@aws-sdk/client-bedrock-runtime@3/+esm",
+          "@google/genai": "https://cdn.jsdelivr.net/npm/@google/genai@1/+esm",
+          "idb": "https://cdn.jsdelivr.net/npm/idb@8/+esm",
+          "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1/dist/solid.min.js",
+          "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1/html/dist/html.min.js",
+          "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1/store/dist/store.min.js",
+          "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1/web/dist/web.min.js"
+        }
+      }
+    </script>
+    <!--
+      CHAT.HTML - AI Chat Interface
+      ==============================
+      Buildless SolidJS chat with AWS Bedrock & Google Gemini.
+      Features: branching conversations, IndexedDB storage, file uploads, tool use.
+
+      DEVELOP: Open chat.html in browser. No build. Dependencies via CDN import maps.
+      TEST: Open ?test=1 and check console, or run headless:
+            npm install playwright && node -e "const {chromium}=require('playwright');(async()=>{const b=await chromium.launch(),p=await b.newPage({ignoreHTTPSErrors:true});p.on('console',m=>console.log(m.text()));p.on('pageerror',e=>console.error('PAGE ERROR:',e.message));await p.goto('file://'+process.cwd()+'/chat.html?test=1');await p.waitForFunction(()=>window.TESTS_DONE,{timeout:30000});await b.close()})()"
+
+      SOLIDJS: COMPONENTS RUN ONCE
+      ----------------------------
+      No re-renders. Reactivity = 0-arg functions, auto-wrapped and re-executed on change.
+        ${() => val}  → reactive     ${val}  → static (evaluated once)
+
+      Signals:  ${count}              ✓ (signals are 0-arg functions)
+                ${count()}            ✗ (called immediately, static)
+      Stores:   ${() => store.prop}   ✓ (wrap store access)
+      Props:    ${() => props.title}  ✓ (props have getters, but templates need () => for tracking)
+                Never destructure - loses the getter
+      Handlers: onClick=${e => fn()}  ✓ always use param (avoids 0-arg auto-wrap issues)
+
+      SYNTAX
+      ------
+      <${Comp} prop=${val} />            Self-closing
+      <${Comp}>children<//>              With children
+      <${Show} when=${cond}>...<//>      Conditional
+      <${For} each=${items}>${x=>...}<//>  Loop
+      class=${() => `a ${b() ? 'c' : ''}`}
+      classList=${{ active: isActiveSignal, disabled: () => store.x }}
+      style=${{ width: () => w() + 'px' }}
+    -->
+  </head>
+  <body class="vh-100 bg-light d-flex flex-column">
+    <div id="app" class="h-100"></div>
+    <script type="module">
+      // #region 1. IMPORTS & INITIALIZATION
+      // =============================================================================
+      // External dependencies, database setup, and app bootstrap.
+      // =============================================================================
+
+      import { BedrockRuntimeClient, ConverseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
+      import { GoogleGenAI } from "@google/genai";
+      import { openDB } from "idb";
+      import { render } from "solid-js/web";
+      import { For, Switch, Match, Show, createEffect, createSignal } from "solid-js";
+      import { createStore, produce, unwrap } from "solid-js/store";
+      import html from "solid-js/html";
+
+      const db = await initDB();
+      await ensureDefaultAgent(db);
+
+      // TOOLS must be defined before useAgent which references it as default parameter
+      const TOOLS = [
+        {
+          fn: code,
+          toolSpec: {
+            name: "code",
+            description: "Execute JavaScript or HTML code snippets.",
+            inputSchema: {
+              json: {
+                type: "object",
+                properties: {
+                  source: { type: "string", description: "The JavaScript code to execute. Eg: 2+2" },
+                  language: { type: "string", description: "The programming language of the code (e.g., 'javascript', 'html').", default: "javascript" },
+                },
+                required: ["source"],
+              },
+            },
+          },
+        },
+        {
+          fn: think,
+          toolSpec: {
+            name: "think",
+            description: "Use this tool to create a dedicated thinking space for complex reasoning. Use it when you need to analyze information, plan steps, or work through problems before providing a final answer.",
+            inputSchema: {
+              json: {
+                type: "object",
+                properties: {
+                  thought: { type: "string", description: "Your detailed thought process, analysis, or reasoning steps." },
+                },
+                required: ["thought"],
+              },
+            },
+          },
+        },
+      ];
+
+      render(App, document.getElementById("app"));
+
+      async function initDB() {
+        return openDB("bedrock-messages", 1, {
+          upgrade(db) {
+            const tables = {};
+            for (const name of ["agents", "threads", "messages", "resources"]) {
+              if (!db.objectStoreNames.contains(name)) {
+                const store = db.createObjectStore(name, { keyPath: "id", autoIncrement: true });
+                store.createIndex("id", "id", { unique: true });
+                tables[name] = store;
+              }
+            }
+            tables.messages.createIndex("agentId", "agentId");
+            tables.messages.createIndex("threadId", "threadId");
+            tables.messages.createIndex("parentId", "parentId");
+            tables.threads.createIndex("agentId", "agentId");
+            tables.resources.createIndex("agentId", "agentId");
+            tables.resources.createIndex("threadId", "threadId");
+            tables.resources.createIndex("messageId", "messageId");
+          },
+        });
+      }
+
+      async function ensureDefaultAgent(db) {
+        if (!(await db.count("agents"))) {
+          await db.add("agents", {
+            name: "default",
+            systemPrompt: "You are honest. When you are uncertain about something, or if your tools aren't working right, you let the user know. You write in brief, artistic prose, without any *markdown*, lists, bullet points, emojis or em-dashes.",
+            tools: ["code", "think"],
+            resources: [],
+          });
+        }
+      }
+
+      // #endregion
+
+      // #region 2. APP & MAIN STATE
+      // =============================================================================
+      // Main App component and useAgent hook for state management.
+      // =============================================================================
+
+      function App() {
+        const searchParams = new URLSearchParams(window.location.search);
+        const urlParams = Object.fromEntries(searchParams.entries());
+        const { agent, sendMessage, switchBranch, params } = useAgent(urlParams, db);
+
+        createEffect(() => setSearchParams(params));
+        const [editingMessageId, setEditingMessageId] = createSignal(null);
+
+        // Event handlers
+        function handleKeyDown(event) {
+          if (event.key === "Enter" && !event.shiftKey && !agent.loading) {
+            event.preventDefault();
+            event.target?.closest("form")?.requestSubmit();
+          }
+        }
+
+        async function handleSubmit(event) {
+          event.preventDefault();
+          const form = event.target;
+          const text = form.userMessage.value;
+          const files = Array.from(form.userFiles.files || []);
+          const modelId = form.modelId.value;
+          const reasoningMode = form.reasoningMode.checked;
+          form.userMessage.value = "";
+          form.userFiles.value = "";
+          await sendMessage(text, files, modelId, reasoningMode);
+        }
+
+        async function saveEdit(messageId, newText) {
+          const msg = agent.messageTree?.nodes.get(messageId)?.message;
+          const originalText = msg?.content.find(c => c.text)?.text;
+          if (msg && newText && newText !== originalText) {
+            const form = document.getElementById("inputForm");
+            await sendMessage(newText, [], form?.modelId?.value || "us.anthropic.claude-haiku-4-5-20251001-v1:0", form?.reasoningMode?.checked || false, messageId);
+          }
+          setEditingMessageId(null);
+        }
+
+        return html`
+          <div class="container my-5">
+            <${For} each=${() => agent.messages}>
+              ${message => html`
+                <div class="message-block mb-2">
+                  <${For} each=${() => message.content}>
+                    ${content => html`
+                      <${MessageContent}
+                        message=${message}
+                        content=${content}
+                        allMessages=${() => agent.messages}
+                        editingId=${editingMessageId}
+                        onSave=${saveEdit}
+                        onCancel=${_ => setEditingMessageId(null)} />
+                    `}
+                  <//>
+                  <${Show} when=${() => message.id && agent.messageTree && editingMessageId() !== message.id}>
+                    <div class="message-controls invisible d-flex align-items-center gap-2">
+                      <${BranchNav} tree=${() => agent.messageTree} messageId=${message.id} onSwitch=${switchBranch} />
+                      <${Show} when=${() => message.role === "user"}>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => setEditingMessageId(message.id)} title="Edit message">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                      <//>
+                    </div>
+                  <//>
+                </div>
+              `}
+            <//>
+
+            <${InputForm} onSubmit=${handleSubmit} onKeyDown=${handleKeyDown} />
+          </div>
+        `;
+      }
+
+      function useAgent({ agentId, threadId }, db, tools = TOOLS) {
+        agentId = +agentId || 1;
+        threadId = +threadId || null;
+
+        const [params, setParams] = createStore({ agentId, threadId });
+        const [agent, setAgent] = createStore({
+          id: null,
+          name: null,
+          thread: { id: null, name: null },
+          modelId: null,
+          reasoningMode: false,
+          systemPrompt: null,
+          loading: false,
+          tools: [],
+          messages: [],
+          messageTree: null,
+          activePath: [],
+          activeLeafId: null,
+        });
+
+        // Effects: Load history
+        createEffect(async () => {
+          if (!params.threadId) return;
+          const history = await db.getAllFromIndex("messages", "threadId", params.threadId);
+          if (!history?.length) return;
+
+          const thread = await db.get("threads", params.threadId);
+          const tree = buildMessageTree(history);
+          const path = getMostRecentPath(tree);
+          const leafId = path.length > 0 ? path[path.length - 1] : null;
+          const messages = path.map(id => tree.nodes.get(id)?.message).filter(Boolean);
+
+          setAgent({ messages, thread: { name: thread?.name || "Untitled" }, messageTree: tree, activePath: path, activeLeafId: leafId });
+        });
+
+        // Effects: Save changes
+        createEffect(async () => {
+          if (!params.agentId || !agent.id) return;
+          await upsert(db, "agents", { id: params.agentId, name: agent.name, systemPrompt: agent.systemPrompt, tools: agent.tools.map(t => t.toolSpec.name) });
+          if (!params.threadId || !agent.thread.id) return;
+          await upsert(db, "threads", { id: params.threadId, agentId: params.agentId, name: agent.thread.name });
+        });
+
+        // Actions
+        async function sendMessage(text, files = [], modelId, reasoningMode, forkFromId = null) {
+          setAgent("loading", true);
+
+          if (!params.threadId) {
+            setAgent("thread", "name", "Untitled");
+            const thread = { agentId, name: agent.thread.name };
+            const threadId = await db.add("threads", thread);
+            setParams("threadId", threadId);
+          }
+
+          const record = await db.get("agents", +params.agentId);
+          const agentTools = tools.filter(t => record.tools.includes(t.toolSpec.name));
+          const client = await getConverseClient(modelId.includes("gemini") ? "google" : "aws");
+          const content = await getMessageContent(text, files);
+
+          const parentId = forkFromId !== null
+            ? agent.messageTree?.nodes.get(forkFromId)?.message?.parentId ?? null
+            : agent.activeLeafId ?? null;
+
+          const userMessage = { role: "user", content, parentId, createdAt: Date.now() };
+          const savedId = await db.add("messages", { ...userMessage, agentId: params.agentId, threadId: params.threadId });
+          userMessage.id = savedId;
+
+          const allMessages = await db.getAllFromIndex("messages", "threadId", params.threadId);
+          const tree = buildMessageTree(allMessages);
+          const newPath = extendPath(tree, getPathToMessage(tree, userMessage.id));
+          const pathMessages = newPath.map(id => tree.nodes.get(id)?.message).filter(Boolean);
+
+          setAgent({
+            id: record.id,
+            thread: { id: params.threadId },
+            modelId,
+            reasoningMode,
+            name: record.name,
+            systemPrompt: record.systemPrompt,
+            resources: record.resources,
+            tools: agentTools,
+            messages: pathMessages,
+            messageTree: tree,
+            activePath: newPath,
+            activeLeafId: userMessage.id,
+          });
+
+          await runAgentWithBranching(agent, setAgent, client, userMessage.id, params, db);
+          setAgent("loading", false);
+        }
+
+        function switchBranch(newMessageId) {
+          const tree = agent.messageTree;
+          if (!tree) return;
+          const pathToMessage = getPathToMessage(tree, newMessageId);
+          const fullPath = extendPath(tree, pathToMessage);
+          const newLeafId = fullPath.length > 0 ? fullPath[fullPath.length - 1] : null;
+          const pathMessages = fullPath.map(id => tree.nodes.get(id)?.message).filter(Boolean);
+          setAgent({ activePath: fullPath, activeLeafId: newLeafId, messages: pathMessages });
+        }
+
+        return { agent, params, setAgent, sendMessage, switchBranch };
+      }
+
+      function setSearchParams(obj) {
+        const params = new URLSearchParams(window.location.search);
+        Object.entries(obj).forEach(([k, v]) => v != null && params.set(k, v));
+        window.history.replaceState({}, "", `${window.location.pathname}?${params}`);
+      }
+
+      async function upsert(db, table, obj, key = "id") {
+        const existing = await db.get(table, obj[key]);
+        if (existing) {
+          const updated = { ...existing, ...obj };
+          await db.put(table, updated);
+          return updated;
+        } else {
+          const id = await db.add(table, obj);
+          return { ...obj, [key]: id };
+        }
+      }
+
+      // #endregion
+
+      // #region 3. UI COMPONENTS
+      // =============================================================================
+      // Presentational components for messages, branching, and input.
+      // =============================================================================
+
+      function InputForm(props) {
+        return html`
+          <form id="inputForm" onSubmit=${props.onSubmit} class="shadow-sm bg-white border rounded">
+            <textarea
+              id="userMessage"
+              class="form-control form-control-sm rounded p-2 border-0 shadow-none"
+              rows="3"
+              placeholder="Enter message"
+              aria-label="User message"
+              onKeyDown=${props.onKeyDown}
+              required></textarea>
+            <div class="d-flex align-items-center justify-content-between gap-1 p-2">
+              <div class="d-flex flex-grow-1 gap-2 align-items-center">
+                <input type="file" name="userFiles" id="userFiles" class="visually-hidden" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.tsv,.md,.json,text/*" multiple />
+                <label for="userFiles" class="btn btn-sm btn-secondary">
+                  <span class="visually-hidden">Attach Files</span>
+                  <i class="bi bi-paperclip"></i>
+                </label>
+                <div class="form-check form-switch form-control-sm">
+                  <input class="form-check-input" type="checkbox" role="switch" id="reasoningMode" name="reasoningMode" title="Enable extended reasoning mode" />
+                  <label class="form-check-label" for="reasoningMode">
+                    <span class="visually-hidden">Reasoning Mode</span>
+                    <i class="bi bi-lightbulb-fill text-secondary"></i>
+                  </label>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <select id="modelId" class="form-select form-select-sm w-auto border-0 shadow-none" required>
+                  <optgroup label="AWS Bedrock">
+                    <option value="global.anthropic.claude-opus-4-5-20251101-v1:0">Opus 4.5</option>
+                    <option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0">Sonnet 4.5</option>
+                    <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0" selected>Haiku 4.5</option>
+                  </optgroup>
+                  <optgroup label="Google Vertex">
+                    <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
+                    <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
+                    <option value="imagen-4.0-generate-001" hidden>Imagen 4.0</option>
+                    <option value="veo-3.0-generate-preview" hidden>Veo 3.0</option>
+                  </optgroup>
+                </select>
+                <button type="submit" class="btn btn-sm btn-dark">Send</button>
+              </div>
+            </div>
+          </form>
+        `;
+      }
+
+      function MessageContent(props) {
+        const findToolResult = toolUseId => {
+          for (const msg of (props.allMessages?.() || []).slice().reverse()) {
+            const result = msg.content.find(c => c.toolResult?.toolUseId === toolUseId);
+            if (result) return result.toolResult;
+          }
+        };
+
+        const c = () => props.content;
+        const m = () => props.message;
+        const isText = () => c().text !== undefined;
+
+        return html`
+          <${Switch}>
+            <${Match} when=${() => isText() && m().role === "user"}>
+              <${Show}
+                when=${() => props.editingId === m().id}
+                fallback=${html`<div class="small rounded p-2 text-dark bg-secondary-subtle d-inline-block text-pre">${() => c().text}</div>`}>
+                <${EditableMessage} text=${() => c().text} onSave=${text => props.onSave?.(m().id, text)} onCancel=${props.onCancel} />
+              <//>
+            <//>
+            <${Match} when=${() => isText() && m().role === "assistant"}>
+              <div class="small p-2 text-pre">${() => c().text}</div>
+            <//>
+            <${Match} when=${() => c().reasoningContent || c().toolUse?.name === "think"}>
+              <details class="small rounded border p-2">
+                <summary class="cursor-pointer text-dark">View Reasoning</summary>
+                <p class="my-2 text-muted">${() => c().reasoningContent?.reasoningText?.text || parseJSON(c().toolUse?.input)?.thought}</p>
+              </details>
+            <//>
+            <${Match} when=${() => c().toolUse && c().toolUse?.name !== "think"}>
+              <details class="small rounded border p-2">
+                <summary class="cursor-pointer text-dark">${() => c().toolUse.name}</summary>
+                <div class="my-2 text-muted text-pre">
+                  ${() => JSON.stringify(parseJSON(c().toolUse.input || "{}"), null, 2)}
+                  <hr />
+                  ${() => JSON.stringify(findToolResult(c().toolUse.toolUseId) || {}, null, 2)}
+                </div>
+              </details>
+            <//>
+          <//>
+        `;
+      }
+
+      function BranchNav(props) {
+        const siblings = () => (props.tree && props.messageId ? getSiblings(props.tree, props.messageId) : [props.messageId]);
+        const index = () => siblings().indexOf(props.messageId);
+
+        return html`
+          <${Show} when=${() => siblings().length > 1}>
+            <span class="branch-nav d-inline-flex align-items-center gap-1 small text-muted ms-2">
+              <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" disabled=${() => index() <= 0} onClick=${e => props.onSwitch(siblings()[index() - 1])} title="Previous version">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <span class="branch-counter text-center">${() => index() + 1}/${() => siblings().length}</span>
+              <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" disabled=${() => index() >= siblings().length - 1} onClick=${e => props.onSwitch(siblings()[index() + 1])} title="Next version">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </span>
+          <//>
+        `;
+      }
+
+      function EditableMessage(props) {
+        let textareaRef;
+        return html`
+          <div class="edit-message-container">
+            <textarea
+              ref=${el => { textareaRef = el; el.focus(); el.select(); }}
+              class="form-control form-control-sm mb-2"
+              rows="3"
+              onKeyDown=${e => {
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); props.onSave(textareaRef.value); }
+                else if (e.key === "Escape") props.onCancel();
+              }}>${() => props.text}</textarea>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-primary" onClick=${e => props.onSave(textareaRef.value)}>Save & Submit</button>
+              <button type="button" class="btn btn-sm btn-secondary" onClick=${props.onCancel}>Cancel</button>
+            </div>
+          </div>
+        `;
+      }
+
+      // #endregion
+
+      // #region 4. AGENT LOOP & STREAMING
+      // =============================================================================
+      // Core agent loop, streaming response processing, and command construction.
+      // =============================================================================
+
+      async function runAgentWithBranching(store, setStore, client, lastMessageId, params, db) {
+        const saveMsg = msg => db.add("messages", { ...unwrap(msg), agentId: params.agentId, threadId: params.threadId });
+        const toolMap = Object.fromEntries(store.tools.map(t => [t.toolSpec.name, t.fn]));
+        let parentId = lastMessageId;
+
+        while (true) {
+          const input = getConverseCommand({ ...store, messages: store.messages.map(({ role, content }) => ({ role, content })) });
+          const output = await client.send(input);
+
+          setStore("messages", store.messages.length, { role: "assistant", content: [], parentId, createdAt: Date.now() });
+
+          let stopReason = null;
+          for await (const msg of output.stream) {
+            setStore(produce(s => processContentBlock(s, msg)));
+            if (msg.messageStop) stopReason = msg.messageStop.stopReason;
+          }
+
+          const savedId = await saveMsg(store.messages.at(-1));
+          setStore("messages", store.messages.length - 1, "id", savedId);
+          setStore("activeLeafId", savedId);
+          parentId = savedId;
+
+          if (stopReason !== "tool_use") break;
+
+          const toolResults = { ...(await getToolResults(store.messages.at(-1).content, toolMap)), parentId: savedId, createdAt: Date.now() };
+          setStore("messages", store.messages.length, toolResults);
+          parentId = await saveMsg(toolResults);
+          setStore("messages", store.messages.length - 1, "id", parentId);
+        }
+
+        const allMessages = await db.getAllFromIndex("messages", "threadId", params.threadId);
+        const tree = buildMessageTree(allMessages);
+        setStore("messageTree", tree);
+        setStore("activePath", getMostRecentPath(tree));
+      }
+
+      function getConverseCommand(config) {
+        const cachePoint = { type: "default" };
+        const additionalModelRequestFields = {};
+        if (config.reasoningMode) {
+          additionalModelRequestFields.thinking = { type: "enabled", budget_tokens: +32_000 };
+        }
+        const tools = config.tools.map(({ toolSpec }) => ({ toolSpec })).filter(Boolean);
+
+        return {
+          modelId: config.modelId,
+          messages: config.messages,
+          system: [{ text: config.systemPrompt }, { cachePoint }],
+          toolConfig: { tools: [...tools, { cachePoint }] },
+          additionalModelRequestFields,
+        };
+      }
+
+      function processContentBlock(s, message) {
+        const { contentBlockStart, contentBlockDelta, contentBlockStop } = message;
+        const content = s.messages.at(-1).content;
+
+        if (contentBlockStart?.start?.toolUse) {
+          content[contentBlockStart.contentBlockIndex] = { toolUse: contentBlockStart.start.toolUse };
+          return;
+        }
+        if (contentBlockStop) {
+          const block = content[contentBlockStop.contentBlockIndex];
+          if (block?.toolUse) block.toolUse.input = parseJSON(block.toolUse.input);
+          return;
+        }
+        if (!contentBlockDelta) return;
+
+        const { contentBlockIndex, delta } = contentBlockDelta;
+        content[contentBlockIndex] ||= {};
+        const block = content[contentBlockIndex];
+
+        if (delta.reasoningContent) appendReasoning(block, delta.reasoningContent);
+        else if (delta.text) block.text = (block.text || "") + delta.text;
+        else if (delta.toolUse) block.toolUse.input = (block.toolUse.input || "") + delta.toolUse.input;
+      }
+
+      function appendReasoning(block, rc) {
+        block.reasoningContent ||= { reasoningText: {} };
+        const t = block.reasoningContent;
+        if (rc.text) t.reasoningText.text = (t.reasoningText.text || "") + rc.text;
+        else if (rc.signature) t.reasoningText.signature = (t.reasoningText.signature || "") + rc.signature;
+        else if (rc.redactedContent) t.redactedContent = (t.redactedContent || "") + rc.redactedContent;
+      }
+
+      // #endregion
+
+      // #region 5. PROVIDERS & CLIENTS
+      // =============================================================================
+      // AI provider clients (AWS Bedrock, Google Gemini) and configuration.
+      // =============================================================================
+
+      async function getConverseClient(type = "aws") {
+        if (type === "aws") {
+          const config = await withStorage(getAwsConfig, localStorage, "aws-config");
+          const client = new BedrockRuntimeClient(config);
+          const send = input => client.send(new ConverseStreamCommand(input));
+          return { client, send };
+        }
+        if (type === "google") {
+          const config = await withStorage(getGoogleConfig, localStorage, "google-config");
+          return getGeminiClient(new GoogleGenAI(config));
+        }
+      }
+
+      export function getGeminiClient(client) {
+        const toB64 = b => btoa(b.reduce((s, x) => s + String.fromCharCode(x), ""));
+        const MIME = { png: "image/png", jpeg: "image/jpeg", jpg: "image/jpeg", gif: "image/gif", webp: "image/webp", pdf: "application/pdf" };
+
+        async function* stream(input) {
+          const toolNames = new Map();
+          const toGeminiPart = b => {
+            if (b.text) return { text: b.text };
+            if (b.image) return { inlineData: { data: toB64(b.image.source.bytes), mimeType: MIME[b.image.format] } };
+            if (b.document) return { inlineData: { data: toB64(b.document.source.bytes), mimeType: MIME[b.document.format] || "application/octet-stream" } };
+            if (b.toolUse) {
+              toolNames.set(b.toolUse.toolUseId, b.toolUse.name);
+              return { functionCall: { name: b.toolUse.name, args: typeof b.toolUse.input === "string" ? JSON.parse(b.toolUse.input) : b.toolUse.input, id: b.toolUse.toolUseId } };
+            }
+            if (b.toolResult) {
+              const c = b.toolResult.content?.[0];
+              return { functionResponse: { id: b.toolResult.toolUseId, name: toolNames.get(b.toolResult.toolUseId) || b.toolResult.toolUseId, response: c?.json ?? { output: c?.text } } };
+            }
+          };
+
+          const geminiReq = {
+            model: input.modelId,
+            contents: input.messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: m.content.map(toGeminiPart).filter(Boolean) })),
+            config: {
+              systemInstruction: input.system?.find(s => s.text)?.text,
+              tools: input.toolConfig?.tools
+                ?.filter(t => t.toolSpec)
+                .map(t => ({
+                  functionDeclarations: [{
+                    name: t.toolSpec.name,
+                    description: t.toolSpec.description,
+                    parametersJsonSchema: t.toolSpec.inputSchema?.json,
+                  }],
+                })),
+              ...(input.additionalModelRequestFields?.thinking && {
+                thinkingConfig: { thinkingBudget: input.additionalModelRequestFields.thinking.budget_tokens },
+              }),
+            },
+          };
+
+          const response = await client.models.generateContentStream(geminiReq);
+          yield { messageStart: { role: "assistant" } };
+
+          let idx = 0, active = null, toolNum = 0;
+
+          for await (const chunk of response) {
+            const parts = chunk.candidates?.[0]?.content?.parts ?? [];
+            const done = chunk.candidates?.[0]?.finishReason;
+
+            for (const p of parts) {
+              let type, start, delta;
+
+              if (p.thought && p.text != null) {
+                type = "reasoning";
+                delta = { reasoningContent: { text: p.text, ...(p.thoughtSignature && { signature: p.thoughtSignature }) } };
+              } else if (p.text != null) {
+                type = "text";
+                delta = { text: p.text };
+              } else if (p.functionCall) {
+                type = "tool";
+                const id = `gemini_${toolNum++}`;
+                start = { toolUse: { toolUseId: id, name: p.functionCall.name } };
+                delta = { toolUse: { input: JSON.stringify(p.functionCall.args ?? {}) } };
+              } else continue;
+
+              if (type !== active) {
+                if (active) yield { contentBlockStop: { contentBlockIndex: idx++ } };
+                if (start) yield { contentBlockStart: { contentBlockIndex: idx, start } };
+                active = type;
+              }
+              yield { contentBlockDelta: { contentBlockIndex: idx, delta } };
+            }
+
+            if (done) {
+              if (active) yield { contentBlockStop: { contentBlockIndex: idx } };
+              yield { messageStop: { stopReason: parts.some(p => p.functionCall) ? "tool_use" : "end_turn" } };
+            }
+          }
+        }
+
+        return { client, send: input => Promise.resolve({ stream: stream(input) }) };
+      }
+
+      async function withStorage(getConfig, storage, key) {
+        const cached = storage.getItem(key);
+        if (cached) return JSON.parse(cached);
+        const config = await getConfig();
+        storage.setItem(key, JSON.stringify(config));
+        return config;
+      }
+
+      function getGoogleConfig(prompt = window.prompt) {
+        const apiKey = prompt("Google GenAI API Key:");
+        return { apiKey };
+      }
+
+      function getAwsConfig(prompt = window.prompt) {
+        const region = prompt("AWS region [us-east-1]:");
+        const accessKeyId = prompt("AWS Access Key ID:");
+        const secretAccessKey = prompt("AWS Secret Access Key:");
+        const sessionToken = prompt("AWS Session Token [optional]:");
+        return {
+          region: region || "us-east-1",
+          credentials: { accessKeyId, secretAccessKey, sessionToken: sessionToken || undefined },
+        };
+      }
+
+      // #endregion
+
+      // #region 6. TOOLS
+      // =============================================================================
+      // Tool function implementations and file/message content handling.
+      // =============================================================================
+
+      function code({ language = "js", source, timeout = 5000 }) {
+        return new Promise(resolve => {
+          const logs = [];
+          const frame = document.createElement("iframe");
+          frame.sandbox = "allow-scripts allow-same-origin";
+          frame.style.cssText = "position:absolute;left:-9999px;top:-9999px;width:0;height:0;border:0";
+          document.body.appendChild(frame);
+
+          const onMsg = e => {
+            if (e.source !== frame.contentWindow) return;
+            const d = e.data || {};
+            if (d.type === "log") logs.push(String(d.msg));
+            if (d.type === "done") cleanup();
+          };
+          window.addEventListener("message", onMsg);
+
+          const cleanup = () => {
+            clearTimeout(kill);
+            window.removeEventListener("message", onMsg);
+            const doc = frame.contentDocument || frame.contentWindow.document;
+            const b = doc.body, de = doc.documentElement;
+            const height = Math.max(b?.scrollHeight || 0, b?.offsetHeight || 0, de?.clientHeight || 0, de?.scrollHeight || 0, de?.offsetHeight || 0);
+            const html = de?.outerHTML || "";
+            frame.remove();
+            resolve({ logs, height, html });
+          };
+
+          const bridge = `
+      (()=>{
+        const send=(t,m)=>parent.postMessage({type:t,msg:m},"*");
+        ["log","warn","error","info","debug"].forEach(k=>{
+          const o=console[k]; console[k]=(...a)=>{try{send("log",a.join(" "))}catch{}; o&&o.apply(console,a);};
+        });
+        addEventListener("error",e=>send("log",String(e.message||e.error||"error")));
+        addEventListener("unhandledrejection",e=>send("log","UnhandledRejection: "+(e?.reason?.message||e?.reason||"")));
+      })();
+    `;
+
+          const jsDoc = `<!doctype html><meta charset=utf-8><scr` + `ipt>${bridge}</scr` + `ipt><scr` + `ipt type="module">${source || ""};parent.postMessage({type:"done"},"*");</scr` + `ipt>`;
+          const htmlDoc = `<!doctype html><meta charset=utf-8><scr` + `ipt>${bridge}</scr` + `ipt>${source || ""}<scr` + `ipt async>addEventListener("load",()=>parent.postMessage({type:"done"},"*"));</scr` + `ipt>`;
+
+          const kill = setTimeout(cleanup, timeout);
+          frame.srcdoc = !language || ["js", "javascript"].includes(language) ? jsDoc : htmlDoc;
+        });
+      }
+
+      function think(input) {
+        return "Thinking complete.";
+      }
+
+      async function getToolResults(toolUseContent, tools) {
+        const content = await Promise.all(
+          toolUseContent
+            .filter(c => c.toolUse)
+            .map(async ({ toolUse }) => {
+              const { toolUseId, name, input } = toolUse;
+              try {
+                const result = await tools?.[name]?.(input);
+                return { toolResult: { toolUseId, content: [{ json: { result } }] } };
+              } catch (error) {
+                console.error("Tool error:", error);
+                return { toolResult: { toolUseId, content: [{ json: { result: error.stack || error.message || String(error) } }] } };
+              }
+            })
+        );
+        return { role: "user", content };
+      }
+
+      async function getMessageContent(text, files) {
+        const blocks = await Promise.all(files.map(getContentBlock));
+        return [{ text }, ...blocks.filter(Boolean)];
+      }
+
+      async function getContentBlock(file) {
+        const DOC_TYPES = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
+        const IMG_TYPES = ["png", "jpg", "jpeg", "gif", "webp"];
+
+        let ext = file.name.split(".").pop().toLowerCase();
+        const isText = file.type.startsWith("text/") || /json|xml/.test(file.type);
+
+        if (isText && !DOC_TYPES.includes(ext)) ext = "txt";
+        if (ext === "htm") ext = "html";
+        if (ext === "jpeg") ext = "jpg";
+
+        const type = IMG_TYPES.includes(ext) ? "image" : DOC_TYPES.includes(ext) ? "document" : null;
+        if (!type) return null;
+
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const name = file.name.replace(/[^A-Z0-9 _\-\(\)\[\]]/gi, "_").replace(/\s+/g, " ").trim();
+        return { [type]: { format: ext, name, source: { bytes } } };
+      }
+
+      // #endregion
+
+      // #region 7. UTILITIES
+      // =============================================================================
+      // Incremental JSON parser and tree/branching utilities.
+      // =============================================================================
+
+      /**
+       * Parses a JSON string incrementally, returning partial results for incomplete inputs.
+       * Essential for streaming responses where JSON arrives in chunks.
+       */
+      function parseJSON(input) {
+        if (typeof input !== "string") return input;
+        const jsonString = input.trim();
+        if (jsonString === "") return null;
+
+        let index = 0;
+        const LITERALS = { true: true, false: false, null: null, NaN: NaN, Infinity: Infinity, "-Infinity": -Infinity };
+
+        function skipWhitespace() {
+          while (index < jsonString.length && " \n\r\t".includes(jsonString[index])) index++;
+        }
+
+        function parseValue() {
+          skipWhitespace();
+          if (index >= jsonString.length) throw new Error("Unexpected end of input");
+
+          const char = jsonString[index];
+          if (char === "{") return parseObject();
+          if (char === "[") return parseArray();
+          if (char === '"') return parseString();
+
+          const remainingText = jsonString.substring(index);
+          for (const [key, value] of Object.entries(LITERALS)) {
+            if (jsonString.startsWith(key, index)) {
+              const endPos = index + key.length;
+              if (endPos === jsonString.length || ",]} \n\r\t".includes(jsonString[endPos])) {
+                index = endPos;
+                return value;
+              }
+            }
+            if (key.startsWith(remainingText)) {
+              index = jsonString.length;
+              return value;
+            }
+          }
+
+          if (char === "-" || (char >= "0" && char <= "9")) return parseNumber();
+          throw new Error(`Unexpected token '${char}' at position ${index}`);
+        }
+
+        function parseArray() {
+          index++;
+          const arr = [];
+          while (index < jsonString.length && jsonString[index] !== "]") {
+            try {
+              arr.push(parseValue());
+              skipWhitespace();
+              if (jsonString[index] === ",") index++;
+              else if (jsonString[index] !== "]") break;
+            } catch (e) { return arr; }
+          }
+          if (index < jsonString.length && jsonString[index] === "]") index++;
+          return arr;
+        }
+
+        function parseObject() {
+          index++;
+          const obj = {};
+          while (index < jsonString.length && jsonString[index] !== "}") {
+            try {
+              skipWhitespace();
+              if (jsonString[index] !== '"') break;
+              const key = parseString();
+              skipWhitespace();
+              if (index >= jsonString.length || jsonString[index] !== ":") break;
+              index++;
+              obj[key] = parseValue();
+              skipWhitespace();
+              if (jsonString[index] === ",") index++;
+              else if (jsonString[index] !== "}") break;
+            } catch (e) { return obj; }
+          }
+          if (index < jsonString.length && jsonString[index] === "}") index++;
+          return obj;
+        }
+
+        function parseString() {
+          if (jsonString[index] !== '"') throw new Error("Expected '\"' to start a string");
+          const startIndex = index;
+          index++;
+          let escape = false;
+          while (index < jsonString.length) {
+            if (jsonString[index] === '"' && !escape) {
+              const fullString = jsonString.substring(startIndex, ++index);
+              return JSON.parse(fullString);
+            }
+            escape = jsonString[index] === "\\" ? !escape : false;
+            index++;
+          }
+          const partialStr = jsonString.substring(startIndex);
+          try {
+            return JSON.parse(partialStr + '"');
+          } catch (e) {
+            const lastBackslash = partialStr.lastIndexOf("\\");
+            if (lastBackslash > 0) return JSON.parse(partialStr.substring(0, lastBackslash) + '"');
+            return partialStr.substring(1);
+          }
+        }
+
+        function parseNumber() {
+          const startIndex = index;
+          const numberChars = "0123456789eE.+-";
+          while (index < jsonString.length && numberChars.includes(jsonString[index])) index++;
+          const numStr = jsonString.substring(startIndex, index);
+          if (!numStr) throw new Error("Empty number literal");
+          try { return parseFloat(numStr); }
+          catch (e) {
+            if (numStr.length > 1) return parseFloat(numStr.slice(0, -1));
+            throw e;
+          }
+        }
+
+        return parseValue();
+      }
+
+      // Tree/Branching utilities
+
+      export function buildMessageTree(messages) {
+        const nodes = new Map();
+        const rootIds = [];
+
+        for (const msg of messages) {
+          nodes.set(msg.id, { message: msg, childIds: [] });
+        }
+
+        for (const msg of messages) {
+          if (msg.parentId === null || msg.parentId === undefined) {
+            rootIds.push(msg.id);
+          } else if (nodes.has(msg.parentId)) {
+            nodes.get(msg.parentId).childIds.push(msg.id);
+          }
+        }
+
+        for (const [_, node] of nodes) {
+          node.childIds.sort((a, b) => nodes.get(a).message.createdAt - nodes.get(b).message.createdAt);
+        }
+        rootIds.sort((a, b) => nodes.get(a).message.createdAt - nodes.get(b).message.createdAt);
+
+        return { rootIds, nodes };
+      }
+
+      export function getMostRecentPath(tree) {
+        if (tree.rootIds.length === 0) return [];
+        const path = [];
+        let currentId = tree.rootIds[tree.rootIds.length - 1];
+
+        while (currentId !== undefined) {
+          path.push(currentId);
+          const node = tree.nodes.get(currentId);
+          if (!node || node.childIds.length === 0) break;
+          currentId = node.childIds[node.childIds.length - 1];
+        }
+        return path;
+      }
+
+      export function getSiblings(tree, messageId) {
+        const node = tree.nodes.get(messageId);
+        if (!node) return [messageId];
+        const parentId = node.message.parentId;
+        if (parentId === null || parentId === undefined) return tree.rootIds;
+        const parentNode = tree.nodes.get(parentId);
+        return parentNode ? parentNode.childIds : [messageId];
+      }
+
+      export function getPathToMessage(tree, messageId) {
+        const path = [];
+        let currentId = messageId;
+        while (currentId !== null && currentId !== undefined) {
+          path.unshift(currentId);
+          const node = tree.nodes.get(currentId);
+          if (!node) break;
+          currentId = node.message.parentId;
+        }
+        return path;
+      }
+
+      export function extendPath(tree, path) {
+        if (path.length === 0) return [];
+        const extended = [...path];
+        let currentId = extended[extended.length - 1];
+
+        while (true) {
+          const node = tree.nodes.get(currentId);
+          if (!node || node.childIds.length === 0) break;
+          currentId = node.childIds[node.childIds.length - 1];
+          extended.push(currentId);
+        }
+        return extended;
+      }
+
+      // #endregion
+
+      // #region 8. TESTS
+      // =============================================================================
+      // Test suite activated with ?test=1 query parameter.
+      // =============================================================================
+
+      if (new URLSearchParams(window.location.search).get("test") === "1") {
+        const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+        const assert = (cond, msg) => { if (!cond) throw new Error(msg || "Assertion failed"); };
+
+        async function runTests(tests) {
+          let passed = 0, failed = 0;
+          for (const test of tests) {
+            try {
+              await test();
+              console.log(`PASS: ${test.name}`);
+              passed++;
+            } catch (e) {
+              console.error(`FAIL: ${test.name}\n   ${e.message}`);
+              failed++;
+            }
+          }
+          console.log(`Results: ${passed} passed, ${failed} failed`);
+          return { passed, failed };
+        }
+
+        async function testBranchingAndParseJSON() {
+          // Test branching: create tree with branches, verify navigation
+          const messages = [
+            { id: 1, parentId: null, createdAt: 1000, role: "user", content: [] },
+            { id: 2, parentId: 1, createdAt: 2000, role: "assistant", content: [] },
+            { id: 3, parentId: 1, createdAt: 3000, role: "assistant", content: [] },
+            { id: 4, parentId: 3, createdAt: 4000, role: "user", content: [] },
+          ];
+          const tree = buildMessageTree(messages);
+
+          assert(eq(tree.rootIds, [1]), "rootIds should be [1]");
+          assert(eq(tree.nodes.get(1).childIds, [2, 3]), "children sorted by createdAt");
+          assert(eq(getMostRecentPath(tree), [1, 3, 4]), "most recent path follows newest branch");
+          assert(eq(getSiblings(tree, 2), [2, 3]), "siblings include both branches");
+          assert(eq(getPathToMessage(tree, 4), [1, 3, 4]), "path from root to message");
+          assert(eq(extendPath(tree, [1]), [1, 3, 4]), "extend path to leaf");
+
+          const empty = buildMessageTree([]);
+          assert(eq(empty.rootIds, []), "empty tree has no roots");
+          assert(eq(getMostRecentPath(empty), []), "empty tree has no path");
+
+          // Test parseJSON
+          assert(eq(parseJSON('{"a": 1}'), { a: 1 }), "complete object");
+          assert(eq(parseJSON("[1, 2, 3]"), [1, 2, 3]), "complete array");
+          assert(parseJSON('{"name": "test", "val').name === "test", "partial object");
+          assert(eq(parseJSON("[1, 2, 3"), [1, 2, 3]), "partial array");
+          assert(eq(parseJSON("true"), true), "literal true");
+          assert(eq(parseJSON("null"), null), "literal null");
+          assert(eq(parseJSON(""), null), "empty string");
+          assert(eq(parseJSON({ x: 1 }), { x: 1 }), "non-string passthrough");
+        }
+
+        async function testUIRendering() {
+          await new Promise(r => setTimeout(r, 100));
+          const app = document.getElementById("app");
+          assert(app, "App container exists");
+          assert(app.querySelector("form#inputForm"), "Input form renders");
+          assert(app.querySelector("textarea#userMessage"), "Message textarea renders");
+          assert(app.querySelector("button[type='submit']"), "Send button renders");
+          const modelSelect = app.querySelector("#modelId");
+          assert(modelSelect?.options?.length > 0, "Model select has options");
+          assert(app.querySelector("#reasoningMode")?.type === "checkbox", "Reasoning toggle is checkbox");
+          assert(app.querySelector("#userFiles")?.type === "file", "File input exists");
+        }
+
+        runTests([testBranchingAndParseJSON, testUIRendering]).then(({ failed }) => {
+          window.TESTS_DONE = true;
+          if (failed > 0) console.error(`\n${failed} test(s) failed!`);
+        });
+      }
+
+      // #endregion
+    </script>
+  </body>
+</html>
