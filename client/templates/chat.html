@@ -13,14 +13,19 @@
         --bs-border-radius: 0.75rem;
         --bs-border-radius-sm: 0.5rem;
       }
+      /* Form element overrides */
       input, button, label, select, .btn, .form-control[type="file"], .form-select, .form-check-label { font-weight: 500; }
       .form-select, .form-check-input, .form-check-label { cursor: pointer; }
+      /* Utilities */
       .text-pre { white-space: pre-wrap !important; }
-      .message-wrapper:hover .message-actions { opacity: 1; }
-      .message-actions { opacity: 0; transition: opacity 0.15s ease-in-out; }
-      .message-block:hover .message-controls { visibility: visible !important; }
-      .branch-counter { min-width: 2.5rem; font-variant-numeric: tabular-nums; }
-      .edit-form textarea { resize: vertical; }
+      .tabular-nums { font-variant-numeric: tabular-nums; }
+      .resize-y { resize: vertical; }
+      .min-w-10 { min-width: 2.5rem; }
+      /* Hover utilities: parent reveals children */
+      .hover-fade { opacity: 0; transition: opacity 0.15s ease-in-out; }
+      .hover-parent:hover .hover-fade { opacity: 1; }
+      .hover-show { visibility: hidden; }
+      .hover-parent:hover .hover-show { visibility: visible !important; }
     </style>
     <script type="importmap">
       {
@@ -204,11 +209,34 @@
           setEditingMessageId(null);
         }
 
+        async function handleCopy(message) {
+          const text = message.content?.find(c => c.text)?.text;
+          if (text) await navigator.clipboard.writeText(text);
+        }
+
+        async function handleRetry(message) {
+          const form = document.getElementById("inputForm");
+          const modelId = form?.modelId?.value;
+          const reasoningMode = form?.reasoningMode?.checked;
+
+          if (message.role === "user") {
+            const text = message.content.find(c => c.text)?.text;
+            if (text) await sendMessage(text, [], modelId, reasoningMode, message.id);
+          } else if (message.role === "assistant") {
+            const idx = agent.messages.findIndex(m => m.id === message.id);
+            const userMsg = agent.messages.slice(0, idx).reverse().find(m => m.role === "user");
+            if (userMsg) {
+              const text = userMsg.content.find(c => c.text)?.text;
+              if (text) await sendMessage(text, [], modelId, reasoningMode, userMsg.id);
+            }
+          }
+        }
+
         return html`
           <div class="container my-5">
             <${For} each=${() => agent.messages}>
               ${message => html`
-                <div class="message-block mb-2">
+                <div class="message-block hover-parent d-flex flex-column mb-2" classList=${{ "align-items-end": message.role === "user" }}>
                   <${For} each=${() => message.content}>
                     ${content => html`
                       <${MessageContent}
@@ -221,13 +249,31 @@
                     `}
                   <//>
                   <${Show} when=${() => message.id && agent.messageTree && editingMessageId() !== message.id}>
-                    <div class="message-controls invisible d-flex align-items-center gap-2">
-                      <${BranchNav} tree=${() => agent.messageTree} messageId=${message.id} onSwitch=${switchBranch} />
+                    <div class="message-controls hover-show d-flex align-items-center gap-2 px-2">
                       <${Show} when=${() => message.role === "user"}>
-                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => setEditingMessageId(message.id)} title="Edit message">
+                        <${Show} when=${() => !agent.loading}>
+                          <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => handleRetry(message)} title="Retry">
+                            <i class="bi bi-arrow-clockwise"></i>
+                          </button>
+                        <//>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => setEditingMessageId(message.id)} title="Edit">
                           <i class="bi bi-pencil"></i>
                         </button>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => handleCopy(message)} title="Copy">
+                          <i class="bi bi-clipboard"></i>
+                        </button>
                       <//>
+                      <${Show} when=${() => message.role === "assistant"}>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => handleCopy(message)} title="Copy">
+                          <i class="bi bi-clipboard"></i>
+                        </button>
+                        <${Show} when=${() => !agent.loading}>
+                          <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => handleRetry(message)} title="Retry">
+                            <i class="bi bi-arrow-clockwise"></i>
+                          </button>
+                        <//>
+                      <//>
+                      <${BranchNav} tree=${() => agent.messageTree} messageId=${message.id} onSwitch=${switchBranch} />
                     </div>
                   <//>
                 </div>
@@ -379,7 +425,7 @@
               aria-label="User message"
               onKeyDown=${props.onKeyDown}
               required></textarea>
-            <div class="d-flex align-items-center justify-content-between gap-1 p-2">
+            <div class="d-flex align-items-center justify-content-between gap-2 p-2">
               <div class="d-flex flex-grow-1 gap-2 align-items-center">
                 <input type="file" name="userFiles" id="userFiles" class="visually-hidden" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.tsv,.md,.json,text/*" multiple />
                 <label for="userFiles" class="btn btn-sm btn-secondary">
@@ -465,11 +511,11 @@
 
         return html`
           <${Show} when=${() => siblings().length > 1}>
-            <span class="branch-nav d-inline-flex align-items-center gap-1 small text-muted ms-2">
+            <span class="branch-nav d-inline-flex align-items-center gap-2 small text-muted">
               <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" disabled=${() => index() <= 0} onClick=${e => props.onSwitch(siblings()[index() - 1])} title="Previous version">
                 <i class="bi bi-chevron-left"></i>
               </button>
-              <span class="branch-counter text-center">${() => index() + 1}/${() => siblings().length}</span>
+              <span class="tabular-nums min-w-10 text-center">${() => index() + 1}/${() => siblings().length}</span>
               <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" disabled=${() => index() >= siblings().length - 1} onClick=${e => props.onSwitch(siblings()[index() + 1])} title="Next version">
                 <i class="bi bi-chevron-right"></i>
               </button>
@@ -484,7 +530,7 @@
           <div class="edit-message-container">
             <textarea
               ref=${el => { textareaRef = el; el.focus(); el.select(); }}
-              class="form-control form-control-sm mb-2"
+              class="form-control form-control-sm resize-y mb-2"
               rows="3"
               onKeyDown=${e => {
                 if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); props.onSave(textareaRef.value); }
