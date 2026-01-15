@@ -89,6 +89,13 @@
       import { createStore, produce, unwrap } from "solid-js/store";
       import html from "solid-js/html";
 
+      // Web component for rendering HTML in isolated shadow DOM
+      customElements.define("html-preview", class extends HTMLElement {
+        static observedAttributes = ["content"];
+        constructor() { super(); this.attachShadow({ mode: "open" }); }
+        attributeChangedCallback(name, old, val) { if (name === "content" && val) this.shadowRoot.innerHTML = val; }
+      });
+
       const db = await initDB();
       await ensureDefaultAgent(db);
 
@@ -525,7 +532,12 @@ Examples:
             <${Match} when=${() => c().toolUse?.name === "editor"}>
               <${EditorResult} result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result} />
             <//>
-            <${Match} when=${() => c().toolUse && !["think", "editor"].includes(c().toolUse?.name)}>
+            <${Match} when=${() => c().toolUse?.name === "code"}>
+              <${CodeResult}
+                input=${() => parseJSON(c().toolUse?.input)}
+                result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result} />
+            <//>
+            <${Match} when=${() => c().toolUse && !["think", "editor", "code"].includes(c().toolUse?.name)}>
               <details class="small rounded border p-2">
                 <summary class="cursor-pointer text-dark">${() => c().toolUse.name}</summary>
                 <div class="my-2 text-muted text-pre">
@@ -580,6 +592,7 @@ Examples:
 
       function EditorResult(props) {
         const r = () => props.result;
+        const isHtml = () => r()?.path?.endsWith(".html");
         const download = () => {
           const content = r()?.content;
           const path = r()?.path || "file.txt";
@@ -602,7 +615,10 @@ Examples:
                 </button>
               <//>
             </div>
-            <${Show} when=${() => r()?.content !== undefined}>
+            <${Show} when=${() => isHtml() && r()?.content !== undefined}>
+              <html-preview attr:content=${() => r().content} style="display: block; padding: 1rem;"></html-preview>
+            <//>
+            <${Show} when=${() => !isHtml() && r()?.content !== undefined}>
               <pre class="m-0 p-2 text-pre" style="max-height: 300px; overflow: auto;">${() => r().content}</pre>
             <//>
             <${Show} when=${() => r()?.entries}>
@@ -610,6 +626,33 @@ Examples:
             <//>
             <${Show} when=${() => r()?.error}>
               <div class="p-2 text-danger">${() => r().error}</div>
+            <//>
+          </div>
+        `;
+      }
+
+      function CodeResult(props) {
+        const input = () => props.input;
+        const result = () => props.result;
+        const lang = () => input()?.language || (input()?.filename?.endsWith(".html") ? "html" : "js");
+        const isHtml = () => lang() === "html";
+
+        return html`
+          <div class="code-result small border rounded overflow-hidden mb-1">
+            <div class="px-2 py-1 bg-secondary-subtle text-muted border-bottom">
+              <span>${() => input()?.filename || lang()}</span>
+            </div>
+            <${Show} when=${() => isHtml() && result()?.html}>
+              <html-preview attr:content=${() => result().html} style="display: block; padding: 1rem;"></html-preview>
+            <//>
+            <${Show} when=${() => !isHtml() && input()?.source}>
+              <pre class="m-0 p-2 text-pre bg-light" style="max-height: 300px; overflow: auto;">${() => input().source}</pre>
+            <//>
+            <${Show} when=${() => result()?.logs?.length}>
+              <pre class="m-0 p-2 text-pre border-top" style="max-height: 200px; overflow: auto;">${() => result().logs.join("\n")}</pre>
+            <//>
+            <${Show} when=${() => result()?.error}>
+              <div class="p-2 text-danger">${() => result().error}</div>
             <//>
           </div>
         `;
@@ -877,11 +920,9 @@ Examples:
             clearTimeout(kill);
             window.removeEventListener("message", onMsg);
             const doc = frame.contentDocument || frame.contentWindow.document;
-            const b = doc.body, de = doc.documentElement;
-            const height = Math.max(b?.scrollHeight || 0, b?.offsetHeight || 0, de?.clientHeight || 0, de?.scrollHeight || 0, de?.offsetHeight || 0);
-            const html = de?.outerHTML || "";
+            const html = doc.documentElement?.outerHTML || "";
             frame.remove();
-            resolve({ logs, height, html });
+            resolve({ logs, html });
           };
 
           const bridge = `
