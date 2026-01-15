@@ -98,15 +98,15 @@
           fn: code,
           toolSpec: {
             name: "code",
-            description: "Execute JavaScript or HTML code snippets.",
+            description: "Execute JavaScript or HTML code. Provide source directly, or use filename to run a file from the editor.",
             inputSchema: {
               json: {
                 type: "object",
                 properties: {
-                  source: { type: "string", description: "The JavaScript code to execute. Eg: 2+2" },
-                  language: { type: "string", description: "The programming language of the code (e.g., 'javascript', 'html').", default: "javascript" },
+                  source: { type: "string", description: "The code to execute (ignored if filename provided)" },
+                  filename: { type: "string", description: "Path to a file in resources to run instead of source" },
+                  language: { type: "string", description: "Language (js/html). Auto-detected from filename extension.", default: "javascript" },
                 },
-                required: ["source"],
               },
             },
           },
@@ -123,6 +123,36 @@
                   thought: { type: "string", description: "Your detailed thought process, analysis, or reasoning steps." },
                 },
                 required: ["thought"],
+              },
+            },
+          },
+        },
+        {
+          fn: editor,
+          toolSpec: {
+            name: "editor",
+            description: `Create, view, and edit files.
+
+Examples:
+- View file: {"command": "view", "path": "app.js"}
+- View lines 1-10: {"command": "view", "path": "app.js", "view_range": [1, 10]}
+- List directory: {"command": "view", "path": "/"}
+- Create file: {"command": "create", "path": "hello.py", "file_text": "print('hello')"}
+- Replace text: {"command": "str_replace", "path": "app.js", "old_str": "foo", "new_str": "bar"}
+- Insert at line 5: {"command": "insert", "path": "app.js", "insert_line": 5, "new_str": "// comment"}`,
+            inputSchema: {
+              json: {
+                type: "object",
+                properties: {
+                  command: { type: "string", enum: ["view", "create", "str_replace", "insert"], description: "The operation to perform" },
+                  path: { type: "string", description: "The file or directory path (end with / for directories)" },
+                  view_range: { type: "array", items: { type: "integer" }, description: "Optional [start, end] line numbers (1-indexed, -1 for end). Only for view command on files." },
+                  old_str: { type: "string", description: "Text to replace (for str_replace command)" },
+                  new_str: { type: "string", description: "Replacement text (for str_replace and insert commands)" },
+                  file_text: { type: "string", description: "File content (for create command)" },
+                  insert_line: { type: "integer", description: "Line number to insert after (0 for beginning, for insert command)" },
+                },
+                required: ["command", "path"],
               },
             },
           },
@@ -154,14 +184,13 @@
       }
 
       async function ensureDefaultAgent(db) {
-        if (!(await db.count("agents"))) {
-          await db.add("agents", {
-            name: "default",
-            systemPrompt: "You are honest. When you are uncertain about something, or if your tools aren't working right, you let the user know. You write in brief, artistic prose, without any *markdown*, lists, bullet points, emojis or em-dashes.",
-            tools: ["code", "think"],
-            resources: [],
-          });
-        }
+        await db.put("agents", {
+          id: 1,
+          name: "default",
+          systemPrompt: "You are honest. When you are uncertain about something, or if your tools aren't working right, you let the user know. You write in brief, artistic prose, without any *markdown*, lists, bullet points, emojis or em-dashes.",
+          tools: ["code", "think", "editor"],
+          resources: [],
+        });
       }
 
       // #endregion
@@ -178,6 +207,7 @@
 
         createEffect(() => setSearchParams(params));
         const [editingMessageId, setEditingMessageId] = createSignal(null);
+        const displayRole = msg => msg.content?.some(c => c.toolResult) ? "assistant" : msg.role;
 
         // Event handlers
         function handleKeyDown(event) {
@@ -236,7 +266,7 @@
           <div class="container my-5">
             <${For} each=${() => agent.messages}>
               ${message => html`
-                <div class="message-block hover-parent d-flex flex-column mb-2" classList=${{ "align-items-end": message.role === "user" }}>
+                <div class="message-block hover-parent d-flex flex-column mb-2" classList=${{ "align-items-end": displayRole(message) === "user" }}>
                   <${For} each=${() => message.content}>
                     ${content => html`
                       <${MessageContent}
@@ -250,7 +280,7 @@
                   <//>
                   <${Show} when=${() => message.id && agent.messageTree && editingMessageId() !== message.id}>
                     <div class="message-controls hover-show d-flex align-items-center gap-2 px-2">
-                      <${Show} when=${() => message.role === "user"}>
+                      <${Show} when=${() => displayRole(message) === "user"}>
                         <${Show} when=${() => !agent.loading}>
                           <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => handleRetry(message)} title="Retry">
                             <i class="bi bi-arrow-clockwise"></i>
@@ -263,7 +293,7 @@
                           <i class="bi bi-clipboard"></i>
                         </button>
                       <//>
-                      <${Show} when=${() => message.role === "assistant"}>
+                      <${Show} when=${() => displayRole(message) === "assistant"}>
                         <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => handleCopy(message)} title="Copy">
                           <i class="bi bi-clipboard"></i>
                         </button>
@@ -463,7 +493,8 @@
 
       function MessageContent(props) {
         const findToolResult = toolUseId => {
-          for (const msg of (props.allMessages?.() || []).slice().reverse()) {
+          const messages = typeof props.allMessages === "function" ? props.allMessages() : props.allMessages;
+          for (const msg of (messages || []).slice().reverse()) {
             const result = msg.content.find(c => c.toolResult?.toolUseId === toolUseId);
             if (result) return result.toolResult;
           }
@@ -491,7 +522,10 @@
                 <p class="my-2 text-muted">${() => c().reasoningContent?.reasoningText?.text || parseJSON(c().toolUse?.input)?.thought}</p>
               </details>
             <//>
-            <${Match} when=${() => c().toolUse && c().toolUse?.name !== "think"}>
+            <${Match} when=${() => c().toolUse?.name === "editor"}>
+              <${EditorResult} result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result} />
+            <//>
+            <${Match} when=${() => c().toolUse && !["think", "editor"].includes(c().toolUse?.name)}>
               <details class="small rounded border p-2">
                 <summary class="cursor-pointer text-dark">${() => c().toolUse.name}</summary>
                 <div class="my-2 text-muted text-pre">
@@ -544,6 +578,43 @@
         `;
       }
 
+      function EditorResult(props) {
+        const r = () => props.result;
+        const download = () => {
+          const content = r()?.content;
+          const path = r()?.path || "file.txt";
+          if (content === undefined) return;
+          const blob = new Blob([content], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = path.split("/").pop() || "file.txt";
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+        return html`
+          <div class="editor-result small border rounded overflow-hidden mb-1">
+            <div class="px-2 py-1 bg-secondary-subtle text-muted border-bottom d-flex justify-content-between align-items-center">
+              <span>${() => r()?.path || (r()?.error ? "Error" : "...")}</span>
+              <${Show} when=${() => r()?.content !== undefined}>
+                <button type="button" class="btn btn-sm btn-link p-0 text-muted" onClick=${download} title="Download">
+                  <i class="bi bi-download"></i>
+                </button>
+              <//>
+            </div>
+            <${Show} when=${() => r()?.content !== undefined}>
+              <pre class="m-0 p-2 text-pre" style="max-height: 300px; overflow: auto;">${() => r().content}</pre>
+            <//>
+            <${Show} when=${() => r()?.entries}>
+              <div class="p-2 text-pre">${() => r().entries.length ? r().entries.join("\n") : "(empty)"}</div>
+            <//>
+            <${Show} when=${() => r()?.error}>
+              <div class="p-2 text-danger">${() => r().error}</div>
+            <//>
+          </div>
+        `;
+      }
+
       // #endregion
 
       // #region 4. AGENT LOOP & STREAMING
@@ -575,7 +646,7 @@
 
           if (stopReason !== "tool_use") break;
 
-          const toolResults = { ...(await getToolResults(store.messages.at(-1).content, toolMap)), parentId: savedId, createdAt: Date.now() };
+          const toolResults = { ...(await getToolResults(store.messages.at(-1).content, toolMap, { db, threadId: params.threadId })), parentId: savedId, createdAt: Date.now() };
           setStore("messages", store.messages.length, toolResults);
           parentId = await saveMsg(toolResults);
           setStore("messages", store.messages.length - 1, "id", parentId);
@@ -694,7 +765,7 @@
                 thinkingConfig: { thinkingBudget: input.additionalModelRequestFields.thinking.budget_tokens },
               }),
             },
-          };
+          };ac
 
           const response = await client.models.generateContentStream(geminiReq);
           yield { messageStart: { role: "assistant" } };
@@ -770,7 +841,23 @@
       // Tool function implementations and file/message content handling.
       // =============================================================================
 
-      function code({ language = "js", source, timeout = 5000 }) {
+      async function code({ language, source, filename, timeout = 5000 }, context = {}) {
+        // If filename provided, load from resources
+        if (filename && context.db) {
+          const { db, threadId } = context;
+          const resources = threadId
+            ? await db.getAllFromIndex("resources", "threadId", threadId)
+            : await db.getAll("resources");
+          const file = resources.find(r => r.path === filename.replace(/^\/+/, ""));
+          if (!file) return { error: `File not found: ${filename}`, logs: [] };
+          source = file.content;
+          if (!language) {
+            const ext = filename.split(".").pop()?.toLowerCase();
+            language = ext === "html" ? "html" : "js";
+          }
+        }
+        language = language || "js";
+
         return new Promise(resolve => {
           const logs = [];
           const frame = document.createElement("iframe");
@@ -820,14 +907,101 @@
         return "Thinking complete.";
       }
 
-      async function getToolResults(toolUseContent, tools) {
+      async function editor({ command, path, view_range, old_str, new_str, file_text, insert_line }, context = {}) {
+        const { db, threadId } = context;
+        if (!db) return "Error: Database not available";
+
+        const normPath = path.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
+        const isDir = path.endsWith("/");
+
+        const getResources = async () => {
+          if (!threadId) return await db.getAll("resources");
+          return await db.getAllFromIndex("resources", "threadId", threadId);
+        };
+
+        const getResource = async p => {
+          const all = await getResources();
+          return all.find(r => r.path === p);
+        };
+
+        const saveResource = async (p, content) => {
+          const existing = await getResource(p);
+          if (existing) {
+            await db.put("resources", { ...existing, content, updatedAt: Date.now() });
+          } else {
+            await db.add("resources", { path: p, content, threadId, createdAt: Date.now() });
+          }
+        };
+
+        switch (command) {
+          case "view": {
+            if (isDir) {
+              const resources = await getResources();
+              const prefix = normPath ? normPath + "/" : "";
+              const entries = new Set();
+              for (const r of resources) {
+                if (r.path.startsWith(prefix)) {
+                  const rest = r.path.slice(prefix.length);
+                  const first = rest.split("/")[0];
+                  if (first) entries.add(rest.includes("/") ? first + "/" : first);
+                }
+              }
+              return { status: "directory", path: path || "/", entries: entries.size ? Array.from(entries).sort() : [] };
+            } else {
+              const resource = await getResource(normPath);
+              if (!resource) return { status: "error", error: `File not found: ${path}` };
+              return { status: "viewed", path, content: resource.content };
+            }
+          }
+
+          case "create": {
+            if (!file_text && file_text !== "") return { status: "error", error: "file_text is required for create" };
+            const existing = await getResource(normPath);
+            if (existing) return { status: "error", error: `File already exists: ${path}. Use str_replace to edit.` };
+            await saveResource(normPath, file_text);
+            return { status: "created", path, content: file_text };
+          }
+
+          case "str_replace": {
+            if (!old_str) return { status: "error", error: "old_str is required for str_replace" };
+            if (new_str === undefined) return { status: "error", error: "new_str is required for str_replace" };
+            const resource = await getResource(normPath);
+            if (!resource) return { status: "error", error: `File not found: ${path}` };
+            const escaped = old_str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const count = (resource.content.match(new RegExp(escaped, "g")) || []).length;
+            if (count === 0) return { status: "error", error: "old_str not found in file" };
+            if (count > 1) return { status: "error", error: `old_str appears ${count} times. Be more specific.` };
+            const newContent = resource.content.replace(old_str, new_str);
+            await saveResource(normPath, newContent);
+            return { status: "replaced", path, content: newContent };
+          }
+
+          case "insert": {
+            if (insert_line === undefined) return { status: "error", error: "insert_line is required for insert" };
+            if (!new_str && new_str !== "") return { status: "error", error: "new_str is required for insert" };
+            const resource = await getResource(normPath);
+            if (!resource) return { status: "error", error: `File not found: ${path}` };
+            const lines = resource.content.split("\n");
+            const idx = Math.max(0, Math.min(lines.length, insert_line));
+            lines.splice(idx, 0, new_str);
+            const newContent = lines.join("\n");
+            await saveResource(normPath, newContent);
+            return { status: "inserted", path, content: newContent };
+          }
+
+          default:
+            return { status: "error", error: `Unknown command: ${command}` };
+        }
+      }
+
+      async function getToolResults(toolUseContent, tools, context = {}) {
         const content = await Promise.all(
           toolUseContent
             .filter(c => c.toolUse)
             .map(async ({ toolUse }) => {
               const { toolUseId, name, input } = toolUse;
               try {
-                const result = await tools?.[name]?.(input);
+                const result = await tools?.[name]?.(input, context);
                 return { toolResult: { toolUseId, content: [{ json: { result } }] } };
               } catch (error) {
                 console.error("Tool error:", error);
