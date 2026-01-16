@@ -160,6 +160,34 @@ Examples:
             },
           },
         },
+        {
+          fn: mcp,
+          toolSpec: {
+            name: "mcp",
+            description: `Interact with MCP (Model Context Protocol) servers. Commands:
+- list_servers: Show configured MCP servers and their status
+- list_tools [server]: List tools available from an MCP server
+- call_tool [server] [tool] [args]: Call a tool on an MCP server
+- list_resources [server]: List available resources from an MCP server
+- read_resource [server] [uri]: Read a resource by URI
+- list_prompts [server]: List available prompts from an MCP server
+- get_prompt [server] [name] [args]: Get an expanded prompt`,
+            inputSchema: {
+              json: {
+                type: "object",
+                properties: {
+                  command: { type: "string", enum: ["list_servers", "list_tools", "call_tool", "list_resources", "read_resource", "list_prompts", "get_prompt"], description: "The MCP command to execute" },
+                  server: { type: "string", description: "MCP server name (required for all commands except list_servers)" },
+                  tool: { type: "string", description: "Tool name (required for call_tool)" },
+                  uri: { type: "string", description: "Resource URI (required for read_resource)" },
+                  name: { type: "string", description: "Prompt name (required for get_prompt)" },
+                  args: { type: "object", description: "Arguments object for call_tool or get_prompt" },
+                },
+                required: ["command"],
+              },
+            },
+          },
+        },
       ];
 
       render(App, document.getElementById("app"));
@@ -198,8 +226,19 @@ MEMORY PROTOCOL:
 3. Keep memory files organized and up-to-date. Delete or rename files that are no longer relevant.
 4. ASSUME INTERRUPTION: Your context window might be reset at any moment, so save any progress you don't want to lose.
 
-HTML files created with the editor tool are automatically rendered in the preview - no need to run them with the code tool.`,
-          tools: ["code", "think", "editor"],
+HTML files created with the editor tool are automatically rendered in the preview - no need to run them with the code tool.
+
+MCP SERVERS:
+You have access to MCP (Model Context Protocol) servers configured by the user. Use the mcp tool to:
+- list_servers: See what MCP servers are available
+- list_tools [server]: Discover tools provided by a server
+- call_tool [server] [tool] [args]: Execute an MCP tool
+- list_resources [server]: See available data resources
+- read_resource [server] [uri]: Read resource content
+- list_prompts [server]: List prompt templates
+- get_prompt [server] [name] [args]: Get a prompt`,
+          tools: ["code", "think", "editor", "mcp"],
+          mcpServers: [],
           resources: [],
         });
       }
@@ -214,11 +253,33 @@ HTML files created with the editor tool are automatically rendered in the previe
       function App() {
         const searchParams = new URLSearchParams(window.location.search);
         const urlParams = Object.fromEntries(searchParams.entries());
-        const { agent, sendMessage, switchBranch, params } = useAgent(urlParams, db);
+        const { agent, sendMessage, switchBranch, params, setAgent } = useAgent(urlParams, db);
 
         createEffect(() => setSearchParams(params));
         const [editingMessageId, setEditingMessageId] = createSignal(null);
+        const [showMCPModal, setShowMCPModal] = createSignal(false);
+        const [mcpServers, setMCPServers] = createSignal([]);
         const displayRole = msg => msg.content?.some(c => c.toolResult) ? "assistant" : msg.role;
+
+        // Load MCP servers when agent loads
+        createEffect(async () => {
+          const agentId = params.agentId || 1;
+          const agentRecord = await db.get("agents", agentId);
+          if (agentRecord?.mcpServers) setMCPServers(agentRecord.mcpServers);
+        });
+
+        // MCP modal handlers
+        async function handleSaveMCP(servers) {
+          const agentId = params.agentId || 1;
+          const agentRecord = await db.get("agents", agentId);
+          if (agentRecord) {
+            await db.put("agents", { ...agentRecord, mcpServers: servers });
+            setMCPServers(servers);
+            // Clear cached MCP sessions when config changes
+            mcpSessions.clear();
+          }
+          setShowMCPModal(false);
+        }
 
         // Event handlers
         function handleKeyDown(event) {
@@ -321,7 +382,14 @@ HTML files created with the editor tool are automatically rendered in the previe
               `}
             <//>
 
-            <${InputForm} onSubmit=${handleSubmit} onKeyDown=${handleKeyDown} />
+            <${InputForm} onSubmit=${handleSubmit} onKeyDown=${handleKeyDown} onOpenMCP=${_ => setShowMCPModal(true)} />
+
+            <${Show} when=${showMCPModal}>
+              <${MCPConfigModal}
+                servers=${mcpServers()}
+                onClose=${_ => setShowMCPModal(false)}
+                onSave=${handleSaveMCP} />
+            <//>
           </div>
         `;
       }
@@ -502,6 +570,9 @@ HTML files created with the editor tool are automatically rendered in the previe
                 </div>
               </div>
               <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-link text-secondary p-1" onClick=${_ => props.onOpenMCP?.()} title="Configure MCP servers">
+                  <i class="bi bi-gear"></i>
+                </button>
                 <select id="modelId" class="form-select form-select-sm w-auto border-0 shadow-none" required>
                   <optgroup label="AWS Bedrock">
                     <option value="global.anthropic.claude-opus-4-5-20251101-v1:0">Opus 4.5</option>
@@ -682,6 +753,113 @@ HTML files created with the editor tool are automatically rendered in the previe
         `;
       }
 
+      function MCPConfigModal(props) {
+        const [servers, setServers] = createSignal([...(props.servers || [])]);
+        const [newName, setNewName] = createSignal("");
+        const [newUrl, setNewUrl] = createSignal("");
+
+        const addServer = () => {
+          const name = newName().trim();
+          const url = newUrl().trim();
+          if (!name || !url) return;
+          setServers([...servers(), { name, url, enabled: true }]);
+          setNewName("");
+          setNewUrl("");
+        };
+
+        const removeServer = index => {
+          setServers(servers().filter((_, i) => i !== index));
+        };
+
+        const toggleServer = index => {
+          setServers(servers().map((s, i) => i === index ? { ...s, enabled: !s.enabled } : s));
+        };
+
+        const updateServer = (index, field, value) => {
+          setServers(servers().map((s, i) => i === index ? { ...s, [field]: value } : s));
+        };
+
+        const handleSave = () => {
+          props.onSave?.(servers());
+        };
+
+        return html`
+          <div class="modal show d-block" style="background: rgba(0,0,0,0.5)" onClick=${e => e.target === e.currentTarget && props.onClose?.()}>
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">MCP Servers</h5>
+                  <button type="button" class="btn-close" onClick=${_ => props.onClose?.()}></button>
+                </div>
+                <div class="modal-body">
+                  <p class="small text-muted mb-3">Configure MCP servers for this agent. Servers must support SSE/HTTP transport.</p>
+
+                  <${Show} when=${() => servers().length === 0}>
+                    <div class="text-muted small mb-3">No servers configured yet.</div>
+                  <//>
+
+                  <${For} each=${servers}>
+                    ${(server, index) => html`
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          class="form-check-input"
+                          checked=${server.enabled}
+                          onChange=${_ => toggleServer(index())}
+                          title="Enable/disable server" />
+                        <input
+                          class="form-control form-control-sm"
+                          style="flex: 1"
+                          value=${server.name}
+                          placeholder="Name"
+                          onChange=${e => updateServer(index(), "name", e.target.value)} />
+                        <input
+                          class="form-control form-control-sm"
+                          style="flex: 2"
+                          value=${server.url}
+                          placeholder="URL"
+                          onChange=${e => updateServer(index(), "url", e.target.value)} />
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-danger"
+                          onClick=${_ => removeServer(index())}
+                          title="Remove server">
+                          <i class="bi bi-x"></i>
+                        </button>
+                      </div>
+                    `}
+                  <//>
+
+                  <div class="d-flex gap-2 mt-3 pt-3 border-top">
+                    <input
+                      class="form-control form-control-sm"
+                      style="flex: 1"
+                      placeholder="Name"
+                      value=${newName}
+                      onInput=${e => setNewName(e.target.value)}
+                      onKeyDown=${e => e.key === "Enter" && addServer()} />
+                    <input
+                      class="form-control form-control-sm"
+                      style="flex: 2"
+                      placeholder="https://server.com/mcp"
+                      value=${newUrl}
+                      onInput=${e => setNewUrl(e.target.value)}
+                      onKeyDown=${e => e.key === "Enter" && addServer()} />
+                    <button type="button" class="btn btn-sm btn-secondary" onClick=${_ => addServer()}>
+                      <i class="bi bi-plus"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" onClick=${_ => props.onClose?.()}>Cancel</button>
+                  <button type="button" class="btn btn-primary" onClick=${handleSave}>Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       // #endregion
 
       // #region 4. AGENT LOOP & STREAMING
@@ -713,7 +891,7 @@ HTML files created with the editor tool are automatically rendered in the previe
 
           if (stopReason !== "tool_use") break;
 
-          const toolResults = { ...(await getToolResults(store.messages.at(-1).content, toolMap, { db, threadId: params.threadId })), parentId: savedId, createdAt: Date.now() };
+          const toolResults = { ...(await getToolResults(store.messages.at(-1).content, toolMap, { db, threadId: params.threadId, agentId: params.agentId })), parentId: savedId, createdAt: Date.now() };
           setStore("messages", store.messages.length, toolResults);
           parentId = await saveMsg(toolResults);
           setStore("messages", store.messages.length - 1, "id", parentId);
@@ -903,6 +1081,8 @@ HTML files created with the editor tool are automatically rendered in the previe
 
       // #endregion
 
+      const mcpSessions = new Map();
+
       // #region 6. TOOLS
       // =============================================================================
       // Tool function implementations and file/message content handling.
@@ -1074,6 +1254,57 @@ HTML files created with the editor tool are automatically rendered in the previe
 
           default:
             return { status: "error", error: `Unknown command: ${command}` };
+        }
+      }
+
+      async function mcp({ command, server, tool, uri, name, args }, context = {}) {
+        const { db, agentId } = context;
+        if (!db) return { error: "Database not available" };
+
+        const servers = (await db.get("agents", agentId || 1))?.mcpServers || [];
+
+        if (command === "list_servers") {
+          return { servers: servers.map(s => ({ name: s.name, url: s.url, enabled: s.enabled !== false })) };
+        }
+
+        const cfg = servers.find(s => s.name === server && s.enabled !== false);
+        if (!cfg) return { error: server ? `Server not found: ${server}` : "Server name required" };
+
+        const send = async (method, params = {}) => {
+          const s = mcpSessions.get(cfg.url) || { id: null, seq: 0 };
+          const res = await fetch(cfg.url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...(s.id && { "Mcp-Session-Id": s.id }) },
+            body: JSON.stringify({ jsonrpc: "2.0", id: ++s.seq, method, params })
+          });
+          s.id = res.headers.get("Mcp-Session-Id") || s.id;
+          mcpSessions.set(cfg.url, s);
+          if (!res.ok) throw new Error(`MCP ${res.status}`);
+          const { result, error } = await res.json();
+          if (error) throw new Error(error.message);
+          return result;
+        };
+
+        try {
+          if (!mcpSessions.has(cfg.url)) {
+            mcpSessions.set(cfg.url, { id: null, seq: 0 });
+            await send("initialize", { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "chat-html", version: "1.0.0" } });
+            await send("notifications/initialized", {});
+          }
+
+          const methods = {
+            list_tools: () => send("tools/list"),
+            call_tool: () => send("tools/call", { name: tool, arguments: args || {} }),
+            list_resources: () => send("resources/list"),
+            read_resource: () => send("resources/read", { uri }),
+            list_prompts: () => send("prompts/list"),
+            get_prompt: () => send("prompts/get", { name, arguments: args || {} }),
+          };
+
+          const fn = methods[command];
+          return fn ? { server, ...await fn() } : { error: `Unknown command: ${command}` };
+        } catch (e) {
+          return { error: e.message };
         }
       }
 
