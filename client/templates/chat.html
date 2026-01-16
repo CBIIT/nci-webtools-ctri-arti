@@ -195,23 +195,24 @@ Examples:
       render(App, document.getElementById("app"));
 
       async function initDB() {
-        return openDB("bedrock-messages", 1, {
-          upgrade(db) {
-            const tables = {};
+        return openDB("chat", 1, {
+          upgrade(db, oldVersion, newVersion, transaction) {
+            const createIndex = (stores, name, key = name, options) => 
+              stores.indexNames.contains(name) || stores.createIndex(name, key, options);
+            const stores = {};
             for (const name of ["agents", "threads", "messages", "resources"]) {
-              if (!db.objectStoreNames.contains(name)) {
-                const store = db.createObjectStore(name, { keyPath: "id", autoIncrement: true });
-                store.createIndex("id", "id", { unique: true });
-                tables[name] = store;
-              }
+              stores[name] = db.objectStoreNames.contains(name)
+                ? transaction.objectStore(name)
+                : db.createObjectStore(name, { keyPath: "id", autoIncrement: true });
+              createIndex(stores[name], "id", "id", { unique: true });
             }
-            tables.messages.createIndex("agentId", "agentId");
-            tables.messages.createIndex("threadId", "threadId");
-            tables.messages.createIndex("parentId", "parentId");
-            tables.threads.createIndex("agentId", "agentId");
-            tables.resources.createIndex("agentId", "agentId");
-            tables.resources.createIndex("threadId", "threadId");
-            tables.resources.createIndex("messageId", "messageId");
+            createIndex(stores.messages, "agentId");
+            createIndex(stores.messages, "threadId");
+            createIndex(stores.messages, "parentId");
+            createIndex(stores.threads, "agentId");
+            createIndex(stores.resources, "agentId");
+            createIndex(stores.resources, "threadId");
+            createIndex(stores.resources, "messageId");
           },
         });
       }
@@ -1110,7 +1111,7 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
                 thinkingConfig: { thinkingBudget: input.additionalModelRequestFields.thinking.budget_tokens },
               }),
             },
-          };ac
+          }
 
           const response = await client.models.generateContentStream(geminiReq);
           yield { messageStart: { role: "assistant" } };
