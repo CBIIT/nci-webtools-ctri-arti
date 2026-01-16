@@ -171,7 +171,8 @@ Examples:
 - list_resources [server]: List available resources from an MCP server
 - read_resource [server] [uri]: Read a resource by URI
 - list_prompts [server]: List available prompts from an MCP server
-- get_prompt [server] [name] [args]: Get an expanded prompt`,
+- get_prompt [server] [name] [args]: Get an expanded prompt
+- Use filename parameter to save any result to a resource file`,
             inputSchema: {
               json: {
                 type: "object",
@@ -182,6 +183,7 @@ Examples:
                   uri: { type: "string", description: "Resource URI (required for read_resource)" },
                   name: { type: "string", description: "Prompt name (required for get_prompt)" },
                   args: { type: "object", description: "Arguments object for call_tool or get_prompt" },
+                  filename: { type: "string", description: "Optional path to save results to a resource file" },
                 },
                 required: ["command"],
               },
@@ -643,7 +645,10 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
                 input=${() => parseJSON(c().toolUse?.input)}
                 result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result} />
             <//>
-            <${Match} when=${() => c().toolUse && !["think", "editor", "code"].includes(c().toolUse?.name)}>
+            <${Match} when=${() => c().toolUse?.name === "mcp"}>
+              <${McpResult} result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result} />
+            <//>
+            <${Match} when=${() => c().toolUse && !["think", "editor", "code", "mcp"].includes(c().toolUse?.name)}>
               <details class="small rounded border p-2">
                 <summary class="cursor-pointer text-dark">${() => c().toolUse.name}</summary>
                 <div class="my-2 text-muted text-pre">
@@ -733,6 +738,9 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
             <${Show} when=${() => r()?.error}>
               <div class="p-2 text-danger">${() => r().error}</div>
             <//>
+            <${Show} when=${() => r()?.status === "deleted"}>
+              <div class="p-2 text-muted">Deleted</div>
+            <//>
           </div>
         `;
       }
@@ -759,6 +767,45 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
             <//>
             <${Show} when=${() => result()?.error}>
               <div class="p-2 text-danger">${() => result().error}</div>
+            <//>
+          </div>
+        `;
+      }
+
+      function McpResult(props) {
+        const r = () => props.result;
+        const formatText = text => {
+          try { return JSON.stringify(JSON.parse(text), null, 2); }
+          catch { return text; }
+        };
+        return html`
+          <div class="mcp-result small border rounded overflow-hidden mb-1">
+            <div class="px-2 py-1 bg-secondary-subtle text-muted border-bottom">
+              <span>${() => r()?.server || "mcp"}</span>
+            </div>
+            <${Show} when=${() => r()?.error}>
+              <div class="p-2 text-danger">${() => r().error}</div>
+            <//>
+            <${Show} when=${() => r()?.servers}>
+              <div class="p-2 text-pre">${() => r().servers.map(s => `${s.enabled ? "●" : "○"} ${s.name} - ${s.url}`).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.tools}>
+              <div class="p-2 text-pre">${() => r().tools.map(t => `${t.name}${t.description ? ` - ${t.description}` : ""}`).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.resources}>
+              <div class="p-2 text-pre">${() => r().resources.map(res => `${res.name || res.uri}`).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.prompts}>
+              <div class="p-2 text-pre">${() => r().prompts.map(p => `${p.name}${p.description ? ` - ${p.description}` : ""}`).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.contents}>
+              <div class="p-2 text-pre">${() => r().contents.map(c => c.text ? formatText(c.text) : JSON.stringify(c, null, 2)).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.content}>
+              <div class="p-2 text-pre">${() => r().content.map(c => c.text ? formatText(c.text) : JSON.stringify(c, null, 2)).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.messages}>
+              <div class="p-2 text-pre">${() => r().messages.map(m => `[${m.role}] ${m.content?.text || JSON.stringify(m.content)}`).join("\n")}</div>
             <//>
           </div>
         `;
@@ -1365,8 +1412,8 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
         }
       }
 
-      async function mcp({ command, server, tool, uri, name, args }, context = {}) {
-        const { db, agentId } = context;
+      async function mcp({ command, server, tool, uri, name, args, filename }, context = {}) {
+        const { db, agentId, threadId } = context;
         if (!db) return { error: "Database not available" };
 
         const servers = (await db.get("agents", agentId || 1))?.mcpServers || [];
@@ -1423,7 +1470,32 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
           };
 
           const fn = methods[command];
-          return fn ? { server, ...await fn() } : { error: `Unknown command: ${command}` };
+          if (!fn) return { error: `Unknown command: ${command}` };
+
+          const result = { server, ...await fn() };
+
+          // Save to file if filename provided
+          if (filename && !result.error) {
+            const normPath = filename.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
+            // Parse JSON text fields to avoid double-encoding
+            const parsed = JSON.parse(JSON.stringify(result), (k, v) => {
+              if (typeof v === "string" && (v.startsWith("{") || v.startsWith("["))) {
+                try { return JSON.parse(v); } catch { return v; }
+              }
+              return v;
+            });
+            const content = JSON.stringify(parsed, null, 2);
+            const resources = threadId ? await db.getAllFromIndex("resources", "threadId", threadId) : await db.getAll("resources");
+            const existing = resources.find(r => r.path === normPath);
+            if (existing) {
+              await db.put("resources", { ...existing, content, updatedAt: Date.now() });
+            } else {
+              await db.add("resources", { path: normPath, content, threadId, createdAt: Date.now() });
+            }
+            result.saved = filename;
+          }
+
+          return result;
         } catch (e) {
           return { error: e.message };
         }
