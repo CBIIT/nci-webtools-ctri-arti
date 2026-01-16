@@ -215,6 +215,9 @@ Examples:
       }
 
       async function ensureDefaultAgent(db) {
+        const existing = await db.get("agents", 1);
+        if (existing) return; // Don't overwrite saved settings
+
         await db.put("agents", {
           id: 1,
           name: "default",
@@ -239,6 +242,7 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
 - get_prompt [server] [name] [args]: Get a prompt`,
           tools: ["code", "think", "editor", "mcp"],
           mcpServers: [],
+          proxyConfig: null,
           resources: [],
         });
       }
@@ -257,28 +261,34 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
 
         createEffect(() => setSearchParams(params));
         const [editingMessageId, setEditingMessageId] = createSignal(null);
-        const [showMCPModal, setShowMCPModal] = createSignal(false);
+        const [showConfigModal, setShowConfigModal] = createSignal(false);
         const [mcpServers, setMCPServers] = createSignal([]);
+        const [proxyConfig, setProxyConfigSignal] = createSignal(null);
         const displayRole = msg => msg.content?.some(c => c.toolResult) ? "assistant" : msg.role;
 
-        // Load MCP servers when agent loads
+        // Load agent settings when agent loads
         createEffect(async () => {
           const agentId = params.agentId || 1;
           const agentRecord = await db.get("agents", agentId);
           if (agentRecord?.mcpServers) setMCPServers(agentRecord.mcpServers);
+          if (agentRecord?.proxyConfig) {
+            setProxyConfigSignal(agentRecord.proxyConfig);
+            setProxyConfig(agentRecord.proxyConfig); // Update module-level for proxyFetch
+          }
         });
 
-        // MCP modal handlers
-        async function handleSaveMCP(servers) {
+        // Settings modal handlers
+        async function handleSaveSettings(servers, proxy) {
           const agentId = params.agentId || 1;
           const agentRecord = await db.get("agents", agentId);
           if (agentRecord) {
-            await db.put("agents", { ...agentRecord, mcpServers: servers });
+            await db.put("agents", { ...agentRecord, mcpServers: servers, proxyConfig: proxy });
             setMCPServers(servers);
-            // Clear cached MCP sessions when config changes
+            setProxyConfigSignal(proxy);
+            setProxyConfig(proxy); // Update module-level for proxyFetch
             mcpSessions.clear();
           }
-          setShowMCPModal(false);
+          setShowConfigModal(false);
         }
 
         // Event handlers
@@ -382,13 +392,14 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
               `}
             <//>
 
-            <${InputForm} onSubmit=${handleSubmit} onKeyDown=${handleKeyDown} onOpenMCP=${_ => setShowMCPModal(true)} />
+            <${InputForm} onSubmit=${handleSubmit} onKeyDown=${handleKeyDown} onOpenConfig=${_ => setShowConfigModal(true)} />
 
-            <${Show} when=${showMCPModal}>
-              <${MCPConfigModal}
-                servers=${mcpServers()}
-                onClose=${_ => setShowMCPModal(false)}
-                onSave=${handleSaveMCP} />
+            <${Show} when=${showConfigModal}>
+              <${AgentConfigModal}
+                servers=${mcpServers}
+                proxyConfig=${proxyConfig}
+                onClose=${_ => setShowConfigModal(false)}
+                onSave=${handleSaveSettings} />
             <//>
           </div>
         `;
@@ -570,7 +581,7 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
                 </div>
               </div>
               <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-link text-secondary p-1" onClick=${_ => props.onOpenMCP?.()} title="Settings">
+                <button type="button" class="btn btn-sm btn-link text-secondary p-1" onClick=${_ => props.onOpenConfig?.()} title="Settings">
                   <i class="bi bi-gear"></i>
                 </button>
                 <select id="modelId" class="form-select form-select-sm w-auto border-0 shadow-none" required>
@@ -753,16 +764,16 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
         `;
       }
 
-      function MCPConfigModal(props) {
+      function AgentConfigModal(props) {
         const [servers, setServers] = createSignal([...(props.servers || [])]);
         const [newName, setNewName] = createSignal("");
         const [newUrl, setNewUrl] = createSignal("");
 
-        // Proxy settings
-        const proxyConfig = getProxyConfig() || {};
-        const [proxyEndpoint, setProxyEndpoint] = createSignal(proxyConfig.endpoint || "");
-        const [proxyHeaderName, setProxyHeaderName] = createSignal(proxyConfig.headerName || "");
-        const [proxyHeaderValue, setProxyHeaderValue] = createSignal(proxyConfig.headerValue || "");
+        // Proxy settings from props (not localStorage)
+        const pc = props.proxyConfig || {};
+        const [proxyEndpoint, setProxyEndpoint] = createSignal(pc.endpoint || "");
+        const [proxyHeaderName, setProxyHeaderName] = createSignal(pc.headerName || "");
+        const [proxyHeaderValue, setProxyHeaderValue] = createSignal(pc.headerValue || "");
 
         const addServer = () => {
           const name = newName().trim();
@@ -786,19 +797,15 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
         };
 
         const handleSave = () => {
-          // Save proxy config
+          // Build proxy config object
           const endpoint = proxyEndpoint().trim();
-          if (endpoint) {
-            setProxyConfig({
-              endpoint,
-              headerName: proxyHeaderName().trim(),
-              headerValue: proxyHeaderValue().trim()
-            });
-          } else {
-            setProxyConfig(null);
-          }
-          // Save MCP servers
-          props.onSave?.(servers());
+          const proxy = endpoint ? {
+            endpoint,
+            headerName: proxyHeaderName().trim(),
+            headerValue: proxyHeaderValue().trim()
+          } : null;
+          // Save both MCP servers and proxy config
+          props.onSave?.(servers(), proxy);
         };
 
         return html`
@@ -1129,18 +1136,15 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
 
       const mcpSessions = new Map();
 
-      // Proxy configuration helpers
+      // Proxy configuration - module-level variable (set by App when loading agent)
+      let currentProxyConfig = null;
+
       function getProxyConfig() {
-        const stored = localStorage.getItem("proxy-config");
-        return stored ? JSON.parse(stored) : null;
+        return currentProxyConfig;
       }
 
       function setProxyConfig(config) {
-        if (config?.endpoint) {
-          localStorage.setItem("proxy-config", JSON.stringify(config));
-        } else {
-          localStorage.removeItem("proxy-config");
-        }
+        currentProxyConfig = config;
       }
 
       // Proxied fetch for non-localhost URLs
