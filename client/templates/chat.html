@@ -1378,13 +1378,26 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
           const s = mcpSessions.get(cfg.url) || { id: null, seq: 0 };
           const res = await proxyFetch(cfg.url, {
             method: "POST",
-            headers: { "Content-Type": "application/json", ...(s.id && { "Mcp-Session-Id": s.id }) },
+            headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream", ...(s.id && { "Mcp-Session-Id": s.id }) },
             body: JSON.stringify({ jsonrpc: "2.0", id: ++s.seq, method, params })
           });
           s.id = res.headers.get("Mcp-Session-Id") || s.id;
           mcpSessions.set(cfg.url, s);
-          if (!res.ok) throw new Error(`MCP ${res.status}`);
-          const { result, error } = await res.json();
+
+          if (!res.ok) throw new Error(`MCP ${res.status}: ${(await res.text()).slice(0, 500)}`);
+          if (res.status === 202 || res.status === 204) return null;
+
+          const text = await res.text();
+          if (!text?.trim()) return null;
+
+          // Parse SSE or JSON - extract "data: {...}" lines or parse directly
+          const isSSE = (res.headers.get("Content-Type") || "").includes("text/event-stream");
+          const jsonStr = isSSE
+            ? text.match(/^data: (.+)$/m)?.[1]
+            : text;
+
+          if (!jsonStr) return null;
+          const { result, error } = JSON.parse(jsonStr);
           if (error) throw new Error(error.message);
           return result;
         };
