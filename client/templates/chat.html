@@ -26,6 +26,27 @@
       .hover-parent:hover .hover-fade { opacity: 1; }
       .hover-show { visibility: hidden; }
       .hover-parent:hover .hover-show { visibility: visible !important; }
+      /* Subagent streaming styles */
+      @keyframes subagent-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .subagent-spin { animation: subagent-spin 1s linear infinite; }
+      .subagent-stream { background: #fafaf8; }
+      .subagent-message.streaming { opacity: 0.8; }
+      .subagent-streaming-indicator {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: currentColor;
+        border-radius: 50%;
+        animation: subagent-pulse 1s ease-in-out infinite;
+      }
+      @keyframes subagent-pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+      }
+      .subagent-conversation { background: #fafaf8; }
     </style>
     <script type="importmap">
       {
@@ -62,6 +83,14 @@
                 Never destructure - loses the getter
       Handlers: onClick=${e => fn()}  ✓ always use param (avoids 0-arg auto-wrap issues)
 
+      STORE ARRAYS: TRACKING GOTCHA
+      Accessing store.array tracks the PROPERTY, not mutations.
+      Accessing store.array.length tracks LENGTH changes.
+      Accessing store.array[i] tracks INDEX changes.
+        for (let i = arr.length - 1; i >= 0; i--) arr[i]  ✓ tracks length + indices
+        for (const x of arr.slice()) ...                 ✗ slice() breaks tracking
+        <${For} each=${() => arr}>                       ✓ For tracks internally
+
       SYNTAX
       ------
       <${Comp} prop=${val} />            Self-closing
@@ -89,8 +118,56 @@
       import { createStore, produce, unwrap } from "solid-js/store";
       import html from "solid-js/html";
 
+      const TOOL_DOCUMENTATION = `
+## Tools
+
+### code
+Execute JavaScript or HTML. Supports top-level await for async operations.
+- Run JS: { "source": "console.log('hello')" }
+- Run from file: { "filename": "app.js" }
+- Fetch from web: { "source": "const r = await fetch('https://api.example.com'); console.log(await r.json())" }
+- Run HTML: { "source": "<h1>Hello</h1>", "language": "html" }
+
+The \`resources\` API is available for file operations:
+- await resources.create("path.txt", "content") - create/overwrite file
+- await resources.view("path.txt") - read file (returns {content, path})
+- await resources.list("/") - list directory (returns {entries})
+- await resources.delete("path.txt") - delete file
+- await resources.rename("old.txt", "new.txt") - rename file
+- await resources.replace("file.txt", "old", "new") - replace text in file
+
+### think
+Dedicated space for reasoning. Use before complex decisions.
+- { "thought": "Let me analyze the structure..." }
+
+### editor
+Virtual filesystem for creating, viewing, editing files.
+- List directory: { "command": "view", "path": "/" }
+- View file: { "command": "view", "path": "app.js" }
+- Create file: { "command": "create", "path": "notes.md", "file_text": "# Notes" }
+- Edit file: { "command": "str_replace", "path": "app.js", "old_str": "foo", "new_str": "bar" }
+- Delete: { "command": "delete", "path": "old.txt" }
+- Rename: { "command": "rename", "path": "old.txt", "new_path": "new.txt" }
+
+### mcp
+Connect to MCP servers for external tools/resources.
+- List servers: { "command": "list_servers" }
+- List tools: { "command": "list_tools", "server": "server-name" }
+- Call tool: { "command": "call_tool", "server": "server-name", "tool": "tool-name", "args": {} }
+- Save result: { "command": "call_tool", "server": "...", "tool": "...", "filename": "result.json" }
+
+### task
+Spawn sub-agents for exploration or planning (main agent only).
+- Explore: { "type": "explore", "prompt": "Find auth code", "folder": "auth" }
+- Plan: { "type": "plan", "prompt": "Design feature based on /explore/auth/" }
+`;
+
       const db = await initDB();
       await ensureDefaultAgent(db);
+
+      // Module-level signal for tracking running subagent state
+      // Map: toolUseId -> { threadId, messages, currentMessage, status, type }
+      const [runningSubagents, setRunningSubagents] = createSignal(new Map());
 
       // TOOLS must be defined before useAgent which references it as default parameter
       const TOOLS = [
@@ -190,14 +267,34 @@ Examples:
             },
           },
         },
+        {
+          fn: task,
+          toolSpec: {
+            name: "task",
+            description: `Spawn a sub-agent for exploration or planning.
+- explore: Finds information, saves EXACT raw data to /explore/{folder}/
+- plan: Designs implementation approach, can read explore findings`,
+            inputSchema: {
+              json: {
+                type: "object",
+                properties: {
+                  prompt: { type: "string", description: "What the sub-agent should do" },
+                  type: { type: "string", enum: ["explore", "plan"], description: "Agent type" },
+                  folder: { type: "string", description: "For explore: folder name under /explore/ to save findings" },
+                },
+                required: ["prompt", "type"],
+              },
+            },
+          },
+        },
       ];
 
       render(App, document.getElementById("app"));
 
       async function initDB() {
-        return openDB("chat", 1, {
+        return openDB("chat", 3, {  // Version 3: added path index on resources
           upgrade(db, oldVersion, newVersion, transaction) {
-            const createIndex = (stores, name, key = name, options) => 
+            const createIndex = (stores, name, key = name, options) =>
               stores.indexNames.contains(name) || stores.createIndex(name, key, options);
             const stores = {};
             for (const name of ["agents", "threads", "messages", "resources"]) {
@@ -210,9 +307,13 @@ Examples:
             createIndex(stores.messages, "threadId");
             createIndex(stores.messages, "parentId");
             createIndex(stores.threads, "agentId");
+            // New indexes for subagent thread support
+            createIndex(stores.threads, "parentToolUseId");
+            createIndex(stores.threads, "type");
             createIndex(stores.resources, "agentId");
             createIndex(stores.resources, "threadId");
             createIndex(stores.resources, "messageId");
+            createIndex(stores.resources, "path");
           },
         });
       }
@@ -224,29 +325,93 @@ Examples:
         await db.put("agents", {
           id: 1,
           name: "default",
-          systemPrompt: `You are honest. When you are uncertain about something, or if your tools aren't working right, you let the user know. You write in brief, artistic prose, without any *markdown*, lists, bullet points, emojis or em-dashes.
+          systemPrompt: `You are terse and direct. No emojis. No capability lists. No performative helpfulness ("Happy to help!", "Great question!").
 
-MEMORY PROTOCOL:
-1. At the START of each conversation, use the editor tool to view /memories/ and check for earlier progress or context.
-2. As you work, record important status, progress, decisions, and context in /memories/ files.
-3. Keep memory files organized and up-to-date. Delete or rename files that are no longer relevant.
-4. ASSUME INTERRUPTION: Your context window might be reset at any moment, so save any progress you don't want to lose.
+Don't announce what you'll do—do it. Don't self-describe—embody. Match the user's energy and register. Humor is fine. Engage with absurdity. Be a person, not a task router.
+
+Never make things up. Use only information from your sources. When uncertain, say so plainly. Prefer direct quotes over paraphrase when the source matters.
+
+When writing: surgical economy. Specific nouns, active verbs, no unearned adjectives. Trust your reader to complete the circuit. The right word sounds inevitable; its cousin sounds written.
+
+${TOOL_DOCUMENTATION}
+
+## Code Environment
+Code runs in a browser sandbox. No Node.js, no build tools.
+
+Patterns:
+- CDN imports: import { x } from 'https://cdn.jsdelivr.net/npm/pkg@version/+esm'
+- Top-level await supported
+- fetch() works (proxied for CORS)
+- resources.create/view/list/delete/rename/replace for files
+
+Secrets: Store at path, read as plain text (keeps values out of visible code):
+  // Save once with editor: create /secrets/openai with value sk-xxx
+  // Read in code:
+  const apiKey = (await resources.view('secrets/openai')).content;
+
+## Skills
+Reusable expertise stored in /skills/. List with: editor view /skills/
+When relevant, read full instructions: editor view /skills/{name}.md
+
+Create skills to capture workflows:
+---
+name: skill-name
+description: When to use this skill
+---
+[Instructions]
+
+## Memory Protocol
+1. At conversation START, list /memories/ for prior context: editor view /memories/
+2. Save important progress, decisions, context to /memories/ files
+3. Keep memory files organized. Delete irrelevant ones.
+4. ASSUME INTERRUPTION: Save progress you don't want to lose.
 
 HTML files created with the editor tool are automatically rendered in the preview - no need to run them with the code tool.
 
-MCP SERVERS:
-You have access to MCP (Model Context Protocol) servers configured by the user. Use the mcp tool to:
-- list_servers: See what MCP servers are available
-- list_tools [server]: Discover tools provided by a server
-- call_tool [server] [tool] [args]: Execute an MCP tool
-- list_resources [server]: See available data resources
-- read_resource [server] [uri]: Read resource content
-- list_prompts [server]: List prompt templates
-- get_prompt [server] [name] [args]: Get a prompt`,
-          tools: ["code", "think", "editor", "mcp"],
+## Sub-agents
+Use the task tool to delegate work:
+- explore: Research agent - gathers info, saves EXACT raw data to /explore/{folder}/
+- plan: Planning agent - designs implementation, reads /explore/ findings
+
+When to use:
+- explore: When you need to investigate, research, or gather evidence
+- plan: When you need to design an approach before implementing
+- Chain them: explore first for context, then plan based on findings
+
+After sub-agent completes, review its saved files before proceeding.
+
+## MCP Servers
+Use mcp tool to interact with configured servers for external capabilities.`,
+          tools: ["code", "think", "editor", "mcp", "task"],
           mcpServers: [],
           proxyConfig: null,
           resources: [],
+        });
+
+        // Seed default skills (agent-scoped, not thread-scoped)
+        await db.add("resources", {
+          agentId: 1,
+          path: "skills/frontend-design.md",
+          content: `---
+name: frontend-design
+description: Build distinctive, production-grade UI. Use when creating web components, pages, or applications.
+---
+
+Pick a BOLD aesthetic direction and commit fully. No safe defaults.
+
+Directions (pick one, go hard): brutalist, maximalist, minimal-refined, retro-futuristic, editorial, art-deco, organic, industrial, playful, luxury
+
+Focus on:
+- Typography: Distinctive fonts, never Inter/Roboto/Arial
+- Color: Dominant + sharp accents, not timid even distribution
+- Motion: One well-orchestrated moment > scattered micro-interactions
+- Layout: Asymmetry, overlap, grid-breaking, intentional negative space
+- Texture: Gradients, noise, patterns, shadows - not flat solid colors
+
+Anti-patterns: purple gradients on white, generic rounded cards, safe corporate feel
+
+Match complexity to vision: maximalist = elaborate code, minimalist = precise restraint.`,
+          createdAt: Date.now(),
         });
       }
 
@@ -599,6 +764,9 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
                     <option value="imagen-4.0-generate-001" hidden>Imagen 4.0</option>
                     <option value="veo-3.0-generate-preview" hidden>Veo 3.0</option>
                   </optgroup>
+                  <optgroup label="Test" hidden>
+                    <option value="echo">Echo</option>
+                  </optgroup>
                 </select>
                 <button type="submit" class="btn btn-sm btn-dark">Send</button>
               </div>
@@ -608,11 +776,18 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
       }
 
       function MessageContent(props) {
+        // IMPORTANT: Access store array indices directly to track reactivity.
+        // Using .slice() breaks SolidJS store tracking since it creates a plain array.
         const findToolResult = toolUseId => {
-          const messages = typeof props.allMessages === "function" ? props.allMessages() : props.allMessages;
-          for (const msg of (messages || []).slice().reverse()) {
-            const result = msg.content.find(c => c.toolResult?.toolUseId === toolUseId);
-            if (result) return result.toolResult;
+          const msgs = typeof props.allMessages === "function" ? props.allMessages() : props.allMessages;
+          if (!msgs) return;
+          for (let i = msgs.length - 1; i >= 0; i--) {
+            const { content } = msgs[i];
+            for (const c of content) {
+              if (c.toolResult?.toolUseId === toolUseId) {
+                return c.toolResult;
+              }
+            }
           }
         };
 
@@ -649,7 +824,12 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
             <${Match} when=${() => c().toolUse?.name === "mcp"}>
               <${McpResult} result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result} />
             <//>
-            <${Match} when=${() => c().toolUse && !["think", "editor", "code", "mcp"].includes(c().toolUse?.name)}>
+            <${Match} when=${() => c().toolUse?.name === "task"}>
+              <${TaskResult}
+                result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result}
+                toolUseId=${() => c().toolUse.toolUseId} />
+            <//>
+            <${Match} when=${() => c().toolUse && !["think", "editor", "code", "mcp", "task"].includes(c().toolUse?.name)}>
               <details class="small rounded border p-2">
                 <summary class="cursor-pointer text-dark">${() => c().toolUse.name}</summary>
                 <div class="my-2 text-muted text-pre">
@@ -812,6 +992,138 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
         `;
       }
 
+      // Renders a single message from a subagent conversation
+      function SubagentMessageBubble(props) {
+        const m = () => props.message;
+        const isToolResult = () => m()?.content?.some(c => c.toolResult);
+        const displayRole = () => isToolResult() ? "tool" : m()?.role;
+
+        const renderContent = (content) => {
+          if (!content) return "";
+          return content.map(c => {
+            if (c.text) return c.text;
+            if (c.toolUse) return `[${c.toolUse.name}] ${JSON.stringify(c.toolUse.input || {}, null, 2).slice(0, 200)}...`;
+            if (c.toolResult) {
+              const result = c.toolResult.content?.[0]?.json?.result;
+              const preview = typeof result === "string" ? result.slice(0, 200) : JSON.stringify(result || {}, null, 2).slice(0, 200);
+              return `Result: ${preview}${preview.length >= 200 ? "..." : ""}`;
+            }
+            if (c.reasoningContent) return `[Thinking...] ${(c.reasoningContent.reasoningText?.text || "").slice(0, 100)}...`;
+            return "";
+          }).filter(Boolean).join("\n");
+        };
+
+        return html`
+          <div class="subagent-message mb-2" classList=${{ "ps-3 border-start border-2": () => displayRole() === "tool" }}>
+            <div class="d-flex align-items-center gap-1 text-muted small mb-1">
+              <span class="fw-semibold">${displayRole}</span>
+            </div>
+            <div class="text-pre small" style="max-height: 150px; overflow: auto;">
+              ${() => renderContent(m()?.content)}
+            </div>
+          </div>
+        `;
+      }
+
+      function TaskResult(props) {
+        const r = () => props.result;
+        const toolUseId = () => typeof props.toolUseId === "function" ? props.toolUseId() : props.toolUseId;
+
+        // Get running state for this tool call from the signal
+        const runningState = () => runningSubagents().get(toolUseId());
+        const isRunning = () => runningState()?.status === "running";
+        const isCompleted = () => runningState()?.status === "completed" || r();
+
+        // State for expanded view of completed conversation
+        const [expanded, setExpanded] = createSignal(false);
+        const [fullMessages, setFullMessages] = createSignal([]);
+
+        // Load full conversation when expanded
+        createEffect(async () => {
+          if (expanded() && r()?.subagentThreadId) {
+            const msgs = await db.getAllFromIndex("messages", "threadId", r().subagentThreadId);
+            setFullMessages(msgs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)));
+          }
+        });
+
+        return html`
+          <div class="task-result small border rounded overflow-hidden mb-1">
+            <div class="px-2 py-1 bg-secondary-subtle d-flex justify-content-between align-items-center">
+              <span class="text-muted">
+                <i class="bi bi-robot me-1"></i>
+                ${() => r()?.type || runningState()?.type || "task"} agent
+              </span>
+              <span class="text-muted">
+                ${() => isRunning() ? html`<i class="bi bi-arrow-repeat subagent-spin me-1"></i> Running...` : ""}
+                ${() => r()?.turns ? `${r().turns} turns` : ""}
+              </span>
+            </div>
+
+            <!-- Real-time streaming display while running -->
+            <${Show} when=${isRunning}>
+              <div class="subagent-stream p-2 border-top" style="max-height: 400px; overflow: auto;">
+                <${For} each=${() => runningState()?.messages || []}>
+                  ${msg => html`<${SubagentMessageBubble} message=${msg} />`}
+                <//>
+                <!-- Current streaming message -->
+                <${Show} when=${() => runningState()?.currentMessage?.content?.length > 0}>
+                  <div class="subagent-message streaming mb-2">
+                    <div class="d-flex align-items-center gap-1 text-muted small mb-1">
+                      <span class="fw-semibold">assistant</span>
+                      <span class="subagent-streaming-indicator"></span>
+                    </div>
+                    <div class="text-pre small" style="max-height: 150px; overflow: auto;">
+                      ${() => {
+                        const content = runningState()?.currentMessage?.content || [];
+                        return content.map(c => c.text || "").filter(Boolean).join("\n");
+                      }}
+                    </div>
+                  </div>
+                <//>
+              </div>
+            <//>
+
+            <!-- Completed state: show error, summary, or expand option -->
+            <${Show} when=${() => !isRunning()}>
+              <${Show} when=${() => r()?.error}>
+                <div class="p-2 text-danger">${() => r().error}</div>
+              <//>
+              <${Show} when=${() => r()?.summary}>
+                <div class="p-2 text-pre">${() => r().summary}</div>
+              <//>
+              <${Show} when=${() => r()?.folder}>
+                <div class="px-2 pb-2 text-muted small">
+                  Saved to: ${() => r().folder}
+                </div>
+              <//>
+              <${Show} when=${() => r()?.subagentThreadId}>
+                <div class="px-2 pb-2">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-link p-0 text-muted"
+                    onClick=${_ => setExpanded(e => !e)}>
+                    <i class=${() => `bi ${expanded() ? 'bi-chevron-up' : 'bi-chevron-down'} me-1`}></i>
+                    ${() => expanded() ? "Hide conversation" : "View full conversation"}
+                  </button>
+                </div>
+              <//>
+
+              <!-- Expanded conversation view -->
+              <${Show} when=${expanded}>
+                <div class="subagent-conversation border-top p-2" style="max-height: 500px; overflow: auto;">
+                  <${For} each=${fullMessages}>
+                    ${msg => html`<${SubagentMessageBubble} message=${msg} />`}
+                  <//>
+                  <${Show} when=${() => fullMessages().length === 0}>
+                    <div class="text-muted small">Loading conversation...</div>
+                  <//>
+                </div>
+              <//>
+            <//>
+          </div>
+        `;
+      }
+
       function AgentConfigModal(props) {
         const [servers, setServers] = createSignal([...(props.servers || [])]);
         const [newName, setNewName] = createSignal("");
@@ -905,19 +1217,19 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
                         <input
                           type="checkbox"
                           class="form-check-input"
-                          checked=${server.enabled}
+                          checked=${() => server.enabled}
                           onChange=${_ => toggleServer(index())}
                           title="Enable/disable server" />
                         <input
                           class="form-control form-control-sm"
                           style="flex: 1"
-                          value=${server.name}
+                          value=${() => server.name}
                           placeholder="Name"
                           onChange=${e => updateServer(index(), "name", e.target.value)} />
                         <input
                           class="form-control form-control-sm"
                           style="flex: 2"
-                          value=${server.url}
+                          value=${() => server.url}
                           placeholder="URL"
                           onChange=${e => updateServer(index(), "url", e.target.value)} />
                         <button
@@ -992,7 +1304,7 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
 
           if (stopReason !== "tool_use") break;
 
-          const toolResults = { ...(await getToolResults(store.messages.at(-1).content, toolMap, { db, threadId: params.threadId, agentId: params.agentId })), parentId: savedId, createdAt: Date.now() };
+          const toolResults = { ...(await getToolResults(store.messages.at(-1).content, toolMap, { db, threadId: params.threadId, agentId: params.agentId, modelId: store.modelId })), parentId: savedId, createdAt: Date.now() };
           setStore("messages", store.messages.length, toolResults);
           parentId = await saveMsg(toolResults);
           setStore("messages", store.messages.length - 1, "id", parentId);
@@ -1071,6 +1383,34 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
           const config = await withStorage(getGoogleConfig, localStorage, "google-config");
           return getGeminiClient(new GoogleGenAI(config));
         }
+        if (type === "echo") {
+          return getEchoClient();
+        }
+      }
+
+      // Echo client for testing - echoes back a summary of the input
+      function getEchoClient() {
+        async function* stream(input) {
+          yield { messageStart: { role: "assistant" } };
+
+          // Extract user message text
+          const lastUserMsg = input.messages?.filter(m => m.role === "user").pop();
+          const userText = lastUserMsg?.content?.find(c => c.text)?.text || "no input";
+
+          // Echo back a response
+          const responseText = `Echo: received "${userText.slice(0, 100)}${userText.length > 100 ? '...' : ''}"`;
+
+          yield { contentBlockStart: { contentBlockIndex: 0, start: {} } };
+          // Stream character by character for realistic simulation
+          for (const char of responseText) {
+            yield { contentBlockDelta: { contentBlockIndex: 0, delta: { text: char } } };
+            await new Promise(r => setTimeout(r, 2));
+          }
+          yield { contentBlockStop: { contentBlockIndex: 0 } };
+          yield { messageStop: { stopReason: "end_turn" } };
+        }
+
+        return { send: input => Promise.resolve({ stream: stream(input) }) };
       }
 
       export function getGeminiClient(client) {
@@ -1247,11 +1587,21 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
           frame.style.cssText = "position:absolute;left:-9999px;top:-9999px;width:0;height:0;border:0";
           document.body.appendChild(frame);
 
-          const onMsg = e => {
+          const onMsg = async e => {
             if (e.source !== frame.contentWindow) return;
             const d = e.data || {};
             if (d.type === "log") logs.push(String(d.msg));
             if (d.type === "done") cleanup();
+            // Handle resource operations from sandbox
+            if (d.type === "resources") {
+              const { id, command, args } = d;
+              try {
+                const result = await editor({ command, ...args }, { db: context.db, threadId: context.threadId });
+                frame.contentWindow?.postMessage({ type: "resources_result", id, result }, "*");
+              } catch (e) {
+                frame.contentWindow?.postMessage({ type: "resources_result", id, error: e.message }, "*");
+              }
+            }
           };
           window.addEventListener("message", onMsg);
 
@@ -1293,6 +1643,30 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
             return _fetch(proxyUrl, { ...opts, headers });
           } catch (e) { console.log(e); return _fetch(url, opts); }
         };
+
+        // Resources API - provides access to virtual filesystem
+        const _resPending = new Map();
+        let _resId = 0;
+        const _resCall = (command, args) => new Promise((resolve, reject) => {
+          const id = ++_resId;
+          _resPending.set(id, { resolve, reject });
+          parent.postMessage({ type: "resources", id, command, args }, "*");
+        });
+        window.resources = {
+          create: (path, content) => _resCall("create", { path, file_text: content }),
+          view: (path) => _resCall("view", { path }),
+          list: (path = "/") => _resCall("view", { path: path.endsWith("/") ? path : path + "/" }),
+          delete: (path) => _resCall("delete", { path }),
+          rename: (path, new_path) => _resCall("rename", { path, new_path }),
+          replace: (path, old_str, new_str) => _resCall("str_replace", { path, old_str, new_str }),
+        };
+        addEventListener("message", e => {
+          if (e.data?.type === "resources_result") {
+            const { id, result, error } = e.data;
+            const p = _resPending.get(id);
+            if (p) { _resPending.delete(id); error ? p.reject(new Error(error)) : p.resolve(result); }
+          }
+        });
       })();
     `;
 
@@ -1309,15 +1683,21 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
       }
 
       async function editor({ command, path, view_range, old_str, new_str, file_text, insert_line, new_path }, context = {}) {
-        const { db, threadId } = context;
+        const { db, threadId, agentId } = context;
         if (!db) return "Error: Database not available";
 
         const normPath = path.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
         const isDir = path.endsWith("/");
 
+        // Get resources: thread-scoped + agent-scoped (skills, etc.)
         const getResources = async () => {
-          if (!threadId) return await db.getAll("resources");
-          return await db.getAllFromIndex("resources", "threadId", threadId);
+          const threadResources = threadId ? await db.getAllFromIndex("resources", "threadId", threadId) : [];
+          const agentResources = agentId ? await db.getAllFromIndex("resources", "agentId", agentId) : [];
+          // Combine, thread resources take precedence (by path)
+          const byPath = new Map();
+          for (const r of agentResources) byPath.set(r.path, r);
+          for (const r of threadResources) byPath.set(r.path, r);
+          return Array.from(byPath.values());
         };
 
         const getResource = async p => {
@@ -1330,29 +1710,32 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
           if (existing) {
             await db.put("resources", { ...existing, content, updatedAt: Date.now() });
           } else {
-            await db.add("resources", { path: p, content, threadId, createdAt: Date.now() });
+            // skills/ and memories/ are agent-scoped, others are thread-scoped
+            const isAgentScoped = p.startsWith("skills/") || p.startsWith("memories/");
+            const resource = { path: p, content, agentId, createdAt: Date.now() };
+            if (!isAgentScoped) resource.threadId = threadId;
+            await db.add("resources", resource);
           }
         };
 
         switch (command) {
           case "view": {
-            if (isDir) {
-              const resources = await getResources();
-              const prefix = normPath ? normPath + "/" : "";
-              const entries = new Set();
-              for (const r of resources) {
-                if (r.path.startsWith(prefix)) {
-                  const rest = r.path.slice(prefix.length);
-                  const first = rest.split("/")[0];
-                  if (first) entries.add(rest.includes("/") ? first + "/" : first);
-                }
+            const resources = await getResources();
+            const file = resources.find(r => r.path === normPath);
+            if (file && !isDir) return { status: "viewed", path, content: file.content };
+
+            // List as directory (with or without trailing slash)
+            const prefix = normPath ? normPath + "/" : "";
+            const entries = new Set();
+            for (const r of resources) {
+              if (r.path.startsWith(prefix)) {
+                const rest = r.path.slice(prefix.length);
+                const first = rest.split("/")[0];
+                if (first) entries.add(rest.includes("/") ? first + "/" : first);
               }
-              return { status: "directory", path: path || "/", entries: entries.size ? Array.from(entries).sort() : [] };
-            } else {
-              const resource = await getResource(normPath);
-              if (!resource) return { status: "error", error: `File not found: ${path}` };
-              return { status: "viewed", path, content: resource.content };
             }
+            if (entries.size > 0) return { status: "directory", path: prefix || "/", entries: Array.from(entries).sort() };
+            return { status: "error", error: `Not found: ${path}` };
           }
 
           case "create": {
@@ -1502,6 +1885,251 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
         }
       }
 
+      async function task({ prompt, type, folder }, context = {}) {
+        const { db, threadId, agentId, modelId, toolUseId } = context;
+        if (!db) return { error: "Database not available" };
+        if (!["explore", "plan"].includes(type)) return { error: `Unknown type: ${type}. Use "explore" or "plan".` };
+
+        const folderName = folder || "findings";
+
+        // Create subagent thread in DB for persistence
+        let subagentThreadId = null;
+        if (toolUseId) {
+          subagentThreadId = await db.add("threads", {
+            agentId,
+            parentThreadId: threadId,
+            parentToolUseId: toolUseId,
+            type: "subagent",
+            subagentType: type,
+            status: "running",
+            createdAt: Date.now()
+          });
+
+          // Register as running in signal
+          setRunningSubagents(prev => {
+            const next = new Map(prev);
+            next.set(toolUseId, {
+              threadId: subagentThreadId,
+              messages: [],
+              currentMessage: null,
+              status: "running",
+              type
+            });
+            return next;
+          });
+        }
+
+        // Sub-agent configuration based on type
+        // Note: Sub-agents get all tools EXCEPT task (no sub-agent chaining)
+        const subAgentToolDocs = TOOL_DOCUMENTATION.replace(/### task[\s\S]*$/, '');
+        const configs = {
+          explore: {
+            system: `You are a research agent. Explore and document findings WITH EXACT EVIDENCE.
+
+${subAgentToolDocs}
+
+## Your Task
+
+CRITICAL RULES:
+1. Save findings to /explore/${folderName}/ using the editor tool
+2. NEVER paraphrase - save EXACT quotes, full JSON, complete code blocks
+3. Include source paths and context in saved files
+4. Use descriptive filenames (e.g., api-endpoints.json, auth-code.txt)
+
+WORKFLOW:
+1. Use editor to view "/" and understand existing files
+2. Use code tool with fetch() to get web resources if needed
+3. Use mcp tool if external tools are configured
+4. Save findings to /explore/${folderName}/
+5. Summarize what you found and list files created
+
+Be thorough. Save evidence, not opinions.`,
+            tools: ["code", "think", "editor", "mcp"]
+          },
+          plan: {
+            system: `You are a planning agent. Design clear implementation approaches.
+
+${subAgentToolDocs}
+
+## Your Task
+
+Read /explore/ files for context from previous exploration.
+
+WORKFLOW:
+1. View /explore/ to see what research exists
+2. Read relevant findings files
+3. Design your implementation plan
+
+Return a structured plan:
+1. Overview - what we're building and why
+2. Steps - specific actions in order
+3. Files - exact paths to create/modify
+4. Dependencies - what must happen first
+5. Risks - potential issues
+
+Be specific. Reference evidence from /explore/ files.`,
+            tools: ["code", "think", "editor", "mcp"]
+          }
+        };
+
+        const config = configs[type];
+        const subTools = TOOLS.filter(t => config.tools.includes(t.toolSpec.name));
+        const toolMap = Object.fromEntries(subTools.map(t => [t.toolSpec.name, t.fn]));
+
+        // Get client (detect provider from model)
+        const effectiveModelId = modelId || "us.anthropic.claude-haiku-4-5-20251001-v1:0";
+        const clientType = effectiveModelId === "echo" ? "echo" : effectiveModelId.includes("gemini") ? "google" : "aws";
+        const client = await getConverseClient(clientType);
+
+        // Isolated message context for sub-agent
+        const messages = [{ role: "user", content: [{ text: prompt }] }];
+        const subContext = { db, threadId, agentId };
+
+        // Save initial user message to subagent thread
+        if (subagentThreadId) {
+          await db.add("messages", {
+            ...messages[0],
+            threadId: subagentThreadId,
+            agentId,
+            createdAt: Date.now()
+          });
+        }
+
+        // Run sub-agent loop (max 15 turns)
+        for (let turn = 0; turn < 15; turn++) {
+          const input = {
+            modelId: effectiveModelId,
+            messages: messages.map(({ role, content }) => ({ role, content })),
+            system: [{ text: config.system }],
+            toolConfig: { tools: subTools.map(({ toolSpec }) => ({ toolSpec })) },
+            additionalModelRequestFields: {}
+          };
+
+          const output = await client.send(input);
+          const assistantMsg = { role: "assistant", content: [], createdAt: Date.now() };
+          let stopReason = null;
+
+          // Process streaming response
+          for await (const msg of output.stream) {
+            processSubAgentBlock(assistantMsg, msg);
+            if (msg.messageStop) stopReason = msg.messageStop.stopReason;
+
+            // Update signal for real-time display
+            if (toolUseId) {
+              setRunningSubagents(prev => {
+                const next = new Map(prev);
+                const entry = next.get(toolUseId);
+                if (entry) {
+                  entry.currentMessage = { ...assistantMsg };
+                }
+                return next;
+              });
+            }
+          }
+
+          messages.push(assistantMsg);
+
+          // Save assistant message to DB and update signal with completed message
+          if (subagentThreadId) {
+            await db.add("messages", {
+              ...assistantMsg,
+              threadId: subagentThreadId,
+              agentId
+            });
+
+            // Update signal with completed message in messages array
+            setRunningSubagents(prev => {
+              const next = new Map(prev);
+              const entry = next.get(toolUseId);
+              if (entry) {
+                entry.messages = [...entry.messages, { ...assistantMsg }];
+                entry.currentMessage = null;
+              }
+              return next;
+            });
+          }
+
+          if (stopReason !== "tool_use") break;
+
+          // Execute tools
+          const toolResults = await getToolResults(assistantMsg.content, toolMap, subContext);
+          messages.push(toolResults);
+
+          // Save tool results to DB and update signal
+          if (subagentThreadId) {
+            await db.add("messages", {
+              ...toolResults,
+              threadId: subagentThreadId,
+              agentId,
+              createdAt: Date.now()
+            });
+
+            setRunningSubagents(prev => {
+              const next = new Map(prev);
+              const entry = next.get(toolUseId);
+              if (entry) {
+                entry.messages = [...entry.messages, { ...toolResults }];
+              }
+              return next;
+            });
+          }
+        }
+
+        // Update thread status and signal to completed
+        if (subagentThreadId) {
+          const thread = await db.get("threads", subagentThreadId);
+          if (thread) {
+            await db.put("threads", { ...thread, status: "completed", updatedAt: Date.now() });
+          }
+
+          setRunningSubagents(prev => {
+            const next = new Map(prev);
+            const entry = next.get(toolUseId);
+            if (entry) {
+              entry.status = "completed";
+            }
+            return next;
+          });
+        }
+
+        // Extract summary from last assistant message
+        const lastAssistant = messages.filter(m => m.role === "assistant").pop();
+        const summary = lastAssistant?.content?.find(c => c.text)?.text || "Completed";
+
+        return {
+          type,
+          summary,
+          folder: type === "explore" ? `/explore/${folderName}/` : null,
+          turns: messages.filter(m => m.role === "assistant").length,
+          subagentThreadId
+        };
+      }
+
+      // Simplified content block processor for sub-agents (no store, just builds message)
+      function processSubAgentBlock(msg, message) {
+        const { contentBlockStart, contentBlockDelta, contentBlockStop } = message;
+        const content = msg.content;
+
+        if (contentBlockStart?.start?.toolUse) {
+          content[contentBlockStart.contentBlockIndex] = { toolUse: contentBlockStart.start.toolUse };
+          return;
+        }
+        if (contentBlockStop) {
+          const block = content[contentBlockStop.contentBlockIndex];
+          if (block?.toolUse) block.toolUse.input = parseJSON(block.toolUse.input);
+          return;
+        }
+        if (!contentBlockDelta) return;
+
+        const { contentBlockIndex, delta } = contentBlockDelta;
+        content[contentBlockIndex] ||= {};
+        const block = content[contentBlockIndex];
+
+        if (delta.reasoningContent) appendReasoning(block, delta.reasoningContent);
+        else if (delta.text) block.text = (block.text || "") + delta.text;
+        else if (delta.toolUse) block.toolUse.input = (block.toolUse.input || "") + delta.toolUse.input;
+      }
+
       async function getToolResults(toolUseContent, tools, context = {}) {
         const content = await Promise.all(
           toolUseContent
@@ -1509,7 +2137,8 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
             .map(async ({ toolUse }) => {
               const { toolUseId, name, input } = toolUse;
               try {
-                const result = await tools?.[name]?.(input, context);
+                // Pass toolUseId in context for task tool to use
+                const result = await tools?.[name]?.(input, { ...context, toolUseId });
                 return { toolResult: { toolUseId, content: [{ json: { result } }] } };
               } catch (error) {
                 console.error("Tool error:", error);
@@ -1817,7 +2446,173 @@ You have access to MCP (Model Context Protocol) servers configured by the user. 
           assert(app.querySelector("#userFiles")?.type === "file", "File input exists");
         }
 
-        runTests([testBranchingAndParseJSON, testUIRendering]).then(({ failed }) => {
+        // Mock client that simulates streaming responses
+        function createMockClient(responses) {
+          let callIndex = 0;
+          return {
+            async send(input) {
+              const response = responses[callIndex++] || responses[responses.length - 1];
+              return {
+                stream: (async function* () {
+                  for (const block of response.blocks) {
+                    yield block;
+                    await new Promise(r => setTimeout(r, 5));
+                  }
+                  yield { messageStop: { stopReason: response.stopReason || "end_turn" } };
+                })()
+              };
+            }
+          };
+        }
+
+        // Helper to create streaming blocks
+        function mockTextBlock(text, index = 0) {
+          return [
+            { contentBlockStart: { contentBlockIndex: index, start: {} } },
+            { contentBlockDelta: { contentBlockIndex: index, delta: { text } } },
+            { contentBlockStop: { contentBlockIndex: index } }
+          ];
+        }
+
+        function mockToolUseBlock(name, input, toolUseId, index = 0) {
+          return [
+            { contentBlockStart: { contentBlockIndex: index, start: { toolUse: { toolUseId, name } } } },
+            { contentBlockDelta: { contentBlockIndex: index, delta: { toolUse: { input: JSON.stringify(input) } } } },
+            { contentBlockStop: { contentBlockIndex: index } }
+          ];
+        }
+
+        async function testTaskIntegration() {
+          // Integration test: call task() with Echo model and verify full behavior
+          const testToolUseId = "integration-test-" + Date.now();
+          const testPrompt = "Find information about testing";
+
+          // Call task() with Echo model
+          const result = await task(
+            { prompt: testPrompt, type: "explore", folder: "test-findings" },
+            { db, threadId: null, agentId: 1, modelId: "echo", toolUseId: testToolUseId }
+          );
+
+          // 1. Verify result structure
+          assert(result.type === "explore", "Result should have correct type");
+          assert(result.subagentThreadId, "Result should have subagentThreadId");
+          assert(result.turns >= 1, "Result should have at least 1 turn");
+          assert(result.summary, "Result should have summary");
+          assert(result.summary.includes("Echo:"), "Summary should be from Echo client");
+
+          // 2. Verify thread was created in DB
+          const thread = await db.get("threads", result.subagentThreadId);
+          assert(thread, "Thread should exist in DB");
+          assert(thread.type === "subagent", "Thread type should be subagent");
+          assert(thread.subagentType === "explore", "Subagent type should be explore");
+          assert(thread.parentToolUseId === testToolUseId, "Thread should link to tool use");
+          assert(thread.status === "completed", "Thread status should be completed");
+
+          // 3. Verify messages were saved to DB
+          const messages = await db.getAllFromIndex("messages", "threadId", result.subagentThreadId);
+          assert(messages.length >= 2, "Should have at least 2 messages (user + assistant)");
+          const userMsg = messages.find(m => m.role === "user");
+          const assistantMsg = messages.find(m => m.role === "assistant");
+          assert(userMsg, "Should have user message");
+          assert(assistantMsg, "Should have assistant message");
+          assert(userMsg.content[0].text === testPrompt, "User message should match prompt");
+
+          // 4. Verify signal was updated (should be completed now)
+          const signalState = runningSubagents().get(testToolUseId);
+          assert(signalState, "Signal state should exist");
+          assert(signalState.status === "completed", "Signal status should be completed");
+          assert(signalState.messages.length >= 1, "Signal should have messages");
+
+          // Cleanup
+          for (const msg of messages) await db.delete("messages", msg.id);
+          await db.delete("threads", result.subagentThreadId);
+          setRunningSubagents(prev => { const next = new Map(prev); next.delete(testToolUseId); return next; });
+        }
+
+        async function testTaskWithoutToolUseId() {
+          // Test that task() works without toolUseId (no thread/signal tracking)
+          const result = await task(
+            { prompt: "Simple test", type: "plan" },
+            { db, threadId: null, agentId: 1, modelId: "echo" }
+          );
+
+          assert(result.type === "plan", "Result should have correct type");
+          assert(result.summary, "Result should have summary");
+          assert(!result.subagentThreadId, "Should not have subagentThreadId without toolUseId");
+        }
+
+        async function testEchoClient() {
+          // Test that Echo client returns expected streaming format
+          const client = await getConverseClient("echo");
+          const output = await client.send({
+            messages: [{ role: "user", content: [{ text: "Hello world" }] }]
+          });
+
+          const blocks = [];
+          for await (const block of output.stream) {
+            blocks.push(block);
+          }
+
+          assert(blocks.some(b => b.messageStart), "Should have messageStart");
+          assert(blocks.some(b => b.contentBlockStart), "Should have contentBlockStart");
+          assert(blocks.some(b => b.contentBlockDelta), "Should have contentBlockDelta");
+          assert(blocks.some(b => b.contentBlockStop), "Should have contentBlockStop");
+          assert(blocks.some(b => b.messageStop), "Should have messageStop");
+
+          // Reconstruct text from deltas
+          const text = blocks
+            .filter(b => b.contentBlockDelta?.delta?.text)
+            .map(b => b.contentBlockDelta.delta.text)
+            .join("");
+          assert(text.includes("Echo:"), "Response should be echo format");
+          assert(text.includes("Hello world"), "Response should echo input");
+        }
+
+        async function testTaskResultRendering() {
+          await new Promise(r => setTimeout(r, 100));
+
+          // Create a test result object
+          const testResult = {
+            type: "explore",
+            summary: "Found test data",
+            folder: "/explore/test/",
+            turns: 2,
+            subagentThreadId: 12345
+          };
+
+          // Render TaskResult component
+          const container = document.createElement("div");
+          document.body.appendChild(container);
+
+          render(() => html`<${TaskResult}
+            result=${() => testResult}
+            toolUseId=${() => "render-test-001"} />`, container);
+
+          await new Promise(r => setTimeout(r, 50));
+
+          const taskResult = container.querySelector(".task-result");
+          assert(taskResult, "TaskResult should render");
+          assert(taskResult.textContent.includes("explore"), "Should show agent type");
+          assert(taskResult.textContent.includes("Found test data"), "Should show summary");
+          assert(taskResult.textContent.includes("2 turns"), "Should show turns");
+
+          // Check for expand button - wait a bit more for reactive content
+          await new Promise(r => setTimeout(r, 100));
+          const expandBtn = taskResult.querySelector("button");
+          assert(expandBtn, "Should have expand button");
+          assert(expandBtn.textContent.includes("View"), "Expand button should say View");
+
+          container.remove();
+        }
+
+        runTests([
+          testBranchingAndParseJSON,
+          testUIRendering,
+          testEchoClient,
+          testTaskIntegration,
+          testTaskWithoutToolUseId,
+          testTaskResultRendering
+        ]).then(({ failed }) => {
           window.TESTS_DONE = true;
           if (failed > 0) console.error(`\n${failed} test(s) failed!`);
         });
