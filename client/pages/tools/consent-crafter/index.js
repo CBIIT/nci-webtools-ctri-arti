@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createResource, For, Show } from "solid-js";
+import { createEffect, createMemo, createResource, ErrorBoundary, For, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { createReport, listCommands } from "docx-templates";
@@ -11,7 +11,7 @@ import ClassToggle from "../../../components/class-toggle.js";
 import FileInput from "../../../components/file-input.js";
 import Tooltip from "../../../components/tooltip.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
-import { alerts, clearAlert } from "../../../utils/alerts.js";
+import { alerts, clearAlert, handleError } from "../../../utils/alerts.js";
 import { createTimestamp, downloadBlob } from "../../../utils/files.js";
 import { parseDocument } from "../../../utils/parsers.js";
 
@@ -272,8 +272,8 @@ export default function Page() {
       const variables = commands
         .filter((c) => ["INS", "FOR"].includes(c.type))
         .map((c) => ({
-          type: c.type === "FOR" ? "array" : "string", 
-          name: c.code.split(" ").pop() 
+          type: c.type === "FOR" ? "array" : "string",
+          name: c.code.split(" ").pop(),
         }))
         .filter((c) => !c.name.startsWith("$"));
 
@@ -303,6 +303,8 @@ export default function Page() {
       store.inputFile.type,
       store.inputFile.name
     );
+
+    setStore("inputText", inputText);
 
     const jobs = [];
 
@@ -393,9 +395,22 @@ export default function Page() {
     setStore("id", await createSession());
     setParam("id", store.id);
 
-    // Start all jobs in parallel
-    for (const { jobId, jobConfig } of jobs) {
-      processJob(jobId, jobConfig);
+    const jobPromises = jobs.map(({ jobId, jobConfig }) => processJob(jobId, jobConfig));
+    await Promise.allSettled(jobPromises);
+
+    const failedJobs = Object.values(store.generatedDocuments).filter(
+      (job) => job.status === "error"
+    );
+
+    if (failedJobs.length > 0) {
+      const failedCount = failedJobs.length;
+      const totalCount = jobs.length;
+      const errorMessage =
+        failedCount === 1
+          ? failedJobs[0].error
+          : `There was an issue with ${failedCount} of ${totalCount} document generations.`;
+
+      handleError(new Error(errorMessage), "Document Generation Error");
     }
   }
 
@@ -415,7 +430,9 @@ export default function Page() {
     });
 
     if (!response.ok) {
-      throw new Error("Network response was not ok");
+      const error = new Error("Something went wrong while processing the document.");
+      error.status = response.status;
+      throw error;
     }
 
     const data = await response.json();
@@ -452,351 +469,402 @@ export default function Page() {
     });
   }
 
+  // ============= Error Data Collection =============
+
+  function collectAdditionalErrorData() {
+    const jobStatuses = Object.entries(store.generatedDocuments).map(([jobId, job]) => ({
+      jobId,
+      status: job.status,
+      error: job.error || null,
+      templateName: job.config?.displayInfo?.templateName || "Unknown",
+    }));
+
+    return {
+      "Session ID": store.id || "No session",
+      Model: store.model || "Not selected",
+      "Template Source Type": store.templateSourceType || "Not set",
+      "Selected Templates": store.selectedTemplates?.length
+        ? store.selectedTemplates.join(", ")
+        : "N/A",
+      "Input File": store.inputFile
+        ? `${store.inputFile.name} (${store.inputFile.size} bytes)`
+        : "No file",
+      "Input Text Length": store.inputText
+        ? `${store.inputText.length} characters`
+        : "0 characters",
+      "Custom Prompt": store.customPrompt ? store.customPrompt : "N/A",
+      "Custom Template File": store.customTemplateFile ? store.customTemplateFile.name : "N/A",
+      "Jobs Count": Object.keys(store.generatedDocuments).length,
+      "Job Statuses": jobStatuses,
+    };
+  }
+
   // ============= UI Component =============
 
   return html`
     <div class="bg-info-subtle h-100 position-relative">
-      <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
-      <div class="container py-3">
-        <form onSubmit=${handleSubmit} onReset=${handleReset}>
-          <div class="row align-items-stretch">
-            <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-              <div class="bg-white shadow rounded p-3 card-lg">
-                <label class="form-label required text-info fs-5 mb-1">Source Document</label>
-                <${FileInput}
-                  value=${() => [store.inputFile]}
-                  onChange=${(ev) => setStore("inputFile", ev.target.files[0] || null)}
-                  accept="text/*,.doc,.docx,.pdf"
-                  class="form-control form-control-sm mb-3"
-                />
+      <${AlertContainer}
+        alerts=${alerts}
+        onDismiss=${clearAlert}
+        onCollectAdditionalData=${() => collectAdditionalErrorData()}
+      />
+      <${ErrorBoundary}
+        fallback=${(error) => {
+          handleError(error, "Consent Crafter Error");
+          return null;
+        }}
+      >
+        <div class="container py-3">
+          <form onSubmit=${handleSubmit} onReset=${handleReset}>
+            <div class="row align-items-stretch">
+              <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
+                <div class="bg-white shadow rounded p-3 card-lg">
+                  <label class="form-label required text-info fs-5 mb-1">Source Document</label>
+                  <${FileInput}
+                    value=${() => [store.inputFile]}
+                    onChange=${(ev) => setStore("inputFile", ev.target.files[0] || null)}
+                    accept="text/*,.doc,.docx,.pdf"
+                    class="form-control form-control-sm mb-3"
+                  />
 
-                <!-- Template Selection -->
-                <div class="mb-3">
-                  <label class="form-label required text-info fs-5 mb-1">Form Templates</label>
-                  <div class="border rounded p-2">
-                    <${For} each=${getTemplateConfigsByCategory}>
-                      ${(group) => html`
-                        <div class="mb-2">
-                          <div class="fw-bold text-muted small">${() => group.label}</div>
-                          <${For} each=${() => group.options}>
-                            ${(option) => html`
-                              <div class="form-check form-control-sm min-height-auto py-0 ms-1">
-                                <input
-                                  class="form-check-input cursor-pointer"
-                                  type="checkbox"
-                                  id=${() => option.value}
-                                  disabled=${() => option.disabled}
-                                  checked=${() => store.selectedTemplates.includes(option.value)}
-                                  onChange=${(e) =>
-                                    setStore("selectedTemplates", (prev) =>
-                                      e.target.checked
-                                        ? prev.concat([option.value])
-                                        : prev.filter((v) => v !== option.value)
-                                    )}
-                                />
-                                <label
-                                  class="form-check-label cursor-pointer"
-                                  classList=${() => ({ "text-muted": option.disabled })}
-                                  for=${() => option.value}
-                                >
-                                  ${() => templateConfigs[option.value].label}
-                                </label>
-                              </div>
-                            `}
-                          <//>
-                        </div>
-                      `}
-                    <//>
-                  </div>
-                </div>
-
-                <div class="d-flex flex-wrap justify-content-between align-items-center">
-                  <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
-                    <details
-                      class="small text-secondary mt-2"
-                      open=${() => store.advancedOptionsOpen}
-                      onToggle=${(e) => setStore("advancedOptionsOpen", e.target.open)}
-                    >
-                      <summary class="form-label text-info fs-5 mb-1">Advanced Options</summary>
-                      <div class="border rounded p-2">
-                        <label for="model" class="form-label required">Default Model</label>
-                        <select
-                          class="form-select form-select-sm cursor-pointer mb-2"
-                          name="model"
-                          id="model"
-                          value=${() => store.model}
-                          onChange=${(e) => setStore("model", e.target.value)}
-                        >
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_5}>Opus 4.5</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5}>Sonnet 4.5</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v3_7}>Sonnet 3.7</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.MAVERICK.v4_0_17b}>
-                            Maverick
-                          </option>
-                        </select>
-
-                        <div class="d-flex justify-content-between">
-                          <label class="form-label">Form Template</label>
-                          <div>
-                            <div class="form-check form-check-inline">
-                              <input
-                                class="form-check-input"
-                                type="radio"
-                                name="templateSource"
-                                id="templateSourcePredefined"
-                                value="predefined"
-                                checked=${() => store.templateSourceType === "predefined"}
-                                onChange=${(e) => setStore("templateSourceType", e.target.value)}
-                              />
-                              <label class="form-check-label" for="templateSourcePredefined">
-                                Predefined template
-                              </label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                              <input
-                                class="form-check-input"
-                                type="radio"
-                                name="templateSource"
-                                id="templateSourceCustom"
-                                value="custom"
-                                checked=${() => store.templateSourceType === "custom"}
-                                onChange=${(e) => setStore("templateSourceType", e.target.value)}
-                              />
-                              <label class="form-check-label" for="templateSourceCustom">
-                                Custom template
-                              </label>
-                            </div>
+                  <!-- Template Selection -->
+                  <div class="mb-3">
+                    <label class="form-label required text-info fs-5 mb-1">Form Templates</label>
+                    <div class="border rounded p-2">
+                      <${For} each=${getTemplateConfigsByCategory}>
+                        ${(group) => html`
+                          <div class="mb-2">
+                            <div class="fw-bold text-muted small">${() => group.label}</div>
+                            <${For} each=${() => group.options}>
+                              ${(option) => html`
+                                <div class="form-check form-control-sm min-height-auto py-0 ms-1">
+                                  <input
+                                    class="form-check-input cursor-pointer"
+                                    type="checkbox"
+                                    id=${() => option.value}
+                                    disabled=${() => option.disabled}
+                                    checked=${() => store.selectedTemplates.includes(option.value)}
+                                    onChange=${(e) =>
+                                      setStore("selectedTemplates", (prev) =>
+                                        e.target.checked
+                                          ? prev.concat([option.value])
+                                          : prev.filter((v) => v !== option.value)
+                                      )}
+                                  />
+                                  <label
+                                    class="form-check-label cursor-pointer"
+                                    classList=${() => ({ "text-muted": option.disabled })}
+                                    for=${() => option.value}
+                                  >
+                                    ${() => templateConfigs[option.value].label}
+                                  </label>
+                                </div>
+                              `}
+                            <//>
                           </div>
-                        </div>
-
-                        <${Show} when=${() => store.templateSourceType === "predefined"}>
-                          <div class="input-group mb-2">
-                            <select
-                              class="form-select form-select-sm cursor-pointer"
-                              name="predefinedTemplate"
-                              id="predefinedTemplate"
-                              value=${() => store.selectedPredefinedTemplate}
-                              onChange=${(e) =>
-                                setStore("selectedPredefinedTemplate", e.target.value)}
-                            >
-                              <option value="">[No Template]</option>
-                              <${For} each=${getTemplateConfigsByCategory}>
-                                ${(group) => html`
-                                  <optgroup label=${() => group.label}>
-                                    <${For} each=${() => group.options}>
-                                      ${(option) => html`
-                                        <option
-                                          value=${() => option.value}
-                                          disabled=${() => option.disabled}
-                                        >
-                                          ${() =>
-                                            `${templateConfigs[option.value].prefix} - ${templateConfigs[option.value].label}`}
-                                        </option>
-                                      `}
-                                    <//>
-                                  </optgroup>
-                                `}
-                              <//>
-                            </select>
-                          </div>
-                        <//>
-
-                        <${Show} when=${() => store.templateSourceType === "custom"}>
-                          <${FileInput}
-                            value=${() => [store.customTemplateFile]}
-                            onChange=${(ev) =>
-                              setStore("customTemplateFile", ev.target.files[0] || null)}
-                            accept=".docx"
-                            class="form-control form-control-sm mb-2"
-                          />
-                        <//>
-
-                        <!-- Custom Prompt -->
-                        <div class="mb-2">
-                          <${ClassToggle}
-                            class="position-relative"
-                            activeClass="show"
-                            event="hover"
-                          >
-                            <label
-                              class="form-label"
-                              classList=${() => ({
-                                required:
-                                  store.selectedPredefinedTemplate || store.customTemplateFile,
-                              })}
-                              toggle
-                            >
-                              Custom Prompt
-                            </label>
-                            <img
-                              class="ms-1"
-                              src="/assets/images/icon-circle-info.svg"
-                              alt="Info"
-                              toggle
-                            />
-                            <div
-                              class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-50 text-muted text-center"
-                            >
-                              Use this field to provide your own instructions for generating a form.
-                              The system will follow your prompt instead of a predefined template.
-                            </div>
-                          <//>
-                        </div>
-                        <textarea
-                          class="form-control form-control-sm resize-vertical"
-                          id="systemPrompt"
-                          name="systemPrompt"
-                          rows="8"
-                          placeholder="Enter a custom prompt to generate your form."
-                          value=${() => store.customPrompt}
-                          onInput=${(e) => setStore("customPrompt", e.target.value)}
-                        />
-                      </div>
-                    </details>
-                  <//>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-              <div
-                class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1 card-lg"
-              >
-                <${Show}
-                  when=${() => Object.keys(store.generatedDocuments).length > 0}
-                  fallback=${html`<div class="d-flex h-100 py-5">
-                    <div class="text-center py-5">
-                      <h1 class="text-info mb-3">Welcome to Consent Crafter</h1>
-                      <div>
-                        To get started, upload your source document, select one or more form
-                        templates from the list, and click Generate to create tailored consent
-                        documents.
-                      </div>
-                    </div>
-                  </div>`}
-                >
-                  <div class="d-flex flex-column gap-2">
-                    <div class="text-muted small fw-semibold">
-                      <${Show}
-                        when=${allJobsProcessed}
-                        fallback="We are generating your forms now. This may take a few moments."
-                      >
-                        All processing is complete. The generated forms are available for download.
+                        `}
                       <//>
                     </div>
+                  </div>
 
-                    <${For} each=${() => Object.keys(store.generatedDocuments)}>
-                      ${(jobId) => {
-                        const job = () => store.generatedDocuments[jobId];
-
-                        return html`
-                          <div
-                            class="d-flex justify-content-between align-items-center p-2 border rounded"
+                  <div class="d-flex flex-wrap justify-content-between align-items-center">
+                    <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
+                      <details
+                        class="small text-secondary mt-2"
+                        open=${() => store.advancedOptionsOpen}
+                        onToggle=${(e) => setStore("advancedOptionsOpen", e.target.open)}
+                      >
+                        <summary class="form-label text-info fs-5 mb-1">Advanced Options</summary>
+                        <div class="border rounded p-2">
+                          <label for="model" class="form-label required">Default Model</label>
+                          <select
+                            class="form-select form-select-sm cursor-pointer mb-2"
+                            name="model"
+                            id="model"
+                            value=${() => store.model}
+                            onChange=${(e) => setStore("model", e.target.value)}
                           >
-                            <div class="flex-grow-1">
-                              <div class="fw-medium">
-                                <span>${() => job().config?.displayInfo?.prefix || ""}</span>
-                                <span class="text-muted fw-normal">
-                                  : ${() => job().config?.displayInfo?.label || "Unknown"}</span
-                                >
+                            <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_5}>Opus 4.5</option>
+                            <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5}>
+                              Sonnet 4.5
+                            </option>
+                            <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v3_7}>
+                              Sonnet 3.7
+                            </option>
+                            <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
+                            <option value=${MODEL_OPTIONS.AWS_BEDROCK.MAVERICK.v4_0_17b}>
+                              Maverick
+                            </option>
+                          </select>
+
+                          <div class="d-flex justify-content-between">
+                            <label class="form-label">Form Template</label>
+                            <div>
+                              <div class="form-check form-check-inline">
+                                <input
+                                  class="form-check-input"
+                                  type="radio"
+                                  name="templateSource"
+                                  id="templateSourcePredefined"
+                                  value="predefined"
+                                  checked=${() => store.templateSourceType === "predefined"}
+                                  onChange=${(e) => setStore("templateSourceType", e.target.value)}
+                                />
+                                <label class="form-check-label" for="templateSourcePredefined">
+                                  Predefined template
+                                </label>
                               </div>
-                              <div class="small text-muted">
-                                ${() => job().config?.displayInfo?.filename || "document.docx"}
+                              <div class="form-check form-check-inline">
+                                <input
+                                  class="form-check-input"
+                                  type="radio"
+                                  name="templateSource"
+                                  id="templateSourceCustom"
+                                  value="custom"
+                                  checked=${() => store.templateSourceType === "custom"}
+                                  onChange=${(e) => setStore("templateSourceType", e.target.value)}
+                                />
+                                <label class="form-check-label" for="templateSourceCustom">
+                                  Custom template
+                                </label>
                               </div>
                             </div>
-                            <${Show} when=${() => job()?.status === "processing"}>
+                          </div>
+
+                          <${Show} when=${() => store.templateSourceType === "predefined"}>
+                            <div class="input-group mb-2">
+                              <select
+                                class="form-select form-select-sm cursor-pointer"
+                                name="predefinedTemplate"
+                                id="predefinedTemplate"
+                                value=${() => store.selectedPredefinedTemplate}
+                                onChange=${(e) =>
+                                  setStore("selectedPredefinedTemplate", e.target.value)}
+                              >
+                                <option value="">[No Template]</option>
+                                <${For} each=${getTemplateConfigsByCategory}>
+                                  ${(group) => html`
+                                    <optgroup label=${() => group.label}>
+                                      <${For} each=${() => group.options}>
+                                        ${(option) => html`
+                                          <option
+                                            value=${() => option.value}
+                                            disabled=${() => option.disabled}
+                                          >
+                                            ${() =>
+                                              `${templateConfigs[option.value].prefix} - ${templateConfigs[option.value].label}`}
+                                          </option>
+                                        `}
+                                      <//>
+                                    </optgroup>
+                                  `}
+                                <//>
+                              </select>
+                            </div>
+                          <//>
+
+                          <${Show} when=${() => store.templateSourceType === "custom"}>
+                            <${FileInput}
+                              value=${() => [store.customTemplateFile]}
+                              onChange=${(ev) =>
+                                setStore("customTemplateFile", ev.target.files[0] || null)}
+                              accept=".docx"
+                              class="form-control form-control-sm mb-2"
+                            />
+                          <//>
+
+                          <!-- Custom Prompt -->
+                          <div class="mb-2">
+                            <${ClassToggle}
+                              class="position-relative"
+                              activeClass="show"
+                              event="hover"
+                            >
+                              <label
+                                class="form-label"
+                                classList=${() => ({
+                                  required:
+                                    store.selectedPredefinedTemplate || store.customTemplateFile,
+                                })}
+                                toggle
+                              >
+                                Custom Prompt
+                              </label>
+                              <img
+                                class="ms-1"
+                                src="/assets/images/icon-circle-info.svg"
+                                alt="Info"
+                                toggle
+                              />
                               <div
-                                class="spinner-border spinner-border-sm text-primary me-2"
-                                role="status"
+                                class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-50 text-muted text-center"
                               >
-                                <span class="visually-hidden">Processing...</span>
-                              </div>
-                            <//>
-                            <${Show} when=${() => job()?.status === "completed"}>
-                              <button
-                                type="button"
-                                class="btn btn-outline-light"
-                                onClick=${() => downloadJob(jobId)}
-                              >
-                                <img
-                                  src="/assets/images/icon-download.svg"
-                                  height="16"
-                                  alt="Download"
-                                />
-                              </button>
-                            <//>
-                            <${Show} when=${() => job()?.status === "error"}>
-                              <div class="d-flex align-items-center gap-2">
-                                <button
-                                  type="button"
-                                  class="btn btn-sm btn-outline-danger"
-                                  title=${() => job().error}
-                                  onClick=${() => retryJob(jobId)}
-                                >
-                                  Retry
-                                </button>
+                                Use this field to provide your own instructions for generating a
+                                form. The system will follow your prompt instead of a predefined
+                                template.
                               </div>
                             <//>
                           </div>
-                        `;
-                      }}
+                          <textarea
+                            class="form-control form-control-sm resize-vertical"
+                            id="systemPrompt"
+                            name="systemPrompt"
+                            rows="8"
+                            placeholder="Enter a custom prompt to generate your form."
+                            value=${() => store.customPrompt}
+                            onInput=${(e) => setStore("customPrompt", e.target.value)}
+                          />
+                        </div>
+                      </details>
                     <//>
                   </div>
-                  <${Show} when=${allJobsProcessed}>
-                    <div class="h-100 d-flex flex-column justify-content-between">
-                      <div class="text-end">
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-link fw-semibold p-0"
-                          onClick=${downloadAll}
-                        >
-                          Download All
-                        </button>
-                      </div>
-                      <div class="mt-auto d-flex align-items-center">
-                        <img
-                          src="/assets/images/icon-star.svg"
-                          alt="Star"
-                          class="me-2"
-                          height="16"
-                        />
+                </div>
+              </div>
+              <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
+                <div
+                  class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1 card-lg"
+                >
+                  <${Show}
+                    when=${() => Object.keys(store.generatedDocuments).length > 0}
+                    fallback=${html`<div class="d-flex h-100 py-5">
+                      <div class="text-center py-5">
+                        <h1 class="text-info mb-3">Welcome to Consent Crafter</h1>
                         <div>
-                          <span class="me-1">We would love your feedback!</span>
-                          <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a>
-                          &nbsp;to help us improve.
+                          To get started, upload your source document, select one or more form
+                          templates from the list, and click Generate to create tailored consent
+                          documents.
                         </div>
                       </div>
-                    </div>
-                  <//>
-                <//>
-              </div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="d-flex-center mt-1 gap-1">
-                <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">Reset</button>
-                <${Tooltip}
-                  title="Not all required fields are provided."
-                  placement="top"
-                  arrow=${true}
-                  class="text-white bg-primary"
-                  disableHoverListener=${() => !submitDisabled()}
-                >
-                  <button
-                    toggle
-                    type="submit"
-                    class="btn btn-wide px-3 py-3 btn-wide-primary"
-                    disabled=${submitDisabled}
+                    </div>`}
                   >
-                    Generate
-                  </button>
-                <//>
+                    <div class="d-flex flex-column gap-2">
+                      <div class="text-muted small fw-semibold">
+                        <${Show}
+                          when=${() => allJobsProcessed()}
+                          fallback="We are generating your forms now. This may take a few moments."
+                        >
+                          <span
+                            >All processing is complete. The generated forms are available for
+                            download.</span
+                          >
+                        <//>
+                      </div>
+
+                      <${For} each=${() => Object.keys(store.generatedDocuments)}>
+                        ${(jobId) => {
+                          const job = () => store.generatedDocuments[jobId];
+
+                          return html`
+                            <div
+                              class="d-flex justify-content-between align-items-center p-2 border rounded"
+                            >
+                              <div class="flex-grow-1">
+                                <div class="fw-medium">
+                                  <span>${() => job().config?.displayInfo?.prefix || ""}</span>
+                                  <span class="text-muted fw-normal">
+                                    : ${() => job().config?.displayInfo?.label || "Unknown"}</span
+                                  >
+                                </div>
+                                <div class="small text-muted">
+                                  ${() => job().config?.displayInfo?.filename || "document.docx"}
+                                </div>
+                              </div>
+                              <${Show} when=${() => job()?.status === "processing"}>
+                                <div
+                                  class="spinner-border spinner-border-sm text-primary me-2"
+                                  role="status"
+                                >
+                                  <span class="visually-hidden">Processing...</span>
+                                </div>
+                              <//>
+                              <${Show} when=${() => job()?.status === "completed"}>
+                                <button
+                                  type="button"
+                                  class="btn btn-outline-light"
+                                  onClick=${() => downloadJob(jobId)}
+                                >
+                                  <img
+                                    src="/assets/images/icon-download.svg"
+                                    height="16"
+                                    alt="Download"
+                                  />
+                                </button>
+                              <//>
+                              <${Show} when=${() => job()?.status === "error"}>
+                                <div class="d-flex align-items-center gap-2">
+                                  <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-danger"
+                                    title=${() => job().error}
+                                    onClick=${() => retryJob(jobId)}
+                                  >
+                                    Retry
+                                  </button>
+                                </div>
+                              <//>
+                            </div>
+                          `;
+                        }}
+                      <//>
+                    </div>
+                    <${Show} when=${() => allJobsProcessed()}>
+                      <div class="h-100 d-flex flex-column justify-content-between">
+                        <div class="text-end">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-link fw-semibold p-0"
+                            onClick=${downloadAll}
+                          >
+                            Download All
+                          </button>
+                        </div>
+                        <div class="mt-auto d-flex align-items-center">
+                          <img
+                            src="/assets/images/icon-star.svg"
+                            alt="Star"
+                            class="me-2"
+                            height="16"
+                          />
+                          <div>
+                            <span class="me-1">We would love your feedback!</span>
+                            <a href="https://www.cancer.gov/" target="_blank"
+                              >Take a quick survey</a
+                            >
+                            &nbsp;to help us improve.
+                          </div>
+                        </div>
+                      </div>
+                    <//>
+                  <//>
+                </div>
               </div>
             </div>
-          </div>
-        </form>
-      </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="d-flex-center mt-1 gap-1">
+                  <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">Reset</button>
+                  <${Tooltip}
+                    title="Not all required fields are provided."
+                    placement="top"
+                    arrow=${true}
+                    class="text-white bg-primary"
+                    disableHoverListener=${() => !submitDisabled()}
+                  >
+                    <button
+                      toggle
+                      type="submit"
+                      class="btn btn-wide px-3 py-3 btn-wide-primary"
+                      disabled=${submitDisabled}
+                    >
+                      Generate
+                    </button>
+                  <//>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      <//>
     </div>
   `;
 }

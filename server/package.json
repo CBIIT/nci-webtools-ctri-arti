@@ -28,6 +28,7 @@
     "connect-session-sequelize": "^8.0.4",
     "express": "^5.2.1",
     "express-session": "^1.18.2",
+    "handlebars": "^4.7.8",
     "lodash": "^4.17.21",
     "mammoth": "^1.11.0",
     "multer": "^2.0.2",

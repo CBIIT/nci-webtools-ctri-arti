@@ -10,7 +10,11 @@ export function formatObject(object) {
   if (object instanceof Error) {
     const errorObject = pick(object, ["code", "message", "stack", "stdout", "stderr"]);
     return formatObject(errorObject);
-  } else if (typeof object === "string" || typeof object === "number") {
+  } else if (
+    typeof object === "string" ||
+    typeof object === "number" ||
+    typeof object === "boolean"
+  ) {
     return String(object);
   } else if (object === null || object === undefined || isEmpty(object)) {
     return "";
