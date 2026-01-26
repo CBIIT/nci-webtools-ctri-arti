@@ -2,13 +2,13 @@ import { json, Router } from "express";
 import { QueryTypes } from "sequelize";
 
 import db from "../database.js";
-import { sendFeedback } from "../email.js";
+import { sendFeedback, sendLogReport } from "../email.js";
 import { proxyMiddleware, requireRole } from "../middleware.js";
 import { parseDocument } from "../parsers.js";
+import { getFile, listFiles } from "../s3.js";
 import { textract } from "../textract.js";
 import { getLanguages, translate } from "../translate.js";
 import { search } from "../utils.js";
-import { getFile, listFiles } from "../s3.js";
 
 const { VERSION, S3_BUCKETS } = process.env;
 const api = Router();
@@ -47,21 +47,35 @@ api.post("/feedback", requireRole(), async (req, res) => {
   return res.json(results);
 });
 
-function getMimeTypeFromKey(key) {
-  const ext = key.split('.').pop()?.toLowerCase();
-  const mimeTypes = {
-    'pdf': 'application/pdf',
-    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'txt': 'text/plain',
-    'json': 'application/json',
-    'csv': 'text/csv'
+api.post("/log", async (req, res) => {
+  const { type, metadata } = req.body;
+
+  const logData = {
+    type: type || "Error",
+    userId: req.session?.user?.id || "N/A",
+    origin: "Frontend",
+    metadata,
   };
-  return mimeTypes[ext] || 'application/octet-stream';
+
+  const results = await sendLogReport(logData);
+  return res.json(results);
+});
+
+function getMimeTypeFromKey(key) {
+  const ext = key.split(".").pop()?.toLowerCase();
+  const mimeTypes = {
+    pdf: "application/pdf",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    txt: "text/plain",
+    json: "application/json",
+    csv: "text/csv",
+  };
+  return mimeTypes[ext] || "application/octet-stream";
 }
 
 api.get("/data", requireRole(), async (req, res) => {
   const { bucket, key, raw } = req.query;
-  if (!S3_BUCKETS?.split(',').includes(bucket)) {
+  if (!S3_BUCKETS?.split(",").includes(bucket)) {
     return res.status(400).json({ error: "Invalid bucket" });
   }
 
@@ -81,7 +95,7 @@ api.get("/data", requireRole(), async (req, res) => {
     // Parse document types that need text extraction
     const documentTypes = [
       "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
 
     if (documentTypes.includes(contentType)) {
