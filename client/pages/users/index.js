@@ -13,7 +13,14 @@ import { useLocation } from "@solidjs/router";
 
 import { AlertContainer } from "../../components/alert.js";
 import { DataTable } from "../../components/table.js";
-import { alerts, clearAlert, handleError, showError, showSuccess } from "../../utils/alerts.js";
+import {
+  alerts,
+  clearAlert,
+  handleError,
+  handleHttpError,
+  showError,
+  showSuccess,
+} from "../../utils/alerts.js";
 import { capitalize } from "../../utils/utils.js";
 
 function UsersList() {
@@ -22,14 +29,14 @@ function UsersList() {
     try {
       const response = await fetch("/api/admin/roles");
       if (!response.ok) {
-        const error = new Error("Failed to fetch roles.");
-        error.status = response.status;
-        handleError(error, "Roles API Error");
+        await handleHttpError(response, "fetching roles");
         return [];
       }
       return response.json();
     } catch (err) {
-      handleError(err, "Roles API Error");
+      const error = new Error("Something went wrong while retrieving roles.");
+      error.cause = err;
+      handleError(error, "Roles API Error");
       return [];
     }
   });
@@ -82,14 +89,14 @@ function UsersList() {
 
       const response = await fetch(`/api/admin/users?${queryParams}`);
       if (!response.ok) {
-        const error = new Error("Failed to fetch users.");
-        error.status = response.status;
-        handleError(error, "Users API Error");
+        await handleHttpError(response, "fetching users");
         return { data: [], meta: { total: 0 } };
       }
       return response.json();
     } catch (err) {
-      handleError(err, "Users API Error");
+      const error = new Error("Something went wrong while retrieving users.");
+      error.cause = err;
+      handleError(error, "Users API Error");
       return { data: [], meta: { total: 0 } };
     }
   });

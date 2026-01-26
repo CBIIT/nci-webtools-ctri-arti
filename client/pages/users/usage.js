@@ -3,7 +3,7 @@ import html from "solid-js/html";
 
 import { AlertContainer } from "../../components/alert.js";
 import { DataTable } from "../../components/table.js";
-import { alerts, clearAlert, handleError } from "../../utils/alerts.js";
+import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 import { capitalize } from "../../utils/utils.js";
 
 // Shared date range utilities
@@ -117,14 +117,14 @@ function UsersList() {
     try {
       const response = await fetch("/api/admin/roles");
       if (!response.ok) {
-        const error = new Error("Failed to fetch roles.");
-        error.status = response.status;
-        handleError(error, "Roles API Error");
+        await handleHttpError(response, "fetching roles");
         return [];
       }
       return response.json();
     } catch (err) {
-      handleError(err, "Roles API Error");
+      const error = new Error("Something went wrong while retrieving roles.");
+      error.cause = err;
+      handleError(error, "Roles API Error");
       return [];
     }
   });
@@ -180,16 +180,15 @@ function UsersList() {
 
       const response = await fetch(`/api/admin/analytics?${queryParams}`);
       if (!response.ok) {
-        const error = new Error("Failed to fetch analytics.");
-        error.status = response.status;
-        error.dateRange = `${params.startDate} to ${params.endDate}`;
-        handleError(error, "Analytics API Error");
+        await handleHttpError(response, "fetching usage analytics");
         return { data: [], meta: { total: 0 } };
       }
       return response.json();
     } catch (err) {
-      err.dateRange = `${params.startDate} to ${params.endDate}`;
-      handleError(err, "Analytics API Error");
+      const error = new Error("Something went wrong while retrieving usage analytics.");
+      error.cause = err;
+      error.dateRange = `${params.startDate} to ${params.endDate}`;
+      handleError(error, "Analytics API Error");
       return { data: [], meta: { total: 0 } };
     }
   });

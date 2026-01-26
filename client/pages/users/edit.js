@@ -4,7 +4,7 @@ import html from "solid-js/html";
 import { useNavigate, useParams } from "@solidjs/router";
 
 import { AlertContainer } from "../../components/alert.js";
-import { alerts, clearAlert, handleError } from "../../utils/alerts.js";
+import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 import { capitalize } from "../../utils/utils.js";
 
 function UserEdit() {
@@ -36,14 +36,14 @@ function UserEdit() {
     try {
       const response = await fetch("/api/admin/roles");
       if (!response.ok) {
-        const error = new Error("Failed to fetch roles");
-        error.status = response.status;
-        handleError(error, "Roles API Error");
+        await handleHttpError(response, "fetching roles");
         return [];
       }
       return response.json();
     } catch (err) {
-      handleError(err, "Roles API Error");
+      const error = new Error("Something went wrong while retrieving roles.");
+      error.cause = err;
+      handleError(error, "Roles API Error");
       return [];
     }
   });
@@ -57,10 +57,7 @@ function UserEdit() {
     try {
       const response = await fetch(`/api/admin/users/${params.id}`);
       if (!response.ok) {
-        const error = new Error("Failed to fetch user data");
-        error.status = response.status;
-        error.userId = params.id;
-        handleError(error, "User Data API Error");
+        await handleHttpError(response, "fetching user details");
         return null;
       }
       const data = await response.json();
@@ -70,8 +67,10 @@ function UserEdit() {
       setOriginalLimit(data.limit || 0);
       return data;
     } catch (err) {
-      err.userId = params.id;
-      handleError(err, "User Data API Error");
+      const error = new Error("Something went wrong while retrieving user details.");
+      error.cause = err;
+      error.userId = params.id;
+      handleError(error, "User Data API Error");
       return null;
     }
   });
@@ -108,8 +107,8 @@ function UserEdit() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to save user");
+        await handleHttpError(response, "saving user");
+        return;
       }
 
       // Navigate with success message in state
@@ -120,7 +119,9 @@ function UserEdit() {
         },
       });
     } catch (err) {
-      handleError(err, "User Save Error");
+      const error = new Error("Something went wrong while saving user.");
+      error.cause = err;
+      handleError(error, "User Save Error");
     } finally {
       setSaving(false);
     }

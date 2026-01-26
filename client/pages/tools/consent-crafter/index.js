@@ -430,7 +430,7 @@ export default function Page() {
     });
 
     if (!response.ok) {
-      const error = new Error("Network response was not ok");
+      const error = new Error("Something went wrong while processing the document.");
       error.status = response.status;
       throw error;
     }

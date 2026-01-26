@@ -2,7 +2,7 @@ import { createResource, createSignal, ErrorBoundary, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { AlertContainer } from "../../components/alert.js";
-import { alerts, clearAlert, handleError } from "../../utils/alerts.js";
+import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 
 function UserProfile() {
   const [saving, setSaving] = createSignal(false);
@@ -13,14 +13,14 @@ function UserProfile() {
     try {
       const response = await fetch("/api/session");
       if (!response.ok) {
-        const error = new Error("Failed to fetch session.");
-        error.status = response.status;
-        handleError(error, "Session API Error");
+        await handleHttpError(response, "fetching your profile");
         return null;
       }
       return response.json();
     } catch (err) {
-      handleError(err, "Session API Error");
+      const error = new Error("Something went wrong while retrieving your profile.");
+      error.cause = err;
+      handleError(error, "Session API Error");
       return null;
     }
   });
@@ -43,14 +43,16 @@ function UserProfile() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to save profile");
+        await handleHttpError(response, "saving your profile");
+        return;
       }
 
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
-      handleError(err, "Profile Save Error");
+      const error = new Error("Something went wrong while saving your profile.");
+      error.cause = err;
+      handleError(error, "Profile Save Error");
     } finally {
       setSaving(false);
     }

@@ -111,7 +111,7 @@ async function runModel(params) {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const error = new Error("Model request failed.");
+    const error = new Error("Something went wrong while processing the translation model.");
     error.status = res.status;
     throw error;
   }
@@ -134,7 +134,7 @@ async function translateBatch(texts, engine, options) {
       }),
     });
     if (!res.ok) {
-      const error = new Error("Translation request failed.");
+      const error = new Error("Something went wrong while translating the document.");
       error.status = res.status;
       throw error;
     }
@@ -208,7 +208,7 @@ async function handleAwsDocument(jobConfig) {
     }),
   });
   if (!res.ok) {
-    const error = new Error("Translation request failed.");
+    const error = new Error("Something went wrong while translating the document.");
     error.status = res.status;
     throw error;
   }
@@ -400,8 +400,10 @@ export default function Page() {
           jobPromises.push(processJob(jobId, jobConfig));
         }
       } catch (error) {
-        error.filename = file?.name;
-        handleError(error, `File Processing Error (${file?.name || "Unknown"})`);
+        const wrappedError = new Error(`Something went wrong while processing the file.`);
+        wrappedError.cause = error;
+        wrappedError.filename = file?.name;
+        handleError(wrappedError, `File Processing Error (${file?.name || "Unknown"})`);
       }
     }
 

@@ -4,7 +4,7 @@ import html from "solid-js/html";
 import { useParams, useSearchParams } from "@solidjs/router";
 
 import { AlertContainer } from "../../components/alert.js";
-import { alerts, clearAlert, handleError } from "../../utils/alerts.js";
+import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 
 import { calculateDateRange, formatDate, getDefaultStartDate, validateDateRange } from "./usage.js";
 
@@ -44,14 +44,14 @@ function UserUsage() {
     try {
       const response = await fetch(`/api/admin/users/${userId}`);
       if (!response.ok) {
-        const error = new Error("Failed to fetch user data.");
-        error.status = response.status;
-        handleError(error, "User Data API Error");
+        await handleHttpError(response, "fetching user details");
         return null;
       }
       return response.json();
     } catch (err) {
-      handleError(err, "User Data API Error");
+      const error = new Error("Something went wrong while retrieving user details.");
+      error.cause = err;
+      handleError(error, "User Data API Error");
       return null;
     }
   });
@@ -64,16 +64,15 @@ function UserUsage() {
           `/api/admin/analytics?groupBy=user&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
         );
         if (!response.ok) {
-          const error = new Error("Failed to fetch analytics.");
-          error.status = response.status;
-          error.dateRange = `${startDate} to ${endDate}`;
-          handleError(error, "Analytics API Error");
+          await handleHttpError(response, "fetching usage analytics");
           return { data: [] };
         }
         return response.json();
       } catch (err) {
-        err.dateRange = `${startDate} to ${endDate}`;
-        handleError(err, "Analytics API Error");
+        const error = new Error("Something went wrong while retrieving usage analytics.");
+        error.cause = err;
+        error.dateRange = `${startDate} to ${endDate}`;
+        handleError(error, "Analytics API Error");
         return { data: [] };
       }
     }
@@ -87,16 +86,15 @@ function UserUsage() {
           `/api/admin/analytics?groupBy=day&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
         );
         if (!response.ok) {
-          const error = new Error("Failed to fetch daily analytics.");
-          error.status = response.status;
-          error.dateRange = `${startDate} to ${endDate}`;
-          handleError(error, "Daily Analytics API Error");
+          await handleHttpError(response, "fetching daily analytics");
           return { data: [] };
         }
         return response.json();
       } catch (err) {
-        err.dateRange = `${startDate} to ${endDate}`;
-        handleError(err, "Daily Analytics API Error");
+        const error = new Error("Something went wrong while retrieving daily analytics.");
+        error.cause = err;
+        error.dateRange = `${startDate} to ${endDate}`;
+        handleError(error, "Daily Analytics API Error");
         return { data: [] };
       }
     }
@@ -110,16 +108,15 @@ function UserUsage() {
           `/api/admin/analytics?groupBy=model&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
         );
         if (!response.ok) {
-          const error = new Error("Failed to fetch model analytics.");
-          error.status = response.status;
-          error.dateRange = `${startDate} to ${endDate}`;
-          handleError(error, "Model Analytics API Error");
+          await handleHttpError(response, "fetching model analytics");
           return { data: [] };
         }
         return response.json();
       } catch (err) {
-        err.dateRange = `${startDate} to ${endDate}`;
-        handleError(err, "Model Analytics API Error");
+        const error = new Error("Something went wrong while retrieving model analytics.");
+        error.cause = err;
+        error.dateRange = `${startDate} to ${endDate}`;
+        handleError(error, "Model Analytics API Error");
         return { data: [] };
       }
     }
@@ -133,16 +130,15 @@ function UserUsage() {
           `/api/admin/usage?startDate=${startDate}&endDate=${endDate}&userId=${userId}&limit=20`
         );
         if (!response.ok) {
-          const error = new Error("Failed to fetch usage data.");
-          error.status = response.status;
-          error.dateRange = `${startDate} to ${endDate}`;
-          handleError(error, "Usage Data API Error");
+          await handleHttpError(response, "fetching usage history");
           return { data: [] };
         }
         return response.json();
       } catch (err) {
-        err.dateRange = `${startDate} to ${endDate}`;
-        handleError(err, "Usage Data API Error");
+        const error = new Error("Something went wrong while retrieving usage history.");
+        error.cause = err;
+        error.dateRange = `${startDate} to ${endDate}`;
+        handleError(error, "Usage Data API Error");
         return { data: [] };
       }
     }
