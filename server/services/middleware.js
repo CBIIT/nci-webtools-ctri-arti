@@ -50,6 +50,8 @@ export function logErrors(formatter = (e) => ({ error: e.message })) {
           { label: "Stack Trace", value: error.stack },
           { label: "Request Path", value: request.path },
         ],
+      }).catch((reportError) => {
+        logger.error("Failed to send error log report:", reportError.message);
       });
     }
 
