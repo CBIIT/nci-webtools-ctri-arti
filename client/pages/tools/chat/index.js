@@ -282,6 +282,18 @@ export default function Page() {
     });
   }
 
+  // ============= Error Data Collection =============
+
+  const collectAdditionalErrorData = async () => ({
+    "Chat ID": conversation?.id || null,
+    "Reasoning Mode": formRef?.reasoningMode?.checked || false,
+    Model: formRef?.model?.value || "sonnet-4.5",
+    "Last 3 chat messages": messages.slice(-3).map((m) => ({
+      role: m.role,
+      preview: m.content?.[0]?.text || "",
+    })),
+  });
+
   return html`
     <div class="container-fluid">
       <div class="row flex-nowrap min-vh-100 position-relative">
@@ -508,7 +520,11 @@ export default function Page() {
             onSubmit=${handleSubmit}
             class="container d-flex flex-column flex-grow-1 mb-3 px-4 position-relative min-w-0"
           >
-            <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
+            <${AlertContainer}
+              alerts=${alerts}
+              onDismiss=${clearAlert}
+              onCollectAdditionalData=${() => collectAdditionalErrorData()}
+            />
 
             <div
               class="flex-grow-1 py-3 min-width-0"

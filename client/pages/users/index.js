@@ -1,16 +1,38 @@
-import { createEffect, createMemo, createResource, createSignal, For, Show } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  ErrorBoundary,
+  For,
+  Show,
+} from "solid-js";
 import html from "solid-js/html";
 
 import { useLocation } from "@solidjs/router";
 
 import { AlertContainer } from "../../components/alert.js";
 import { DataTable } from "../../components/table.js";
-import { alerts, clearAlert, showError, showSuccess } from "../../utils/alerts.js";
+import { alerts, clearAlert, handleError, showError, showSuccess } from "../../utils/alerts.js";
 import { capitalize } from "../../utils/utils.js";
 
 function UsersList() {
   const location = useLocation();
-  const [rolesResource] = createResource(() => fetch("/api/admin/roles").then((res) => res.json()));
+  const [rolesResource] = createResource(async () => {
+    try {
+      const response = await fetch("/api/admin/roles");
+      if (!response.ok) {
+        const error = new Error("Failed to fetch roles.");
+        error.status = response.status;
+        handleError(error, "Roles API Error");
+        return [];
+      }
+      return response.json();
+    } catch (err) {
+      handleError(err, "Roles API Error");
+      return [];
+    }
+  });
 
   // Server-side filters & sorting
   const [searchQuery, setSearchQuery] = createSignal("");
@@ -46,19 +68,30 @@ function UsersList() {
   }));
 
   const [usersResource] = createResource(usersParams, async (params) => {
-    const queryParams = new URLSearchParams({
-      limit: params.limit.toString(),
-      offset: params.offset.toString(),
-    });
+    try {
+      const queryParams = new URLSearchParams({
+        limit: params.limit.toString(),
+        offset: params.offset.toString(),
+      });
 
-    if (params.search) queryParams.set("search", params.search);
-    if (params.roleId) queryParams.set("roleId", params.roleId.toString());
-    if (params.status) queryParams.set("status", params.status);
-    if (params.sortBy) queryParams.set("sortBy", params.sortBy);
-    if (params.sortOrder) queryParams.set("sortOrder", params.sortOrder);
+      if (params.search) queryParams.set("search", params.search);
+      if (params.roleId) queryParams.set("roleId", params.roleId.toString());
+      if (params.status) queryParams.set("status", params.status);
+      if (params.sortBy) queryParams.set("sortBy", params.sortBy);
+      if (params.sortOrder) queryParams.set("sortOrder", params.sortOrder);
 
-    const response = await fetch(`/api/admin/users?${queryParams}`);
-    return response.json();
+      const response = await fetch(`/api/admin/users?${queryParams}`);
+      if (!response.ok) {
+        const error = new Error("Failed to fetch users.");
+        error.status = response.status;
+        handleError(error, "Users API Error");
+        return { data: [], meta: { total: 0 } };
+      }
+      return response.json();
+    } catch (err) {
+      handleError(err, "Users API Error");
+      return { data: [], meta: { total: 0 } };
+    }
   });
 
   // Format user data
@@ -118,162 +151,187 @@ function UsersList() {
 
   const isLoading = createMemo(() => usersResource.loading || rolesResource.loading);
 
+  // ============= Error Data Collection =============
+
+  function collectAdditionalErrorData() {
+    return {
+      "Search Query": searchQuery() || "N/A",
+      "Selected Role": selectedRole(),
+      "Selected Status": selectedStatus(),
+      "Current Page": currentPage(),
+      "Sort Column": sortColumn(),
+      "Sort Order": sortOrder(),
+      "Total Users": usersResource()?.meta?.total || 0,
+    };
+  }
+
   return html`
-    <div class="container py-4">
-      <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="font-title fs-1 fw-bold mt-4 table-header-color">Manage Users</h1>
-      </div>
-
-      <!-- Error Alert -->
-      <${Show} when=${() => usersResource.error || rolesResource.error}>
-        <div class="alert alert-danger" role="alert">
-          ${() =>
-            usersResource.error || rolesResource.error || "An error occurred while fetching data"}
+    <${AlertContainer}
+      alerts=${alerts}
+      onDismiss=${clearAlert}
+      onCollectAdditionalData=${collectAdditionalErrorData}
+    />
+    <${ErrorBoundary}
+      fallback=${(error) => {
+        handleError(error, "Users List Error");
+        return null;
+      }}
+    >
+      <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h1 class="font-title fs-1 fw-bold mt-4 table-header-color">Manage Users</h1>
         </div>
-      <//>
 
-      <!-- Filters -->
-      <div class="mb-4">
-        <div class="row g-3 align-items-center">
-          <div class="col-md-3">
-            <div class="row align-items-center">
-              <div class="col-auto">
-                <label for="search-filter" class="form-label mb-0 fw-semibold px-2">User</label>
-              </div>
-              <div class="col px-0">
-                <input
-                  type="text"
-                  class="form-control"
-                  id="search-filter"
-                  placeholder="Search by name or email"
-                  value=${searchQuery}
-                  onInput=${(e) => handleSearch(e.target.value)}
-                />
+        <!-- Error Alert -->
+        <${Show} when=${() => usersResource.error || rolesResource.error}>
+          <div class="alert alert-danger" role="alert">
+            ${() =>
+              usersResource.error || rolesResource.error || "An error occurred while fetching data"}
+          </div>
+        <//>
+
+        <!-- Filters -->
+        <div class="mb-4">
+          <div class="row g-3 align-items-center">
+            <div class="col-md-3">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <label for="search-filter" class="form-label mb-0 fw-semibold px-2">User</label>
+                </div>
+                <div class="col px-0">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="search-filter"
+                    placeholder="Search by name or email"
+                    value=${searchQuery}
+                    onInput=${(e) => handleSearch(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-          <div class="col-md-3">
-            <div class="row align-items-center">
-              <div class="col-auto">
-                <label for="role-filter" class="form-label mb-0 fw-semibold px-2">Role</label>
-              </div>
-              <div class="col px-0">
-                <select
-                  class="form-select"
-                  id="role-filter"
-                  aria-label="Select Role Filter"
-                  value=${selectedRole}
-                  onInput=${(e) => handleRoleChange(e.target.value)}
-                >
-                  <${For} each=${() => roleNames()}>
-                    ${(role) => html`<option value=${role}>${capitalize(role)}</option>`}
-                  <//>
-                </select>
+            <div class="col-md-3">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <label for="role-filter" class="form-label mb-0 fw-semibold px-2">Role</label>
+                </div>
+                <div class="col px-0">
+                  <select
+                    class="form-select"
+                    id="role-filter"
+                    aria-label="Select Role Filter"
+                    value=${selectedRole}
+                    onInput=${(e) => handleRoleChange(e.target.value)}
+                  >
+                    <${For} each=${() => roleNames()}>
+                      ${(role) => html`<option value=${role}>${capitalize(role)}</option>`}
+                    <//>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="col-md-3">
-            <div class="row align-items-center">
-              <div class="col-auto">
-                <label for="status-filter" class="form-label mb-0 fw-semibold px-2">Status</label>
-              </div>
-              <div class="col px-0">
-                <select
-                  class="form-select"
-                  id="status-filter"
-                  value=${selectedStatus}
-                  aria-label="Select Status Filter"
-                  onInput=${(e) => handleStatusChange(e.target.value)}
-                >
-                  <${For} each=${statuses}>
-                    ${(status) =>
-                      html`<option value=${status} selected=${selectedStatus() === status}>
-                        ${capitalize(status)}
-                      </option>`}
-                  <//>
-                </select>
+            <div class="col-md-3">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <label for="status-filter" class="form-label mb-0 fw-semibold px-2">Status</label>
+                </div>
+                <div class="col px-0">
+                  <select
+                    class="form-select"
+                    id="status-filter"
+                    value=${selectedStatus}
+                    aria-label="Select Status Filter"
+                    onInput=${(e) => handleStatusChange(e.target.value)}
+                  >
+                    <${For} each=${statuses}>
+                      ${(status) =>
+                        html`<option value=${status} selected=${selectedStatus() === status}>
+                          ${capitalize(status)}
+                        </option>`}
+                    <//>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Users Table -->
-      <${DataTable}
-        remote=${true}
-        data=${formattedUsers}
-        loading=${() => isLoading()}
-        loadingText="Loading users..."
-        totalItems=${() => usersResource()?.meta?.total || 0}
-        page=${currentPage}
-        search=${() => (searchQuery().length >= 3 ? searchQuery() : "")}
-        sortColumn=${sortColumn}
-        sortOrder=${sortOrder}
-        onSort=${handleSort}
-        onPageChange=${handlePageChange}
-        className="users-table"
-        columns=${[
-          {
-            key: "name",
-            title: "Name",
-            className: "ps-4",
-            cellClassName: "ps-4 small",
-          },
-          {
-            key: "accountType",
-            title: "Account Type",
-            cellClassName: "small",
-          },
-          {
-            key: "email",
-            title: "Email",
-            cellClassName: "small",
-          },
-          {
-            key: "role",
-            title: "Role",
-            cellClassName: "text-capitalize small",
-          },
-          {
-            key: "status",
-            title: "Status",
-            render: (user) => html`
-              <span
-                class=${() =>
-                  `badge text-capitalize ${
-                    user.status === "active"
-                      ? "text-bg-success"
-                      : user.status === "inactive"
-                        ? "text-bg-warning"
-                        : "text-bg-danger"
-                  }`}
-              >
-                ${user.status}
-              </span>
-            `,
-          },
-          {
-            key: "limit",
-            title: "Weekly Cost Limit",
-            cellClassName: "text-capitalize small",
-          },
-          {
-            key: "action",
-            title: "Action",
-            cellClassName: "text-center",
-            render: (user) => html`
-              <a
-                href=${`/_/users/${user.id}`}
-                class="btn btn-outline-primary btn-sm text-decoration-none w-100 p-1"
-              >
-                Edit
-              </a>
-            `,
-          },
-        ]}
-      />
-    </div>
+        <!-- Users Table -->
+        <${DataTable}
+          remote=${true}
+          data=${formattedUsers}
+          loading=${() => isLoading()}
+          loadingText="Loading users..."
+          totalItems=${() => usersResource()?.meta?.total || 0}
+          page=${currentPage}
+          search=${() => (searchQuery().length >= 3 ? searchQuery() : "")}
+          sortColumn=${sortColumn}
+          sortOrder=${sortOrder}
+          onSort=${handleSort}
+          onPageChange=${handlePageChange}
+          className="users-table"
+          columns=${[
+            {
+              key: "name",
+              title: "Name",
+              className: "ps-4",
+              cellClassName: "ps-4 small",
+            },
+            {
+              key: "accountType",
+              title: "Account Type",
+              cellClassName: "small",
+            },
+            {
+              key: "email",
+              title: "Email",
+              cellClassName: "small",
+            },
+            {
+              key: "role",
+              title: "Role",
+              cellClassName: "text-capitalize small",
+            },
+            {
+              key: "status",
+              title: "Status",
+              render: (user) => html`
+                <span
+                  class=${() =>
+                    `badge text-capitalize ${
+                      user.status === "active"
+                        ? "text-bg-success"
+                        : user.status === "inactive"
+                          ? "text-bg-warning"
+                          : "text-bg-danger"
+                    }`}
+                >
+                  ${user.status}
+                </span>
+              `,
+            },
+            {
+              key: "limit",
+              title: "Weekly Cost Limit",
+              cellClassName: "text-capitalize small",
+            },
+            {
+              key: "action",
+              title: "Action",
+              cellClassName: "text-center",
+              render: (user) => html`
+                <a
+                  href=${`/_/users/${user.id}`}
+                  class="btn btn-outline-primary btn-sm text-decoration-none w-100 p-1"
+                >
+                  Edit
+                </a>
+              `,
+            },
+          ]}
+        />
+      </div>
+    <//>
   `;
 }
 
