@@ -4,6 +4,7 @@ import Provider from "oidc-provider";
 import * as client from "openid-client";
 
 import { Role, User } from "./database.js";
+import { sendLogReport } from "./email.js";
 import logger, { formatObject } from "./logger.js";
 
 const {
@@ -13,6 +14,7 @@ const {
   OAUTH_DISCOVERY_URL,
   OAUTH_CLIENT_ID,
   OAUTH_CLIENT_SECRET,
+  EMAIL_DEV,
 } = process.env;
 export const WHITELIST = [/.*/i];
 
@@ -37,17 +39,31 @@ export function logRequests(formatter = (request) => [request.path]) {
 export function logErrors(formatter = (e) => ({ error: e.message })) {
   return (error, request, response, _next) => {
     logger.error(formatObject(error));
+
+    if (EMAIL_DEV && EMAIL_DEV.length > 0) {
+      sendLogReport({
+        type: "Error",
+        userId: request.session?.user?.id || "N/A",
+        origin: "Server",
+        metadata: [
+          { label: "Error Message", value: error.message },
+          { label: "Stack Trace", value: error.stack },
+          { label: "Request Path", value: request.path },
+        ],
+      });
+    }
+
     response.status(400).json(formatter(error));
   };
 }
 
 export function nocache(req, res, next) {
   res.set({
-    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, private", 
-    "Expires": "0",
-    "Pragma": "no-cache",
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, private",
+    Expires: "0",
+    Pragma: "no-cache",
     "Surrogate-Control": "no-store",
-    "Vary": "*",
+    Vary: "*",
   });
   next();
 }
@@ -175,7 +191,11 @@ export function requireRole(requiredRole) {
       }
       const role = user.Role;
       // Check role requirement (1 = admin, always allowed)
-      if (requiredRole && role?.id !== 1 && !(role?.name === requiredRole || role?.id === +requiredRole)) {
+      if (
+        requiredRole &&
+        role?.id !== 1 &&
+        !(role?.name === requiredRole || role?.id === +requiredRole)
+      ) {
         return res.status(403).json({ error: "Authorization required" });
       }
       // Set user in session for downstream handlers
