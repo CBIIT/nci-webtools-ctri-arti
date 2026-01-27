@@ -6,6 +6,7 @@ import * as client from "openid-client";
 import { Role, User } from "./database.js";
 import { sendLogReport } from "./email.js";
 import logger, { formatObject } from "./logger.js";
+import { createHttpError } from "./utils.js";
 
 const {
   HOSTNAME,
@@ -38,7 +39,8 @@ export function logRequests(formatter = (request) => [request.path]) {
  */
 export function logErrors(formatter = (e) => ({ error: e.message })) {
   return (error, request, response, _next) => {
-    logger.error(formatObject(error));
+    const fullErrorMessage = `${formatObject(error.message)}.\n${formatObject(error.additionalError)}`;
+    logger.error(fullErrorMessage);
 
     if (EMAIL_DEV && EMAIL_DEV.length > 0) {
       sendLogReport({
@@ -48,7 +50,7 @@ export function logErrors(formatter = (e) => ({ error: e.message })) {
         origin: "Server",
         recipient: EMAIL_DEV,
         metadata: [
-          { label: "Error Message", value: error.message },
+          { label: "Error Message", value: fullErrorMessage },
           { label: "Stack Trace", value: error.stack },
           { label: "Request Path", value: request.path },
         ],
@@ -258,9 +260,7 @@ export async function proxyMiddleware(req, res, next) {
       res.end();
     }
   } catch (error) {
-    error.statusCode = 500;
-    error.message = `Proxy error: ${error.message}`;
-    next(error);
+    next(createHttpError(500, error, error.message));
   }
 }
 
