@@ -57,7 +57,7 @@ export function logErrors(formatter = (e) => ({ error: e.message })) {
       });
     }
 
-    response.status(400).json(formatter(error));
+    response.status(error.statusCode || 400).json(formatter(error));
   };
 }
 
@@ -221,7 +221,7 @@ export function requireRole(requiredRole) {
  * @param {Function} next
  * @returns
  */
-export async function proxyMiddleware(req, res, _next) {
+export async function proxyMiddleware(req, res, next) {
   const { headers, method, body, query } = req;
   const host = headers.host?.split(":")[0];
   let urlString = req.path.replace(/^\/[^/]+\/?/, ""); // remove path prefix
@@ -258,8 +258,9 @@ export async function proxyMiddleware(req, res, _next) {
       res.end();
     }
   } catch (error) {
-    console.error("Proxy error:", error);
-    res.status(500).send(`Proxy error: ${error.message}`);
+    error.statusCode = 500;
+    error.message = `Proxy error: ${error.message}`;
+    next(error);
   }
 }
 
