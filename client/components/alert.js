@@ -137,6 +137,14 @@ export default function Alert(props) {
  * @returns Alert container component
  */
 export function AlertContainer(props) {
+  const getAutoDismiss = (alert) => {
+    if (alert?.autoDismiss !== undefined) {
+      return alert.autoDismiss;
+    }
+
+    return 5000;
+  };
+
   return html`
     <${Show} when=${() => props.alerts && props.alerts.length > 0}>
       <div class="alert-container position-fixed top-0 start-50 translate-middle-x p-3">
@@ -146,7 +154,7 @@ export function AlertContainer(props) {
               type=${alert.type}
               message=${alert.message}
               dismissible=${alert.dismissible !== false}
-              autoDismiss=${alert.autoDismiss || 5000}
+              autoDismiss=${getAutoDismiss(alert)}
               errorData=${alert.errorData}
               onCollectAdditionalData=${props.onCollectAdditionalData}
               onDismiss=${() => props.onDismiss?.(alert.id)}
