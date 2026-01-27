@@ -3,6 +3,7 @@ import { json, Router } from "express";
 import { Model, Usage, User } from "../database.js";
 import { runModel } from "../inference.js";
 import { requireRole } from "../middleware.js";
+import { createHttpError } from "../utils.js";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
@@ -43,9 +44,7 @@ api.post("/model", requireRole(), async (req, res, next) => {
     res.end();
   } catch (error) {
     console.error("Error in model API:", error);
-    error.statusCode = 500;
-    error.message = "An error occurred while processing the model request";
-    next(error);
+    next(createHttpError(500, error, "An error occurred while processing the model request"));
   }
 });
 

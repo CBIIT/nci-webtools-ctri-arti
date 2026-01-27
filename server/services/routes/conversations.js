@@ -2,6 +2,7 @@ import { json, Router } from "express";
 
 import { conversationService } from "../conversation.js";
 import { requireRole } from "../middleware.js";
+import { createHttpError } from "../utils.js";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB for file uploads
@@ -15,9 +16,7 @@ api.post("/agents", requireRole(), async (req, res, next) => {
     res.status(201).json(agent);
   } catch (error) {
     console.error("Error creating agent:", error);
-    error.statusCode = 500;
-    error.message = "Failed to create agent";
-    next(error);
+    next(createHttpError(500, error, "Failed to create agent"));
   }
 });
 
@@ -28,9 +27,7 @@ api.get("/agents", requireRole(), async (req, res, next) => {
     res.json(agents);
   } catch (error) {
     console.error("Error fetching agents:", error);
-    error.statusCode = 500;
-    error.message = "Failed to fetch agents";
-    next(error);
+    next(createHttpError(500, error, "Failed to fetch agents"));
   }
 });
 
@@ -42,9 +39,7 @@ api.get("/agents/:id", requireRole(), async (req, res, next) => {
     res.json(agent);
   } catch (error) {
     console.error("Error fetching agent:", error);
-    error.statusCode = 500;
-    error.message = "Failed to fetch agent";
-    next(error);
+    next(createHttpError(500, error, "Failed to fetch agent"));
   }
 });
 
@@ -61,9 +56,7 @@ api.put("/agents/:id", requireRole(), async (req, res, next) => {
     res.json(agent);
   } catch (error) {
     console.error("Error updating agent:", error);
-    error.statusCode = 500;
-    error.message = "Failed to update agent";
-    next(error);
+    next(createHttpError(500, error, "Failed to update agent"));
   }
 });
 
@@ -74,9 +67,7 @@ api.delete("/agents/:id", requireRole(), async (req, res, next) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting agent:", error);
-    error.statusCode = 500;
-    error.message = "Failed to delete agent";
-    next(error);
+    next(createHttpError(500, error, "Failed to delete agent"));
   }
 });
 
@@ -89,9 +80,7 @@ api.post("/threads", requireRole(), async (req, res, next) => {
     res.status(201).json(thread);
   } catch (error) {
     console.error("Error creating thread:", error);
-    error.statusCode = 500;
-    error.message = "Failed to create thread";
-    next(error);
+    next(createHttpError(500, error, "Failed to create thread"));
   }
 });
 
@@ -113,9 +102,7 @@ api.get("/threads", requireRole(), async (req, res, next) => {
     });
   } catch (error) {
     console.error("Error fetching threads:", error);
-    error.statusCode = 500;
-    error.message = "Failed to fetch threads";
-    next(error);
+    next(createHttpError(500, error, "Failed to fetch threads"));
   }
 });
 
@@ -127,9 +114,7 @@ api.get("/threads/:id", requireRole(), async (req, res, next) => {
     res.json(thread);
   } catch (error) {
     console.error("Error fetching thread:", error);
-    error.statusCode = 500;
-    error.message = "Failed to fetch thread";
-    next(error);
+    next(createHttpError(500, error, "Failed to fetch thread"));
   }
 });
 
@@ -141,9 +126,7 @@ api.put("/threads/:id", requireRole(), async (req, res, next) => {
     res.json(thread);
   } catch (error) {
     console.error("Error updating thread:", error);
-    error.statusCode = 500;
-    error.message = "Failed to update thread";
-    next(error);
+    next(createHttpError(500, error, "Failed to update thread"));
   }
 });
 
@@ -154,9 +137,7 @@ api.delete("/threads/:id", requireRole(), async (req, res, next) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting thread:", error);
-    error.statusCode = 500;
-    error.message = "Failed to delete thread";
-    next(error);
+    next(createHttpError(500, error, "Failed to delete thread"));
   }
 });
 
@@ -169,9 +150,7 @@ api.post("/threads/:threadId/messages", requireRole(), async (req, res, next) =>
     res.status(201).json(message);
   } catch (error) {
     console.error("Error adding message:", error);
-    error.statusCode = 500;
-    error.message = "Failed to add message";
-    next(error);
+    next(createHttpError(500, error, "Failed to add message"));
   }
 });
 
@@ -182,9 +161,7 @@ api.get("/threads/:threadId/messages", requireRole(), async (req, res, next) => 
     res.json(messages);
   } catch (error) {
     console.error("Error fetching messages:", error);
-    error.statusCode = 500;
-    error.message = "Failed to fetch messages";
-    next(error);
+    next(createHttpError(500, error, "Failed to fetch messages"));
   }
 });
 
@@ -196,9 +173,7 @@ api.put("/messages/:id", requireRole(), async (req, res, next) => {
     res.json(message);
   } catch (error) {
     console.error("Error updating message:", error);
-    error.statusCode = 500;
-    error.message = "Failed to update message";
-    next(error);
+    next(createHttpError(500, error, "Failed to update message"));
   }
 });
 
@@ -209,9 +184,7 @@ api.delete("/messages/:id", requireRole(), async (req, res, next) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting message:", error);
-    error.statusCode = 500;
-    error.message = "Failed to delete message";
-    next(error);
+    next(createHttpError(500, error, "Failed to delete message"));
   }
 });
 
@@ -224,9 +197,7 @@ api.post("/resources", requireRole(), async (req, res, next) => {
     res.status(201).json(resource);
   } catch (error) {
     console.error("Error adding resource:", error);
-    error.statusCode = 500;
-    error.message = "Failed to add resource";
-    next(error);
+    next(createHttpError(500, error, "Failed to add resource"));
   }
 });
 
@@ -238,9 +209,7 @@ api.get("/resources/:id", requireRole(), async (req, res, next) => {
     res.json(resource);
   } catch (error) {
     console.error("Error fetching resource:", error);
-    error.statusCode = 500;
-    error.message = "Failed to fetch resource";
-    next(error);
+    next(createHttpError(500, error, "Failed to fetch resource"));
   }
 });
 
@@ -251,9 +220,7 @@ api.get("/threads/:threadId/resources", requireRole(), async (req, res, next) =>
     res.json(resources);
   } catch (error) {
     console.error("Error fetching resources:", error);
-    error.statusCode = 500;
-    error.message = "Failed to fetch resources";
-    next(error);
+    next(createHttpError(500, error, "Failed to fetch resources"));
   }
 });
 
@@ -264,9 +231,7 @@ api.delete("/resources/:id", requireRole(), async (req, res, next) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting resource:", error);
-    error.statusCode = 500;
-    error.message = "Failed to delete resource";
-    next(error);
+    next(createHttpError(500, error, "Failed to delete resource"));
   }
 });
 
@@ -283,9 +248,7 @@ api.post("/threads/:threadId/vectors", requireRole(), async (req, res, next) => 
     res.status(201).json(vectors);
   } catch (error) {
     console.error("Error adding vectors:", error);
-    error.statusCode = 500;
-    error.message = "Failed to add vectors";
-    next(error);
+    next(createHttpError(500, error, "Failed to add vectors"));
   }
 });
 
@@ -296,9 +259,7 @@ api.get("/threads/:threadId/vectors", requireRole(), async (req, res, next) => {
     res.json(vectors);
   } catch (error) {
     console.error("Error fetching vectors:", error);
-    error.statusCode = 500;
-    error.message = "Failed to fetch vectors";
-    next(error);
+    next(createHttpError(500, error, "Failed to fetch vectors"));
   }
 });
 

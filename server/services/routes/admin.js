@@ -4,7 +4,7 @@ import { col, fn, Op, where as sequelizeWhere } from "sequelize";
 import { Model, Role, Usage, User } from "../database.js";
 import { requireRole } from "../middleware.js";
 import { resetUsageLimits } from "../scheduler.js";
-import { getDateRange } from "../utils.js";
+import { createHttpError, getDateRange } from "../utils.js";
 
 const api = Router();
 
@@ -114,9 +114,7 @@ api.post("/admin/profile", requireRole(), async (req, res, next) => {
     res.json(updatedUser);
   } catch (error) {
     console.error("Profile update error:", error);
-    error.statusCode = 500;
-    error.message = "Failed to update profile";
-    next(error);
+    next(createHttpError(500, error, "Failed to update profile"));
   }
 });
 
@@ -301,9 +299,7 @@ api.post("/admin/users/:id/reset-limit", requireRole("admin"), async (req, res, 
     }
   } catch (error) {
     console.error("Error resetting user limit:", error);
-    error.statusCode = 500;
-    error.message = "An error occurred while resetting the user limit";
-    next(error);
+    next(createHttpError(500, error, "An error occurred while resetting the user limit"));
   }
 });
 
