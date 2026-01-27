@@ -83,7 +83,7 @@ api.get("/admin/users/:id", requireRole("admin"), async (req, res) => {
 });
 
 // Update current user's profile (authenticated users only)
-api.post("/admin/profile", requireRole(), async (req, res) => {
+api.post("/admin/profile", requireRole(), async (req, res, next) => {
   const { session } = req;
   const currentUser = session.user;
   const { firstName, lastName } = req.body;
@@ -114,7 +114,9 @@ api.post("/admin/profile", requireRole(), async (req, res) => {
     res.json(updatedUser);
   } catch (error) {
     console.error("Profile update error:", error);
-    res.status(500).json({ error: "Failed to update profile" });
+    error.statusCode = 500;
+    error.message = "Failed to update profile";
+    next(error);
   }
 });
 
@@ -277,7 +279,7 @@ api.post("/admin/usage/reset", requireRole("admin"), async (req, res) => {
 });
 
 // Reset usage limit for a specific user (admin only)
-api.post("/admin/users/:id/reset-limit", requireRole("admin"), async (req, res) => {
+api.post("/admin/users/:id/reset-limit", requireRole("admin"), async (req, res, next) => {
   const userId = req.params.id;
   try {
     const user = await User.findByPk(userId);
@@ -299,7 +301,9 @@ api.post("/admin/users/:id/reset-limit", requireRole("admin"), async (req, res) 
     }
   } catch (error) {
     console.error("Error resetting user limit:", error);
-    res.status(500).json({ error: "An error occurred while resetting the user limit" });
+    error.statusCode = 500;
+    error.message = "An error occurred while resetting the user limit";
+    next(error);
   }
 });
 

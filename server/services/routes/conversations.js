@@ -1,35 +1,40 @@
 import { json, Router } from "express";
-import { requireRole } from "../middleware.js";
+
 import { conversationService } from "../conversation.js";
+import { requireRole } from "../middleware.js";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB for file uploads
 
 // ===== AGENT ROUTES =====
 
-api.post("/agents", requireRole(), async (req, res) => {
+api.post("/agents", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const agent = await conversationService.createAgent(userId, req.body);
     res.status(201).json(agent);
   } catch (error) {
     console.error("Error creating agent:", error);
-    res.status(500).json({ error: "Failed to create agent" });
+    error.statusCode = 500;
+    error.message = "Failed to create agent";
+    next(error);
   }
 });
 
-api.get("/agents", requireRole(), async (req, res) => {
+api.get("/agents", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const agents = await conversationService.getAgents(userId);
     res.json(agents);
   } catch (error) {
     console.error("Error fetching agents:", error);
-    res.status(500).json({ error: "Failed to fetch agents" });
+    error.statusCode = 500;
+    error.message = "Failed to fetch agents";
+    next(error);
   }
 });
 
-api.get("/agents/:id", requireRole(), async (req, res) => {
+api.get("/agents/:id", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const agent = await conversationService.getAgent(userId, req.params.id);
@@ -37,11 +42,13 @@ api.get("/agents/:id", requireRole(), async (req, res) => {
     res.json(agent);
   } catch (error) {
     console.error("Error fetching agent:", error);
-    res.status(500).json({ error: "Failed to fetch agent" });
+    error.statusCode = 500;
+    error.message = "Failed to fetch agent";
+    next(error);
   }
 });
 
-api.put("/agents/:id", requireRole(), async (req, res) => {
+api.put("/agents/:id", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     // Check if agent exists and is global (userId is null)
@@ -54,35 +61,41 @@ api.put("/agents/:id", requireRole(), async (req, res) => {
     res.json(agent);
   } catch (error) {
     console.error("Error updating agent:", error);
-    res.status(500).json({ error: "Failed to update agent" });
+    error.statusCode = 500;
+    error.message = "Failed to update agent";
+    next(error);
   }
 });
 
-api.delete("/agents/:id", requireRole(), async (req, res) => {
+api.delete("/agents/:id", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     await conversationService.deleteAgent(userId, req.params.id);
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting agent:", error);
-    res.status(500).json({ error: "Failed to delete agent" });
+    error.statusCode = 500;
+    error.message = "Failed to delete agent";
+    next(error);
   }
 });
 
 // ===== THREAD ROUTES =====
 
-api.post("/threads", requireRole(), async (req, res) => {
+api.post("/threads", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const thread = await conversationService.createThread(userId, req.body);
     res.status(201).json(thread);
   } catch (error) {
     console.error("Error creating thread:", error);
-    res.status(500).json({ error: "Failed to create thread" });
+    error.statusCode = 500;
+    error.message = "Failed to create thread";
+    next(error);
   }
 });
 
-api.get("/threads", requireRole(), async (req, res) => {
+api.get("/threads", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const { limit, offset } = req.query;
@@ -100,11 +113,13 @@ api.get("/threads", requireRole(), async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching threads:", error);
-    res.status(500).json({ error: "Failed to fetch threads" });
+    error.statusCode = 500;
+    error.message = "Failed to fetch threads";
+    next(error);
   }
 });
 
-api.get("/threads/:id", requireRole(), async (req, res) => {
+api.get("/threads/:id", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const thread = await conversationService.getThread(userId, req.params.id);
@@ -112,11 +127,13 @@ api.get("/threads/:id", requireRole(), async (req, res) => {
     res.json(thread);
   } catch (error) {
     console.error("Error fetching thread:", error);
-    res.status(500).json({ error: "Failed to fetch thread" });
+    error.statusCode = 500;
+    error.message = "Failed to fetch thread";
+    next(error);
   }
 });
 
-api.put("/threads/:id", requireRole(), async (req, res) => {
+api.put("/threads/:id", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const thread = await conversationService.updateThread(userId, req.params.id, req.body);
@@ -124,46 +141,54 @@ api.put("/threads/:id", requireRole(), async (req, res) => {
     res.json(thread);
   } catch (error) {
     console.error("Error updating thread:", error);
-    res.status(500).json({ error: "Failed to update thread" });
+    error.statusCode = 500;
+    error.message = "Failed to update thread";
+    next(error);
   }
 });
 
-api.delete("/threads/:id", requireRole(), async (req, res) => {
+api.delete("/threads/:id", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     await conversationService.deleteThread(userId, req.params.id);
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting thread:", error);
-    res.status(500).json({ error: "Failed to delete thread" });
+    error.statusCode = 500;
+    error.message = "Failed to delete thread";
+    next(error);
   }
 });
 
 // ===== MESSAGE ROUTES =====
 
-api.post("/threads/:threadId/messages", requireRole(), async (req, res) => {
+api.post("/threads/:threadId/messages", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const message = await conversationService.addMessage(userId, req.params.threadId, req.body);
     res.status(201).json(message);
   } catch (error) {
     console.error("Error adding message:", error);
-    res.status(500).json({ error: "Failed to add message" });
+    error.statusCode = 500;
+    error.message = "Failed to add message";
+    next(error);
   }
 });
 
-api.get("/threads/:threadId/messages", requireRole(), async (req, res) => {
+api.get("/threads/:threadId/messages", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const messages = await conversationService.getMessages(userId, req.params.threadId);
     res.json(messages);
   } catch (error) {
     console.error("Error fetching messages:", error);
-    res.status(500).json({ error: "Failed to fetch messages" });
+    error.statusCode = 500;
+    error.message = "Failed to fetch messages";
+    next(error);
   }
 });
 
-api.put("/messages/:id", requireRole(), async (req, res) => {
+api.put("/messages/:id", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const message = await conversationService.updateMessage(userId, req.params.id, req.body);
@@ -171,35 +196,41 @@ api.put("/messages/:id", requireRole(), async (req, res) => {
     res.json(message);
   } catch (error) {
     console.error("Error updating message:", error);
-    res.status(500).json({ error: "Failed to update message" });
+    error.statusCode = 500;
+    error.message = "Failed to update message";
+    next(error);
   }
 });
 
-api.delete("/messages/:id", requireRole(), async (req, res) => {
+api.delete("/messages/:id", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     await conversationService.deleteMessage(userId, req.params.id);
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting message:", error);
-    res.status(500).json({ error: "Failed to delete message" });
+    error.statusCode = 500;
+    error.message = "Failed to delete message";
+    next(error);
   }
 });
 
 // ===== RESOURCE ROUTES =====
 
-api.post("/resources", requireRole(), async (req, res) => {
+api.post("/resources", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const resource = await conversationService.addResource(userId, req.body);
     res.status(201).json(resource);
   } catch (error) {
     console.error("Error adding resource:", error);
-    res.status(500).json({ error: "Failed to add resource" });
+    error.statusCode = 500;
+    error.message = "Failed to add resource";
+    next(error);
   }
 });
 
-api.get("/resources/:id", requireRole(), async (req, res) => {
+api.get("/resources/:id", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const resource = await conversationService.getResource(userId, req.params.id);
@@ -207,53 +238,67 @@ api.get("/resources/:id", requireRole(), async (req, res) => {
     res.json(resource);
   } catch (error) {
     console.error("Error fetching resource:", error);
-    res.status(500).json({ error: "Failed to fetch resource" });
+    error.statusCode = 500;
+    error.message = "Failed to fetch resource";
+    next(error);
   }
 });
 
-api.get("/threads/:threadId/resources", requireRole(), async (req, res) => {
+api.get("/threads/:threadId/resources", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const resources = await conversationService.getResourcesByThread(userId, req.params.threadId);
     res.json(resources);
   } catch (error) {
     console.error("Error fetching resources:", error);
-    res.status(500).json({ error: "Failed to fetch resources" });
+    error.statusCode = 500;
+    error.message = "Failed to fetch resources";
+    next(error);
   }
 });
 
-api.delete("/resources/:id", requireRole(), async (req, res) => {
+api.delete("/resources/:id", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     await conversationService.deleteResource(userId, req.params.id);
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting resource:", error);
-    res.status(500).json({ error: "Failed to delete resource" });
+    error.statusCode = 500;
+    error.message = "Failed to delete resource";
+    next(error);
   }
 });
 
 // ===== VECTOR ROUTES =====
 
-api.post("/threads/:threadId/vectors", requireRole(), async (req, res) => {
+api.post("/threads/:threadId/vectors", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
-    const vectors = await conversationService.addVectors(userId, req.params.threadId, req.body.vectors);
+    const vectors = await conversationService.addVectors(
+      userId,
+      req.params.threadId,
+      req.body.vectors
+    );
     res.status(201).json(vectors);
   } catch (error) {
     console.error("Error adding vectors:", error);
-    res.status(500).json({ error: "Failed to add vectors" });
+    error.statusCode = 500;
+    error.message = "Failed to add vectors";
+    next(error);
   }
 });
 
-api.get("/threads/:threadId/vectors", requireRole(), async (req, res) => {
+api.get("/threads/:threadId/vectors", requireRole(), async (req, res, next) => {
   try {
     const userId = req.session.user.id;
     const vectors = await conversationService.getVectorsByThread(userId, req.params.threadId);
     res.json(vectors);
   } catch (error) {
     console.error("Error fetching vectors:", error);
-    res.status(500).json({ error: "Failed to fetch vectors" });
+    error.statusCode = 500;
+    error.message = "Failed to fetch vectors";
+    next(error);
   }
 });
 

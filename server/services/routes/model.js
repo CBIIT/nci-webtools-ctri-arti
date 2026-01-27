@@ -7,7 +7,7 @@ import { requireRole } from "../middleware.js";
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
 
-api.post("/model", requireRole(), async (req, res) => {
+api.post("/model", requireRole(), async (req, res, next) => {
   const user = req.session.user;
   const modelValue = req.body.model;
   const ip = req.ip || req.socket.remoteAddress;
@@ -43,7 +43,9 @@ api.post("/model", requireRole(), async (req, res) => {
     res.end();
   } catch (error) {
     console.error("Error in model API:", error);
-    res.status(500).json({ error: "An error occurred while processing the model request" });
+    error.statusCode = 500;
+    error.message = "An error occurred while processing the model request";
+    next(error);
   }
 });
 
