@@ -1,6 +1,8 @@
-// Key groups for chunked extraction (77 keys grouped by topic for better extraction quality)
+// Key groups for chunked extraction (grouped by topic for better extraction quality)
+// Note: The new schema uses nested objects for complex fields like Phase_Trial, Study_Design_Explanation, etc.
+// These nested objects are extracted as single fields - the AI will populate the nested structure.
 export const KEY_GROUPS = [
-  // Group 1: Basic Study Info (10 keys)
+  // Group 1: Basic Study Info & Contacts (11 keys)
   [
     "references",
     "PI",
@@ -12,94 +14,72 @@ export const KEY_GROUPS = [
     "Contact_Phone",
     "Other_Contact_Name",
     "Other_Contact_Email",
+    "Other_Contact_Phone",
   ],
   // Group 2: Study Overview (10 keys)
   [
-    "Other_Contact_Phone",
     "Why_Asked",
     "Study_Purpose",
-    "Time_Commitment",
-    "Brief_Happenings",
-    "Randomization_Process",
-    "Blinding_Process",
-    "How_Long",
-    "How_Many",
     "Disease_Condition",
-  ],
-  // Group 3: Risks Overview (10 keys)
-  [
-    "Abbreviated_Risks",
+    "Phase_Trial",
+    "FDA_Approval_Status",
+    "Brief_Happenings",
+    "Brief_Risks",
     "Brief_Alternatives",
     "Responsibilities",
     "Brief_Benefits",
-    "Voluntariness",
-    "Risks_Study_Drug_Title",
-    "Risks_Study_Drug_General",
-    "Points_Side_Effects",
-    "Other_Options",
-    "FDA_Approval_Status",
   ],
-  // Group 4: Study Timeline (10 keys)
+  // Group 3: Study Details & Timeline (10 keys)
   [
+    "Voluntariness",
+    "Parent_Permission",
+    "Impaired_Adults",
+    "How_Long",
+    "How_Many",
+    "Introduction",
+    "Study_Design_Explanation",
     "Before_You_Begin",
     "During_The_Study",
     "Follow_Up",
-    "Risks_Discomforts",
-    "Inclusion_Criteria",
-    "Exclusion_Criteria",
-    "Early_Withdrawal",
-    "Return_Results",
-    "Parent_Permission",
-    "Impaired_Adults",
   ],
-  // Group 5: Radiation Risks (10 keys)
+  // Group 4: Drug & Procedure Risks (4 keys)
   [
-    "Risks_Radiation_Title",
-    "Rad_Risk_LT3",
-    "Rad_Risk_GE3_LT5",
-    "Rad_Risk_GT5",
-    "Thera_Rad_Title",
-    "Thera_Rad",
-    "Overall_Rad_Risk",
-    "RDRC_Reviewed_Rad",
+    "Study_Drug_Risks",
+    "Risks_Discomforts",
+    "Radiation_Risks",
+    "Pregnancy_Risks",
+  ],
+  // Group 5: Benefits, Alternatives & Results (5 keys)
+  [
     "Potential_Benefits_You",
     "Potential_Benefits_Others",
+    "Other_Options",
+    "Return_Results",
+    "Early_Withdrawal",
   ],
-  // Group 6: Pregnancy - Women (10 keys)
+  // Group 6: Data & Specimens (6 keys)
   [
-    "Risks_Pregnancy_Title",
-    "Risks_Pregnancy_Rationale_Women",
-    "Pregnancy_Women_Title",
-    "Pregnancy_Testing_Requirements",
-    "Pregnancy_Testing_Women_Over_Forty",
-    "Required_Contraception_Women",
-    "Pregnancy_Event_Women",
-    "Fertility_Risk_Women",
-    "Risks_Pregnancy_Rationale_Men",
-    "Pregnancy_Men_Title",
-  ],
-  // Group 7: Pregnancy - Men & Data (10 keys)
-  [
-    "Required_Contraception_Men",
-    "Seminal_Transmission_Text",
-    "Pregnancy_Event_Men",
-    "Fertility_Risk_Men",
-    "Data_Save_Type",
+    "Data_Saved",
+    "Data_Shared_Deidentified",
+    "Data_Shared_Identified",
     "Genomic_Sensitivity",
     "Anonymized_Specimen_Sharing",
     "Specimen_Storage",
+  ],
+  // Group 7: Financial Information (3 keys)
+  [
     "Payment_Information",
     "Reimbursement_Information",
-  ],
-  // Group 8: Financial & Legal (7 keys)
-  [
     "Costs",
-    "Conflict_Of_Interest_Information",
-    "Clinical_Trial_Agreement_Information",
+  ],
+  // Group 8: Confidentiality & Legal (6 keys)
+  [
     "Confidentiality",
     "Confidentiality_Study_Sponsor",
     "Confidentiality_Manufacturer",
     "Confidentiality_Drug_Device",
+    "Conflict_Of_Interest_Information",
+    "Clinical_Trial_Agreement_Information",
     "COVID_PREP_Act_Language",
   ],
 ];
@@ -121,7 +101,7 @@ export async function loadPrompt(filepath) {
 
 // Template configuration for all consent forms and lay person abstracts
 export const templateConfigs = {
-  // NIH Clinical Center Consent Forms (use procedure library)
+  // NIH Clinical Center Consent Forms (procedure library is embedded in prompts)
   "nih-cc-adult-patient": {
     label: "Adult affected patient",
     prefix: "NIH CCC",
@@ -129,7 +109,7 @@ export const templateConfigs = {
     templateUrl: "/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx",
     promptUrl: "/templates/nih-cc/adult-affected-patient.txt",
     schemaUrl: "/templates/nih-cc/adult-affected-patient.json",
-    procedureLibraryUrl: "/templates/nih-cc/procedure-library.json",
+    procedureLibraryUrl: null, // Procedure library is embedded in prompts
     filename: "nih-cc-consent-adult-affected.docx",
     disabled: false,
   },
@@ -140,7 +120,7 @@ export const templateConfigs = {
     templateUrl: "/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx",
     promptUrl: "/templates/nih-cc/adult-healthy-volunteer.txt",
     schemaUrl: "/templates/nih-cc/adult-healthy-volunteer.json",
-    procedureLibraryUrl: "/templates/nih-cc/procedure-library.json",
+    procedureLibraryUrl: null, // Procedure library is embedded in prompts
     filename: "nih-cc-consent-adult-healthy.docx",
     disabled: false,
   },
@@ -151,7 +131,7 @@ export const templateConfigs = {
     templateUrl: "/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx",
     promptUrl: "/templates/nih-cc/adult-family-member.txt",
     schemaUrl: "/templates/nih-cc/adult-family-member.json",
-    procedureLibraryUrl: "/templates/nih-cc/procedure-library.json",
+    procedureLibraryUrl: null, // Procedure library is embedded in prompts
     filename: "nih-cc-consent-adult-family.docx",
     disabled: false,
   },
@@ -162,7 +142,7 @@ export const templateConfigs = {
     templateUrl: "/templates/nih-cc/nih-cc-consent-template-2024-04-15.docx", // Would be different assent template in future
     promptUrl: "/templates/nih-cc/adult-healthy-volunteer.txt", // Placeholder - would be different assent prompt
     schemaUrl: "/templates/nih-cc/adult-healthy-volunteer.json", // Placeholder
-    procedureLibraryUrl: "/templates/nih-cc/procedure-library.json",
+    procedureLibraryUrl: null, // Procedure library is embedded in prompts
     filename: "nih-assent-child.docx",
     disabled: true,
   },
