@@ -43,8 +43,10 @@ export function logErrors(formatter = (e) => ({ error: e.message })) {
     if (EMAIL_DEV && EMAIL_DEV.length > 0) {
       sendLogReport({
         type: "Error",
+        reportSource: "Automatic",
         userId: request.session?.user?.id || "N/A",
         origin: "Server",
+        recipient: EMAIL_DEV,
         metadata: [
           { label: "Error Message", value: error.message },
           { label: "Stack Trace", value: error.stack },
