@@ -6,6 +6,7 @@ import * as client from "openid-client";
 import { Role, User } from "./database.js";
 import { sendLogReport } from "./email.js";
 import logger, { formatObject } from "./logger.js";
+import { createHttpError } from "./utils.js";
 
 const {
   HOSTNAME,
@@ -38,15 +39,18 @@ export function logRequests(formatter = (request) => [request.path]) {
  */
 export function logErrors(formatter = (e) => ({ error: e.message })) {
   return (error, request, response, _next) => {
-    logger.error(formatObject(error));
+    const fullErrorMessage = `${formatObject(error.message)}.\n${formatObject(error.additionalError)}`;
+    logger.error(fullErrorMessage);
 
     if (EMAIL_DEV && EMAIL_DEV.length > 0) {
       sendLogReport({
         type: "Error",
+        reportSource: "Automatic",
         userId: request.session?.user?.id || "N/A",
         origin: "Server",
+        recipient: EMAIL_DEV,
         metadata: [
-          { label: "Error Message", value: error.message },
+          { label: "Error Message", value: fullErrorMessage },
           { label: "Stack Trace", value: error.stack },
           { label: "Request Path", value: request.path },
         ],
@@ -55,7 +59,7 @@ export function logErrors(formatter = (e) => ({ error: e.message })) {
       });
     }
 
-    response.status(400).json(formatter(error));
+    response.status(error.statusCode || 400).json(formatter(error));
   };
 }
 
@@ -219,7 +223,7 @@ export function requireRole(requiredRole) {
  * @param {Function} next
  * @returns
  */
-export async function proxyMiddleware(req, res, _next) {
+export async function proxyMiddleware(req, res, next) {
   const { headers, method, body, query } = req;
   const host = headers.host?.split(":")[0];
   let urlString = req.path.replace(/^\/[^/]+\/?/, ""); // remove path prefix
@@ -256,8 +260,7 @@ export async function proxyMiddleware(req, res, _next) {
       res.end();
     }
   } catch (error) {
-    console.error("Proxy error:", error);
-    res.status(500).send(`Proxy error: ${error.message}`);
+    next(createHttpError(500, error, error.message));
   }
 }
 

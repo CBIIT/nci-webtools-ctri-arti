@@ -55,7 +55,7 @@ export function showError(message, options = {}) {
   return showAlert({
     message,
     type: "danger",
-    autoDismiss: 8000, // Longer duration for errors
+    autoDismiss: 0, // Do not auto-dismiss errors to allow reporting
     ...options,
   });
 }
