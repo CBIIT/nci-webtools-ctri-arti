@@ -10,7 +10,7 @@ import { textract } from "../textract.js";
 import { getLanguages, translate } from "../translate.js";
 import { search } from "../utils.js";
 
-const { VERSION, S3_BUCKETS, EMAIL_DEV, EMAIL_SENDER, EMAIL_USER_REPORTS } = process.env;
+const { VERSION, S3_BUCKETS, EMAIL_DEV, EMAIL_ADMIN, EMAIL_USER_REPORTS } = process.env;
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
 
@@ -51,7 +51,7 @@ api.post("/log", async (req, res) => {
   const { type, metadata, reportSource } = req.body;
 
   const recipient =
-    reportSource?.toLowerCase() === "user" ? EMAIL_USER_REPORTS || EMAIL_SENDER : EMAIL_DEV;
+    reportSource?.toLowerCase() === "user" ? EMAIL_USER_REPORTS || EMAIL_ADMIN : EMAIL_DEV;
 
   const logData = {
     type: type || "Error",
