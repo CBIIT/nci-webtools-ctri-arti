@@ -70,6 +70,7 @@ const config: Config = {
             
             S3_BUCKETS: process.env.S3_BUCKETS || "rh-eagle",
 
+            EMAIL_DEV: process.env.EMAIL_DEV || "",
             EMAIL_ADMIN: process.env.EMAIL_ADMIN || "",
             SMTP_HOST: process.env.SMTP_HOST || "",
             SMTP_PORT: process.env.SMTP_PORT || "",
