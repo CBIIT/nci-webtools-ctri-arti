@@ -194,3 +194,20 @@ export function getDateRange(startDateParam, endDateParam) {
 
   return { startDate: new Date(startDate), endDate: new Date(endDate) };
 }
+
+/**
+ * Creates an error with a custom status code and user-friendly message,
+ * while preserving the original error details.
+ *
+ * @param {number} statusCode - HTTP status code (e.g., 500, 400)
+ * @param {Error|string} error - Original error or error message
+ * @param {string} userMessage - User-friendly message to display
+ * @returns {Error} Enhanced error object
+ */
+export function createHttpError(statusCode, error, userMessage) {
+  const err = error instanceof Error ? error : new Error(error);
+  err.statusCode = statusCode;
+  err.additionalError = err.message;
+  err.message = userMessage || err.message;
+  return err;
+}
