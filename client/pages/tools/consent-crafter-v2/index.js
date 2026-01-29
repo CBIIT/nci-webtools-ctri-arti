@@ -45,7 +45,7 @@ async function getDatabase(userEmail = "anonymous") {
  * @param {number} overlap - Overlap between chunks in characters
  * @returns {Array<{index: number, text: string, startChar: number, endChar: number}>}
  */
-function chunkDocument(text, chunkSize = 10000, overlap = 1000) {
+function chunkDocument(text, chunkSize = 20000, overlap = 2000) {
   const chunks = [];
   const step = chunkSize - overlap;
   for (let i = 0; i < text.length; i += step) {
@@ -637,8 +637,8 @@ export default function Page() {
 
   // ============= Job Processing =============
 
-  // Threshold for using chunked extraction (15K characters)
-  const CHUNKED_EXTRACTION_THRESHOLD = 15000;
+  // Threshold for using chunked extraction (30K characters)
+  const CHUNKED_EXTRACTION_THRESHOLD = 30000;
 
   async function processJob(jobId, jobConfig) {
     // 1. Set job status to processing

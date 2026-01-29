@@ -63,11 +63,14 @@
       "items": { "type": "string" },
       "description": "Array of follow-up activities"
     },
+    "Randomization_Process": { "type": "string", "description": "Description of randomization process (legacy field for template compatibility)" },
+    "Blinding_Process": { "type": "string", "description": "Description of blinding process (legacy field for template compatibility)" },
     "Study_Drug_Risks": {
       "type": "object",
       "properties": {
         "title": { "type": "string", "description": "Title for study drug risks section" },
         "general_description": { "type": "string", "description": "How drugs affect body systems" },
+        "side_effects_info": { "type": "string", "description": "Additional side effects information" },
         "specific_risks": {
           "type": "array",
           "items": {

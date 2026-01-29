@@ -1,8 +1,8 @@
-// Key groups for chunked extraction (grouped by topic for better extraction quality)
+// Key groups for chunked extraction (larger batches for better performance)
 // Note: The new schema uses nested objects for complex fields like Phase_Trial, Study_Design_Explanation, etc.
 // These nested objects are extracted as single fields - the AI will populate the nested structure.
 export const KEY_GROUPS = [
-  // Group 1: Basic Study Info & Contacts (11 keys)
+  // Group 1: Basic Study Info, Contacts & Overview (21 keys)
   [
     "references",
     "PI",
@@ -15,9 +15,6 @@ export const KEY_GROUPS = [
     "Other_Contact_Name",
     "Other_Contact_Email",
     "Other_Contact_Phone",
-  ],
-  // Group 2: Study Overview (10 keys)
-  [
     "Why_Asked",
     "Study_Purpose",
     "Disease_Condition",
@@ -29,7 +26,7 @@ export const KEY_GROUPS = [
     "Responsibilities",
     "Brief_Benefits",
   ],
-  // Group 3: Study Details & Timeline (10 keys)
+  // Group 2: Timeline, Procedures & Risks (21 keys)
   [
     "Voluntariness",
     "Parent_Permission",
@@ -38,26 +35,22 @@ export const KEY_GROUPS = [
     "How_Many",
     "Introduction",
     "Study_Design_Explanation",
+    "Randomization_Process",
+    "Blinding_Process",
     "Before_You_Begin",
     "During_The_Study",
     "Follow_Up",
-  ],
-  // Group 4: Drug & Procedure Risks (4 keys)
-  [
     "Study_Drug_Risks",
     "Risks_Discomforts",
     "Radiation_Risks",
     "Pregnancy_Risks",
-  ],
-  // Group 5: Benefits, Alternatives & Results (5 keys)
-  [
     "Potential_Benefits_You",
     "Potential_Benefits_Others",
     "Other_Options",
     "Return_Results",
     "Early_Withdrawal",
   ],
-  // Group 6: Data & Specimens (6 keys)
+  // Group 3: Data, Specimens, Financial & Legal (16 keys)
   [
     "Data_Saved",
     "Data_Shared_Deidentified",
@@ -65,15 +58,9 @@ export const KEY_GROUPS = [
     "Genomic_Sensitivity",
     "Anonymized_Specimen_Sharing",
     "Specimen_Storage",
-  ],
-  // Group 7: Financial Information (3 keys)
-  [
     "Payment_Information",
     "Reimbursement_Information",
     "Costs",
-  ],
-  // Group 8: Confidentiality & Legal (6 keys)
-  [
     "Confidentiality",
     "Confidentiality_Study_Sponsor",
     "Confidentiality_Manufacturer",
