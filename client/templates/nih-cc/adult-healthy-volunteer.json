@@ -20,13 +20,8 @@
     "Why_Asked": { "type": "string", "description": "Describe why they are being asked to take part in the research study" },
     "Study_Purpose": { "type": "string", "description": "Describe the purpose or objective of the study" },
     "Disease_Condition": { "type": "string", "description": "Patient-friendly name of the disease or condition being studied" },
-    "Phase_Trial": {
-      "type": "object",
-      "properties": {
-        "type": { "type": "string", "description": "Study type/phase in plain language" },
-        "explanation": { "type": "string", "description": "Explanation of study type/phase at 6th grade reading level" }
-      }
-    },
+    "Phase_Trial_type": { "type": "string", "description": "Study type/phase in plain language" },
+    "Phase_Trial_explanation": { "type": "string", "description": "Explanation of study type/phase at 6th grade reading level" },
     "FDA_Approval_Status": { "type": "string", "description": "FDA approval status of drugs or devices used" },
     "Brief_Happenings": { "type": "string", "description": "Brief high-level summary of what will happen during the study" },
     "Brief_Risks": { "type": "string", "description": "High-level overview of main risks for the summary section" },
@@ -39,15 +34,10 @@
     "How_Long": { "type": "string", "description": "Complete time commitment for participants" },
     "How_Many": { "type": "string", "description": "Total number of participants to be enrolled" },
     "Introduction": { "type": "string", "description": "Introductory statement for procedures section" },
-    "Study_Design_Explanation": {
-      "type": "object",
-      "properties": {
-        "overview": { "type": "string", "description": "Overview of study design methods" },
-        "randomization": { "type": "string", "description": "Description of randomization process" },
-        "blinding": { "type": "string", "description": "Description of blinding process" },
-        "placebo": { "type": "string", "description": "Description of placebo if used" }
-      }
-    },
+    "Study_Design_Explanation_overview": { "type": "string", "description": "Overview of study design methods" },
+    "Study_Design_Explanation_randomization": { "type": "string", "description": "Description of randomization process" },
+    "Study_Design_Explanation_blinding": { "type": "string", "description": "Description of blinding process" },
+    "Study_Design_Explanation_placebo": { "type": "string", "description": "Description of placebo if used" },
     "Before_You_Begin": {
       "type": "array",
       "items": { "type": "string" },
@@ -65,141 +55,100 @@
     },
     "Randomization_Process": { "type": "string", "description": "Description of randomization process (legacy field for template compatibility)" },
     "Blinding_Process": { "type": "string", "description": "Description of blinding process (legacy field for template compatibility)" },
-    "Study_Drug_Risks": {
-      "type": "object",
-      "properties": {
-        "title": { "type": "string", "description": "Title for study drug risks section" },
-        "general_description": { "type": "string", "description": "How drugs affect body systems" },
-        "side_effects_info": { "type": "string", "description": "Additional side effects information" },
-        "specific_risks": {
-          "type": "array",
-          "items": {
+    "Study_Drug_Risks_title": { "type": "string", "description": "Title for study drug risks section" },
+    "Study_Drug_Risks_general_description": { "type": "string", "description": "How drugs affect body systems" },
+    "Study_Drug_Risks_side_effects_info": { "type": "string", "description": "Additional side effects information" },
+    "Study_Drug_Risks_specific_risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "drug_name": { "type": "string" },
+          "common": {
             "type": "object",
             "properties": {
-              "drug_name": { "type": "string" },
-              "common": {
-                "type": "object",
-                "properties": {
-                  "definition": { "type": "string" },
-                  "risks": { "type": "array", "items": { "type": "string" } }
-                }
-              },
-              "occasional": {
-                "type": "object",
-                "properties": {
-                  "definition": { "type": "string" },
-                  "risks": { "type": "array", "items": { "type": "string" } }
-                }
-              },
-              "rare": {
-                "type": "object",
-                "properties": {
-                  "definition": { "type": "string" },
-                  "risks": { "type": "array", "items": { "type": "string" } }
-                }
-              }
+              "definition": { "type": "string" },
+              "risks": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "occasional": {
+            "type": "object",
+            "properties": {
+              "definition": { "type": "string" },
+              "risks": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "rare": {
+            "type": "object",
+            "properties": {
+              "definition": { "type": "string" },
+              "risks": { "type": "array", "items": { "type": "string" } }
             }
           }
         }
-      }
+      },
+      "description": "Array of drug risk objects with nested structure for loop iteration"
     },
     "Risks_Discomforts": {
       "type": "array",
       "items": { "type": "string" },
       "description": "Array of procedure-specific risks"
     },
-    "Radiation_Risks": {
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "diagnostic": {
-          "type": "object",
-          "properties": {
-            "low_dose": { "type": "string" },
-            "moderate_dose": { "type": "string" },
-            "high_dose": { "type": "string" }
-          }
-        },
-        "therapeutic": {
-          "type": "object",
-          "properties": {
-            "title": { "type": "string" },
-            "description": { "type": "string" }
-          }
-        },
-        "combined_exposure": { "type": "string" },
-        "rdrc_reviewed": { "type": "string" }
-      }
+    "Radiation_Risks_title": { "type": "string", "description": "Title for radiation risks section" },
+    "Radiation_Risks_diagnostic_low_dose": { "type": "string", "description": "Low dose diagnostic radiation risk text" },
+    "Radiation_Risks_diagnostic_moderate_dose": { "type": "string", "description": "Moderate dose diagnostic radiation risk text" },
+    "Radiation_Risks_diagnostic_high_dose": { "type": "string", "description": "High dose diagnostic radiation risk text" },
+    "Radiation_Risks_therapeutic_title": { "type": "string", "description": "Therapeutic radiation title" },
+    "Radiation_Risks_therapeutic_description": { "type": "string", "description": "Therapeutic radiation description" },
+    "Radiation_Risks_combined_exposure": { "type": "string", "description": "Combined radiation exposure statement" },
+    "Radiation_Risks_rdrc_reviewed": { "type": "string", "description": "RDRC reviewed radioactive drug statement" },
+    "Pregnancy_Risks_title": { "type": "string", "description": "Title for pregnancy risks section" },
+    "Pregnancy_Risks_women_title": { "type": "string", "description": "Title for women's pregnancy section" },
+    "Pregnancy_Risks_women_rationale": { "type": "string", "description": "Rationale for female pregnancy prevention" },
+    "Pregnancy_Risks_women_testing_required": { "type": "string", "description": "Pregnancy testing requirements" },
+    "Pregnancy_Risks_women_testing_over_forty": { "type": "string", "description": "Pregnancy testing for women over 40" },
+    "Pregnancy_Risks_women_contraception_required": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Array of contraception requirements for women"
     },
-    "Pregnancy_Risks": {
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "women": {
-          "type": "object",
-          "properties": {
-            "title": { "type": "string" },
-            "rationale": { "type": "string" },
-            "testing_required": { "type": "string" },
-            "testing_over_forty": { "type": "string" },
-            "contraception_required": { "type": "array", "items": { "type": "string" } },
-            "if_pregnant": { "type": "string" },
-            "fertility_risk": { "type": "string" }
-          }
-        },
-        "men": {
-          "type": "object",
-          "properties": {
-            "title": { "type": "string" },
-            "rationale": { "type": "string" },
-            "contraception_required": { "type": "array", "items": { "type": "string" } },
-            "seminal_transmission": { "type": "string" },
-            "if_partner_pregnant": { "type": "string" },
-            "fertility_risk": { "type": "string" }
-          }
-        }
-      }
+    "Pregnancy_Risks_women_if_pregnant": { "type": "string", "description": "Actions if pregnancy occurs" },
+    "Pregnancy_Risks_women_fertility_risk": { "type": "string", "description": "Fertility risks for women" },
+    "Pregnancy_Risks_men_title": { "type": "string", "description": "Title for men's pregnancy section" },
+    "Pregnancy_Risks_men_rationale": { "type": "string", "description": "Rationale for male pregnancy prevention" },
+    "Pregnancy_Risks_men_contraception_required": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Array of contraception requirements for men"
     },
+    "Pregnancy_Risks_men_seminal_transmission": { "type": "string", "description": "Seminal transmission risks" },
+    "Pregnancy_Risks_men_if_partner_pregnant": { "type": "string", "description": "Actions if partner becomes pregnant" },
+    "Pregnancy_Risks_men_fertility_risk": { "type": "string", "description": "Fertility risks for men" },
     "Potential_Benefits_You": { "type": "string", "description": "Potential benefits to participant" },
     "Potential_Benefits_Others": { "type": "string", "description": "Potential benefits to others" },
     "Other_Options": { "type": "string", "description": "Alternatives to participating" },
     "Return_Results": { "type": "string", "description": "Plan for returning results to participants" },
-    "Data_Saved": {
-      "type": "object",
-      "properties": {
-        "applicable": { "type": "boolean" },
-        "title": { "type": "string" },
-        "intro_question": { "type": "string" },
-        "description": { "type": "string" },
-        "permission_statement": { "type": "string" },
-        "checkbox_line": { "type": "string" },
-        "initial_line": { "type": "string" }
-      }
-    },
-    "Data_Shared_Deidentified": {
-      "type": "object",
-      "properties": {
-        "applicable": { "type": "boolean" },
-        "intro_question": { "type": "string" },
-        "sharing_description": { "type": "string" },
-        "repository_description": { "type": "string" },
-        "data_save_type": { "type": "string" },
-        "deidentification_statement": { "type": "string" },
-        "permission_statement": { "type": "string" },
-        "checkbox_line": { "type": "string" },
-        "initial_line": { "type": "string" }
-      }
-    },
-    "Data_Shared_Identified": {
-      "type": "object",
-      "properties": {
-        "applicable": { "type": "boolean" },
-        "description": { "type": "string" },
-        "permission_statement": { "type": "string" },
-        "checkbox_line": { "type": "string" },
-        "initial_line": { "type": "string" }
-      }
-    },
+    "Data_Saved_applicable": { "type": "boolean", "description": "Whether data saving section applies" },
+    "Data_Saved_title": { "type": "string", "description": "Title for data saved section" },
+    "Data_Saved_intro_question": { "type": "string", "description": "Intro question for data saved section" },
+    "Data_Saved_description": { "type": "string", "description": "Description of data saving" },
+    "Data_Saved_permission_statement": { "type": "string", "description": "Permission statement for data saving" },
+    "Data_Saved_checkbox_line": { "type": "string", "description": "Checkbox line for data saving consent" },
+    "Data_Saved_initial_line": { "type": "string", "description": "Initial line for data saving consent" },
+    "Data_Shared_Deidentified_applicable": { "type": "boolean", "description": "Whether deidentified sharing section applies" },
+    "Data_Shared_Deidentified_intro_question": { "type": "string", "description": "Intro question for deidentified sharing" },
+    "Data_Shared_Deidentified_sharing_description": { "type": "string", "description": "Description of deidentified sharing" },
+    "Data_Shared_Deidentified_repository_description": { "type": "string", "description": "Repository description" },
+    "Data_Shared_Deidentified_data_save_type": { "type": "string", "description": "Type of data save (open/restricted access)" },
+    "Data_Shared_Deidentified_deidentification_statement": { "type": "string", "description": "Deidentification statement" },
+    "Data_Shared_Deidentified_permission_statement": { "type": "string", "description": "Permission statement for deidentified sharing" },
+    "Data_Shared_Deidentified_checkbox_line": { "type": "string", "description": "Checkbox line for deidentified sharing" },
+    "Data_Shared_Deidentified_initial_line": { "type": "string", "description": "Initial line for deidentified sharing" },
+    "Data_Shared_Identified_applicable": { "type": "boolean", "description": "Whether identified sharing section applies" },
+    "Data_Shared_Identified_description": { "type": "string", "description": "Description of identified sharing" },
+    "Data_Shared_Identified_permission_statement": { "type": "string", "description": "Permission statement for identified sharing" },
+    "Data_Shared_Identified_checkbox_line": { "type": "string", "description": "Checkbox line for identified sharing" },
+    "Data_Shared_Identified_initial_line": { "type": "string", "description": "Initial line for identified sharing" },
     "Genomic_Sensitivity": { "type": "string", "description": "Genomic summary results sharing statement" },
     "Anonymized_Specimen_Sharing": { "type": "string", "description": "Statement about anonymized specimen sharing" },
     "Specimen_Storage": { "type": "string", "description": "Specimen and data storage duration" },
