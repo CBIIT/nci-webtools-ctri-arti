@@ -82,10 +82,10 @@ export class EcsServiceStack extends Stack {
       },
     });
 
-    const namespace = new servicediscovery.PrivateDnsNamespace(this, "ecs-service-namespace", {
-      name: prefix,
-      vpc,
-    });
+    // const namespace = new servicediscovery.PrivateDnsNamespace(this, "ecs-service-namespace", {
+    //   name: prefix,
+    //   vpc,
+    // });
 
     const executionRole = new iam.Role(this, "ecs-task-execution-role", {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
@@ -173,16 +173,16 @@ export class EcsServiceStack extends Stack {
       enableECSManagedTags: true,
       enableExecuteCommand: true,
       minHealthyPercent: 100,
-      serviceConnectConfiguration: {
-        namespace: namespace.namespaceArn,
-        services: [
-          {
-            discoveryName: "main",
-            portMappingName: portMapping?.name || "main",
-            port: portMapping?.containerPort || 80,
-          }
-        ]
-      }
+      // serviceConnectConfiguration: {
+      //   namespace: namespace.namespaceArn,
+      //   services: [
+      //     {
+      //       discoveryName: "main",
+      //       portMappingName: portMapping?.name || "main",
+      //       port: portMapping?.containerPort || 80,
+      //     }
+      //   ]
+      // }
     });
 
     // add microservices here (gateway, cms)
