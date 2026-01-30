@@ -45,10 +45,10 @@ const config: Config = {
       containers: [
         {
           image: process.env.SERVER_IMAGE || "httpd" || `${account}.dkr.ecr.${region}.amazonaws.com/${prefix}:server-latest`,
-          name: "main",
+          name: "gateway",
           portMappings: [
             {
-              name: "main",
+              name: "gateway",
               containerPort: 80,
             }
           ],
