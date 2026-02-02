@@ -65,8 +65,20 @@ function formatMetadataForTemplate(metadata) {
   });
 }
 
-function buildPlainTextFallback({ type, timestamp, userId, metadata, origin, version }) {
-  const lines = [`ResearchOptimizer ${type} Report`, "", `Origin: ${origin}`];
+function buildPlainTextFallback({
+  type,
+  reportSource,
+  timestamp,
+  userId,
+  metadata,
+  origin,
+  version,
+}) {
+  const lines = [
+    `ResearchOptimizer ${type} Report`,
+    "",
+    `Origin: ${origin}, Report Source: ${reportSource}`,
+  ];
 
   if (version) {
     lines.push(`Version: ${version}`);
@@ -93,18 +105,20 @@ function buildPlainTextFallback({ type, timestamp, userId, metadata, origin, ver
 }
 
 export async function sendLogReport(
-  { type = "Error", userId, metadata, origin = "Server" },
+  { type = "Error", reportSource, userId, metadata, origin = "Server", recipient },
   env = process.env
 ) {
-  const { EMAIL_DEV, EMAIL_SENDER, VERSION } = env;
+  const { EMAIL_SENDER, EMAIL_ADMIN, EMAIL_DEV, VERSION } = env;
 
   const template = await getCompiledTemplate();
   const timestamp = new Date().toLocaleString();
   const userIdValue = userId || "N/A";
   const originLabel = origin === "Frontend" ? "Frontend" : "Server";
+  const reportSourceLabel = reportSource || "Unknown";
 
   const html = template({
     timestamp,
+    reportSource: reportSourceLabel,
     userId: userIdValue,
     origin: originLabel,
     version: VERSION || null,
@@ -113,6 +127,7 @@ export async function sendLogReport(
 
   const text = buildPlainTextFallback({
     type,
+    reportSource: reportSourceLabel,
     timestamp,
     userId: userIdValue,
     metadata,
@@ -122,8 +137,8 @@ export async function sendLogReport(
 
   return sendEmail(
     {
-      from: EMAIL_SENDER || EMAIL_DEV,
-      to: EMAIL_DEV,
+      from: EMAIL_SENDER || EMAIL_ADMIN,
+      to: recipient || EMAIL_DEV,
       subject: `[${originLabel}] ResearchOptimizer ${type} Report`,
       html,
       text,

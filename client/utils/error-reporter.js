@@ -33,10 +33,6 @@ export async function reportErrorToServer(options = {}) {
     metadata.push({ label: "Error Type", value: errorType });
   }
 
-  if (reportSource) {
-    metadata.push({ label: "Report Source", value: reportSource });
-  }
-
   if (additionalData) {
     for (const [key, value] of Object.entries(additionalData)) {
       metadata.push({ label: key, value });
@@ -47,7 +43,7 @@ export async function reportErrorToServer(options = {}) {
     const response = await fetch("/api/log", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "Error", metadata }),
+      body: JSON.stringify({ type: "Error", reportSource, metadata }),
     });
 
     return response?.ok ?? false;
