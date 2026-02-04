@@ -1,10 +1,8 @@
 import { createEffect, createMemo, createResource, For, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { createReport, listCommands } from "docx-templates";
 import { openDB } from "idb";
 import { createStore, reconcile, unwrap } from "solid-js/store";
-import yaml from "yaml";
 
 import { AlertContainer } from "../../../components/alert.js";
 import ClassToggle from "../../../components/class-toggle.js";
@@ -12,10 +10,17 @@ import FileInput from "../../../components/file-input.js";
 import Tooltip from "../../../components/tooltip.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
+import { docxExtractTextBlocks, docxReplace } from "../../../utils/docx.js";
 import { createTimestamp, downloadBlob } from "../../../utils/files.js";
 import { parseDocument } from "../../../utils/parsers.js";
 
-import { getPrompt, getTemplateConfigsByCategory, KEY_GROUPS, templateConfigs } from "./config.js";
+import { getTemplateConfigsByCategory, templateConfigs } from "./config.js";
+
+// ============= Constants =============
+const PROTOCOL_CHUNK_SIZE = 20000; // ~20KB per protocol chunk
+const PROTOCOL_OVERLAP = 2000; // 2KB overlap
+const TEMPLATE_CHUNK_SIZE = 40; // 40 blocks per template chunk
+const MAX_CONCURRENT_REQUESTS = 20; // Limit parallel API calls
 
 // ============= Database Layer =============
 async function getDatabase(userEmail = "anonymous") {
@@ -36,16 +41,16 @@ async function getDatabase(userEmail = "anonymous") {
   });
 }
 
-// ============= Chunked Extraction Functions =============
+// ============= Chunking Functions =============
 
 /**
- * Split document text into overlapping chunks
- * @param {string} text - Full document text
- * @param {number} chunkSize - Target chunk size in characters
+ * Chunk the protocol text into overlapping segments
+ * @param {string} text - Full protocol text
+ * @param {number} chunkSize - Size of each chunk in characters
  * @param {number} overlap - Overlap between chunks in characters
  * @returns {Array<{index: number, text: string, startChar: number, endChar: number}>}
  */
-function chunkDocument(text, chunkSize = 20000, overlap = 2000) {
+function chunkProtocol(text, chunkSize = PROTOCOL_CHUNK_SIZE, overlap = PROTOCOL_OVERLAP) {
   const chunks = [];
   const step = chunkSize - overlap;
   for (let i = 0; i < text.length; i += step) {
@@ -62,408 +67,843 @@ function chunkDocument(text, chunkSize = 20000, overlap = 2000) {
 }
 
 /**
- * Create key groups with their partial schemas
- * @param {Object} schema - Full JSON schema
- * @param {string[][]} keyGroups - Pre-defined key groups from config
- * @returns {Array<{index: number, keys: string[], schema: Object}>}
+ * Chunk template blocks while preserving original indices
+ * @param {Array} blocks - All template blocks with their original indices
+ * @param {number} chunkSize - Number of blocks per chunk
+ * @returns {Array<{index: number, blocks: Array}>}
  */
-function createKeyGroupsWithSchema(schema, keyGroups) {
-  return keyGroups.map((keys, index) => {
-    const partialSchema = {
-      type: "object",
-      properties: {},
-    };
-    for (const key of keys) {
-      if (schema.properties?.[key]) {
-        partialSchema.properties[key] = schema.properties[key];
-      }
-    }
-    return { index, keys, schema: partialSchema };
-  });
-}
-
-/**
- * Build the cache-primed system prompt
- * @param {Object} chunk - Document chunk
- * @param {Object|null} procedureLibrary - Procedure library JSON (null for non-NIH-CC templates)
- * @param {number} totalChunks - Total number of chunks
- * @returns {string}
- */
-function buildCacheableSystemPrompt(chunk, procedureLibrary, totalChunks) {
-  let prompt = `## ROLE
-You are a compassionate patient educator at the National Institutes of Health who specializes in identifying key information in research protocols and simplifying information so that patients can understand it.
-
-## CRITICAL: READABILITY REQUIREMENTS
-Your output MUST meet these readability standards:
-- Flesch Reading Ease score MUST be greater than 80 (easy to read)
-- Flesch-Kincaid Grade Level MUST be less than 7.0 (6th grade reading level)
-
-## HOW TO ACHIEVE THESE READABILITY TARGETS
-1. **Use short sentences**: Keep sentences under 15 words. Break long sentences into multiple short ones.
-2. **Use simple words**: Choose words with 1-2 syllables over longer alternatives:
-   - "use" not "utilize"
-   - "take part" not "participate"
-   - "help" not "facilitate"
-   - "get" not "receive"
-   - "shot" not "injection"
-   - "doctor" not "physician"
-   - "medicine" not "medication"
-3. **Use active voice**: "The doctor will check your blood" not "Your blood will be checked by the doctor"
-4. **Use second person**: Address the reader directly as "you"
-5. **Define medical terms immediately**: When you must use a medical term, explain it right after in simple words
-6. **Use simple subject-verb-object order**: Put the most important information first
-7. **Avoid jargon and acronyms**: Spell out acronyms on first use with simple explanation
-8. **One main idea per sentence**: Don't combine multiple concepts
-
-## EXAMPLES OF GOOD vs BAD READABILITY
-BAD (Flesch Score ~40): "The administration of the investigational pharmaceutical agent will be conducted via intravenous infusion over the duration of approximately sixty minutes."
-GOOD (Flesch Score ~85): "You will get the study drug through a small tube in your arm. This takes about one hour."
-
-BAD: "Participants may experience adverse events including but not limited to gastrointestinal disturbances."
-GOOD: "You may have stomach problems like upset stomach or feeling sick."
-`;
-
-  // Only include procedure library if provided (NIH-CC templates only)
-  if (procedureLibrary) {
-    prompt += `
-## PROCEDURE LIBRARY
-Use standardized text from this library when procedures match. Fill in study-specific variables as needed.
-<procedure_library>
-${JSON.stringify(procedureLibrary, null, 2)}
-</procedure_library>
-`;
-  }
-
-  prompt += `
-## DOCUMENT CHUNK (${chunk.index + 1} of ${totalChunks})
-Character range: ${chunk.startChar}-${chunk.endChar}
-<document_chunk>
-${chunk.text}
-</document_chunk>
-
-You have read the document chunk above. Wait for extraction instructions from the user.`;
-
-  return prompt;
-}
-
-/**
- * Build extraction prompt for specific key group
- * @param {Object} keyGroup - The key group with schema
- * @returns {string}
- */
-function buildExtractionPrompt(keyGroup) {
-  return `## EXTRACTION TASK
-
-Extract ONLY the following ${keyGroup.keys.length} fields from the document chunk provided in the system prompt above.
-
-### TARGET FIELDS:
-${keyGroup.keys.map((key, i) => `${i + 1}. ${key}`).join("\n")}
-
-### SCHEMA FOR THESE FIELDS:
-\`\`\`json
-${JSON.stringify(keyGroup.schema, null, 2)}
-\`\`\`
-
-### OUTPUT FORMAT:
-Return a JSON object. For EACH field, provide:
-
-\`\`\`json
-{
-  "field_name": {
-    "value": "<extracted value matching schema type - string or array>",
-    "exact_quote": "<verbatim quote from document that supports this extraction>",
-    "confidence": <0-10 integer>
-  }
-}
-\`\`\`
-
-### CONFIDENCE GUIDELINES:
-- 10: Direct quote or explicit statement found in document chunk
-- 7-9: Strongly implied or clearly derivable from the text
-- 4-6: Reasonably inferred but not explicitly stated
-- 1-3: Weak evidence or only partial information found
-- 0: No relevant information found in this chunk (use empty string "" or empty array [])
-
-### RULES:
-1. ONLY extract information found in the document chunk provided
-2. If information is NOT found in this chunk, return confidence 0 with empty value
-3. For array fields, extract all relevant items found in this chunk
-4. The exact_quote MUST be verbatim text from the document chunk
-5. Follow all formatting guidelines from the schema descriptions
-6. Use simple, patient-friendly language following the guidelines above
-
-Return ONLY valid JSON, no explanation or preamble.
-
-BEGIN EXTRACTION:`;
-}
-
-/**
- * Prime the cache by sending a minimal request with the system prompt
- * @param {string} systemPrompt - The cacheable system prompt
- * @param {string} model - Model ID
- * @param {Function} runModelFn - The runModel function
- * @returns {Promise<boolean>}
- */
-async function primeCacheForChunk(systemPrompt, model, runModelFn) {
-  const primingParams = {
-    model,
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            text: "Acknowledge you have read the document chunk and procedure library. Reply with only: READY",
-          },
-        ],
-      },
-    ],
-    system: systemPrompt,
-    thoughtBudget: 0,
-    stream: false,
-  };
-
-  try {
-    const response = await runModelFn(primingParams);
-    return response?.includes("READY");
-  } catch (error) {
-    console.error("Cache priming failed:", error);
-    return false;
-  }
-}
-
-/**
- * Run a single extraction task
- * @param {Object} keyGroup - The key group with schema
- * @param {string} systemPrompt - Pre-built system prompt
- * @param {string} model - Model ID
- * @param {Function} runModelFn - The runModel function
- * @param {number} chunkIndex - Index of the document chunk
- * @returns {Promise<Array>} Extracted candidates
- */
-async function runExtractionTask(keyGroup, systemPrompt, model, runModelFn, chunkIndex) {
-  const extractionPrompt = buildExtractionPrompt(keyGroup);
-
-  const params = {
-    model,
-    messages: [
-      {
-        role: "user",
-        content: [{ text: extractionPrompt }],
-      },
-    ],
-    system: systemPrompt,
-    thoughtBudget: 8000,
-    stream: false,
-  };
-
-  const response = await runModelFn(params);
-
-  // Parse JSON from response
-  const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) || response.match(/\{[\s\S]*\}/);
-  const jsonStr = jsonMatch?.[1] || jsonMatch?.[0] || "{}";
-
-  let parsed;
-  try {
-    parsed = JSON.parse(jsonStr);
-  } catch {
-    console.error("Failed to parse extraction response:", jsonStr.substring(0, 200));
-    parsed = {};
-  }
-
-  // Convert to candidates array
-  const candidates = [];
-  for (const key of keyGroup.keys) {
-    const extraction = parsed[key] || {};
-    candidates.push({
-      key,
-      value: extraction.value ?? (keyGroup.schema.properties?.[key]?.type === "array" ? [] : ""),
-      exact_quote: extraction.exact_quote || "",
-      confidence: typeof extraction.confidence === "number" ? extraction.confidence : 0,
-      chunkIndex,
-      keyGroupIndex: keyGroup.index,
+function chunkTemplateBlocks(blocks, chunkSize = TEMPLATE_CHUNK_SIZE) {
+  const chunks = [];
+  for (let i = 0; i < blocks.length; i += chunkSize) {
+    chunks.push({
+      index: chunks.length,
+      blocks: blocks.slice(i, i + chunkSize),
     });
   }
+  return chunks;
+}
 
-  return candidates;
+// ============= Prompt Building =============
+
+/**
+ * Build the system prompt for block-based consent generation
+ */
+export function buildBlockSystemPrompt(protocolChunk, libraryText, totalChunks, cohortType = "adult-patient") {
+  return `You are a consent form generator. Your job is to FOLLOW the instructions in each template block to generate patient-friendly consent language.
+
+## PROTOCOL EXCERPT (chunk ${protocolChunk.index + 1} of ${totalChunks})
+<protocol_excerpt>
+${protocolChunk.text}
+</protocol_excerpt>
+
+## CONSENT LIBRARY (standardized IRB-approved language)
+<consent_library>
+${libraryText}
+</consent_library>
+
+## COHORT TYPE: ${cohortType}
+
+## FORMATTING GUIDE - Template Color Scheme
+
+The template uses formatting to indicate what action to take. Each block includes "runs" array showing text segments with their formatting:
+
+| Formatting | Meaning | Action |
+|------------|---------|--------|
+| \`color: "0070C0"\` or \`color: "2E74B5"\` (blue) | Required NIH language | **KEEP exactly as-is** |
+| \`highlight: "yellow"\` | Placeholder label | **DELETE** this label text |
+| \`italic: true\` (no blue color) | Instructions to follow | **FOLLOW and REPLACE** with generated content |
+| No special formatting | Standard consent text | **KEEP or REPLACE** as appropriate |
+
+## CRITICAL: Mixed-Formatting Blocks Require REPLACE Action
+
+**IMPORTANT**: When a block has MIXED formatting (some blue, some yellow, some italic), you MUST use action "REPLACE" and compose the replacement content by:
+
+1. **COPY** blue text (color: 0070C0 or 2E74B5) verbatim into your output
+2. **OMIT** yellow-highlighted text entirely (do NOT include it)
+3. **GENERATE** content to replace italic instructions based on the protocol
+
+### Example - Block 53 (KEY INFORMATION) with Mixed Formatting:
+
+**Input runs:**
+\`\`\`
+[0] {highlight:yellow, italic} "[Required NIH language...]:" → OMIT (yellow label)
+[1] {color:0070C0} "This consent form describes a research study..." → COPY VERBATIM
+[2] {color:0070C0} "You are being asked to take part..." → COPY VERBATIM
+[3] {italic} "This Key Information section is meant to provide..." → GENERATE REPLACEMENT (substantial content!)
+\`\`\`
+
+**Correct output for this block:**
+\`\`\`json
+{
+  "index": 53,
+  "action": "REPLACE",
+  "content": "This consent form describes a research study and is designed to help you decide if you would like to be a part of the research study.\\n\\nYou are being asked to take part in a research study at the National Institutes of Health (NIH). This section provides the information we believe is most helpful and important to you in making your decision about participating in this study. Additional information that may help you decide can be found in other sections of the document. Taking part in research at NIH is your choice.\\n\\nYou are being asked to take part in this study because you have cancer that has spread locally or to other organs, and your cancer doctor recommended treatment with atezolizumab alone or in combination with other FDA-approved drug(s).\\n\\nAtezolizumab may stop the growth of cancer cells by blocking the work of some of the proteins needed for cell growth and by helping your immune system to fight cancer.\\n\\nAtezolizumab is approved by the U.S. Food and Drug Administration (FDA) to treat some types of cancers. The use of atezolizumab in this study is considered investigational because we are using therapeutic drug monitoring to adjust dosing.\\n\\nThe purpose of this study is to look at the best dose and frequency of atezolizumab to give based on drug levels in your blood.\\n\\nIf you decide to join this study, here are some of the most important things that you should know:\\n\\n• First, we will perform tests to see if you fit the study requirements.\\n• If you fit the study requirements, you will start treatment with atezolizumab.\\n• Starting from the 3rd dose, your dose will be adjusted based on blood levels.\\n• Study treatment will last for 2 years.\\n• This study may benefit you by shrinking your tumor.\\n\\nYou are free to stop taking part at any time.",
+  "confidence": 9,
+  "reasoning": "Mixed formatting block: copied blue required text verbatim, omitted yellow label, replaced italic instructions with substantial study-specific key information from protocol"
+}
+\`\`\`
+
+**WRONG outputs (DO NOT DO THESE):**
+
+1. **Only keeping blue text without generating content:**
+\`\`\`json
+{
+  "index": 53,
+  "action": "REPLACE",
+  "content": "This consent form describes... [ONLY BLUE TEXT, NO STUDY-SPECIFIC INFO]"
+}
+\`\`\`
+This is WRONG because the italic instructions say to generate key information but you didn't.
+
+2. **Using KEEP:**
+\`\`\`json
+{
+  "index": 53,
+  "action": "KEEP"
+}
+\`\`\`
+This is WRONG because it keeps yellow labels and italic instructions.
+
+**KEY POINT**: When italic instructions say to generate content (like "This Key Information section is meant to provide prospective participants with information..."), you MUST generate substantial study-specific content from the protocol, not just delete the instructions.
+
+## CRITICAL UNDERSTANDING
+
+The template contains INSTRUCTIONS that tell you what content to generate. Your job is to:
+1. READ the formatting to understand what's required vs. what's instructions
+2. For blocks with ONLY blue text that is COMPLETE content → use KEEP
+3. For blocks with ONLY blue text that is a LABEL needing content (e.g., "PRINCIPAL INVESTIGATOR:  ", "STUDY TITLE:") → use REPLACE to add the actual content after the label
+4. For blocks with ONLY italic instructions → use REPLACE with generated content OR DELETE if redundant
+5. For blocks with MIXED formatting → use REPLACE, composing output that preserves blue and generates new content for italic
+6. For blocks with yellow highlights → ALWAYS omit the yellow text from output
+
+**Blue text is MANDATORY** - Always preserve it exactly as-is in your output.
+**Yellow labels are for template users** - NEVER include them in output.
+**Italic instructions tell you what to generate** - Replace with actual content from protocol.
+
+## SPECIAL CASES
+
+### 1. Label-only blocks (PRINCIPAL INVESTIGATOR, STUDY TITLE, STUDY SITE)
+These blocks contain ONLY a blue label like "PRINCIPAL INVESTIGATOR:  " with nothing after it.
+- Action: REPLACE
+- Content: "PRINCIPAL INVESTIGATOR: [actual PI name from protocol]"
+- Example: "PRINCIPAL INVESTIGATOR: James Gulley, MD, PhD"
+
+### 2. Instruction blocks before headings
+If an italic instruction block appears immediately before a heading with similar topic:
+- The instruction block should be DELETED (action: DELETE, or content: null)
+- The heading block should be KEPT
+- Do NOT replace the instruction with the heading text (causes duplication)
+
+### 3. Bracketed placeholders
+NEVER include bracketed placeholders like [X], [insert something], or [coordinating center] in your output.
+- If you can find the actual info in the protocol, use it
+- If you cannot find the info, omit that sentence entirely
+- Your output should be FINAL text ready for a patient to read
+
+## THE FOUR ACTIONS
+
+### INSERT - Use when SUBSTANTIAL content needs to be ADDED after a block:
+
+Use INSERT when you need to add substantial new content that doesn't fit in any existing block. The new content is inserted as a NEW paragraph AFTER the specified block. The original block remains unchanged.
+
+**Key use cases for INSERT:**
+1. **Drug side effects tables** - When protocol has detailed toxicity data that needs the standardized NIH format (see DRUG SIDE EFFECTS section below)
+2. **Additional procedure descriptions** - When a procedure list needs expansion beyond what fits in one block
+3. **Supplementary risk information** - When risks span multiple categories needing separate formatting
+
+**When to use INSERT vs REPLACE:**
+- Use REPLACE when you're transforming/filling in an existing block's content
+- Use INSERT when you have NEW content to ADD that doesn't replace anything
+
+**Pattern recognition for INSERT:**
+- Template has a general intro block (e.g., "Taking any medication can cause side effects...")
+- Protocol has detailed data that should follow that intro (e.g., drug toxicity tables)
+- The detailed data is too substantial to merge into the intro block
+- → REPLACE the intro block with updated intro, then INSERT the detailed content after it
+
+### DELETE - Use for:
+1. **Coversheet blocks (indices 0-44)** - Template usage instructions, not consent content
+
+2. **Conditional sections where condition is FALSE** - e.g., for adult patient cohort:
+   - "[Use this language if seeking parental permission for a child]" → DELETE (not applicable)
+   - "Legally Authorized Representative" signature block → DELETE (not applicable)
+   - "Parent/Guardian of a Minor" signature block → DELETE (not applicable)
+
+3. **General meta-guidance about writing style** - Instructions that tell you HOW to write but don't specify WHAT content to generate:
+   - "Be concise; use short sentences and short paragraphs. Bullet points are okay." → DELETE
+   - "12-point, Times New Roman is the preferred font." → DELETE
+   - "Proofread, and spell check the final clean document." → DELETE
+   - "Use the Consent Library for suggested procedure descriptions." → DELETE (unless followed by specific content instruction)
+   - "If there is randomization, explain this clearly." → DELETE (general reminder, not tied to specific content block)
+   - "Note: This information should be described here only if more information is needed..." → DELETE
+
+### REPLACE - Use for CONTENT-GENERATING instructions:
+
+These are instructions that specify WHAT content should appear in the final document. They have a "slot" that needs to be filled.
+
+**Pattern: Template sentence with placeholder instruction:**
+- "The purpose of this research study is [general description of the project]"
+  → Write the actual purpose using protocol information
+
+- "We are asking you to join because you [complete this sentence describing eligibility]"
+  → Complete the sentence with eligibility criteria from protocol
+
+- "[Name of drug/device] is considered investigational..."
+  → Fill in the drug name and explain why it's investigational
+
+- "We plan to have approximately [accrual ceiling #] people"
+  → Fill in the actual number from the protocol
+
+- "If you decide to take part in this study, you will be asked to [Include the following...]"
+  → Generate the actual procedure list based on protocol
+
+**Pattern: Explicit content generation instruction:**
+- "Refer to the 'consent library' for the appropriate language" (in a SPECIFIC section like Pregnancy Risks)
+  → Look up that section in library, use standardized language with protocol values
+
+- "Include the approximate number of subjects to be included in the study"
+  → Generate: "We plan to have approximately 40 people participate..."
+
+- "For each research procedure, describe the reasonably foreseeable risks"
+  → Generate risk descriptions using consent library + protocol data
+
+**Pattern: Bracketed placeholder in otherwise-final text:**
+- "[PI name]" → Replace with actual PI name
+- "[drug name]" → Replace with actual drug name
+- "[accrual ceiling #]" → Replace with actual number
+- Keep surrounding text, only replace the bracketed portion
+
+**How to distinguish DELETE vs REPLACE:**
+- DELETE: "Be concise" - No specific content slot, just style advice
+- REPLACE: "The purpose is [describe purpose]" - Has a content slot to fill
+- DELETE: "If there is randomization, explain this clearly" - Reminder without specific slot
+- REPLACE: "Describe the randomization process" - Expects actual randomization description
+
+**CRITICAL: Risk/side effect instruction blocks are CONTENT-GENERATING:**
+
+These italic instruction blocks tell you to GENERATE CONTENT, not just provide style guidance:
+- "For each research procedure or intervention, describe the reasonably foreseeable risks..." → REPLACE with actual risks from protocol
+- "Risk information should be organized by the intervention..." → This tells you HOW to structure the content you're generating
+- "Physical risks should be described in terms of magnitude and likelihood..." → This tells you to use COMMON/OCCASIONAL/RARE format
+- "If death is a foreseeable outcome..." → REPLACE with the death statement if applicable
+
+When you see a CLUSTER of italic instruction blocks about risks:
+1. The FIRST instruction block should be REPLACED with the actual risk content (drug side effects, procedure risks)
+2. Subsequent instruction blocks that elaborate on formatting can be DELETED after you've followed their guidance
+3. Use INSERT if you need to add substantial formatted content (like drug side effects tables) after an intro paragraph
+
+DO NOT delete all risk instruction blocks without generating content. That leaves the consent with no risk information!
+
+### KEEP - Use for:
+- Section headers: "WHY IS THIS STUDY BEING DONE?", "WHAT ARE THE RISKS?"
+- Required boilerplate: Long paragraphs of standard NIH legal language
+- Signature labels: "Signature of Research Participant", "Date", "Print Name"
+- Content you're uncertain about - let another chunk handle it
+
+## PROCEDURE AND RISK DESCRIPTIONS - USE EXACT LIBRARY LANGUAGE
+
+**CRITICAL: The consent library contains IRB-approved language. You MUST use this language VERBATIM - do NOT paraphrase, rephrase, or reword it.**
+
+When generating procedure or risk content:
+1. Find the matching section in the consent library
+2. Copy the library text EXACTLY as written
+3. Only modify [bracketed placeholders] with protocol-specific values
+4. Include the library section name in the "procedure_library" field
+
+| Protocol mentions | Find in library | Action |
+|-------------------|-----------------|--------|
+| blood draw, blood sample | BLOOD DRAWS | Copy EXACT library text, fill [brackets] |
+| CT scan, imaging | CT SCAN | Copy EXACT library text, fill [brackets] |
+| biopsy, tissue sample | BIOPSY | Copy EXACT library text, fill [brackets] |
+| radiation, rem, mSv | RADIATION | Copy EXACT library text, fill [brackets] with protocol values |
+| pregnancy test, contraception | PREGNANCY | Copy EXACT library text, fill [brackets] |
+| allergic reaction | ALLERGIC REACTION | Copy EXACT library text |
+| infusion reaction | INFUSION REACTION | Copy EXACT library text |
+
+**WRONG (paraphrasing):**
+Library: "Blood draws may cause pain, redness, bruising, or infection where we put the needle."
+Output: "Blood draws may cause pain, redness, bruising, or infection at the needle site." ❌
+
+**CORRECT (verbatim):**
+Library: "Blood draws may cause pain, redness, bruising, or infection where we put the needle."
+Output: "Blood draws may cause pain, redness, bruising, or infection where we put the needle." ✓
+
+## DRUG SIDE EFFECTS - REQUIRED FORMAT
+
+When the protocol contains drug toxicity/adverse event information, you MUST present it using this standardized NIH format. This applies to ANY drug (chemotherapy, immunotherapy, targeted therapy, etc.).
+
+### Where to Find Drug Side Effects in Protocols
+
+Drug toxicity information is typically found in:
+- Pharmaceutical/Drug Information sections (often Section 14.x)
+- Sections titled "Toxicity", "Adverse Events", "Side Effects", "Safety"
+- Look for frequency breakdowns: ">20%", "4-20%", "<3%", "more than 20 out of 100", etc.
+
+### Required Output Format
+
+**CRITICAL: Use this EXACT format structure. The phrasing "In 100 people receiving [drug]..." is standardized NIH language.**
+
+\`\`\`
+Possible Side Effects of [Drug Name]
+
+COMMON, SOME MAY BE SERIOUS
+In 100 people receiving [drug name], more than 20 and up to 100 may have:
+• [side effect where frequency >20%]
+• [side effect where frequency >20%]
+
+OCCASIONAL, SOME MAY BE SERIOUS
+In 100 people receiving [drug name], from 4 to 20 may have:
+• [side effect where frequency 4-20%]
+• [side effect where frequency 4-20%]
+
+RARE, AND SERIOUS
+In 100 people receiving [drug name], 3 or fewer may have:
+• [side effect where frequency <3%]
+• [side effect where frequency <3%]
+\`\`\`
+
+### How to Apply This
+
+1. **Find the drug toxicity section** in the protocol (search for "toxicity", "adverse", or percentage breakdowns)
+2. **Extract side effects by frequency category** from the protocol data
+3. **Convert clinical terminology to patient-friendly language:**
+   - "fatigue" → "tiredness"
+   - "pyrexia" → "fever"
+   - "dyspnea" → "shortness of breath"
+   - "anorexia" → "loss of appetite"
+   - "pruritus" → "itching"
+   - "alopecia" → "hair loss"
+4. **Format using the exact structure above** with the drug name from the protocol
+5. **Use INSERT action** to add this content after the general risk intro block
+
+### When Template Has Risk Instructions But No Drug Side Effects Block
+
+If the template has instruction blocks like:
+- "For each research procedure or intervention, describe the reasonably foreseeable risks..."
+- "Risk information should be organized by the intervention..."
+- "Physical risks should be described in terms of magnitude and likelihood..."
+
+These instructions are telling you to GENERATE the drug side effects content. You should:
+1. REPLACE the first instruction block with a general risk intro
+2. Use INSERT to add the full drug side effects table (formatted as above) after that block
+3. DELETE remaining instruction blocks that were just meta-guidance
+
+### Example
+
+Protocol section 14.1.9 contains:
+\`\`\`
+More than 20% of participants may have:
+• Fatigue
+• Infection
+Between 4 and 20% may have:
+• Anemia
+• Diarrhea
+• Nausea
+Less than 3% may have:
+• Heart failure
+• Colitis
+\`\`\`
+
+Your output should include an INSERT action:
+\`\`\`json
+{
+  "index": 91,
+  "action": "INSERT",
+  "content": "Possible Side Effects of Atezolizumab\\n\\nCOMMON, SOME MAY BE SERIOUS\\nIn 100 people receiving atezolizumab, more than 20 and up to 100 may have:\\n• Tiredness\\n• Infection\\n\\nOCCASIONAL, SOME MAY BE SERIOUS\\nIn 100 people receiving atezolizumab, from 4 to 20 may have:\\n• Anemia which may require a blood transfusion\\n• Diarrhea\\n• Nausea\\n\\nRARE, AND SERIOUS\\nIn 100 people receiving atezolizumab, 3 or fewer may have:\\n• Heart failure\\n• Colitis",
+  "confidence": 9,
+  "reasoning": "Protocol section 14.1.9 contains drug toxicity data organized by frequency - formatted using required NIH structure"
+}
+\`\`\`
+
+## OUTPUT FORMAT
+
+Output a JSON array. Each element:
+{
+  "index": <block number>,
+  "action": "REPLACE" | "DELETE" | "KEEP" | "INSERT",
+  "content": "<generated text>" | null,
+  "confidence": 1-10,
+  "reasoning": "<brief explanation of what instruction you followed>",
+  "exact_quote": "<protocol text used>",
+  "procedure_library": "<SECTION TITLE\\n<exact verbatim quote from that section>>" | null
+}
+
+**Note on INSERT action:**
+- INSERT adds a new paragraph AFTER the specified block
+- The original block is NOT modified
+- Use when substantial content needs to be added (e.g., drug side effects tables)
+
+**IMPORTANT about procedure_library field:**
+- Format: "SECTION TITLE\\n<exact verbatim text from that section>"
+- Example: "BLOOD DRAWS\\nRisks: Blood draws may cause pain, redness, bruising..."
+- The text in "content" should match the library text (with only [brackets] filled in)
+- If not using library language, set to null
+- This allows verification that library language is being used verbatim
+
+## EXAMPLES
+
+**Example 1 - Following an instruction to describe procedures:**
+Input block 65: "If you decide to take part in this study, you will be asked to [Include the following in your description: Describe in plain language, step-by-step what will be done...]"
+
+Output:
+{
+  "index": 65,
+  "action": "REPLACE",
+  "content": "If you decide to take part in this study, you will be asked to:\\n\\n• Have blood drawn at each visit to measure the amount of atezolizumab in your blood\\n• Receive atezolizumab infusions, with timing based on your blood test results\\n• Have CT scans every 9 weeks to check your tumor response\\n• Complete questionnaires about your symptoms and quality of life",
+  "confidence": 9,
+  "reasoning": "Followed instruction to describe procedures step-by-step in plain language",
+  "exact_quote": "Blood samples will be collected at baseline and at each subsequent visit... CT scans will be performed every 9 weeks"
+}
+
+**Example 2 - Following an instruction with library reference (EXACT library language):**
+Input block 97: "Refer to the 'consent library' for the appropriate language that is consistent with your protocol."
+
+Output:
+{
+  "index": 97,
+  "action": "REPLACE",
+  "content": "The effects of atezolizumab on a developing pregnancy or breastfeeding infant are unknown. To reduce the risk of harms, women who are pregnant, planning a pregnancy, or breastfeeding cannot be in studies using atezolizumab.\\n\\nIf you could possibly become pregnant (you have not completed menopause or haven't had surgery that makes it impossible for you to become pregnant) and if you have a partner who is able to father children, a blood pregnancy test will be done. The pregnancy test must be negative for you to stay in the study.\\n\\nYou and your partner must agree to one of the following for the entire study, and for 5 months after your last dose of atezolizumab:\\n\\n• Stop having sex (vaginal intercourse), or\\n• Use a highly effective method of contraception (birth control).",
+  "confidence": 9,
+  "reasoning": "Used EXACT consent library pregnancy language (Unknown risks template), filled in drug name and 5-month duration from protocol",
+  "exact_quote": "Contraceptive use should continue for 5 months after the last dose of atezolizumab",
+  "procedure_library": "PREGNANCY\\nUnknown risks: The effects of [study drug] on a developing pregnancy or breastfeeding infant are unknown. To reduce the risk of harms, women who are pregnant, planning a pregnancy, or breastfeeding cannot be in studies using [study drug].\\n\\nIf you could possibly become pregnant (you have not completed menopause or haven't had surgery that makes it impossible for you to become pregnant) and if you have a partner who is able to father children, a [blood/urine] pregnancy test will be done. The pregnancy test must be negative for you to stay in the study."
+}
+
+**Example 2b - Blood draw risks (EXACT library language):**
+Input block contains instruction to describe blood draw risks.
+
+Output:
+{
+  "index": 92,
+  "action": "REPLACE",
+  "content": "Risks: Blood draws may cause pain, redness, bruising, or infection where we put the needle. Some people might faint, but this is rare. We can put numbing cream on the area, so the needle won't hurt as much.",
+  "confidence": 10,
+  "reasoning": "Used EXACT consent library BLOOD DRAWS risk language - copied verbatim",
+  "exact_quote": "Blood samples will be collected at each visit",
+  "procedure_library": "BLOOD DRAWS\\nRisks: Blood draws may cause pain, redness, bruising, or infection where we put the needle. Some people might faint, but this is rare. We can put numbing cream on the area, so the needle won't hurt as much."
+}
+
+**Example 3 - Filling a placeholder:**
+Input block 88: "We plan to have approximately [accrual ceiling #] people participate in this study at the NIH."
+
+Output:
+{
+  "index": 88,
+  "action": "REPLACE",
+  "content": "We plan to have approximately 40 people participate in this study at the NIH.",
+  "confidence": 10,
+  "reasoning": "Filled placeholder with accrual number from protocol",
+  "exact_quote": "up to 40 participants will be enrolled at the NIH Clinical Center"
+}
+
+**Example 4 - Deleting a conditional section (condition FALSE):**
+Input block 55: "[Use this language if this consent is seeking parental permission for participation of a child:] If the individual being enrolled is a minor..."
+
+Output:
+{
+  "index": 55,
+  "action": "DELETE",
+  "content": null,
+  "confidence": 10,
+  "reasoning": "Cohort is adult-patient, not minors - condition is FALSE"
+}
+
+**Example 5 - Deleting meta-guidance (no content slot):**
+Input block 67: "Be concise; use short sentences and short paragraphs. Bullet points are okay."
+
+Output:
+{
+  "index": 67,
+  "action": "DELETE",
+  "content": null,
+  "confidence": 10,
+  "reasoning": "General writing guidance - no specific content to generate"
+}
+
+**Example 6 - Deleting standalone reminder:**
+Input block 85: "Note: This information should be described here only if more information is needed beyond what has been stated in the Key Information section above."
+
+Output:
+{
+  "index": 85,
+  "action": "DELETE",
+  "content": null,
+  "confidence": 10,
+  "reasoning": "Meta-note for template users, not patient-facing content"
+}
+
+**Example 7 - Keeping a section header:**
+Input block 90: "WHAT ARE THE RISKS AND DISCOMFORTS OF BEING IN THE STUDY?"
+
+Output:
+{
+  "index": 90,
+  "action": "KEEP",
+  "confidence": 10,
+  "reasoning": "Section header - keep as-is"
+}
+
+## CONFIDENCE SCORING
+- 10: Found exact data in protocol, clear instruction to follow
+- 7-9: Found relevant data, instruction is clear
+- 4-6: Partial data found, or instruction somewhat ambiguous
+- 1-3: No relevant data in THIS excerpt - use KEEP (another chunk may have it)
+
+## FINAL REMINDERS
+
+1. **Content-generating instructions → REPLACE** - If the block has a "slot" for content (placeholder, "describe X", "include Y"), FOLLOW the instruction and generate the content
+2. **Meta-guidance about style → DELETE** - If the block is just advice on HOW to write (be concise, use bullet points), delete it
+3. **Use consent library language** for procedures and risks
+4. **Fill in placeholders** with protocol-specific values
+5. **KEEP when uncertain** - another chunk may have the data you need
+6. **DELETE:** coversheet (0-44), false-condition blocks, and pure style guidance`;
 }
 
 /**
- * Check if a value is non-empty
+ * Build user prompt with template blocks
  */
-function hasValue(v) {
-  if (v === null || v === undefined) return false;
-  if (typeof v === "string") return v.trim().length > 0;
-  if (Array.isArray(v)) return v.length > 0;
-  return true;
+export function buildBlockUserPrompt(templateChunk) {
+  const blocksText = templateChunk.blocks
+    .map((b) => {
+      const loc =
+        b.type === "cell"
+          ? `[@${b.index}] ${b.source}/${b.type} (row ${b.row}, col ${b.col})`
+          : `[@${b.index}] ${b.source}/${b.type} (${b.style})`;
+
+      // Include formatting info if available
+      let formattingInfo = "";
+      if (b.runs && b.runs.length > 0) {
+        const formattedRuns = b.runs
+          .map((r, i) => {
+            const fmt = [];
+            if (r.color) fmt.push(`color:"${r.color}"`);
+            if (r.highlight) fmt.push(`highlight:"${r.highlight}"`);
+            if (r.italic) fmt.push("italic");
+            if (r.bold) fmt.push("bold");
+            const fmtStr = fmt.length ? ` {${fmt.join(", ")}}` : "";
+            const preview = r.text.length > 80 ? r.text.slice(0, 80) + "..." : r.text;
+            return `  [${i}]${fmtStr} "${preview.replace(/\n/g, "\\n")}"`;
+          })
+          .join("\n");
+        formattingInfo = `\nFormatting runs:\n${formattedRuns}`;
+      }
+
+      return `${loc}:${formattingInfo}\n${b.text}`;
+    })
+    .join("\n\n---\n\n");
+
+  return `## TEMPLATE BLOCKS TO PROCESS
+
+<template_blocks>
+${blocksText}
+</template_blocks>
+
+Process each block using the formatting guide:
+1. Blocks with ONLY blue COMPLETE text (full sentences) → action: KEEP
+2. Blocks with ONLY blue LABEL text ending with ":" (e.g., "PRINCIPAL INVESTIGATOR:  ") → action: REPLACE with "label: actual content"
+3. Blocks with ONLY italic instructions → action: REPLACE with generated content, OR DELETE if it's redundant with a nearby heading
+4. Blocks with MIXED formatting (blue + italic + yellow) → action: REPLACE
+   - Your replacement content MUST include the blue text verbatim
+   - Your replacement content MUST omit yellow-highlighted text
+   - Your replacement content MUST replace italic instructions with generated content
+5. Yellow highlight text should NEVER appear in your output
+6. Bracketed placeholders like [X] should NEVER appear in your output - find actual info or omit the sentence
+7. Do NOT duplicate heading text by replacing instruction blocks with the same heading that follows`;
 }
 
+// ============= JSON Parsing =============
+
 /**
- * Merge candidates for a single key by highest confidence
- * @param {Array} candidates - All candidates for one key
- * @param {string} fieldType - 'array' or 'string'
- * @returns {*} Merged value
+ * Parse JSON response, handling markdown code blocks
  */
-function mergeCandidates(candidates, fieldType) {
-  if (!candidates || candidates.length === 0) {
-    return fieldType === "array" ? [] : "";
+function parseJsonResponse(response) {
+  let jsonStr = response.trim();
+  if (jsonStr.startsWith("```json")) jsonStr = jsonStr.slice(7);
+  else if (jsonStr.startsWith("```")) jsonStr = jsonStr.slice(3);
+  if (jsonStr.endsWith("```")) jsonStr = jsonStr.slice(0, -3);
+  jsonStr = jsonStr.trim();
+
+  try {
+    const data = JSON.parse(jsonStr);
+    return { success: true, data, error: null };
+  } catch (e) {
+    return { success: false, data: [], error: `JSON parse error: ${e.message}` };
   }
+}
 
-  // Filter out zero-confidence candidates with empty values
-  const validCandidates = candidates.filter((c) => c.confidence > 0 || hasValue(c.value));
+// ============= Processing Functions =============
 
-  if (validCandidates.length === 0) {
-    return fieldType === "array" ? [] : "";
+/**
+ * Process a single protocol chunk × template chunk pair with retry
+ */
+async function processChunkPair(
+  protocolChunk,
+  templateChunk,
+  libraryText,
+  totalChunks,
+  model,
+  runModelFn,
+  maxRetries = 2
+) {
+  const systemPrompt = buildBlockSystemPrompt(protocolChunk, libraryText, totalChunks);
+  const messages = [{ role: "user", content: [{ text: buildBlockUserPrompt(templateChunk) }] }];
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await runModelFn({
+        model,
+        messages,
+        system: systemPrompt,
+        thoughtBudget: 10000,
+        stream: false,
+      });
+
+      const parsed = parseJsonResponse(response);
+      if (parsed.success) {
+        return { candidates: Array.isArray(parsed.data) ? parsed.data : [], retries: attempt };
+      }
+
+      // JSON retry with conversation history
+      if (attempt < maxRetries) {
+        messages.push({ role: "assistant", content: [{ text: response }] });
+        messages.push({
+          role: "user",
+          content: [
+            {
+              text: `Your response had a JSON error: ${parsed.error}\n\nPlease try again. Output ONLY a valid JSON array.`,
+            },
+          ],
+        });
+      }
+    } catch (error) {
+      console.error(`Error processing P${protocolChunk.index}×T${templateChunk.index}:`, error);
+      if (attempt === maxRetries) return { candidates: [], error: error.message };
+    }
   }
+  return { candidates: [], error: "Max retries exceeded" };
+}
 
-  if (fieldType === "array") {
-    // For arrays: collect unique elements from high-confidence candidates
-    const elementMap = new Map();
+// ============= Merging =============
 
-    for (const candidate of validCandidates) {
-      const elements = Array.isArray(candidate.value) ? candidate.value : [candidate.value];
-      for (const element of elements) {
-        if (!hasValue(element)) continue;
-        const key = typeof element === "string" ? element : JSON.stringify(element);
-        const existing = elementMap.get(key);
-        if (!existing || candidate.confidence > existing.maxConfidence) {
-          elementMap.set(key, { value: element, maxConfidence: candidate.confidence });
+/**
+ * Merge candidates from all n × m results by selecting highest confidence per block
+ */
+function mergeByConfidence(allResults, blocks = []) {
+  const byIndex = new Map();
+  const insertsByIndex = new Map();  // Separate map for INSERT actions
+
+  for (const result of allResults) {
+    for (const candidate of result.candidates || []) {
+      // Handle INSERT actions separately - they accumulate rather than replace
+      if (candidate.action === "INSERT" && candidate.content) {
+        const existing = insertsByIndex.get(candidate.index);
+        if (!existing) {
+          insertsByIndex.set(candidate.index, candidate);
+        } else if (candidate.confidence > existing.confidence) {
+          // Higher confidence INSERT wins
+          insertsByIndex.set(candidate.index, candidate);
+        } else if (candidate.confidence === existing.confidence && candidate.content !== existing.content) {
+          // Same confidence, different content - combine them
+          const combined = {
+            ...existing,
+            content: existing.content + "\n\n" + candidate.content,
+            confidence: existing.confidence,
+          };
+          insertsByIndex.set(candidate.index, combined);
         }
+        continue;
+      }
+
+      const existing = byIndex.get(candidate.index);
+
+      // Skip low-confidence KEEP
+      if (candidate.action === "KEEP" && candidate.confidence < 5) continue;
+
+      if (!existing) {
+        byIndex.set(candidate.index, candidate);
+      } else if ((candidate.action === "REPLACE" || candidate.action === "APPEND") && candidate.content) {
+        // REPLACE/APPEND with content wins over KEEP
+        if (existing.action === "KEEP" || candidate.confidence > existing.confidence) {
+          byIndex.set(candidate.index, candidate);
+        }
+        // If both are APPEND, combine the content
+        if (existing.action === "APPEND" && candidate.action === "APPEND" && candidate.content) {
+          const combined = {
+            ...existing,
+            content: existing.content + candidate.content,
+            confidence: Math.max(existing.confidence, candidate.confidence),
+          };
+          byIndex.set(candidate.index, combined);
+        }
+      } else if (candidate.action === "DELETE" && existing.action === "KEEP") {
+        byIndex.set(candidate.index, candidate);
+      } else if (candidate.confidence > existing.confidence && candidate.action === existing.action) {
+        byIndex.set(candidate.index, candidate);
+      }
+    }
+  }
+
+  // Build replacement map
+  const replacements = {};
+  for (const [index, candidate] of byIndex) {
+    if (candidate.action === "DELETE") {
+      replacements[`@${index}`] = null;
+    } else if (candidate.action === "REPLACE") {
+      replacements[`@${index}`] = candidate.content;
+    } else if (candidate.action === "APPEND") {
+      // For APPEND, get original block text and add the new content
+      const originalBlock = blocks.find((b) => b.index === index);
+      const originalText = originalBlock ? originalBlock.text : "";
+      replacements[`@${index}`] = originalText + candidate.content;
+    }
+  }
+
+  // Add INSERT actions to replacements map
+  for (const [index, candidate] of insertsByIndex) {
+    replacements[`INSERT@${index}`] = candidate.content;
+    // Also add to candidateMap for stats tracking
+    byIndex.set(`INSERT@${index}`, candidate);
+  }
+
+  return { replacements, candidateMap: byIndex };
+}
+
+// ============= Concurrency =============
+
+/**
+ * Run tasks with limited concurrency
+ */
+async function runWithConcurrency(tasks, maxConcurrent) {
+  const results = [];
+  const executing = new Set();
+
+  for (const task of tasks) {
+    const promise = task().then((result) => {
+      executing.delete(promise);
+      return result;
+    });
+    executing.add(promise);
+    results.push(promise);
+
+    if (executing.size >= maxConcurrent) {
+      await Promise.race(executing);
+    }
+  }
+
+  return Promise.all(results);
+}
+
+// ============= Main Orchestration =============
+
+/**
+ * Run block-based consent form generation
+ */
+async function runBlockBasedGeneration(
+  templateBuffer,
+  protocolText,
+  libraryText,
+  model,
+  runModelFn,
+  onProgress
+) {
+  // 1. Extract template blocks with formatting info
+  onProgress?.({ status: "extracting", message: "Extracting template blocks with formatting..." });
+  const { blocks } = await docxExtractTextBlocks(templateBuffer, { includeFormatting: true });
+
+  // 2. Chunk protocol and template
+  const protocolChunks = chunkProtocol(protocolText);
+  const templateChunks = chunkTemplateBlocks(blocks);
+  const totalCombinations = protocolChunks.length * templateChunks.length;
+
+  onProgress?.({
+    status: "chunked",
+    protocolChunks: protocolChunks.length,
+    templateChunks: templateChunks.length,
+    totalCombinations,
+    completed: 0,
+    total: totalCombinations,
+  });
+
+  // 3. Phase 1: Prime cache for each protocol chunk
+  onProgress?.({ status: "priming", completed: 0, total: protocolChunks.length });
+
+  const primingResults = await runWithConcurrency(
+    protocolChunks.map(
+      (pChunk) => () =>
+        processChunkPair(
+          pChunk,
+          templateChunks[0],
+          libraryText,
+          protocolChunks.length,
+          model,
+          runModelFn
+        )
+    ),
+    MAX_CONCURRENT_REQUESTS
+  );
+
+  // 4. Phase 2: Process remaining combinations
+  const allResults = [...primingResults];
+
+  if (templateChunks.length > 1) {
+    const remainingTasks = [];
+    for (const pChunk of protocolChunks) {
+      for (const tChunk of templateChunks.slice(1)) {
+        remainingTasks.push(() =>
+          processChunkPair(pChunk, tChunk, libraryText, protocolChunks.length, model, runModelFn)
+        );
       }
     }
 
-    // Return elements with confidence >= 3, sorted by confidence
-    return Array.from(elementMap.values())
-      .filter((e) => e.maxConfidence >= 3)
-      .sort((a, b) => b.maxConfidence - a.maxConfidence)
-      .map((e) => e.value);
-  } else {
-    // For strings: take highest confidence candidate
-    const best = validCandidates.reduce((a, b) => (a.confidence > b.confidence ? a : b));
-    return best.value;
-  }
-}
+    let completed = primingResults.length;
+    const trackingTasks = remainingTasks.map((task) => async () => {
+      const result = await task();
+      completed++;
+      onProgress?.({ status: "processing", completed, total: totalCombinations });
+      return result;
+    });
 
-/**
- * Merge all extraction candidates into final result
- * @param {Map} allCandidates - All candidates by key
- * @param {Object} schema - Original schema
- * @returns {Object} Final merged JSON object
- */
-function mergeAllExtractions(allCandidates, schema) {
-  const result = {};
-  const properties = schema.properties || {};
-
-  for (const [key, prop] of Object.entries(properties)) {
-    const candidates = allCandidates.get(key) || [];
-    const fieldType = prop.type === "array" ? "array" : "string";
-    result[key] = mergeCandidates(candidates, fieldType);
+    const remainingResults = await runWithConcurrency(trackingTasks, MAX_CONCURRENT_REQUESTS);
+    allResults.push(...remainingResults);
   }
 
-  return result;
-}
+  // 5. Merge by confidence
+  onProgress?.({ status: "merging", completed: totalCombinations, total: totalCombinations });
+  const { replacements, candidateMap } = mergeByConfidence(allResults, blocks);
 
-/**
- * Main chunked extraction orchestration (fully parallel)
- * @param {string} inputText - Full document text
- * @param {Object} schema - JSON schema
- * @param {Object|null} procedureLibrary - Procedure library (null for non-NIH-CC templates)
- * @param {string} model - Model ID
- * @param {Function} runModelFn - The runModel function
- * @param {Function} onProgress - Progress callback
- * @returns {Promise<Object>} Extracted and merged data
- */
-async function runChunkedExtraction(inputText, schema, procedureLibrary, model, runModelFn, onProgress) {
-  const chunks = chunkDocument(inputText);
-  const keyGroups = createKeyGroupsWithSchema(schema, KEY_GROUPS);
-  const allCandidates = new Map();
-  const totalChunks = chunks.length;
-  const totalTasks = chunks.length * keyGroups.length;
-  let failedTasks = 0;
+  // 6. Apply replacements
+  onProgress?.({ status: "applying", message: "Generating consent document..." });
+  console.log("=== DOCX REPLACEMENTS ===");
+  console.log("Total replacements:", Object.keys(replacements).length);
+  console.log("Replacements JSON:", JSON.stringify(replacements, null, 2));
+  const outputBuffer = await docxReplace(templateBuffer, replacements);
 
-  // Build all system prompts upfront
-  const chunkPrompts = chunks.map((chunk) => ({
-    chunk,
-    systemPrompt: buildCacheableSystemPrompt(chunk, procedureLibrary, totalChunks),
-  }));
+  // 7. Calculate stats
+  const deleteCount = Object.values(replacements).filter((v) => v === null).length;
+  const replaceCount = Object.keys(replacements).length - deleteCount;
+  const confidences = Array.from(candidateMap.values())
+    .map((c) => c.confidence)
+    .filter((c) => typeof c === "number" && !isNaN(c));
+  const avgConfidence =
+    confidences.length > 0
+      ? (confidences.reduce((a, b) => a + b, 0) / confidences.length).toFixed(1)
+      : 0;
 
-  // PHASE 1: Prime ALL caches in parallel
-  onProgress?.({
-    status: "priming",
-    currentChunk: 0,
-    totalChunks,
-    completedTasks: 0,
-    totalTasks,
-    failedTasks: 0,
-  });
+  onProgress?.({ status: "completed" });
 
-  await Promise.all(
-    chunkPrompts.map(({ systemPrompt }) => primeCacheForChunk(systemPrompt, model, runModelFn))
-  );
-
-  // PHASE 2: Run ALL extractions in parallel (chunks × keyGroups)
-  onProgress?.({
-    status: "extracting",
-    currentChunk: 0,
-    totalChunks,
-    completedTasks: 0,
-    totalTasks,
-    failedTasks: 0,
-  });
-
-  const allTasks = [];
-  for (const { chunk, systemPrompt } of chunkPrompts) {
-    for (const keyGroup of keyGroups) {
-      allTasks.push(
-        runExtractionTask(keyGroup, systemPrompt, model, runModelFn, chunk.index).catch((error) => {
-          console.error(`Extraction failed for chunk ${chunk.index}, group ${keyGroup.index}:`, error);
-          failedTasks++;
-          // Return empty candidates on failure
-          return keyGroup.keys.map((key) => ({
-            key,
-            value: keyGroup.schema.properties?.[key]?.type === "array" ? [] : "",
-            exact_quote: "",
-            confidence: 0,
-            chunkIndex: chunk.index,
-            keyGroupIndex: keyGroup.index,
-            error: error.message,
-          }));
-        })
-      );
-    }
-  }
-
-  const results = await Promise.all(allTasks);
-
-  // Collect all candidates
-  for (const candidates of results) {
-    for (const c of candidates) {
-      if (!allCandidates.has(c.key)) allCandidates.set(c.key, []);
-      allCandidates.get(c.key).push(c);
-    }
-  }
-
-  // PHASE 3: Merge all candidates
-  onProgress?.({
-    status: "merging",
-    currentChunk: totalChunks,
-    totalChunks,
-    completedTasks: totalTasks,
-    totalTasks,
-    failedTasks,
-  });
-
-  const mergedData = mergeAllExtractions(allCandidates, schema);
-
-  onProgress?.({
-    status: "completed",
-    currentChunk: totalChunks,
-    totalChunks,
-    completedTasks: totalTasks,
-    totalTasks,
-    failedTasks,
-  });
-
-  return mergedData;
+  return {
+    outputBuffer,
+    replacements,
+    stats: {
+      protocolChunks: protocolChunks.length,
+      templateChunks: templateChunks.length,
+      totalCombinations,
+      totalBlocks: blocks.length,
+      deleteCount,
+      replaceCount,
+      avgConfidence,
+    },
+  };
 }
 
 // ============= Main Component =============
@@ -488,26 +928,24 @@ export default function Page() {
     templateSourceType: "predefined",
     selectedPredefinedTemplate: "",
     customTemplateFile: null,
-    customPrompt: "",
+    customLibraryUrl: "",
 
     // Job results - each job stores complete config for easy retry
     generatedDocuments: {},
-    // Structure: { [jobId]: {
-    //   status, blob, error,
-    //   config: { inputFile, templateFile, prompt, model, displayInfo }
-    // }}
 
     // Template cache - fetched templates stored as Files
     templateCache: {},
 
-    // Chunked extraction progress tracking
+    // Library cache - fetched library text
+    libraryCache: {},
+
+    // Extraction progress tracking
     extractionProgress: {
-      status: "idle", // 'idle' | 'priming' | 'extracting' | 'merging' | 'completed' | 'error'
-      currentChunk: 0,
-      totalChunks: 0,
-      completedTasks: 0,
-      totalTasks: 0,
-      failedTasks: 0,
+      status: "idle", // 'idle' | 'extracting' | 'priming' | 'processing' | 'merging' | 'applying' | 'completed' | 'error'
+      completed: 0,
+      total: 0,
+      protocolChunks: 0,
+      templateChunks: 0,
     },
 
     // Timestamps
@@ -582,11 +1020,26 @@ export default function Page() {
     return file;
   }
 
+  async function fetchAndCacheLibrary(templateId) {
+    const config = templateConfigs[templateId];
+    if (!config.libraryUrl) return "";
+
+    if (store.libraryCache[config.libraryUrl]) {
+      return store.libraryCache[config.libraryUrl];
+    }
+
+    const response = await fetch(config.libraryUrl);
+    const text = await response.text();
+    setStore("libraryCache", config.libraryUrl, text);
+    return text;
+  }
+
   // Pre-fetch templates when selected
   createEffect(async () => {
     for (const templateId of store.selectedTemplates) {
       try {
         await fetchAndCacheTemplate(templateId);
+        await fetchAndCacheLibrary(templateId);
       } catch (error) {
         console.error(`Failed to fetch template ${templateId}:`, error);
       }
@@ -598,11 +1051,9 @@ export default function Page() {
     if (store.selectedPredefinedTemplate && store.templateSourceType === "predefined") {
       try {
         await fetchAndCacheTemplate(store.selectedPredefinedTemplate);
-        const prompt = await getPrompt(store.selectedPredefinedTemplate);
-        setStore("customPrompt", prompt);
+        await fetchAndCacheLibrary(store.selectedPredefinedTemplate);
       } catch (error) {
-        console.error("Failed to load template or prompt:", error);
-        setStore("customPrompt", "");
+        console.error("Failed to load template:", error);
       }
     }
   });
@@ -625,23 +1076,15 @@ export default function Page() {
 
     const hasValidAdvancedOptions =
       store.advancedOptionsOpen &&
-      ((store.templateSourceType === "predefined" &&
-        store.selectedPredefinedTemplate &&
-        store.customPrompt.trim()) ||
-        (store.templateSourceType === "custom" &&
-          store.customTemplateFile &&
-          store.customPrompt.trim()));
+      ((store.templateSourceType === "predefined" && store.selectedPredefinedTemplate) ||
+        (store.templateSourceType === "custom" && store.customTemplateFile));
 
     return !(hasBasicTemplates || hasValidAdvancedOptions);
   });
 
   // ============= Job Processing =============
 
-  // Threshold for using chunked extraction (30K characters)
-  const CHUNKED_EXTRACTION_THRESHOLD = 30000;
-
   async function processJob(jobId, jobConfig) {
-    // 1. Set job status to processing
     setStore("generatedDocuments", jobId, {
       status: "processing",
       blob: null,
@@ -649,83 +1092,52 @@ export default function Page() {
       config: jobConfig,
     });
 
-    // Reset extraction progress
     setStore("extractionProgress", {
       status: "idle",
-      currentChunk: 0,
-      totalChunks: 0,
-      completedTasks: 0,
-      totalTasks: 0,
-      failedTasks: 0,
+      completed: 0,
+      total: 0,
+      protocolChunks: 0,
+      templateChunks: 0,
     });
 
     await saveSession();
 
     try {
-      let data;
+      // Load template buffer
+      const templateBuffer = await jobConfig.templateFile.arrayBuffer();
 
-      // Determine if chunked extraction is needed based on document size
-      const useChunkedExtraction = jobConfig.inputText.length > CHUNKED_EXTRACTION_THRESHOLD;
-
-      if (useChunkedExtraction) {
-        // Get template config to determine schema and procedure library URLs
-        const templateConfig = jobConfig.templateId ? templateConfigs[jobConfig.templateId] : null;
-
-        if (!templateConfig?.schemaUrl) {
-          throw new Error(`No schema URL found for template: ${jobConfig.templateId}`);
+      // Load consent library if URL provided
+      let libraryText = "";
+      if (jobConfig.libraryUrl) {
+        if (store.libraryCache[jobConfig.libraryUrl]) {
+          libraryText = store.libraryCache[jobConfig.libraryUrl];
+        } else {
+          const libraryResponse = await fetch(jobConfig.libraryUrl);
+          libraryText = await libraryResponse.text();
+          setStore("libraryCache", jobConfig.libraryUrl, libraryText);
         }
-
-        // Load schema and procedure library based on template config
-        const [schema, procedureLibrary] = await Promise.all([
-          fetch(templateConfig.schemaUrl).then((r) => r.json()),
-          templateConfig.procedureLibraryUrl
-            ? fetch(templateConfig.procedureLibraryUrl).then((r) => r.json())
-            : null,
-        ]);
-
-        // Run chunked extraction with progress tracking
-        data = await runChunkedExtraction(
-          jobConfig.inputText,
-          schema,
-          procedureLibrary, // null for templates without procedure library
-          jobConfig.model,
-          runModel,
-          (progress) => {
-            setStore("extractionProgress", progress);
-            saveSession();
-          }
-        );
-      } else {
-        // Use existing single-call approach for smaller documents
-        const systemPrompt =
-          "Please process the ENTIRE document according to your instructions and your role: <document>{{document}}</document>. The document may be quite lengthy, so take your time. After reading the document and user instructions, provide your response below, without preamble. Begin your detailed extraction and JSON generation as soon as you receive further instructions from the user.";
-
-        const params = {
-          model: jobConfig.model,
-          messages: [
-            {
-              role: "user",
-              content: [{ text: jobConfig.prompt.replace("{{document}}", "see above") }],
-            },
-          ],
-          system: systemPrompt.replace("{{document}}", jobConfig.inputText),
-          thoughtBudget: 24_000,
-          stream: false,
-        };
-
-        const output = await runModel(params);
-        const jsonOutput =
-          output.match(/```json\s*([\s\S]*?)\s*```/)?.[1] ||
-          output.match(/{\s*[\s\S]*?}/)?.[0] ||
-          "{}";
-
-        data = yaml.parse(jsonOutput);
       }
 
-      // 3. Update job status to completed with JSON data
+      // Run block-based generation
+      const result = await runBlockBasedGeneration(
+        templateBuffer,
+        jobConfig.inputText,
+        libraryText,
+        jobConfig.model,
+        runModel,
+        (progress) => {
+          setStore("extractionProgress", progress);
+        }
+      );
+
+      // Create blob from output buffer
+      const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const blob = new Blob([result.outputBuffer], { type });
+
       setStore("generatedDocuments", jobId, {
         status: "completed",
-        data,
+        blob,
+        stats: result.stats,
         error: null,
         config: jobConfig,
       });
@@ -733,7 +1145,7 @@ export default function Page() {
       console.error(`Error processing job ${jobId}:`, error);
       setStore("generatedDocuments", jobId, {
         status: "error",
-        data: null,
+        blob: null,
         error: error.message,
         config: jobConfig,
       });
@@ -748,36 +1160,6 @@ export default function Page() {
     if (!job?.config) return;
 
     await processJob(jobId, job.config);
-  }
-
-  async function generateDocument(data, templateFile) {
-    try {
-      const templateBuffer = await templateFile.arrayBuffer();
-      const cmdDelimiter = ["{{", "}}"];
-
-      // Try to ensure variables in template are present in data
-      const commands = await listCommands(templateBuffer, cmdDelimiter);
-
-      const variables = commands
-        .filter((c) => ["INS", "FOR"].includes(c.type))
-        .map((c) => ({
-          type: c.type === "FOR" ? "array" : "string", 
-          name: c.code.split(" ").pop() 
-        }))
-        .filter((c) => !c.name.startsWith("$"));
-
-      for (const variable of variables) {
-        const defaultValue = variable.type === "array" ? [] : "";
-        data[variable.name] ||= defaultValue;
-      }
-
-      const buffer = await createReport({ template: templateBuffer, data, cmdDelimiter });
-      const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      return new Blob([buffer], { type });
-    } catch (error) {
-      console.error("Error generating document:", error);
-      throw error;
-    }
   }
 
   // ============= Submit Handler =============
@@ -806,14 +1188,12 @@ export default function Page() {
         continue;
       }
 
-      const prompt = await getPrompt(templateId);
-
       const jobConfig = {
         inputFile: store.inputFile,
         inputText,
         templateFile,
-        templateId, // Used to determine if procedure library should be loaded
-        prompt,
+        templateId,
+        libraryUrl: config.libraryUrl,
         model: store.model,
         displayInfo: {
           prefix: config.prefix || "",
@@ -827,11 +1207,7 @@ export default function Page() {
 
     // Create job for advanced options if configured
     if (store.advancedOptionsOpen) {
-      if (
-        store.templateSourceType === "predefined" &&
-        store.selectedPredefinedTemplate &&
-        store.customPrompt.trim()
-      ) {
+      if (store.templateSourceType === "predefined" && store.selectedPredefinedTemplate) {
         const jobId = crypto.randomUUID();
         const config = templateConfigs[store.selectedPredefinedTemplate];
         const templateFile = store.templateCache[store.selectedPredefinedTemplate];
@@ -841,8 +1217,8 @@ export default function Page() {
             inputFile: store.inputFile,
             inputText,
             templateFile,
-            templateId: store.selectedPredefinedTemplate, // Used to determine if procedure library should be loaded
-            prompt: store.customPrompt,
+            templateId: store.selectedPredefinedTemplate,
+            libraryUrl: config.libraryUrl,
             model: store.model,
             displayInfo: {
               prefix: config.prefix || "",
@@ -853,19 +1229,15 @@ export default function Page() {
 
           jobs.push({ jobId, jobConfig });
         }
-      } else if (
-        store.templateSourceType === "custom" &&
-        store.customTemplateFile &&
-        store.customPrompt.trim()
-      ) {
+      } else if (store.templateSourceType === "custom" && store.customTemplateFile) {
         const jobId = crypto.randomUUID();
 
         const jobConfig = {
           inputFile: store.inputFile,
           inputText,
           templateFile: store.customTemplateFile,
-          templateId: null, // Custom templates don't use procedure library
-          prompt: store.customPrompt,
+          templateId: null,
+          libraryUrl: store.customLibraryUrl || null,
           model: store.model,
           displayInfo: {
             prefix: "Custom",
@@ -917,23 +1289,15 @@ export default function Page() {
 
   async function downloadJob(jobId) {
     const job = store.generatedDocuments[jobId];
-    if (!job?.data || job.status !== "completed") return;
+    if (!job?.blob || job.status !== "completed") return;
 
-    try {
-      // Generate document on-demand
-      const blob = await generateDocument(unwrap(job.data), job.config.templateFile);
+    // Create timestamp for filename
+    const timestamp = createTimestamp();
+    const baseFilename = job.config.displayInfo.filename;
+    const filename = baseFilename.replace(".docx", `-${timestamp}.docx`);
 
-      // Create timestamp for filename
-      const timestamp = createTimestamp();
-      const baseFilename = job.config.displayInfo.filename;
-      const filename = baseFilename.replace(".docx", `-${timestamp}.docx`);
-
-      // Trigger download
-      downloadBlob(filename, blob);
-    } catch (error) {
-      console.error(`Error downloading job ${jobId}:`, error);
-      // Could add user notification here
-    }
+    // Trigger download
+    downloadBlob(filename, job.blob);
   }
 
   function downloadAll() {
@@ -1102,48 +1466,15 @@ export default function Page() {
                             accept=".docx"
                             class="form-control form-control-sm mb-2"
                           />
+                          <label class="form-label">Consent Library URL (optional)</label>
+                          <input
+                            type="text"
+                            class="form-control form-control-sm mb-2"
+                            placeholder="/templates/nih-cc/consent-library.txt"
+                            value=${() => store.customLibraryUrl}
+                            onInput=${(e) => setStore("customLibraryUrl", e.target.value)}
+                          />
                         <//>
-
-                        <!-- Custom Prompt -->
-                        <div class="mb-2">
-                          <${ClassToggle}
-                            class="position-relative"
-                            activeClass="show"
-                            event="hover"
-                          >
-                            <label
-                              class="form-label"
-                              classList=${() => ({
-                                required:
-                                  store.selectedPredefinedTemplate || store.customTemplateFile,
-                              })}
-                              toggle
-                            >
-                              Custom Prompt
-                            </label>
-                            <img
-                              class="ms-1"
-                              src="/assets/images/icon-circle-info.svg"
-                              alt="Info"
-                              toggle
-                            />
-                            <div
-                              class="tooltip shadow p-1 position-absolute top-100 start-0 p-2 bg-white border rounded w-50 text-muted text-center"
-                            >
-                              Use this field to provide your own instructions for generating a form.
-                              The system will follow your prompt instead of a predefined template.
-                            </div>
-                          <//>
-                        </div>
-                        <textarea
-                          class="form-control form-control-sm resize-vertical"
-                          id="systemPrompt"
-                          name="systemPrompt"
-                          rows="8"
-                          placeholder="Enter a custom prompt to generate your form."
-                          value=${() => store.customPrompt}
-                          onInput=${(e) => setStore("customPrompt", e.target.value)}
-                        />
                       </div>
                     </details>
                   <//>
@@ -1173,15 +1504,18 @@ export default function Page() {
                         when=${allJobsProcessed}
                         fallback=${() => {
                           const progress = store.extractionProgress;
-                          if (progress.status === "idle" || progress.totalTasks === 0) {
+                          if (progress.status === "idle" || progress.total === 0) {
                             return "We are generating your forms now. This may take a few moments.";
                           }
                           const statusText = {
-                            priming: `Priming cache for chunk ${progress.currentChunk + 1} of ${progress.totalChunks}...`,
-                            extracting: `Extracting fields (chunk ${progress.currentChunk + 1}/${progress.totalChunks}, ${progress.completedTasks}/${progress.totalTasks} tasks)...`,
-                            merging: "Merging extraction results...",
-                            completed: "Extraction complete.",
-                            error: "An error occurred during extraction.",
+                            extracting: "Extracting template blocks...",
+                            chunked: `Preparing ${progress.protocolChunks} protocol chunks × ${progress.templateChunks} template chunks...`,
+                            priming: `Priming cache (${progress.completed}/${progress.total})...`,
+                            processing: `Processing combinations (${progress.completed}/${progress.total})...`,
+                            merging: "Merging results by confidence...",
+                            applying: "Generating consent document...",
+                            completed: "Generation complete.",
+                            error: "An error occurred during generation.",
                           };
                           return statusText[progress.status] || "Processing...";
                         }}
@@ -1189,16 +1523,17 @@ export default function Page() {
                         All processing is complete. The generated forms are available for download.
                       <//>
                     </div>
-                    <!-- Progress bar for chunked extraction -->
-                    <${Show} when=${() => !allJobsProcessed() && store.extractionProgress.totalTasks > 0}>
+                    <!-- Progress bar -->
+                    <${Show} when=${() => !allJobsProcessed() && store.extractionProgress.total > 0}>
                       <div class="progress" style="height: 6px;">
                         <div
                           class="progress-bar"
                           role="progressbar"
-                          style=${() => `width: ${Math.round((store.extractionProgress.completedTasks / store.extractionProgress.totalTasks) * 100)}%`}
-                          aria-valuenow=${() => store.extractionProgress.completedTasks}
+                          style=${() =>
+                            `width: ${Math.round((store.extractionProgress.completed / store.extractionProgress.total) * 100)}%`}
+                          aria-valuenow=${() => store.extractionProgress.completed}
                           aria-valuemin="0"
-                          aria-valuemax=${() => store.extractionProgress.totalTasks}
+                          aria-valuemax=${() => store.extractionProgress.total}
                         ></div>
                       </div>
                     <//>
@@ -1220,6 +1555,13 @@ export default function Page() {
                               </div>
                               <div class="small text-muted">
                                 ${() => job().config?.displayInfo?.filename || "document.docx"}
+                                <${Show} when=${() => job().stats}>
+                                  <span class="ms-2">
+                                    (${() => job().stats?.replaceCount || 0} replaced,
+                                    ${() => job().stats?.deleteCount || 0} deleted, confidence:
+                                    ${() => job().stats?.avgConfidence || 0})
+                                  </span>
+                                <//>
                               </div>
                             </div>
                             <${Show} when=${() => job()?.status === "processing"}>
