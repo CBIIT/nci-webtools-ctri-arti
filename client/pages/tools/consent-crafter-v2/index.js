@@ -1,3 +1,26 @@
+/**
+ * Consent Crafter v2 - Block-based consent form generation
+ *
+ * PURPOSE: Clinical research requires informed consent documents that explain study procedures,
+ * risks, and benefits to participants. Creating these documents is time-consuming because
+ * researchers must manually extract information from lengthy protocol documents and translate
+ * it into patient-friendly language using standardized NIH templates.
+ *
+ * This tool automates that process: upload a protocol, select consent templates, and receive
+ * completed consent documents with protocol-specific information filled in.
+ *
+ * HOW IT WORKS:
+ * 1. Protocol is chunked into overlapping segments (handles long documents)
+ * 2. Template blocks are extracted with formatting metadata (blue=required, italic=instructions)
+ * 3. Each protocol chunk × template chunk pair is processed by AI in parallel
+ * 4. Results are merged by confidence score (highest confidence wins per block)
+ * 5. Final document is generated with replacements applied
+ *
+ * This file is organized with #region/#endregion markers for code folding.
+ * To list all regions: grep -n "^// #region" index.js
+ */
+
+// #region Imports
 import { createEffect, createMemo, createResource, For, Show } from "solid-js";
 import html from "solid-js/html";
 
@@ -5,7 +28,6 @@ import { openDB } from "idb";
 import { createStore, reconcile, unwrap } from "solid-js/store";
 
 import { AlertContainer } from "../../../components/alert.js";
-import ClassToggle from "../../../components/class-toggle.js";
 import FileInput from "../../../components/file-input.js";
 import Tooltip from "../../../components/tooltip.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
@@ -15,14 +37,20 @@ import { createTimestamp, downloadBlob } from "../../../utils/files.js";
 import { parseDocument } from "../../../utils/parsers.js";
 
 import { getTemplateConfigsByCategory, templateConfigs } from "./config.js";
+// #endregion
 
-// ============= Constants =============
+// #region Constants
+// Tuning parameters for chunking strategy. Protocol chunks overlap to avoid losing context
+// at boundaries. Template chunks are sized to fit within model context limits.
 const PROTOCOL_CHUNK_SIZE = 20000; // ~20KB per protocol chunk
 const PROTOCOL_OVERLAP = 2000; // 2KB overlap
 const TEMPLATE_CHUNK_SIZE = 40; // 40 blocks per template chunk
 const MAX_CONCURRENT_REQUESTS = 20; // Limit parallel API calls
+// #endregion
 
-// ============= Database Layer =============
+// #region Database
+// Sessions are stored in IndexedDB, scoped by user email. This allows users to resume
+// interrupted work and retry failed jobs without re-uploading documents.
 async function getDatabase(userEmail = "anonymous") {
   const userName = userEmail
     .toLowerCase()
@@ -40,8 +68,12 @@ async function getDatabase(userEmail = "anonymous") {
     },
   });
 }
+// #endregion
 
-// ============= Chunking Functions =============
+// #region Chunking
+// Protocols can be 100+ pages. Templates can have 200+ blocks. Processing everything at once
+// would exceed model context limits. Instead, we chunk both and process all combinations,
+// then merge results. Overlap ensures information at chunk boundaries isn't lost.
 
 /**
  * Chunk the protocol text into overlapping segments
@@ -82,11 +114,16 @@ function chunkTemplateBlocks(blocks, chunkSize = TEMPLATE_CHUNK_SIZE) {
   }
   return chunks;
 }
+// #endregion
 
-// ============= Prompt Building =============
+// #region Prompts
+// The AI needs detailed instructions to correctly interpret template formatting conventions.
+// Blue text = NIH-required language (keep verbatim), yellow = labels to remove, italic = instructions
+// to follow. The consent library provides IRB-approved language for common procedures/risks.
 
 /**
- * Build the system prompt for block-based consent generation
+ * Build the system prompt for block-based consent generation.
+ * Contains formatting guide, action definitions (KEEP/REPLACE/DELETE/INSERT), and examples.
  */
 export function buildBlockSystemPrompt(protocolChunk, libraryText, totalChunks, cohortType = "adult-patient") {
   return `You are a consent form generator. Your job is to FOLLOW the instructions in each template block to generate patient-friendly consent language.
@@ -376,44 +413,52 @@ In 100 people receiving [drug name], 3 or fewer may have:
 4. **Format using the exact structure above** with the drug name from the protocol
 5. **Use INSERT action** to add this content after the general risk intro block
 
-### When Template Has Risk Instructions But No Drug Side Effects Block
+### CRITICAL: Risk Instruction Blocks Require Content Generation
 
-If the template has instruction blocks like:
+When you see template instruction blocks about risks like:
 - "For each research procedure or intervention, describe the reasonably foreseeable risks..."
 - "Risk information should be organized by the intervention..."
 - "Physical risks should be described in terms of magnitude and likelihood..."
 
-These instructions are telling you to GENERATE the drug side effects content. You should:
-1. REPLACE the first instruction block with a general risk intro
-2. Use INSERT to add the full drug side effects table (formatted as above) after that block
-3. DELETE remaining instruction blocks that were just meta-guidance
+These are NOT meta-guidance to delete. They are CONTENT REQUIREMENTS telling you what to generate.
 
-### Example
+**You MUST search the protocol for drug toxicity data and generate the full side effects table.**
 
-Protocol section 14.1.9 contains:
+**Step-by-step (ALL steps required when toxicity data exists):**
+
+1. **REPLACE** the first instruction block with BOTH:
+   - A brief intro paragraph, AND
+   - The FULL drug side effects table (COMMON/OCCASIONAL/RARE format)
+
+2. **DELETE** remaining instruction blocks (they've been fulfilled)
+
+**Your REPLACE content for the first risk instruction block MUST include:**
 \`\`\`
-More than 20% of participants may have:
-• Fatigue
-• Infection
-Between 4 and 20% may have:
-• Anemia
-• Diarrhea
-• Nausea
-Less than 3% may have:
-• Heart failure
-• Colitis
+Taking any medication can cause side effects. [Brief intro...]
+
+Possible Side Effects of [Drug Name]
+
+COMMON, SOME MAY BE SERIOUS
+In 100 people receiving [drug], more than 20 and up to 100 may have:
+• [side effect]
+• [side effect]
+
+OCCASIONAL, SOME MAY BE SERIOUS
+In 100 people receiving [drug], from 4 to 20 may have:
+• [side effect]
+• [side effect]
+
+RARE, AND SERIOUS
+In 100 people receiving [drug], 3 or fewer may have:
+• [side effect]
+• [side effect]
 \`\`\`
 
-Your output should include an INSERT action:
-\`\`\`json
-{
-  "index": 91,
-  "action": "INSERT",
-  "content": "Possible Side Effects of Atezolizumab\\n\\nCOMMON, SOME MAY BE SERIOUS\\nIn 100 people receiving atezolizumab, more than 20 and up to 100 may have:\\n• Tiredness\\n• Infection\\n\\nOCCASIONAL, SOME MAY BE SERIOUS\\nIn 100 people receiving atezolizumab, from 4 to 20 may have:\\n• Anemia which may require a blood transfusion\\n• Diarrhea\\n• Nausea\\n\\nRARE, AND SERIOUS\\nIn 100 people receiving atezolizumab, 3 or fewer may have:\\n• Heart failure\\n• Colitis",
-  "confidence": 9,
-  "reasoning": "Protocol section 14.1.9 contains drug toxicity data organized by frequency - formatted using required NIH structure"
-}
-\`\`\`
+**FAILURE MODES TO AVOID:**
+❌ WRONG: Only writing a brief intro without the COMMON/OCCASIONAL/RARE table
+❌ WRONG: Using KEEP on instruction blocks (leaves instructions in patient document)
+❌ WRONG: Using DELETE on all instruction blocks without generating content
+✓ RIGHT: REPLACE first instruction with intro + full drug side effects table
 
 ## OUTPUT FORMAT
 
@@ -610,8 +655,11 @@ Process each block using the formatting guide:
 6. Bracketed placeholders like [X] should NEVER appear in your output - find actual info or omit the sentence
 7. Do NOT duplicate heading text by replacing instruction blocks with the same heading that follows`;
 }
+// #endregion
 
-// ============= JSON Parsing =============
+// #region Processing
+// The core pipeline: parse JSON responses (handling markdown code blocks), process chunk pairs
+// with retry logic, merge candidates by confidence, and orchestrate the full n×m matrix.
 
 /**
  * Parse JSON response, handling markdown code blocks
@@ -631,10 +679,9 @@ function parseJsonResponse(response) {
   }
 }
 
-// ============= Processing Functions =============
-
 /**
- * Process a single protocol chunk × template chunk pair with retry
+ * Process a single protocol chunk × template chunk pair with retry.
+ * If JSON parsing fails, retries with conversation context for self-correction.
  */
 async function processChunkPair(
   protocolChunk,
@@ -683,10 +730,9 @@ async function processChunkPair(
   return { candidates: [], error: "Max retries exceeded" };
 }
 
-// ============= Merging =============
-
 /**
- * Merge candidates from all n × m results by selecting highest confidence per block
+ * Merge candidates from all n × m results by selecting highest confidence per block.
+ * REPLACE/DELETE with content beats KEEP. INSERT actions are tracked separately.
  */
 function mergeByConfidence(allResults, blocks = []) {
   const byIndex = new Map();
@@ -694,7 +740,7 @@ function mergeByConfidence(allResults, blocks = []) {
 
   for (const result of allResults) {
     for (const candidate of result.candidates || []) {
-      // Handle INSERT actions separately - they accumulate rather than replace
+      // Handle INSERT actions separately
       if (candidate.action === "INSERT" && candidate.content) {
         const existing = insertsByIndex.get(candidate.index);
         if (!existing) {
@@ -703,13 +749,26 @@ function mergeByConfidence(allResults, blocks = []) {
           // Higher confidence INSERT wins
           insertsByIndex.set(candidate.index, candidate);
         } else if (candidate.confidence === existing.confidence && candidate.content !== existing.content) {
-          // Same confidence, different content - combine them
-          const combined = {
-            ...existing,
-            content: existing.content + "\n\n" + candidate.content,
-            confidence: existing.confidence,
-          };
-          insertsByIndex.set(candidate.index, combined);
+          // Same confidence, different content - check if they're duplicates
+          // Extract first line/heading to detect duplicates
+          const existingHeading = existing.content.split('\n')[0].trim();
+          const candidateHeading = candidate.content.split('\n')[0].trim();
+
+          if (existingHeading === candidateHeading) {
+            // Same heading = same content type, take the longer/more complete version
+            if (candidate.content.length > existing.content.length) {
+              insertsByIndex.set(candidate.index, candidate);
+            }
+            // Otherwise keep existing (don't duplicate)
+          } else {
+            // Truly different content - combine them
+            const combined = {
+              ...existing,
+              content: existing.content + "\n\n" + candidate.content,
+              confidence: existing.confidence,
+            };
+            insertsByIndex.set(candidate.index, combined);
+          }
         }
         continue;
       }
@@ -726,14 +785,25 @@ function mergeByConfidence(allResults, blocks = []) {
         if (existing.action === "KEEP" || candidate.confidence > existing.confidence) {
           byIndex.set(candidate.index, candidate);
         }
-        // If both are APPEND, combine the content
+        // If both are APPEND, combine the content (but avoid duplicates)
         if (existing.action === "APPEND" && candidate.action === "APPEND" && candidate.content) {
-          const combined = {
-            ...existing,
-            content: existing.content + candidate.content,
-            confidence: Math.max(existing.confidence, candidate.confidence),
-          };
-          byIndex.set(candidate.index, combined);
+          // Check if content is duplicate (same first line/heading)
+          const existingHeading = existing.content.split('\n')[0].trim();
+          const candidateHeading = candidate.content.split('\n')[0].trim();
+
+          if (existingHeading !== candidateHeading) {
+            // Different content, combine
+            const combined = {
+              ...existing,
+              content: existing.content + candidate.content,
+              confidence: Math.max(existing.confidence, candidate.confidence),
+            };
+            byIndex.set(candidate.index, combined);
+          } else if (candidate.content.length > existing.content.length) {
+            // Same heading, take longer version
+            byIndex.set(candidate.index, { ...candidate, action: "APPEND" });
+          }
+          // Otherwise keep existing, don't duplicate
         }
       } else if (candidate.action === "DELETE" && existing.action === "KEEP") {
         byIndex.set(candidate.index, candidate);
@@ -768,10 +838,8 @@ function mergeByConfidence(allResults, blocks = []) {
   return { replacements, candidateMap: byIndex };
 }
 
-// ============= Concurrency =============
-
 /**
- * Run tasks with limited concurrency
+ * Run tasks with limited concurrency to avoid overwhelming the API.
  */
 async function runWithConcurrency(tasks, maxConcurrent) {
   const results = [];
@@ -793,10 +861,9 @@ async function runWithConcurrency(tasks, maxConcurrent) {
   return Promise.all(results);
 }
 
-// ============= Main Orchestration =============
-
 /**
- * Run block-based consent form generation
+ * Main orchestration: extract blocks, chunk protocol/template, process all pairs, merge, apply.
+ * Phase 1 primes cache for each protocol chunk. Phase 2 processes remaining combinations.
  */
 async function runBlockBasedGeneration(
   templateBuffer,
@@ -873,9 +940,6 @@ async function runBlockBasedGeneration(
 
   // 6. Apply replacements
   onProgress?.({ status: "applying", message: "Generating consent document..." });
-  console.log("=== DOCX REPLACEMENTS ===");
-  console.log("Total replacements:", Object.keys(replacements).length);
-  console.log("Replacements JSON:", JSON.stringify(replacements, null, 2));
   const outputBuffer = await docxReplace(templateBuffer, replacements);
 
   // 7. Calculate stats
@@ -905,19 +969,23 @@ async function runBlockBasedGeneration(
     },
   };
 }
+// #endregion
 
-// ============= Main Component =============
+// #region Page Component
+// The UI lets users upload a protocol, select templates, and generate consent documents.
+// State is persisted to IndexedDB so users can resume or retry failed jobs.
+
 export default function Page() {
   let db = null;
 
-  // ============= Store & State =============
+  // #region State
+  // Central store holds input file, selected templates, job status, and cached templates/libraries.
   const defaultStore = {
     // Session
     id: null,
 
     // Input - single File blob
     inputFile: null,
-    inputText: "",
 
     // Basic template selection - array of template IDs
     selectedTemplates: [],
@@ -955,8 +1023,11 @@ export default function Page() {
   const [store, setStore] = createStore(structuredClone(defaultStore));
 
   const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
+  // #endregion
 
-  // ============= Session Persistence =============
+  // #region Session Persistence
+  // Sessions are saved to IndexedDB. URL param ?id=X loads a previous session.
+  // Interrupted jobs (status=processing) are auto-retried on page load.
 
   function setParam(key, value) {
     const url = new URL(window.location);
@@ -1001,8 +1072,11 @@ export default function Page() {
       }
     }
   });
+  // #endregion
 
-  // ============= Template Handling =============
+  // #region Template Caching
+  // Templates and consent libraries are fetched once and cached in store.
+  // Pre-fetching happens when user selects templates, so they're ready at submit time.
 
   async function fetchAndCacheTemplate(templateId) {
     if (store.templateCache[templateId]) {
@@ -1033,10 +1107,19 @@ export default function Page() {
     setStore("libraryCache", config.libraryUrl, text);
     return text;
   }
+  // #endregion
 
-  // Pre-fetch templates when selected
+  // #region Effects
+  // Reactive effects: pre-fetch templates when selected (both basic and advanced options).
+
   createEffect(async () => {
-    for (const templateId of store.selectedTemplates) {
+    // Gather all template IDs that need fetching
+    const templateIds = [
+      ...store.selectedTemplates,
+      store.templateSourceType === "predefined" && store.selectedPredefinedTemplate,
+    ].filter(Boolean);
+
+    for (const templateId of templateIds) {
       try {
         await fetchAndCacheTemplate(templateId);
         await fetchAndCacheLibrary(templateId);
@@ -1045,20 +1128,10 @@ export default function Page() {
       }
     }
   });
+  // #endregion
 
-  // Pre-fetch advanced template when selected
-  createEffect(async () => {
-    if (store.selectedPredefinedTemplate && store.templateSourceType === "predefined") {
-      try {
-        await fetchAndCacheTemplate(store.selectedPredefinedTemplate);
-        await fetchAndCacheLibrary(store.selectedPredefinedTemplate);
-      } catch (error) {
-        console.error("Failed to load template:", error);
-      }
-    }
-  });
-
-  // ============= Computed Properties =============
+  // #region Computed
+  // Derived state: whether all jobs are done (for showing download all), whether submit is disabled.
 
   const allJobsProcessed = createMemo(() => {
     const jobs = store.generatedDocuments;
@@ -1081,8 +1154,10 @@ export default function Page() {
 
     return !(hasBasicTemplates || hasValidAdvancedOptions);
   });
+  // #endregion
 
-  // ============= Job Processing =============
+  // #region Job Processing
+  // Each selected template becomes a "job". Jobs run in parallel and can be retried individually.
 
   async function processJob(jobId, jobConfig) {
     setStore("generatedDocuments", jobId, {
@@ -1161,8 +1236,11 @@ export default function Page() {
 
     await processJob(jobId, job.config);
   }
+  // #endregion
 
-  // ============= Submit Handler =============
+  // #region Event Handlers
+  // Submit parses the protocol, creates jobs for each selected template, and starts processing.
+  // Reset clears store and URL. runModel calls the backend API. Download triggers file save.
 
   async function handleSubmit(event) {
     event?.preventDefault();
@@ -1269,8 +1347,6 @@ export default function Page() {
     setParam("id", null);
   }
 
-  // ============= Utility Functions =============
-
   async function runModel(params) {
     const response = await fetch("/api/model", {
       method: "POST",
@@ -1291,12 +1367,9 @@ export default function Page() {
     const job = store.generatedDocuments[jobId];
     if (!job?.blob || job.status !== "completed") return;
 
-    // Create timestamp for filename
     const timestamp = createTimestamp();
     const baseFilename = job.config.displayInfo.filename;
     const filename = baseFilename.replace(".docx", `-${timestamp}.docx`);
-
-    // Trigger download
     downloadBlob(filename, job.blob);
   }
 
@@ -1308,7 +1381,26 @@ export default function Page() {
     });
   }
 
-  // ============= UI Component =============
+  function getProgressMessage(progress) {
+    if (progress.status === "idle" || progress.total === 0) {
+      return "We are generating your forms now. This may take a few moments.";
+    }
+    const messages = {
+      extracting: "Extracting template blocks...",
+      chunked: `Preparing ${progress.protocolChunks} protocol chunks × ${progress.templateChunks} template chunks...`,
+      priming: `Priming cache (${progress.completed}/${progress.total})...`,
+      processing: `Processing combinations (${progress.completed}/${progress.total})...`,
+      merging: "Merging results by confidence...",
+      applying: "Generating consent document...",
+      completed: "Generation complete.",
+      error: "An error occurred during generation.",
+    };
+    return messages[progress.status] || "Processing...";
+  }
+  // #endregion
+
+  // #region Render
+  // Two-column layout: left side for input (file upload, template selection), right side for results.
 
   return html`
     <div class="bg-info-subtle h-100 position-relative">
@@ -1502,23 +1594,7 @@ export default function Page() {
                     <div class="text-muted small fw-semibold">
                       <${Show}
                         when=${allJobsProcessed}
-                        fallback=${() => {
-                          const progress = store.extractionProgress;
-                          if (progress.status === "idle" || progress.total === 0) {
-                            return "We are generating your forms now. This may take a few moments.";
-                          }
-                          const statusText = {
-                            extracting: "Extracting template blocks...",
-                            chunked: `Preparing ${progress.protocolChunks} protocol chunks × ${progress.templateChunks} template chunks...`,
-                            priming: `Priming cache (${progress.completed}/${progress.total})...`,
-                            processing: `Processing combinations (${progress.completed}/${progress.total})...`,
-                            merging: "Merging results by confidence...",
-                            applying: "Generating consent document...",
-                            completed: "Generation complete.",
-                            error: "An error occurred during generation.",
-                          };
-                          return statusText[progress.status] || "Processing...";
-                        }}
+                        fallback=${() => getProgressMessage(store.extractionProgress)}
                       >
                         All processing is complete. The generated forms are available for download.
                       <//>
@@ -1659,4 +1735,6 @@ export default function Page() {
       </div>
     </div>
   `;
+  // #endregion
 }
+// #endregion
