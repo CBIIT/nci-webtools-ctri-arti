@@ -1345,4 +1345,20 @@ export async function seedDatabase(models) {
   // Seed prompts before agents (agents reference prompts via promptId)
   await models.Prompt.bulkCreate(seedData.prompts, { updateOnDuplicate: ["name", "version", "content"] });
   await models.Agent.bulkCreate(seedData.agents, { updateOnDuplicate: ["name", "tools", "promptId"] });
+
+  // Create test admin user if TEST_API_KEY is set
+  if (process.env.TEST_API_KEY) {
+    await models.User.findOrCreate({
+      where: { email: "test@test.com" },
+      defaults: {
+        firstName: "Test",
+        lastName: "Admin",
+        status: "active",
+        roleId: 1,
+        apiKey: process.env.TEST_API_KEY,
+        limit: 1000,
+        remaining: 1000,
+      },
+    });
+  }
 }
