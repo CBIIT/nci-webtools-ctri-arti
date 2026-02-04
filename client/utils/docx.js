@@ -931,13 +931,17 @@ export async function docxReplace(docxBuffer, replacements, options = {}) {
           if (newText === null) {
             // For table cells, clear content instead of deleting (deleting corrupts table structure)
             if (block.type === 'cell') {
-              applyTextToBlock(block.element, block.type, ' ', block.parent, block.index);
+              const currentIndex = block.parent ? block.parent.indexOf(block.element) : block.index;
+              applyTextToBlock(block.element, block.type, ' ', block.parent, currentIndex);
             } else {
               // Mark paragraphs for deletion
               blocksToDelete.push(block);
             }
           } else {
-            applyTextToBlock(block.element, block.type, newText, block.parent, block.index);
+            // IMPORTANT: Use indexOf to get CURRENT position in parent array.
+            // The stored block.index may be stale if earlier blocks inserted new paragraphs.
+            const currentIndex = block.parent ? block.parent.indexOf(block.element) : block.index;
+            applyTextToBlock(block.element, block.type, newText, block.parent, currentIndex);
           }
         }
 
