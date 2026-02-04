@@ -1,43 +1,63 @@
-# ConsentCrafter
+# Consent Crafter v2
 
 ## What It Does
 
-Transforms unstructured documents into standardized, purpose-specific documents using AI extraction and templates.
+Generates informed consent documents from research protocols using AI-powered block-based extraction. Upload a protocol document, select consent form templates, and receive completed consent documents with protocol-specific information filled in.
 
 ## How It Works
 
-1. Upload source document(s) (PDF/DOCX/TXT)
-2. Select output template(s)
-3. AI extracts data using template's prompt
-4. System fills template with extracted data
-5. Download generated document(s)
+1. **Upload** your protocol document (PDF/DOCX/TXT, up to 200+ pages)
+2. **Select** one or more consent form templates
+3. **AI processes** the protocol using block-based extraction:
+   - Template is parsed into formatted blocks with metadata (blue=required, yellow=delete, italic=instructions)
+   - Long documents are chunked with overlapping segments
+   - Each protocol chunk × template chunk pair is processed in parallel
+   - Results are merged by confidence score (highest confidence wins per block)
+4. **Download** the generated consent document(s)
 
-## Core Concept: Template-Prompt Pairing
+## Core Concept: Block-Based Extraction
 
-Every template needs to be paired with an extraction prompt:
+Unlike simple placeholder filling, this tool uses formatting-aware block processing. Template formatting indicates how to handle each text segment:
 
-- **Template**: DOCX with {{placeholders}} like {{Study_Title}} or {{Principal_Investigator}}
-- **Prompt**: Instructions for AI to extract data for placeholders
-- **Process**: Empty template + Prompt → JSON data → Filled template
+| Template Formatting | Meaning |
+|---------------------|---------|
+| Blue text (`0070C0`, `2E74B5`) | Required NIH language - preserve verbatim in output |
+| Yellow highlight | Label for template users - omit from output entirely |
+| Italic text (non-blue) | Instructions to follow - generate replacement content |
+| Bold text | Emphasis - preserve formatting |
 
-## Use Case: Consent Forms
+The AI assigns each block one of four actions based on overall formatting:
 
-- **Source**: Research protocols
-- **Templates**: NIH consent forms, lay abstracts
-- **Extraction**: Study details, procedures, risks, benefits, contacts
-- **Output**: Multiple audience-specific documents. Eg: Completed consent form with all fields filled from the protocol
+- **KEEP**: Block is complete as-is (section headers, required boilerplate, signature labels)
+- **DELETE**: Remove block entirely (conditional sections for other cohorts, meta-guidance, coversheet instructions)
+- **REPLACE**: Generate new content (instruction blocks, mixed formatting, label-only blocks needing values)
+- **INSERT**: Add substantial new content after block (drug side effects tables, additional procedures)
 
-## Custom Usage
+## Use Cases
 
-Users can create their own transformations with:
+### NIH Clinical Center Consent Forms
+- Adult affected patient consent
+- Adult healthy volunteer consent
+- Adult family member consent
+- Child/cognitive impairment assent (coming soon)
 
-1. [DOCX template](https://www.npmjs.com/package/docx-templates) with {{placeholders}}
-2. Matching extraction prompt
+### Lay Person Abstracts
+- Patient-friendly study summaries
+- Multiple cohort types supported
 
-## Features
+## Key Features
 
-- Documents up to 200 pages
-- Batch processing support
-- Custom model support
-- Role-based access control
-- Error recovery mechanisms
+- **Long document support**: Handles protocols 100+ pages via overlapping chunk strategy
+- **Parallel processing**: Up to 20 concurrent API calls for faster generation
+- **Confidence-based merging**: Duplicate results resolved by selecting highest confidence
+- **Consent library integration**: IRB-approved language for common procedures/risks
+- **Session recovery**: Resume interrupted work, retry failed jobs
+- **Section-aware extraction**: Content placed in correct document sections
+- **Custom templates**: Advanced users can use custom templates with optional consent libraries
+
+## Technical Details
+
+- **Chunking**: Protocol (20KB chunks, 2KB overlap) × Template (40 blocks, 10 block overlap)
+- **Processing**: Two-phase approach (priming + parallel main)
+- **Merging**: Per-block confidence scoring (1-10 scale)
+- **Output**: DOCX with formatting preserved via `docxReplace()` utility

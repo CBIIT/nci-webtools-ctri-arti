@@ -1,15 +1,16 @@
-# Consent-Crafter Application Specification
+# Consent-Crafter v2 Application Specification
 
 ## Overview
 
-Consent-Crafter transforms unstructured documents into standardized forms using AI extraction and DOCX templates. The application uses a job-based architecture where each output document is generated independently.
+Consent-Crafter v2 generates informed consent documents from research protocols using **block-based AI extraction**. Rather than simple placeholder filling, it processes template blocks with formatting-aware actions (KEEP/DELETE/REPLACE/INSERT) and uses confidence-based merging across overlapping chunks to handle documents of any length.
 
 ## Architecture Principles
 
-1. **File-First Storage**: Store File blobs directly in IndexedDB, no text extraction caching
-2. **Job-Based Processing**: Each output document is a separate job with its own input file, template, and prompt
-3. **Minimal State**: Store only essential data - input files, template selections, and job results
-4. **Self-Contained Jobs**: Each job re-parses input files independently (fast operation)
+1. **Block-Based Extraction**: Templates are parsed into formatted blocks; AI determines action for each block based on formatting cues
+2. **Overlapping Chunk Strategy**: Long documents (100+ pages) are chunked with overlap to ensure no context is lost at boundaries
+3. **Confidence-Based Merging**: Multiple chunk combinations may produce results for the same block; highest confidence wins
+4. **Section-Aware Processing**: Global section map ensures content is placed in correct document sections
+5. **Session Persistence**: IndexedDB storage allows session recovery and job retry
 
 ## Store Structure
 
@@ -18,214 +19,468 @@ const [store, setStore] = createStore({
   // Session
   id: null,
 
-  // Input - array of File blobs
-  inputFiles: [],
+  // Input - single File blob
+  inputFile: null,
 
-  // Basic Template Selection - array of template IDs from config.js
+  // Basic template selection - array of template IDs from config.js
   selectedTemplates: [],
 
-  // Advanced Options
-  model: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+  // Advanced options
+  model: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5, // "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
   advancedOptionsOpen: false,
-  
-  // Advanced Template Source
   templateSourceType: "predefined", // "predefined" | "custom"
-  selectedPredefinedTemplate: "", // template ID from config.js
-  customTemplateFiles: [], // array of File blobs for custom templates
-  customSystemPrompt: "", // custom prompt text
+  selectedPredefinedTemplate: "",
+  customTemplateFile: null,
+  customLibraryUrl: "",
 
-  // Job Results - keyed by jobId
-  generatedDocuments: {}, // { jobId: { status, blob, content, error } }
+  // Job results - keyed by jobId (UUID)
+  generatedDocuments: {
+    // [jobId]: {
+    //   status: "processing" | "completed" | "error",
+    //   blob: Blob | null,
+    //   stats: { protocolChunks, templateChunks, totalCombinations, totalBlocks, deleteCount, replaceCount, avgConfidence },
+    //   error: string | null,
+    //   config: { inputFile, inputText, templateFile, templateId, libraryUrl, model, displayInfo }
+    // }
+  },
 
-  // UI State
-  expandModalOpen: false,
+  // Template cache - fetched templates stored as Files
+  templateCache: {},
+
+  // Library cache - fetched library text by URL
+  libraryCache: {},
+
+  // Extraction progress tracking
+  extractionProgress: {
+    status: "idle", // 'idle' | 'extracting' | 'chunked' | 'priming' | 'processing' | 'merging' | 'applying' | 'completed' | 'error'
+    completed: 0,
+    total: 0,
+    protocolChunks: 0,
+    templateChunks: 0,
+  },
+
+  // Timestamps
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
 });
 ```
 
-## Data Flow
+## Block-Based Extraction Algorithm
 
-### 1. Input Selection
-- User uploads files via FileInput component
-- Files stored directly as File blobs in `store.inputFiles`
-- No text extraction at this stage
+### Core Concept
 
-### 2. Template Selection
+Templates contain formatted blocks where formatting indicates how to handle each text segment:
 
-#### Basic Mode:
-- User selects one or more predefined templates
-- Template IDs stored in `store.selectedTemplates`
-- Uses default prompts from config.js
+| Formatting | Color/Style | Meaning |
+|------------|-------------|---------|
+| Blue text | `color: "0070C0"` or `"2E74B5"` | Required NIH language - preserve verbatim |
+| Yellow highlight | `highlight: "yellow"` | Label for template users - omit entirely |
+| Italic (non-blue) | `italic: true` | Instructions to follow - generate content |
+| Bold | `bold: true` | Emphasis - preserve formatting |
 
-#### Advanced Mode:
-- User can select either:
-  - **Predefined template** + custom prompt
-  - **Custom template file** + custom prompt
-- Advanced selection is additive to basic selections
+The AI determines the block-level ACTION based on overall formatting composition:
 
-### 3. Job Generation
-When user clicks Generate, create jobs for:
-- Each selected basic template (with default prompt)
-- Advanced predefined template (with custom prompt) if selected
-- Custom template (with custom prompt) if uploaded
+### Block Actions
 
-### 4. Job Processing
-Each job is independent and contains:
+1. **KEEP**: Preserve block content exactly as-is
+   - Section headers: "WHY IS THIS STUDY BEING DONE?"
+   - Required boilerplate: NIH legal language (all blue)
+   - Signature labels: "Date", "Print Name"
+
+2. **DELETE**: Remove block entirely from output
+   - NIH template coversheet blocks (indices 0-44 for NIH templates)
+   - Conditional sections where condition is FALSE (e.g., child consent for adult cohort)
+   - Meta-guidance about writing style ("Be concise", "Use bullet points")
+
+3. **REPLACE**: Generate new content for block
+   - Content-generating instructions with placeholders
+   - Mixed formatting blocks (preserve blue, omit yellow, generate for italic)
+   - Label-only blocks that need actual values (e.g., "PRINCIPAL INVESTIGATOR:  ")
+
+4. **INSERT**: Add new content after specified block (original block unchanged)
+   - Drug side effects tables (after general risk intro)
+   - Additional procedure descriptions
+   - Supplementary risk information
+
+## Processing Pipeline
+
+### 1. Template Extraction
+
 ```javascript
-{
-  jobId: string, // unique identifier
-  inputFile: File, // the source document blob
-  templateSource: { type: "url" | "blob", value: string | File },
-  prompt: string, // extraction instructions
-  model: string, // AI model ID
-  defaultOutputData: object // from config.js
+const { blocks } = await docxExtractTextBlocks(templateBuffer, { includeFormatting: true });
+```
+
+Extracts blocks with:
+- `index`: Block position in document (0-based)
+- `text`: Plain text content
+- `style`: Word style (Heading1, Normal, etc.) - for paragraphs
+- `runs`: Array of text segments with formatting (color, highlight, italic, bold)
+- `type`: "paragraph" | "cell"
+- `source`: "body" | "header" | "footer"
+- `row`, `col`: Table position - for cells only
+
+### 2. Section Map Computation
+
+```javascript
+const sectionMap = computeSectionMap(blocks);
+for (const block of blocks) {
+  block.section = sectionMap[block.index];
 }
 ```
 
-## Job Processing Pipeline
+Scans all blocks to identify section headings and assigns each block its section context. This is computed GLOBALLY before chunking to ensure accurate context across chunk boundaries.
 
-For each job:
+### 3. Chunking Strategy
 
-1. **Parse Input**: Extract text from `inputFile` using `parseDocument()`
-2. **Get Template**: 
-   - If URL: fetch template file
-   - If blob: use directly
-3. **AI Extraction**: Send text + prompt to AI model, get JSON response
-4. **Document Generation**: Fill template with extracted data using docx-templates
-5. **Store Result**: Save blob and status to `store.generatedDocuments[jobId]`
-
-## Components
-
-### Main Component Structure
-```
-Page()
-├── FileInput (for source documents)
-├── TemplateSelection (inline, not separate component)
-│   └── Checkbox list grouped by category
-├── AdvancedOptions (collapsible)
-│   ├── ModelSelect
-│   ├── TemplateSourceToggle (predefined/custom)
-│   ├── PredefinedTemplateSelect (if predefined)
-│   ├── FileInput (if custom template)
-│   └── CustomPromptTextarea
-├── ResultsPanel
-│   └── JobStatusList
-└── ActionButtons (Generate/Reset)
-```
-
-### Job Status Display
-Each job shows:
-- Template name and description
-- Status: processing | completed | error
-- Download button (if completed)
-- Retry button (if error)
-
-## Validation Rules
-
-Generate button enabled when:
+**Protocol Chunking:**
 ```javascript
-const canGenerate = 
-  store.inputFiles.length > 0 && (
-    // Basic templates selected
-    store.selectedTemplates.length > 0 ||
-    // OR valid advanced options
-    (store.advancedOptionsOpen && (
-      // Predefined with prompt
-      (store.templateSourceType === "predefined" && 
-       store.selectedPredefinedTemplate && 
-       store.customSystemPrompt.trim()) ||
-      // Custom with template and prompt  
-      (store.templateSourceType === "custom" && 
-       store.customTemplateFiles.length > 0 && 
-       store.customSystemPrompt.trim())
-    ))
-  )
+const PROTOCOL_CHUNK_SIZE = 20000; // ~20KB per chunk
+const PROTOCOL_OVERLAP = 2000;      // 2KB overlap
+const protocolChunks = chunkProtocol(protocolText, PROTOCOL_CHUNK_SIZE, PROTOCOL_OVERLAP);
+```
+
+**Template Chunking:**
+```javascript
+const TEMPLATE_CHUNK_SIZE = 40;     // 40 blocks per chunk
+const TEMPLATE_OVERLAP = 10;        // 10 block overlap
+const templateChunks = chunkTemplateBlocks(blocks, TEMPLATE_CHUNK_SIZE, TEMPLATE_OVERLAP);
+```
+
+Overlap ensures information at chunk boundaries isn't lost and section context is preserved.
+
+### 4. Two-Phase Processing
+
+**Phase 1 - Priming:**
+Process first template chunk with each protocol chunk to warm the cache:
+```javascript
+const primingResults = await runWithConcurrency(
+  protocolChunks.map(pChunk => () =>
+    processChunkPair(pChunk, templateChunks[0], libraryText, totalChunks, model, runModelFn)
+  ),
+  MAX_CONCURRENT_REQUESTS
+);
+```
+
+**Phase 2 - Main Processing:**
+Process all remaining protocol × template combinations in parallel:
+```javascript
+for (const pChunk of protocolChunks) {
+  for (const tChunk of templateChunks.slice(1)) {
+    remainingTasks.push(() => processChunkPair(pChunk, tChunk, ...));
+  }
+}
+const remainingResults = await runWithConcurrency(remainingTasks, MAX_CONCURRENT_REQUESTS);
+```
+
+### 5. Chunk Pair Processing
+
+Each chunk pair is processed with retry logic:
+```javascript
+async function processChunkPair(protocolChunk, templateChunk, libraryText, totalChunks, model, runModelFn, maxRetries = 2) {
+  const systemPrompt = buildBlockSystemPrompt(protocolChunk, libraryText, totalChunks);
+  const messages = [{ role: "user", content: [{ text: buildBlockUserPrompt(templateChunk) }] }];
+
+  // Retry with conversation context if JSON parsing fails
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await runModelFn({ model, messages, system: systemPrompt, thoughtBudget: 10000 });
+    const parsed = parseJsonResponse(response);
+    if (parsed.success) return { candidates: parsed.data };
+    // Add assistant response and retry prompt to messages for self-correction
+  }
+}
+```
+
+### 6. Confidence-Based Merging
+
+```javascript
+function mergeByConfidence(allResults, blocks) {
+  const byIndex = new Map();
+  const insertsByIndex = new Map();
+
+  for (const result of allResults) {
+    for (const candidate of result.candidates) {
+      // INSERT actions tracked separately
+      // REPLACE/DELETE with content beats KEEP
+      // Higher confidence wins when actions match
+      // Same-confidence INSERTs with different content are combined
+    }
+  }
+
+  return { replacements, candidateMap };
+}
+```
+
+Merging rules:
+- REPLACE/DELETE with content always beats KEEP
+- Higher confidence wins when actions are the same
+- INSERT actions are tracked separately and can be combined
+- Low-confidence KEEP (< 5) is skipped
+- APPEND actions (adds content to existing block) are handled but rarely used
+
+### 7. Document Generation
+
+```javascript
+const outputBuffer = await docxReplace(templateBuffer, replacements);
+```
+
+Applies the merged replacement map to generate the final document.
+
+## System Prompt Architecture
+
+The system prompt (~520 lines in `buildBlockSystemPrompt()`) provides comprehensive instructions:
+
+### Protocol Context
+```
+## PROTOCOL EXCERPT (chunk X of Y)
+<protocol_excerpt>
+${protocolChunk.text}
+</protocol_excerpt>
+```
+
+### Consent Library
+```
+## CONSENT LIBRARY (standardized IRB-approved language)
+<consent_library>
+${libraryText}
+</consent_library>
+```
+
+### Cohort Type
+The prompt includes `## COHORT TYPE: ${cohortType}` to indicate the target audience (e.g., "adult-patient"). Currently defaults to "adult-patient" - cohort-specific generation is planned but not yet implemented.
+
+### Formatting Guide
+Detailed table mapping formatting to actions with examples.
+
+### Action Definitions
+Comprehensive rules for KEEP, DELETE, REPLACE, INSERT with examples.
+
+### Section Ordering Rules
+Critical rules ensuring content is placed in correct sections.
+
+### Drug Side Effects Format
+Standardized NIH format for presenting medication risks.
+
+### Output Format
+```json
+{
+  "index": <block number>,
+  "action": "REPLACE" | "DELETE" | "KEEP" | "INSERT",
+  "content": "<generated text>" | null,
+  "confidence": 1-10,
+  "reasoning": "<explanation>",
+  "exact_quote": "<protocol text used>",
+  "procedure_library": "<library section used>" | null
+}
+```
+
+### Confidence Scoring
+- 10: Exact data found, clear instruction
+- 7-9: Relevant data found, clear instruction
+- 4-6: Partial data or ambiguous instruction
+- 1-3: No relevant data in this excerpt (use KEEP)
+
+## AI Integration
+
+### Endpoint
+```javascript
+const response = await fetch("/api/model", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    model,
+    messages,
+    system: systemPrompt,
+    thoughtBudget: 10000,
+    stream: false
+  })
+});
+```
+
+### Response Parsing
+Handles markdown code blocks (`\`\`\`json`) and validates JSON structure.
+
+### Retry Logic
+Failed JSON parsing triggers retry with conversation context for self-correction.
+
+## Concurrency & Performance
+
+### Concurrent Request Limit
+```javascript
+const MAX_CONCURRENT_REQUESTS = 20;
+```
+
+### Concurrency Control
+```javascript
+async function runWithConcurrency(tasks, maxConcurrent) {
+  const results = [];
+  const executing = new Set();
+
+  for (const task of tasks) {
+    const promise = task().then((result) => {
+      executing.delete(promise);
+      return result;
+    });
+    executing.add(promise);
+    results.push(promise);
+
+    if (executing.size >= maxConcurrent) {
+      await Promise.race(executing);
+    }
+  }
+
+  return Promise.all(results);
+}
+```
+
+### Pre-fetching Strategy
+Templates and consent libraries are fetched when user selects them, not at submit time:
+```javascript
+createEffect(async () => {
+  for (const templateId of [...store.selectedTemplates, store.selectedPredefinedTemplate]) {
+    await fetchAndCacheTemplate(templateId);
+    await fetchAndCacheLibrary(templateId);
+  }
+});
+```
+
+## Template Configuration
+
+### Structure (config.js)
+```javascript
+export const templateConfigs = {
+  "nih-cc-adult-patient": {
+    label: "Adult affected patient",
+    prefix: "NIH CCC",
+    category: "NIH Clinical Center Consent (NIH CCC)",
+    templateUrl: "/templates/nih-cc/...",
+    libraryUrl: "/templates/nih-cc/consent-library.txt",
+    filename: "nih-cc-consent-adult-affected.docx",
+    disabled: false,
+  },
+  // ... more templates
+};
+```
+
+### Available Templates
+
+| ID | Category | Description |
+|----|----------|-------------|
+| `nih-cc-adult-patient` | NIH CCC | Adult affected patient consent |
+| `nih-cc-adult-healthy` | NIH CCC | Adult healthy volunteer consent |
+| `nih-cc-adult-family` | NIH CCC | Adult family member consent |
+| `nih-cc-child-assent` | NIH CCA | Child/cognitive impairment assent (disabled) |
+| `lpa-adult-patient` | LPA | Lay person abstract - patient |
+| `lpa-adult-healthy` | LPA | Lay person abstract - healthy |
+| `lpa-adult-family` | LPA | Lay person abstract - family |
+
+### Category Grouping
+```javascript
+export function getTemplateConfigsByCategory() {
+  // Returns: [{ label: "Category", options: [{ value: "id", disabled: false }] }]
+}
 ```
 
 ## Session Persistence
 
-### Save to IndexedDB
-- Store File blobs directly (no base64 conversion)
-- Convert generated document blobs to base64 for storage
-- Save on: job completion, session creation
-
-### Load from IndexedDB
-- Restore File blobs as-is
-- Convert base64 back to blobs for generated documents
-- Auto-retry interrupted jobs (status: "processing")
-
-## Template Configuration Integration
-
-Use existing config.js structure:
-- `templateConfigs` - template metadata and URLs
-- `getPrompt(templateId)` - fetch default prompts
-- `getTemplateConfigsByCategory()` - grouped templates for UI
-
-## Job ID Generation
-
-Create unique job IDs:
+### Database Schema
 ```javascript
-function generateJobId(templateId, inputFileName) {
-  if (templateId === "custom") return `custom-${Date.now()}`;
-  if (templateId === "predefined-custom") return `${store.selectedPredefinedTemplate}-custom-${Date.now()}`;
-  return `${templateId}-${Date.now()}`;
+async function getDatabase(userEmail = "anonymous") {
+  const userName = userEmail.toLowerCase().replace(/[^a-z0-9]/g, "-")...;
+  return await openDB(`arti-consent-crafter-${userName}`, 1, {
+    upgrade(db) {
+      const store = db.createObjectStore("sessions", {
+        keyPath: "id",
+        autoIncrement: true
+      });
+      store.createIndex("createdAt", "createdAt");
+    }
+  });
 }
 ```
 
-## Error Recovery
+### Session Operations
+- **Create**: `const id = await db.add("sessions", session);`
+- **Save**: `await db.put("sessions", session);`
+- **Load**: `const session = await db.get("sessions", +id);`
 
-- Jobs can be retried individually
+### URL Integration
+Session ID stored in URL param `?id=X` for bookmarking and sharing.
+
+### Auto-Retry
+Interrupted jobs (status: "processing") are automatically retried on page load:
+```javascript
+const interruptedJobs = Object.entries(store.generatedDocuments)
+  .filter(([_id, job]) => job.status === "processing");
+for (const [jobId] of interruptedJobs) {
+  retryJob(jobId);
+}
+```
+
+## Validation Rules
+
+### Submit Button Enabled When
+```javascript
+const submitDisabled = createMemo(() => {
+  if (!store.inputFile) return true;
+
+  const hasBasicTemplates = store.selectedTemplates.length > 0;
+  const hasValidAdvancedOptions = store.advancedOptionsOpen && (
+    (store.templateSourceType === "predefined" && store.selectedPredefinedTemplate) ||
+    (store.templateSourceType === "custom" && store.customTemplateFile)
+  );
+
+  return !(hasBasicTemplates || hasValidAdvancedOptions);
+});
+```
+
+## Error Handling
+
+- JSON parsing failures trigger retry with conversation context
+- Job errors are captured and displayed with retry option
 - Session persistence allows recovery from browser refresh
-- Clear error messaging with specific retry actions
+- Progress tracking shows detailed status during processing
 
-## File Handling
+## Statistics Tracking
 
-### Supported Input Formats
-- PDF, DOCX, TXT files
-- Parse using existing `parseDocument()` utility
+Each completed job includes:
+```javascript
+stats: {
+  protocolChunks: number,     // Number of protocol chunks
+  templateChunks: number,     // Number of template chunks
+  totalCombinations: number,  // protocolChunks × templateChunks
+  totalBlocks: number,        // Total blocks in template
+  deleteCount: number,        // Blocks deleted
+  replaceCount: number,       // Blocks replaced (includes insertions)
+  avgConfidence: string,      // Average confidence score
+}
+```
 
-### Template Files
-- DOCX files with `{{placeholder}}` syntax
-- Fetch predefined templates from URLs
-- Accept uploaded custom templates
+## UI Components
 
-### Output Generation
-- Use docx-templates library
-- Generate timestamped filenames
-- Support bulk download
+```
+Page()
+├── AlertContainer
+├── Form
+│   ├── FileInput (source document)
+│   ├── Template Selection (checkbox list by category)
+│   ├── Advanced Options (collapsible)
+│   │   ├── Model Select
+│   │   ├── Template Source Toggle
+│   │   ├── Predefined/Custom Template Selection
+│   │   └── Custom Library URL
+│   └── Action Buttons (Generate/Reset)
+└── Results Panel
+    ├── Progress Message & Bar
+    ├── Job Status List
+    │   └── Job Card (prefix, label, filename, stats, download/retry)
+    ├── Download All Button
+    └── Feedback Link
+```
 
-## UI/UX Considerations
+## Dependencies
 
-### Progressive Enhancement
-1. Basic mode: Simple template selection
-2. Advanced mode: Power users with custom templates/prompts
-
-### Feedback
-- Clear validation messages
-- Progress indicators for job processing
-- Success/error states for each job
-
-### Accessibility
-- Proper form labels and ARIA attributes
-- Keyboard navigation support
-- Screen reader friendly status updates
-
-## Performance Considerations
-
-- File parsing is fast, safe to re-parse per job
-- Parallel job processing for better user experience
-- IndexedDB for efficient local storage
-- Lazy loading of template configurations
-
-## Security Considerations
-
-- File uploads stay client-side until processing
-- No sensitive data in localStorage
-- User-isolated IndexedDB storage
-- Validate file types and sizes
-
-## Future Enhancements
-
-- Multiple input file processing
-- Batch template operations
-- Template sharing/import
-- Processing history/analytics
+- **SolidJS**: Reactive UI framework
+- **idb**: IndexedDB wrapper for session storage
+- **docxExtractTextBlocks**: Custom DOCX block extraction with formatting
+- **docxReplace**: Custom DOCX replacement utility
+- **parseDocument**: Protocol text extraction (PDF/DOCX/TXT)

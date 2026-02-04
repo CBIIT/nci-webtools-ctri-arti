@@ -45,6 +45,7 @@ import { getTemplateConfigsByCategory, templateConfigs } from "./config.js";
 const PROTOCOL_CHUNK_SIZE = 20000; // ~20KB per protocol chunk
 const PROTOCOL_OVERLAP = 2000; // 2KB overlap
 const TEMPLATE_CHUNK_SIZE = 40; // 40 blocks per template chunk
+const TEMPLATE_OVERLAP = 10; // 10 block overlap to preserve section context across chunk boundaries
 const MAX_CONCURRENT_REQUESTS = 20; // Limit parallel API calls
 // #endregion
 
@@ -99,18 +100,25 @@ function chunkProtocol(text, chunkSize = PROTOCOL_CHUNK_SIZE, overlap = PROTOCOL
 }
 
 /**
- * Chunk template blocks while preserving original indices
+ * Chunk template blocks while preserving original indices.
+ * Uses overlapping chunks to preserve section context across boundaries.
  * @param {Array} blocks - All template blocks with their original indices
  * @param {number} chunkSize - Number of blocks per chunk
- * @returns {Array<{index: number, blocks: Array}>}
+ * @param {number} overlap - Number of blocks to overlap between chunks
+ * @returns {Array<{index: number, blocks: Array, startIdx: number, endIdx: number}>}
  */
-function chunkTemplateBlocks(blocks, chunkSize = TEMPLATE_CHUNK_SIZE) {
+function chunkTemplateBlocks(blocks, chunkSize = TEMPLATE_CHUNK_SIZE, overlap = TEMPLATE_OVERLAP) {
   const chunks = [];
-  for (let i = 0; i < blocks.length; i += chunkSize) {
+  const step = chunkSize - overlap;
+  for (let i = 0; i < blocks.length; i += step) {
+    const endIdx = Math.min(i + chunkSize, blocks.length);
     chunks.push({
       index: chunks.length,
-      blocks: blocks.slice(i, i + chunkSize),
+      blocks: blocks.slice(i, endIdx),
+      startIdx: i,
+      endIdx: endIdx,
     });
+    if (endIdx >= blocks.length) break;
   }
   return chunks;
 }
@@ -139,6 +147,21 @@ ${libraryText}
 </consent_library>
 
 ## COHORT TYPE: ${cohortType}
+
+## ⚠️ CRITICAL: SECTION ORDERING ⚠️
+
+**BEFORE placing ANY content, check the block's Section context!**
+
+Each block in the user prompt shows: \`Section: "SECTION NAME"\`
+
+This tells you which document section the block belongs to. Content MUST match its section:
+- Drug side effects → ONLY in blocks where Section contains "WHAT ARE THE RISKS" or "RISKS"
+- Procedure descriptions → ONLY in blocks where Section contains "WHAT WILL HAPPEN"
+- Study purpose → ONLY in blocks where Section contains "WHY IS THIS STUDY"
+
+**If a block's Section doesn't match the content type, use DELETE not REPLACE.**
+
+Example: A block about "describing risks" but Section shows "WHAT WILL HAPPEN" → DELETE it, because the risks section hasn't started yet.
 
 ## FORMATTING GUIDE - Template Color Scheme
 
@@ -324,12 +347,15 @@ These italic instruction blocks tell you to GENERATE CONTENT, not just provide s
 - "Physical risks should be described in terms of magnitude and likelihood..." → This tells you to use COMMON/OCCASIONAL/RARE format
 - "If death is a foreseeable outcome..." → REPLACE with the death statement if applicable
 
-When you see a CLUSTER of italic instruction blocks about risks:
-1. The FIRST instruction block should be REPLACED with the actual risk content (drug side effects, procedure risks)
-2. Subsequent instruction blocks that elaborate on formatting can be DELETED after you've followed their guidance
-3. Use INSERT if you need to add substantial formatted content (like drug side effects tables) after an intro paragraph
+**IMPORTANT: Section ordering applies to risk content too.** See the SECTION ORDERING RULE below.
 
-DO NOT delete all risk instruction blocks without generating content. That leaves the consent with no risk information!
+When you see MULTIPLE italic instruction blocks about risks:
+1. Check each block's Section context to determine if it's BEFORE or AFTER the "WHAT ARE THE RISKS?" heading
+2. Blocks BEFORE the risks heading (e.g., still in "WHAT WILL HAPPEN" section) → DELETE them, don't fill with risk content
+3. Blocks AFTER the risks heading (in "WHAT ARE THE RISKS" section) → REPLACE the first content block with full drug side effects
+4. Subsequent instruction blocks after generating content → DELETE
+
+DO NOT place drug side effects in blocks that appear before the "WHAT ARE THE RISKS?" heading!
 
 ### KEEP - Use for:
 - Section headers: "WHY IS THIS STUDY BEING DONE?", "WHAT ARE THE RISKS?"
@@ -413,26 +439,50 @@ In 100 people receiving [drug name], 3 or fewer may have:
 4. **Format using the exact structure above** with the drug name from the protocol
 5. **Use INSERT action** to add this content after the general risk intro block
 
-### CRITICAL: Risk Instruction Blocks Require Content Generation
+### SECTION ORDERING RULE - CRITICAL
+
+**Content MUST appear AFTER its section heading, not before.**
+
+When processing instruction blocks about risks, procedures, or other content:
+
+1. **Identify the section boundary first**: Look for ALL CAPS headings like "WHAT ARE THE RISKS?" or styled Heading text
+2. **Only place content at blocks that appear AFTER the relevant heading**
+3. **If an instruction block appears BEFORE a section heading**, it belongs to a DIFFERENT (previous) section - check if it should be DELETED or filled with content from the PREVIOUS section
+4. **Never place substantial content (like drug side effects) at a block that precedes the "WHAT ARE THE RISKS?" heading**
+
+### Identifying Section Boundaries
+
+Section headings are typically:
+- ALL CAPS text (e.g., "WHAT ARE THE RISKS?", "WHY IS THIS STUDY BEING DONE?")
+- Short phrases without instructions (not full sentences with guidance)
+- Styled as Heading1, Heading2, or similar
+
+**Example - Correct block placement:**
+- Block 85: instruction about study purpose → belongs to "WHY IS THIS STUDY BEING DONE?" section (likely ends here)
+- Block 90: "WHAT ARE THE RISKS?" heading → KEEP this
+- Block 91: instruction about drug side effects → REPLACE with drug side effects content HERE (after the heading)
+
+**Example - WRONG block placement:**
+- Block 85: put drug side effects here ❌ (this is BEFORE the risks heading!)
+- Block 90: "WHAT ARE THE RISKS?" heading
+- Block 91: delete this ❌ (this is where content should go!)
+
+### Risk Instruction Blocks Require Content Generation
 
 When you see template instruction blocks about risks like:
 - "For each research procedure or intervention, describe the reasonably foreseeable risks..."
 - "Risk information should be organized by the intervention..."
 - "Physical risks should be described in terms of magnitude and likelihood..."
 
-These are NOT meta-guidance to delete. They are CONTENT REQUIREMENTS telling you what to generate.
-
-**You MUST search the protocol for drug toxicity data and generate the full side effects table.**
+These are CONTENT REQUIREMENTS telling you what to generate. **But place the content at the instruction block that FOLLOWS the "WHAT ARE THE RISKS?" heading.**
 
 **Step-by-step (ALL steps required when toxicity data exists):**
 
-1. **REPLACE** the first instruction block with BOTH:
-   - A brief intro paragraph, AND
-   - The FULL drug side effects table (COMMON/OCCASIONAL/RARE format)
+1. **DELETE** any risk-related instruction blocks that appear BEFORE the "WHAT ARE THE RISKS?" heading (they're transitional/meta-guidance)
+2. **REPLACE** the instruction block that appears AFTER the "WHAT ARE THE RISKS?" heading with the full drug side effects content
+3. **DELETE** subsequent instruction blocks in the risks section after content has been generated
 
-2. **DELETE** remaining instruction blocks (they've been fulfilled)
-
-**Your REPLACE content for the first risk instruction block MUST include:**
+**Your REPLACE content for the risk instruction block (AFTER the heading) should include:**
 \`\`\`
 Taking any medication can cause side effects. [Brief intro...]
 
@@ -455,10 +505,10 @@ In 100 people receiving [drug], 3 or fewer may have:
 \`\`\`
 
 **FAILURE MODES TO AVOID:**
-❌ WRONG: Only writing a brief intro without the COMMON/OCCASIONAL/RARE table
+❌ WRONG: Placing drug side effects BEFORE the "WHAT ARE THE RISKS?" heading
 ❌ WRONG: Using KEEP on instruction blocks (leaves instructions in patient document)
-❌ WRONG: Using DELETE on all instruction blocks without generating content
-✓ RIGHT: REPLACE first instruction with intro + full drug side effects table
+❌ WRONG: Using DELETE on all instruction blocks without generating content anywhere
+✓ RIGHT: DELETE pre-heading instructions, REPLACE post-heading instruction with content
 
 ## OUTPUT FORMAT
 
@@ -605,15 +655,63 @@ Output:
 }
 
 /**
- * Build user prompt with template blocks
+ * Check if block is a section heading using actual Word styles.
+ * Relies on DOCX structure rather than text heuristics for accuracy.
+ * @param {Object} block - Block object with text and style properties
+ * @returns {boolean} - True if block is a section heading
+ */
+function isLikelySectionHeading(block) {
+  if (!block) return false;
+  const style = (block.style || "").toLowerCase();
+  // Trust actual DOCX heading styles
+  if (style.includes("heading") || style === "title") return true;
+  // Fallback: check for ALL CAPS text (common in NIH templates for section headers)
+  const text = block.text;
+  if (!text) return false;
+  const trimmed = text.trim();
+  const uppercaseLetters = trimmed.replace(/[^A-Z]/g, "").length;
+  const totalLetters = trimmed.replace(/[^A-Za-z]/g, "").length;
+  if (totalLetters >= 3 && uppercaseLetters / totalLetters > 0.8) return true;
+  return false;
+}
+
+/**
+ * Compute section context for each block by scanning all blocks in order.
+ * This provides GLOBAL section context that persists across chunk boundaries.
+ * @param {Array} blocks - All template blocks
+ * @returns {Object} - Map of block index to section name
+ */
+function computeSectionMap(blocks) {
+  const sectionMap = {};
+  let currentSection = "Document Start";
+
+  for (const block of blocks) {
+    if (isLikelySectionHeading(block)) {
+      currentSection = block.text.trim().slice(0, 60);
+    }
+    sectionMap[block.index] = currentSection;
+  }
+  return sectionMap;
+}
+
+/**
+ * Build user prompt with template blocks.
+ * Uses pre-computed section context from block.section property (set by computeSectionMap).
  */
 export function buildBlockUserPrompt(templateChunk) {
+  const blockIndices = templateChunk.blocks.map((b) => b.index);
+  const minIndex = Math.min(...blockIndices);
+  const maxIndex = Math.max(...blockIndices);
+
   const blocksText = templateChunk.blocks
     .map((b) => {
       const loc =
         b.type === "cell"
           ? `[@${b.index}] ${b.source}/${b.type} (row ${b.row}, col ${b.col})`
           : `[@${b.index}] ${b.source}/${b.type} (${b.style})`;
+
+      // Use PRE-COMPUTED section from global map (accurate across chunks!)
+      const sectionInfo = `  Section: "${b.section || "Document Start"}"`;
 
       // Include formatting info if available
       let formattingInfo = "";
@@ -626,22 +724,34 @@ export function buildBlockUserPrompt(templateChunk) {
             if (r.italic) fmt.push("italic");
             if (r.bold) fmt.push("bold");
             const fmtStr = fmt.length ? ` {${fmt.join(", ")}}` : "";
-            const preview = r.text.length > 80 ? r.text.slice(0, 80) + "..." : r.text;
+            // Increase preview length from 80 to 200 for better context
+            const preview = r.text.length > 200 ? r.text.slice(0, 200) + "..." : r.text;
             return `  [${i}]${fmtStr} "${preview.replace(/\n/g, "\\n")}"`;
           })
           .join("\n");
         formattingInfo = `\nFormatting runs:\n${formattedRuns}`;
       }
 
-      return `${loc}:${formattingInfo}\n${b.text}`;
+      return `${loc}:\n${sectionInfo}${formattingInfo}\n${b.text}`;
     })
     .join("\n\n---\n\n");
 
   return `## TEMPLATE BLOCKS TO PROCESS
 
+**IMPORTANT: This chunk contains blocks ${minIndex} through ${maxIndex}. Only output indices from this range.**
+
 <template_blocks>
 ${blocksText}
 </template_blocks>
+
+## SECTION CONTEXT
+
+Each block shows its "Section:" context - this tells you which section heading it falls under.
+- Content about risks should appear in blocks with Section: "WHAT ARE THE RISKS..." (or similar)
+- Content about procedures should appear in blocks with Section: "WHAT WILL HAPPEN..." (or similar)
+- If an instruction block's Section doesn't match its topic, it may need to be DELETED rather than filled
+
+## PROCESSING RULES
 
 Process each block using the formatting guide:
 1. Blocks with ONLY blue COMPLETE text (full sentences) → action: KEEP
@@ -653,7 +763,8 @@ Process each block using the formatting guide:
    - Your replacement content MUST replace italic instructions with generated content
 5. Yellow highlight text should NEVER appear in your output
 6. Bracketed placeholders like [X] should NEVER appear in your output - find actual info or omit the sentence
-7. Do NOT duplicate heading text by replacing instruction blocks with the same heading that follows`;
+7. Do NOT duplicate heading text by replacing instruction blocks with the same heading that follows
+8. **CRITICAL: Place content in the correct section** - drug side effects go AFTER the "WHAT ARE THE RISKS?" heading, not before it`;
 }
 // #endregion
 
@@ -877,9 +988,16 @@ async function runBlockBasedGeneration(
   onProgress?.({ status: "extracting", message: "Extracting template blocks with formatting..." });
   const { blocks } = await docxExtractTextBlocks(templateBuffer, { includeFormatting: true });
 
-  // 2. Chunk protocol and template
+  // 2. Compute GLOBAL section map and attach to blocks before chunking
+  // This ensures each block knows its true section context regardless of chunk boundaries
+  const sectionMap = computeSectionMap(blocks);
+  for (const block of blocks) {
+    block.section = sectionMap[block.index];
+  }
+
+  // 3. Chunk protocol and template (blocks now have section attached)
   const protocolChunks = chunkProtocol(protocolText);
-  const templateChunks = chunkTemplateBlocks(blocks);
+  const templateChunks = chunkTemplateBlocks(blocks); // Uses overlap by default
   const totalCombinations = protocolChunks.length * templateChunks.length;
 
   onProgress?.({
@@ -891,7 +1009,7 @@ async function runBlockBasedGeneration(
     total: totalCombinations,
   });
 
-  // 3. Phase 1: Prime cache for each protocol chunk
+  // 4. Phase 1: Prime cache for each protocol chunk
   onProgress?.({ status: "priming", completed: 0, total: protocolChunks.length });
 
   const primingResults = await runWithConcurrency(
@@ -909,7 +1027,7 @@ async function runBlockBasedGeneration(
     MAX_CONCURRENT_REQUESTS
   );
 
-  // 4. Phase 2: Process remaining combinations
+  // 5. Phase 2: Process remaining combinations
   const allResults = [...primingResults];
 
   if (templateChunks.length > 1) {
@@ -934,15 +1052,15 @@ async function runBlockBasedGeneration(
     allResults.push(...remainingResults);
   }
 
-  // 5. Merge by confidence
+  // 6. Merge by confidence
   onProgress?.({ status: "merging", completed: totalCombinations, total: totalCombinations });
   const { replacements, candidateMap } = mergeByConfidence(allResults, blocks);
 
-  // 6. Apply replacements
+  // 7. Apply replacements
   onProgress?.({ status: "applying", message: "Generating consent document..." });
   const outputBuffer = await docxReplace(templateBuffer, replacements);
 
-  // 7. Calculate stats
+  // 8. Calculate stats
   const deleteCount = Object.values(replacements).filter((v) => v === null).length;
   const replaceCount = Object.keys(replacements).length - deleteCount;
   const confidences = Array.from(candidateMap.values())
