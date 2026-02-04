@@ -966,10 +966,20 @@ export async function docxReplace(docxBuffer, replacements, options = {}) {
         if (block.parent && Array.isArray(block.parent)) {
           const idx = block.parent.indexOf(block.element);
           if (idx >= 0) {
-            // Create new paragraph with the content, copying style from the source block
-            const newParagraph = createParagraphElement(content, block.element);
-            // Insert after the current block
-            block.parent.splice(idx + 1, 0, newParagraph);
+            // Split content on newlines and create separate paragraphs
+            // This prevents over-justification from w:br in justified paragraphs
+            if (content.includes('\n')) {
+              const lines = content.split('\n');
+              // Insert in reverse order so indices stay correct
+              for (let i = lines.length - 1; i >= 0; i--) {
+                const newParagraph = createSingleLineParagraph(lines[i], block.element);
+                block.parent.splice(idx + 1, 0, newParagraph);
+              }
+            } else {
+              // Single line - use createSingleLineParagraph for consistency
+              const newParagraph = createSingleLineParagraph(content, block.element);
+              block.parent.splice(idx + 1, 0, newParagraph);
+            }
           }
         }
       }
