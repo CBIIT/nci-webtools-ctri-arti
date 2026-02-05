@@ -1,3 +1,65 @@
+/**
+ * DOCX Manipulation Utilities
+ *
+ * This module provides functions for reading and modifying DOCX files while
+ * preserving their structure and formatting. It supports both simple text
+ * replacement and index-based block replacement for precise document editing.
+ *
+ * ## Key Concepts
+ *
+ * ### Block Structure
+ * A DOCX document is parsed into XML. Paragraphs (w:p) and table cells (w:tc)
+ * are "blocks" that can contain text. All paragraphs in the main document body
+ * share the SAME parent array in the parsed XML structure.
+ *
+ * ### The Stale Index Problem (CRITICAL)
+ *
+ * When we collect blocks with `findAllBlocks()`, we store each block's position
+ * in its parent array as `block.index`. However, when we INSERT new paragraphs
+ * (for multi-line content), ALL subsequent blocks' positions SHIFT in the array,
+ * but their stored `block.index` values remain unchanged (stale).
+ *
+ * **Example of the bug this causes:**
+ * ```
+ * Original parent array: [para0, para1, para2, para3, para4...]
+ *                         idx 0   idx 1   idx 2   idx 3   idx 4
+ *
+ * findAllBlocks() stores: block0.index=0, block1.index=1, block2.index=2...
+ *
+ * We replace block0 with 3-line content, inserting 2 new paragraphs:
+ * New parent array: [para0, newPara1, newPara2, para1, para2, para3...]
+ *                    idx 0   idx 1     idx 2    idx 3  idx 4   idx 5
+ *
+ * block1.index is STILL 1, but para1 is now at index 3!
+ * Inserting at index 1+1=2 puts content BEFORE para1, not after!
+ * ```
+ *
+ * **Solution:** Always use `block.parent.indexOf(block.element)` to get the
+ * CURRENT position. Never trust `block.index` after any insertion has occurred.
+ *
+ * ### Processing Order
+ *
+ * The order of operations is critical for correctness:
+ *
+ * 1. **Replacements**: Process in document order (as blocks appear). Use
+ *    `indexOf()` to find current position before each operation.
+ *
+ * 2. **Insertions**: Apply in REVERSE order (highest index first). This ensures
+ *    that inserting at position N doesn't shift positions 0..N-1.
+ *
+ * 3. **Deletions**: Apply in REVERSE order (highest index first). Same reason
+ *    as insertions - removing from the end preserves earlier indices.
+ *
+ * ### Table Cells
+ *
+ * Table cells (w:tc) require special handling:
+ * - Never delete table cells (corrupts table structure)
+ * - Instead of deleting, replace content with empty space
+ * - Multi-line content in cells creates paragraphs within the cell
+ *
+ * @module docx
+ */
+
 import JSZip from 'jszip';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 
@@ -555,7 +617,29 @@ function getParagraphStyle(element) {
 }
 
 /**
- * Find all blocks (paragraphs and table cells) in document order with context
+ * Find all blocks (paragraphs and table cells) in document order with context.
+ *
+ * This function traverses the parsed XML document and collects all content blocks
+ * (paragraphs and table cells) in the order they appear in the document.
+ *
+ * ## Return Value Structure
+ *
+ * Each block object contains:
+ * - `element`: The XML element object (contains w:p or w:tc)
+ * - `parent`: The parent array containing this element
+ * - `index`: Position in parent array AT THE TIME OF COLLECTION (may become stale!)
+ * - `type`: 'paragraph' or 'cell'
+ * - `row`, `col`, `tableIndex`: For table cells only
+ *
+ * ## CRITICAL WARNING: Stale Index Problem
+ *
+ * The `index` property is a SNAPSHOT captured when this function runs. If you
+ * later insert or remove elements from the parent array, this index becomes
+ * STALE and will point to the wrong element.
+ *
+ * **ALWAYS use `block.parent.indexOf(block.element)` to get the current position
+ * before performing any insertion or deletion operations.**
+ *
  * @param {Object} node - Parsed XML document
  * @param {Array} results - Accumulated results
  * @param {Object} context - Current context (table position, parent info)
@@ -840,10 +924,68 @@ export async function docxExtractText(docxBuffer, options = {}) {
 }
 
 /**
- * Replace text strings in a DOCX document
- * Supports two replacement modes:
- * - Text-based: {"original text": "replacement text"}
- * - Index-based: {"@0": "replacement for block 0", "@5": "replacement for block 5"}
+ * Replace text strings in a DOCX document by block index or text matching.
+ *
+ * ## Algorithm Overview
+ *
+ * This function processes replacements in a specific order to avoid the "stale
+ * index" problem where insertions shift subsequent block positions.
+ *
+ * ### Phase 1: Parse Input
+ *
+ * Replacement keys are categorized into three types:
+ * - **Index replacements**: `"@5"` → replace block 5's content
+ * - **Insert actions**: `"INSERT@5"` or `"+@5"` → insert new paragraph after block 5
+ * - **Text replacements**: `"old text"` → `"new text"` (find/replace within blocks)
+ *
+ * ### Phase 2: Discover Blocks
+ *
+ * Call `findAllBlocks(doc)` to get all paragraphs and table cells in document
+ * order. Each block has: element, parent (array), index (position), type.
+ *
+ * **IMPORTANT:** `block.index` is a SNAPSHOT that becomes stale after insertions.
+ *
+ * ### Phase 3: Process Replacements (document order)
+ *
+ * For each non-empty block in document order:
+ * 1. If marked for deletion (null value): queue for deletion, don't delete yet
+ * 2. If has replacement text: apply using CURRENT index from `indexOf()`
+ *    - For multi-line text, insert new paragraphs AFTER current position
+ *    - This shifts all subsequent blocks in the parent array!
+ * 3. If has INSERT action: queue for later (we need stable indices)
+ *
+ * ### Phase 4: Apply Insertions (REVERSE order)
+ *
+ * Sort queued insertions by CURRENT position (`indexOf`), descending.
+ * Process highest index first so lower indices remain valid.
+ *
+ * ### Phase 5: Apply Deletions (REVERSE order)
+ *
+ * Process deletions from end to start so indices don't shift.
+ * Use `indexOf()` to find current position since it may have changed.
+ *
+ * ### Phase 6: Serialize
+ *
+ * Build XML from modified document structure and update ZIP archive.
+ *
+ * ## Why This Order Matters
+ *
+ * Consider blocks at original positions [0, 1, 2, 3]:
+ * - Replace block 0 with 3 lines → inserts 2 paragraphs after position 0
+ * - Now block 1's element is at position 3, not 1!
+ * - If we used `block.index=1` to insert after block 1, we'd insert at position 2
+ * - That's BETWEEN the new paragraphs, not after block 1's actual element!
+ *
+ * By using `indexOf()` for replacements and reverse order for insertions/deletions,
+ * each operation finds the correct current position.
+ *
+ * ## Supported Replacement Modes
+ *
+ * - **Text-based**: `{"original text": "replacement text"}`
+ * - **Index-based**: `{"@0": "replacement for block 0", "@5": "replacement for block 5"}`
+ * - **Insert after**: `{"INSERT@5": "new paragraph content"}` or `{"+@5": "content"}`
+ * - **Delete block**: `{"@5": null}` (for paragraphs only; cells are cleared, not deleted)
+ *
  * @param {Buffer|Uint8Array|ArrayBuffer} docxBuffer - Input DOCX file
  * @param {Object} replacements - Map of replacements (text keys or @index keys)
  * @param {Object} options - Optional settings
@@ -929,17 +1071,36 @@ export async function docxReplace(docxBuffer, replacements, options = {}) {
         if (globalBlockIndex in indexReplacements) {
           const newText = indexReplacements[globalBlockIndex];
           if (newText === null) {
-            // For table cells, clear content instead of deleting (deleting corrupts table structure)
+            // ============================================================
+            // Deletion Handling
+            //
+            // Table cells (w:tc) CANNOT be deleted - doing so corrupts the
+            // table structure and makes the document invalid. Instead, we
+            // clear the cell content by replacing with a space.
+            //
+            // Paragraphs CAN be deleted, but we queue them for later and
+            // process deletions in reverse order (see Phase 5).
+            // ============================================================
             if (block.type === 'cell') {
               const currentIndex = block.parent ? block.parent.indexOf(block.element) : block.index;
               applyTextToBlock(block.element, block.type, ' ', block.parent, currentIndex);
             } else {
-              // Mark paragraphs for deletion
+              // Queue paragraph for deletion (processed in Phase 5)
               blocksToDelete.push(block);
             }
           } else {
-            // IMPORTANT: Use indexOf to get CURRENT position in parent array.
-            // The stored block.index may be stale if earlier blocks inserted new paragraphs.
+            // ============================================================
+            // CRITICAL: Use indexOf() to get CURRENT position in parent array.
+            //
+            // The stored block.index is a snapshot from when findAllBlocks() ran.
+            // After ANY insertion into the parent array, block.index is STALE.
+            // All blocks in the main document share ONE parent array, so inserting
+            // paragraphs for multi-line content shifts ALL subsequent blocks.
+            //
+            // Example: If block 0 was replaced with 3 lines (inserting 2 paragraphs),
+            // block 1's element is now at position 3, not position 1. Using the
+            // stale block.index=1 would insert content in the wrong location.
+            // ============================================================
             const currentIndex = block.parent ? block.parent.indexOf(block.element) : block.index;
             applyTextToBlock(block.element, block.type, newText, block.parent, currentIndex);
           }
@@ -957,13 +1118,21 @@ export async function docxReplace(docxBuffer, replacements, options = {}) {
         globalBlockIndex++;
       }
 
-      // Perform insertions in reverse order to preserve indices
-      // Sort by the block's position in its parent array (descending)
+      // ============================================================
+      // PHASE 4: Apply Insertions in REVERSE Order
+      //
+      // We MUST process insertions from highest index to lowest. This ensures
+      // that inserting at position N doesn't shift positions 0..N-1, which
+      // would invalidate our queued insertion indices.
+      //
+      // We use indexOf() here too because replacements in Phase 3 may have
+      // inserted new paragraphs, shifting block positions.
+      // ============================================================
       blocksToInsertAfter.sort((a, b) => {
-        // Get current index in parent
+        // Get CURRENT index in parent (not the stale block.index)
         const aIdx = a.block.parent.indexOf(a.block.element);
         const bIdx = b.block.parent.indexOf(b.block.element);
-        return bIdx - aIdx;
+        return bIdx - aIdx;  // Descending order (highest first)
       });
 
       for (const { block, content } of blocksToInsertAfter) {
@@ -988,10 +1157,19 @@ export async function docxReplace(docxBuffer, replacements, options = {}) {
         }
       }
 
-      // Delete marked blocks in reverse order to preserve indices
+      // ============================================================
+      // PHASE 5: Apply Deletions in REVERSE Order
+      //
+      // Process deletions from highest index to lowest for the same reason
+      // as insertions: removing from the end preserves earlier indices.
+      //
+      // We use indexOf() because both replacements and insertions may have
+      // shifted block positions since we collected them.
+      // ============================================================
       for (let i = blocksToDelete.length - 1; i >= 0; i--) {
         const block = blocksToDelete[i];
         if (block.parent && Array.isArray(block.parent)) {
+          // Use indexOf() to get CURRENT position (block.index is stale)
           const idx = block.parent.indexOf(block.element);
           if (idx >= 0) {
             block.parent.splice(idx, 1);
@@ -1014,13 +1192,31 @@ export async function docxReplace(docxBuffer, replacements, options = {}) {
 }
 
 /**
- * Apply text to a block element (paragraph or table cell)
- * Splits newlines into multiple paragraphs to avoid over-justification from w:br
+ * Apply text to a block element (paragraph or table cell).
+ *
+ * For multi-line text, this function creates new paragraphs instead of using
+ * w:br line breaks. This avoids over-justification issues in justified text.
+ *
+ * ## Multi-line Handling
+ *
+ * When `newText` contains newlines:
+ * 1. The first line replaces the existing paragraph's content
+ * 2. New paragraphs are created for subsequent lines
+ * 3. New paragraphs are inserted AFTER the current element
+ * 4. Insertion happens in reverse line order to maintain correct positions
+ *
+ * ## IMPORTANT: elementIndex Must Be Current
+ *
+ * The `elementIndex` parameter MUST be the CURRENT position of the element in
+ * the parent array, obtained via `parent.indexOf(element)`. Do NOT pass a
+ * cached/stale index value, as insertions from processing earlier blocks will
+ * have shifted positions.
+ *
  * @param {Object} element - The block element
  * @param {string} type - 'paragraph' or 'cell'
- * @param {string} newText - The text to apply
+ * @param {string} newText - The text to apply (may contain \n for multi-line)
  * @param {Array} parent - Parent array containing the element (for paragraph insertion)
- * @param {number} elementIndex - Index of element in parent array
+ * @param {number} elementIndex - CURRENT index of element in parent array (use indexOf!)
  */
 function applyTextToBlock(element, type, newText, parent = null, elementIndex = -1) {
   if (type === 'paragraph') {
@@ -1088,10 +1284,18 @@ function applyTextToBlock(element, type, newText, parent = null, elementIndex = 
 }
 
 /**
- * Create a single-line paragraph (no w:br elements) copying style from source
+ * Create a single-line paragraph (no w:br elements) copying style from source.
+ *
+ * This function is used when splitting multi-line replacement text into
+ * separate paragraphs. Using separate paragraphs instead of w:br line breaks
+ * avoids over-justification issues in Word's justified text alignment.
+ *
+ * The new paragraph copies the style (w:pPr) from the source element to
+ * maintain consistent formatting (font, spacing, indentation, etc.).
+ *
  * @param {string} text - Single line of text (should not contain \n)
  * @param {Object} styleFrom - w:p element to copy style from
- * @returns {Object} New paragraph element
+ * @returns {Object} New paragraph element in fast-xml-parser format
  */
 function createSingleLineParagraph(text, styleFrom) {
   // Build the run with a single w:t element

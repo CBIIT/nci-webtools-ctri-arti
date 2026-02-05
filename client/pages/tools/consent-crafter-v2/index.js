@@ -44,7 +44,7 @@ import { getTemplateConfigsByCategory, templateConfigs } from "./config.js";
 // at boundaries. Template chunks are sized to fit within model context limits.
 const PROTOCOL_CHUNK_SIZE = 20000; // ~20KB per protocol chunk
 const PROTOCOL_OVERLAP = 2000; // 2KB overlap
-const TEMPLATE_CHUNK_SIZE = 40; // 40 blocks per template chunk
+const TEMPLATE_CHUNK_SIZE = 100; // EXPERIMENT: Larger value for fewer template chunks (was 40)
 const TEMPLATE_OVERLAP = 10; // 10 block overlap to preserve section context across chunk boundaries
 const MAX_CONCURRENT_REQUESTS = 20; // Limit parallel API calls
 // #endregion
@@ -133,13 +133,11 @@ function chunkTemplateBlocks(blocks, chunkSize = TEMPLATE_CHUNK_SIZE, overlap = 
  * Build the system prompt for block-based consent generation.
  * Contains formatting guide, action definitions (KEEP/REPLACE/DELETE/INSERT), and examples.
  */
-export function buildBlockSystemPrompt(protocolChunk, libraryText, totalChunks, cohortType = "adult-patient") {
+export function buildBlockSystemPrompt(libraryText, cohortType = "adult-patient") {
+  // NOTE: Protocol excerpt moved to user message for better prompt engineering.
+  // Template blocks appear FIRST (primacy), protocol in MIDDLE (haystack),
+  // rules reminder at END (recency). This combats "lost in the middle" problem.
   return `You are a consent form generator. Your job is to FOLLOW the instructions in each template block to generate patient-friendly consent language.
-
-## PROTOCOL EXCERPT (chunk ${protocolChunk.index + 1} of ${totalChunks})
-<protocol_excerpt>
-${protocolChunk.text}
-</protocol_excerpt>
 
 ## CONSENT LIBRARY (standardized IRB-approved language)
 <consent_library>
@@ -695,10 +693,16 @@ function computeSectionMap(blocks) {
 }
 
 /**
- * Build user prompt with template blocks.
+ * Build user prompt with template blocks, protocol excerpt, and rules reminder.
+ *
+ * PROMPT ENGINEERING: Structure optimized for LLM attention patterns:
+ * 1. TEMPLATE BLOCKS first (primacy - what we need to fill, highest attention)
+ * 2. PROTOCOL EXCERPT middle (haystack - source material to search)
+ * 3. RULES REMINDER end (recency - reinforce key rules)
+ *
  * Uses pre-computed section context from block.section property (set by computeSectionMap).
  */
-export function buildBlockUserPrompt(templateChunk) {
+export function buildBlockUserPrompt(templateChunk, protocolChunk, totalProtocolChunks) {
   const blockIndices = templateChunk.blocks.map((b) => b.index);
   const minIndex = Math.min(...blockIndices);
   const maxIndex = Math.max(...blockIndices);
@@ -764,7 +768,28 @@ Process each block using the formatting guide:
 5. Yellow highlight text should NEVER appear in your output
 6. Bracketed placeholders like [X] should NEVER appear in your output - find actual info or omit the sentence
 7. Do NOT duplicate heading text by replacing instruction blocks with the same heading that follows
-8. **CRITICAL: Place content in the correct section** - drug side effects go AFTER the "WHAT ARE THE RISKS?" heading, not before it`;
+8. **CRITICAL: Place content in the correct section** - drug side effects go AFTER the "WHAT ARE THE RISKS?" heading, not before it
+
+## PROTOCOL EXCERPT (chunk ${protocolChunk.index + 1} of ${totalProtocolChunks})
+
+Search through this protocol text to find information needed to fill the template blocks above.
+
+<protocol_excerpt>
+${protocolChunk.text}
+</protocol_excerpt>
+
+## REMINDER: KEY RULES
+
+Before responding, verify your output follows these critical rules:
+
+1. **TEMPLATE BLOCKS FIRST**: Process the blocks shown above - output JSON array with index, action, content, confidence, reasoning
+2. **Blue text (color 0070C0 or 2E74B5) = action KEEP**: Blocks with ONLY blue text that forms complete sentences must use action "KEEP". This includes the AI disclaimer text "Human Review is Required" and "This document represents a computational draft..." - these are REQUIRED legal text.
+3. **Yellow highlight = DELETE**: Never include highlighted text in output
+4. **Italic = REPLACE**: Generate content following the instructions (unless block is redundant)
+5. **Section ordering**: Drug side effects go AFTER "WHAT ARE THE RISKS?" heading, not before
+6. **No placeholders**: Never output [X], [insert...], or similar - find real info or omit
+7. **Use consent library language VERBATIM** for procedures and risks - do not paraphrase
+8. **CRITICAL**: The "Human Review is Required" disclaimer and accompanying AI-generated notice MUST be KEPT - do NOT delete these blocks`;
 }
 // #endregion
 
@@ -803,8 +828,8 @@ async function processChunkPair(
   runModelFn,
   maxRetries = 2
 ) {
-  const systemPrompt = buildBlockSystemPrompt(protocolChunk, libraryText, totalChunks);
-  const messages = [{ role: "user", content: [{ text: buildBlockUserPrompt(templateChunk) }] }];
+  const systemPrompt = buildBlockSystemPrompt(libraryText);
+  const messages = [{ role: "user", content: [{ text: buildBlockUserPrompt(templateChunk, protocolChunk, totalChunks) }] }];
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -892,8 +917,30 @@ function mergeByConfidence(allResults, blocks = []) {
       if (!existing) {
         byIndex.set(candidate.index, candidate);
       } else if ((candidate.action === "REPLACE" || candidate.action === "APPEND") && candidate.content) {
-        // REPLACE/APPEND with content wins over KEEP
-        if (existing.action === "KEEP" || candidate.confidence > existing.confidence) {
+        // =================================================================
+        // FIX: REPLACE/APPEND with content should beat KEEP or DELETE
+        // because content is always better than no content when generating
+        // a consent form. Also prefer longer content for same-action REPLACE.
+        // =================================================================
+        const candidateLen = (candidate.content || "").length;
+        const existingLen = (existing.content || "").length;
+        const existingIsEmpty = existing.action === "KEEP" || existing.action === "DELETE";
+
+        if (existingIsEmpty) {
+          // Content beats no-content (KEEP or DELETE)
+          byIndex.set(candidate.index, candidate);
+        } else if (candidate.action === "REPLACE" && existing.action === "REPLACE") {
+          // Both are REPLACE - prefer substantially longer content or higher confidence
+          // A response with actual procedures (1000+ chars) should beat one with just an intro (50 chars)
+          if (candidateLen > existingLen * 1.5 && candidateLen > 100) {
+            // Candidate has substantially more content
+            byIndex.set(candidate.index, candidate);
+          } else if (candidate.confidence > existing.confidence && candidateLen >= existingLen * 0.5) {
+            // Higher confidence AND not drastically shorter
+            byIndex.set(candidate.index, candidate);
+          }
+          // Otherwise keep existing (first good response wins)
+        } else if (candidate.confidence > existing.confidence) {
           byIndex.set(candidate.index, candidate);
         }
         // If both are APPEND, combine the content (but avoid duplicates)
