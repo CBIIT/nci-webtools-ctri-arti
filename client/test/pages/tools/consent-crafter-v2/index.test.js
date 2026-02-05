@@ -51,6 +51,54 @@ If you find ANY corrections, additions, or improvements:
 
 If your response was complete and correct, output: []`;
 
+// Final verification prompt - reviews the complete merged output for duplicates and issues
+const FINAL_VERIFICATION_PROMPT = `You are reviewing a generated consent document for quality issues.
+
+## Your Task
+
+Review the replacement map and generated document text below. Identify:
+
+1. **DUPLICATE CONTENT**: Multiple blocks with the same or very similar content (e.g., drug side effects appearing in blocks 94, 96, AND 97). Keep the BEST/most complete version, set others to null.
+
+2. **DUPLICATE HEADINGS**: If a heading appears twice (e.g., "What are the risks related to pregnancy?" in both block 99 and 100), keep one and null the other.
+
+3. **REDUNDANT SECTIONS**: If the same information appears multiple times (e.g., pregnancy risks, blood draw risks), keep the most complete version and null duplicates.
+
+4. **MISSING CONTENT**: Blocks that should have content but are null or empty.
+
+## Output Format
+
+Output a JSON object with corrections:
+\`\`\`json
+{
+  "corrections": [
+    {"index": 96, "action": "DELETE", "reason": "Duplicate of block 94 drug side effects"},
+    {"index": 97, "action": "DELETE", "reason": "Duplicate of block 94 drug side effects"},
+    {"index": 91, "action": "DELETE", "reason": "Duplicate of block 90 participant count"}
+  ],
+  "summary": "Found 3 duplicate blocks to remove"
+}
+\`\`\`
+
+If no corrections needed, output:
+\`\`\`json
+{"corrections": [], "summary": "No duplicates or issues found"}
+\`\`\`
+
+## REPLACEMENT MAP (block index → content or null)
+
+<replacement_map>
+%REPLACEMENT_MAP%
+</replacement_map>
+
+## GENERATED DOCUMENT TEXT (with block indices)
+
+<generated_text>
+%GENERATED_TEXT%
+</generated_text>
+
+Now review for duplicates and issues. Output JSON corrections.`;
+
 // ============================================================
 // DEBUG CONFIG: Blocks to watch closely during processing
 // These are blocks that have been problematic (deleted instead of replaced)
@@ -478,12 +526,91 @@ test("Consent Crafter v2 Full Generation", async (t) => {
 
     // 7. Log replacement map
     console.log("\n" + "=".repeat(80));
-    console.log("=== REPLACEMENT MAP ===");
+    console.log("=== REPLACEMENT MAP (before final verification) ===");
     console.log("=".repeat(80));
     console.log(JSON.stringify(replacements, null, 2));
 
+    // 7.5 FINAL VERIFICATION: Detect and remove duplicates
+    console.log("\n" + "=".repeat(80));
+    console.log("=== FINAL VERIFICATION: Checking for duplicates ===");
+    console.log("=".repeat(80));
+
+    // Generate text preview with indices
+    const textPreviewLines = [];
+    for (const block of blocks) {
+      const key = `@${block.index}`;
+      let content;
+      if (key in replacements) {
+        content = replacements[key];
+      } else {
+        content = block.text;
+      }
+      if (content !== null && content !== undefined) {
+        textPreviewLines.push(`[${key}] ${content}`);
+      }
+    }
+    const textPreview = textPreviewLines.join("\n\n");
+
+    // Build compact replacement map for prompt
+    const compactMap = {};
+    for (const [key, value] of Object.entries(replacements)) {
+      if (value === null) {
+        compactMap[key] = "[DELETED]";
+      } else if (value && value.length > 200) {
+        compactMap[key] = value.slice(0, 200) + "...";
+      } else {
+        compactMap[key] = value;
+      }
+    }
+
+    // Run final verification
+    const finalVerifyPrompt = FINAL_VERIFICATION_PROMPT
+      .replace("%REPLACEMENT_MAP%", JSON.stringify(compactMap, null, 2))
+      .replace("%GENERATED_TEXT%", textPreview);
+
+    let correctedReplacements = replacements;
+    try {
+      const verifyResponse = await runModel({
+        model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        messages: [{ role: "user", content: [{ text: finalVerifyPrompt }] }],
+        system: "You are a document quality reviewer. Output only valid JSON.",
+        thoughtBudget: 10000,
+        stream: false,
+      });
+
+      // Parse response
+      let jsonStr = verifyResponse.trim();
+      if (jsonStr.startsWith("```json")) jsonStr = jsonStr.slice(7);
+      else if (jsonStr.startsWith("```")) jsonStr = jsonStr.slice(3);
+      if (jsonStr.endsWith("```")) jsonStr = jsonStr.slice(0, -3);
+
+      const verifyResult = JSON.parse(jsonStr.trim());
+      if (verifyResult && Array.isArray(verifyResult.corrections)) {
+        console.log(`Final verification found ${verifyResult.corrections.length} corrections: ${verifyResult.summary}`);
+
+        correctedReplacements = { ...replacements };
+        for (const correction of verifyResult.corrections) {
+          const key = `@${correction.index}`;
+          if (correction.action === "DELETE") {
+            correctedReplacements[key] = null;
+            console.log(`  Correction: ${key} → DELETE (${correction.reason})`);
+          } else if (correction.action === "REPLACE" && correction.content) {
+            correctedReplacements[key] = correction.content;
+            console.log(`  Correction: ${key} → REPLACE`);
+          }
+        }
+      }
+    } catch (verifyError) {
+      console.warn("Final verification failed:", verifyError.message);
+    }
+
+    console.log("\n" + "=".repeat(80));
+    console.log("=== REPLACEMENT MAP (after final verification) ===");
+    console.log("=".repeat(80));
+    console.log(JSON.stringify(correctedReplacements, null, 2));
+
     // 8. Apply replacements and extract text
-    const outputBuffer = await docxReplace(templateBuffer, replacements);
+    const outputBuffer = await docxReplace(templateBuffer, correctedReplacements);
     const { blocks: outputBlocks } = await docxExtractTextBlocks(outputBuffer);
     const outputText = outputBlocks.map((b) => b.text).join("\n");
 
@@ -493,8 +620,8 @@ test("Consent Crafter v2 Full Generation", async (t) => {
     console.log(outputText);
 
     // 9. Stats
-    const deleteCount = Object.values(replacements).filter((v) => v === null).length;
-    const replaceCount = Object.keys(replacements).length - deleteCount;
+    const deleteCount = Object.values(correctedReplacements).filter((v) => v === null).length;
+    const replaceCount = Object.keys(correctedReplacements).length - deleteCount;
     console.log("\n" + "=".repeat(80));
     console.log("=== STATS ===");
     console.log("=".repeat(80));

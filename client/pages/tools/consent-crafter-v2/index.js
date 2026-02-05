@@ -70,6 +70,54 @@ If you find ANY corrections, additions, or improvements:
 - Use the same format: {index, action, content, confidence, reasoning, procedure_library}
 
 If your response was complete and correct, output: []`;
+
+// Final verification prompt - reviews the complete merged output for duplicates and issues
+const FINAL_VERIFICATION_PROMPT = `You are reviewing a generated consent document for quality issues.
+
+## Your Task
+
+Review the replacement map and generated document text below. Identify:
+
+1. **DUPLICATE CONTENT**: Multiple blocks with the same or very similar content (e.g., drug side effects appearing in blocks 94, 96, AND 97). Keep the BEST/most complete version, set others to null.
+
+2. **DUPLICATE HEADINGS**: If a heading appears twice (e.g., "What are the risks related to pregnancy?" in both block 99 and 100), keep one and null the other.
+
+3. **REDUNDANT SECTIONS**: If the same information appears multiple times (e.g., pregnancy risks, blood draw risks), keep the most complete version and null duplicates.
+
+4. **MISSING CONTENT**: Blocks that should have content but are null or empty.
+
+## Output Format
+
+Output a JSON object with corrections:
+\`\`\`json
+{
+  "corrections": [
+    {"index": 96, "action": "DELETE", "reason": "Duplicate of block 94 drug side effects"},
+    {"index": 97, "action": "DELETE", "reason": "Duplicate of block 94 drug side effects"},
+    {"index": 91, "action": "DELETE", "reason": "Duplicate of block 90 participant count"}
+  ],
+  "summary": "Found 3 duplicate blocks to remove"
+}
+\`\`\`
+
+If no corrections needed, output:
+\`\`\`json
+{"corrections": [], "summary": "No duplicates or issues found"}
+\`\`\`
+
+## REPLACEMENT MAP (block index → content or null)
+
+<replacement_map>
+%REPLACEMENT_MAP%
+</replacement_map>
+
+## GENERATED DOCUMENT TEXT (with block indices)
+
+<generated_text>
+%GENERATED_TEXT%
+</generated_text>
+
+Now review for duplicates and issues. Output JSON corrections.`;
 // #endregion
 
 // #region Database
@@ -917,6 +965,98 @@ async function processChunkPair(
 }
 
 /**
+ * Generate a text preview of the document with block indices for final verification.
+ * @param {Array} blocks - Original template blocks
+ * @param {Object} replacements - The replacement map from mergeByConfidence
+ * @returns {string} - Text with [@index] prefixes for each block
+ */
+function generateTextPreviewWithIndices(blocks, replacements) {
+  const lines = [];
+  for (const block of blocks) {
+    const key = `@${block.index}`;
+    let content;
+    if (key in replacements) {
+      content = replacements[key]; // Could be null (deleted) or string (replaced)
+    } else {
+      content = block.text; // Original text if not in replacements
+    }
+    if (content !== null && content !== undefined) {
+      lines.push(`[${key}] ${content}`);
+    }
+    // Skip null/deleted blocks in preview
+  }
+  return lines.join("\n\n");
+}
+
+/**
+ * Run final verification to detect duplicates and issues in the merged output.
+ * @param {Object} replacements - The merged replacement map
+ * @param {Array} blocks - Original template blocks
+ * @param {string} model - Model ID
+ * @param {Function} runModelFn - Function to call the model
+ * @returns {Object} - Corrected replacements map
+ */
+async function runFinalVerification(replacements, blocks, model, runModelFn) {
+  // Generate text preview with indices
+  const textPreview = generateTextPreviewWithIndices(blocks, replacements);
+
+  // Build compact replacement map for prompt (only non-null entries for brevity)
+  const compactMap = {};
+  for (const [key, value] of Object.entries(replacements)) {
+    if (value === null) {
+      compactMap[key] = "[DELETED]";
+    } else if (value && value.length > 200) {
+      compactMap[key] = value.slice(0, 200) + "...";
+    } else {
+      compactMap[key] = value;
+    }
+  }
+
+  // Build prompt
+  const prompt = FINAL_VERIFICATION_PROMPT
+    .replace("%REPLACEMENT_MAP%", JSON.stringify(compactMap, null, 2))
+    .replace("%GENERATED_TEXT%", textPreview);
+
+  const messages = [{ role: "user", content: [{ text: prompt }] }];
+
+  try {
+    const response = await runModelFn({
+      model,
+      messages,
+      system: "You are a document quality reviewer. Output only valid JSON.",
+      thoughtBudget: 10000,
+      stream: false,
+    });
+
+    // Parse response
+    const parsed = parseJsonResponse(response);
+    if (parsed.success && parsed.data && Array.isArray(parsed.data.corrections)) {
+      const corrections = parsed.data.corrections;
+      console.log(`Final verification found ${corrections.length} corrections:`, parsed.data.summary);
+
+      // Apply corrections
+      let correctedReplacements = { ...replacements };
+      for (const correction of corrections) {
+        const key = `@${correction.index}`;
+        if (correction.action === "DELETE") {
+          correctedReplacements[key] = null;
+          console.log(`  Correction: ${key} → DELETE (${correction.reason})`);
+        } else if (correction.action === "REPLACE" && correction.content) {
+          correctedReplacements[key] = correction.content;
+          console.log(`  Correction: ${key} → REPLACE`);
+        }
+      }
+      return correctedReplacements;
+    }
+  } catch (error) {
+    console.warn("Final verification failed:", error.message);
+  }
+
+  // Return original if verification fails
+  return replacements;
+}
+
+/**
  * Merge candidates from all n × m results by selecting highest confidence per block.
  * REPLACE/DELETE with content beats KEEP. INSERT actions are tracked separately.
  */
@@ -1153,13 +1293,17 @@ async function runBlockBasedGeneration(
   onProgress?.({ status: "merging", completed: totalCombinations, total: totalCombinations });
   const { replacements, candidateMap } = mergeByConfidence(allResults, blocks);
 
-  // 7. Apply replacements
-  onProgress?.({ status: "applying", message: "Generating consent document..." });
-  const outputBuffer = await docxReplace(templateBuffer, replacements);
+  // 7. Final verification to detect duplicates and issues
+  onProgress?.({ status: "verifying", message: "Running final verification for duplicates..." });
+  const correctedReplacements = await runFinalVerification(replacements, blocks, model, runModelFn);
 
-  // 8. Calculate stats
-  const deleteCount = Object.values(replacements).filter((v) => v === null).length;
-  const replaceCount = Object.keys(replacements).length - deleteCount;
+  // 8. Apply replacements
+  onProgress?.({ status: "applying", message: "Generating consent document..." });
+  const outputBuffer = await docxReplace(templateBuffer, correctedReplacements);
+
+  // 9. Calculate stats
+  const deleteCount = Object.values(correctedReplacements).filter((v) => v === null).length;
+  const replaceCount = Object.keys(correctedReplacements).length - deleteCount;
   const confidences = Array.from(candidateMap.values())
     .map((c) => c.confidence)
     .filter((c) => typeof c === "number" && !isNaN(c));
