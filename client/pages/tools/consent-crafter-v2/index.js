@@ -46,7 +46,7 @@ const PROTOCOL_CHUNK_SIZE = 20000; // ~20KB per protocol chunk
 const PROTOCOL_OVERLAP = 2000; // 2KB overlap
 const TEMPLATE_CHUNK_SIZE = 100; // EXPERIMENT: Larger value for fewer template chunks (was 40)
 const TEMPLATE_OVERLAP = 10; // 10 block overlap to preserve section context across chunk boundaries
-const MAX_CONCURRENT_REQUESTS = 20; // Limit parallel API calls
+const MAX_CONCURRENT_REQUESTS = 50; // Limit parallel API calls (increased for faster processing)
 
 // Verification turn prompt - generic prompt to double-check work after initial response
 const VERIFICATION_PROMPT = `Now double-check your response.
@@ -62,6 +62,8 @@ const VERIFICATION_PROMPT = `Now double-check your response.
 4. **Placeholders**: Did you leave any [bracketed placeholders] unfilled that you could fill with protocol data?
 
 5. **procedure_library Field**: For any content you pulled from the consent library, did you include the procedure_library field showing the exact source?
+
+6. **Procedure Completeness**: Count the procedure headings in your output for the risks section. Does the count match the number in the "PROCEDURE RISKS GENERATION INSTRUCTIONS" section? If it says "ALL N items", verify you output exactly N procedure headings. Missing any is a critical error.
 
 ## Your Task
 
@@ -85,6 +87,8 @@ Review the replacement map and generated document text below. Identify:
 3. **REDUNDANT SECTIONS**: If the same information appears multiple times (e.g., pregnancy risks, blood draw risks), keep the most complete version and null duplicates.
 
 4. **MISSING CONTENT**: Blocks that should have content but are null or empty.
+
+5. **Procedure Coverage**: Check that all study procedures have corresponding risk entries. Missing procedures should be flagged.
 
 ## Output Format
 
@@ -118,6 +122,140 @@ If no corrections needed, output:
 </generated_text>
 
 Now review for duplicates and issues. Output JSON corrections.`;
+
+// #region Pipeline 1: Metadata Extraction Prompts
+// The extraction pipeline identifies procedures and metadata from protocol chunks.
+// It outputs exact quotes from both the protocol AND the consent library.
+// This ensures accuracy and prevents fabrication.
+
+/**
+ * Build the system prompt for metadata extraction (Pipeline 1).
+ * This prompt is CACHED across all protocol chunks since the library and template are constant.
+ *
+ * @param {string} libraryText - The full consent library text
+ * @param {Array} templateBlocks - All template blocks (for context on what fields we need)
+ * @returns {string} - System prompt for extraction
+ */
+export function buildExtractionSystemPrompt(libraryText, templateBlocks) {
+  // Create a summary of template fields that need to be filled
+  const templateSummary = templateBlocks
+    .filter(b => b.runs?.some(r => r.italic) || b.text.includes("["))
+    .slice(0, 50) // Limit to first 50 relevant blocks for prompt size
+    .map(b => `[@${b.index}] ${b.text.slice(0, 100)}${b.text.length > 100 ? "..." : ""}`)
+    .join("\n");
+
+  return `You are extracting metadata from a clinical protocol to populate a consent form.
+
+## CONSENT LIBRARY (standardized IRB-approved language)
+<consent_library>
+${libraryText}
+</consent_library>
+
+## TEMPLATE FIELDS TO FILL (sample of blocks needing content)
+<template_summary>
+${templateSummary}
+</template_summary>
+
+## Your Task
+
+For each protocol chunk provided, extract:
+1. **Procedures** mentioned that match consent library sections - with EXACT QUOTES from both sources
+2. **Metadata** values needed by the template (PI name, accrual ceiling, study duration, drug names, etc.)
+3. **Study information** (purpose, eligibility, treatment description)
+
+## Output Format
+
+Return JSON with exact quotes and reasoning:
+
+{
+  "reasoning": "Brief explanation of what you found in this chunk and why it's relevant",
+
+  "procedures": [
+    {
+      "name": "procedure name as mentioned in protocol",
+      "reasoning": "How you identified this procedure and matched it to library",
+      "protocol_quote": "EXACT verbatim quote from protocol describing this procedure",
+      "protocol_location": "Section X.X if identifiable, or 'not specified'",
+      "library_section": "MATCHING SECTION NAME from consent library (e.g., BLOOD DRAWS, BIOPSY)",
+      "library_quote": "EXACT verbatim quote from consent library for this procedure's risks"
+    }
+  ],
+
+  "metadata": [
+    {
+      "key": "descriptive key (e.g., pi_name, accrual_ceiling, study_duration, drug_name)",
+      "value": "the extracted value",
+      "reasoning": "How you found this value",
+      "quote": "EXACT verbatim quote from protocol containing this value"
+    }
+  ],
+
+  "drug_toxicity": {
+    "drug_name": "Name of study drug if found",
+    "common": ["side effects >20% frequency"],
+    "occasional": ["side effects 4-20% frequency"],
+    "rare": ["side effects <3% frequency"],
+    "source_quote": "EXACT quote from protocol toxicity section"
+  },
+
+  "not_found": ["metadata keys that could not be found in this chunk"]
+}
+
+## Critical Rules
+
+1. **EXACT QUOTES ONLY** - Copy text character-for-character from the source. Do not paraphrase, summarize, or rephrase.
+2. **NEVER FABRICATE** - If information is not explicitly stated in the protocol, do NOT make it up. Add to not_found.
+3. **MATCH TO LIBRARY** - For each procedure, find the matching consent library section and quote it exactly.
+4. **INCLUDE REASONING** - Explain HOW you identified each piece of information.
+5. **INCLUDE LOCATION** - Note section numbers when visible (e.g., "Section 12.3.1").
+6. **LIBRARY SECTIONS** - Common sections: BLOOD DRAWS, BIOPSY, CT SCAN, ELECTROCARDIOGRAM, CONSCIOUS SEDATION, LOCAL ANESTHESIA, IONIZING RADIATION, PREGNANCY, IV CATHETER, ULTRASOUND, MRI
+
+## Procedure Categories to Look For
+- Blood draws / phlebotomy
+- Biopsies (tissue, tumor, bone marrow, liver, skin)
+- IV catheter / infusion / central line
+- CT scans (with/without contrast)
+- MRI, PET, X-ray, DXA scans
+- Ultrasound / ultrasound-guided procedures
+- ECG / EKG / electrocardiogram
+- Sedation / conscious sedation
+- Local anesthesia / lidocaine
+- Urine collection, stool sample
+- Lumbar puncture, leukapheresis
+- Physical exam, cognitive testing
+- Ionizing radiation exposure
+
+## Metadata to Extract
+- Principal Investigator name
+- Accrual ceiling (number of participants)
+- Study duration / treatment duration
+- Drug names (study drug, investigational agents)
+- Eligibility criteria
+- Study purpose / objectives
+- Randomization details (if any)
+- Visit schedule information`;
+}
+
+/**
+ * Build the user prompt for extraction (varies per protocol chunk).
+ * @param {Object} protocolChunk - Protocol chunk with text and index
+ * @returns {string} - User prompt for this chunk
+ */
+export function buildExtractionUserPrompt(protocolChunk) {
+  return `## PROTOCOL CHUNK ${protocolChunk.index + 1}
+
+<protocol_chunk>
+${protocolChunk.text}
+</protocol_chunk>
+
+Extract all procedures and metadata from this chunk. For each procedure, include:
+1. The exact quote from the protocol describing it
+2. The matching consent library section name
+3. The exact quote from the consent library for that procedure's risks
+
+Output JSON only.`;
+}
+// #endregion
 // #endregion
 
 // #region Database
@@ -201,13 +339,131 @@ function chunkTemplateBlocks(blocks, chunkSize = TEMPLATE_CHUNK_SIZE, overlap = 
 // to follow. The consent library provides IRB-approved language for common procedures/risks.
 
 /**
- * Build the system prompt for block-based consent generation.
- * Contains formatting guide, action definitions (KEEP/REPLACE/DELETE/INSERT), and examples.
+ * Build the system prompt for block-based consent generation (Pipeline 2).
+ * This prompt receives EXTRACTED metadata from Pipeline 1, not the full library.
+ *
+ * @param {string} libraryText - The consent library text (still needed for reference)
+ * @param {string} cohortType - Type of participant (adult-patient, adult-healthy-volunteer, etc.)
+ * @param {Array} extractedProcedures - Array of procedures extracted from protocol (legacy format)
+ * @param {Object} extractedMetadata - Full metadata extracted from Pipeline 1 (new format)
  */
-export function buildBlockSystemPrompt(libraryText, cohortType = "adult-patient") {
+export function buildBlockSystemPrompt(libraryText, cohortType = "adult-patient", extractedProcedures = [], extractedMetadata = null) {
   // NOTE: Protocol excerpt moved to user message for better prompt engineering.
   // Template blocks appear FIRST (primacy), protocol in MIDDLE (haystack),
   // rules reminder at END (recency). This combats "lost in the middle" problem.
+
+  // Build procedure list section from either new metadata or legacy format
+  let procedureListSection = "";
+  let relevantLibrarySections = "";
+
+  if (extractedMetadata && extractedMetadata.procedures && extractedMetadata.procedures.length > 0) {
+    // NEW FORMAT: Use rich metadata with exact quotes
+    procedureListSection = `
+## STUDY PROCEDURES REQUIRING RISK DESCRIPTIONS
+
+These procedures were identified in the protocol with their exact risk language from the consent library.
+You MUST include risk descriptions for ALL of them using the EXACT library quotes provided below.
+
+${extractedMetadata.procedures.map((p, i) => `${i + 1}. **${p.name}**
+   - Protocol location: ${p.protocol_location || "not specified"}
+   - Library section: ${p.library_section}
+   - Protocol quote: "${p.protocol_quote?.slice(0, 150)}${p.protocol_quote?.length > 150 ? "..." : ""}"
+`).join('\n')}
+
+**Do not skip any procedure.** Missing risks are a critical deficiency.
+`;
+
+    // Build procedure risks as a structured iteration instruction
+    // Key insight: LLMs follow procedural instructions better than "copy this block" instructions
+    // because they're trained on step-by-step reasoning patterns
+    const proceduresWithQuotes = extractedMetadata.procedures
+      .filter(p => p.library_quote && p.library_quote.length > 50);
+
+    // Format as numbered items with clear structure
+    const procedureItems = proceduresWithQuotes
+      .map((p, i) => {
+        const heading = p.name.replace(/\s*\([^)]*\)\s*/g, '').trim();
+        return `ITEM ${i + 1}:
+  HEADING: "${heading}"
+  TEXT: "${p.library_quote}"`;
+      })
+      .join('\n\n');
+
+    relevantLibrarySections = `
+## PROCEDURE RISKS GENERATION INSTRUCTIONS
+
+When generating content for a "Risks of Study Procedures" block, you must iterate through the following ${proceduresWithQuotes.length} items.
+
+**For EACH item below, output:**
+1. The HEADING value as a bold markdown heading
+2. The TEXT value verbatim (do not paraphrase)
+
+**Iterate through ALL ${proceduresWithQuotes.length} items in order:**
+
+${procedureItems}
+
+**Output format example:**
+**[HEADING from item 1]:**
+[TEXT from item 1]
+
+**[HEADING from item 2]:**
+[TEXT from item 2]
+
+...and so on for all ${proceduresWithQuotes.length} items.
+
+
+## RELEVANT CONSENT LIBRARY SECTIONS (reference)
+
+These are the exact quotes from the consent library for each procedure:
+
+${extractedMetadata.procedures.map(p => `### ${p.library_section}
+${p.library_quote || "[No library quote extracted - find in consent library above]"}
+`).join('\n')}
+`;
+
+    // Add extracted metadata values
+    if (extractedMetadata.metadata && extractedMetadata.metadata.length > 0) {
+      relevantLibrarySections += `
+## EXTRACTED METADATA VALUES (use these for placeholders)
+
+These values were extracted from the protocol. Use them to fill [bracketed placeholders].
+Verify against the protocol excerpt if anything seems incorrect.
+
+${extractedMetadata.metadata.map(m => `- **${m.key}**: ${m.value}
+  Quote: "${m.quote?.slice(0, 100)}${m.quote?.length > 100 ? "..." : ""}"`).join('\n')}
+`;
+    }
+
+    // Add drug toxicity information if available
+    if (extractedMetadata.drug_toxicity && extractedMetadata.drug_toxicity.drug_name) {
+      const tox = extractedMetadata.drug_toxicity;
+      // Handle both array and string formats for toxicity lists
+      const formatList = (v) => Array.isArray(v) ? v.join(", ") : (v || "Not specified");
+      relevantLibrarySections += `
+## DRUG SIDE EFFECTS (extracted from protocol)
+
+Drug: ${tox.drug_name}
+
+COMMON (>20%): ${formatList(tox.common)}
+OCCASIONAL (4-20%): ${formatList(tox.occasional)}
+RARE (<3%): ${formatList(tox.rare)}
+
+Source: "${tox.source_quote?.slice(0, 200)}${tox.source_quote?.length > 200 ? "..." : ""}"
+`;
+    }
+  } else if (extractedProcedures && extractedProcedures.length > 0) {
+    // LEGACY FORMAT: Simple procedure list (backwards compatibility)
+    procedureListSection = `
+## STUDY PROCEDURES REQUIRING RISK DESCRIPTIONS
+
+These procedures were identified in the protocol. You MUST include risk descriptions for ALL of them:
+
+${extractedProcedures.map((p, i) => `${i + 1}. ${p.name} → Use "${p.library_match}" from consent library`).join('\n')}
+
+**Do not skip any procedure.** Missing risks are a critical deficiency.
+`;
+  }
+
   return `You are a consent form generator. Your job is to FOLLOW the instructions in each template block to generate patient-friendly consent language.
 
 ## CONSENT LIBRARY (standardized IRB-approved language)
@@ -216,6 +472,18 @@ ${libraryText}
 </consent_library>
 
 ## COHORT TYPE: ${cohortType}
+${procedureListSection}${relevantLibrarySections}
+## TONE AND VOICE
+
+Write with a compassionate, patient-centered tone:
+- Address the reader directly as "you"
+- Use warm, supportive language while remaining professional
+- Acknowledge that procedures may cause discomfort
+- Reassure participants that the research team is there to help
+- Avoid cold, clinical language - participants are people, not subjects
+- Example: Instead of "Blood will be collected" → "We will draw a small amount of blood"
+- Example: Instead of "Side effects include..." → "You may experience..."
+- Example: Instead of "The subject must..." → "You will need to..."
 
 ## ⚠️ CRITICAL: SECTION ORDERING ⚠️
 
@@ -887,9 +1155,186 @@ function parseJsonResponse(response) {
 }
 
 /**
+ * Extract metadata from a single protocol chunk (Pipeline 1).
+ * Uses the extraction system prompt with full consent library and template context.
+ *
+ * @param {Object} protocolChunk - Protocol chunk with text content
+ * @param {string} extractionSystemPrompt - Pre-built system prompt with library + template
+ * @param {string} model - Model ID
+ * @param {Function} runModelFn - Function to call the model
+ * @returns {Object} - Parsed JSON response with procedures, metadata, drug_toxicity
+ */
+async function extractMetadataFromChunk(protocolChunk, extractionSystemPrompt, model, runModelFn) {
+  const userPrompt = buildExtractionUserPrompt(protocolChunk);
+  const response = await runModelFn({
+    model,
+    messages: [{ role: "user", content: [{ text: userPrompt }] }],
+    system: extractionSystemPrompt,
+    thoughtBudget: 8000,
+    stream: false,
+  });
+  const result = parseJsonResponse(response);
+  if (result.success) {
+    result.chunkIndex = protocolChunk.index;
+  }
+  return result;
+}
+
+/**
+ * Aggregate metadata from all extraction results into a unified object.
+ * Deduplicates procedures by library_section, merges metadata values.
+ *
+ * @param {Array} results - Array of parseJsonResponse results from extractMetadataFromChunk
+ * @returns {Object} - Aggregated metadata { procedures, metadata, drug_toxicity }
+ */
+function aggregateExtractedMetadata(results) {
+  const proceduresBySection = new Map();
+  const metadataByKey = new Map();
+  let drugToxicity = null;
+
+  for (const r of results) {
+    if (!r.success || !r.data) continue;
+    const data = r.data;
+
+    // Aggregate procedures - dedupe by library_section, keep the one with longest quotes
+    if (data.procedures && Array.isArray(data.procedures)) {
+      for (const p of data.procedures) {
+        const key = (p.library_section || p.name || "").toUpperCase();
+        const existing = proceduresBySection.get(key);
+        if (!existing) {
+          proceduresBySection.set(key, p);
+        } else {
+          // Keep the one with longer quotes (more complete extraction)
+          const existingLen = (existing.protocol_quote?.length || 0) + (existing.library_quote?.length || 0);
+          const candidateLen = (p.protocol_quote?.length || 0) + (p.library_quote?.length || 0);
+          if (candidateLen > existingLen) {
+            proceduresBySection.set(key, p);
+          }
+        }
+      }
+    }
+
+    // Aggregate metadata - dedupe by key, keep the one with longer quote
+    if (data.metadata && Array.isArray(data.metadata)) {
+      for (const m of data.metadata) {
+        const key = m.key?.toLowerCase() || "";
+        const existing = metadataByKey.get(key);
+        if (!existing) {
+          metadataByKey.set(key, m);
+        } else if ((m.quote?.length || 0) > (existing.quote?.length || 0)) {
+          metadataByKey.set(key, m);
+        }
+      }
+    }
+
+    // Take the most complete drug toxicity
+    if (data.drug_toxicity && data.drug_toxicity.drug_name) {
+      if (!drugToxicity) {
+        drugToxicity = data.drug_toxicity;
+      } else {
+        // Keep the one with more side effects listed
+        const existingCount = (drugToxicity.common?.length || 0) +
+          (drugToxicity.occasional?.length || 0) +
+          (drugToxicity.rare?.length || 0);
+        const candidateCount = (data.drug_toxicity.common?.length || 0) +
+          (data.drug_toxicity.occasional?.length || 0) +
+          (data.drug_toxicity.rare?.length || 0);
+        if (candidateCount > existingCount) {
+          drugToxicity = data.drug_toxicity;
+        }
+      }
+    }
+  }
+
+  return {
+    procedures: Array.from(proceduresBySection.values()),
+    metadata: Array.from(metadataByKey.values()),
+    drug_toxicity: drugToxicity,
+  };
+}
+
+/**
+ * Legacy function - extract procedures from a single protocol chunk.
+ * Kept for backwards compatibility, now wraps extractMetadataFromChunk.
+ *
+ * @param {Object} protocolChunk - Protocol chunk with text content
+ * @param {string} model - Model ID
+ * @param {Function} runModelFn - Function to call the model
+ * @returns {Object} - Parsed JSON response with procedures array
+ * @deprecated Use extractMetadataFromChunk instead
+ */
+async function extractProceduresFromChunk(protocolChunk, model, runModelFn) {
+  // Build a minimal extraction prompt for legacy usage
+  const legacyPrompt = `Extract ALL study procedures from this protocol excerpt that may have associated risks.
+
+## Categories to Look For
+- Blood draws / phlebotomy
+- Biopsies (tissue, bone marrow, liver, skin)
+- IV catheter / infusion
+- CT scans (with/without contrast)
+- MRI, PET, X-ray, DXA scans
+- Ultrasound / ultrasound-guided procedures
+- ECG / EKG / electrocardiogram
+- Sedation / conscious sedation
+- Local anesthesia / lidocaine
+- Urine collection, stool sample
+- Lumbar puncture, leukapheresis
+- Physical exam, cognitive testing
+- Ionizing radiation exposure
+
+## Output Format
+Output JSON only:
+{
+  "procedures": [
+    {"name": "Blood Collection", "library_match": "BLOOD DRAWS"},
+    {"name": "CT Scan", "library_match": "CT SCAN"}
+  ]
+}
+
+Use library_match to indicate the consent library section name.`;
+
+  const response = await runModelFn({
+    model,
+    messages: [{ role: "user", content: [{ text: `<protocol>\n${protocolChunk.text}\n</protocol>\n\nExtract procedures. Output JSON only.` }] }],
+    system: legacyPrompt,
+    thoughtBudget: 3000,
+    stream: false,
+  });
+  return parseJsonResponse(response);
+}
+
+/**
+ * Legacy function - aggregate procedures from extraction results.
+ * @param {Array} results - Array of parseJsonResponse results
+ * @returns {Array} - Deduplicated array of procedure objects
+ * @deprecated Use aggregateExtractedMetadata instead
+ */
+function aggregateProcedures(results) {
+  const seen = new Map();
+  for (const r of results) {
+    if (!r.success || !r.data?.procedures) continue;
+    for (const p of r.data.procedures) {
+      const key = (p.library_match || p.library_section || p.name).toUpperCase();
+      if (!seen.has(key)) seen.set(key, p);
+    }
+  }
+  return Array.from(seen.values());
+}
+
+/**
  * Process a single protocol chunk × template chunk pair with retry and verification.
  * If JSON parsing fails, retries with conversation context for self-correction.
  * ALWAYS adds a verification turn after successful initial response to double-check work.
+ *
+ * @param {Object} protocolChunk - Protocol chunk with text content
+ * @param {Object} templateChunk - Template chunk with blocks
+ * @param {string} libraryText - Consent library text
+ * @param {number} totalChunks - Total number of protocol chunks
+ * @param {string} model - Model ID
+ * @param {Function} runModelFn - Function to call the model
+ * @param {Array} extractedProcedures - Procedures extracted from protocol (legacy format)
+ * @param {number} maxRetries - Maximum retry attempts
+ * @param {Object} extractedMetadata - Full metadata from Pipeline 1 (new format, optional)
  */
 async function processChunkPair(
   protocolChunk,
@@ -898,9 +1343,12 @@ async function processChunkPair(
   totalChunks,
   model,
   runModelFn,
-  maxRetries = 2
+  extractedProcedures = [],
+  maxRetries = 2,
+  extractedMetadata = null
 ) {
-  const systemPrompt = buildBlockSystemPrompt(libraryText);
+  // Use new metadata format if available, otherwise fall back to legacy
+  const systemPrompt = buildBlockSystemPrompt(libraryText, "adult-patient", extractedProcedures, extractedMetadata);
   const messages = [{ role: "user", content: [{ text: buildBlockUserPrompt(templateChunk, protocolChunk, totalChunks) }] }];
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -1210,8 +1658,17 @@ async function runWithConcurrency(tasks, maxConcurrent) {
 }
 
 /**
- * Main orchestration: extract blocks, chunk protocol/template, process all pairs, merge, apply.
- * Phase 1 primes cache for each protocol chunk. Phase 2 processes remaining combinations.
+ * Main orchestration: Two-pipeline architecture for consent generation.
+ *
+ * Pipeline 1: Metadata Extraction
+ *   - System prompt: Full consent library + template structure (CACHED)
+ *   - User message: Protocol chunk (VARIES)
+ *   - Output: Procedures with exact quotes, metadata values, drug toxicity
+ *
+ * Pipeline 2: Consent Generation
+ *   - System prompt: Formatting rules + extracted metadata + relevant library quotes (CACHED per protocol)
+ *   - User message: Template chunk (VARIES)
+ *   - Output: Block-by-block processing decisions
  */
 async function runBlockBasedGeneration(
   templateBuffer,
@@ -1246,7 +1703,66 @@ async function runBlockBasedGeneration(
     total: totalCombinations,
   });
 
-  // 4. Phase 1: Prime cache for each protocol chunk
+  // ============================================================
+  // PIPELINE 1: Metadata Extraction
+  // System prompt: library + template (CACHED across all protocol chunks)
+  // User message: protocol chunk (VARIES)
+  // ============================================================
+  onProgress?.({ status: "extracting_metadata", message: "Extracting metadata from protocol (Pipeline 1)..." });
+  console.log("=== PIPELINE 1: Metadata Extraction ===");
+  console.log(`Processing ${protocolChunks.length} protocol chunks with shared system prompt (library + template cached)`);
+
+  // Build extraction system prompt ONCE (cached across all protocol chunks)
+  const extractionSystemPrompt = buildExtractionSystemPrompt(libraryText, blocks);
+  console.log(`Extraction system prompt size: ${extractionSystemPrompt.length} chars`);
+
+  // Run extraction on all protocol chunks in parallel
+  const extractionTasks = protocolChunks.map(chunk =>
+    () => extractMetadataFromChunk(chunk, extractionSystemPrompt, model, runModelFn)
+  );
+  const extractionResults = await runWithConcurrency(extractionTasks, MAX_CONCURRENT_REQUESTS);
+
+  // Aggregate all extracted metadata
+  const extractedMetadata = aggregateExtractedMetadata(extractionResults);
+
+  // Log extraction results
+  console.log(`Extracted ${extractedMetadata.procedures.length} procedures:`);
+  for (const p of extractedMetadata.procedures) {
+    console.log(`  - ${p.name} (${p.library_section})`);
+    if (p.protocol_quote) console.log(`    Protocol: "${p.protocol_quote.slice(0, 80)}..."`);
+    if (p.library_quote) console.log(`    Library: "${p.library_quote.slice(0, 80)}..."`);
+  }
+  console.log(`Extracted ${extractedMetadata.metadata.length} metadata values:`);
+  for (const m of extractedMetadata.metadata) {
+    console.log(`  - ${m.key}: ${m.value}`);
+  }
+  if (extractedMetadata.drug_toxicity) {
+    console.log(`Drug toxicity found: ${extractedMetadata.drug_toxicity.drug_name}`);
+  }
+
+  // Also create legacy format for backwards compatibility
+  const extractedProcedures = extractedMetadata.procedures.map(p => ({
+    name: p.name,
+    library_match: p.library_section,
+  }));
+
+  onProgress?.({
+    status: "metadata_extracted",
+    procedureCount: extractedMetadata.procedures.length,
+    metadataCount: extractedMetadata.metadata.length,
+    procedures: extractedMetadata.procedures.map(p => p.name),
+  });
+
+  // ============================================================
+  // PIPELINE 2: Consent Generation
+  // System prompt: formatting rules + extracted metadata (CACHED)
+  // User message: template chunk (VARIES)
+  // ============================================================
+  onProgress?.({ status: "generating", message: "Generating consent content (Pipeline 2)..." });
+  console.log("\n=== PIPELINE 2: Consent Generation ===");
+  console.log(`Processing ${totalCombinations} combinations (${protocolChunks.length} protocol × ${templateChunks.length} template chunks)`);
+
+  // Phase 1: Prime cache for each protocol chunk (first template chunk)
   onProgress?.({ status: "priming", completed: 0, total: protocolChunks.length });
 
   const primingResults = await runWithConcurrency(
@@ -1258,13 +1774,16 @@ async function runBlockBasedGeneration(
           libraryText,
           protocolChunks.length,
           model,
-          runModelFn
+          runModelFn,
+          extractedProcedures, // Legacy format
+          2, // maxRetries
+          extractedMetadata // New format with exact quotes
         )
     ),
     MAX_CONCURRENT_REQUESTS
   );
 
-  // 5. Phase 2: Process remaining combinations
+  // Phase 2: Process remaining combinations
   const allResults = [...primingResults];
 
   if (templateChunks.length > 1) {
@@ -1272,7 +1791,17 @@ async function runBlockBasedGeneration(
     for (const pChunk of protocolChunks) {
       for (const tChunk of templateChunks.slice(1)) {
         remainingTasks.push(() =>
-          processChunkPair(pChunk, tChunk, libraryText, protocolChunks.length, model, runModelFn)
+          processChunkPair(
+            pChunk,
+            tChunk,
+            libraryText,
+            protocolChunks.length,
+            model,
+            runModelFn,
+            extractedProcedures, // Legacy format
+            2, // maxRetries
+            extractedMetadata // New format with exact quotes
+          )
         );
       }
     }
@@ -1317,6 +1846,7 @@ async function runBlockBasedGeneration(
   return {
     outputBuffer,
     replacements,
+    extractedMetadata, // Include for debugging/analysis
     stats: {
       protocolChunks: protocolChunks.length,
       templateChunks: templateChunks.length,
@@ -1325,6 +1855,8 @@ async function runBlockBasedGeneration(
       deleteCount,
       replaceCount,
       avgConfidence,
+      proceduresExtracted: extractedMetadata.procedures.length,
+      metadataExtracted: extractedMetadata.metadata.length,
     },
   };
 }

@@ -15,7 +15,12 @@
 import test from "/test/test.js";
 import assert from "/test/assert.js";
 import { docxExtractTextBlocks, docxReplace } from "/utils/docx.js";
-import { buildBlockSystemPrompt, buildBlockUserPrompt } from "/pages/tools/consent-crafter-v2/index.js";
+import {
+  buildBlockSystemPrompt,
+  buildBlockUserPrompt,
+  buildExtractionSystemPrompt,
+  buildExtractionUserPrompt
+} from "/pages/tools/consent-crafter-v2/index.js";
 
 // Get API key from URL for authenticated requests
 const urlParams = new URLSearchParams(window.location.search);
@@ -26,7 +31,7 @@ const PROTOCOL_CHUNK_SIZE = 20000;
 const PROTOCOL_OVERLAP = 2000;
 const TEMPLATE_CHUNK_SIZE = 100; // Larger value for fewer template chunks (was 40)
 const TEMPLATE_OVERLAP = 10;
-const MAX_CONCURRENT_REQUESTS = 15;
+const MAX_CONCURRENT_REQUESTS = 50;
 
 // Verification turn prompt - generic prompt to double-check work after initial response
 const VERIFICATION_PROMPT = `Now double-check your response.
@@ -42,6 +47,8 @@ const VERIFICATION_PROMPT = `Now double-check your response.
 4. **Placeholders**: Did you leave any [bracketed placeholders] unfilled that you could fill with protocol data?
 
 5. **procedure_library Field**: For any content you pulled from the consent library, did you include the procedure_library field showing the exact source?
+
+6. **Procedure Completeness**: Count the procedure headings in your output for the risks section. Does the count match the number specified in the system prompt's "CRITICAL: PROCEDURE RISKS" section? If the system prompt says "ALL X PROCEDURES", you MUST have X separate procedure headings. Missing any is a critical error. Sedation and Local Anesthesia are SEPARATE from Biopsy.
 
 ## Your Task
 
@@ -65,6 +72,8 @@ Review the replacement map and generated document text below. Identify:
 3. **REDUNDANT SECTIONS**: If the same information appears multiple times (e.g., pregnancy risks, blood draw risks), keep the most complete version and null duplicates.
 
 4. **MISSING CONTENT**: Blocks that should have content but are null or empty.
+
+5. **Procedure Coverage**: Check that all study procedures have corresponding risk entries. Missing procedures should be flagged.
 
 ## Output Format
 
@@ -98,6 +107,8 @@ If no corrections needed, output:
 </generated_text>
 
 Now review for duplicates and issues. Output JSON corrections.`;
+
+// NOTE: Procedure extraction prompt removed - now using buildExtractionSystemPrompt from index.js
 
 // ============================================================
 // DEBUG CONFIG: Blocks to watch closely during processing
@@ -208,6 +219,111 @@ function parseJsonResponse(response) {
   }
 }
 
+/**
+ * Extract metadata from a single protocol chunk using Pipeline 1.
+ * Uses the extraction system prompt with full consent library and template context.
+ */
+async function extractMetadataFromChunk(protocolChunk, extractionSystemPrompt, model) {
+  const userPrompt = buildExtractionUserPrompt(protocolChunk);
+  const response = await runModel({
+    model,
+    messages: [{ role: "user", content: [{ text: userPrompt }] }],
+    system: extractionSystemPrompt,
+    thoughtBudget: 8000,
+    stream: false,
+  });
+  const result = parseJsonResponse(response);
+  if (result.success) {
+    result.chunkIndex = protocolChunk.index;
+  }
+  return result;
+}
+
+/**
+ * Aggregate metadata from all extraction results into a unified object.
+ * Deduplicates procedures by library_section, merges metadata values.
+ */
+function aggregateExtractedMetadata(results) {
+  const proceduresBySection = new Map();
+  const metadataByKey = new Map();
+  let drugToxicity = null;
+
+  for (const r of results) {
+    if (!r.success || !r.data) continue;
+    const data = r.data;
+
+    // Aggregate procedures - dedupe by library_section, keep the one with longest quotes
+    if (data.procedures && Array.isArray(data.procedures)) {
+      for (const p of data.procedures) {
+        const key = (p.library_section || p.name || "").toUpperCase();
+        const existing = proceduresBySection.get(key);
+        if (!existing) {
+          proceduresBySection.set(key, p);
+        } else {
+          // Keep the one with longer quotes (more complete extraction)
+          const existingLen = (existing.protocol_quote?.length || 0) + (existing.library_quote?.length || 0);
+          const candidateLen = (p.protocol_quote?.length || 0) + (p.library_quote?.length || 0);
+          if (candidateLen > existingLen) {
+            proceduresBySection.set(key, p);
+          }
+        }
+      }
+    }
+
+    // Aggregate metadata - dedupe by key, keep the one with longer quote
+    if (data.metadata && Array.isArray(data.metadata)) {
+      for (const m of data.metadata) {
+        const key = m.key?.toLowerCase() || "";
+        const existing = metadataByKey.get(key);
+        if (!existing) {
+          metadataByKey.set(key, m);
+        } else if ((m.quote?.length || 0) > (existing.quote?.length || 0)) {
+          metadataByKey.set(key, m);
+        }
+      }
+    }
+
+    // Take the most complete drug toxicity
+    if (data.drug_toxicity && data.drug_toxicity.drug_name) {
+      if (!drugToxicity) {
+        drugToxicity = data.drug_toxicity;
+      } else {
+        // Keep the one with more side effects listed
+        const existingCount = (drugToxicity.common?.length || 0) +
+          (drugToxicity.occasional?.length || 0) +
+          (drugToxicity.rare?.length || 0);
+        const candidateCount = (data.drug_toxicity.common?.length || 0) +
+          (data.drug_toxicity.occasional?.length || 0) +
+          (data.drug_toxicity.rare?.length || 0);
+        if (candidateCount > existingCount) {
+          drugToxicity = data.drug_toxicity;
+        }
+      }
+    }
+  }
+
+  return {
+    procedures: Array.from(proceduresBySection.values()),
+    metadata: Array.from(metadataByKey.values()),
+    drug_toxicity: drugToxicity,
+  };
+}
+
+/**
+ * Build system prompt for Pipeline 2 using extracted metadata.
+ * Now calls buildBlockSystemPrompt with the new extractedMetadata parameter.
+ */
+function buildBlockSystemPromptWithMetadata(libraryText, extractedMetadata) {
+  // Convert new metadata format to legacy procedures format for backwards compatibility
+  const extractedProcedures = extractedMetadata?.procedures?.map(p => ({
+    name: p.name,
+    library_match: p.library_section,
+  })) || [];
+
+  // Call buildBlockSystemPrompt with both legacy and new format
+  return buildBlockSystemPrompt(libraryText, "adult-patient", extractedProcedures, extractedMetadata);
+}
+
 test("Consent Crafter v2 Full Generation", async (t) => {
   await t.test("generate consent form and log results", async () => {
     console.log("=".repeat(80));
@@ -289,6 +405,60 @@ test("Consent Crafter v2 Full Generation", async (t) => {
     console.log("");
 
     // ============================================================
+    // PIPELINE 1: Metadata Extraction
+    // System prompt: library + template (CACHED across all protocol chunks)
+    // User message: protocol chunk (VARIES)
+    // ============================================================
+    console.log("=".repeat(80));
+    console.log("=== PIPELINE 1: METADATA EXTRACTION ===");
+    console.log("=".repeat(80));
+
+    // Build extraction system prompt ONCE (cached across all protocol chunks)
+    const extractionSystemPrompt = buildExtractionSystemPrompt(libraryText, blocks);
+    console.log(`Extraction system prompt size: ${extractionSystemPrompt.length} chars`);
+
+    // Run extraction on all protocol chunks in parallel
+    const extractionTasks = protocolChunks.map(chunk =>
+      () => extractMetadataFromChunk(chunk, extractionSystemPrompt, "us.anthropic.claude-sonnet-4-5-20250929-v1:0")
+    );
+    const extractionResults = await runWithConcurrency(extractionTasks, MAX_CONCURRENT_REQUESTS);
+
+    // Aggregate all extracted metadata
+    const extractedMetadata = aggregateExtractedMetadata(extractionResults);
+
+    // Log extraction results in detail
+    console.log(`\nExtracted ${extractedMetadata.procedures.length} procedures:`);
+    for (const p of extractedMetadata.procedures) {
+      console.log(`  - ${p.name} (${p.library_section})`);
+      if (p.protocol_quote) console.log(`    Protocol: "${p.protocol_quote.slice(0, 100)}..."`);
+      if (p.library_quote) console.log(`    Library: "${p.library_quote.slice(0, 100)}..."`);
+    }
+    console.log(`\nExtracted ${extractedMetadata.metadata.length} metadata values:`);
+    for (const m of extractedMetadata.metadata) {
+      console.log(`  - ${m.key}: ${m.value}`);
+      if (m.quote) console.log(`    Quote: "${m.quote.slice(0, 80)}..."`);
+    }
+    if (extractedMetadata.drug_toxicity) {
+      const tox = extractedMetadata.drug_toxicity;
+      console.log(`\nDrug toxicity found: ${tox.drug_name}`);
+      // Handle both array and string formats
+      const formatList = (v) => Array.isArray(v) ? v.join(", ") : (v || "N/A");
+      console.log(`  Common: ${formatList(tox.common)}`);
+      console.log(`  Occasional: ${formatList(tox.occasional)}`);
+      console.log(`  Rare: ${formatList(tox.rare)}`);
+    }
+    console.log("");
+
+    // ============================================================
+    // PIPELINE 2: Consent Generation
+    // System prompt: formatting rules + extracted metadata (CACHED)
+    // User message: template chunk (VARIES)
+    // ============================================================
+    console.log("=".repeat(80));
+    console.log("=== PIPELINE 2: CONSENT GENERATION ===");
+    console.log("=".repeat(80));
+
+    // ============================================================
     // Track all candidates per block for debugging merge decisions
     // ============================================================
     const allCandidatesPerBlock = new Map(); // index -> array of {pChunk, tChunk, candidate}
@@ -297,7 +467,8 @@ test("Consent Crafter v2 Full Generation", async (t) => {
     console.log("Processing... (this will take a while)\n");
 
     const processChunkPair = async (pChunk, tChunk) => {
-      const systemPrompt = buildBlockSystemPrompt(libraryText);
+      // Use the system prompt with extracted metadata (exact quotes from library)
+      const systemPrompt = buildBlockSystemPromptWithMetadata(libraryText, extractedMetadata);
       const userPrompt = buildBlockUserPrompt(tChunk, pChunk, protocolChunks.length);
       const messages = [{ role: "user", content: [{ text: userPrompt }] }];
 
@@ -417,10 +588,29 @@ test("Consent Crafter v2 Full Generation", async (t) => {
     console.log("=".repeat(80));
 
     const byIndex = new Map();
+    const insertsByIndex = new Map();  // Separate map for INSERT actions
+
     for (const result of allResults) {
       for (const candidate of result.candidates || []) {
-        const existing = byIndex.get(candidate.index);
         const isWatched = WATCH_BLOCKS.includes(candidate.index);
+
+        // Handle INSERT actions separately - they add content after a block, not replace it
+        if (candidate.action === "INSERT" && candidate.content) {
+          const existingInsert = insertsByIndex.get(candidate.index);
+          if (!existingInsert) {
+            insertsByIndex.set(candidate.index, candidate);
+            if (isWatched) console.log(`[@${candidate.index}] INSERT INITIAL: "${candidate.content.slice(0, 50)}..."`);
+          } else if (candidate.confidence > existingInsert.confidence) {
+            insertsByIndex.set(candidate.index, candidate);
+            if (isWatched) console.log(`[@${candidate.index}] INSERT OVERRIDE: higher confidence`);
+          } else if (candidate.confidence === existingInsert.confidence && candidate.content.length > existingInsert.content.length) {
+            insertsByIndex.set(candidate.index, candidate);
+            if (isWatched) console.log(`[@${candidate.index}] INSERT OVERRIDE: longer content`);
+          }
+          continue;  // Don't process INSERT as a regular candidate
+        }
+
+        const existing = byIndex.get(candidate.index);
 
         if (candidate.action === "KEEP" && candidate.confidence < 5) {
           if (isWatched) console.log(`[@${candidate.index}] SKIP low-confidence KEEP (conf=${candidate.confidence})`);
@@ -522,6 +712,12 @@ test("Consent Crafter v2 Full Generation", async (t) => {
         const originalText = originalBlock ? originalBlock.text : "";
         replacements[`@${index}`] = originalText + candidate.content;
       }
+    }
+
+    // Add INSERT actions to replacements - these add content AFTER a block
+    for (const [index, candidate] of insertsByIndex) {
+      replacements[`INSERT@${index}`] = candidate.content;
+      console.log(`[@${index}] INSERT added: "${candidate.content.slice(0, 80)}..."`);
     }
 
     // 7. Log replacement map
