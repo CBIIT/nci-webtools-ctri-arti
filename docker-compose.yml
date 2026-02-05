@@ -1,4 +1,5 @@
 services:
+  # Main app - serves client and API, proxies to internal services
   server:
     build:
       context: .
@@ -7,7 +8,14 @@ services:
       - "443:443"
     environment:
       - PORT=443
+      - DB_DIALECT=postgres
       - PGHOST=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=postgres
+      # Internal service URLs (docker network)
+      - GATEWAY_URL=http://gateway:3001
+      - CMS_URL=http://cms:3002
     env_file:
       - ./server/.env
     develop:
@@ -29,9 +37,75 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-        
+      gateway:
+        condition: service_started
+      cms:
+        condition: service_started
+
+  # Gateway service - AI inference
+  gateway:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    command: ["npm", "run", "start:gateway"]
+    environment:
+      - PORT=3001
+      - DB_DIALECT=postgres
+      - DB_SKIP_SYNC=true
+      - PGHOST=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=postgres
+    env_file:
+      - ./server/.env
+    develop:
+      watch:
+      - action: sync+restart
+        path: ./server
+        target: /server
+        ignore:
+          - ./server/node_modules
+      - action: rebuild
+        path: server/package.json
+        ignore:
+          - ./server/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # CMS service - conversation management
+  cms:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    command: ["npm", "run", "start:cms"]
+    environment:
+      - PORT=3002
+      - DB_DIALECT=postgres
+      - DB_SKIP_SYNC=true
+      - PGHOST=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=postgres
+    env_file:
+      - ./server/.env
+    develop:
+      watch:
+      - action: sync+restart
+        path: ./server
+        target: /server
+        ignore:
+          - ./server/node_modules
+      - action: rebuild
+        path: server/package.json
+        ignore:
+          - ./server/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
-    image: pgvector/pgvector:pg16 
+    image: pgvector/pgvector:pg16
     ports:
       - "5432:5432"
     volumes:

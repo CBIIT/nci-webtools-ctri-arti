@@ -1,0 +1,7 @@
+# CMS service Dockerfile
+# Builds from the main image with a different CMD
+ARG ECR_REGISTRY
+ARG PREFIX
+ARG GITHUB_SHA
+FROM ${ECR_REGISTRY}/${PREFIX}:main-${GITHUB_SHA}
+CMD ["npm", "run", "start:cms"]

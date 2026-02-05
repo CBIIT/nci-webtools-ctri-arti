@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node --env-file .env server.js",
     "start:dev": "node --env-file .env --watch-path=. server.js",
+    "start:gateway": "node --env-file .env gateway.js",
+    "start:cms": "node --env-file .env cms.js",
     "test:setup": "npx playwright install chromium",
     "test": "node --env-file test.env --test --test-reporter=tap && npm run test:integration",
     "test:integration": "node --env-file test.env integration.js",

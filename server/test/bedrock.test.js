@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { after, before, beforeEach, test } from "node:test";
 
-import BedrockProvider from "../services/providers/bedrock.js";
+import BedrockProvider from "../services/gateway/providers/bedrock.js";
 
 const HAIKU_MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0";
 
