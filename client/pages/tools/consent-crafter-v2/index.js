@@ -47,6 +47,29 @@ const PROTOCOL_OVERLAP = 2000; // 2KB overlap
 const TEMPLATE_CHUNK_SIZE = 100; // EXPERIMENT: Larger value for fewer template chunks (was 40)
 const TEMPLATE_OVERLAP = 10; // 10 block overlap to preserve section context across chunk boundaries
 const MAX_CONCURRENT_REQUESTS = 20; // Limit parallel API calls
+
+// Verification turn prompt - generic prompt to double-check work after initial response
+const VERIFICATION_PROMPT = `Now double-check your response.
+
+## Review Checklist
+
+1. **Completeness**: Did you process ALL blocks in the range? Are there any instruction blocks you should have REPLACED with content but marked as DELETE instead?
+
+2. **Library Usage**: For any procedures, risks, or standardized language - did you use EXACT text from the <consent_library>? The text should match character-for-character, not be paraphrased.
+
+3. **Missing Content**: Review the protocol excerpt again. Is there any relevant information you didn't extract that should fill a template block?
+
+4. **Placeholders**: Did you leave any [bracketed placeholders] unfilled that you could fill with protocol data?
+
+5. **procedure_library Field**: For any content you pulled from the consent library, did you include the procedure_library field showing the exact source?
+
+## Your Task
+
+If you find ANY corrections, additions, or improvements:
+- Output them as a JSON array
+- Use the same format: {index, action, content, confidence, reasoning, procedure_library}
+
+If your response was complete and correct, output: []`;
 // #endregion
 
 // #region Database
@@ -816,8 +839,9 @@ function parseJsonResponse(response) {
 }
 
 /**
- * Process a single protocol chunk × template chunk pair with retry.
+ * Process a single protocol chunk × template chunk pair with retry and verification.
  * If JSON parsing fails, retries with conversation context for self-correction.
+ * ALWAYS adds a verification turn after successful initial response to double-check work.
  */
 async function processChunkPair(
   protocolChunk,
@@ -842,8 +866,34 @@ async function processChunkPair(
       });
 
       const parsed = parseJsonResponse(response);
-      if (parsed.success) {
-        return { candidates: Array.isArray(parsed.data) ? parsed.data : [], retries: attempt };
+      if (parsed.success && Array.isArray(parsed.data)) {
+        let candidates = parsed.data;
+
+        // ALWAYS add verification turn to double-check work
+        messages.push({ role: "assistant", content: [{ text: response }] });
+        messages.push({ role: "user", content: [{ text: VERIFICATION_PROMPT }] });
+
+        try {
+          const verifyResponse = await runModelFn({
+            model,
+            messages,
+            system: systemPrompt,
+            thoughtBudget: 5000,
+            stream: false,
+          });
+
+          const verifyParsed = parseJsonResponse(verifyResponse);
+          if (verifyParsed.success && Array.isArray(verifyParsed.data) && verifyParsed.data.length > 0) {
+            // Merge corrections into candidates
+            candidates = candidates.concat(verifyParsed.data);
+            console.log(`Verification turn for P${protocolChunk.index}×T${templateChunk.index}: ${verifyParsed.data.length} corrections`);
+          }
+        } catch (verifyError) {
+          console.warn(`Verification turn failed for P${protocolChunk.index}×T${templateChunk.index}:`, verifyError);
+          // Continue with original results even if verification fails
+        }
+
+        return { candidates, retries: attempt };
       }
 
       // JSON retry with conversation history
