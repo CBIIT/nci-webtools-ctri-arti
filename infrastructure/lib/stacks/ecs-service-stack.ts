@@ -7,7 +7,6 @@ import {
   aws_logs as logs,
   aws_elasticloadbalancingv2 as elbv2,
   aws_secretsmanager as secretsmanager,
-  aws_servicediscovery as servicediscovery,
   aws_ssm as ssm,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
@@ -153,7 +152,7 @@ export class EcsServiceStack extends Stack {
         secrets: secrets ?? {},
         logging: new ecs.AwsLogDriver({
           logGroup,
-          streamPrefix: "ecs",
+          streamPrefix: containerProps.name,
         }),
       });
 
@@ -184,10 +183,6 @@ export class EcsServiceStack extends Stack {
       //   ]
       // }
     });
-
-    // add microservices here (gateway, cms)
-    for (const microservice of ["cms", "gateway"]) {
-    }
 
     const listener = elbv2.ApplicationListener.fromLookup(this, "ecs-service-listener", {
       loadBalancerTags: { Name: tier },

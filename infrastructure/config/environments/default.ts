@@ -106,6 +106,7 @@ const config: Config = {
           ],
           environment: {
             PORT: "3001",
+            DB_SKIP_SYNC: "true",
           },
           secrets: {
             ...sharedSecrets,
@@ -124,6 +125,7 @@ const config: Config = {
           ],
           environment: {
             PORT: "3002",
+            DB_SKIP_SYNC: "true",
           },
           secrets: {
             ...sharedSecrets,
