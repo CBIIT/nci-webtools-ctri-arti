@@ -23,9 +23,14 @@ async function trackModelUsage(userId, modelValue, ip, usageData) {
 
     const inputTokens = Math.max(0, parseInt(usageData.inputTokens) || 0);
     const outputTokens = Math.max(0, parseInt(usageData.outputTokens) || 0);
+    const cacheReadTokens = Math.max(0, parseInt(usageData.cacheReadInputTokens) || 0);
+    const cacheWriteTokens = Math.max(0, parseInt(usageData.cacheWriteInputTokens) || 0);
+
     const inputCost = (inputTokens / 1000) * (model.cost1kInput || 0);
     const outputCost = (outputTokens / 1000) * (model.cost1kOutput || 0);
-    const totalCost = inputCost + outputCost;
+    const cacheReadCost = (cacheReadTokens / 1000) * (model.cost1kCacheRead || 0);
+    const cacheWriteCost = (cacheWriteTokens / 1000) * (model.cost1kCacheWrite || 0);
+    const totalCost = inputCost + outputCost + cacheReadCost + cacheWriteCost;
 
     const usageRecord = await Usage.create({
       userId,
@@ -33,6 +38,8 @@ async function trackModelUsage(userId, modelValue, ip, usageData) {
       ip,
       inputTokens,
       outputTokens,
+      cacheReadTokens,
+      cacheWriteTokens,
       cost: totalCost,
     });
 
