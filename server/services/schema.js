@@ -1195,8 +1195,8 @@ export const seedData = {
     {
       id: 1,
       providerId: 1,
-      name: "Opus 4.5",
-      internalName: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+      name: "Opus 4.6",
+      internalName: "us.anthropic.claude-opus-4-6-v1",
       cost1kInput: 0.005,
       cost1kOutput: 0.025,
       cost1kCacheRead: 0.0005,

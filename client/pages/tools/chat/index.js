@@ -655,7 +655,7 @@ export default function Page() {
                           id="model"
                           required
                         >
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_5}>Opus 4.5</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus 4.6</option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5} selected>
                             Sonnet 4.5
                           </option>
