@@ -14,33 +14,24 @@
 import { buildChunkedSchemas, buildOutputConfig } from "./schema.js";
 
 /**
- * Split the prompt template into a system prompt and user message.
+ * Build the system prompt with all content (instructions + consent library + protocol).
  *
- * prompt-v3.txt ends with:
- *   CONSENT LIBRARY:\n${consentLibrary}\n\nPROTOCOL DOCUMENT:\n${protocol}
- *
- * System prompt = instructions + consent library (static, cached across chunks)
- * User message  = protocol text (same across chunks, also cached)
+ * Everything goes in the system prompt so Bedrock caches the entire input after the
+ * first chunk request. Chunks 2-4 get full cache hits — only outputConfig differs.
  *
  * @param {string} promptTemplate - prompt-v3.txt content
  * @param {string} protocolText - Full protocol document text
  * @param {string} consentLibrary - consent-library.txt content
- * @returns {{ system: string, userMessage: string }}
+ * @returns {string} Fully assembled system prompt
  */
-function buildPromptParts(promptTemplate, protocolText, consentLibrary) {
+function buildSystemPrompt(promptTemplate, protocolText, consentLibrary) {
   const today = new Date();
   const todayStr = `${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}/${today.getFullYear()}`;
 
-  // Substitute today and consent library into the template, but replace
-  // the protocol placeholder with a pointer to the user message.
-  const system = promptTemplate
+  return promptTemplate
     .replaceAll("${consentLibrary}", consentLibrary)
-    .replaceAll("${today}", todayStr)
-    .replace("${protocol}", "[See the protocol document in the user message below.]");
-
-  const userMessage = `PROTOCOL DOCUMENT:\n${protocolText}`;
-
-  return { system, userMessage };
+    .replaceAll("${protocol}", protocolText)
+    .replaceAll("${today}", todayStr);
 }
 
 /**
@@ -67,7 +58,7 @@ export async function runFieldExtraction({
   runModelFn,
   onProgress,
 }) {
-  const { system, userMessage } = buildPromptParts(promptTemplate, protocolText, consentLibrary || "");
+  const system = buildSystemPrompt(promptTemplate, protocolText, consentLibrary || "");
   const chunks = buildChunkedSchemas(fullSchema);
   const totalChunks = chunks.length;
 
@@ -93,7 +84,7 @@ export async function runFieldExtraction({
     const responseText = await runModelFn({
       model,
       system,
-      messages: [{ role: "user", content: [{ text: userMessage }] }],
+      messages: [{ role: "user", content: [{ text: "Extract the fields specified by the output schema." }] }],
       outputConfig,
     });
 
