@@ -291,6 +291,57 @@ These are NIH consent form conventions that cannot be inferred from the template
 2. For each complex/ambiguous field, include verbatim quotes AND trace your logic in "reasoning".
 3. Write each content field at an 8th-grade reading level, grounded in the quotes and reasoning you've already generated.
 
+=== OUTPUT SCHEMA ===
+
+Your output MUST be a valid JSON object matching this schema. The output schema specifies which subset of fields to extract for each request.
+
+${schema}
+
+=== OUTPUT EXAMPLE ===
+
+Below is a truncated example of the expected JSON output for a single chunk. Your response must be ONLY a JSON object — no prose, no explanation, no markdown fences. The exact fields requested will vary per chunk.
+
+{
+  "references": [],
+  "reasoning": [
+    "accrual_ceiling: 'We plan to enroll up to 15 evaluable subjects at the NIH site' (Section 6.1) → protocol distinguishes evaluable vs total; using total enrollment → '15'",
+    "is_fda_approved_off_label: 'Atezolizumab is approved by the FDA to treat some types of cancers... but in this study, we will use the minimum approved dose of 840 mg and decide on the frequency' → approved drug used at different dose/schedule → true"
+  ],
+  "pi_name": "James Gulley, M.D., Ph.D.",
+  "study_title": "A Feasibility Multicenter Phase I Study of Therapeutic Drug Monitoring-Based Atezolizumab Dosing.",
+  "study_site": "NIH Clinical Center",
+  "cohort": "Affected patient",
+  "consent_version": "01/15/2025",
+  "contact_name": "Dr. James Gulley",
+  "contact_phone": "(301) 480-7164",
+  "contact_email": "gulleyj@mail.nih.gov",
+  "parent_permission": false,
+  "impaired_adults": false,
+  "is_investigational": true,
+  "investigational_drug_name": "atezolizumab",
+  "study_duration": "2 years",
+  "accrual_ceiling": "15",
+  "drug_risks": [
+    {
+      "drug_name": "Atezolizumab",
+      "common_definition": "In 100 people receiving atezolizumab, more than 20 and up to 100 may have:",
+      "common_risks": ["Tiredness", "Infection"],
+      "occasional_definition": "In 100 people receiving atezolizumab, from 4 to 20 may have:",
+      "occasional_risks": ["Anemia which may require a blood transfusion", "Diarrhea, nausea, vomiting", "..."],
+      "rare_definition": "In 100 people receiving atezolizumab, 3 or fewer may have:",
+      "rare_risks": ["Abnormal kidney test (possible kidney damage)", "..."]
+    }
+  ],
+  "procedure_risks": [
+    "Biopsy:\nThis procedure usually causes only brief discomfort at the site from which the biopsy is taken. Risks of biopsy may include bleeding, injury to internal organs, and infection.",
+    "Blood collection:\nSide effects of blood draw include pain and bruising in the area where the needle was placed, lightheadedness, and rarely, fainting and infection.",
+    "Electrocardiogram:\nYou may experience some minor skin irritation from the electrodes."
+  ],
+  "no_payment": true,
+  "has_payment": false,
+  "disease_condition": "cancer"
+}
+
 CONSENT LIBRARY:
 ${consentLibrary}
 

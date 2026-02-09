@@ -14,7 +14,7 @@
 import { buildChunkedSchemas, buildOutputConfig } from "./schema.js";
 
 /**
- * Build the system prompt with all content (instructions + consent library + protocol).
+ * Build the system prompt with all content (instructions + consent library + protocol + schema).
  *
  * Everything goes in the system prompt so Bedrock caches the entire input after the
  * first chunk request. Chunks 2-4 get full cache hits — only outputConfig differs.
@@ -22,16 +22,18 @@ import { buildChunkedSchemas, buildOutputConfig } from "./schema.js";
  * @param {string} promptTemplate - prompt-v3.txt content
  * @param {string} protocolText - Full protocol document text
  * @param {string} consentLibrary - consent-library.txt content
+ * @param {Object} fullSchema - consent-schema.json parsed object
  * @returns {string} Fully assembled system prompt
  */
-function buildSystemPrompt(promptTemplate, protocolText, consentLibrary) {
+function buildSystemPrompt(promptTemplate, protocolText, consentLibrary, fullSchema) {
   const today = new Date();
   const todayStr = `${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}/${today.getFullYear()}`;
 
   return promptTemplate
     .replaceAll("${consentLibrary}", consentLibrary)
     .replaceAll("${protocol}", protocolText)
-    .replaceAll("${today}", todayStr);
+    .replaceAll("${today}", todayStr)
+    .replaceAll("${schema}", JSON.stringify(fullSchema, null, 2));
 }
 
 /**
@@ -58,7 +60,7 @@ export async function runFieldExtraction({
   runModelFn,
   onProgress,
 }) {
-  const system = buildSystemPrompt(promptTemplate, protocolText, consentLibrary || "");
+  const system = buildSystemPrompt(promptTemplate, protocolText, consentLibrary || "", fullSchema);
   const chunks = buildChunkedSchemas(fullSchema);
   const totalChunks = chunks.length;
 
@@ -88,17 +90,29 @@ export async function runFieldExtraction({
       outputConfig,
     });
 
-    // Strip markdown fences if present (model may wrap JSON in ```json ... ```)
+    // Extract JSON from response — handle plain JSON, markdown-fenced JSON,
+    // or prose followed by a ```json block
     let jsonText = responseText.trim();
     if (jsonText.startsWith("```")) {
       jsonText = jsonText.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+    } else if (!jsonText.startsWith("{")) {
+      // Model may have output prose before a ```json block or bare JSON
+      const fencedMatch = jsonText.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
+      if (fencedMatch) {
+        jsonText = fencedMatch[1];
+      } else {
+        const braceMatch = jsonText.match(/\{[\s\S]*\}/);
+        if (braceMatch) {
+          jsonText = braceMatch[0];
+        }
+      }
     }
 
     let data;
     try {
       data = JSON.parse(jsonText);
     } catch (e) {
-      throw new Error(`Failed to parse structured output for chunk "${chunk.label}": ${e.message}`);
+      throw new Error(`Failed to parse structured output for chunk "${chunk.label}": ${e.message}\nResponse preview: ${responseText.slice(0, 500)}`);
     }
 
     // Merge into combined result
