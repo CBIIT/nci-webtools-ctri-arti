@@ -3,34 +3,49 @@
  *
  * Ported from scripts/consent-crafter/extract.mjs for browser use.
  *
- * Sends 4 requests (one per schema chunk), each with the full protocol + prompt.
- * Bedrock's grammar-enforced JSON guarantees valid structured output.
+ * Uses a system prompt (instructions + consent library) and user message (protocol)
+ * so that Bedrock caches the system prompt after the first chunk request. All 4 chunk
+ * requests share the same system + user content — only outputConfig differs — so
+ * chunks 2-4 get full cache hits on input tokens.
+ *
  * Results are merged into a single object with all 76 fields.
  */
 
 import { buildChunkedSchemas, buildOutputConfig } from "./schema.js";
 
 /**
- * Build the full extraction prompt by substituting template variables.
+ * Split the prompt template into a system prompt and user message.
  *
- * @param {string} promptTemplate - prompt-v3.txt content with ${protocol}, ${consentLibrary}, ${today} placeholders
+ * prompt-v3.txt ends with:
+ *   CONSENT LIBRARY:\n${consentLibrary}\n\nPROTOCOL DOCUMENT:\n${protocol}
+ *
+ * System prompt = instructions + consent library (static, cached across chunks)
+ * User message  = protocol text (same across chunks, also cached)
+ *
+ * @param {string} promptTemplate - prompt-v3.txt content
  * @param {string} protocolText - Full protocol document text
  * @param {string} consentLibrary - consent-library.txt content
- * @returns {string} Assembled prompt
+ * @returns {{ system: string, userMessage: string }}
  */
-function buildPrompt(promptTemplate, protocolText, consentLibrary) {
+function buildPromptParts(promptTemplate, protocolText, consentLibrary) {
   const today = new Date();
   const todayStr = `${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}/${today.getFullYear()}`;
 
-  return promptTemplate
+  // Substitute today and consent library into the template, but replace
+  // the protocol placeholder with a pointer to the user message.
+  const system = promptTemplate
     .replaceAll("${consentLibrary}", consentLibrary)
-    .replaceAll("${protocol}", protocolText)
-    .replaceAll("${today}", todayStr);
+    .replaceAll("${today}", todayStr)
+    .replace("${protocol}", "[See the protocol document in the user message below.]");
+
+  const userMessage = `PROTOCOL DOCUMENT:\n${protocolText}`;
+
+  return { system, userMessage };
 }
 
 /**
  * Run field-based extraction using Bedrock structured output.
- * Sends 4 requests (one per schema chunk), each with full protocol + prompt.
+ * Sends 4 requests (one per schema chunk) with a shared system prompt.
  * Returns merged JSON with all 76 fields.
  *
  * @param {Object} options
@@ -52,7 +67,7 @@ export async function runFieldExtraction({
   runModelFn,
   onProgress,
 }) {
-  const fullPrompt = buildPrompt(promptTemplate, protocolText, consentLibrary || "");
+  const { system, userMessage } = buildPromptParts(promptTemplate, protocolText, consentLibrary || "");
   const chunks = buildChunkedSchemas(fullSchema);
   const totalChunks = chunks.length;
 
@@ -77,7 +92,8 @@ export async function runFieldExtraction({
 
     const responseText = await runModelFn({
       model,
-      messages: [{ role: "user", content: [{ text: fullPrompt }] }],
+      system,
+      messages: [{ role: "user", content: [{ text: userMessage }] }],
       outputConfig,
     });
 
