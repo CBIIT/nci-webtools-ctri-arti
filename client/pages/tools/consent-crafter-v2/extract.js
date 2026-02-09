@@ -88,9 +88,15 @@ export async function runFieldExtraction({
       outputConfig,
     });
 
+    // Strip markdown fences if present (model may wrap JSON in ```json ... ```)
+    let jsonText = responseText.trim();
+    if (jsonText.startsWith("```")) {
+      jsonText = jsonText.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+    }
+
     let data;
     try {
-      data = JSON.parse(responseText);
+      data = JSON.parse(jsonText);
     } catch (e) {
       throw new Error(`Failed to parse structured output for chunk "${chunk.label}": ${e.message}`);
     }
