@@ -71,7 +71,7 @@ async function trackModelUsage(userId, modelValue, ip, usageData) {
  * @param {string} options.ip - Client IP address
  * @returns {Promise<Object>} - Inference result or stream
  */
-export async function infer({ userId, model, messages, system, tools, thoughtBudget, stream, ip }) {
+export async function infer({ userId, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }) {
   if (!GATEWAY_URL) {
     // Monolith mode: direct function calls
     if (userId) {
@@ -85,7 +85,7 @@ export async function infer({ userId, model, messages, system, tools, thoughtBud
       }
     }
 
-    const result = await directRunModel({ model, messages, system, tools, thoughtBudget, stream });
+    const result = await directRunModel({ model, messages, system, tools, thoughtBudget, stream, outputConfig });
 
     // For non-streaming responses, track usage inline
     if (!result?.stream && userId) {
@@ -113,7 +113,7 @@ export async function infer({ userId, model, messages, system, tools, thoughtBud
   const response = await fetch(`${GATEWAY_URL}/api/infer`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, model, messages, system, tools, thoughtBudget, stream, ip }),
+    body: JSON.stringify({ userId, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }),
   });
 
   if (response.status === 429) {

@@ -119,6 +119,7 @@ export async function runModel({
   tools = [],
   thoughtBudget = 0,
   stream = false,
+  outputConfig,
 }) {
   if (!model || !messages || messages?.length === 0) {
     return null;
@@ -194,6 +195,7 @@ export async function runModel({
     toolConfig,
     inferenceConfig,
     additionalModelRequestFields,
+    ...(outputConfig && { outputConfig }),
   };
   const response = stream ? provider.converseStream(input) : provider.converse(input);
   const result = await response;

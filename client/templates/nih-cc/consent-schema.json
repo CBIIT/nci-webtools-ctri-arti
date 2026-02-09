@@ -1,0 +1,445 @@
+{
+  "name": "consent_extraction",
+  "description": "Extracted consent form variables from a clinical trial protocol.",
+  "type": "object",
+  "properties": {
+    "references": {
+      "type": "array",
+      "description": "Verbatim quotes from protocol/consent library.",
+      "items": { "type": "string" }
+    },
+    "reasoning": {
+      "type": "array",
+      "description": "For each complex decision, quote the relevant text and explain reasoning. Format: 'field_name: \"quote\" → reasoning → value chosen'",
+      "items": { "type": "string" }
+    },
+    "pi_name": {
+      "type": "string",
+      "description": "PI full name with credentials."
+    },
+    "study_title": {
+      "type": "string",
+      "description": "Official study title."
+    },
+    "study_site": {
+      "type": "string",
+      "description": "Study site name."
+    },
+    "cohort": {
+      "type": "string",
+      "description": "Participant type: 'Affected patient' or 'Healthy volunteer'."
+    },
+    "consent_version": {
+      "type": "string",
+      "description": "Date in MM/DD/YYYY format."
+    },
+    "contact_name": {
+      "type": "string",
+      "description": "Primary contact name."
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Primary contact phone."
+    },
+    "contact_email": {
+      "type": "string",
+      "description": "Primary contact email."
+    },
+    "other_contact_name": {
+      "type": "string",
+      "description": "Secondary contact name or empty string."
+    },
+    "other_contact_phone": {
+      "type": "string",
+      "description": "Secondary contact phone or empty string."
+    },
+    "other_contact_email": {
+      "type": "string",
+      "description": "Secondary contact email or empty string."
+    },
+    "key_info_why_asked": {
+      "type": "string",
+      "description": "Why participant is being asked to join."
+    },
+    "key_info_purpose": {
+      "type": "string",
+      "description": "Study purpose, drug mechanism, tradeoffs. Multi-paragraph."
+    },
+    "key_info_fda_status": {
+      "type": "string",
+      "description": "FDA approval status with dosages. Multi-paragraph."
+    },
+    "key_info_phase": {
+      "type": "string",
+      "description": "Study phase, e.g., 'Phase I'."
+    },
+    "key_info_phase_explanation": {
+      "type": "string",
+      "description": "What this phase means, or empty string."
+    },
+    "key_info_happenings": {
+      "type": "string",
+      "description": "Detailed bullet-point summary of study events. See prompt."
+    },
+    "key_info_benefits": {
+      "type": "string",
+      "description": "Brief benefits summary."
+    },
+    "key_info_risks": {
+      "type": "string",
+      "description": "Brief risks summary."
+    },
+    "key_info_alternatives": {
+      "type": "string",
+      "description": "Alternatives summary."
+    },
+    "key_info_voluntariness": {
+      "type": "string",
+      "description": "Voluntary participation statement."
+    },
+    "parent_permission": {
+      "type": "boolean",
+      "description": "True if minors enrolled."
+    },
+    "impaired_adults": {
+      "type": "boolean",
+      "description": "True if impaired adults enrolled."
+    },
+    "study_purpose": {
+      "type": "string",
+      "description": "Completes 'The purpose of this research study is...'"
+    },
+    "why_you_asked": {
+      "type": "string",
+      "description": "Completes 'We are asking you to join because you...'"
+    },
+    "is_investigational": {
+      "type": "boolean",
+      "description": "True if drug/approach is investigational."
+    },
+    "investigational_drug_name": {
+      "type": "string",
+      "description": "Drug name or empty string."
+    },
+    "investigational_condition": {
+      "type": "string",
+      "description": "Condition not approved to treat, or empty string."
+    },
+    "is_fda_approved_off_label": {
+      "type": "boolean",
+      "description": "True if FDA-approved for different indication."
+    },
+    "fda_approved_indication": {
+      "type": "string",
+      "description": "What drug is approved for, or empty string."
+    },
+    "research_testing_reason": {
+      "type": "string",
+      "description": "Completes 'We are testing it to see...'"
+    },
+    "study_procedures": {
+      "type": "string",
+      "description": "All procedures with subsection headings. See prompt."
+    },
+    "study_duration": {
+      "type": "string",
+      "description": "Duration value only, e.g., '2 years'."
+    },
+    "accrual_ceiling": {
+      "type": "string",
+      "description": "Number at NIH site only."
+    },
+    "multisite_count": {
+      "type": "string",
+      "description": "Number of participants at other sites (just the number), or empty string if single-site. Never an explanation."
+    },
+    "risks_intro": {
+      "type": "string",
+      "description": "Standard risks intro. See prompt for structure."
+    },
+    "drug_risks": {
+      "type": "array",
+      "description": "Risk profiles per drug.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "drug_name": {
+            "type": "string",
+            "description": "Drug name."
+          },
+          "common_definition": {
+            "type": "string",
+            "description": "Frequency definition for common risks."
+          },
+          "common_risks": {
+            "type": "array",
+            "description": "Common side effects, grouped.",
+            "items": { "type": "string" }
+          },
+          "occasional_definition": {
+            "type": "string",
+            "description": "Frequency definition for occasional risks."
+          },
+          "occasional_risks": {
+            "type": "array",
+            "description": "Occasional side effects with symptoms.",
+            "items": { "type": "string" }
+          },
+          "rare_definition": {
+            "type": "string",
+            "description": "Frequency definition for rare risks."
+          },
+          "rare_risks": {
+            "type": "array",
+            "description": "Rare side effects with symptoms.",
+            "items": { "type": "string" }
+          }
+        },
+        "required": [
+          "drug_name",
+          "common_definition",
+          "common_risks",
+          "occasional_definition",
+          "occasional_risks",
+          "rare_definition",
+          "rare_risks"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "procedure_risks": {
+      "type": "array",
+      "description": "Procedure risk blocks from consent library.",
+      "items": { "type": "string" }
+    },
+    "pregnancy_risks": {
+      "type": "string",
+      "description": "Pregnancy risks section or empty string."
+    },
+    "radiation_risks": {
+      "type": "string",
+      "description": "Radiation risks section or empty string."
+    },
+    "has_potential_benefits": {
+      "type": "boolean",
+      "description": "True if potential direct benefits exist."
+    },
+    "no_potential_benefits": {
+      "type": "boolean",
+      "description": "Inverse of has_potential_benefits."
+    },
+    "benefits_description": {
+      "type": "string",
+      "description": "Completes 'the potential benefit might be...'"
+    },
+    "benefits_others_reason": {
+      "type": "string",
+      "description": "Completes 'others might benefit because...'"
+    },
+    "alternatives_list": {
+      "type": "array",
+      "description": "Alternative options, each completing 'you could...'",
+      "items": { "type": "string" }
+    },
+    "alternatives_advice": {
+      "type": "string",
+      "description": "Advice about discussing alternatives, or empty string."
+    },
+    "return_of_results": {
+      "type": "string",
+      "description": "How results will be communicated."
+    },
+    "early_withdrawal": {
+      "type": "string",
+      "description": "Withdrawal circumstances."
+    },
+    "disease_condition": {
+      "type": "string",
+      "description": "Disease being studied, e.g., 'cancer'."
+    },
+    "is_open_repository": {
+      "type": "boolean",
+      "description": "True if data shared openly."
+    },
+    "is_closed_repository": {
+      "type": "boolean",
+      "description": "True if data shared via controlled access."
+    },
+    "genomic_non_sensitive": {
+      "type": "boolean",
+      "description": "True if genomic summary shared openly."
+    },
+    "genomic_sensitive": {
+      "type": "boolean",
+      "description": "True if genomic summary shared controlled."
+    },
+    "may_anonymize": {
+      "type": "boolean",
+      "description": "True if specimens may be anonymized."
+    },
+    "will_not_anonymize": {
+      "type": "boolean",
+      "description": "Inverse of may_anonymize."
+    },
+    "specimen_storage_duration": {
+      "type": "string",
+      "description": "Duration only, e.g., 'indefinitely'."
+    },
+    "no_payment": {
+      "type": "boolean",
+      "description": "True if no payment."
+    },
+    "has_payment": {
+      "type": "boolean",
+      "description": "True if payment provided."
+    },
+    "payment_details": {
+      "type": "string",
+      "description": "Payment details or empty string."
+    },
+    "partial_payment_details": {
+      "type": "string",
+      "description": "Partial payment details or empty string."
+    },
+    "reimbursement_info": {
+      "type": "string",
+      "description": "Reimbursement details or empty string."
+    },
+    "cost_additional": {
+      "type": "string",
+      "description": "Additional cost info or empty string."
+    },
+    "coi_no_agreements": {
+      "type": "boolean",
+      "description": "True if no COI agreements."
+    },
+    "coi_tech_license": {
+      "type": "boolean",
+      "description": "True if technology license COI."
+    },
+    "coi_product_description": {
+      "type": "string",
+      "description": "COI product description or empty string."
+    },
+    "coi_product_name": {
+      "type": "string",
+      "description": "COI product name or empty string."
+    },
+    "coi_crada": {
+      "type": "boolean",
+      "description": "True if CRADA COI."
+    },
+    "coi_cta": {
+      "type": "boolean",
+      "description": "True if CTA COI."
+    },
+    "coi_company_name": {
+      "type": "string",
+      "description": "COI company name or empty string."
+    },
+    "coi_product_provision": {
+      "type": "string",
+      "description": "What company provides or empty string."
+    },
+    "coi_through_program": {
+      "type": "boolean",
+      "description": "True if provided through a program."
+    },
+    "coi_program_name": {
+      "type": "string",
+      "description": "Program name or empty string."
+    },
+    "sponsor_name": {
+      "type": "string",
+      "description": "Study sponsor organization name."
+    },
+    "manufacturer_name": {
+      "type": "string",
+      "description": "Drug manufacturer name."
+    },
+    "product_name": {
+      "type": "string",
+      "description": "Product name for confidentiality section."
+    }
+  },
+  "required": [
+    "references",
+    "reasoning",
+    "pi_name",
+    "study_title",
+    "study_site",
+    "cohort",
+    "consent_version",
+    "contact_name",
+    "contact_phone",
+    "contact_email",
+    "other_contact_name",
+    "other_contact_phone",
+    "other_contact_email",
+    "key_info_why_asked",
+    "key_info_purpose",
+    "key_info_fda_status",
+    "key_info_phase",
+    "key_info_phase_explanation",
+    "key_info_happenings",
+    "key_info_benefits",
+    "key_info_risks",
+    "key_info_alternatives",
+    "key_info_voluntariness",
+    "parent_permission",
+    "impaired_adults",
+    "study_purpose",
+    "why_you_asked",
+    "is_investigational",
+    "investigational_drug_name",
+    "investigational_condition",
+    "is_fda_approved_off_label",
+    "fda_approved_indication",
+    "research_testing_reason",
+    "study_procedures",
+    "study_duration",
+    "accrual_ceiling",
+    "multisite_count",
+    "risks_intro",
+    "drug_risks",
+    "procedure_risks",
+    "pregnancy_risks",
+    "radiation_risks",
+    "has_potential_benefits",
+    "no_potential_benefits",
+    "benefits_description",
+    "benefits_others_reason",
+    "alternatives_list",
+    "alternatives_advice",
+    "return_of_results",
+    "early_withdrawal",
+    "disease_condition",
+    "is_open_repository",
+    "is_closed_repository",
+    "genomic_non_sensitive",
+    "genomic_sensitive",
+    "may_anonymize",
+    "will_not_anonymize",
+    "specimen_storage_duration",
+    "no_payment",
+    "has_payment",
+    "payment_details",
+    "partial_payment_details",
+    "reimbursement_info",
+    "cost_additional",
+    "coi_no_agreements",
+    "coi_tech_license",
+    "coi_product_description",
+    "coi_product_name",
+    "coi_crada",
+    "coi_cta",
+    "coi_company_name",
+    "coi_product_provision",
+    "coi_through_program",
+    "coi_program_name",
+    "sponsor_name",
+    "manufacturer_name",
+    "product_name"
+  ],
+  "additionalProperties": false
+}

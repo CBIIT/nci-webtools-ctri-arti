@@ -37,6 +37,7 @@ import { createTimestamp, downloadBlob } from "../../../utils/files.js";
 import { parseDocument } from "../../../utils/parsers.js";
 
 import { getTemplateConfigsByCategory, templateConfigs } from "./config.js";
+import { runFieldExtraction } from "./extract.js";
 // #endregion
 
 // #region Constants
@@ -1882,7 +1883,7 @@ export default function Page() {
     selectedTemplates: [],
 
     // Advanced options
-    model: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5,
+    model: MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6,
     advancedOptionsOpen: false,
     templateSourceType: "predefined",
     selectedPredefinedTemplate: "",
@@ -1898,6 +1899,12 @@ export default function Page() {
     // Library cache - fetched library text
     libraryCache: {},
 
+    // Prompt cache - fetched prompt text (for field-extraction pipeline)
+    promptCache: {},
+
+    // Schema cache - fetched JSON schemas (for field-extraction pipeline)
+    schemaCache: {},
+
     // Extraction progress tracking
     extractionProgress: {
       status: "idle", // 'idle' | 'extracting' | 'priming' | 'processing' | 'merging' | 'applying' | 'completed' | 'error'
@@ -1905,6 +1912,7 @@ export default function Page() {
       total: 0,
       protocolChunks: 0,
       templateChunks: 0,
+      message: "",
     },
 
     // Timestamps
@@ -1998,6 +2006,34 @@ export default function Page() {
     setStore("libraryCache", config.libraryUrl, text);
     return text;
   }
+
+  async function fetchAndCachePrompt(templateId) {
+    const config = templateConfigs[templateId];
+    if (!config.promptUrl) return "";
+
+    if (store.promptCache[config.promptUrl]) {
+      return store.promptCache[config.promptUrl];
+    }
+
+    const response = await fetch(config.promptUrl);
+    const text = await response.text();
+    setStore("promptCache", config.promptUrl, text);
+    return text;
+  }
+
+  async function fetchAndCacheSchema(templateId) {
+    const config = templateConfigs[templateId];
+    if (!config.schemaUrl) return null;
+
+    if (store.schemaCache[config.schemaUrl]) {
+      return store.schemaCache[config.schemaUrl];
+    }
+
+    const response = await fetch(config.schemaUrl);
+    const schema = await response.json();
+    setStore("schemaCache", config.schemaUrl, schema);
+    return schema;
+  }
   // #endregion
 
   // #region Effects
@@ -2014,6 +2050,11 @@ export default function Page() {
       try {
         await fetchAndCacheTemplate(templateId);
         await fetchAndCacheLibrary(templateId);
+        const config = templateConfigs[templateId];
+        if (config?.pipeline === "field-extraction") {
+          await fetchAndCachePrompt(templateId);
+          await fetchAndCacheSchema(templateId);
+        }
       } catch (error) {
         console.error(`Failed to fetch template ${templateId}:`, error);
       }
@@ -2084,29 +2125,65 @@ export default function Page() {
         }
       }
 
-      // Run block-based generation
-      const result = await runBlockBasedGeneration(
-        templateBuffer,
-        jobConfig.inputText,
-        libraryText,
-        jobConfig.model,
-        runModel,
-        (progress) => {
-          setStore("extractionProgress", progress);
-        }
-      );
+      const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-      // Create blob from output buffer
-      const type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      const blob = new Blob([result.outputBuffer], { type });
+      if (jobConfig.pipeline === "field-extraction") {
+        // Field-based extraction pipeline (NIH CCC templates)
+        const promptText = store.promptCache[jobConfig.promptUrl]
+          || await fetchAndCachePrompt(jobConfig.templateId);
+        const schema = store.schemaCache[jobConfig.schemaUrl]
+          || await fetchAndCacheSchema(jobConfig.templateId);
 
-      setStore("generatedDocuments", jobId, {
-        status: "completed",
-        blob,
-        stats: result.stats,
-        error: null,
-        config: jobConfig,
-      });
+        const extractedData = await runFieldExtraction({
+          protocolText: jobConfig.inputText,
+          promptTemplate: promptText,
+          consentLibrary: libraryText,
+          fullSchema: schema,
+          model: jobConfig.model,
+          runModelFn: runModel,
+          onProgress: (progress) => {
+            setStore("extractionProgress", progress);
+          },
+        });
+
+        // Generate DOCX using docx-templates
+        const { createReport } = await import("docx-templates");
+        const buffer = await createReport({
+          template: templateBuffer,
+          data: extractedData,
+          cmdDelimiter: ["{{", "}}"],
+        });
+
+        const blob = new Blob([buffer], { type: DOCX_MIME });
+        setStore("generatedDocuments", jobId, {
+          status: "completed",
+          blob,
+          data: extractedData,
+          error: null,
+          config: jobConfig,
+        });
+      } else {
+        // Block-based pipeline (LPA templates)
+        const result = await runBlockBasedGeneration(
+          templateBuffer,
+          jobConfig.inputText,
+          libraryText,
+          jobConfig.model,
+          runModel,
+          (progress) => {
+            setStore("extractionProgress", progress);
+          }
+        );
+
+        const blob = new Blob([result.outputBuffer], { type: DOCX_MIME });
+        setStore("generatedDocuments", jobId, {
+          status: "completed",
+          blob,
+          stats: result.stats,
+          error: null,
+          config: jobConfig,
+        });
+      }
     } catch (error) {
       console.error(`Error processing job ${jobId}:`, error);
       setStore("generatedDocuments", jobId, {
@@ -2163,6 +2240,9 @@ export default function Page() {
         templateFile,
         templateId,
         libraryUrl: config.libraryUrl,
+        promptUrl: config.promptUrl,
+        schemaUrl: config.schemaUrl,
+        pipeline: config.pipeline || "block-based",
         model: store.model,
         displayInfo: {
           prefix: config.prefix || "",
@@ -2188,6 +2268,9 @@ export default function Page() {
             templateFile,
             templateId: store.selectedPredefinedTemplate,
             libraryUrl: config.libraryUrl,
+            promptUrl: config.promptUrl,
+            schemaUrl: config.schemaUrl,
+            pipeline: config.pipeline || "block-based",
             model: store.model,
             displayInfo: {
               prefix: config.prefix || "",
@@ -2273,6 +2356,9 @@ export default function Page() {
   }
 
   function getProgressMessage(progress) {
+    // Field extraction pipeline provides its own message
+    if (progress.message) return progress.message;
+
     if (progress.status === "idle" || progress.total === 0) {
       return "We are generating your forms now. This may take a few moments.";
     }
@@ -2527,6 +2613,11 @@ export default function Page() {
                                     (${() => job().stats?.replaceCount || 0} replaced,
                                     ${() => job().stats?.deleteCount || 0} deleted, confidence:
                                     ${() => job().stats?.avgConfidence || 0})
+                                  </span>
+                                <//>
+                                <${Show} when=${() => job().data && !job().stats}>
+                                  <span class="ms-2">
+                                    (${() => Object.keys(job().data || {}).length} fields extracted)
                                   </span>
                                 <//>
                               </div>
