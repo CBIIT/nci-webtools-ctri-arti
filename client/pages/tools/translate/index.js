@@ -1,4 +1,4 @@
-import { createMemo, createSignal, ErrorBoundary, For, Show } from "solid-js";
+import { createMemo, createSignal, ErrorBoundary, For, onCleanup, onMount, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { createStore, reconcile } from "solid-js/store";
@@ -10,6 +10,10 @@ import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert, handleError } from "../../../utils/alerts.js";
 import { translateDocx } from "../../../utils/docx.js";
 import { createTimestamp, downloadBlob } from "../../../utils/files.js";
+import {
+  registerErrorDataCollector,
+  unregisterErrorDataCollector,
+} from "../../../utils/global-error-handler.js";
 import { parseDocument } from "../../../utils/parsers.js";
 import { useSessionPersistence } from "../translate/hooks.js";
 
@@ -264,6 +268,14 @@ export default function Page() {
   const [targetLanguages, setTargetLanguages] = createSignal([]);
   const [engine, setEngine] = createSignal("aws");
   const [store, setStore] = createStore(structuredClone(defaultStore));
+
+  onMount(() => {
+    registerErrorDataCollector("translate", collectAdditionalErrorData);
+  });
+
+  onCleanup(() => {
+    unregisterErrorDataCollector("translate");
+  });
 
   // #region Session Persistence
   const { setParam, createSession, saveSession } = useSessionPersistence({
