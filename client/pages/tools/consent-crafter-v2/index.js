@@ -2147,11 +2147,35 @@ export default function Page() {
         });
 
         // Generate DOCX using docx-templates
-        const { createReport } = await import("docx-templates");
+        const { createReport, listCommands } = await import("docx-templates");
+        const cmdDelimiter = ["{{", "}}"];
+
+        // Set defaults for any missing template variables to prevent errors
+        const commands = await listCommands(templateBuffer, cmdDelimiter);
+        const variables = commands
+          .filter((c) => ["INS", "FOR", "IF"].includes(c.type))
+          .map((c) => {
+            if (c.type === "IF") {
+              return { type: "boolean", name: c.code.trim().split(/\s/)[0] };
+            }
+            return {
+              type: c.type === "FOR" ? "array" : "string",
+              name: c.code.split(" ").pop(),
+            };
+          })
+          .filter((c) => !c.name.startsWith("$") && !c.name.includes("."));
+
+        for (const variable of variables) {
+          if (extractedData[variable.name] === undefined || extractedData[variable.name] === null) {
+            extractedData[variable.name] = variable.type === "array" ? [] : variable.type === "boolean" ? false : "";
+          }
+        }
+
         const buffer = await createReport({
           template: templateBuffer,
           data: extractedData,
-          cmdDelimiter: ["{{", "}}"],
+          cmdDelimiter,
+          processLineBreaks: true,
         });
 
         const blob = new Blob([buffer], { type: DOCX_MIME });
