@@ -65,26 +65,15 @@ function formatMetadataForTemplate(metadata) {
   });
 }
 
-function buildPlainTextFallback({
-  type,
-  reportSource,
-  timestamp,
-  userId,
-  metadata,
-  origin,
-  version,
-}) {
-  const lines = [
-    `ResearchOptimizer ${type} Report`,
-    "",
-    `Origin: ${origin}, Report Source: ${reportSource}`,
-  ];
+function buildPlainTextFallback({ reportSource, timestamp, userId, userName, metadata, version }) {
+  const isUserReported = reportSource === "User";
+  const lines = [isUserReported ? "Issue Reported by a User" : "Application Error", ""];
 
   if (version) {
     lines.push(`Version: ${version}`);
   }
 
-  lines.push(`Timestamp: ${timestamp}`, `User ID: ${userId}`);
+  lines.push(`Timestamp: ${timestamp}`, `User ID: ${userId}`, `User Name: ${userName}`);
 
   if (Array.isArray(metadata) && metadata.length > 0) {
     lines.push("", "Details:");
@@ -105,33 +94,35 @@ function buildPlainTextFallback({
 }
 
 export async function sendLogReport(
-  { type = "Error", reportSource, userId, metadata, origin = "Server", recipient },
+  { reportSource, userId, userName, metadata, recipient },
   env = process.env
 ) {
-  const { EMAIL_SENDER, EMAIL_ADMIN, EMAIL_DEV, VERSION } = env;
+  const { EMAIL_SENDER, EMAIL_ADMIN, EMAIL_DEV, VERSION, TIER } = env;
 
   const template = await getCompiledTemplate();
   const timestamp = new Date().toLocaleString();
   const userIdValue = userId || "N/A";
-  const originLabel = origin === "Frontend" ? "Frontend" : "Server";
-  const reportSourceLabel = reportSource || "Unknown";
+  const userNameValue = userName || "N/A";
+  const isUserReported = reportSource === "User";
+
+  const tierPrefix = TIER && TIER.toUpperCase() !== "PROD" ? `[${TIER.toUpperCase()}] ` : "";
+  const subject = `${tierPrefix}[ResearchOptimizer Error] ${isUserReported ? "User-Reported Issue" : "Application Error"}`;
 
   const html = template({
     timestamp,
-    reportSource: reportSourceLabel,
     userId: userIdValue,
-    origin: originLabel,
+    userName: userNameValue,
     version: VERSION || null,
+    isUserReported,
     detailRows: formatMetadataForTemplate(metadata || []),
   });
 
   const text = buildPlainTextFallback({
-    type,
-    reportSource: reportSourceLabel,
+    reportSource,
     timestamp,
     userId: userIdValue,
+    userName: userNameValue,
     metadata,
-    origin: originLabel,
     version: VERSION || null,
   });
 
@@ -139,7 +130,7 @@ export async function sendLogReport(
     {
       from: EMAIL_SENDER || EMAIL_ADMIN,
       to: recipient || EMAIL_DEV,
-      subject: `[${originLabel}] ResearchOptimizer ${type} Report`,
+      subject,
       html,
       text,
     },
