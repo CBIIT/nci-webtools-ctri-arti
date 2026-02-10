@@ -66,7 +66,7 @@ function formatMetadataForTemplate(metadata) {
 }
 
 function buildPlainTextFallback({ reportSource, timestamp, userId, userName, metadata, version }) {
-  const isUserReported = reportSource === "User";
+  const isUserReported = reportSource?.toUpperCase() === "USER";
   const lines = [isUserReported ? "Issue Reported by a User" : "Application Error", ""];
 
   if (version) {
@@ -103,7 +103,7 @@ export async function sendLogReport(
   const timestamp = new Date().toLocaleString();
   const userIdValue = userId || "N/A";
   const userNameValue = userName || "N/A";
-  const isUserReported = reportSource === "User";
+  const isUserReported = reportSource?.toUpperCase() === "USER";
 
   const tierPrefix = TIER && TIER.toUpperCase() !== "PROD" ? `[${TIER.toUpperCase()}] ` : "";
   const subject = `${tierPrefix}[ResearchOptimizer Error] ${isUserReported ? "User-Reported Issue" : "Application Error"}`;
