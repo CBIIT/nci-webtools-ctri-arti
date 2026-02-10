@@ -41,17 +41,14 @@
                     <td style="vertical-align: middle;">
                       <h1
                         style="margin: 0; font-size: 18px; font-weight: 600; color: #ffffff;"
-                      >Error Log Report</h1>
-                      <p
-                        style="margin: 4px 0 0 0; font-size: 14px; color: rgba(255, 255, 255, 0.7);"
-                      >Application Error Detected</p>
+                      >{{#if isUserReported}}Issue Reported by a User{{else}}Application Error{{/if}}</h1>
                     </td>
                   </tr>
                 </table>
               </td>
             </tr>
 
-            <!-- Origin & Report Source -->
+            <!-- Version & Timestamp -->
             <tr>
               <td style="padding: 0; border-bottom: 1px solid #e5e5e5;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -66,60 +63,16 @@
                             <p
                               style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #737373;"
                             >
-                              Origin</p>
+                              Version</p>
                             <p
                               style="margin: 0; font-size: 14px; font-weight: 500; color: #171717;"
                             >
-                              {{origin}}</p>
+                              MVP</p>
                           </td>
                         </tr>
                       </table>
                     </td>
                     <td width="50%" style="padding: 16px 24px; vertical-align: top;">
-                      <table role="presentation" cellpadding="0" cellspacing="0">
-                        <tr>
-                          <td style="vertical-align: top;">
-                            <p
-                              style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #737373;"
-                            >
-                              Report Source</p>
-                            <p
-                              style="margin: 0; font-size: 14px; font-weight: 500; color: #171717;"
-                            >
-                              {{reportSource}}</p>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-
-            <!-- Version -->
-            {{#if version}}
-              <tr>
-                <td style="padding: 16px 24px; border-bottom: 1px solid #e5e5e5;">
-                  <p
-                    style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #737373;"
-                  >
-                    Backend Version</p>
-                  <p
-                    style="margin: 0; font-size: 14px; font-weight: 500; color: #171717;"
-                  >{{version}}</p>
-                </td>
-              </tr>
-            {{/if}}
-
-            <!-- Timestamp & User ID -->
-            <tr>
-              <td style="padding: 0; border-bottom: 1px solid #e5e5e5;">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td
-                      width="50%"
-                      style="padding: 16px 24px; border-right: 1px solid #e5e5e5; vertical-align: top;"
-                    >
                       <table role="presentation" cellpadding="0" cellspacing="0">
                         <tr>
                           <td style="vertical-align: top;">
@@ -135,7 +88,20 @@
                         </tr>
                       </table>
                     </td>
-                    <td width="50%" style="padding: 16px 24px; vertical-align: top;">
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- User ID & User Name -->
+            <tr>
+              <td style="padding: 0; border-bottom: 1px solid #e5e5e5;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td
+                      width="50%"
+                      style="padding: 16px 24px; border-right: 1px solid #e5e5e5; vertical-align: top;"
+                    >
                       <table role="presentation" cellpadding="0" cellspacing="0">
                         <tr>
                           <td style="vertical-align: top;">
@@ -147,6 +113,22 @@
                               style="margin: 0; font-size: 14px; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace; color: #171717; word-break: break-all;"
                             >
                               {{userId}}</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td width="50%" style="padding: 16px 24px; vertical-align: top;">
+                      <table role="presentation" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="vertical-align: top;">
+                            <p
+                              style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #737373;"
+                            >
+                              User Name</p>
+                            <p
+                              style="margin: 0; font-size: 14px; font-weight: 500; color: #171717; word-break: break-all;"
+                            >
+                              {{userName}}</p>
                           </td>
                         </tr>
                       </table>
