@@ -9,7 +9,6 @@ export const templateConfigs = {
     libraryUrl: "/templates/nih-cc/consent-library.txt",
     promptUrl: "/templates/nih-cc/prompt-v3.txt",
     schemaUrl: "/templates/nih-cc/consent-schema.json",
-    pipeline: "field-extraction",
     filename: "nih-cc-consent-adult-affected.docx",
     disabled: false,
   },
@@ -21,7 +20,6 @@ export const templateConfigs = {
     libraryUrl: "/templates/nih-cc/consent-library.txt",
     promptUrl: "/templates/nih-cc/prompt-v3.txt",
     schemaUrl: "/templates/nih-cc/consent-schema.json",
-    pipeline: "field-extraction",
     filename: "nih-cc-consent-adult-healthy.docx",
     disabled: false,
   },
@@ -33,7 +31,6 @@ export const templateConfigs = {
     libraryUrl: "/templates/nih-cc/consent-library.txt",
     promptUrl: "/templates/nih-cc/prompt-v3.txt",
     schemaUrl: "/templates/nih-cc/consent-schema.json",
-    pipeline: "field-extraction",
     filename: "nih-cc-consent-adult-family.docx",
     disabled: false,
   },
@@ -45,20 +42,19 @@ export const templateConfigs = {
     libraryUrl: "/templates/nih-cc/consent-library.txt",
     promptUrl: "/templates/nih-cc/prompt-v3.txt",
     schemaUrl: "/templates/nih-cc/consent-schema.json",
-    pipeline: "field-extraction",
     filename: "nih-assent-child.docx",
     disabled: true,
   },
 
-  // Lay Person Abstract Templates (no library needed)
+  // Lay Person Abstract Templates (disabled — requires block-based pipeline)
   "lpa-adult-patient": {
     label: "Adult affected patient",
     prefix: "LPA",
     category: "Lay Person Abstract (LPA)",
     templateUrl: "/templates/lay-person-abstract/lay-person-abstract-template.docx",
-    libraryUrl: null, // LPA doesn't use consent library
+    libraryUrl: null,
     filename: "lay-person-abstract-patient.docx",
-    disabled: false,
+    disabled: true,
   },
   "lpa-adult-healthy": {
     label: "Adult healthy volunteer",
@@ -67,7 +63,7 @@ export const templateConfigs = {
     templateUrl: "/templates/lay-person-abstract/lay-person-abstract-template.docx",
     libraryUrl: null,
     filename: "lay-person-abstract-healthy.docx",
-    disabled: false,
+    disabled: true,
   },
   "lpa-adult-family": {
     label: "Adult family member",
@@ -76,7 +72,7 @@ export const templateConfigs = {
     templateUrl: "/templates/lay-person-abstract/lay-person-abstract-template.docx",
     libraryUrl: null,
     filename: "lay-person-abstract-family.docx",
-    disabled: false,
+    disabled: true,
   },
 };
 

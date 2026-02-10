@@ -107,35 +107,35 @@
     },
     "study_purpose": {
       "type": "string",
-      "description": "Completes 'The purpose of this research study is...'"
+      "description": "Completes: 'The purpose of this research study is {{study_purpose}}'. Must flow grammatically from 'is'."
     },
     "why_you_asked": {
       "type": "string",
-      "description": "Completes 'We are asking you to join because you...'"
+      "description": "Completes: 'We are asking you to join this research study because you {{why_you_asked}}'. Must flow grammatically from 'you'."
     },
     "is_investigational": {
       "type": "boolean",
-      "description": "True if drug/approach is investigational."
+      "description": "True if drug/approach is investigational. Triggers: '{{investigational_drug_name}} is considered investigational, which means that it has not been approved by the FDA to treat {{investigational_condition}}.'"
     },
     "investigational_drug_name": {
       "type": "string",
-      "description": "Drug name or empty string."
+      "description": "JUST the drug name (e.g., 'atezolizumab'). Template uses it in MULTIPLE places: '{{investigational_drug_name}} is considered investigational...' and 'use {{investigational_drug_name}} in this study' and 'The use of {{investigational_drug_name}} is approved to treat...' — MUST be a short name, never a description of a dosing method."
     },
     "investigational_condition": {
       "type": "string",
-      "description": "Condition not approved to treat, or empty string."
+      "description": "Completes: '...has not been approved by the FDA to treat {{investigational_condition}}'. Short phrase like 'cancer' or 'breast cancer'. Must be grammatically correct after 'to treat'."
     },
     "is_fda_approved_off_label": {
       "type": "boolean",
-      "description": "True if FDA-approved for different indication."
+      "description": "True if drug is FDA-approved for a different indication or use. Triggers: 'The use of {{investigational_drug_name}} is approved to treat {{fda_approved_indication}}. We are testing it in this research study to see {{research_testing_reason}}'"
     },
     "fda_approved_indication": {
       "type": "string",
-      "description": "What drug is approved for, or empty string."
+      "description": "Short phrase completing: 'The use of {{investigational_drug_name}} is approved to treat {{fda_approved_indication}}.' e.g., 'certain types of lung cancer, liver cancer, and melanoma'. Must be a phrase that flows after 'to treat', NOT a full sentence."
     },
     "research_testing_reason": {
       "type": "string",
-      "description": "Completes 'We are testing it to see...'"
+      "description": "Completes: 'We are testing it in this research study to see {{research_testing_reason}}'. Must flow grammatically from 'to see'."
     },
     "study_procedures": {
       "type": "string",
@@ -143,15 +143,15 @@
     },
     "study_duration": {
       "type": "string",
-      "description": "Duration value only, e.g., '2 years'."
+      "description": "Duration phrase completing: 'your involvement is expected to last {{study_duration}}'. Short phrase like '2 years' or 'about 6 months'. Must flow after 'to last'."
     },
     "accrual_ceiling": {
       "type": "string",
-      "description": "Number at NIH site only."
+      "description": "Number completing: 'approximately {{accrual_ceiling}} people participate in this study at the NIH'. Just the number, e.g., '40'."
     },
     "multisite_count": {
       "type": "string",
-      "description": "Number of participants at other sites (just the number), or empty string if single-site. Never an explanation."
+      "description": "Number completing: 'Up to {{multisite_count}} people might also participate at other study sites.' Just the number, or empty string if single-site."
     },
     "risks_intro": {
       "type": "string",
@@ -230,15 +230,15 @@
     },
     "benefits_description": {
       "type": "string",
-      "description": "Completes 'the potential benefit might be...'"
+      "description": "Completes: 'the potential benefit to you might be {{benefits_description}}.' Must flow grammatically from 'might be'."
     },
     "benefits_others_reason": {
       "type": "string",
-      "description": "Completes 'others might benefit because...'"
+      "description": "Completes: 'other people might benefit from this study because {{benefits_others_reason}}.' Must flow from 'because'."
     },
     "alternatives_list": {
       "type": "array",
-      "description": "Alternative options, each completing 'you could...'",
+      "description": "Alternative options. Each item completes a bullet: '• {{$alt}}'. Each should start lowercase and read as a standalone option a patient could choose.",
       "items": { "type": "string" }
     },
     "alternatives_advice": {
@@ -283,7 +283,7 @@
     },
     "specimen_storage_duration": {
       "type": "string",
-      "description": "Duration only, e.g., 'indefinitely'."
+      "description": "Completes: 'Your specimens and data may be stored by the NIH {{specimen_storage_duration}}.' e.g., 'indefinitely' or 'until they are no longer of scientific value'."
     },
     "no_payment": {
       "type": "boolean",
