@@ -285,6 +285,7 @@ export default function Page() {
   // ============= Error Data Collection =============
 
   const collectAdditionalErrorData = async () => ({
+    "Tool Name": isFedPulse ? "FedPulse" : "Chat",
     "Chat ID": conversation?.id || null,
     "Reasoning Mode": formRef?.reasoningMode?.checked || false,
     Model: formRef?.model?.value || "sonnet-4.5",

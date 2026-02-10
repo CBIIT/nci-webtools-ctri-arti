@@ -452,6 +452,7 @@ export default function Page() {
     }));
 
     return {
+      "Tool Name": "Translator",
       "Session ID": store.id || "No session",
       Engine: engine() || "Not selected",
       "Source Files": sourceFiles().length

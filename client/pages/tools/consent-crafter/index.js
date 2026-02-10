@@ -480,6 +480,7 @@ export default function Page() {
     }));
 
     return {
+      "Tool Name": "Consent Crafter",
       "Session ID": store.id || "No session",
       Model: store.model || "Not selected",
       "Template Source Type": store.templateSourceType || "Not set",
