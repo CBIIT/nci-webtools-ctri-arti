@@ -1,4 +1,13 @@
-import { createEffect, createMemo, createResource, ErrorBoundary, For, Show } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  ErrorBoundary,
+  For,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
 import html from "solid-js/html";
 
 import { createReport, listCommands } from "docx-templates";
@@ -13,6 +22,10 @@ import Tooltip from "../../../components/tooltip.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert, handleError } from "../../../utils/alerts.js";
 import { createTimestamp, downloadBlob } from "../../../utils/files.js";
+import {
+  registerErrorDataCollector,
+  unregisterErrorDataCollector,
+} from "../../../utils/global-error-handler.js";
 import { parseDocument } from "../../../utils/parsers.js";
 
 import { getPrompt, getTemplateConfigsByCategory, templateConfigs } from "./config.js";
@@ -39,6 +52,14 @@ async function getDatabase(userEmail = "anonymous") {
 // ============= Main Component =============
 export default function Page() {
   let db = null;
+
+  onMount(() => {
+    registerErrorDataCollector("consent-crafter", collectAdditionalErrorData);
+  });
+
+  onCleanup(() => {
+    unregisterErrorDataCollector("consent-crafter");
+  });
 
   // ============= Store & State =============
   const defaultStore = {
@@ -480,6 +501,7 @@ export default function Page() {
     }));
 
     return {
+      "Tool Name": "Consent Crafter",
       "Session ID": store.id || "No session",
       Model: store.model || "Not selected",
       "Template Source Type": store.templateSourceType || "Not set",

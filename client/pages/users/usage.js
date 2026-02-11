@@ -1,9 +1,22 @@
-import { createMemo, createResource, createSignal, ErrorBoundary, For, Show } from "solid-js";
+import {
+  createMemo,
+  createResource,
+  createSignal,
+  ErrorBoundary,
+  For,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
 import html from "solid-js/html";
 
 import { AlertContainer } from "../../components/alert.js";
 import { DataTable } from "../../components/table.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
+import {
+  registerErrorDataCollector,
+  unregisterErrorDataCollector,
+} from "../../utils/global-error-handler.js";
 import { capitalize } from "../../utils/utils.js";
 
 // Shared date range utilities
@@ -94,6 +107,14 @@ function UsersList() {
   const [customDates, setCustomDates] = createSignal({
     startDate: getDefaultStartDate(),
     endDate: formatDate(new Date()),
+  });
+
+  onMount(() => {
+    registerErrorDataCollector("usage", collectAdditionalErrorData);
+  });
+
+  onCleanup(() => {
+    unregisterErrorDataCollector("usage");
   });
 
   // Get current date range (either from preset or custom)

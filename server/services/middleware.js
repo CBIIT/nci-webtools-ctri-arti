@@ -43,11 +43,13 @@ export function logErrors(formatter = (e) => ({ error: e.message })) {
     logger.error(fullErrorMessage);
 
     if (EMAIL_DEV && EMAIL_DEV.length > 0) {
+      const user = request.session?.user;
+      const userName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "N/A";
+
       sendLogReport({
-        type: "Error",
         reportSource: "Automatic",
-        userId: request.session?.user?.id || "N/A",
-        origin: "Server",
+        userId: user?.id || "N/A",
+        userName,
         recipient: EMAIL_DEV,
         metadata: [
           { label: "Error Message", value: fullErrorMessage },
