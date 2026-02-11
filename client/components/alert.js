@@ -87,7 +87,7 @@ export default function Alert(props) {
           <${Match} when=${() => reportStatus() === "success"}>
             <div class="text-success d-flex align-items-center gap-2">
               <${Check} size="16" />
-              Report sent successfully. Thank you for your feedback!
+              Your error report has been sent to the ResearchOptimizer team.
             </div>
           <//>
           <${Match} when=${() => reportStatus() === "error"}>

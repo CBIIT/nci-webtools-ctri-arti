@@ -48,16 +48,18 @@ api.post("/feedback", requireRole(), async (req, res) => {
 });
 
 api.post("/log", async (req, res) => {
-  const { type, metadata, reportSource } = req.body;
+  const { metadata, reportSource } = req.body;
 
   const recipient =
-    reportSource?.toLowerCase() === "user" ? EMAIL_USER_REPORTS || EMAIL_ADMIN : EMAIL_DEV;
+    reportSource?.toUpperCase() === "USER" ? EMAIL_USER_REPORTS || EMAIL_ADMIN : EMAIL_DEV;
+
+  const user = req.session?.user;
+  const userName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "N/A";
 
   const logData = {
-    type: type || "Error",
     reportSource,
-    userId: req.session?.user?.id || "N/A",
-    origin: "Frontend",
+    userId: user?.id || "N/A",
+    userName,
     metadata,
     recipient,
   };

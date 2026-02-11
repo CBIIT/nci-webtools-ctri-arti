@@ -5,6 +5,8 @@ import {
   createSignal,
   ErrorBoundary,
   For,
+  onCleanup,
+  onMount,
   Show,
 } from "solid-js";
 import html from "solid-js/html";
@@ -21,10 +23,23 @@ import {
   showError,
   showSuccess,
 } from "../../utils/alerts.js";
+import {
+  registerErrorDataCollector,
+  unregisterErrorDataCollector,
+} from "../../utils/global-error-handler.js";
 import { capitalize } from "../../utils/utils.js";
 
 function UsersList() {
   const location = useLocation();
+
+  onMount(() => {
+    registerErrorDataCollector("users", collectAdditionalErrorData);
+  });
+
+  onCleanup(() => {
+    unregisterErrorDataCollector("users");
+  });
+
   const [rolesResource] = createResource(async () => {
     try {
       const response = await fetch("/api/admin/roles");

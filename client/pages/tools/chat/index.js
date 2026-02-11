@@ -21,6 +21,10 @@ import Tooltip from "../../../components/tooltip.js";
 import { useAuthContext } from "../../../contexts/auth-context.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
+import {
+  registerErrorDataCollector,
+  unregisterErrorDataCollector,
+} from "../../../utils/global-error-handler.js";
 
 import DeleteConversation from "./delete-conversation.js";
 import { useChat } from "./hooks.js";
@@ -125,10 +129,13 @@ export default function Page() {
 
     document.addEventListener("click", handleDocumentClick, true);
 
+    registerErrorDataCollector("chat", collectAdditionalErrorData);
+
     onCleanup(() => {
       observer.disconnect();
       resizeObserver.disconnect();
       document.removeEventListener("click", handleDocumentClick, true);
+      unregisterErrorDataCollector("chat");
     });
   });
 
@@ -285,6 +292,7 @@ export default function Page() {
   // ============= Error Data Collection =============
 
   const collectAdditionalErrorData = async () => ({
+    "Tool Name": isFedPulse ? "FedPulse" : "Chat",
     "Chat ID": conversation?.id || null,
     "Reasoning Mode": formRef?.reasoningMode?.checked || false,
     Model: formRef?.model?.value || "sonnet-4.5",
