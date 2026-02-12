@@ -15,7 +15,7 @@
     },
     "pi_name": {
       "type": "string",
-      "description": "PI full name with credentials."
+      "description": "Principal investigator full name with credentials."
     },
     "study_title": {
       "type": "string",
@@ -35,15 +35,15 @@
     },
     "contact_name": {
       "type": "string",
-      "description": "Primary contact name."
+      "description": "Principal Investigator contact name."
     },
     "contact_phone": {
       "type": "string",
-      "description": "Primary contact phone."
+      "description": "Principal investigator contact phone."
     },
     "contact_email": {
       "type": "string",
-      "description": "Primary contact email."
+      "description": "Principal investigator contact email."
     },
     "other_contact_name": {
       "type": "string",
@@ -59,43 +59,43 @@
     },
     "key_info_why_asked": {
       "type": "string",
-      "description": "Why participant is being asked to join."
+      "description": "Why participant is being asked to join. 1-2 sentences maximum"
     },
     "key_info_purpose": {
       "type": "string",
-      "description": "Study purpose, drug mechanism, tradeoffs. Multi-paragraph."
+      "description": "Study purpose, drug mechanism, tradeoffs. 1-2 sentences maximum."
     },
     "key_info_fda_status": {
       "type": "string",
-      "description": "FDA approval status with dosages. Multi-paragraph."
+      "description": "FDA approval status with dosages. 1-2 sentences maximum."
     },
     "key_info_phase": {
       "type": "string",
-      "description": "Study phase, e.g., 'Phase I'."
+      "description": "Study phase, e.g., 'Phase I', 'Phase II', 'Pilot/Feasibility', 'Observational'."
     },
     "key_info_phase_explanation": {
       "type": "string",
-      "description": "Brief, compassionate explanation of what this study phase means. For Phase I: focus on what it IS trying to achieve (safety, feasibility) — never say 'not to determine effectiveness' or 'not to cure disease.' Empty string if not applicable."
+      "description": "Completes: 'This is a {{key_info_phase}} study' Include a brief description this study kind.  Must follow grammatically from 'is'." 1-2 sentences maximum. Empty string if not applicable."
     },
     "key_info_happenings": {
       "type": "string",
-      "description": "Detailed bullet-point summary of study events. See prompt."
+      "description": "What will happen in general during the study.  1-3 sentences maximum. See prompt."
     },
     "key_info_benefits": {
       "type": "string",
-      "description": "Brief benefits summary. Lead with the potential benefit ('This study may benefit you by...'), then add honest caveats. Never open with 'You may or may not benefit.'"
+      "description": "Brief benefits summary.  If there are no benefits, be clear and also describe potential benefits from the protocol. 1-2 sentences maximum."
     },
     "key_info_risks": {
       "type": "string",
-      "description": "Brief risks summary. Mention the most serious outcomes (including death) in context, not as the final sentence. End with reassurance about monitoring."
+      "description": "Brief risks summary. End with reassurance about monitoring. 1-2 sentences maximum"
     },
     "key_info_alternatives": {
       "type": "string",
-      "description": "Alternatives summary."
+      "description": "Alternatives summary. 1-2 sentences maximum"
     },
     "key_info_voluntariness": {
       "type": "string",
-      "description": "Voluntary participation statement."
+      "description": "Voluntary participation statement. 1-2 sentences maximum"
     },
     "parent_permission": {
       "type": "boolean",
@@ -115,19 +115,19 @@
     },
     "is_investigational": {
       "type": "boolean",
-      "description": "True if drug/approach is investigational. Triggers: '{{investigational_drug_name}} is considered investigational, which means that it has not been approved by the FDA to treat {{investigational_condition}}.'"
+      "description": "True if drug/approach is investigational. Triggers: '{{approach_investigational_drug_name}} is considered investigational, which means that it has not been approved by the FDA to treat {{investigational_condition}}.'"
     },
-    "investigational_drug_name": {
+    "approach_investigational_drug_name": {
       "type": "string",
-      "description": "JUST the drug name (e.g., 'Atezolizumab'). Capitalize the first letter (e.g., 'Atezolizumab' not 'atezolizumab') because the template places this at the start of sentences. Template uses it in MULTIPLE places: '{{investigational_drug_name}} is considered investigational...' and 'use {{investigational_drug_name}} in this study' and 'The use of {{investigational_drug_name}} is approved to treat...' — MUST be a short name, never a description of a dosing method."
+      "description": "JUST the drug name (e.g., 'Atezolizumab', Transcranial magnetic stimulation, Vagus nerve stimulation, etc.). Capitalize the first letter (e.g., 'Atezolizumab' not 'atezolizumab') because the template places this at the start of sentences. Template uses it in MULTIPLE places: '{{investigational_drug_name}} is considered investigational...' and 'use {{approach_investigational_drug_name}} in this study' and 'The use of {{approach_investigational_drug_name}} is approved to treat...' — MUST be a short name, never a description of a dosing method."
     },
     "investigational_condition": {
       "type": "string",
-      "description": "Completes: '...has not been approved by the FDA to treat {{investigational_condition}}'. Short phrase like 'cancer' or 'breast cancer'. Must be grammatically correct after 'to treat'."
+      "description": "Completes: '...has not been approved by the FDA to treat {{investigational_condition}}'. Short phrase like 'cancer' or 'breast cancer' or 'depression'. Must be grammatically correct after 'to treat'."
     },
     "is_fda_approved_off_label": {
       "type": "boolean",
-      "description": "True if drug is FDA-approved for a different indication or use. Triggers: 'The use of {{investigational_drug_name}} is approved to treat {{fda_approved_indication}}. We are testing it in this research study to see {{research_testing_reason}}'"
+      "description": "True if drug is FDA-approved for a different indication or use. Triggers: 'The use of {{approach_investigational_drug_name}} is approved to treat {{fda_approved_indication}}. We are testing it in this research study to see {{research_testing_reason}}'"
     },
     "fda_approved_indication": {
       "type": "string",
@@ -143,15 +143,15 @@
     },
     "study_duration": {
       "type": "string",
-      "description": "Duration phrase completing: 'your involvement is expected to last {{study_duration}}'. Short phrase like '2 years' or 'about 6 months'. Must flow after 'to last'."
+      "description": "Duration phrase completing: 'If you agree to take part in this study, will be in it for {{study_duration}}'. Short phrase like '2 years' or 'about 6 months'. Must flow after 'will be in it for'."
     },
     "accrual_ceiling": {
       "type": "string",
-      "description": "Number of participants AT THE NIH SITE ONLY, completing: 'approximately {{accrual_ceiling}} people participate in this study at the NIH'. Just the number. For multisite studies, this is the NIH-specific enrollment, NOT the overall total. Use multisite_count for the total at other sites."
+      "description": "Number of participants AT THE NIH SITE ONLY, completing: 'about {{accrual_ceiling}} people take part in this study at the NIH'. Just the number. For multisite studies, this is the NIH-specific enrollment, NOT the overall total. Use multisite_count for the total at other sites."
     },
     "multisite_count": {
       "type": "string",
-      "description": "Total participants at NON-NIH sites, completing: 'Up to {{multisite_count}} people might also participate at other study sites.' Just the number, or empty string if single-site. This plus accrual_ceiling should approximate the overall accrual ceiling from the protocol."
+      "description": "Total participants at NON-NIH sites, completing: 'Up to {{multisite_count}} people might also take part at other study sites.' Just the number, or empty string if single-site. This plus accrual_ceiling should approximate the overall accrual ceiling from the protocol."
     },
     "risks_intro": {
       "type": "string",
