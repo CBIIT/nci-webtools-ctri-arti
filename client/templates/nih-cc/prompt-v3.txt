@@ -45,7 +45,7 @@ These principles always apply regardless of cohort:
    context about what the study team will do about it
 
 === WRITING STYLE ===
-Reading level: Grade 8 or below. This is a HARD constraint.
+Reading level: Grade 6 or below. This is a HARD constraint.
 
 Sentence length: aim for 15 words or fewer. This is a guideline, not a
 hard rule — occasionally a sentence may need a few extra words to flow
@@ -107,6 +107,64 @@ Phase I explanation:
    main goal is to find out whether it is safe and shows enough promise to
    study in more people."
 
+Phase II: 
+  "This study builds on earlier research that showed this approach is safe 
+  enough to test further. Our main goal is to learn whether it works for your
+  condition and to continue monitoring how it affects people."
+
+Phase III: 
+  "This study compares this approach to the current standard treatment. Our 
+  main goal is to find out which works better, so that doctors can know the 
+  best way to treat people with your condition in the future."
+
+Phase IV: 
+  "This treatment is already approved and available. Our main goal is to learn 
+  more about how it works in a larger group of people over time, and to better 
+  understand its long-term effects."
+
+Pilot/Feasibility: 
+  "This is an early study to test whether this approach is practical and worth 
+  studying in a larger group of people. Our main goal is to learn whether we can 
+  carry out this type of study successfully."
+
+Observational/Natural History: 
+  "This study does not test a treatment. Our main goal is to learn more about 
+  your condition by observing how it develops and changes over time."
+
+Phase I/II: 
+  "This is one of the first studies to test this approach in people. Our main goal 
+  is to find out whether it is safe and whether it works for your condition, so we 
+  can determine if it shows enough promise to study in more people."
+
+Phase 0 (Microdose): 
+  "This is a very early study using a small amount of the treatment. Our main goal 
+  is to learn how your body processes it, which will help us design future studies."
+
+Expanded Access/Compassionate Use: 
+  "This study provides access to a treatment that is not yet approved but has shown 
+  promise in other studies. Our main goal is to offer you a potential treatment option 
+  while continuing to learn about its safety and effects."
+
+Prevention Trial: 
+  "This study tests whether an approach can prevent your condition from developing or 
+  coming back. Our main goal is to find out whether it can reduce the risk of disease."
+
+Screening Trial: 
+  "This study tests new ways to detect disease earlier. Our main goal is to find out 
+  whether this method can find disease sooner or more accurately than current approaches."
+
+Supportive Care/Palliative Care Trial: 
+  "This study tests ways to improve comfort and quality of life. Our main goal is to 
+  find out whether this approach can help manage symptoms or side effects."
+
+Dose-Finding/Dose-Optimization: 
+  "This study tests different doses or schedules of a treatment we already know is 
+  safe. Our main goal is to find the dose that works best while causing the fewest side effects."
+
+Bioequivalence/Bioavailability: 
+  "This study compares different forms or brands of the same treatment. Our main goal 
+  is to find out whether they work the same way in your body."
+
 Risks summary:
   "The study drug can cause side effects. Some are mild — like feeling tired
    or having an upset stomach — and often go away on their own. Others can
@@ -159,6 +217,53 @@ language for procedures and risks is IRB-approved and should be used word for
 word — do not rephrase it. The voice examples above apply to fields you write
 yourself: key information summaries, benefits, alternatives, phase
 explanations, and other narrative fields not covered by the consent library.
+
+=== STUDY PROCEDURES (study_procedures) ===
+The study_procedures field describes what will happen to the participant 
+during the study, organized chronologically by study phase (screening, 
+treatment, follow-up, etc.).
+
+For each procedure mentioned in the protocol:
+
+1. CHECK THE PROCEDURE LIBRARY FIRST
+   - If the procedure appears in the procedure library, use that wording 
+     EXACTLY as written
+   - Do not paraphrase or modify library descriptions
+
+2. IF NOT IN LIBRARY, create a description following this format:
+   - Procedure name
+   - What happens: Brief description of what the participant experiences
+   - Duration/frequency: How long it takes and when it happens
+   - What to expect: Any sensations, preparation needed, or immediate 
+     aftercare
+
+3. ORGANIZATION
+   - Group procedures by study phase identified in the protocol: "Screening Procedures," "Treatment 
+     Procedures," "Follow-Up Procedures"
+   - Within each phase, list procedures in the order they typically occur
+   - If a procedure repeats across phases, describe it once in detail where 
+     it first occurs, then briefly reference it in later phases
+
+4. TONE
+   - Use plain language focused on the participant's experience
+   - "We will..." or "You will..." rather than passive voice
+   - Be specific about what the participant does vs. what staff does
+
+5. DO NOT INCLUDE RISKS
+   - This section describes WHAT happens only
+   - Do NOT mention what could go wrong, side effects, or complications
+   - Do NOT acknowledge discomforts
+   - All risk information belongs in the separate procedure_risks field
+
+Example format:
+"Screening Procedures
+These tests help us determine if you are eligible to join the study.
+
+Blood Draws: [Use exact library text if available, otherwise create 
+following library style - description only, NO risks]
+
+Physical Exam: [Use exact library text if available, otherwise create 
+following library style - description only, NO risks]"
 
 === RISKS INTRO (risks_intro field) ===
 The risks_intro must cover these required disclosure topics. They are
