@@ -47,9 +47,10 @@ These principles always apply regardless of cohort:
 === WRITING STYLE ===
 Reading level: Grade 8 or below. This is a HARD constraint.
 
-Sentence length: 15 words maximum. This is critical. Count your words.
-Break long sentences into two or three short ones. If a sentence has a
-comma followed by another clause, it is probably too long — split it.
+Sentence length: aim for 15 words or fewer. This is a guideline, not a
+hard rule — occasionally a sentence may need a few extra words to flow
+naturally. But most sentences should be short. If a sentence has a comma
+followed by another clause, consider splitting it.
   GOOD: "You will get a shot once a month. The shot goes into a muscle."
   BAD:  "You will receive a monthly injection of the study drug, which will
          be administered intramuscularly at each clinic visit."
@@ -226,13 +227,18 @@ For other drug classes, simply list the side effects from the protocol
 grouped by frequency and severity.
 
 === PROCEDURE RISKS STYLE ===
-Each procedure_risks entry should be a SHORT heading followed by the risks:
-     GOOD: "Biopsy:\nThis procedure usually causes only brief discomfort..."
-     GOOD: "Blood collection:\nBlood draws may cause pain..."
+Each procedure_risks entry should be a SHORT heading followed by ONLY the
+risks on the SAME LINE — do NOT include procedure descriptions here (that
+belongs in study_procedures):
+     GOOD: "Biopsy: This procedure usually causes only brief discomfort..."
+     GOOD: "Blood Draws: Blood draws may cause pain, redness, bruising, or
+            infection where we put the needle. Some people might faint, but
+            this is rare."
      BAD:  "Risks of Blood Draws: Blood draws may cause..."
+     BAD:  "IV: We will put a small plastic tube into a vein... The risks
+            include pain..." (procedure description does not belong here)
 
-Do NOT combine procedure + risks into a single wall of text. Keep each entry
-focused — one procedure per entry, short and scannable.
+Keep each entry focused — one procedure per entry, short and scannable.
 
 Include entries for ALL procedures in the protocol, even low-risk ones.
 
@@ -304,8 +310,13 @@ ${fieldDescriptions}
 
 === CONSENT LIBRARY ===
 The consent library below contains IRB-approved sample language for describing
-study procedures and their risks. For EVERY procedure in the protocol that has
-a matching consent library entry:
+study procedures and their risks. Each consent library entry may have a
+"Procedure:" section and a "Risks:" section. These go to DIFFERENT fields:
+
+  - Procedure text → use in study_procedures (the "What Will Happen" section)
+  - Risks text → use in procedure_risks (the "Risks" section)
+
+For EVERY procedure in the protocol that has a matching consent library entry:
 
 1. Use the consent library's Procedure and Risks text VERBATIM — do not
    paraphrase, summarize, or rewrite it.
@@ -313,9 +324,11 @@ a matching consent library entry:
    (e.g., "[specify visits]" → "months 1, 3, and 6").
 3. If the protocol mentions a procedure NOT in the library, write your own
    patient-friendly description following the same style.
-4. Each procedure_risks entry should contain the full Risks text from the
-   matching consent library section (with placeholders filled in).
-5. For the RADIATION section, choose the correct template based on effective
+4. Put Procedure text (with placeholders filled in) into the study_procedures
+   field, organized under subsection headings.
+5. Put ONLY Risks text (with placeholders filled in) into procedure_risks
+   entries. Do NOT include Procedure descriptions in procedure_risks.
+6. For the RADIATION section, choose the correct template based on effective
    dose (< 0.3 rem, 0.3-5 rem, or > 5 rem) and fill in ALL placeholders
    including the cancer risk calculations.
 
