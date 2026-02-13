@@ -75,7 +75,7 @@
     },
     "key_info_phase_explanation": {
       "type": "string",
-      "description": "Completes: 'This is a {{key_info_phase}} study' Include a brief description this study kind.  Must follow grammatically from 'is'." 1-2 sentences maximum. Empty string if not applicable."
+      "description": "Full phase explanation text. The template renders: 'This is a {{key_info_phase_explanation}}'. Must read naturally after 'This is a'. 1-2 sentences maximum. Empty string if not applicable."
     },
     "key_info_happenings": {
       "type": "string",
@@ -119,7 +119,7 @@
     },
     "approach_investigational_drug_name": {
       "type": "string",
-      "description": "JUST the drug name (e.g., 'Atezolizumab', Transcranial magnetic stimulation, Vagus nerve stimulation, etc.). Capitalize the first letter (e.g., 'Atezolizumab' not 'atezolizumab') because the template places this at the start of sentences. Template uses it in MULTIPLE places: '{{investigational_drug_name}} is considered investigational...' and 'use {{approach_investigational_drug_name}} in this study' and 'The use of {{approach_investigational_drug_name}} is approved to treat...' — MUST be a short name, never a description of a dosing method."
+      "description": "JUST the drug name (e.g., 'Atezolizumab', Transcranial magnetic stimulation, Vagus nerve stimulation, etc.). Capitalize the first letter (e.g., 'Atezolizumab' not 'atezolizumab') because the template places this at the start of sentences. Template uses it in MULTIPLE places: '{{approach_investigational_drug_name}} is considered investigational...' and 'use {{approach_investigational_drug_name}} in this study' and 'The use of {{approach_investigational_drug_name}} is approved to treat...' — MUST be a short name, never a description of a dosing method."
     },
     "investigational_condition": {
       "type": "string",
@@ -131,7 +131,7 @@
     },
     "fda_approved_indication": {
       "type": "string",
-      "description": "Short phrase completing: 'The use of {{investigational_drug_name}} is approved to treat {{fda_approved_indication}}.' e.g., 'certain types of lung cancer, liver cancer, and melanoma'. Must be a phrase that flows after 'to treat', NOT a full sentence."
+      "description": "Just the name of the drug or approach described in the protocol. Short phrase completing: 'The use of {{approach_investigational_drug_name}} is approved to treat {{fda_approved_indication}}.' e.g., 'certain types of lung cancer, liver cancer, and melanoma'. Must be a phrase that flows after 'to treat', NOT a full sentence."
     },
     "research_testing_reason": {
       "type": "string",
@@ -143,7 +143,7 @@
     },
     "study_duration": {
       "type": "string",
-      "description": "Duration phrase completing: 'If you agree to take part in this study, will be in it for {{study_duration}}'. Short phrase like '2 years' or 'about 6 months'. Must flow after 'will be in it for'."
+      "description": "Duration phrase completing: 'If you agree to take part in this study, you will be in it for about {{study_duration}}'. Short phrase like '2 years' or '6 months'. Must flow after 'for about'."
     },
     "accrual_ceiling": {
       "type": "string",
@@ -391,7 +391,7 @@
     "study_purpose",
     "why_you_asked",
     "is_investigational",
-    "investigational_drug_name",
+    "approach_investigational_drug_name",
     "investigational_condition",
     "is_fda_approved_off_label",
     "fda_approved_indication",
