@@ -107,63 +107,71 @@ Phase I explanation:
    main goal is to find out whether it is safe and shows enough promise to
    study in more people."
 
-Phase II: 
-  "This study builds on earlier research that showed this approach is safe 
-  enough to test further. Our main goal is to learn whether it works for your
-  condition and to continue monitoring how it affects people."
+Phase II:
+  "This study builds on earlier work that showed this approach is safe
+   enough to try with more people. We want to find out if it can help
+   people with your condition, while we keep a close watch on how it
+   affects you."
 
-Phase III: 
-  "This study compares this approach to the current standard treatment. Our 
-  main goal is to find out which works better, so that doctors can know the 
-  best way to treat people with your condition in the future."
+Phase III:
+  "This study compares this approach to the treatment most doctors use
+   now. We want to find out which one works better for people like you —
+   so that doctors can offer the best care in the future."
 
-Phase IV: 
-  "This treatment is already approved and available. Our main goal is to learn 
-  more about how it works in a larger group of people over time, and to better 
-  understand its long-term effects."
+Phase IV:
+  "This treatment is already approved and in use. We are studying it in
+   more people over a longer time to better understand how it works and
+   what to watch for down the road."
 
-Pilot/Feasibility: 
-  "This is an early study to test whether this approach is practical and worth 
-  studying in a larger group of people. Our main goal is to learn whether we can 
-  carry out this type of study successfully."
+Pilot/Feasibility:
+  "This is an early study to see if this approach is practical and worth
+   trying with more people. What we learn will help us decide the best
+   way to move forward."
 
-Observational/Natural History: 
-  "This study does not test a treatment. Our main goal is to learn more about 
-  your condition by observing how it develops and changes over time."
+Observational/Natural History:
+  "This study does not test a treatment. Instead, we want to learn more
+   about how your condition develops over time — so we can better
+   understand it and look for ways to help."
 
-Phase I/II: 
-  "This is one of the first studies to test this approach in people. Our main goal 
-  is to find out whether it is safe and whether it works for your condition, so we 
-  can determine if it shows enough promise to study in more people."
+Phase I/II:
+  "This is one of the first studies to test this approach in people. We
+   want to find out if it is safe and if it can help with your condition
+   — and whether it shows enough promise to study further."
 
-Phase 0 (Microdose): 
-  "This is a very early study using a small amount of the treatment. Our main goal 
-  is to learn how your body processes it, which will help us design future studies."
+Phase 0 (Microdose):
+  "This is a very early study using a tiny amount of the treatment — too
+   small to treat your condition, but enough for us to learn how your
+   body handles it. What we learn will help us plan the next steps."
 
-Expanded Access/Compassionate Use: 
-  "This study provides access to a treatment that is not yet approved but has shown 
-  promise in other studies. Our main goal is to offer you a potential treatment option 
-  while continuing to learn about its safety and effects."
+Expanded Access/Compassionate Use:
+  "This treatment is not yet approved, but it has shown promise in
+   earlier studies. This study gives you a chance to try it while we
+   continue to learn about how safe and helpful it is."
 
-Prevention Trial: 
-  "This study tests whether an approach can prevent your condition from developing or 
-  coming back. Our main goal is to find out whether it can reduce the risk of disease."
+Prevention Trial:
+  "This study tests whether an approach can keep your condition from
+   developing or coming back. We want to find out if it can lower your
+   risk."
 
-Screening Trial: 
-  "This study tests new ways to detect disease earlier. Our main goal is to find out 
-  whether this method can find disease sooner or more accurately than current approaches."
+Screening Trial:
+  "This study tests a new way to spot disease earlier. We want to find
+   out if it can catch things sooner or more clearly than the methods
+   doctors use now."
 
-Supportive Care/Palliative Care Trial: 
-  "This study tests ways to improve comfort and quality of life. Our main goal is to 
-  find out whether this approach can help manage symptoms or side effects."
+Supportive Care/Palliative Care Trial:
+  "This study looks at ways to help you feel better and manage symptoms.
+   We want to find out if this approach can ease what you are going
+   through."
 
-Dose-Finding/Dose-Optimization: 
-  "This study tests different doses or schedules of a treatment we already know is 
-  safe. Our main goal is to find the dose that works best while causing the fewest side effects."
+Dose-Finding/Dose-Optimization:
+  "We already know this treatment is safe. This study tries different
+   doses or schedules to find the one that works best for you with the
+   fewest side effects."
 
-Bioequivalence/Bioavailability: 
-  "This study compares different forms or brands of the same treatment. Our main goal 
-  is to find out whether they work the same way in your body."
+Bioequivalence/Bioavailability:
+  "This study compares different forms of the same treatment — such as a
+   pill versus a liquid, or two different brands. We want to make sure
+   they work the same way in your body."
 
 Risks summary:
   "The study drug can cause side effects. Some are mild — like feeling tired
@@ -369,6 +377,12 @@ Specific guidance for commonly mishandled fields:
   ("you may have to pay") AND (b) study drug supply ("the drug will be
   supplied at no charge... it is possible the drug may not continue to be
   supplied"). Use the protocol/consent library language.
+- approach_investigational_drug_name: This field is required whenever
+  is_investigational OR is_fda_approved_off_label is true — the template uses
+  it in BOTH conditional sections. Use the short drug or approach name from
+  the protocol (e.g., "Atezolizumab"). Never leave it empty when either
+  boolean is true — an empty string creates "The use of  is approved to
+  treat..." with a visible gap.
 - investigational_condition: If the drug IS FDA-approved but the DOSING METHOD
   is investigational, write something like "cancer" — because the template
   reads "has not been approved by the FDA to treat [this field]" and it needs
