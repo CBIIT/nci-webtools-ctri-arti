@@ -167,7 +167,7 @@ export default function Page() {
     const message = form.message.value;
     const inputFiles = form.inputFiles.files;
     const reasoningMode = form.reasoningMode.checked;
-    const defaultModel = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5;
+    const defaultModel = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6;
     const model = form.model?.value || defaultModel;
     setIsStreaming(true);
     await submitMessage({
@@ -664,8 +664,8 @@ export default function Page() {
                           required
                         >
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus 4.6</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5} selected>
-                            Sonnet 4.5
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6} selected>
+                            Sonnet 4.6
                           </option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
                         </select>

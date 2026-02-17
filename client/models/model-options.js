@@ -4,6 +4,7 @@
 export const MODEL_OPTIONS = Object.freeze({
   AWS_BEDROCK: {
     SONNET: {
+      v4_6: "us.anthropic.claude-sonnet-4-6",
       v4_5: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
       v3_7: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
     },
