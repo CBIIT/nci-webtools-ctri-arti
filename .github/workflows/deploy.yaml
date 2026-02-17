@@ -30,10 +30,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4 # Use latest version of node
-      - uses: aws-actions/configure-aws-credentials@v4 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # ARN must not contain the words "github" or "actions" (https://github.com/aws-actions/configure-aws-credentials/issues/1093)
       - run: npm install -g aws-cdk
-      - run: echo "${{ secrets.ENV_FILE }}" > infrastructure/.env
+      - run: pip install -r infrastructure-v2/requirements.txt
+      - run: echo "${{ secrets.ENV_FILE }}" > infrastructure-v2/.env
       - run: bash deploy.sh
