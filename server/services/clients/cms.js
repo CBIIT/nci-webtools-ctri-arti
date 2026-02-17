@@ -4,12 +4,13 @@
  * Provides a unified interface for conversation management that works in both:
  * - Monolith mode (direct function calls when CMS_URL is not set)
  * - Microservice mode (HTTP calls when CMS_URL is set)
+ *
+ * Uses a factory pattern — the mode is resolved once at module load time.
  */
 
 import { ConversationService } from "../cms/conversation.js";
 
 const CMS_URL = process.env.CMS_URL;
-const directService = new ConversationService();
 
 /**
  * Make an HTTP request to the CMS service
@@ -34,183 +35,79 @@ async function httpRequest(method, path, body, userId) {
   return response.json();
 }
 
-// ===== AGENT METHODS =====
+function buildDirectClient() {
+  const s = new ConversationService();
+  return {
+    createAgent: (userId, data) => s.createAgent(userId, data),
+    getAgents: (userId) => s.getAgents(userId),
+    getAgent: (userId, agentId) => s.getAgent(userId, agentId),
+    updateAgent: (userId, agentId, updates) => s.updateAgent(userId, agentId, updates),
+    deleteAgent: (userId, agentId) => s.deleteAgent(userId, agentId),
 
-export async function createAgent(userId, data) {
-  if (!CMS_URL) {
-    return directService.createAgent(userId, data);
-  }
-  return httpRequest("POST", "/api/agents", data, userId);
+    createThread: (userId, data) => s.createThread(userId, data),
+    getThreads: (userId, options) => s.getThreads(userId, options),
+    getThread: (userId, threadId) => s.getThread(userId, threadId),
+    updateThread: (userId, threadId, updates) => s.updateThread(userId, threadId, updates),
+    deleteThread: (userId, threadId) => s.deleteThread(userId, threadId),
+
+    addMessage: (userId, threadId, data) => s.addMessage(userId, threadId, data),
+    getMessages: (userId, threadId) => s.getMessages(userId, threadId),
+    getMessage: (userId, messageId) => s.getMessage(userId, messageId),
+    updateMessage: (userId, messageId, updates) => s.updateMessage(userId, messageId, updates),
+    deleteMessage: (userId, messageId) => s.deleteMessage(userId, messageId),
+
+    addResource: (userId, data) => s.addResource(userId, data),
+    getResource: (userId, resourceId) => s.getResource(userId, resourceId),
+    getResourcesByThread: (userId, threadId) => s.getResourcesByThread(userId, threadId),
+    deleteResource: (userId, resourceId) => s.deleteResource(userId, resourceId),
+
+    addVectors: (userId, threadId, vectors) => s.addVectors(userId, threadId, vectors),
+    getVectorsByThread: (userId, threadId) => s.getVectorsByThread(userId, threadId),
+    getVectorsByResource: (userId, resourceId) => s.getVectorsByResource(userId, resourceId),
+    deleteVectorsByThread: (userId, threadId) => s.deleteVectorsByThread(userId, threadId),
+  };
 }
 
-export async function getAgents(userId) {
-  if (!CMS_URL) {
-    return directService.getAgents(userId);
-  }
-  return httpRequest("GET", "/api/agents", null, userId);
+function buildHttpClient() {
+  const s = new ConversationService(); // fallback for routes not yet exposed via HTTP
+  return {
+    createAgent: (userId, data) => httpRequest("POST", "/api/agents", data, userId),
+    getAgents: (userId) => httpRequest("GET", "/api/agents", null, userId),
+    getAgent: (userId, agentId) => httpRequest("GET", `/api/agents/${agentId}`, null, userId),
+    updateAgent: (userId, agentId, updates) => httpRequest("PUT", `/api/agents/${agentId}`, updates, userId),
+    deleteAgent: (userId, agentId) => httpRequest("DELETE", `/api/agents/${agentId}`, null, userId),
+
+    createThread: (userId, data) => httpRequest("POST", "/api/threads", data, userId),
+    getThreads: (userId, options = {}) => {
+      const { limit = 20, offset = 0 } = options;
+      return httpRequest("GET", `/api/threads?limit=${limit}&offset=${offset}`, null, userId);
+    },
+    getThread: (userId, threadId) => httpRequest("GET", `/api/threads/${threadId}`, null, userId),
+    updateThread: (userId, threadId, updates) => httpRequest("PUT", `/api/threads/${threadId}`, updates, userId),
+    deleteThread: (userId, threadId) => httpRequest("DELETE", `/api/threads/${threadId}`, null, userId),
+
+    addMessage: (userId, threadId, data) => httpRequest("POST", `/api/threads/${threadId}/messages`, data, userId),
+    getMessages: (userId, threadId) => httpRequest("GET", `/api/threads/${threadId}/messages`, null, userId),
+    getMessage: (userId, messageId) => s.getMessage(userId, messageId),
+    updateMessage: (userId, messageId, updates) => httpRequest("PUT", `/api/messages/${messageId}`, updates, userId),
+    deleteMessage: (userId, messageId) => httpRequest("DELETE", `/api/messages/${messageId}`, null, userId),
+
+    addResource: (userId, data) => httpRequest("POST", "/api/resources", data, userId),
+    getResource: (userId, resourceId) => httpRequest("GET", `/api/resources/${resourceId}`, null, userId),
+    getResourcesByThread: (userId, threadId) => httpRequest("GET", `/api/threads/${threadId}/resources`, null, userId),
+    deleteResource: (userId, resourceId) => httpRequest("DELETE", `/api/resources/${resourceId}`, null, userId),
+
+    addVectors: (userId, threadId, vectors) => httpRequest("POST", `/api/threads/${threadId}/vectors`, { vectors }, userId),
+    getVectorsByThread: (userId, threadId) => httpRequest("GET", `/api/threads/${threadId}/vectors`, null, userId),
+    getVectorsByResource: (userId, resourceId) => s.getVectorsByResource(userId, resourceId),
+    deleteVectorsByThread: (userId, threadId) => s.deleteVectorsByThread(userId, threadId),
+  };
 }
 
-export async function getAgent(userId, agentId) {
-  if (!CMS_URL) {
-    return directService.getAgent(userId, agentId);
-  }
-  return httpRequest("GET", `/api/agents/${agentId}`, null, userId);
-}
+export const cmsClient = CMS_URL ? buildHttpClient() : buildDirectClient();
 
-export async function updateAgent(userId, agentId, updates) {
-  if (!CMS_URL) {
-    return directService.updateAgent(userId, agentId, updates);
-  }
-  return httpRequest("PUT", `/api/agents/${agentId}`, updates, userId);
-}
-
-export async function deleteAgent(userId, agentId) {
-  if (!CMS_URL) {
-    return directService.deleteAgent(userId, agentId);
-  }
-  return httpRequest("DELETE", `/api/agents/${agentId}`, null, userId);
-}
-
-// ===== THREAD METHODS =====
-
-export async function createThread(userId, data) {
-  if (!CMS_URL) {
-    return directService.createThread(userId, data);
-  }
-  return httpRequest("POST", "/api/threads", data, userId);
-}
-
-export async function getThreads(userId, options = {}) {
-  if (!CMS_URL) {
-    return directService.getThreads(userId, options);
-  }
-  const { limit = 20, offset = 0 } = options;
-  return httpRequest("GET", `/api/threads?limit=${limit}&offset=${offset}`, null, userId);
-}
-
-export async function getThread(userId, threadId) {
-  if (!CMS_URL) {
-    return directService.getThread(userId, threadId);
-  }
-  return httpRequest("GET", `/api/threads/${threadId}`, null, userId);
-}
-
-export async function updateThread(userId, threadId, updates) {
-  if (!CMS_URL) {
-    return directService.updateThread(userId, threadId, updates);
-  }
-  return httpRequest("PUT", `/api/threads/${threadId}`, updates, userId);
-}
-
-export async function deleteThread(userId, threadId) {
-  if (!CMS_URL) {
-    return directService.deleteThread(userId, threadId);
-  }
-  return httpRequest("DELETE", `/api/threads/${threadId}`, null, userId);
-}
-
-// ===== MESSAGE METHODS =====
-
-export async function addMessage(userId, threadId, data) {
-  if (!CMS_URL) {
-    return directService.addMessage(userId, threadId, data);
-  }
-  return httpRequest("POST", `/api/threads/${threadId}/messages`, data, userId);
-}
-
-export async function getMessages(userId, threadId) {
-  if (!CMS_URL) {
-    return directService.getMessages(userId, threadId);
-  }
-  return httpRequest("GET", `/api/threads/${threadId}/messages`, null, userId);
-}
-
-export async function getMessage(userId, messageId) {
-  if (!CMS_URL) {
-    return directService.getMessage(userId, messageId);
-  }
-  // Note: Direct service doesn't have a route for this, falling back to direct
-  return directService.getMessage(userId, messageId);
-}
-
-export async function updateMessage(userId, messageId, updates) {
-  if (!CMS_URL) {
-    return directService.updateMessage(userId, messageId, updates);
-  }
-  return httpRequest("PUT", `/api/messages/${messageId}`, updates, userId);
-}
-
-export async function deleteMessage(userId, messageId) {
-  if (!CMS_URL) {
-    return directService.deleteMessage(userId, messageId);
-  }
-  return httpRequest("DELETE", `/api/messages/${messageId}`, null, userId);
-}
-
-// ===== RESOURCE METHODS =====
-
-export async function addResource(userId, data) {
-  if (!CMS_URL) {
-    return directService.addResource(userId, data);
-  }
-  return httpRequest("POST", "/api/resources", data, userId);
-}
-
-export async function getResource(userId, resourceId) {
-  if (!CMS_URL) {
-    return directService.getResource(userId, resourceId);
-  }
-  return httpRequest("GET", `/api/resources/${resourceId}`, null, userId);
-}
-
-export async function getResourcesByThread(userId, threadId) {
-  if (!CMS_URL) {
-    return directService.getResourcesByThread(userId, threadId);
-  }
-  return httpRequest("GET", `/api/threads/${threadId}/resources`, null, userId);
-}
-
-export async function deleteResource(userId, resourceId) {
-  if (!CMS_URL) {
-    return directService.deleteResource(userId, resourceId);
-  }
-  return httpRequest("DELETE", `/api/resources/${resourceId}`, null, userId);
-}
-
-// ===== VECTOR METHODS =====
-
-export async function addVectors(userId, threadId, vectors) {
-  if (!CMS_URL) {
-    return directService.addVectors(userId, threadId, vectors);
-  }
-  return httpRequest("POST", `/api/threads/${threadId}/vectors`, { vectors }, userId);
-}
-
-export async function getVectorsByThread(userId, threadId) {
-  if (!CMS_URL) {
-    return directService.getVectorsByThread(userId, threadId);
-  }
-  return httpRequest("GET", `/api/threads/${threadId}/vectors`, null, userId);
-}
-
-export async function getVectorsByResource(userId, resourceId) {
-  if (!CMS_URL) {
-    return directService.getVectorsByResource(userId, resourceId);
-  }
-  // Note: No HTTP endpoint for this, falling back to direct
-  return directService.getVectorsByResource(userId, resourceId);
-}
-
-export async function deleteVectorsByThread(userId, threadId) {
-  if (!CMS_URL) {
-    return directService.deleteVectorsByThread(userId, threadId);
-  }
-  // Note: No HTTP endpoint for this, falling back to direct
-  return directService.deleteVectorsByThread(userId, threadId);
-}
-
-// Export a convenience object with all methods
-export const cmsClient = {
+// Named exports for backward compatibility
+export const {
   createAgent,
   getAgents,
   getAgent,
@@ -234,4 +131,4 @@ export const cmsClient = {
   getVectorsByThread,
   getVectorsByResource,
   deleteVectorsByThread,
-};
+} = cmsClient;

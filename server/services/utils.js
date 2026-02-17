@@ -196,6 +196,17 @@ export function getDateRange(startDateParam, endDateParam) {
 }
 
 /**
+ * Wraps an async Express route handler with automatic error forwarding.
+ * Eliminates repetitive try/catch/next boilerplate in route definitions.
+ *
+ * @param {Function} fn - Async function (req, res, next) => Promise<void>
+ * @returns {Function} Express middleware that catches errors and forwards them via next()
+ */
+export function routeHandler(fn) {
+  return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+}
+
+/**
  * Creates an error with a custom status code and user-friendly message,
  * while preserving the original error details.
  *
