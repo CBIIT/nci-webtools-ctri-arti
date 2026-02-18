@@ -1,4 +1,4 @@
 id,name,type,authenticationType,endpoint,transportType,customConfig
-1,Web Search,MCP,api_key,https://api.search.com/v1,http,"{""maxResults"":10}"
-2,Code Executor,Custom,none,https://api.executor.com/run,http,"{""timeout"":30000}"
-3,File Reader,MCP,oauth,https://api.files.com/read,http,"{""maxSize"":""10MB""}"
+1,Web Search,mcp,api_key,https://api.search.com/v1,http,"{""maxResults"":10}"
+2,Code Executor,custom,none,https://api.executor.com/run,http,"{""timeout"":30000}"
+3,File Reader,mcp,oauth,https://api.files.com/read,http,"{""maxSize"":""10MB""}"

@@ -1,4 +1,4 @@
 id,firstName,lastName,email,roleId,status,apiKey,budget,remaining
-1,x,x,x,1,Active,rsk_admin_test_key_001,null,null
-2,Bob,Builder,bob@example.com,2,Active,rsk_user_test_key_002,1.0,0.00001
-3,Carol,Chen,carol@example.com,2,Active,rsk_user_test_key_003,1.0,0.75
+1,x,x,x,1,active,rsk_admin_test_key_001,null,null
+2,Bob,Builder,bob@example.com,2,active,rsk_user_test_key_002,1.0,0.00001
+3,Carol,Chen,carol@example.com,2,active,rsk_user_test_key_003,1.0,0.75

@@ -154,7 +154,7 @@ export const modelDefinitions = {
       lastName: DataTypes.STRING,
       email: DataTypes.STRING,
       roleId: DataTypes.INTEGER,
-      status: DataTypes.ENUM("Active", "Inactive", "Disabled"),
+      status: DataTypes.ENUM("active", "inactive", "disabled"),
       apiKey: DataTypes.STRING,
       budget: DataTypes.FLOAT,
       remaining: DataTypes.FLOAT,
@@ -211,7 +211,7 @@ export const modelDefinitions = {
   Tool: {
     attributes: {
       name: DataTypes.STRING,
-      type: DataTypes.ENUM("MCP", "Custom"),
+      type: DataTypes.ENUM("mcp", "custom"),
       authenticationType: DataTypes.STRING,
       endpoint: DataTypes.STRING,
       transportType: DataTypes.STRING,
