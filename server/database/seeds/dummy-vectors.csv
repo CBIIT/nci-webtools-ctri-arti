@@ -1,0 +1,4 @@
+id,resourceId,order,embedding,content,conversationId
+1,1,1,"[0.1,0.2,0.3,0.4,0.5]",Project setup notes chunk 1,1
+2,2,1,"[0.2,0.3,0.4,0.5,0.6]",Error log chunk 1,2
+3,3,1,"[0.3,0.4,0.5,0.6,0.7]",Research data chunk 1,3

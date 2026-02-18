@@ -1,0 +1,4 @@
+id,userId,toolId,credential
+1,1,1,"{""apiKey"":""user1_search_key""}"
+2,2,2,null
+3,3,3,"{""accessToken"":""user3_oauth_token""}"

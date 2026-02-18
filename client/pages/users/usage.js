@@ -219,7 +219,7 @@ function UsersList() {
     if (!serverAnalyticsResource()?.data) return [];
     return serverAnalyticsResource().data.map((userStats) => {
       const user = userStats.User;
-      const limitDisplay = user.limit === null ? "Unlimited" : `$${user.limit}`;
+      const limitDisplay = user.budget === null ? "Unlimited" : `$${user.budget}`;
       const fullName =
         `${user.lastName || ""}, ${user.firstName || ""}`.replace(/^,\s*|,\s*$/g, "").trim() ||
         user.email;
@@ -232,8 +232,9 @@ function UsersList() {
         roleId: user.roleId,
         inputTokens: Math.round(userStats.totalInputTokens || 0),
         outputTokens: Math.round(userStats.totalOutputTokens || 0),
-        weeklyCostLimit: limitDisplay,
-        estimatedCost: parseFloat((userStats.totalCost || 0).toFixed(2)),
+        dailyCostLimit: limitDisplay,
+        estimatedCost: parseFloat((userStats.totalCost || 0).toFixed(4)),
+        guardrailCost: parseFloat((userStats.totalGuardrailCost || 0).toFixed(4)),
         totalRequests: userStats.totalRequests || 0,
       };
     });
@@ -492,13 +493,18 @@ function UsersList() {
               cellClassName: "small",
             },
             {
-              key: "weeklyCostLimit",
-              title: "Weekly Cost Limit ($)",
+              key: "dailyCostLimit",
+              title: "Daily Cost Limit ($)",
               cellClassName: "small",
             },
             {
               key: "estimatedCost",
               title: "Estimated Cost ($)",
+              cellClassName: "small",
+            },
+            {
+              key: "guardrailCost",
+              title: "Guardrail Cost ($)",
               cellClassName: "small",
             },
             {

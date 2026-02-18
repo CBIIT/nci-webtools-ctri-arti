@@ -1,130 +1,156 @@
 /**
  * Gateway Client
  *
- * Provides a unified interface for AI inference that works in both:
- * - Monolith mode (direct function calls when GATEWAY_URL is not set)
- * - Microservice mode (HTTP calls when GATEWAY_URL is set)
- *
- * Uses a factory pattern — the mode is resolved once at module load time.
+ * Provides inference via direct function calls (monolith mode).
+ * The /v1/chat and /v1/embeddings endpoints now handle most inference.
+ * This client is still used by routes/model.js for legacy POST /api/model calls
+ * (e.g. browse tool summarization).
  */
 
-import { Model, User } from "../database.js";
-import { runModel as directRunModel } from "../gateway/inference.js";
-import { trackModelUsage } from "../gateway/usage.js";
+import { Model, Provider, Usage, User } from "../database.js";
+import { runModel as directRunModel } from "../gateway/chat.js";
+import { getGuardrail } from "../gateway/guardrails/index.js";
+import logger from "../logger.js";
 
-const GATEWAY_URL = process.env.GATEWAY_URL;
+const guardrail = getGuardrail();
 
-const RATE_LIMIT_MESSAGE =
-  "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.";
+function calculateCost(modelRecord, inputTokens, outputTokens, cacheReadTokens = 0, cacheWriteTokens = 0) {
+  const inputCost = (inputTokens / 1000) * (modelRecord.cost1kInput || 0);
+  const outputCost = (outputTokens / 1000) * (modelRecord.cost1kOutput || 0);
+  const cacheReadCost = (cacheReadTokens / 1000) * (modelRecord.cost1kCacheRead || 0);
+  const cacheWriteCost = (cacheWriteTokens / 1000) * (modelRecord.cost1kCacheWrite || 0);
+  return inputCost + outputCost + cacheReadCost + cacheWriteCost;
+}
 
-async function checkRateLimit(userId) {
-  if (!userId) return null;
-  const user = await User.findByPk(userId);
-  if (user?.limit !== null && user?.remaining !== null && user?.remaining <= 0) {
-    return { error: RATE_LIMIT_MESSAGE, status: 429 };
+async function trackUsage(userRecord, modelRecord, inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens, guardrailCost = 0) {
+  const modelCost = calculateCost(modelRecord, inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens);
+  const cost = modelCost + guardrailCost;
+
+  // User row — full cost (model + guardrail)
+  await Usage.create({
+    type: "user",
+    userId: userRecord.id,
+    modelId: modelRecord.id,
+    inputTokens,
+    outputTokens,
+    cacheReadTokens,
+    cacheWriteTokens,
+    cost,
+  });
+
+  // Guardrail breakdown row (not additive — for visibility only)
+  if (guardrailCost > 0) {
+    await Usage.create({
+      type: "guardrail",
+      userId: userRecord.id,
+      modelId: modelRecord.id,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      cost: guardrailCost,
+    });
   }
-  return null;
+
+  if (userRecord.budget !== null && userRecord.remaining !== null) {
+    const newRemaining = Math.max(0, userRecord.remaining - cost);
+    await userRecord.update({ remaining: newRemaining });
+  }
+
+  return cost;
 }
 
-function buildDirectClient() {
-  return {
-    async infer({ userId, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }) {
-      const limited = await checkRateLimit(userId);
-      if (limited) return limited;
+/**
+ * Run AI inference (monolith mode only — legacy callers)
+ * @param {Object} options - Inference options
+ * @param {string} options.userId - User ID for rate limiting
+ * @param {string} options.model - Model internal name
+ * @param {Array} options.messages - Messages array
+ * @param {string} options.system - System prompt
+ * @param {Array} options.tools - Tools array
+ * @param {number} options.thoughtBudget - Token budget for thinking
+ * @param {boolean} options.stream - Whether to stream the response
+ * @returns {Promise<Object>} - Inference result or stream
+ */
+export async function infer({ userId, model, messages, system, tools, thoughtBudget, stream }) {
+  // Load user and model records for budget check and usage tracking
+  const userRecord = userId ? await User.findByPk(userId) : null;
+  const modelRecord = model
+    ? await Model.findOne({ where: { internalName: model }, include: [Provider] })
+    : null;
 
-      const result = await directRunModel({ model, messages, system, tools, thoughtBudget, stream, outputConfig });
+  // Budget check
+  if (userRecord?.budget !== null && userRecord?.remaining !== null && userRecord?.remaining <= 0) {
+    return {
+      error:
+        "You have reached your daily usage limit. Your access to the chat tool is temporarily disabled and will reset at midnight. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.",
+      status: 429,
+    };
+  }
 
-      // For non-streaming responses, track usage inline
-      if (!result?.stream && userId) {
-        await trackModelUsage(userId, model, ip, result.usage);
+  const result = await directRunModel({ model, messages, system, tools, thoughtBudget, stream });
+
+  // Track usage for non-streaming responses
+  if (!stream && result && !result.error && userRecord && modelRecord) {
+    const usage = result.usage || {};
+    const inputTokens = usage.inputTokens || 0;
+    const outputTokens = usage.outputTokens || 0;
+    const cacheReadTokens = usage.cacheReadInputTokens || 0;
+    const cacheWriteTokens = usage.cacheWriteInputTokens || 0;
+
+    // Extract inline guardrail cost from response metadata
+    const guardrailCost = guardrail?.supportsInline
+      ? guardrail.calculateCostFromResponse({ usage: result.usage, trace: result.trace })
+      : 0;
+
+    if (inputTokens > 0 || outputTokens > 0) {
+      const cost = await trackUsage(userRecord, modelRecord, inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens, guardrailCost);
+      logger.info(
+        `Legacy usage tracked: user=${userId}, model=${model}, input=${inputTokens}, output=${outputTokens}, guardrail=${guardrailCost.toFixed(6)}, cost=${cost.toFixed(6)}`
+      );
+    }
+  }
+
+  // For streaming responses, wrap the stream to track usage from metadata
+  if (stream && result?.stream && userRecord && modelRecord) {
+    const originalStream = result.stream;
+    result.stream = (async function* () {
+      for await (const event of originalStream) {
+        yield event;
+
+        if (event.metadata?.usage) {
+          const usage = event.metadata.usage;
+          const inputTokens = usage.inputTokens || 0;
+          const outputTokens = usage.outputTokens || 0;
+          const cacheReadTokens = usage.cacheReadInputTokens || 0;
+          const cacheWriteTokens = usage.cacheWriteInputTokens || 0;
+
+          // Extract inline guardrail cost from stream metadata
+          const guardrailCost = guardrail?.supportsInline
+            ? guardrail.calculateCostFromResponse(event.metadata)
+            : 0;
+
+          if (inputTokens > 0 || outputTokens > 0) {
+            const cost = await trackUsage(userRecord, modelRecord, inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens, guardrailCost);
+            logger.info(
+              `Legacy stream usage tracked: user=${userId}, model=${model}, input=${inputTokens}, output=${outputTokens}, guardrail=${guardrailCost.toFixed(6)}, cost=${cost.toFixed(6)}`
+            );
+          }
+        }
       }
+    })();
+  }
 
-      // For streaming, wrap to track usage on metadata
-      if (result?.stream) {
-        return {
-          stream: (async function* () {
-            for await (const message of result.stream) {
-              if (message.metadata && userId) {
-                await trackModelUsage(userId, model, ip, message.metadata.usage);
-              }
-              yield message;
-            }
-          })(),
-        };
-      }
-
-      return result;
-    },
-
-    async listModels() {
-      return Model.findAll({
-        attributes: ["name", "internalName", "maxContext", "maxOutput", "maxReasoning"],
-        where: { providerId: 1 },
-      });
-    },
-  };
+  return result;
 }
 
-function buildHttpClient() {
-  return {
-    async infer({ userId, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }) {
-      const response = await fetch(`${GATEWAY_URL}/api/infer`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }),
-      });
-
-      if (response.status === 429) {
-        return { error: (await response.json()).error, status: 429 };
-      }
-
-      if (stream) {
-        return {
-          stream: (async function* () {
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = "";
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split("\n");
-              buffer = lines.pop() || "";
-
-              for (const line of lines) {
-                if (line.trim()) {
-                  try {
-                    yield JSON.parse(line);
-                  } catch (e) {
-                    console.error("Error parsing stream line:", e);
-                  }
-                }
-              }
-            }
-
-            if (buffer.trim()) {
-              try {
-                yield JSON.parse(buffer);
-              } catch (e) {
-                console.error("Error parsing final stream buffer:", e);
-              }
-            }
-          })(),
-        };
-      }
-
-      return response.json();
-    },
-
-    async listModels() {
-      const response = await fetch(`${GATEWAY_URL}/api/models`);
-      return response.json();
-    },
-  };
+/**
+ * List available models
+ * @returns {Promise<Array>} - Array of model objects
+ */
+export async function listModels() {
+  return Model.findAll({
+    attributes: ["name", "internalName", "maxContext", "maxOutput", "maxReasoning"],
+    where: { providerId: 1 },
+  });
 }
-
-const client = GATEWAY_URL ? buildHttpClient() : buildDirectClient();
-
-export const { infer, listModels } = client;

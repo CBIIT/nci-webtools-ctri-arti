@@ -220,19 +220,19 @@ function UserProfile() {
             </div>
 
             <div class="row align-items-center mb-2">
-              <!-- Weekly Cost Limit -->
+              <!-- Daily Cost Limit -->
               <label
                 class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Weekly Cost Limit ($)</label
+                >Daily Cost Limit ($)</label
               >
               <div class="col-sm-3 col-xl-2">
                 <div>
                   ${() => {
                     const user = session()?.user;
-                    if (user?.limit === null) {
+                    if (user?.budget === null) {
                       return "Unlimited";
                     } else {
-                      return user?.limit;
+                      return user?.budget;
                     }
                   }}
                 </div>

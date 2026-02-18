@@ -126,7 +126,7 @@ function UsersList() {
       email: user.email || "-",
       status: user.status || "unknown",
       role: user.Role?.name || "No Role",
-      limit: user.limit === null ? "Unlimited" : user.limit,
+      budget: user.budget === null ? "Unlimited" : user.budget,
       rawUser: user,
     }));
   });
@@ -333,8 +333,8 @@ function UsersList() {
               `,
             },
             {
-              key: "limit",
-              title: "Weekly Cost Limit",
+              key: "budget",
+              title: "Daily Cost Limit",
               cellClassName: "text-capitalize small",
             },
             {

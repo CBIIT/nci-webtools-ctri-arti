@@ -3,7 +3,7 @@
 // =================================================================================
 
 import { openDB } from "idb";
-import { createEffect } from "solid-js";
+import { createEffect, createSignal } from "solid-js";
 import { createStore, produce, unwrap } from "solid-js/store";
 import mammoth from "mammoth";
 import { docxReplace, docxExtractTextBlocks } from "/utils/docx.js";
@@ -389,41 +389,64 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     });
   });
 
-  async function sendMessage(text, files = [], modelId, reasoningMode) {
+  const [abortController, setAbortController] = createSignal(null);
+
+  function cancelStream() {
+    const controller = abortController();
+    if (controller) {
+      controller.abort();
+      setAbortController(null);
+    }
+  }
+
+  async function sendMessage(text, files = [], modelId, reasoningMode, streamingMode = false) {
     setAgent("loading", true);
+    const controller = new AbortController();
+    setAbortController(controller);
 
-    if (!params.threadId) {
-      setAgent("thread", "name", "Untitled");
-      const thread = await db.createThread({ agentId, name: agent.thread.name });
-      setParams("threadId", thread.id);
-      setAgent("thread", "id", thread.id);
-      await loadThreads();
+    try {
+      if (!params.threadId) {
+        setAgent("thread", "name", "Untitled");
+        const thread = await db.createThread({ agentId, name: agent.thread.name });
+        setParams("threadId", thread.id);
+        setAgent("thread", "id", thread.id);
+        await loadThreads();
+      }
+
+      const record = await db.getAgent(+params.agentId);
+      const agentTools = tools.filter((t) => record.tools.includes(t.toolSpec.name));
+
+      const content = await getMessageContent(text, files);
+      const userMessage = { role: "user", content };
+
+      setAgent({
+        id: record.id,
+        thread: { id: params.threadId, name: agent.thread.name },
+        modelId,
+        reasoningMode,
+        name: record.name,
+        systemPrompt: record.systemPrompt || null,
+        tools: agentTools,
+        messages: agent.messages.concat([userMessage]),
+      });
+
+      const messages = await runAgent(agent, setAgent, { signal: controller.signal, stream: streamingMode });
+      for (const message of messages) {
+        const messageRecord = unwrap(message);
+        messageRecord.agentId = params.agentId;
+        await db.addMessage(params.threadId, messageRecord);
+      }
+    } catch (error) {
+      if (error.name === "AbortError") {
+        // Cancelled by user — preserve any partial content already in store
+        console.log("Request cancelled by user");
+      } else {
+        throw error;
+      }
+    } finally {
+      setAbortController(null);
+      setAgent("loading", false);
     }
-
-    const record = await db.getAgent(+params.agentId);
-    const agentTools = tools.filter((t) => record.tools.includes(t.toolSpec.name));
-
-    const content = await getMessageContent(text, files);
-    const userMessage = { role: "user", content };
-
-    setAgent({
-      id: record.id,
-      thread: { id: params.threadId, name: agent.thread.name },
-      modelId,
-      reasoningMode,
-      name: record.name,
-      systemPrompt: record.systemPrompt || null,
-      tools: agentTools,
-      messages: agent.messages.concat([userMessage]),
-    });
-
-    const messages = await runAgent(agent, setAgent);
-    for (const message of messages) {
-      const messageRecord = unwrap(message);
-      messageRecord.agentId = params.agentId;
-      await db.addMessage(params.threadId, messageRecord);
-    }
-    setAgent("loading", false);
   }
 
   // Generate thread title after first message
@@ -477,6 +500,7 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     setAgent,
     setParams,
     sendMessage,
+    cancelStream,
     threads,
     loadThreads,
     updateThread,
@@ -576,6 +600,8 @@ async function sendToModel(config) {
     }),
   }));
 
+  const stream = config.stream ?? false;
+
   const response = await fetch("/api/model", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -585,13 +611,19 @@ async function sendToModel(config) {
       system,
       tools,
       thoughtBudget,
-      stream: true,
+      stream,
     }),
+    signal: config.signal,
   });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(error.error || `API error: ${response.status}`);
+  }
+
+  if (!stream) {
+    const json = await response.json();
+    return { json };
   }
 
   return { stream: streamResponse(response) };
@@ -606,7 +638,7 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
-async function runAgent(store, setStore) {
+async function runAgent(store, setStore, { signal, stream = false } = {}) {
   const startingIndex = store.messages.length - 1;
   const tools = {};
   for (const tool of store.tools) {
@@ -615,21 +647,40 @@ async function runAgent(store, setStore) {
 
   let done = false;
   while (!done) {
-    const output = await sendToModel(store);
-    const assistantMessage = { role: "assistant", content: [] };
-    setStore("messages", store.messages.length, assistantMessage);
+    const output = await sendToModel({ ...store, signal, stream });
 
-    for await (const message of output.stream) {
-      // console.log(message);
-      setStore(produce((s) => processContentBlock(s, message)));
+    if (output.json) {
+      // Non-streaming response
+      const result = output.json;
+      const message = result.output?.message;
+      if (message) {
+        setStore("messages", store.messages.length, { role: "assistant", content: message.content });
+      }
 
-      const stopReason = message.messageStop?.stopReason;
-      if (stopReason === "end_turn") {
+      const stopReason = result.stopReason;
+      if (stopReason === "end_turn" || !stopReason) {
         done = true;
       } else if (stopReason === "tool_use") {
         const toolUses = store.messages.at(-1).content;
         const toolResultsMessage = await getToolResults(toolUses, tools, store, setStore);
         setStore("messages", store.messages.length, toolResultsMessage);
+      }
+    } else {
+      // Streaming response
+      const assistantMessage = { role: "assistant", content: [] };
+      setStore("messages", store.messages.length, assistantMessage);
+
+      for await (const message of output.stream) {
+        setStore(produce((s) => processContentBlock(s, message)));
+
+        const stopReason = message.messageStop?.stopReason;
+        if (stopReason === "end_turn") {
+          done = true;
+        } else if (stopReason === "tool_use") {
+          const toolUses = store.messages.at(-1).content;
+          const toolResultsMessage = await getToolResults(toolUses, tools, store, setStore);
+          setStore("messages", store.messages.length, toolResultsMessage);
+        }
       }
     }
   }

@@ -1,0 +1,4 @@
+id,userId,agentId,messageId,modelId,inputTokens,outputTokens,cacheReadTokens,cacheWriteTokens,cost
+1,2,100,2,2,12,18,0,0,0.000306
+2,2,101,null,3,10,25,0,0,0.000108
+3,3,102,null,1,50,100,10,20,0.008265

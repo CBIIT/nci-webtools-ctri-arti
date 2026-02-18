@@ -1,6 +1,7 @@
 import {
   createEffect,
   createMemo,
+  createResource,
   createSignal,
   For,
   Index,
@@ -10,7 +11,7 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-import { EllipsisVertical, Pencil, Trash2 } from "lucide-solid";
+import { EllipsisVertical, Pencil, Square, Trash2 } from "lucide-solid";
 
 import { AlertContainer } from "../../../components/alert.js";
 import AttachmentsPreview from "../../../components/attachments-preview.js";
@@ -32,6 +33,14 @@ import Message from "./message.js";
 
 const MAX_TITLE_LENGTH = 30;
 
+function filterChatModels(models) {
+  if (!models) return [];
+  return models.filter((model) => {
+    const value = model.value?.toLowerCase() || "";
+    return !value.includes("titan") && !value.includes("cohere") && !value.includes("mock");
+  });
+}
+
 export default function Page() {
   const { user } = useAuthContext();
 
@@ -43,6 +52,7 @@ export default function Page() {
     messages,
     loading,
     submitMessage,
+    cancelStream,
   } = useChat();
   const [toggles, setToggles] = createSignal({ conversations: true });
   const [isAtBottom, setIsAtBottom] = createSignal(true);
@@ -53,6 +63,11 @@ export default function Page() {
   const [openMenu, setOpenMenu] = createSignal(null);
   const [editingState, setEditingState] = createSignal({ id: null, context: null, title: "" });
   let titleInputRef;
+
+  // Fetch available models for the dropdown
+  const [models] = createResource(() =>
+    fetch("/api/model/list").then((res) => res.json()).then(filterChatModels)
+  );
 
   const isFedPulse = new URLSearchParams(location.search).get("fedpulse") === "1";
   let bottomEl;
@@ -150,6 +165,11 @@ export default function Page() {
   });
 
   function handleKeyDown(event) {
+    if (event.key === "Escape" && loading()) {
+      event.preventDefault();
+      cancelStream();
+      return;
+    }
     if (event.key === "Enter" && !event.shiftKey && !loading()) {
       event.preventDefault();
       event.target?.closest("form")?.requestSubmit();
@@ -655,21 +675,21 @@ export default function Page() {
                     </div>
 
                     <div class="d-flex w-auto align-items-center gap-2">
-                      <${Show} when=${() => user?.()?.Role?.name === "admin"}>
-                        <label for="model" class="visually-hidden">Model Selection</label>
-                        <select
-                          class="model-dropdown form-select form-select-lg fw-semibold fs-6 h-100 border-0 bg-primary-hover cursor-pointer"
-                          name="model"
-                          id="model"
-                          required
-                        >
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus 4.6</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5} selected>
-                            Sonnet 4.5
-                          </option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
-                        </select>
-                      <//>
+                      <label for="model" class="visually-hidden">Model Selection</label>
+                      <select
+                        class="btn btn-wide btn-wide-info px-3 py-3 model-dropdown form-select cursor-pointer"
+                        name="model"
+                        id="model"
+                        required
+                      >
+                        <${For} each=${() => models() || []}>
+                          ${(model) => html`
+                            <option value=${model.value} selected=${model.internalName?.includes("sonnet-4-5")}>
+                              ${model.label}
+                            </option>
+                          `}
+                        <//>
+                      </select>
 
                       <div class="d-flex flex-row gap-2">
                         <button
@@ -680,13 +700,21 @@ export default function Page() {
                           <img src="assets/images/icon-clear.svg" alt="Clear" />
                           Clear
                         </button>
-                        <button
-                          class="btn btn-wide px-3 py-3 btn-wide-primary"
-                          type="submit"
-                          disabled=${loading}
-                        >
-                          Send
-                        </button>
+                        ${() => loading()
+                          ? html`<button
+                              class="btn btn-wide px-3 py-3 btn-danger"
+                              type="button"
+                              onClick=${() => cancelStream()}
+                            >
+                              <${Square} size="16" fill="currentColor" /> Stop
+                            </button>`
+                          : html`<button
+                              class="btn btn-wide px-3 py-3 btn-wide-primary"
+                              type="submit"
+                            >
+                              Send
+                            </button>`
+                        }
                       </div>
                     </div>
                   </div>

@@ -1,101 +1,22 @@
 import { Router } from "express";
-import { col, fn, Op, where as sequelizeWhere } from "sequelize";
+import { col, fn, literal, Op, where as sequelizeWhere } from "sequelize";
 
 import { Model, Role, Usage, User } from "../database.js";
 import { requireRole } from "../middleware.js";
 import { resetUsageLimits } from "../scheduler.js";
-import { createHttpError, getDateRange, routeHandler } from "../utils.js";
+import { createHttpError, getDateRange } from "../utils.js";
 
 const api = Router();
 
-// ===== Shared helpers =====
-
-function buildSearchConditions(search) {
-  if (!search) return {};
-  const searchTerm = `%${search.toLowerCase()}%`;
-  return {
-    [Op.or]: [
-      sequelizeWhere(fn("LOWER", col("firstName")), Op.like, searchTerm),
-      sequelizeWhere(fn("LOWER", col("lastName")), Op.like, searchTerm),
-      sequelizeWhere(fn("LOWER", col("email")), Op.like, searchTerm),
-    ],
-  };
-}
-
-function getGroupColumn(groupBy) {
-  switch (groupBy) {
-    case "hour":
-      return fn("DATE_FORMAT", col("createdAt"), "%Y-%m-%d %H:00:00");
-    case "day":
-      return fn("DATE", col("createdAt"));
-    case "week":
-      return fn("YEARWEEK", col("createdAt"));
-    case "month":
-      return fn("DATE_FORMAT", col("createdAt"), "%Y-%m");
-    case "user":
-      return col("userId");
-    case "model":
-      return col("modelId");
-    default:
-      return fn("DATE", col("createdAt"));
-  }
-}
-
-const aggregateAttributes = [
-  [fn("SUM", col("cost")), "totalCost"],
-  [fn("SUM", col("inputTokens")), "totalInputTokens"],
-  [fn("SUM", col("outputTokens")), "totalOutputTokens"],
-  [fn("COUNT", col("*")), "totalRequests"],
-];
-
-function buildUserAnalyticsQuery(baseQuery, { search, roleFilter, statusFilter, sortBy, sortOrder, limit, offset }) {
-  const userWhere = { ...buildSearchConditions(search) };
-  if (statusFilter && statusFilter !== "All") {
-    userWhere.status = statusFilter;
-  }
-
-  const roleWhere = {};
-  if (roleFilter && roleFilter !== "All") {
-    roleWhere.name = roleFilter;
-  }
-
-  const sortMapping = {
-    name: ["User", "firstName"],
-    email: ["User", "email"],
-    role: ["User->Role", "name"],
-    totalCost: [fn("SUM", col("cost"))],
-    totalRequests: [fn("COUNT", col("*"))],
-    totalInputTokens: [fn("SUM", col("inputTokens"))],
-    totalOutputTokens: [fn("SUM", col("outputTokens"))],
-    estimatedCost: [fn("SUM", col("cost"))],
-    inputTokens: [fn("SUM", col("inputTokens"))],
-    outputTokens: [fn("SUM", col("outputTokens"))],
-  };
-
-  const orderBy = sortMapping[sortBy] || [fn("SUM", col("cost"))];
-  const orderDirection = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
-
-  const includeOpts = [
-    {
-      model: User,
-      attributes: ["id", "email", "firstName", "lastName", "limit", "remaining", "roleId"],
-      include: [{ model: Role, attributes: ["name"], where: roleWhere }],
-      where: userWhere,
-    },
-  ];
-
-  return { userWhere, roleWhere, includeOpts, orderBy, orderDirection };
-}
-
-// ===== User Management =====
-
-api.get("/admin/users", requireRole("admin"), routeHandler(async (req, res) => {
+// Admin routes - User Management
+api.get("/admin/users", requireRole("admin"), async (req, res) => {
   const search = req.query.search;
   const limit = parseInt(req.query.limit) || 100;
   const offset = parseInt(req.query.offset) || 0;
   const sortBy = req.query.sortBy || "createdAt";
   const sortOrder = req.query.sortOrder || "DESC";
 
+  // Build search conditions
   const where = { ...req.query };
   delete where.search;
   delete where.limit;
@@ -104,9 +25,16 @@ api.get("/admin/users", requireRole("admin"), routeHandler(async (req, res) => {
   delete where.sortOrder;
 
   if (search) {
-    Object.assign(where, buildSearchConditions(search));
+    // Use database-agnostic case-insensitive search
+    const searchTerm = `%${search.toLowerCase()}%`;
+    where[Op.or] = [
+      sequelizeWhere(fn("LOWER", col("firstName")), Op.like, searchTerm),
+      sequelizeWhere(fn("LOWER", col("lastName")), Op.like, searchTerm),
+      sequelizeWhere(fn("LOWER", col("email")), Op.like, searchTerm),
+    ];
   }
 
+  // Map sortBy to actual columns/associations
   const sortMapping = {
     name: ["lastName"],
     lastName: ["lastName"],
@@ -114,7 +42,7 @@ api.get("/admin/users", requireRole("admin"), routeHandler(async (req, res) => {
     email: ["email"],
     status: ["status"],
     role: [{ model: Role }, "name"],
-    limit: ["limit"],
+    budget: ["budget"],
     createdAt: ["createdAt"],
   };
 
@@ -131,80 +59,120 @@ api.get("/admin/users", requireRole("admin"), routeHandler(async (req, res) => {
 
   res.json({
     data: users,
-    meta: { total: count, limit, offset, search, sortBy, sortOrder },
+    meta: {
+      total: count,
+      limit,
+      offset,
+      search,
+      sortBy,
+      sortOrder,
+    },
   });
-}));
+});
 
-api.get("/admin/users/:id", requireRole("admin"), routeHandler(async (req, res) => {
+api.get("/admin/users/:id", requireRole("admin"), async (req, res) => {
   const user = await User.findByPk(req.params.id, {
     include: [{ model: Role }],
   });
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(user);
-}));
 
-api.post("/admin/profile", requireRole(), routeHandler(async (req, res, next) => {
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.json(user);
+});
+
+// Update current user's profile (authenticated users only)
+api.post("/admin/profile", requireRole(), async (req, res, next) => {
   const { session } = req;
   const currentUser = session.user;
   const { firstName, lastName } = req.body;
 
+  // Only allow firstName and lastName updates
   const allowedFields = { firstName, lastName };
+
+  // Remove undefined values
   Object.keys(allowedFields).forEach((key) => {
-    if (allowedFields[key] === undefined) delete allowedFields[key];
+    if (allowedFields[key] === undefined) {
+      delete allowedFields[key];
+    }
   });
 
   try {
     const user = await User.findByPk(currentUser.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     await user.update(allowedFields);
-    const updatedUser = await User.findByPk(currentUser.id, { include: [{ model: Role }] });
+
+    // Return updated user with Role included
+    const updatedUser = await User.findByPk(currentUser.id, {
+      include: [{ model: Role }],
+    });
+
     res.json(updatedUser);
   } catch (error) {
     console.error("Profile update error:", error);
     next(createHttpError(500, error, "Failed to update profile"));
   }
-}));
+});
 
-api.post("/admin/users", requireRole("admin"), routeHandler(async (req, res) => {
+// Create or update a user (admin only)
+api.post("/admin/users", requireRole("admin"), async (req, res) => {
   const { id, generateApiKey, ...userData } = req.body;
 
+  // Generate API key if requested
   if (generateApiKey) {
     userData.apiKey = `rsk_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
   }
 
   let user;
   if (id) {
+    // Update existing user
     user = await User.findByPk(id);
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
     await user.update(userData);
   } else {
+    // Create new user
     user = await User.create(userData);
   }
 
   res.json(user);
-}));
+});
 
-api.delete("/admin/users/:id", requireRole("admin"), routeHandler(async (req, res) => {
+// Delete a user (admin only)
+api.delete("/admin/users/:id", requireRole("admin"), async (req, res) => {
   const user = await User.findByPk(req.params.id);
-  if (!user) return res.status(404).json({ error: "User not found" });
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
   await user.destroy();
   res.json({ success: true });
-}));
+});
 
-// ===== Usage =====
-
-api.get("/admin/users/:id/usage", requireRole("admin"), routeHandler(async (req, res) => {
+// Get usage data for a specific user (admin only)
+api.get("/admin/users/:id/usage", requireRole("admin"), async (req, res) => {
   const userId = req.params.id;
   const user = await User.findByPk(userId);
-  if (!user) return res.status(404).json({ error: "User not found" });
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
 
   const { startDate, endDate } = getDateRange(req.query.startDate, req.query.endDate);
   const limit = parseInt(req.query.limit) || 100;
   const offset = parseInt(req.query.offset) || 0;
 
   const { count, rows } = await Usage.findAndCountAll({
-    where: { userId, createdAt: { [Op.between]: [startDate, endDate] } },
+    where: {
+      userId,
+      createdAt: { [Op.between]: [startDate, endDate] },
+    },
     include: [{ model: Model, attributes: ["id", "name"] }],
     order: [["createdAt", "DESC"]],
     limit,
@@ -214,6 +182,7 @@ api.get("/admin/users/:id/usage", requireRole("admin"), routeHandler(async (req,
   res.json({
     data: rows.map((usage) => ({
       id: usage.id,
+      type: usage.type,
       userId: usage.userId,
       modelId: usage.modelId,
       modelName: usage.Model?.name,
@@ -231,26 +200,33 @@ api.get("/admin/users/:id/usage", requireRole("admin"), routeHandler(async (req,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        limit: user.limit,
+        budget: user.budget,
         remaining: user.remaining,
       },
     },
   });
-}));
+});
 
-api.get("/admin/roles", requireRole("admin"), routeHandler(async (req, res) => {
-  const roles = await Role.findAll({ order: [["order"]] });
+// Get all roles (admin only)
+api.get("/admin/roles", requireRole("admin"), async (req, res) => {
+  const roles = await Role.findAll({ order: [["displayOrder"]] });
   res.json(roles);
-}));
+});
 
-api.get("/admin/usage", requireRole("admin"), routeHandler(async (req, res) => {
+// Get usage data for all users (admin only)
+api.get("/admin/usage", requireRole("admin"), async (req, res) => {
   const { startDate, endDate } = getDateRange(req.query.startDate, req.query.endDate);
   const limit = parseInt(req.query.limit) || 100;
   const offset = parseInt(req.query.offset) || 0;
   const userId = req.query.userId;
 
-  const where = { createdAt: { [Op.between]: [startDate, endDate] } };
-  if (userId) where.userId = userId;
+  const where = {
+    createdAt: { [Op.between]: [startDate, endDate] },
+  };
+
+  if (userId) {
+    where.userId = userId;
+  }
 
   const { count, rows } = await Usage.findAndCountAll({
     where,
@@ -258,7 +234,7 @@ api.get("/admin/usage", requireRole("admin"), routeHandler(async (req, res) => {
       { model: Model, attributes: ["id", "name"] },
       {
         model: User,
-        attributes: ["id", "email", "firstName", "lastName", "limit", "remaining"],
+        attributes: ["id", "email", "firstName", "lastName", "budget", "remaining"],
         include: [{ model: Role, attributes: ["id", "name"] }],
       },
     ],
@@ -270,6 +246,7 @@ api.get("/admin/usage", requireRole("admin"), routeHandler(async (req, res) => {
   res.json({
     data: rows.map((usage) => ({
       id: usage.id,
+      type: usage.type,
       userId: usage.userId,
       modelId: usage.modelId,
       modelName: usage.Model?.name,
@@ -282,28 +259,37 @@ api.get("/admin/usage", requireRole("admin"), routeHandler(async (req, res) => {
         email: usage.User.email,
         firstName: usage.User.firstName,
         lastName: usage.User.lastName,
-        limit: usage.User.limit,
+        budget: usage.User.budget,
         remaining: usage.User.remaining,
         role: usage.User.Role?.name,
       },
     })),
-    meta: { total: count, limit, offset },
+    meta: {
+      total: count,
+      limit,
+      offset,
+    },
   });
-}));
+});
 
-api.post("/admin/usage/reset", requireRole("admin"), routeHandler(async (req, res) => {
+// Reset usage limits for all users (admin only)
+api.post("/admin/usage/reset", requireRole("admin"), async (req, res) => {
   const [updatedCount] = await resetUsageLimits();
   res.json({ success: true, updatedUsers: updatedCount });
-}));
+});
 
-api.post("/admin/users/:id/reset-limit", requireRole("admin"), routeHandler(async (req, res, next) => {
+// Reset usage budget for a specific user (admin only)
+api.post("/admin/users/:id/reset-budget", requireRole("admin"), async (req, res, next) => {
   const userId = req.params.id;
   try {
     const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
+    // Reset the user's remaining balance to match their budget
     const [updated] = await User.update(
-      { remaining: User.sequelize.col("limit") },
+      { remaining: User.sequelize.col("budget") },
       { where: { id: userId } }
     );
 
@@ -311,17 +297,31 @@ api.post("/admin/users/:id/reset-limit", requireRole("admin"), routeHandler(asyn
       const updatedUser = await User.findByPk(userId);
       res.json({ success: true, user: updatedUser });
     } else {
-      res.status(500).json({ error: "Failed to reset user limit" });
+      res.status(500).json({ error: "Failed to reset user budget" });
     }
   } catch (error) {
-    console.error("Error resetting user limit:", error);
-    next(createHttpError(500, error, "An error occurred while resetting the user limit"));
+    console.error("Error resetting user budget:", error);
+    next(createHttpError(500, error, "An error occurred while resetting the user budget"));
   }
-}));
+});
 
-// ===== Analytics =====
+// Type-aware SQL fragments — exclude guardrail rows from totals to avoid double-counting
+const COST_SQL = `CASE WHEN "Usage"."type" != 'guardrail' THEN "Usage"."cost" ELSE 0 END`;
+const GUARDRAIL_COST_SQL = `CASE WHEN "Usage"."type" = 'guardrail' THEN "Usage"."cost" ELSE 0 END`;
+const INPUT_SQL = `CASE WHEN "Usage"."type" != 'guardrail' THEN "Usage"."inputTokens" ELSE 0 END`;
+const OUTPUT_SQL = `CASE WHEN "Usage"."type" != 'guardrail' THEN "Usage"."outputTokens" ELSE 0 END`;
+const COUNT_SQL = `CASE WHEN "Usage"."type" != 'guardrail' THEN 1 END`;
 
-api.get("/admin/analytics", requireRole("admin"), routeHandler(async (req, res) => {
+const usageAttributes = [
+  [fn("SUM", literal(COST_SQL)), "totalCost"],
+  [fn("SUM", literal(GUARDRAIL_COST_SQL)), "totalGuardrailCost"],
+  [fn("SUM", literal(INPUT_SQL)), "totalInputTokens"],
+  [fn("SUM", literal(OUTPUT_SQL)), "totalOutputTokens"],
+  [fn("COUNT", literal(COUNT_SQL)), "totalRequests"],
+];
+
+// Get usage analytics with aggregation (admin only)
+api.get("/admin/analytics", requireRole("admin"), async (req, res) => {
   const { startDate, endDate } = getDateRange(req.query.startDate, req.query.endDate);
   const groupBy = req.query.groupBy || "day";
   const userId = req.query.userId;
@@ -333,7 +333,34 @@ api.get("/admin/analytics", requireRole("admin"), routeHandler(async (req, res) 
   const roleFilter = req.query.role;
   const statusFilter = req.query.status;
 
-  const groupCol = getGroupColumn(groupBy);
+  let dateFormat, groupCol;
+  switch (groupBy) {
+    case "hour":
+      dateFormat = "%Y-%m-%d %H:00:00";
+      groupCol = fn("DATE_FORMAT", col("createdAt"), "%Y-%m-%d %H:00:00");
+      break;
+    case "day":
+      dateFormat = "%Y-%m-%d";
+      groupCol = fn("DATE", col("createdAt"));
+      break;
+    case "week":
+      dateFormat = "%Y-%u";
+      groupCol = fn("YEARWEEK", col("createdAt"));
+      break;
+    case "month":
+      // eslint-disable-next-line no-unused-vars
+      dateFormat = "%Y-%m";
+      groupCol = fn("DATE_FORMAT", col("createdAt"), "%Y-%m");
+      break;
+    case "user":
+      groupCol = col("userId");
+      break;
+    case "model":
+      groupCol = col("modelId");
+      break;
+    default:
+      groupCol = fn("DATE", col("createdAt"));
+  }
 
   const baseQuery = {
     where: {
@@ -343,42 +370,98 @@ api.get("/admin/analytics", requireRole("admin"), routeHandler(async (req, res) 
   };
 
   if (groupBy === "user") {
-    const { userWhere, roleWhere, includeOpts, orderBy, orderDirection } =
-      buildUserAnalyticsQuery(baseQuery, { search, roleFilter, statusFilter, sortBy, sortOrder, limit, offset });
+    // Build search conditions for users
+    const userWhere = {};
+    if (search) {
+      const searchTerm = `%${search.toLowerCase()}%`;
+      userWhere[Op.or] = [
+        sequelizeWhere(fn("LOWER", col("firstName")), Op.like, searchTerm),
+        sequelizeWhere(fn("LOWER", col("lastName")), Op.like, searchTerm),
+        sequelizeWhere(fn("LOWER", col("email")), Op.like, searchTerm),
+      ];
+    }
 
-    const totalCount = await Usage.count({
-      ...baseQuery,
-      include: [
-        {
-          model: User,
-          where: userWhere,
-          include: [{ model: Role, where: roleWhere }],
+    const roleWhere = {};
+    if (roleFilter && roleFilter !== "All") {
+      roleWhere.name = roleFilter;
+    }
+
+    if (statusFilter && statusFilter !== "All") {
+      userWhere.status = statusFilter;
+    }
+
+    if (userId) {
+      userWhere.id = userId;
+    }
+
+    // Step 1: Fetch all matching users
+    const allUsers = await User.findAll({
+      where: userWhere,
+      include: [{ model: Role, attributes: ["id", "name"], where: roleWhere }],
+      raw: true,
+      nest: true,
+    });
+
+    // Step 2: Fetch aggregated usage stats for the date range
+    const usageStats = allUsers.length
+      ? await Usage.findAll({
+          where: {
+            userId: { [Op.in]: allUsers.map((u) => u.id) },
+            createdAt: { [Op.between]: [startDate, endDate] },
+          },
+          attributes: ["userId", ...usageAttributes],
+          group: ["userId"],
+          raw: true,
+        })
+      : [];
+
+    const usageMap = new Map(usageStats.map((s) => [s.userId, s]));
+
+    // Step 3: Merge — users without usage get zeros
+    let merged = allUsers.map((user) => {
+      const stats = usageMap.get(user.id) || {};
+      return {
+        userId: user.id,
+        totalCost: parseFloat(stats.totalCost) || 0,
+        totalGuardrailCost: parseFloat(stats.totalGuardrailCost) || 0,
+        totalInputTokens: parseInt(stats.totalInputTokens) || 0,
+        totalOutputTokens: parseInt(stats.totalOutputTokens) || 0,
+        totalRequests: parseInt(stats.totalRequests) || 0,
+        User: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          budget: user.budget,
+          remaining: user.remaining,
+          roleId: user.roleId,
+          Role: user.Role,
         },
-      ],
-      distinct: true,
-      col: "userId",
+      };
     });
 
-    const data = await Usage.findAll({
-      ...baseQuery,
-      attributes: ["userId", ...aggregateAttributes],
-      include: includeOpts,
-      group: [
-        "userId",
-        "User.id",
-        "User.email",
-        "User.firstName",
-        "User.lastName",
-        "User.limit",
-        "User.remaining",
-        "User.roleId",
-        "User->Role.id",
-        "User->Role.name",
-      ],
-      order: [[...orderBy, orderDirection]],
-      limit,
-      offset,
-    });
+    // Step 4: Sort
+    const comparators = {
+      name: (a, b) => (a.User.firstName || "").localeCompare(b.User.firstName || ""),
+      email: (a, b) => (a.User.email || "").localeCompare(b.User.email || ""),
+      role: (a, b) => (a.User.Role?.name || "").localeCompare(b.User.Role?.name || ""),
+      totalCost: (a, b) => a.totalCost - b.totalCost,
+      estimatedCost: (a, b) => a.totalCost - b.totalCost,
+      totalRequests: (a, b) => a.totalRequests - b.totalRequests,
+      totalInputTokens: (a, b) => a.totalInputTokens - b.totalInputTokens,
+      inputTokens: (a, b) => a.totalInputTokens - b.totalInputTokens,
+      totalOutputTokens: (a, b) => a.totalOutputTokens - b.totalOutputTokens,
+      outputTokens: (a, b) => a.totalOutputTokens - b.totalOutputTokens,
+      guardrailCost: (a, b) => a.totalGuardrailCost - b.totalGuardrailCost,
+    };
+
+    const compareFn = comparators[sortBy] || comparators.totalCost;
+    const dir = sortOrder.toUpperCase() === "ASC" ? 1 : -1;
+    merged.sort((a, b) => dir * compareFn(a, b));
+
+    // Step 5: Paginate
+    const total = merged.length;
+    const data = merged.slice(offset, offset + limit);
 
     return res.json({
       data,
@@ -390,7 +473,7 @@ api.get("/admin/analytics", requireRole("admin"), routeHandler(async (req, res) 
         sortBy,
         sortOrder,
         role: roleFilter,
-        total: totalCount,
+        total,
       },
     });
   }
@@ -398,20 +481,20 @@ api.get("/admin/analytics", requireRole("admin"), routeHandler(async (req, res) 
   if (groupBy === "model") {
     const data = await Usage.findAll({
       ...baseQuery,
-      attributes: ["modelId", ...aggregateAttributes],
+      attributes: ["modelId", ...usageAttributes],
       include: [{ model: Model, attributes: ["name"] }],
       group: ["modelId", "Model.id", "Model.name"],
-      order: [[fn("SUM", col("cost")), "DESC"]],
+      order: [[fn("SUM", literal(COST_SQL)), "DESC"]],
     });
     return res.json({ data, meta: { groupBy } });
   }
 
-  // Time-based grouping (hour, day, week, month)
+  // Time-based grouping
   const data = await Usage.findAll({
     ...baseQuery,
     attributes: [
       [groupCol, "period"],
-      ...aggregateAttributes,
+      ...usageAttributes,
       [fn("COUNT", fn("DISTINCT", col("userId"))), "uniqueUsers"],
     ],
     group: [groupCol],
@@ -420,6 +503,6 @@ api.get("/admin/analytics", requireRole("admin"), routeHandler(async (req, res) 
   });
 
   res.json({ data, meta: { groupBy } });
-}));
+});
 
 export default api;

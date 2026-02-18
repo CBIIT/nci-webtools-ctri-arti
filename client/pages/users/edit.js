@@ -16,19 +16,19 @@ function UserEdit() {
     lastName: "",
     status: "active",
     roleId: 3,
-    limit: 0,
+    budget: 0,
     remaining: 0,
     noLimit: false,
   });
-  const [originalLimit, setOriginalLimit] = createSignal(0);
+  const [originalBudget, setOriginalBudget] = createSignal(0);
   const [generateApiKey] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
 
   // Default value mapping based on role ID
   const DEFAULT_ROLE_LIMITS = {
-    1: { limit: null, noLimit: true }, // Admin
-    2: { limit: 10, noLimit: false }, // Super Admin
-    3: { limit: 5, noLimit: false }, // User
+    1: { budget: null, noLimit: true }, // Admin
+    2: { budget: 10, noLimit: false }, // Super Admin
+    3: { budget: 5, noLimit: false }, // User
   };
 
   // Fetch roles data using resource
@@ -61,10 +61,10 @@ function UserEdit() {
         return null;
       }
       const data = await response.json();
-      // Set noLimit flag based on limit being null
-      data.noLimit = data.limit === null;
+      // Set noLimit flag based on budget being null
+      data.noLimit = data.budget === null;
       setUser(data);
-      setOriginalLimit(data.limit || 0);
+      setOriginalBudget(data.budget || 0);
       return data;
     } catch (err) {
       const error = new Error("Something went wrong while retrieving user details.");
@@ -85,14 +85,14 @@ function UserEdit() {
       // Include ID for user being edited
       userData.id = params.id;
 
-      // Handle no limit case - send null for limit when noLimit is true
+      // Handle no limit case - send null for budget when noLimit is true
       if (userData.noLimit) {
-        userData.limit = null;
+        userData.budget = null;
       }
       delete userData.noLimit; // Remove the UI-only property
 
-      if (userData.limit !== originalLimit()) {
-        userData.remaining = userData.limit; // Reset remaining to if limit changes
+      if (userData.budget !== originalBudget()) {
+        userData.remaining = userData.budget; // Reset remaining if budget changes
       }
 
       // Include generateApiKey flag if checked
@@ -140,7 +140,7 @@ function UserEdit() {
     setUser((prev) => ({
       ...prev,
       noLimit: checked,
-      limit: checked ? null : DEFAULT_ROLE_LIMITS[prev.roleId]?.limit || 0,
+      budget: checked ? null : DEFAULT_ROLE_LIMITS[prev.roleId]?.budget || 0,
     }));
   }
 
@@ -307,11 +307,11 @@ function UserEdit() {
               </div>
             </div>
             <div class="row align-items-center mb-2">
-              <!-- Weekly Cost Limit -->
+              <!-- Daily Cost Limit -->
               <label
-                for="limit"
+                for="budget"
                 class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-start col-form-label form-label-user fw-semibold"
-                >Weekly Cost Limit ($)</label
+                >Daily Cost Limit ($)</label
               >
               <div class="col-sm-3 col-xl-2">
                 <div class="form-check form-switch my-2">
@@ -334,10 +334,10 @@ function UserEdit() {
                     min="0"
                     class="form-control"
                     disabled=${() => user().noLimit}
-                    id="limit"
-                    value=${() => user().limit || 0}
-                    onInput=${(e) => handleInputChange("limit", parseInt(e.target.value) || 0)}
-                    aria-label="Weekly cost limit"
+                    id="budget"
+                    value=${() => user().budget || 0}
+                    onInput=${(e) => handleInputChange("budget", parseInt(e.target.value) || 0)}
+                    aria-label="Daily cost limit"
                   />
                   <${Show} when=${() => params.id}>
                     <button
@@ -347,7 +347,7 @@ function UserEdit() {
                       onClick=${() => {
                         setUser((prev) => ({
                           ...prev,
-                          limit: DEFAULT_ROLE_LIMITS[prev.roleId]?.limit,
+                          budget: DEFAULT_ROLE_LIMITS[prev.roleId]?.budget,
                           noLimit: DEFAULT_ROLE_LIMITS[prev.roleId]?.noLimit,
                         }));
                       }}

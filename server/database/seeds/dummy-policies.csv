@@ -1,0 +1,4 @@
+id,name,resource,action
+1,admin_full_access,*,*
+2,user_read_write,conversation,"read,write"
+3,guest_read_only,conversation,read

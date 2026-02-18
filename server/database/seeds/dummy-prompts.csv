@@ -1,0 +1,4 @@
+id,agentId,version,name,content
+100,null,1,General Assistant,You are a helpful AI assistant. Be concise and accurate in your responses.
+101,null,1,Code Helper,"You are a coding assistant. Help users write, debug, and explain code."
+102,null,1,Research Assistant,You are a research assistant. Help users find and analyze information.

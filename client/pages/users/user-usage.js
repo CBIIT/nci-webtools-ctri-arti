@@ -168,6 +168,7 @@ function UserUsage() {
       totalInputTokens: data.totalInputTokens || 0,
       totalOutputTokens: data.totalOutputTokens || 0,
       totalCost: data.totalCost || 0,
+      totalGuardrailCost: data.totalGuardrailCost || 0,
     };
   });
 
@@ -204,12 +205,12 @@ function UserUsage() {
               </div>
               <div class="col-md-6 text-md-end">
                 <div class="mb-1">
-                  <span class="fw-bold">Limit: </span>
+                  <span class="fw-bold">Daily Cost Limit: </span>
                   <span
                     >${() =>
-                      userResource()?.limit === null
+                      userResource()?.budget === null
                         ? "Unlimited"
-                        : formatCurrency(userResource()?.limit || 0)}</span
+                        : formatCurrency(userResource()?.budget || 0)}</span
                   >
                 </div>
                 <div>
@@ -308,7 +309,7 @@ function UserUsage() {
                 </div>
                 <div class="card-body">
                   <div class="row">
-                    <div class="col-md-3 mb-3">
+                    <div class="col mb-3">
                       <div class="card h-100">
                         <div class="card-body text-center">
                           <h6 class="text-muted">Total Requests</h6>
@@ -316,7 +317,7 @@ function UserUsage() {
                         </div>
                       </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col mb-3">
                       <div class="card h-100">
                         <div class="card-body text-center">
                           <h6 class="text-muted">Input Tokens</h6>
@@ -324,7 +325,7 @@ function UserUsage() {
                         </div>
                       </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col mb-3">
                       <div class="card h-100">
                         <div class="card-body text-center">
                           <h6 class="text-muted">Output Tokens</h6>
@@ -332,11 +333,19 @@ function UserUsage() {
                         </div>
                       </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col mb-3">
                       <div class="card h-100">
                         <div class="card-body text-center">
                           <h6 class="text-muted">Total Cost</h6>
                           <h3>${() => formatCurrency(userStats().totalCost)}</h3>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col mb-3">
+                      <div class="card h-100">
+                        <div class="card-body text-center">
+                          <h6 class="text-muted">Guardrail Cost</h6>
+                          <h3>${() => formatCurrency(userStats().totalGuardrailCost)}</h3>
                         </div>
                       </div>
                     </div>

@@ -1,0 +1,4 @@
+id,conversationId,serialNumber,role,content,tokens
+1,1,1,user,"[{""text"":""How do I set up a new Node.js project?""}]",12
+2,1,2,assistant,"[{""text"":""To set up a new Node.js project, run npm init in your project directory.""}]",18
+3,2,1,user,"[{""text"":""Why is my Python script throwing an error?""}]",10

@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import logger from "../../logger.js";
 
 /**
  * GeminiProvider
@@ -129,7 +130,7 @@ export default class GeminiProvider {
             : bedrockConverseInput.additionalModelRequestFields;
         Object.assign(geminiRequest, additionalFields);
       } catch (e) {
-        console.warn("GeminiProvider: Failed to parse additionalModelRequestFields:", e);
+        logger.warn("GeminiProvider: Failed to parse additionalModelRequestFields:", e);
       }
     }
     return geminiRequest;
@@ -339,7 +340,7 @@ export default class GeminiProvider {
         },
       };
     } catch (error) {
-      console.error("GeminiProvider Stream Conversion Error:", error.message, error.stack);
+      logger.error("GeminiProvider Stream Conversion Error:", error.message, error.stack);
       yield {
         type: "error",
         error: { internalServerError: { message: `Stream Conversion Error: ${error.message}` } },
@@ -375,7 +376,7 @@ export default class GeminiProvider {
         { latencyMs: Date.now() - startTime }
       );
     } catch (error) {
-      console.error("AwsBedrockGeminiProvider 'converse' error:", error);
+      logger.error("GeminiProvider converse error:", error);
       // Return a Bedrock-like error structure
       return {
         output: {
@@ -414,7 +415,7 @@ export default class GeminiProvider {
         startTime
       );
     } catch (error) {
-      console.error("AwsBedrockGeminiProvider 'converseStream' setup error:", error);
+      logger.error("GeminiProvider converseStream setup error:", error);
       // This catch is for errors in *initiating* the stream with Gemini.
       // Errors during streaming are handled inside toBedrockConverseStreamOutput.
       async function* errorStream() {

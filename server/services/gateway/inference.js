@@ -3,9 +3,16 @@ import bedrock from "./providers/bedrock.js";
 import gemini from "./providers/gemini.js";
 import mock from "./providers/mock.js";
 
-export async function getModelProvider(value) {
+// AWS Guardrail configuration from environment variables
+const {
+  BEDROCK_GUARDRAIL_ID,
+  BEDROCK_GUARDRAIL_VERSION = "DRAFT",
+  BEDROCK_GUARDRAIL_TRACE = "disabled",
+} = process.env;
+
+export async function getModelProvider(internalName) {
   const providers = { bedrock, gemini, mock };
-  const model = await Model.findOne({ where: { internalName: value }, include: Provider });
+  const model = await Model.findOne({ where: { internalName }, include: Provider });
   const provider = new providers[model?.Provider?.name]();
   return { model, provider };
 }
@@ -28,7 +35,7 @@ function estimateContentTokens(content) {
 }
 
 /**
- * Calculates optimal cache boundaries using sqrt(2) scaling factor
+ * Calculates optimal cache boundaries using √2 scaling factor
  * @param {number} maxTokens - Maximum token limit to consider
  * @returns {Array<number>} Array of token boundaries for cache points
  */
@@ -103,10 +110,28 @@ function addCachePointsToMessages(messages, hasCache) {
 }
 
 /**
- * Validate and normalize messages: filter nulls, ensure non-empty content,
- * strip reasoning when disabled, convert base64 bytes, and interleave missing tool results.
+ * Stream a conversation with an AI model by sending messages and receiving responses in a stream format.
+ *
+ * @param {string} modelId - The ID of the model to use (defaults to DEFAULT_MODEL_ID)
+ * @param {Array|string} messages - Array of message objects or a string that will be converted to a user message
+ * @param {string} systemPrompt - The system prompt to guide the model's behavior
+ * @param {number} thoughtBudget - Token budget for the model's thinking process (0 disables thinking feature)
+ * @param {Array} tools - Array of tools the model can use during the conversation
+ * @returns {Promise<import("@aws-sdk/client-bedrock-runtime").ConverseStreamCommandOutput|import("@aws-sdk/client-bedrock-runtime").ConverseCommandOutput>} A promise that resolves to a stream of model responses
  */
-function processMessages(messages, thoughtBudget) {
+export async function runModel({
+  model,
+  messages,
+  system: systemPrompt,
+  tools = [],
+  thoughtBudget = 0,
+  stream = false,
+}) {
+  if (!model || !messages || messages?.length === 0) {
+    return null;
+  }
+
+  // process messages to ensure they are in the correct format
   messages = messages.filter(Boolean);
   for (const message of messages) {
     if (!message.content.filter(Boolean).length) {
@@ -146,18 +171,17 @@ function processMessages(messages, thoughtBudget) {
       }
     }
   }
-  return messages;
-}
-
-/**
- * Look up the provider and assemble the full inference input object
- * (model config, cache points, system prompt, tool config, thinking config).
- */
-async function buildInferenceParams(modelId, messages, systemPrompt, tools, thoughtBudget, outputConfig) {
   const {
-    model: { maxOutput, maxReasoning, cost1kInput, _cost1kOutput, cost1kCacheRead, _cost1kCacheWrite },
+    model: {
+      maxOutput,
+      maxReasoning,
+      cost1kInput,
+      _cost1kOutput,
+      cost1kCacheRead,
+      _cost1kCacheWrite,
+    },
     provider,
-  } = await getModelProvider(modelId);
+  } = await getModelProvider(model);
   const hasCache = !!cost1kCacheRead;
   const maxTokens = Math.min(maxOutput, thoughtBudget + 2000);
 
@@ -174,71 +198,47 @@ async function buildInferenceParams(modelId, messages, systemPrompt, tools, thou
   if (thoughtBudget > 0 && maxReasoning > 0) {
     additionalModelRequestFields.thinking = { type: "enabled", budget_tokens: +thoughtBudget };
   }
-  if (modelId.includes("sonnet-4")) {
+  if (model.includes("sonnet-4")) {
     additionalModelRequestFields.anthropic_beta = ["context-1m-2025-08-07"];
   }
+  // Build guardrail config if enabled (only for Bedrock models)
+  const guardrailConfig =
+    BEDROCK_GUARDRAIL_ID && model.includes("anthropic")
+      ? {
+          guardrailIdentifier: BEDROCK_GUARDRAIL_ID,
+          guardrailVersion: BEDROCK_GUARDRAIL_VERSION,
+          trace: BEDROCK_GUARDRAIL_TRACE,
+          ...(stream && { streamProcessingMode: "sync" }),
+        }
+      : undefined;
 
   const input = {
-    modelId,
+    modelId: model,
     messages,
     system,
     toolConfig,
     inferenceConfig,
     additionalModelRequestFields,
-    ...(outputConfig && { outputConfig }),
+    guardrailConfig,
   };
-
-  return { input, provider, hasCache, cost1kInput, cost1kCacheRead };
-}
-
-/**
- * Stream a conversation with an AI model by sending messages and receiving responses.
- *
- * @param {string} model - The model internal name
- * @param {Array} messages - Array of message objects
- * @param {string} system - System prompt
- * @param {number} thoughtBudget - Token budget for thinking (0 disables)
- * @param {Array} tools - Tools the model can use
- * @param {boolean} stream - Whether to stream the response
- * @param {Object} outputConfig - Optional output configuration
- * @returns {Promise<Object>} Inference result or stream
- */
-export async function runModel({
-  model,
-  messages,
-  system: systemPrompt,
-  tools = [],
-  thoughtBudget = 0,
-  stream = false,
-  outputConfig,
-}) {
-  if (!model || !messages || messages?.length === 0) {
-    return null;
-  }
-
-  messages = processMessages(messages, thoughtBudget);
-
-  const { input, provider, hasCache, cost1kInput, cost1kCacheRead } =
-    await buildInferenceParams(model, messages, systemPrompt, tools, thoughtBudget, outputConfig);
-
   const response = stream ? provider.converseStream(input) : provider.converse(input);
   const result = await response;
 
   // Debug logging for cache behavior
   if (hasCache && !stream && result.usage) {
-    const totalEstimatedTokens = input.messages.reduce(
+    const totalEstimatedTokens = messages.reduce(
       (sum, m) => sum + m.content.reduce((s, c) => s + estimateContentTokens(c), 0),
       0
     );
-    const messagesWithCache = input.messages.filter((m) => m.content.some((c) => c.cachePoint)).length;
+    const messagesWithCache = messages.filter((m) => m.content.some((c) => c.cachePoint)).length;
     const cacheRead = result.usage.cacheReadInputTokens || 0;
     const cacheWrite = result.usage.cacheWriteInputTokens || 0;
 
     // Calculate cost savings using actual model costs
     const totalInputTokens = result.usage.inputTokens + cacheRead;
-    const regularCost = (totalInputTokens * cost1kInput) / 1000;
+    const regularCost = (totalInputTokens * cost1kInput) / 1000; // Cost without cache
     const actualCost =
-      (result.usage.inputTokens * cost1kInput + cacheRead * cost1kCacheRead) / 1000;
+      (result.usage.inputTokens * cost1kInput + cacheRead * cost1kCacheRead) / 1000; // Cost with cache
     const savings = regularCost - actualCost;
 
     console.log("[Cache Debug]", {

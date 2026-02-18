@@ -1,0 +1,4 @@
+id,userId,agentId,role
+1,1,100,admin
+2,2,101,user
+3,3,102,user

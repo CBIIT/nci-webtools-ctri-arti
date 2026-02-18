@@ -97,6 +97,15 @@ export function useChat() {
   const [loading, setLoading] = createSignal(false);
   const [userEmail, setUserEmail] = createSignal(null);
   const [db, setDB] = createSignal(null);
+  const [abortController, setAbortController] = createSignal(null);
+
+  function cancelStream() {
+    const controller = abortController();
+    if (controller) {
+      controller.abort();
+      setAbortController(null);
+    }
+  }
 
   // Initialize user session and database
   const initializeDatabase = async () => {
@@ -485,23 +494,33 @@ export function useChat() {
       }
     }
 
+    const controller = new AbortController();
+    setAbortController(controller);
+
     try {
       let isComplete = false;
       setLoading(true);
 
       while (!isComplete) {
-        const response = await fetch("/api/model", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            model,
-            tools,
-            system: systemPrompt(getClientContext(context)),
-            messages,
-            thoughtBudget: reasoningMode ? 8000 : 0,
-            stream: true,
-          }),
-        });
+        let response;
+        try {
+          response = await fetch("/api/model", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              model,
+              tools,
+              system: systemPrompt(getClientContext(context)),
+              messages,
+              thoughtBudget: reasoningMode ? 8000 : 0,
+              stream: true,
+            }),
+          });
+        } catch (error) {
+          if (error.name === "AbortError") break;
+          throw error;
+        }
 
         if (!response.ok) {
           await handleHttpError(response, "sending message");
@@ -531,181 +550,204 @@ export function useChat() {
         }
 
         // Process streaming chunks from the API
-        for await (const chunk of readStream(response)) {
-          const values = decoder
-            .decode(chunk, { stream: true })
-            .trim()
-            .split("\n")
-            .map((e) => JSON.parse(e));
+        try {
+          for await (const chunk of readStream(response)) {
+            const values = decoder
+              .decode(chunk, { stream: true })
+              .trim()
+              .split("\n")
+              .map((e) => JSON.parse(e));
 
-          for (const value of values) {
-            const { contentBlockStart, contentBlockDelta, contentBlockStop, messageStop } = value;
-            const toolUse = contentBlockStart?.start?.toolUse;
-            const stopReason = messageStop?.stopReason;
+            for (const value of values) {
+              const { contentBlockStart, contentBlockDelta, contentBlockStop, messageStop } = value;
+              const toolUse = contentBlockStart?.start?.toolUse;
+              const stopReason = messageStop?.stopReason;
 
-            if (toolUse) {
-              toolUse.input = "";
-              const { contentBlockIndex } = contentBlockStart;
-              setMessages(messages.length - 1, "content", contentBlockIndex, { toolUse });
-            } else if (contentBlockDelta) {
-              const { contentBlockIndex, delta } = contentBlockDelta;
-              const { reasoningContent, text, toolUse } = delta;
+              if (toolUse) {
+                toolUse.input = "";
+                const { contentBlockIndex } = contentBlockStart;
+                setMessages(messages.length - 1, "content", contentBlockIndex, { toolUse });
+              } else if (contentBlockDelta) {
+                const { contentBlockIndex, delta } = contentBlockDelta;
+                const { reasoningContent, text, toolUse } = delta;
 
-              if (reasoningContent) {
-                if (!messages.at(-1).content[contentBlockIndex]?.reasoningContent) {
-                  setMessages(messages.length - 1, "content", contentBlockIndex, {
-                    reasoningContent: {
-                      reasoningText: {
-                        text: "",
-                        signature: "",
+                if (reasoningContent) {
+                  if (!messages.at(-1).content[contentBlockIndex]?.reasoningContent) {
+                    setMessages(messages.length - 1, "content", contentBlockIndex, {
+                      reasoningContent: {
+                        reasoningText: {
+                          text: "",
+                          signature: "",
+                        },
+                        redactedContent: "",
                       },
-                      redactedContent: "",
-                    },
-                  });
-                }
-                if (reasoningContent.text) {
-                  setMessages(
-                    messages.length - 1,
-                    "content",
-                    contentBlockIndex,
-                    "reasoningContent",
-                    "reasoningText",
-                    "text",
-                    (prev) => prev + reasoningContent.text
-                  );
-                } else if (reasoningContent.signature) {
-                  setMessages(
-                    messages.length - 1,
-                    "content",
-                    contentBlockIndex,
-                    "reasoningContent",
-                    "reasoningText",
-                    "signature",
-                    (prev) => prev + reasoningContent.signature
-                  );
-                  setMessages(
-                    messages.length - 1,
-                    "content",
-                    contentBlockIndex,
-                    "reasoningContent",
-                    "redactedContent",
-                    undefined
-                  );
-                } else if (reasoningContent.redactedContent) {
-                  setMessages(
-                    messages.length - 1,
-                    "content",
-                    contentBlockIndex,
-                    "reasoningContent",
-                    "redactedContent",
-                    (prev) => prev + reasoningContent.redactedContent
-                  );
-                  setMessages(
-                    messages.length - 1,
-                    "content",
-                    contentBlockIndex,
-                    "reasoningContent",
-                    "reasoningText",
-                    undefined
-                  );
-                }
-              } else if (text) {
-                if (!messages.at(-1).content[contentBlockIndex]?.text) {
-                  setMessages(messages.length - 1, "content", contentBlockIndex, { text: "" });
-                }
-                setMessages(
-                  messages.length - 1,
-                  "content",
-                  contentBlockIndex,
-                  "text",
-                  (prev) => prev + text
-                );
-              } else if (toolUse) {
-                setMessages(
-                  messages.length - 1,
-                  "content",
-                  contentBlockIndex,
-                  "toolUse",
-                  "input",
-                  (prev) => prev + toolUse.input
-                );
-              }
-            } else if (contentBlockStop) {
-              const { contentBlockIndex } = contentBlockStop;
-              const { toolUse } = messages.at(-1).content[contentBlockIndex];
-              const parse = (input) => {
-                try {
-                  return JSON.parse(input);
-                } catch (e) {
-                  return { error: e.message, input };
-                }
-              };
-              if (toolUse)
-                setMessages(
-                  messages.length - 1,
-                  "content",
-                  contentBlockIndex,
-                  "toolUse",
-                  "input",
-                  (prev) => parse(prev)
-                );
-            } else if (stopReason) {
-              // Update the stored assistant message with final content
-              if (database && conversation.id && assistantMessageId) {
-                try {
-                  const currentAssistantMessage = messages.at(-1);
-                  if (currentAssistantMessage && currentAssistantMessage.role === "assistant") {
-                    // CRITICAL FIX: Deep clone the content to remove any reactive references
-                    const serializedContent = JSON.parse(
-                      JSON.stringify(currentAssistantMessage.content)
-                    );
-                    await database.updateMessage(assistantMessageId, {
-                      content: serializedContent,
                     });
                   }
-                } catch (error) {
-                  console.error("Failed to update assistant message:", error);
-                  const wrappedError = new Error(
-                    "Something went wrong while updating the response."
+                  if (reasoningContent.text) {
+                    setMessages(
+                      messages.length - 1,
+                      "content",
+                      contentBlockIndex,
+                      "reasoningContent",
+                      "reasoningText",
+                      "text",
+                      (prev) => prev + reasoningContent.text
+                    );
+                  } else if (reasoningContent.signature) {
+                    setMessages(
+                      messages.length - 1,
+                      "content",
+                      contentBlockIndex,
+                      "reasoningContent",
+                      "reasoningText",
+                      "signature",
+                      (prev) => prev + reasoningContent.signature
+                    );
+                    setMessages(
+                      messages.length - 1,
+                      "content",
+                      contentBlockIndex,
+                      "reasoningContent",
+                      "redactedContent",
+                      undefined
+                    );
+                  } else if (reasoningContent.redactedContent) {
+                    setMessages(
+                      messages.length - 1,
+                      "content",
+                      contentBlockIndex,
+                      "reasoningContent",
+                      "redactedContent",
+                      (prev) => prev + reasoningContent.redactedContent
+                    );
+                    setMessages(
+                      messages.length - 1,
+                      "content",
+                      contentBlockIndex,
+                      "reasoningContent",
+                      "reasoningText",
+                      undefined
+                    );
+                  }
+                } else if (text) {
+                  if (!messages.at(-1).content[contentBlockIndex]?.text) {
+                    setMessages(messages.length - 1, "content", contentBlockIndex, { text: "" });
+                  }
+                  setMessages(
+                    messages.length - 1,
+                    "content",
+                    contentBlockIndex,
+                    "text",
+                    (prev) => prev + text
                   );
-                  wrappedError.cause = error;
-                  handleError(wrappedError, "Update Response Error");
+                } else if (toolUse) {
+                  setMessages(
+                    messages.length - 1,
+                    "content",
+                    contentBlockIndex,
+                    "toolUse",
+                    "input",
+                    (prev) => prev + toolUse.input
+                  );
                 }
-              }
-
-              if (stopReason === "tool_use") {
-                const toolUses = messages
-                  .at(-1)
-                  .content.filter((c) => c.toolUse)
-                  .map((c) => c.toolUse);
-                const toolResults = await Promise.all(toolUses.map((t) => runTool(t)));
-                const toolResultsMessage = {
-                  role: "user",
-                  content: toolResults.map((r) => ({ toolResult: r })),
-                };
-                setMessages(messages.length, toolResultsMessage);
-
-                // CRITICAL FIX: Store tool results message immediately when created
-                if (database && conversation.id) {
+              } else if (contentBlockStop) {
+                const { contentBlockIndex } = contentBlockStop;
+                const { toolUse } = messages.at(-1).content[contentBlockIndex];
+                const parse = (input) => {
                   try {
-                    await database.addMessage(conversation.id, {
-                      role: toolResultsMessage.role,
-                      content: toolResultsMessage.content,
-                    });
+                    return JSON.parse(input);
+                  } catch (e) {
+                    return { error: e.message, input };
+                  }
+                };
+                if (toolUse)
+                  setMessages(
+                    messages.length - 1,
+                    "content",
+                    contentBlockIndex,
+                    "toolUse",
+                    "input",
+                    (prev) => parse(prev)
+                  );
+              } else if (stopReason) {
+                // Update the stored assistant message with final content
+                if (database && conversation.id && assistantMessageId) {
+                  try {
+                    const currentAssistantMessage = messages.at(-1);
+                    if (currentAssistantMessage && currentAssistantMessage.role === "assistant") {
+                      // CRITICAL FIX: Deep clone the content to remove any reactive references
+                      const serializedContent = JSON.parse(
+                        JSON.stringify(currentAssistantMessage.content)
+                      );
+                      await database.updateMessage(assistantMessageId, {
+                        content: serializedContent,
+                      });
+                    }
                   } catch (error) {
-                    console.error("Failed to store tool results message:", error);
+                    console.error("Failed to update assistant message:", error);
                     const wrappedError = new Error(
-                      "Something went wrong while storing tool results."
+                      "Something went wrong while updating the response."
                     );
                     wrappedError.cause = error;
-                    handleError(wrappedError, "Store Tool Results Error");
+                    handleError(wrappedError, "Update Response Error");
                   }
                 }
-              } else {
-                isComplete = true;
+
+                if (stopReason === "tool_use") {
+                  const toolUses = messages
+                    .at(-1)
+                    .content.filter((c) => c.toolUse)
+                    .map((c) => c.toolUse);
+                  const toolResults = await Promise.all(toolUses.map((t) => runTool(t)));
+                  const toolResultsMessage = {
+                    role: "user",
+                    content: toolResults.map((r) => ({ toolResult: r })),
+                  };
+                  setMessages(messages.length, toolResultsMessage);
+
+                  // CRITICAL FIX: Store tool results message immediately when created
+                  if (database && conversation.id) {
+                    try {
+                      await database.addMessage(conversation.id, {
+                        role: toolResultsMessage.role,
+                        content: toolResultsMessage.content,
+                      });
+                    } catch (error) {
+                      console.error("Failed to store tool results message:", error);
+                      const wrappedError = new Error(
+                        "Something went wrong while storing tool results."
+                      );
+                      wrappedError.cause = error;
+                      handleError(wrappedError, "Store Tool Results Error");
+                    }
+                  }
+                } else {
+                  isComplete = true;
+                }
               }
             }
           }
+        } catch (error) {
+          if (error.name === "AbortError") {
+            // User cancelled — persist partial assistant message and break
+            if (database && conversation.id && assistantMessageId) {
+              try {
+                const currentAssistantMessage = messages.at(-1);
+                if (currentAssistantMessage && currentAssistantMessage.role === "assistant") {
+                  const serializedContent = JSON.parse(
+                    JSON.stringify(currentAssistantMessage.content)
+                  );
+                  await database.updateMessage(assistantMessageId, {
+                    content: serializedContent,
+                  });
+                }
+              } catch (err) {
+                console.error("Failed to persist partial assistant message:", err);
+              }
+            }
+            break;
+          }
+          throw error;
         }
       }
 
@@ -716,11 +758,16 @@ export function useChat() {
         });
       }
     } catch (error) {
-      console.error("Error sending message:", error);
-      const wrappedError = new Error("Something went wrong while sending your message.");
-      wrappedError.cause = error;
-      handleError(wrappedError, "Send Message Error");
+      if (error.name === "AbortError") {
+        console.log("Request cancelled by user");
+      } else {
+        console.error("Error sending message:", error);
+        const wrappedError = new Error("Something went wrong while sending your message.");
+        wrappedError.cause = error;
+        handleError(wrappedError, "Send Message Error");
+      }
     } finally {
+      setAbortController(null);
       setLoading(false);
     }
   }
@@ -728,6 +775,7 @@ export function useChat() {
   return {
     messages,
     submitMessage,
+    cancelStream,
     conversation,
     updateConversation,
     deleteConversation,

@@ -1,0 +1,13 @@
+id,providerId,name,description,internalName,type,cost1kInput,cost1kOutput,cost1kCacheRead,cost1kCacheWrite,maxContext,maxOutput,maxReasoning,summarizeThreshold,defaultParameters
+1,1,Opus 4.6,Most capable Claude model,us.anthropic.claude-opus-4-6-v1,chat,0.005,0.025,0.0005,0.00625,200000,64000,60000,100000,"{""temperature"":1,""topP"":1,""topK"":250}"
+2,1,Sonnet 4.5,Balanced Claude model,us.anthropic.claude-sonnet-4-5-20250929-v1:0,chat,0.003,0.015,0.0003,0.00375,1000000,64000,60000,500000,"{""temperature"":1,""topP"":1,""topK"":250}"
+3,1,Haiku 4.5,Fast and cost-effective Claude model,us.anthropic.claude-haiku-4-5-20251001-v1:0,chat,0.001,0.005,0.00008,0.001,200000,32000,30000,100000,"{""temperature"":1,""topP"":1,""topK"":250}"
+4,1,Maverick,Llama 4 Maverick model,us.meta.llama4-maverick-17b-instruct-v1:0,chat,0.00024,0.00097,null,null,1000000,8192,0,500000,"{""temperature"":0.5,""topP"":0.9}"
+5,1,Scout,Llama 4 Scout model,us.meta.llama4-scout-17b-instruct-v1:0,chat,0.00017,0.00066,null,null,3500000,8192,0,1750000,"{""temperature"":0.5,""topP"":0.9}"
+6,1,Sonnet 3.7,Previous generation Sonnet model,us.anthropic.claude-3-7-sonnet-20250219-v1:0,chat,0.003,0.015,0.0003,0.00375,200000,64000,60000,100000,"{""temperature"":1,""topP"":1,""topK"":250}"
+7,2,Gemini 2.5 Pro,Google's pro model,gemini-2.5-pro-preview-06-05,chat,0.0025,0.015,null,null,1048576,65536,1000000,500000,"{""temperature"":1,""topP"":1,""topK"":10}"
+8,2,Gemini 2.5 Flash,Google's fast model,gemini-2.5-flash-preview-04-17,chat,0.00015,0.0035,null,null,1048576,65536,1000000,500000,"{""temperature"":1,""topP"":1,""topK"":10}"
+20,1,Amazon Titan Embed Text V2,Amazon Titan embedding model,amazon.titan-embed-text-v2:0,embedding,0.00002,0,null,null,8192,1024,0,0,null
+21,1,Cohere Embed English V3,Cohere English embedding model,cohere.embed-english-v3,embedding,0.0001,0,null,null,512,1024,0,0,null
+22,1,Cohere Embed Multilingual V3,Cohere multilingual embedding model,cohere.embed-multilingual-v3,embedding,0.0001,0,null,null,512,1024,0,0,null
+99,99,Mock Model,Mock model for testing,mock-model,chat,0.0000001,0.0000005,0.00000001,0.00000012,1000000,100000,500000,500000,"{""temperature"":1,""topP"":1,""topK"":250}"

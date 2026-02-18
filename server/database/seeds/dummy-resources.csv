@@ -1,0 +1,4 @@
+id,name,description,metadata,s3Url,conversationId,mimeType,content,messageId
+1,project_notes.txt,Project setup notes,"{""size"":1024}",s3://bucket/project_notes.txt,1,text/plain,Sample project notes content,null
+2,error_log.txt,Python error log,"{""size"":512}",s3://bucket/error_log.txt,2,text/plain,Traceback error details,3
+3,research_data.json,AI trends data,"{""size"":2048}",s3://bucket/research_data.json,3,application/json,AI trends: LLM and RAG and Agents,null

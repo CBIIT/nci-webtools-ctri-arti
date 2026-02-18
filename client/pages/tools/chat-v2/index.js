@@ -16,7 +16,7 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-import { EllipsisVertical, Pencil, Trash2 } from "lucide-solid";
+import { EllipsisVertical, Pencil, Square, Trash2 } from "lucide-solid";
 
 import { AlertContainer } from "../../../components/alert.js";
 import AttachmentsPreview from "../../../components/attachments-preview.js";
@@ -58,6 +58,14 @@ export default function Page() {
 // INTERNAL CHAT APPLICATION
 // =================================================================================
 
+function filterChatModels(models) {
+  if (!models) return [];
+  return models.filter((model) => {
+    const value = model.value?.toLowerCase() || "";
+    return !value.includes("titan") && !value.includes("cohere") && !value.includes("mock");
+  });
+}
+
 function ChatApp(props) {
   const { user } = useAuthContext();
 
@@ -69,6 +77,7 @@ function ChatApp(props) {
     params,
     setParams,
     sendMessage,
+    cancelStream,
     threads,
     loadThreads,
     updateThread,
@@ -83,6 +92,11 @@ function ChatApp(props) {
     return response.json();
   };
   const [agents] = createResource(fetchAgents);
+
+  // Fetch available models for the dropdown
+  const [models] = createResource(() =>
+    fetch("/api/model/list").then((res) => res.json()).then(filterChatModels)
+  );
 
   // UI State (from V1)
   const [toggles, setToggles] = createSignal({ conversations: true });
@@ -193,6 +207,11 @@ function ChatApp(props) {
 
   // Event handlers
   function handleKeyDown(event) {
+    if (event.key === "Escape" && agent.loading) {
+      event.preventDefault();
+      cancelStream();
+      return;
+    }
     if (event.key === "Enter" && !event.shiftKey && !agent.loading) {
       event.preventDefault();
       event.target?.closest("form")?.requestSubmit();
@@ -210,6 +229,7 @@ function ChatApp(props) {
     const text = form.message.value;
     const files = Array.from(form.inputFiles?.files || []);
     const reasoningMode = form.reasoningMode.checked;
+    const streamingMode = form.streamingMode?.checked || false;
     const defaultModel = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5;
     const modelId = form.model?.value || defaultModel;
 
@@ -221,7 +241,7 @@ function ChatApp(props) {
     setIsStreaming(true);
 
     try {
-      await sendMessage(text, files, modelId, reasoningMode);
+      await sendMessage(text, files, modelId, reasoningMode, streamingMode);
 
       // Generate title after first exchange
       if (isFirstMessage) {
@@ -654,23 +674,40 @@ function ChatApp(props) {
                           </label>
                         </div>
                       <//>
+
+                      <div class="form-check form-switch form-switch-lg d-flex align-items-center gap-2 my-0 mx-2 d-none">
+                        <input
+                          class="form-check-input form-check-input-lg mt-0 cursor-pointer"
+                          type="checkbox"
+                          id="streamingMode"
+                          name="streamingMode"
+                        />
+                        <label
+                          class="form-check-label text-secondary fw-semibold cursor-pointer fs-6"
+                          for="streamingMode"
+                        >
+                          Streaming
+                        </label>
+                      </div>
                     </div>
 
-                    <!-- Right: Model Selector (admin only) + Clear + Send -->
+                    <!-- Right: Model Selector + Clear + Send -->
                     <div class="d-flex w-auto align-items-center gap-2">
-                      <${Show} when=${() => user?.()?.Role?.name === "admin"}>
-                        <label for="model" class="visually-hidden">Model Selection</label>
-                        <select
-                          class="model-dropdown form-select form-select-lg fw-semibold fs-6 h-100 border-0 bg-primary-hover cursor-pointer"
-                          name="model"
-                          id="model"
-                          required
-                        >
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus 4.6</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5} selected>Sonnet 4.5</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
-                        </select>
-                      <//>
+                      <label for="model" class="visually-hidden">Model Selection</label>
+                      <select
+                        class="btn btn-wide btn-wide-info px-3 py-3 model-dropdown form-select cursor-pointer"
+                        name="model"
+                        id="model"
+                        required
+                      >
+                        <${For} each=${() => models() || []}>
+                          ${(model) => html`
+                            <option value=${model.value} selected=${model.internalName?.includes("sonnet-4-5")}>
+                              ${model.label}
+                            </option>
+                          `}
+                        <//>
+                      </select>
 
                       <div class="d-flex flex-row gap-2">
                         <button
@@ -681,13 +718,21 @@ function ChatApp(props) {
                           <img src="assets/images/icon-clear.svg" alt="Clear" />
                           Clear
                         </button>
-                        <button
-                          class="btn btn-wide px-3 py-3 btn-wide-primary"
-                          type="submit"
-                          disabled=${() => agent.loading}
-                        >
-                          Send
-                        </button>
+                        ${() => agent.loading
+                          ? html`<button
+                              class="btn btn-wide px-3 py-3 btn-danger"
+                              type="button"
+                              onClick=${() => cancelStream()}
+                            >
+                              <${Square} size="16" fill="currentColor" /> Stop
+                            </button>`
+                          : html`<button
+                              class="btn btn-wide px-3 py-3 btn-wide-primary"
+                              type="submit"
+                            >
+                              Send
+                            </button>`
+                        }
                       </div>
                     </div>
                   </div>

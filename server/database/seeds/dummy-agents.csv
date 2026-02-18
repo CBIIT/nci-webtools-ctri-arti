@@ -1,0 +1,4 @@
+id,name,description,promptId,modelId,creatorId,modelParameters
+100,General Assistant,A general-purpose AI assistant,100,2,1,null
+101,Code Helper,An AI assistant specialized in coding tasks,101,3,1,"{""temperature"":0.2,""topP"":0.9,""topK"":50}"
+102,Research Bot,An AI assistant for research and analysis,102,1,2,null
