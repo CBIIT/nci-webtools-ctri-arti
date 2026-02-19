@@ -168,12 +168,12 @@ def load_config() -> tuple[Config, str, str]:
                         "environment": {
                             "PORT": "80",
                             "VERSION": get_env("GITHUB_SHA", "latest"),
+                            "TIER": tier,
                             # Internal service URLs (same task = same network namespace = localhost)
                             "GATEWAY_URL": "http://localhost:3001",
                             "CMS_URL": "http://localhost:3002",
                         },
                         "secrets": {
-                            "TIER": tier,
                             "SESSION_SECRET": get_env("SESSION_SECRET"),
                             "OAUTH_CLIENT_ID": get_env("OAUTH_CLIENT_ID"),
                             "OAUTH_CLIENT_SECRET": get_env("OAUTH_CLIENT_SECRET"),
