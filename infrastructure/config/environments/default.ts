@@ -71,7 +71,7 @@ const config: Config = {
             CMS_URL: "http://localhost:3002",
           },
           secrets: {
-            TIER: process.env.TIER || "",
+            TIER: tier,
             SESSION_SECRET: process.env.SESSION_SECRET || "",
             OAUTH_CLIENT_ID: process.env.OAUTH_CLIENT_ID || "",
             OAUTH_CLIENT_SECRET: process.env.OAUTH_CLIENT_SECRET || "",
