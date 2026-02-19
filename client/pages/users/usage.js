@@ -233,8 +233,8 @@ function UsersList() {
         inputTokens: Math.round(userStats.totalInputTokens || 0),
         outputTokens: Math.round(userStats.totalOutputTokens || 0),
         dailyCostLimit: limitDisplay,
-        estimatedCost: parseFloat((userStats.totalCost || 0).toFixed(4)),
-        guardrailCost: parseFloat((userStats.totalGuardrailCost || 0).toFixed(4)),
+        estimatedCost: parseFloat((userStats.totalCost || 0).toFixed(2)),
+        guardrailCost: parseFloat((userStats.totalGuardrailCost || 0).toFixed(2)),
         totalRequests: userStats.totalRequests || 0,
       };
     });
