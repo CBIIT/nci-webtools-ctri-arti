@@ -173,6 +173,7 @@ def load_config() -> tuple[Config, str, str]:
                             "CMS_URL": "http://localhost:3002",
                         },
                         "secrets": {
+                            "TIER": tier,
                             "SESSION_SECRET": get_env("SESSION_SECRET"),
                             "OAUTH_CLIENT_ID": get_env("OAUTH_CLIENT_ID"),
                             "OAUTH_CLIENT_SECRET": get_env("OAUTH_CLIENT_SECRET"),
