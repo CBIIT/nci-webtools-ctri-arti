@@ -137,9 +137,28 @@
       "type": "string",
       "description": "Completes: 'We are testing it in this research study to see {{research_testing_reason}}'. Must flow grammatically from 'to see'."
     },
-    "study_procedures": {
+    "study_procedures_intro": {
       "type": "string",
-      "description": "All procedures with subsection headings. See prompt."
+      "description": "A 2-3 sentence overview of the study for the participant. Describe the main phases (screening, treatment, follow-up), roughly how long each lasts, and the general flow. Write in warm, direct language. This renders before the procedures table in the 'What Will Happen During the Study' section."
+    },
+    "study_procedures": {
+      "type": "array",
+      "description": "Each procedure in the study. For procedures with a matching consent library entry, use the library's Procedure text verbatim (filling bracketed placeholders). Each item has a title (procedure name) and description (what happens). Renders as a table in the 'What Will Happen' section.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Procedure name, e.g. 'Blood Draws', 'Physical Exam', 'CT Scan'."
+          },
+          "description": {
+            "type": "string",
+            "description": "What happens during this procedure. Use consent library text verbatim if available. Description only — NO risks."
+          }
+        },
+        "required": ["title", "description"],
+        "additionalProperties": false
+      }
     },
     "study_duration": {
       "type": "string",
@@ -147,11 +166,11 @@
     },
     "accrual_ceiling": {
       "type": "string",
-      "description": "Number completing: 'approximately {{accrual_ceiling}} people participate in this study at the NIH'. Just the number, e.g., '40'."
+      "description": "Number of participants AT THE NIH SITE ONLY, completing: 'approximately {{accrual_ceiling}} people participate in this study at the NIH'. Just the number. For multisite studies, this is the NIH-specific enrollment, NOT the overall total. Use multisite_count for the total at other sites."
     },
     "multisite_count": {
       "type": "string",
-      "description": "Number completing: 'Up to {{multisite_count}} people might also participate at other study sites.' Just the number, or empty string if single-site."
+      "description": "Total participants at NON-NIH sites, completing: 'Up to {{multisite_count}} people might also participate at other study sites.' Just the number, or empty string if single-site. This plus accrual_ceiling should approximate the overall accrual ceiling from the protocol."
     },
     "risks_intro": {
       "type": "string",
@@ -209,12 +228,12 @@
     },
     "procedure_risks": {
       "type": "array",
-      "description": "Procedure risk blocks from consent library.",
+      "description": "ONLY the risks for each procedure — do NOT include procedure descriptions (those go in study_procedures). For matching consent library entries, use ONLY the Risks text verbatim. Format: 'Heading: Risks text...' (heading and text on the same line). Renders in the Risks section of the consent form.",
       "items": { "type": "string" }
     },
     "pregnancy_risks": {
       "type": "string",
-      "description": "Pregnancy risks section or empty string."
+      "description": "Pregnancy risks section or empty string. Include if the study involves any intervention (drug, device, radiation) that may have a negative or unknown impact on a fetus — use consent library language. Empty string if the protocol has no interventions with reproductive risk."
     },
     "radiation_risks": {
       "type": "string",
@@ -222,11 +241,11 @@
     },
     "has_potential_benefits": {
       "type": "boolean",
-      "description": "True if potential direct benefits exist."
+      "description": "True if the study has therapeutic intent — i.e., the intervention might directly benefit the participant's health condition (e.g., treating their disease, reducing symptoms). Set true for studies testing treatments on affected patients. Set false for healthy volunteer studies, observational studies, biospecimen-only collection, or studies where the intervention provides no direct health benefit. Mutually exclusive with no_potential_benefits — exactly one must be true."
     },
     "no_potential_benefits": {
       "type": "boolean",
-      "description": "Inverse of has_potential_benefits."
+      "description": "True for non-therapeutic studies where participation offers no direct health benefit (healthy volunteers, observational studies, biospecimen collection). Mutually exclusive with has_potential_benefits — exactly one must be true."
     },
     "benefits_description": {
       "type": "string",
@@ -259,11 +278,11 @@
     },
     "is_open_repository": {
       "type": "boolean",
-      "description": "True if shared data/specimens will be in an open-access repository (available to anyone). Template renders: 'The data in the repository will be widely available to anyone who wants it.'"
+      "description": "True if shared data/specimens will be in an open-access repository (available to anyone). Template renders: 'The data in the repository will be widely available to anyone who wants it.' Mutually exclusive with is_closed_repository — the template says 'choose one of the following two options.' If the protocol describes data sharing via a repository, exactly one must be true. Look for 'publicly available', 'open access', or 'available to anyone'. If the protocol does not specify access restrictions, default to true (open)."
     },
     "is_closed_repository": {
       "type": "boolean",
-      "description": "True if shared data/specimens will be in a controlled-access repository (requires permission). Template renders: 'The data in the repository will only be available to qualified researchers.' Look for language about 'qualified researchers', 'permission', or 'controlled access'. For most NIH studies, this is true."
+      "description": "True if shared data/specimens will be in a controlled-access repository (requires permission). Template renders: 'The data in the repository will only be available to qualified researchers.' Mutually exclusive with is_open_repository. Set true ONLY if the protocol explicitly describes restricted access, permission requirements, or 'qualified researchers'. If the protocol does not specify access restrictions, default to is_open_repository instead."
     },
     "genomic_non_sensitive": {
       "type": "boolean",
@@ -327,7 +346,7 @@
     },
     "coi_crada": {
       "type": "boolean",
-      "description": "True when the protocol describes a Cooperative Research and Development Agreement (CRADA) between a company and NIH. Look for the word 'CRADA' in section 11. Template renders: 'The NIH and the research team for this study are using [coi_product_description] developed by [coi_company_name] through a collaboration...' — if true, coi_product_description MUST be filled (e.g., 'a cancer drug called atezolizumab')."
+      "description": "True when the protocol describes a Cooperative Research and Development Agreement (CRADA) between a company and NIH. Look for the word 'CRADA' in section 11. Template renders: 'The NIH and the research team for this study are using [coi_product_description] developed by [coi_company_name] through a collaboration...' — if true, coi_product_description MUST be filled (e.g., 'a cancer drug called atezolizumab'). Note: CTEP-managed protocols often have boilerplate CRADA text in section 11 even when the primary arrangement is drug supply. If the CRADA section only describes drug supply through CTEP (not a genuine co-development collaboration with shared IP or financial support), set this to false and use coi_cta instead. A true CRADA involves joint research, shared intellectual property, or financial support — not just a company providing drug through a government program."
     },
     "coi_cta": {
       "type": "boolean",
@@ -339,7 +358,7 @@
     },
     "coi_product_provision": {
       "type": "string",
-      "description": "What the company provides, for the CTA disclosure only. Template renders: '[company] is providing [this field] for this study to NIH without charge.' Use a short phrase like 'the study drug atezolizumab' or 'the study drug and funding support'. If coi_cta is true, this MUST NOT be empty — an empty string creates broken grammar. Not used in the CRADA template (CRADA has fixed 'financial support' text). Empty string if coi_cta is false."
+      "description": "What the company provides, for the CTA disclosure only. Template renders: '[company] is providing [this field] for this study to NIH without charge.' Use a short phrase like 'the study drug atezolizumab' or 'the study drug and funding support'. IMPORTANT: The template ALREADY includes 'for this study to NIH without charge' after this field — do NOT repeat that phrase in this field value. If coi_cta is true, this MUST NOT be empty — an empty string creates broken grammar. Not used in the CRADA template (CRADA has fixed 'financial support' text). Empty string if coi_cta is false."
     },
     "coi_through_program": {
       "type": "boolean",
@@ -396,6 +415,7 @@
     "is_fda_approved_off_label",
     "fda_approved_indication",
     "research_testing_reason",
+    "study_procedures_intro",
     "study_procedures",
     "study_duration",
     "accrual_ceiling",

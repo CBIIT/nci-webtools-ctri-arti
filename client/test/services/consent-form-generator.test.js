@@ -244,7 +244,7 @@ test("Consent Form Generator", async (t) => {
       "key_info_happenings",
       "study_purpose",
       "why_you_asked",
-      "study_procedures",
+      "study_procedures_intro",
       "risks_intro",
       "benefits_description",
       "disease_condition",
@@ -276,6 +276,15 @@ test("Consent Form Generator", async (t) => {
       assert.ok(typeof risk === "string" && risk.length > 0, "Each procedure_risk should be a non-empty string");
     }
     console.log(`[PASS] procedure_risks: ${extraction.procedure_risks.length} entries, all non-empty strings`);
+
+    // ── 9b. study_procedures — array of objects with title and description ──
+    assert.ok(Array.isArray(extraction.study_procedures), "study_procedures should be an array");
+    assert.ok(extraction.study_procedures.length > 0, "study_procedures should be non-empty");
+    for (const proc of extraction.study_procedures) {
+      assert.ok(typeof proc.title === "string" && proc.title.length > 0, "Each study_procedures item should have a non-empty title");
+      assert.ok(typeof proc.description === "string" && proc.description.length > 0, "Each study_procedures item should have a non-empty description");
+    }
+    console.log(`[PASS] study_procedures: ${extraction.study_procedures.length} entries, all with title and description`);
 
     // ── 10. Boolean fields are actual booleans ─────────────────────────────
     const booleanFields = [

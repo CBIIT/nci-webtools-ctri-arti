@@ -137,9 +137,28 @@
       "type": "string",
       "description": "Completes: 'We are testing it in this research study to see {{research_testing_reason}}'. Must flow grammatically from 'to see'."
     },
-    "study_procedures": {
+    "study_procedures_intro": {
       "type": "string",
-      "description": "All procedures with subsection headings. For each procedure with a matching consent library entry, use the library's Procedure text verbatim (with bracketed placeholders filled in). Organize under clear subsection headings. This field renders in the 'What Will Happen During the Study' section."
+      "description": "A 2-3 sentence overview of the study for the participant. Describe the main phases (screening, treatment, follow-up), roughly how long each lasts, and the general flow. Write in warm, direct language. This renders before the procedures table in the 'What Will Happen During the Study' section."
+    },
+    "study_procedures": {
+      "type": "array",
+      "description": "Each procedure in the study. For procedures with a matching consent library entry, use the library's Procedure text verbatim (filling bracketed placeholders). Each item has a title (procedure name) and description (what happens). Renders as a table in the 'What Will Happen' section.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Procedure name, e.g. 'Blood Draws', 'Physical Exam', 'CT Scan'."
+          },
+          "description": {
+            "type": "string",
+            "description": "What happens during this procedure. Use consent library text verbatim if available. Description only — NO risks."
+          }
+        },
+        "required": ["title", "description"],
+        "additionalProperties": false
+      }
     },
     "study_duration": {
       "type": "string",
@@ -396,6 +415,7 @@
     "is_fda_approved_off_label",
     "fda_approved_indication",
     "research_testing_reason",
+    "study_procedures_intro",
     "study_procedures",
     "study_duration",
     "accrual_ceiling",

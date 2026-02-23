@@ -4,7 +4,7 @@
  * Ported from scripts/consent-crafter-v2/pipeline.mjs for browser use.
  *
  * Uses 2 Bedrock calls with a shared, cached system prompt:
- *   Chunk 1: Study identity & procedures (37 fields)
+ *   Chunk 1: Study identity & procedures (38 fields)
  *   Chunk 2: Risks, benefits, alternatives & COI (42 fields)
  *
  * The full schema, consent library, and protocol go in the system prompt.
@@ -27,9 +27,9 @@ const SCHEMA_CHUNKS = [
       "key_info_alternatives", "key_info_voluntariness",
       "parent_permission", "impaired_adults",
       "study_purpose", "why_you_asked",
-      "is_investigational", "investigational_drug_name", "investigational_condition",
+      "is_investigational", "approach_investigational_drug_name", "investigational_condition",
       "is_fda_approved_off_label", "fda_approved_indication", "research_testing_reason",
-      "study_procedures", "study_duration", "accrual_ceiling", "multisite_count",
+      "study_procedures_intro", "study_procedures", "study_duration", "accrual_ceiling", "multisite_count",
     ],
   },
   {
