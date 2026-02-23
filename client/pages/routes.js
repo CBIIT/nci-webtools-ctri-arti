@@ -56,7 +56,7 @@ export default function getRoutes() {
         {
           path: "consent-crafter",
           title: "ConsentCrafter",
-          component: ConsentCrafter,
+          component: ConsentCrafterV2,
         },
         {
           path: "consent-crafter-v2",
