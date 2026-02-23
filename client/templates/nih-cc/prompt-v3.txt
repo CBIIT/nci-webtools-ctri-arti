@@ -47,10 +47,11 @@ These principles always apply regardless of cohort:
 === WRITING STYLE ===
 Reading level: Grade 6 or below. This is a HARD constraint.
 
-Sentence length: aim for 15 words or fewer. This is a guideline, not a
-hard rule — occasionally a sentence may need a few extra words to flow
-naturally. But most sentences should be short. If a sentence has a comma
-followed by another clause, consider splitting it.
+Sentence length: 15 words or fewer. Treat this as a hard ceiling you break
+only when a sentence truly cannot be split. Most sentences should be 8-12
+words. If a sentence has a comma followed by another clause, SPLIT IT into
+two sentences. If you catch yourself writing more than 20 words, stop and
+rewrite.
   GOOD: "You will get a shot once a month. The shot goes into a muscle."
   BAD:  "You will receive a monthly injection of the study drug, which will
          be administered intramuscularly at each clinic visit."
@@ -312,48 +313,41 @@ Cover ALL of the following:
    - The study doctor may adjust medications to reduce side effects
 
 === DRUG SIDE EFFECTS STYLE ===
-When writing drug_risks arrays, follow the style of real NIH consent forms:
+When writing drug_risks arrays, follow these rules:
 
-1. Group related side effects together on one line where natural:
+HARD LIMIT: Each risk entry must be 30 words or fewer. If a body-system
+description exceeds 30 words, split it into separate entries.
+
+1. Group related SIMPLE side effects on one line:
      GOOD: "Diarrhea, nausea, vomiting"
      BAD:  Three separate entries for diarrhea, nausea, vomiting
 
-2. For allergic reactions and infusion reactions, ALWAYS describe symptoms:
+2. For allergic and infusion reactions, describe symptoms:
      GOOD: "Allergic reaction which may cause rash, low blood pressure,
-            wheezing, shortness of breath, swelling of the face or throat"
-     GOOD: "Reaction during or following a drug infusion which may cause
-            fever, chills, rash"
-     BAD:  "Allergic reaction, infusion-related reaction"
+            wheezing, shortness of breath, or swelling of the face or throat"
 
-3. For immune-related or organ-affecting side effects, describe by body system
-   and include recognizable symptoms patients can watch for:
-     GOOD: "Heart problems including swelling and heart failure. Symptoms may
-            include shortness of breath and swelling of the ankles and body"
-     GOOD: "Intestinal problems (colitis) that can lead to tears or holes in
-            your intestine. Signs include diarrhea, blood in your stools, or
-            severe belly pain"
-     BAD:  "Colitis (swelling of the large intestine)"
+3. For immune-related side effects, use ONE entry per organ or body system.
+   Name the plain-language problem, give the medical term in parentheses,
+   and list what the person would notice:
+     GOOD: "Liver problems (hepatitis). Signs may include yellowing of the
+            skin or eyes, dark urine, or pain on the right side of the belly"
+     GOOD: "Lung problems (pneumonitis). Signs may include new or worsening
+            cough, shortness of breath, or chest pain"
+     BAD:  One giant entry listing liver + lung + kidney + skin together
+     BAD:  "Brain and nerve problems including confusion (encephalopathy),
+            loss of coordination (ataxia), swelling of the brain
+            (encephalitis)..." — this packs 8 conditions into 80 words
 
-4. For occasional side effects of immunotherapy drugs, after listing the
-   non-immune effects, add:
-   "[Drug] may cause your immune system to attack normal organs and cause side
-   effects in many parts of the body. These problems may include but are not
-   limited to:"
-   Then list organ effects GROUPED (not individual entries):
-     GOOD: "Hormone gland problems (especially the thyroid, pituitary, adrenal
-            glands, and pancreas). Signs and symptoms may include: headaches
-            that will not go away, extreme tiredness, weight loss or gain,
-            excessive thirst or urine, dizziness or fainting"
-     BAD:  Separate entries for thyroid, pituitary, adrenal, pancreas
+4. For immunotherapy drugs, you may add a framing sentence before the
+   organ-specific entries:
+   "[Drug] may cause your immune system to attack healthy parts of your body.
+    This can cause problems in many organs:"
+   Then list EACH organ as its OWN entry (one entry per organ, not one
+   giant grouped entry).
 
-5. For rare side effects of immunotherapy drugs, use the same immune-system
-   framing, then list organ effects grouped by system (heart, gut, liver,
-   brain/nerves, kidneys, lungs, skin) with what patients would notice.
-
-Items 4 and 5 apply only when the study drug works through the immune system
-(checkpoint inhibitors, CAR-T, immune-targeting monoclonal antibodies, etc.).
-For other drug classes, simply list the side effects from the protocol
-grouped by frequency and severity.
+5. Keep medical terms AFTER the plain description:
+     GOOD: "Swelling of the heart muscle (myocarditis)"
+     BAD:  "Myocarditis (swelling of the heart muscle)"
 
 === PROCEDURE RISKS STYLE ===
 Each procedure_risks entry should be a SHORT heading followed by ONLY the
@@ -370,6 +364,19 @@ belongs in study_procedures):
 Keep each entry focused — one procedure per entry, short and scannable.
 
 Include entries for ALL procedures in the protocol, even low-risk ones.
+
+=== PREGNANCY AND RADIATION SECTIONS ===
+These sections often run long and complex. Apply the same Grade 6 / 15-word
+sentence rules. For pregnancy:
+- Split contraception guidance into short sentences
+- Name each method simply, do not embed lists inside sentences
+- Keep each paragraph to 3-4 sentences
+
+For radiation:
+- Explain "rem" in a separate sentence
+- Keep risk statistics in their own short sentences
+- Do not pack background radiation comparison AND cancer risk percentages
+  into one sentence
 
 === SECTION COMPLETENESS ===
 Read the protocol thoroughly. If the protocol contains information relevant
@@ -435,6 +442,14 @@ Specific guidance for commonly mishandled fields:
 - Boolean fields: true or false (never empty string)
 - Empty/not-applicable fields: "" (string) or [] (array)
 - Return ONLY valid JSON. No markdown fencing, no commentary outside the JSON.
+
+=== READING LEVEL SELF-CHECK ===
+Before returning your JSON, review every string field and every array entry:
+1. Is every sentence 15 words or fewer? Split any that exceed 20 words.
+2. Does every medical term have a plain description BEFORE it?
+3. Is every drug risk entry 30 words or fewer?
+4. Could a 12-year-old understand each sentence on its own?
+If not, rewrite until they pass.
 
 === TEMPLATE STRUCTURE ===
 Your output fills a DOCX template. Here is the template layout:
