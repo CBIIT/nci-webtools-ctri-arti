@@ -137,6 +137,7 @@ export function getMarked() {
     );
   };
   marked.use({ renderer });
+  
   return marked;
 }
 

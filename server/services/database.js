@@ -6,6 +6,7 @@ import { createModels, seedDatabase } from "./schema.js";
 const {
   DB_DIALECT = "postgres",
   DB_STORAGE = ":memory:",
+  DB_SKIP_SYNC = "false",
   PGHOST,
   PGPORT,
   PGDATABASE,
@@ -34,10 +35,12 @@ const dbConfigs = {
 const db = new Sequelize(dbConfigs[DB_DIALECT]);
 const models = createModels(db);
 
-// Sync and seed database
-const syncOptions = DB_DIALECT === "sqlite" ? { force: false } : { alter: true };
-await db.sync(syncOptions);
-await seedDatabase(models);
+// Sync and seed database (skip for microservices that don't need to manage schema)
+if (DB_SKIP_SYNC !== "true") {
+  const syncOptions = DB_DIALECT === "sqlite" ? { force: false } : { alter: true };
+  await db.sync(syncOptions);
+  await seedDatabase(models);
+}
 
 export const { User, Role, Provider, Model, Usage, Prompt, Agent, Thread, Message, Resource, Vector } = models;
 export default db;

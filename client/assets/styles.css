@@ -1040,7 +1040,8 @@ dialog .close-btn {
 
 .alert-container {
   z-index: 99999 !important;
-  top: 60px;
+  max-width: 600px;
+  width: calc(100% - 2rem);
 }
 
 .ui-floats {

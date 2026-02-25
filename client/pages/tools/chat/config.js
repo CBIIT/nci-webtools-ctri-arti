@@ -172,6 +172,31 @@ export const tools = [
       },
     },
   },
+  {
+    toolSpec: {
+      name: "docxTemplate",
+      description:
+        "Fill out DOCX documents by finding and replacing text in blocks. Without replacements: returns the document's text as numbered blocks (paragraphs and table cells) with style info and row/col for cells. With replacements: use text-based keys (\"original text\": \"new text\") or index-based keys (\"@0\": \"replacement for block 0\") to fill in content.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            docxUrl: {
+              type: "string",
+              description:
+                "URL to the DOCX document. Supports s3://bucket/key or https:// URLs.",
+            },
+            replacements: {
+              type: "object",
+              description:
+                'Map of replacements. Use text keys for text-based replacement (use only when text spans a single block): {"text to find": "replacement"}. In most cases, use @index keys for index-based replacement: {"@0": "text for block 0", "@5": "text for block 5"}. Both modes can be mixed. Index-based is useful for long text, text that needs to be deleted, table cells or blocks with duplicate/empty content.',
+            },
+          },
+          required: ["docxUrl"],
+        },
+      },
+    },
+  },
 ];
 
 export function systemPrompt(context) {

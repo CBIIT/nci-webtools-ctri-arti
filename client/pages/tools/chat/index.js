@@ -21,6 +21,10 @@ import Tooltip from "../../../components/tooltip.js";
 import { useAuthContext } from "../../../contexts/auth-context.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
+import {
+  registerErrorDataCollector,
+  unregisterErrorDataCollector,
+} from "../../../utils/global-error-handler.js";
 
 import DeleteConversation from "./delete-conversation.js";
 import { useChat } from "./hooks.js";
@@ -125,10 +129,13 @@ export default function Page() {
 
     document.addEventListener("click", handleDocumentClick, true);
 
+    registerErrorDataCollector("chat", collectAdditionalErrorData);
+
     onCleanup(() => {
       observer.disconnect();
       resizeObserver.disconnect();
       document.removeEventListener("click", handleDocumentClick, true);
+      unregisterErrorDataCollector("chat");
     });
   });
 
@@ -160,7 +167,7 @@ export default function Page() {
     const message = form.message.value;
     const inputFiles = form.inputFiles.files;
     const reasoningMode = form.reasoningMode.checked;
-    const defaultModel = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5;
+    const defaultModel = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6;
     const model = form.model?.value || defaultModel;
     setIsStreaming(true);
     await submitMessage({
@@ -281,6 +288,19 @@ export default function Page() {
       }
     });
   }
+
+  // ============= Error Data Collection =============
+
+  const collectAdditionalErrorData = async () => ({
+    "Tool Name": isFedPulse ? "FedPulse" : "Chat",
+    "Chat ID": conversation?.id || null,
+    "Reasoning Mode": formRef?.reasoningMode?.checked || false,
+    Model: formRef?.model?.value || "sonnet-4.5",
+    "Last 3 chat messages": messages.slice(-3).map((m) => ({
+      role: m.role,
+      preview: m.content?.[0]?.text || "",
+    })),
+  });
 
   return html`
     <div class="container-fluid">
@@ -508,7 +528,11 @@ export default function Page() {
             onSubmit=${handleSubmit}
             class="container d-flex flex-column flex-grow-1 mb-3 px-4 position-relative min-w-0"
           >
-            <${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />
+            <${AlertContainer}
+              alerts=${alerts}
+              onDismiss=${clearAlert}
+              onCollectAdditionalData=${() => collectAdditionalErrorData()}
+            />
 
             <div
               class="flex-grow-1 py-3 min-width-0"
@@ -639,9 +663,9 @@ export default function Page() {
                           id="model"
                           required
                         >
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_5}>Opus 4.5</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5} selected>
-                            Sonnet 4.5
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus 4.6</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6} selected>
+                            Sonnet 4.6
                           </option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
                         </select>

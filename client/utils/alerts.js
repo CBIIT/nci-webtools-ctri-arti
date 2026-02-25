@@ -18,9 +18,16 @@ function generateAlertId() {
  * @param {string} options.type - Alert type ('danger', 'warning', 'success', 'info')
  * @param {boolean} options.dismissible - Whether alert can be dismissed (default: true)
  * @param {number} options.autoDismiss - Auto-dismiss timeout in ms (default: 5000)
+ * @param {object} options.errorData - Error data for reporting
  * @returns {string} Alert ID
  */
-export function showAlert({ message, type = "info", dismissible = true, autoDismiss = 5000 }) {
+export function showAlert({
+  message,
+  type = "info",
+  dismissible = true,
+  autoDismiss = 5000,
+  errorData = null,
+}) {
   const id = generateAlertId();
 
   const alert = {
@@ -29,6 +36,7 @@ export function showAlert({ message, type = "info", dismissible = true, autoDism
     type,
     dismissible,
     autoDismiss,
+    errorData,
     timestamp: Date.now(),
   };
 
@@ -47,7 +55,7 @@ export function showError(message, options = {}) {
   return showAlert({
     message,
     type: "danger",
-    autoDismiss: 8000, // Longer duration for errors
+    autoDismiss: 0, // Do not auto-dismiss errors to allow reporting
     ...options,
   });
 }
@@ -127,43 +135,56 @@ export function getAlerts() {
  * @returns {Promise<void>}
  */
 export async function handleHttpError(response, context = "request") {
-  let errorMessage = `Failed to ${context}`;
+  let errorData = {
+    message: `Failed to ${context}`,
+    context,
+  };
 
   try {
     // Try to get error details from response
-    const errorData = await response.json();
-    if (errorData.error) {
-      errorMessage = errorData.error;
-    } else if (errorData.message) {
-      errorMessage = errorData.message;
+    const responseData = await response.json();
+    if (responseData.error) {
+      errorData.message = responseData.error;
+    } else if (responseData.message) {
+      errorData.message = responseData.message;
     }
+
+    errorData = {
+      ...errorData,
+      code: response.status,
+      responseData,
+    };
   } catch (_e) {
     // If we can't parse JSON, use status-based message
     switch (response.status) {
       case 400:
-        errorMessage = `Bad request while ${context}`;
+        errorData.message = `Bad request while ${context}`;
         break;
       case 401:
-        errorMessage = "Authentication required. Please log in.";
+        errorData.message = "Authentication required. Please log in.";
         break;
       case 403:
-        errorMessage = "You don't have permission to perform this action.";
+        errorData.message = "You don't have permission to perform this action.";
         break;
       case 404:
-        errorMessage = `Resource not found while ${context}`;
+        errorData.message = `Resource not found while ${context}`;
         break;
       case 429:
-        errorMessage = "Too many requests. Please try again later.";
+        errorData.message = "Too many requests. Please try again later.";
         break;
       case 500:
-        errorMessage = `Server error while ${context}. Please try again.`;
+        errorData.message = `Server error while ${context}. Please try again.`;
         break;
       default:
-        errorMessage = `${errorMessage} (${response.status})`;
+        errorData.message = `${errorData.message} (${response.status})`;
     }
+    errorData = {
+      ...errorData,
+      code: response.status,
+    };
   }
 
-  showError(errorMessage);
+  showError(errorData.message, { errorData });
 }
 
 /**
@@ -180,7 +201,14 @@ export function handleError(error, context = "operation") {
     errorMessage = error.toString();
   }
 
-  showError(errorMessage);
+  const errorData = {
+    message: errorMessage,
+    stack: error.stack || null,
+    code: error.code || error.status || error.statusCode || null,
+    context,
+  };
+
+  showError(errorMessage, { errorData });
 
   // Still log to console for debugging
   console.error(`Error during ${context}:`, error);

@@ -6,30 +6,42 @@ import { BedrockRuntimeClient, ConverseStreamCommand } from "@aws-sdk/client-bed
 import { GoogleGenAI } from "@google/genai";
 import { openDB, deleteDB } from "idb";
 import { render } from "solid-js/web";
-import { For, Switch, Match, createEffect } from "solid-js";
+import { For, Switch, Match, Show, createEffect, createSignal } from "solid-js";
 import { createStore, produce, unwrap } from "solid-js/store";
 import html from "solid-js/html";
 
 // try { await deleteDB("bedrock-messages"); } catch (e) { console.warn(e);}
-const db = await openDB("bedrock-messages", 1, {
-  upgrade(db) {
-    const tables = {};
-    const tableNames = ["agents", "threads", "messages", "resources"];
-    for (const tableName of tableNames) {
-      if (!db.objectStoreNames.contains(tableName)) {
-        const store = db.createObjectStore(tableName, { keyPath: "id", autoIncrement: true });
-        store.createIndex("id", "id", { unique: true });
-        tables[tableName] = store;
+const db = await openDB("bedrock-messages", 2, {
+  upgrade(db, oldVersion, newVersion, transaction) {
+    // Version 1: Original schema
+    if (oldVersion < 1) {
+      const tables = {};
+      const tableNames = ["agents", "threads", "messages", "resources"];
+      for (const tableName of tableNames) {
+        if (!db.objectStoreNames.contains(tableName)) {
+          const store = db.createObjectStore(tableName, { keyPath: "id", autoIncrement: true });
+          store.createIndex("id", "id", { unique: true });
+          tables[tableName] = store;
+        }
       }
+
+      tables.messages.createIndex("agentId", "agentId");
+      tables.messages.createIndex("threadId", "threadId");
+      tables.messages.createIndex("parentId", "parentId"); // Added in v2, but include for fresh installs
+      tables.threads.createIndex("agentId", "agentId");
+
+      tables.resources.createIndex("agentId", "agentId");
+      tables.resources.createIndex("threadId", "threadId");
+      tables.resources.createIndex("messageId", "messageId");
     }
 
-    tables.messages.createIndex("agentId", "agentId");
-    tables.messages.createIndex("threadId", "threadId");
-    tables.threads.createIndex("agentId", "agentId");
-
-    tables.resources.createIndex("agentId", "agentId");
-    tables.resources.createIndex("threadId", "threadId");
-    tables.resources.createIndex("messageId", "messageId");
+    // Version 2: Add parentId index for branching support (for upgrades from v1)
+    if (oldVersion >= 1 && oldVersion < 2) {
+      const msgStore = transaction.objectStore("messages");
+      if (!msgStore.indexNames.contains("parentId")) {
+        msgStore.createIndex("parentId", "parentId", { unique: false });
+      }
+    }
   },
 });
 
@@ -104,6 +116,107 @@ render(App, document.getElementById("app"));
 // 2. UI COMPONENTS
 // =================================================================================
 
+/**
+ * Branch navigation component - shows arrows to navigate between sibling messages
+ */
+function BranchNav(props) {
+  // props: { tree, messageId, onSwitch }
+  const siblings = () => {
+    if (!props.tree || !props.messageId) return [props.messageId];
+    return getSiblings(props.tree, props.messageId);
+  };
+  const hasSiblings = () => siblings().length > 1;
+  const currentIndex = () => siblings().indexOf(props.messageId);
+
+  const canGoPrev = () => currentIndex() > 0;
+  const canGoNext = () => currentIndex() < siblings().length - 1;
+
+  const goPrev = () => {
+    if (canGoPrev()) {
+      props.onSwitch(siblings()[currentIndex() - 1]);
+    }
+  };
+
+  const goNext = () => {
+    if (canGoNext()) {
+      props.onSwitch(siblings()[currentIndex() + 1]);
+    }
+  };
+
+  return html`
+    <${Show} when=${hasSiblings}>
+      <span class="branch-nav d-inline-flex align-items-center gap-1 small text-muted ms-2">
+        <button
+          type="button"
+          class="btn btn-sm btn-link p-0 text-muted"
+          disabled=${() => !canGoPrev()}
+          onClick=${goPrev}
+          title="Previous version">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span>${() => currentIndex() + 1}/${() => siblings().length}</span>
+        <button
+          type="button"
+          class="btn btn-sm btn-link p-0 text-muted"
+          disabled=${() => !canGoNext()}
+          onClick=${goNext}
+          title="Next version">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </span>
+    <//>
+  `;
+}
+
+/**
+ * Inline edit textarea component for editing user messages
+ */
+function EditableMessage(props) {
+  let textareaRef;
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      props.onSave(textareaRef.value);
+    } else if (e.key === "Escape") {
+      props.onCancel();
+    }
+  };
+
+  // Auto-focus on mount
+  createEffect(() => {
+    if (textareaRef) {
+      textareaRef.focus();
+      textareaRef.select();
+    }
+  });
+
+  return html`
+    <div class="edit-message-container">
+      <textarea
+        ref=${el => textareaRef = el}
+        class="form-control form-control-sm mb-2"
+        rows="3"
+        onKeyDown=${handleKeyDown}
+      >${() => props.text}</textarea>
+      <div class="d-flex gap-2">
+        <button
+          type="button"
+          class="btn btn-sm btn-primary"
+          onClick=${e => props.onSave(textareaRef.value)}>
+          Save & Submit
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-secondary"
+          onClick=${e => props.onCancel()}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  `;
+}
+
 function MessageContent(props) {
   function findToolResult(messages, toolUseId) {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -117,8 +230,18 @@ function MessageContent(props) {
   }
   if (props.content.text !== undefined) {
     if (props.role === "user") {
+      // Check if this message is being edited
+      const isEditing = () => props.editingId === props.messageId;
+
       return html`
-        <div class="small rounded p-2 mb-3 text-dark bg-secondary-subtle d-inline-block text-pre">${() => props.content.text}</div>
+        <${Show} when=${isEditing} fallback=${html`
+          <div class="small rounded p-2 mb-3 text-dark bg-secondary-subtle d-inline-block text-pre">${() => props.content.text}</div>
+        `}>
+          <${EditableMessage}
+            text=${() => props.content.text}
+            onSave=${text => props.onSave?.(props.messageId, text)}
+            onCancel=${e => props.onCancel?.()} />
+        <//>
       `;
     } else if (props.role === "assistant") {
       return html`
@@ -159,8 +282,11 @@ function setSearchParams(obj) {
 function App() {
   const searchParams = new URLSearchParams(window.location.search);
   const urlParams = Object.fromEntries(searchParams.entries());
-  const { agent, sendMessage, params } = useAgent(urlParams, db);
+  const { agent, sendMessage, switchBranch, params } = useAgent(urlParams, db);
   createEffect(() => setSearchParams(params));
+
+  // Editing state for inline message editing
+  const [editingMessageId, setEditingMessageId] = createSignal(null);
 
   function handleKeyDown(event) {
     if (event.key === "Enter" && !event.shiftKey && !agent.loading) {
@@ -183,18 +309,75 @@ function App() {
     await sendMessage(text, files, modelId, reasoningMode);
   }
 
+  // Start editing a message
+  function startEdit(messageId) {
+    setEditingMessageId(messageId);
+  }
+
+  // Cancel editing
+  function cancelEdit() {
+    setEditingMessageId(null);
+  }
+
+  // Save edited message (creates a new branch)
+  async function saveEdit(messageId, newText) {
+    const message = agent.messageTree?.nodes.get(messageId)?.message;
+    if (!message) return;
+
+    const originalText = message.content.find(c => c.text)?.text || "";
+    if (newText && newText !== originalText) {
+      const form = document.getElementById("inputForm");
+      const modelId = form?.modelId?.value || "us.anthropic.claude-haiku-4-5-20251001-v1:0";
+      const reasoningMode = form?.reasoningMode?.checked || false;
+      await sendMessage(newText, [], modelId, reasoningMode, messageId);
+    }
+    setEditingMessageId(null);
+  }
+
   return html`
+    <style>
+      .message-block .message-controls {
+        visibility: hidden;
+      }
+      .message-block:hover .message-controls {
+        visibility: visible;
+      }
+    </style>
     <div class="container my-5">
       <${For} each=${() => agent.messages}>
         ${message => html`
-          <${For} each=${() => message.content}>
-            ${content => html`
-              <${MessageContent}
-                role=${message.role}
-                content=${content}
-                messages=${() => agent.messages} />
-            `}
-          <//>
+          <div class="message-block mb-3">
+            <${For} each=${() => message.content}>
+              ${content => html`
+                <${MessageContent}
+                  role=${message.role}
+                  content=${content}
+                  messages=${() => agent.messages}
+                  messageId=${message.id}
+                  editingId=${editingMessageId}
+                  onSave=${saveEdit}
+                  onCancel=${cancelEdit} />
+              `}
+            <//>
+            <!-- Controls below message, visible on hover -->
+            <${Show} when=${() => message.id && agent.messageTree && editingMessageId() !== message.id}>
+              <div class="message-controls d-flex align-items-center gap-2">
+                <${BranchNav}
+                  tree=${() => agent.messageTree}
+                  messageId=${message.id}
+                  onSwitch=${switchBranch} />
+                <${Show} when=${() => message.role === "user"}>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-link p-0 text-muted"
+                    onClick=${e => startEdit(message.id)}
+                    title="Edit message">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                <//>
+              </div>
+            <//>
+          </div>
         `}
       <//>
 
@@ -299,6 +482,10 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     loading: false,
     tools: [],
     messages: [],
+    // Branching support
+    messageTree: null,
+    activePath: [],
+    activeLeafId: null,
   });
 
   // load history
@@ -308,8 +495,25 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     if (!history?.length) return;
     const thread = await db.get("threads", params.threadId);
     const name = thread?.name || "Untitled";
-    const messages = history.map(({ role, content }) => ({ role, content }));
-    setAgent({ messages, thread: { name } });
+
+    // Build message tree for branching support
+    const tree = buildMessageTree(history);
+    const path = getMostRecentPath(tree);
+    const leafId = path.length > 0 ? path[path.length - 1] : null;
+
+    // Get messages for the active path only
+    const messages = path.map(id => {
+      const node = tree.nodes.get(id);
+      return node ? node.message : null;
+    }).filter(Boolean);
+
+    setAgent({
+      messages,
+      thread: { name },
+      messageTree: tree,
+      activePath: path,
+      activeLeafId: leafId,
+    });
   });
 
   // save changes when store updates
@@ -330,7 +534,7 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
       name: agent.thread.name,
     });
   });
-  async function sendMessage(text, files = [], modelId, reasoningMode) {
+  async function sendMessage(text, files = [], modelId, reasoningMode, forkFromId = null) {
     setAgent("loading", true);
 
     if (!params.threadId) {
@@ -345,7 +549,38 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
 
     const client = await getConverseClient(modelId.includes("gemini") ? "google" : "aws");
     const content = await getMessageContent(text, files);
-    const userMessage = { role: "user", content };
+
+    // Determine parent for the new message (branching support)
+    let parentId = null;
+    if (forkFromId !== null) {
+      // Editing: new message has same parent as the message being edited
+      const editedMsg = agent.messageTree?.nodes.get(forkFromId)?.message;
+      parentId = editedMsg?.parentId ?? null;
+    } else if (agent.activeLeafId !== null) {
+      // Normal send: parent is the current leaf
+      parentId = agent.activeLeafId;
+    }
+
+    const userMessage = {
+      role: "user",
+      content,
+      parentId,
+      createdAt: Date.now(),
+    };
+
+    // Save user message to DB immediately to get its ID
+    const savedId = await db.add("messages", {
+      ...userMessage,
+      agentId: params.agentId,
+      threadId: params.threadId,
+    });
+    userMessage.id = savedId;
+
+    // Rebuild tree and update active path
+    const allMessages = await db.getAllFromIndex("messages", "threadId", params.threadId);
+    const tree = buildMessageTree(allMessages);
+    const newPath = extendPath(tree, getPathToMessage(tree, userMessage.id));
+    const pathMessages = newPath.map(id => tree.nodes.get(id)?.message).filter(Boolean);
 
     setAgent({
       id: record.id,
@@ -356,20 +591,36 @@ function useAgent({ agentId, threadId }, db, tools = TOOLS) {
       systemPrompt: record.systemPrompt,
       resources: record.resources,
       tools: agentTools,
-      messages: agent.messages.concat([userMessage]),
+      messages: pathMessages,
+      messageTree: tree,
+      activePath: newPath,
+      activeLeafId: userMessage.id,
     });
 
-    const messages = await runAgent(agent, setAgent, client);
-    for (const message of messages) {
-      const record = unwrap(message);
-      record.agentId = params.agentId;
-      record.threadId = params.threadId;
-      await db.add("messages", record);
-    }
+    // Run agent and save messages incrementally with parentId tracking
+    await runAgentWithBranching(agent, setAgent, client, userMessage.id, params, db);
     setAgent("loading", false);
   }
 
-  return { agent, params, setAgent, sendMessage };
+  // Switch to a different branch
+  function switchBranch(newMessageId) {
+    const tree = agent.messageTree;
+    if (!tree) return;
+
+    // Build path to the new message, then extend to leaf
+    const pathToMessage = getPathToMessage(tree, newMessageId);
+    const fullPath = extendPath(tree, pathToMessage);
+    const newLeafId = fullPath.length > 0 ? fullPath[fullPath.length - 1] : null;
+    const pathMessages = fullPath.map(id => tree.nodes.get(id)?.message).filter(Boolean);
+
+    setAgent({
+      activePath: fullPath,
+      activeLeafId: newLeafId,
+      messages: pathMessages,
+    });
+  }
+
+  return { agent, params, setAgent, sendMessage, switchBranch };
 }
 
 // =================================================================================
@@ -536,14 +787,16 @@ function getConverseCommand(config) {
 }
 
 /**
- * Runs the agent loop, processing messages until completion.
+ * Runs the agent loop with branching support, saving messages with parentId tracking.
  * @param {any} store - Agent store with messages and tools
  * @param {any} setStore - Function to update the store
  * @param {any} client - Converse client with send() method
- * @returns {Promise<Array>} New messages generated by the agent
+ * @param {number} lastMessageId - ID of the last message (parent for first assistant message)
+ * @param {any} params - Store params with agentId and threadId
+ * @param {any} db - IndexedDB database instance
  */
-async function runAgent(store, setStore, client) {
-  const startingIndex = store.messages.length - 1;
+async function runAgentWithBranching(store, setStore, client, lastMessageId, params, db) {
+  let currentParentId = lastMessageId;
   const tools = {};
   for (const tool of store.tools) {
     tools[tool.toolSpec.name] = tool.fn;
@@ -551,9 +804,20 @@ async function runAgent(store, setStore, client) {
 
   let done = false;
   while (!done) {
-    const input = getConverseCommand(store);
+    // Prepare messages for model (only role/content)
+    const input = getConverseCommand({
+      ...store,
+      messages: store.messages.map(({ role, content }) => ({ role, content })),
+    });
     const output = await client.send(input);
-    const assistantMessage = { role: "assistant", content: [] };
+
+    // Create assistant message with parentId
+    const assistantMessage = {
+      role: "assistant",
+      content: [],
+      parentId: currentParentId,
+      createdAt: Date.now(),
+    };
     setStore("messages", store.messages.length, assistantMessage);
 
     for await (const message of output.stream) {
@@ -561,15 +825,53 @@ async function runAgent(store, setStore, client) {
 
       const stopReason = message.messageStop?.stopReason;
       if (stopReason === "end_turn") {
+        // Save assistant message to DB
+        const savedId = await db.add("messages", {
+          ...unwrap(store.messages.at(-1)),
+          agentId: params.agentId,
+          threadId: params.threadId,
+        });
+        // Update the message in store with its ID
+        setStore("messages", store.messages.length - 1, "id", savedId);
+        setStore("activeLeafId", savedId);
+        currentParentId = savedId;
         done = true;
       } else if (stopReason === "tool_use") {
+        // Save assistant message to DB first
+        const assistantSavedId = await db.add("messages", {
+          ...unwrap(store.messages.at(-1)),
+          agentId: params.agentId,
+          threadId: params.threadId,
+        });
+        setStore("messages", store.messages.length - 1, "id", assistantSavedId);
+
+        // Execute tools and create tool results message
         const toolUses = store.messages.at(-1).content;
-        const toolResultsMessage = await getToolResults(toolUses, tools);
+        const toolResultsMessage = {
+          ...(await getToolResults(toolUses, tools)),
+          parentId: assistantSavedId,
+          createdAt: Date.now(),
+        };
         setStore("messages", store.messages.length, toolResultsMessage);
+
+        // Save tool results message to DB
+        const toolResultsSavedId = await db.add("messages", {
+          ...unwrap(toolResultsMessage),
+          agentId: params.agentId,
+          threadId: params.threadId,
+        });
+        setStore("messages", store.messages.length - 1, "id", toolResultsSavedId);
+        currentParentId = toolResultsSavedId;
       }
     }
   }
-  return store.messages.slice(startingIndex);
+
+  // Rebuild tree after all messages are saved
+  const allMessages = await db.getAllFromIndex("messages", "threadId", params.threadId);
+  const tree = buildMessageTree(allMessages);
+  const path = getMostRecentPath(tree);
+  setStore("messageTree", tree);
+  setStore("activePath", path);
 }
 
 /**
@@ -906,4 +1208,129 @@ function parseJSON(input) {
     console.warn(`Extra data found at position ${index}: "${jsonString.substring(index)}"`);
   }
   return result;
+}
+
+// =================================================================================
+// 7. BRANCHING UTILITIES
+// =================================================================================
+
+/**
+ * Build a tree structure from a flat array of messages.
+ * @param {Array} messages - Array of { id, parentId, role, content, createdAt }
+ * @returns {{ rootIds: number[], nodes: Map<number, { message: object, childIds: number[] }> }}
+ */
+export function buildMessageTree(messages) {
+  const nodes = new Map();
+  const rootIds = [];
+
+  // First pass: create nodes
+  for (const msg of messages) {
+    nodes.set(msg.id, { message: msg, childIds: [] });
+  }
+
+  // Second pass: build parent-child relationships
+  for (const msg of messages) {
+    if (msg.parentId === null || msg.parentId === undefined) {
+      rootIds.push(msg.id);
+    } else if (nodes.has(msg.parentId)) {
+      nodes.get(msg.parentId).childIds.push(msg.id);
+    }
+  }
+
+  // Sort children by createdAt
+  for (const [_, node] of nodes) {
+    node.childIds.sort((a, b) => nodes.get(a).message.createdAt - nodes.get(b).message.createdAt);
+  }
+
+  // Sort rootIds by createdAt
+  rootIds.sort((a, b) => nodes.get(a).message.createdAt - nodes.get(b).message.createdAt);
+
+  return { rootIds, nodes };
+}
+
+/**
+ * Get the path from root to leaf following the most recent (newest) child at each branch point.
+ * @param {{ rootIds: number[], nodes: Map }} tree - Tree structure from buildMessageTree
+ * @returns {number[]} Array of message IDs from root to leaf
+ */
+export function getMostRecentPath(tree) {
+  if (tree.rootIds.length === 0) return [];
+
+  const path = [];
+  // Start with the most recent root (last in sorted array)
+  let currentId = tree.rootIds[tree.rootIds.length - 1];
+
+  while (currentId !== undefined) {
+    path.push(currentId);
+    const node = tree.nodes.get(currentId);
+    if (!node || node.childIds.length === 0) break;
+    // Follow most recent child (last in sorted array)
+    currentId = node.childIds[node.childIds.length - 1];
+  }
+
+  return path;
+}
+
+/**
+ * Get all siblings of a message (including itself), sorted by createdAt.
+ * @param {{ rootIds: number[], nodes: Map }} tree - Tree structure from buildMessageTree
+ * @param {number} messageId - ID of the message
+ * @returns {number[]} Array of sibling message IDs
+ */
+export function getSiblings(tree, messageId) {
+  const node = tree.nodes.get(messageId);
+  if (!node) return [messageId];
+
+  const parentId = node.message.parentId;
+
+  if (parentId === null || parentId === undefined) {
+    // Root message - siblings are other roots
+    return tree.rootIds;
+  }
+
+  const parentNode = tree.nodes.get(parentId);
+  return parentNode ? parentNode.childIds : [messageId];
+}
+
+/**
+ * Build the path from root to a specific message by following parent links.
+ * @param {{ rootIds: number[], nodes: Map }} tree - Tree structure from buildMessageTree
+ * @param {number} messageId - ID of the target message
+ * @returns {number[]} Array of message IDs from root to the target message
+ */
+export function getPathToMessage(tree, messageId) {
+  const path = [];
+  let currentId = messageId;
+
+  while (currentId !== null && currentId !== undefined) {
+    path.unshift(currentId);
+    const node = tree.nodes.get(currentId);
+    if (!node) break;
+    currentId = node.message.parentId;
+  }
+
+  return path;
+}
+
+/**
+ * Extend a partial path to a full path by following the most recent children.
+ * @param {{ rootIds: number[], nodes: Map }} tree - Tree structure from buildMessageTree
+ * @param {number[]} path - Partial path to extend
+ * @returns {number[]} Extended path to leaf
+ */
+export function extendPath(tree, path) {
+  if (path.length === 0) return [];
+
+  const extended = [...path];
+  let currentId = extended[extended.length - 1];
+
+  while (true) {
+    const node = tree.nodes.get(currentId);
+    if (!node || node.childIds.length === 0) break;
+    // Follow most recent child
+    currentId = node.childIds[node.childIds.length - 1];
+    extended.push(currentId);
+  }
+
+  return extended;
 }

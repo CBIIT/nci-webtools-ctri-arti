@@ -81,7 +81,7 @@ export class Project extends BaseModel {
 
     // Project settings
     this.settings = data.settings || {
-      model: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_5,
+      model: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6,
       temperature: 0.7,
       maxContextLength: 100000,
     };

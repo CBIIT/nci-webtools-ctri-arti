@@ -6,8 +6,8 @@ import {
   aws_iam as iam,
   aws_logs as logs,
   aws_elasticloadbalancingv2 as elbv2,
-  aws_ssm as ssm,
   aws_secretsmanager as secretsmanager,
+  aws_ssm as ssm,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { prefix, tier } from "../../config";
@@ -31,6 +31,7 @@ export interface EcsServiceStackProps extends StackProps {
       image: string;
       name: string;
       portMappings?: {
+        name: string;
         containerPort: number;
       }[];
       environment?: Record<string, string>;
@@ -80,6 +81,11 @@ export class EcsServiceStack extends Stack {
       },
     });
 
+    // const namespace = new servicediscovery.PrivateDnsNamespace(this, "ecs-service-namespace", {
+    //   name: prefix,
+    //   vpc,
+    // });
+
     const executionRole = new iam.Role(this, "ecs-task-execution-role", {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
       roleName: `power-user-${prefix}-task-execution-role`.slice(0, 64),
@@ -101,6 +107,7 @@ export class EcsServiceStack extends Stack {
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonRDSDataFullAccess"));
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("SecretsManagerReadWrite"));
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("TranslateFullAccess"));
+    taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonS3FullAccess"));
 
     const logGroup = new logs.LogGroup(this, "log-group", {
       logGroupName: prefix,
@@ -145,7 +152,7 @@ export class EcsServiceStack extends Stack {
         secrets: secrets ?? {},
         logging: new ecs.AwsLogDriver({
           logGroup,
-          streamPrefix: "ecs",
+          streamPrefix: containerProps.name,
         }),
       });
 
@@ -155,6 +162,7 @@ export class EcsServiceStack extends Stack {
       }
     }
 
+    const portMapping = props.taskDefinition.containers[0].portMappings?.[0];
     const service = new ecs.FargateService(this, "ecs-service", {
       cluster,
       desiredCount,
@@ -164,6 +172,16 @@ export class EcsServiceStack extends Stack {
       enableECSManagedTags: true,
       enableExecuteCommand: true,
       minHealthyPercent: 100,
+      // serviceConnectConfiguration: {
+      //   namespace: namespace.namespaceArn,
+      //   services: [
+      //     {
+      //       discoveryName: "main",
+      //       portMappingName: portMapping?.name || "main",
+      //       port: portMapping?.containerPort || 80,
+      //     }
+      //   ]
+      // }
     });
 
     const listener = elbv2.ApplicationListener.fromLookup(this, "ecs-service-listener", {

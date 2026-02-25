@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import { Agent, Thread, Message, Resource, Vector, Prompt } from "./database.js";
+import { Agent, Thread, Message, Resource, Vector, Prompt } from "../database.js";
 
 export class ConversationService {
   // ===== AGENT METHODS =====

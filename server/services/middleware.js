@@ -1,10 +1,12 @@
-import { Readable } from "stream";
-
 import Provider from "oidc-provider";
 import * as client from "openid-client";
 
 import { Role, User } from "./database.js";
+import { sendLogReport } from "./email.js";
 import logger, { formatObject } from "./logger.js";
+
+// Re-export proxy concerns for backward compatibility
+export { WHITELIST, proxyMiddleware, getAuthorizedUrl, getAuthorizedHeaders } from "./proxy.js";
 
 const {
   HOSTNAME,
@@ -13,8 +15,8 @@ const {
   OAUTH_DISCOVERY_URL,
   OAUTH_CLIENT_ID,
   OAUTH_CLIENT_SECRET,
+  EMAIL_DEV,
 } = process.env;
-export const WHITELIST = [/.*/i];
 
 /**
  * Logs requests
@@ -36,27 +38,45 @@ export function logRequests(formatter = (request) => [request.path]) {
  */
 export function logErrors(formatter = (e) => ({ error: e.message })) {
   return (error, request, response, _next) => {
-    logger.error(formatObject(error));
-    response.status(400).json(formatter(error));
+    const fullErrorMessage = `${formatObject(error.message)}.\n${formatObject(error.additionalError)}`;
+    logger.error(fullErrorMessage);
+
+    if (EMAIL_DEV && EMAIL_DEV.length > 0) {
+      const user = request.session?.user;
+      const userName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "N/A";
+
+      sendLogReport({
+        reportSource: "Automatic",
+        userId: user?.id || "N/A",
+        userName,
+        recipient: EMAIL_DEV,
+        metadata: [
+          { label: "Error Message", value: fullErrorMessage },
+          { label: "Stack Trace", value: error.stack },
+          { label: "Request Path", value: request.path },
+        ],
+      }).catch((reportError) => {
+        logger.error("Failed to send error log report:", reportError.message);
+      });
+    }
+
+    response.status(error.statusCode || 400).json(formatter(error));
   };
 }
 
 export function nocache(req, res, next) {
   res.set({
-    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, private", 
-    "Expires": "0",
-    "Pragma": "no-cache",
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, private",
+    Expires: "0",
+    Pragma: "no-cache",
     "Surrogate-Control": "no-store",
-    "Vary": "*",
+    Vary: "*",
   });
   next();
 }
 
 /**
  * Login middleware for handling OpenID Connect authentication
- * @param {Express.Request} req
- * @param {Express.Response} res
- * @param {Function} next
  */
 export async function loginMiddleware(req, res, next) {
   try {
@@ -115,7 +135,6 @@ export async function loginMiddleware(req, res, next) {
 
 /**
  * Returns middleware for handling local OIDC provider (for development/testing)
- * @returns {Function} Middleware function
  */
 export function oauthMiddleware() {
   const hostname = HOSTNAME || "localhost";
@@ -175,7 +194,11 @@ export function requireRole(requiredRole) {
       }
       const role = user.Role;
       // Check role requirement (1 = admin, always allowed)
-      if (requiredRole && role?.id !== 1 && !(role?.name === requiredRole || role?.id === +requiredRole)) {
+      if (
+        requiredRole &&
+        role?.id !== 1 &&
+        !(role?.name === requiredRole || role?.id === +requiredRole)
+      ) {
         return res.status(403).json({ error: "Authorization required" });
       }
       // Set user in session for downstream handlers
@@ -186,75 +209,4 @@ export function requireRole(requiredRole) {
       next(err);
     }
   };
-}
-
-/**
- * Proxy Middleware that handles requests to external URLs.
- * It validates the URL, checks against a whitelist, and forwards the request.
- * It also handles the response and streams it back to the client.
- * @param {Express.Request} req
- * @param {Express.Response} res
- * @param {Function} next
- * @returns
- */
-export async function proxyMiddleware(req, res, _next) {
-  const { headers, method, body, query } = req;
-  const host = headers.host?.split(":")[0];
-  let urlString = req.path.replace(/^\/[^/]+\/?/, ""); // remove path prefix
-  if (!/^https?:\/\//i.test(urlString)) {
-    urlString = "https://" + urlString;
-  }
-  let url = new URL(urlString);
-  for (const key in query) {
-    url.searchParams.set(key, query[key]);
-  }
-  // Only allow requests if the hostname matches or is on the whitelist
-  if (!WHITELIST.some((regex) => regex.test(url.hostname)) && url.hostname !== host) {
-    res.status(403).send("Forbidden: Domain not allowed");
-    return;
-  }
-
-  try {
-    // remove problematic headers
-    const normalizedHeaders = { ...headers, ...getAuthorizedHeaders(url) };
-    const normalizedBody =
-      headers["content-type"] === "application/json" ? JSON.stringify(body) : body;
-    ["host", "connection", "content-length"].forEach((h) => delete normalizedHeaders[h]);
-    const response = await fetch(getAuthorizedUrl(url), {
-      method,
-      headers: normalizedHeaders,
-      body: normalizedBody,
-      redirect: "follow",
-    });
-    res.status(response.status);
-    res.setHeader("Content-Type", response.headers.get("content-type") || "");
-    if (response.body) {
-      Readable.fromWeb(response.body).pipe(res);
-    } else {
-      res.end();
-    }
-  } catch (error) {
-    console.error("Proxy error:", error);
-    res.status(500).send(`Proxy error: ${error.message}`);
-  }
-}
-
-export function getAuthorizedUrl(url, env = process.env) {
-  const params =
-    {
-      "api.govinfo.gov": { api_key: env.DATA_GOV_API_KEY },
-      "api.congress.gov": { api_key: env.CONGRESS_GOV_API_KEY },
-    }[url.hostname] || {};
-  for (const key in params) {
-    url.searchParams.set(key, params[key]);
-  }
-  return url.toString();
-}
-
-export function getAuthorizedHeaders(url, env = process.env) {
-  return (
-    {
-      "api.search.brave.com": { "x-subscription-token": env.BRAVE_SEARCH_API_KEY },
-    }[url.hostname] || {}
-  );
 }

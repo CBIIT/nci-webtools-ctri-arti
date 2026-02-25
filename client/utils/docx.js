@@ -1,3 +1,65 @@
+/**
+ * DOCX Manipulation Utilities
+ *
+ * This module provides functions for reading and modifying DOCX files while
+ * preserving their structure and formatting. It supports both simple text
+ * replacement and index-based block replacement for precise document editing.
+ *
+ * ## Key Concepts
+ *
+ * ### Block Structure
+ * A DOCX document is parsed into XML. Paragraphs (w:p) and table cells (w:tc)
+ * are "blocks" that can contain text. All paragraphs in the main document body
+ * share the SAME parent array in the parsed XML structure.
+ *
+ * ### The Stale Index Problem (CRITICAL)
+ *
+ * When we collect blocks with `findAllBlocks()`, we store each block's position
+ * in its parent array as `block.index`. However, when we INSERT new paragraphs
+ * (for multi-line content), ALL subsequent blocks' positions SHIFT in the array,
+ * but their stored `block.index` values remain unchanged (stale).
+ *
+ * **Example of the bug this causes:**
+ * ```
+ * Original parent array: [para0, para1, para2, para3, para4...]
+ *                         idx 0   idx 1   idx 2   idx 3   idx 4
+ *
+ * findAllBlocks() stores: block0.index=0, block1.index=1, block2.index=2...
+ *
+ * We replace block0 with 3-line content, inserting 2 new paragraphs:
+ * New parent array: [para0, newPara1, newPara2, para1, para2, para3...]
+ *                    idx 0   idx 1     idx 2    idx 3  idx 4   idx 5
+ *
+ * block1.index is STILL 1, but para1 is now at index 3!
+ * Inserting at index 1+1=2 puts content BEFORE para1, not after!
+ * ```
+ *
+ * **Solution:** Always use `block.parent.indexOf(block.element)` to get the
+ * CURRENT position. Never trust `block.index` after any insertion has occurred.
+ *
+ * ### Processing Order
+ *
+ * The order of operations is critical for correctness:
+ *
+ * 1. **Replacements**: Process in document order (as blocks appear). Use
+ *    `indexOf()` to find current position before each operation.
+ *
+ * 2. **Insertions**: Apply in REVERSE order (highest index first). This ensures
+ *    that inserting at position N doesn't shift positions 0..N-1.
+ *
+ * 3. **Deletions**: Apply in REVERSE order (highest index first). Same reason
+ *    as insertions - removing from the end preserves earlier indices.
+ *
+ * ### Table Cells
+ *
+ * Table cells (w:tc) require special handling:
+ * - Never delete table cells (corrupts table structure)
+ * - Instead of deleting, replace content with empty space
+ * - Multi-line content in cells creates paragraphs within the cell
+ *
+ * @module docx
+ */
+
 import JSZip from 'jszip';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 
@@ -176,40 +238,1475 @@ function collectTextNodes(block, nodes = [], inField = false) {
 }
 
 /**
- * Distribute translated text across original text nodes proportionally
+ * Extract text with run-level formatting info from a block element
+ * Returns both the text and an array of formatting runs with their positions
+ * @param {Object} element - The block element
+ * @param {string} type - 'paragraph' or 'cell'
+ * @returns {{text: string, runs: Array<{text: string, start: number, end: number, color?: string, highlight?: string, italic?: boolean, bold?: boolean}>}}
+ */
+function extractBlockTextWithFormatting(element, type) {
+  const runs = [];
+  let offset = 0;
+
+  function processRunElement(runElement) {
+    let text = '';
+    let formatting = {};
+
+    const runContent = runElement['w:r'];
+    if (!Array.isArray(runContent)) return;
+
+    for (const item of runContent) {
+      if (item && typeof item === 'object') {
+        // Extract formatting from w:rPr (run properties)
+        if ('w:rPr' in item) {
+          const rPrContent = item['w:rPr'];
+          if (Array.isArray(rPrContent)) {
+            for (const prItem of rPrContent) {
+              if (prItem && typeof prItem === 'object') {
+                // Text color
+                if ('w:color' in prItem) {
+                  const attrs = prItem[':@'];
+                  if (attrs && attrs['@_w:val']) {
+                    formatting.color = attrs['@_w:val'];
+                  }
+                }
+                // Highlight color
+                if ('w:highlight' in prItem) {
+                  const attrs = prItem[':@'];
+                  if (attrs && attrs['@_w:val']) {
+                    formatting.highlight = attrs['@_w:val'];
+                  }
+                }
+                // Italic
+                if ('w:i' in prItem) {
+                  formatting.italic = true;
+                }
+                // Bold
+                if ('w:b' in prItem) {
+                  formatting.bold = true;
+                }
+              }
+            }
+          }
+        }
+        // Extract text from w:t
+        if ('w:t' in item) {
+          const textNode = Array.isArray(item['w:t']) ? item['w:t'][0] : item['w:t'];
+          if (textNode && typeof textNode === 'object' && '#text' in textNode) {
+            text += textNode['#text'] || '';
+          }
+        }
+        // Handle line breaks
+        if ('w:br' in item) {
+          text += '\n';
+        }
+      }
+    }
+
+    if (text) {
+      runs.push({
+        text,
+        start: offset,
+        end: offset + text.length,
+        ...formatting
+      });
+      offset += text.length;
+    }
+  }
+
+  function walkParagraph(node, inField = false) {
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        walkParagraph(item, inField);
+      }
+    } else if (typeof node === 'object' && node !== null) {
+      // Check for field char markers
+      if ('w:fldChar' in node) {
+        const fldType = node['w:fldChar']?.[0]?.[':@']?.['@_w:fldCharType'] ||
+                    node[':@']?.['@_w:fldCharType'];
+        if (fldType === 'begin') inField = true;
+        if (fldType === 'end') inField = false;
+        return;
+      }
+
+      // Skip field content
+      if (inField) return;
+
+      for (const key in node) {
+        // Skip field instructions and math
+        if (key === 'w:instrText' || key === 'w:fldSimple' || key.startsWith('m:')) {
+          continue;
+        }
+
+        if (key === 'w:r') {
+          // Found a run element
+          processRunElement(node);
+        } else if (key !== ':@' && key !== '#text') {
+          walkParagraph(node[key], inField);
+        }
+      }
+    }
+  }
+
+  if (type === 'paragraph') {
+    walkParagraph(element);
+  } else if (type === 'cell') {
+    const tcContent = element['w:tc'];
+    if (Array.isArray(tcContent)) {
+      for (const item of tcContent) {
+        if (item && typeof item === 'object' && 'w:p' in item) {
+          walkParagraph(item);
+          // Add newline between paragraphs in cell
+          if (offset > 0 && runs.length > 0) {
+            offset++; // Account for implicit newline between paragraphs
+          }
+        }
+      }
+    }
+  }
+
+  return { text: runs.map(r => r.text).join(''), runs };
+}
+
+/**
+ * Extract text from a paragraph, converting w:br elements to newlines
+ * This is for text extraction (read-only), not for modification
+ */
+function extractParagraphText(block) {
+  const parts = [];
+
+  function walk(node, inField = false) {
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        walk(item, inField);
+      }
+    } else if (typeof node === 'object' && node !== null) {
+      // Check for field char markers
+      if ('w:fldChar' in node) {
+        const type = node['w:fldChar']?.[0]?.[':@']?.['@_w:fldCharType'] ||
+                    node[':@']?.['@_w:fldCharType'];
+        if (type === 'begin') inField = true;
+        if (type === 'end') inField = false;
+        return;
+      }
+
+      // Skip field content
+      if (inField) return;
+
+      for (const key in node) {
+        // Skip field instructions and math
+        if (key === 'w:instrText' || key === 'w:fldSimple' || key.startsWith('m:')) {
+          continue;
+        }
+
+        if (key === 'w:br') {
+          // Line break element - convert to newline
+          parts.push('\n');
+        } else if (key === 'w:t') {
+          // Text element
+          const textNode = Array.isArray(node[key]) ? node[key][0] : node[key];
+          if (textNode && typeof textNode === 'object' && '#text' in textNode) {
+            parts.push(textNode['#text'] || '');
+          }
+        } else if (key !== ':@' && key !== '#text') {
+          walk(node[key], inField);
+        }
+      }
+    }
+  }
+
+  walk(block);
+  return parts.join('');
+}
+
+/**
+ * Collect text nodes with their parent run context (for inserting line breaks)
+ * @returns {Array<{textNode: Object, parentRun: Array, indexInRun: number}>}
+ */
+function collectTextNodesWithContext(block, results = [], currentRun = null, runContent = null) {
+  if (Array.isArray(block)) {
+    for (let i = 0; i < block.length; i++) {
+      const item = block[i];
+      if (typeof item === 'object' && item !== null) {
+        // Check if this item is a w:r (run) element
+        if ('w:r' in item) {
+          collectTextNodesWithContext(item['w:r'], results, item, item['w:r']);
+        } else if ('w:t' in item && currentRun) {
+          // Found a text element inside a run
+          const textNode = Array.isArray(item['w:t']) ? item['w:t'][0] : item['w:t'];
+          if (textNode && typeof textNode === 'object' && '#text' in textNode) {
+            results.push({
+              textNode,
+              parentRun: currentRun,
+              runContent: runContent,
+              tElement: item,
+              indexInRun: i
+            });
+          }
+        } else {
+          collectTextNodesWithContext(item, results, currentRun, runContent);
+        }
+      }
+    }
+  } else if (typeof block === 'object' && block !== null) {
+    for (const key in block) {
+      if (key === 'w:instrText' || key === 'w:fldSimple' || key.startsWith('m:')) {
+        continue;
+      }
+      if (key === 'w:r') {
+        collectTextNodesWithContext(block[key], results, block, block[key]);
+      } else if (key === 'w:t' && currentRun) {
+        const textNode = Array.isArray(block[key]) ? block[key][0] : block[key];
+        if (textNode && typeof textNode === 'object' && '#text' in textNode) {
+          // Find index in runContent
+          const idx = runContent ? runContent.findIndex(item => item === block || ('w:t' in item && item['w:t'] === block[key])) : -1;
+          results.push({
+            textNode,
+            parentRun: currentRun,
+            runContent: runContent,
+            tElement: block,
+            indexInRun: idx
+          });
+        }
+      } else {
+        collectTextNodesWithContext(block[key], results, currentRun, runContent);
+      }
+    }
+  }
+  return results;
+}
+
+/**
+ * Insert text with line breaks into a run by creating multiple w:t elements with w:br between them
+ * @param {Array} runContent - The w:r element's content array
+ * @param {number} tIndex - Index of the w:t element to replace
+ * @param {string} text - Text that may contain \n characters
+ */
+function insertTextWithLineBreaks(runContent, tIndex, text) {
+  if (tIndex < 0 || !runContent || !Array.isArray(runContent)) {
+    return;
+  }
+
+  const lines = text.split('\n');
+  if (lines.length === 1) {
+    // No line breaks, just update the text
+    const tElement = runContent[tIndex];
+    if (tElement && 'w:t' in tElement) {
+      const textNode = Array.isArray(tElement['w:t']) ? tElement['w:t'][0] : tElement['w:t'];
+      if (textNode) {
+        textNode['#text'] = text;
+      }
+    }
+    return;
+  }
+
+  // Build new elements: w:t, w:br, w:t, w:br, w:t...
+  // IMPORTANT: Always include xml:space="preserve" attribute - Word rejects <w:t/> but accepts <w:t xml:space="preserve"/>
+  const newElements = [];
+  for (let i = 0; i < lines.length; i++) {
+    // Always create w:t with xml:space="preserve" attribute (Word rejects bare <w:t/>)
+    newElements.push({
+      'w:t': [{
+        '#text': lines[i]
+      }],
+      ':@': { '@_xml:space': 'preserve' }
+    });
+    // Add line break (except after last line)
+    if (i < lines.length - 1) {
+      newElements.push({ 'w:br': [] });
+    }
+  }
+
+  // Replace the original w:t element with the new elements
+  runContent.splice(tIndex, 1, ...newElements);
+}
+
+/**
+ * Distribute translated text across original text nodes
+ * SIMPLIFIED: Always put ALL text in first node and clear others
+ * This avoids word-spacing issues caused by Word's implicit spacing between runs
+ * NOTE: Empty strings in w:t elements are handled by suppressEmptyNode: true in XML builder
  */
 function distributeText(textNodes, translated) {
   if (textNodes.length === 0) return;
 
-  // Calculate original lengths
-  const lengths = textNodes.map(n => (n['#text'] || '').length);
-  const totalOriginal = lengths.reduce((a, b) => a + b, 0);
+  // Always put all text in first node
+  textNodes[0]['#text'] = translated;
 
-  if (totalOriginal === 0) {
-    // All empty, put everything in first node
-    textNodes[0]['#text'] = translated;
+  // Clear all other text nodes with empty string
+  // Empty strings are preferred over spaces to avoid over-justification issues
+  // when Word stretches space-only runs in justified paragraphs
+  for (let i = 1; i < textNodes.length; i++) {
+    textNodes[i]['#text'] = '';
+  }
+}
+
+/**
+ * Create a new paragraph element with text
+ * @param {string} text - Text content (supports \n for line breaks)
+ * @param {Object} styleFrom - Optional w:p element to copy style from
+ * @returns {Object} New paragraph element in fast-xml-parser format
+ */
+function createParagraphElement(text, styleFrom = null) {
+  const runContent = [];
+
+  // Split text on newlines and create w:t elements with w:br between them
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    // Always create w:t with xml:space="preserve" attribute (Word rejects bare <w:t/>)
+    runContent.push({
+      'w:t': [{
+        '#text': lines[i] || ' '  // Use space for empty lines to avoid empty <w:t/>
+      }],
+      ':@': { '@_xml:space': 'preserve' }
+    });
+    // Add line break (except after last line)
+    if (i < lines.length - 1) {
+      runContent.push({ 'w:br': [] });
+    }
+  }
+
+  // Build the paragraph structure
+  const pContent = [];
+
+  // Copy paragraph style if provided
+  if (styleFrom && styleFrom['w:p']) {
+    const pPr = styleFrom['w:p'].find(item => item && typeof item === 'object' && 'w:pPr' in item);
+    if (pPr) {
+      pContent.push(JSON.parse(JSON.stringify(pPr)));
+    }
+  }
+
+  // Add the run containing the text
+  pContent.push({
+    'w:r': runContent
+  });
+
+  return {
+    'w:p': pContent
+  };
+}
+
+/**
+ * Get the style name from a paragraph element
+ * @param {Object} element - The paragraph element (object containing w:p)
+ * @returns {string} Style name (e.g., 'Title', 'Heading1', 'Normal')
+ */
+function getParagraphStyle(element) {
+  // With preserveOrder: true, w:p contains an array of child elements
+  // Style is in: w:p[{w:pPr: [{w:pStyle: [{':@': {'@_w:val': 'StyleName'}}]}]}]
+  const pContent = element['w:p'];
+  if (!Array.isArray(pContent)) return 'Normal';
+
+  for (const item of pContent) {
+    if (item && typeof item === 'object' && 'w:pPr' in item) {
+      const pPrContent = item['w:pPr'];
+      if (!Array.isArray(pPrContent)) continue;
+
+      for (const prItem of pPrContent) {
+        if (prItem && typeof prItem === 'object' && 'w:pStyle' in prItem) {
+          const attrs = prItem[':@'];
+          if (attrs && attrs['@_w:val']) {
+            return attrs['@_w:val'];
+          }
+        }
+      }
+    }
+  }
+  return 'Normal';
+}
+
+/**
+ * Find all blocks (paragraphs and table cells) in document order with context.
+ *
+ * This function traverses the parsed XML document and collects all content blocks
+ * (paragraphs and table cells) in the order they appear in the document.
+ *
+ * ## Return Value Structure
+ *
+ * Each block object contains:
+ * - `element`: The XML element object (contains w:p or w:tc)
+ * - `parent`: The parent array containing this element
+ * - `index`: Position in parent array AT THE TIME OF COLLECTION (may become stale!)
+ * - `type`: 'paragraph' or 'cell'
+ * - `row`, `col`, `tableIndex`: For table cells only
+ *
+ * ## CRITICAL WARNING: Stale Index Problem
+ *
+ * The `index` property is a SNAPSHOT captured when this function runs. If you
+ * later insert or remove elements from the parent array, this index becomes
+ * STALE and will point to the wrong element.
+ *
+ * **ALWAYS use `block.parent.indexOf(block.element)` to get the current position
+ * before performing any insertion or deletion operations.**
+ *
+ * @param {Object} node - Parsed XML document
+ * @param {Array} results - Accumulated results
+ * @param {Object} context - Current context (table position, parent info)
+ * @returns {Array<{element: Object, parent: Array, index: number, type: string, row?: number, col?: number, tableIndex?: number}>}
+ */
+function findAllBlocks(node, results = [], context = { inTable: false, tableIndex: -1, rowIndex: -1, colIndex: -1 }, parent = null, index = -1) {
+  if (Array.isArray(node)) {
+    for (let i = 0; i < node.length; i++) {
+      const item = node[i];
+      if (typeof item === 'object' && item !== null) {
+        // Check for table
+        if ('w:tbl' in item) {
+          const tableIndex = context.tableIndex + 1;
+          // Process table rows
+          const tblContent = item['w:tbl'];
+          if (Array.isArray(tblContent)) {
+            let rowIndex = 0;
+            for (const tblItem of tblContent) {
+              if (tblItem && typeof tblItem === 'object' && 'w:tr' in tblItem) {
+                // Process table row
+                const trContent = tblItem['w:tr'];
+                if (Array.isArray(trContent)) {
+                  let colIndex = 0;
+                  for (const trItem of trContent) {
+                    if (trItem && typeof trItem === 'object' && 'w:tc' in trItem) {
+                      // Found table cell - add as block
+                      results.push({
+                        element: trItem,
+                        parent: trContent,
+                        index: trContent.indexOf(trItem),
+                        type: 'cell',
+                        row: rowIndex,
+                        col: colIndex,
+                        tableIndex
+                      });
+                      colIndex++;
+                    }
+                  }
+                }
+                rowIndex++;
+              }
+            }
+          }
+        }
+        // Check for paragraph (not inside a table cell - those are handled above)
+        else if ('w:p' in item && !context.inTable) {
+          results.push({
+            element: item,
+            parent: node,
+            index: i,
+            type: 'paragraph'
+          });
+        }
+        // Recurse into other elements (but not into tables or paragraphs)
+        else if (!('w:p' in item) && !('w:tbl' in item)) {
+          findAllBlocks(item, results, context, node, i);
+        }
+      }
+    }
+  } else if (typeof node === 'object' && node !== null) {
+    for (const key in node) {
+      if (key === 'w:tbl') {
+        const tableIndex = context.tableIndex + 1;
+        // Process table rows
+        const tblContent = node[key];
+        if (Array.isArray(tblContent)) {
+          let rowIndex = 0;
+          for (const tblItem of tblContent) {
+            if (tblItem && typeof tblItem === 'object' && 'w:tr' in tblItem) {
+              const trContent = tblItem['w:tr'];
+              if (Array.isArray(trContent)) {
+                let colIndex = 0;
+                for (const trItem of trContent) {
+                  if (trItem && typeof trItem === 'object' && 'w:tc' in trItem) {
+                    results.push({
+                      element: trItem,
+                      parent: trContent,
+                      index: trContent.indexOf(trItem),
+                      type: 'cell',
+                      row: rowIndex,
+                      col: colIndex,
+                      tableIndex
+                    });
+                    colIndex++;
+                  }
+                }
+              }
+              rowIndex++;
+            }
+          }
+        }
+      } else if (key === 'w:p' && !context.inTable) {
+        // Standalone paragraph in object form - less common with preserveOrder
+        results.push({
+          element: node,
+          parent: parent,
+          index: index,
+          type: 'paragraph'
+        });
+      } else {
+        findAllBlocks(node[key], results, context, null, -1);
+      }
+    }
+  }
+  return results;
+}
+
+/**
+ * Extract text from a block element (paragraph or table cell)
+ * @param {Object} element - The block element
+ * @param {string} type - 'paragraph' or 'cell'
+ * @returns {string} Extracted text
+ */
+function extractBlockText(element, type) {
+  if (type === 'paragraph') {
+    return extractParagraphText(element);
+  } else if (type === 'cell') {
+    // Table cell: extract text from all paragraphs inside
+    const tcContent = element['w:tc'];
+    if (!Array.isArray(tcContent)) return '';
+
+    const parts = [];
+    for (const item of tcContent) {
+      if (item && typeof item === 'object' && 'w:p' in item) {
+        const paraText = extractParagraphText(item);
+        if (paraText) parts.push(paraText);
+      }
+    }
+    return parts.join('\n');
+  }
+  return '';
+}
+
+/**
+ * Extract text from a DOCX file as an array of blocks with metadata
+ * @param {Buffer|Uint8Array|ArrayBuffer} docxBuffer - Input DOCX file
+ * @param {Object} options - Optional settings
+ * @param {boolean} options.includeHeaders - Include headers/footers (default: true)
+ * @param {boolean} options.includeFootnotes - Include footnotes/endnotes (default: true)
+ * @param {boolean} options.includeEmpty - Include empty blocks (default: false)
+ * @param {boolean} options.includeFormatting - Include run-level formatting (color, highlight, italic, bold) (default: false)
+ * @returns {Promise<{blocks: Array<{index: number, text: string, type: string, style: string, source: string, row?: number, col?: number, runs?: Array}>}>}
+ */
+export async function docxExtractTextBlocks(docxBuffer, options = {}) {
+  const {
+    includeHeaders = true,
+    includeFootnotes = true,
+    includeEmpty = false,
+    includeFormatting = false,
+  } = options;
+
+  // Load the DOCX file
+  const zip = await JSZip.loadAsync(docxBuffer);
+
+  // Collect XML parts to process with their source labels
+  const partsToProcess = [{ path: 'word/document.xml', source: 'document' }];
+
+  if (includeHeaders) {
+    zip.forEach((path) => {
+      if (/^word\/header\d+\.xml$/.test(path)) {
+        partsToProcess.push({ path, source: 'header' });
+      } else if (/^word\/footer\d+\.xml$/.test(path)) {
+        partsToProcess.push({ path, source: 'footer' });
+      }
+    });
+  }
+
+  if (includeFootnotes) {
+    if (zip.file('word/footnotes.xml')) {
+      partsToProcess.push({ path: 'word/footnotes.xml', source: 'footnote' });
+    }
+    if (zip.file('word/endnotes.xml')) {
+      partsToProcess.push({ path: 'word/endnotes.xml', source: 'endnote' });
+    }
+  }
+
+  // Extract blocks from each part
+  const allBlocks = [];
+  let globalIndex = 0;
+
+  for (const { path, source } of partsToProcess) {
+    const file = zip.file(path);
+    if (!file) continue;
+
+    const xmlText = await file.async('string');
+    const doc = xmlParser.parse(xmlText);
+
+    const blocks = findAllBlocks(doc);
+
+    for (const block of blocks) {
+      let text, runs;
+
+      if (includeFormatting) {
+        // Use formatting-aware extraction
+        const result = extractBlockTextWithFormatting(block.element, block.type);
+        text = result.text;
+        runs = result.runs;
+      } else {
+        text = extractBlockText(block.element, block.type);
+      }
+
+      // Skip empty blocks unless includeEmpty is true
+      if (!includeEmpty && !text.trim()) continue;
+
+      const blockInfo = {
+        index: globalIndex++,
+        text,
+        type: block.type,
+        style: block.type === 'paragraph' ? getParagraphStyle(block.element) : 'TableCell',
+        source,
+      };
+
+      // Add formatting runs if requested
+      if (includeFormatting && runs) {
+        blockInfo.runs = runs;
+      }
+
+      // Add row/col for table cells
+      if (block.type === 'cell') {
+        blockInfo.row = block.row;
+        blockInfo.col = block.col;
+      }
+
+      allBlocks.push(blockInfo);
+    }
+  }
+
+  return { blocks: allBlocks };
+}
+
+/**
+ * Extract text from a DOCX file
+ * Uses the same text extraction as docxReplace for consistency
+ * @param {Buffer|Uint8Array|ArrayBuffer} docxBuffer - Input DOCX file
+ * @param {Object} options - Optional settings
+ * @param {boolean} options.includeHeaders - Include headers/footers (default: true)
+ * @param {boolean} options.includeFootnotes - Include footnotes/endnotes (default: true)
+ * @returns {Promise<string>} Extracted text
+ */
+export async function docxExtractText(docxBuffer, options = {}) {
+  const {
+    includeHeaders = true,
+    includeFootnotes = true,
+  } = options;
+
+  // Load the DOCX file
+  const zip = await JSZip.loadAsync(docxBuffer);
+
+  // Collect XML parts to process
+  const parts = ['word/document.xml'];
+
+  if (includeHeaders) {
+    zip.forEach((path) => {
+      if (/^word\/(header|footer)\d+\.xml$/.test(path)) {
+        parts.push(path);
+      }
+    });
+  }
+
+  if (includeFootnotes) {
+    if (zip.file('word/footnotes.xml')) parts.push('word/footnotes.xml');
+    if (zip.file('word/endnotes.xml')) parts.push('word/endnotes.xml');
+  }
+
+  // Extract text from each part
+  const textParts = [];
+  for (const path of parts) {
+    const file = zip.file(path);
+    if (!file) continue;
+
+    const xmlText = await file.async('string');
+    const doc = xmlParser.parse(xmlText);
+
+    const paragraphs = findParagraphs(doc);
+    const { combinedText } = buildNormalizedCombinedText(paragraphs);
+    if (combinedText.trim()) {
+      textParts.push(combinedText);
+    }
+  }
+
+  return textParts.join('\n\n');
+}
+
+/**
+ * Replace text strings in a DOCX document by block index or text matching.
+ *
+ * ## Algorithm Overview
+ *
+ * This function processes replacements in a specific order to avoid the "stale
+ * index" problem where insertions shift subsequent block positions.
+ *
+ * ### Phase 1: Parse Input
+ *
+ * Replacement keys are categorized into three types:
+ * - **Index replacements**: `"@5"` → replace block 5's content
+ * - **Insert actions**: `"INSERT@5"` or `"+@5"` → insert new paragraph after block 5
+ * - **Text replacements**: `"old text"` → `"new text"` (find/replace within blocks)
+ *
+ * ### Phase 2: Discover Blocks
+ *
+ * Call `findAllBlocks(doc)` to get all paragraphs and table cells in document
+ * order. Each block has: element, parent (array), index (position), type.
+ *
+ * **IMPORTANT:** `block.index` is a SNAPSHOT that becomes stale after insertions.
+ *
+ * ### Phase 3: Process Replacements (document order)
+ *
+ * For each non-empty block in document order:
+ * 1. If marked for deletion (null value): queue for deletion, don't delete yet
+ * 2. If has replacement text: apply using CURRENT index from `indexOf()`
+ *    - For multi-line text, insert new paragraphs AFTER current position
+ *    - This shifts all subsequent blocks in the parent array!
+ * 3. If has INSERT action: queue for later (we need stable indices)
+ *
+ * ### Phase 4: Apply Insertions (REVERSE order)
+ *
+ * Sort queued insertions by CURRENT position (`indexOf`), descending.
+ * Process highest index first so lower indices remain valid.
+ *
+ * ### Phase 5: Apply Deletions (REVERSE order)
+ *
+ * Process deletions from end to start so indices don't shift.
+ * Use `indexOf()` to find current position since it may have changed.
+ *
+ * ### Phase 6: Serialize
+ *
+ * Build XML from modified document structure and update ZIP archive.
+ *
+ * ## Why This Order Matters
+ *
+ * Consider blocks at original positions [0, 1, 2, 3]:
+ * - Replace block 0 with 3 lines → inserts 2 paragraphs after position 0
+ * - Now block 1's element is at position 3, not 1!
+ * - If we used `block.index=1` to insert after block 1, we'd insert at position 2
+ * - That's BETWEEN the new paragraphs, not after block 1's actual element!
+ *
+ * By using `indexOf()` for replacements and reverse order for insertions/deletions,
+ * each operation finds the correct current position.
+ *
+ * ## Supported Replacement Modes
+ *
+ * - **Text-based**: `{"original text": "replacement text"}`
+ * - **Index-based**: `{"@0": "replacement for block 0", "@5": "replacement for block 5"}`
+ * - **Insert after**: `{"INSERT@5": "new paragraph content"}` or `{"+@5": "content"}`
+ * - **Delete block**: `{"@5": null}` (for paragraphs only; cells are cleared, not deleted)
+ *
+ * @param {Buffer|Uint8Array|ArrayBuffer} docxBuffer - Input DOCX file
+ * @param {Object} replacements - Map of replacements (text keys or @index keys)
+ * @param {Object} options - Optional settings
+ * @param {boolean} options.includeHeaders - Process headers/footers (default: true)
+ * @param {boolean} options.includeFootnotes - Process footnotes/endnotes (default: true)
+ * @returns {Promise<Uint8Array>} Modified DOCX file
+ */
+export async function docxReplace(docxBuffer, replacements, options = {}) {
+  const {
+    includeHeaders = true,
+    includeFootnotes = true,
+  } = options;
+
+  // Separate index-based replacements, INSERT actions, and text-based replacements
+  const indexReplacements = {};
+  const insertActions = {};  // Maps block index to content to insert after
+  const textReplacements = {};
+
+  for (const [key, value] of Object.entries(replacements)) {
+    // Check for INSERT action: "INSERT@5" or "+@5"
+    const insertMatch = key.match(/^(?:INSERT@|\+@)(\d+)$/i);
+    if (insertMatch && value !== null) {
+      const blockIndex = parseInt(insertMatch[1], 10);
+      if (!isNaN(blockIndex)) {
+        insertActions[blockIndex] = value;
+      }
+    } else if (key.startsWith('@')) {
+      const blockIndex = parseInt(key.slice(1), 10);
+      if (!isNaN(blockIndex)) {
+        indexReplacements[blockIndex] = value;
+      }
+    } else {
+      textReplacements[key] = value;
+    }
+  }
+
+  // Load the DOCX file
+  const zip = await JSZip.loadAsync(docxBuffer);
+
+  // Collect XML parts to process
+  const parts = ['word/document.xml'];
+
+  if (includeHeaders) {
+    zip.forEach((path) => {
+      if (/^word\/(header|footer)\d+\.xml$/.test(path)) {
+        parts.push(path);
+      }
+    });
+  }
+
+  if (includeFootnotes) {
+    if (zip.file('word/footnotes.xml')) parts.push('word/footnotes.xml');
+    if (zip.file('word/endnotes.xml')) parts.push('word/endnotes.xml');
+  }
+
+  // If there are index-based replacements or insert actions, we need to track block indices across all parts
+  const hasIndexReplacements = Object.keys(indexReplacements).length > 0;
+  const hasInsertActions = Object.keys(insertActions).length > 0;
+  let globalBlockIndex = 0;
+
+  // Process each part
+  for (const path of parts) {
+    const file = zip.file(path);
+    if (!file) continue;
+
+    const xmlText = await file.async('string');
+    const doc = xmlParser.parse(xmlText);
+
+    // Process index-based replacements and collect insert targets
+    if (hasIndexReplacements || hasInsertActions) {
+      const blocks = findAllBlocks(doc);
+      const blocksToDelete = [];  // Track blocks to delete
+      const blocksToInsertAfter = [];  // Track blocks to insert content after
+
+      for (const block of blocks) {
+        // Extract text to check if block is empty (matching docxExtractTextBlocks behavior)
+        const text = extractBlockText(block.element, block.type);
+
+        // Skip empty blocks to match docxExtractTextBlocks indexing
+        if (!text.trim()) continue;
+
+        // Handle replacements
+        if (globalBlockIndex in indexReplacements) {
+          const newText = indexReplacements[globalBlockIndex];
+          if (newText === null) {
+            // ============================================================
+            // Deletion Handling
+            //
+            // Table cells (w:tc) CANNOT be deleted - doing so corrupts the
+            // table structure and makes the document invalid. Instead, we
+            // clear the cell content by replacing with a space.
+            //
+            // Paragraphs CAN be deleted, but we queue them for later and
+            // process deletions in reverse order (see Phase 5).
+            // ============================================================
+            if (block.type === 'cell') {
+              const currentIndex = block.parent ? block.parent.indexOf(block.element) : block.index;
+              applyTextToBlock(block.element, block.type, ' ', block.parent, currentIndex);
+            } else {
+              // Queue paragraph for deletion (processed in Phase 5)
+              blocksToDelete.push(block);
+            }
+          } else {
+            // ============================================================
+            // CRITICAL: Use indexOf() to get CURRENT position in parent array.
+            //
+            // The stored block.index is a snapshot from when findAllBlocks() ran.
+            // After ANY insertion into the parent array, block.index is STALE.
+            // All blocks in the main document share ONE parent array, so inserting
+            // paragraphs for multi-line content shifts ALL subsequent blocks.
+            //
+            // Example: If block 0 was replaced with 3 lines (inserting 2 paragraphs),
+            // block 1's element is now at position 3, not position 1. Using the
+            // stale block.index=1 would insert content in the wrong location.
+            // ============================================================
+            const currentIndex = block.parent ? block.parent.indexOf(block.element) : block.index;
+            applyTextToBlock(block.element, block.type, newText, block.parent, currentIndex);
+          }
+        }
+
+        // Handle INSERT actions - only for paragraphs (inserting into tables would corrupt structure)
+        if (globalBlockIndex in insertActions && block.type === 'paragraph') {
+          blocksToInsertAfter.push({
+            block,
+            content: insertActions[globalBlockIndex],
+            globalIndex: globalBlockIndex
+          });
+        }
+
+        globalBlockIndex++;
+      }
+
+      // ============================================================
+      // PHASE 4: Apply Insertions in REVERSE Order
+      //
+      // We MUST process insertions from highest index to lowest. This ensures
+      // that inserting at position N doesn't shift positions 0..N-1, which
+      // would invalidate our queued insertion indices.
+      //
+      // We use indexOf() here too because replacements in Phase 3 may have
+      // inserted new paragraphs, shifting block positions.
+      // ============================================================
+      blocksToInsertAfter.sort((a, b) => {
+        // Get CURRENT index in parent (not the stale block.index)
+        const aIdx = a.block.parent.indexOf(a.block.element);
+        const bIdx = b.block.parent.indexOf(b.block.element);
+        return bIdx - aIdx;  // Descending order (highest first)
+      });
+
+      for (const { block, content } of blocksToInsertAfter) {
+        if (block.parent && Array.isArray(block.parent)) {
+          const idx = block.parent.indexOf(block.element);
+          if (idx >= 0) {
+            // Split content on newlines and create separate paragraphs
+            // This prevents over-justification from w:br in justified paragraphs
+            if (content.includes('\n')) {
+              const lines = content.split('\n');
+              // Insert in reverse order so indices stay correct
+              for (let i = lines.length - 1; i >= 0; i--) {
+                const newParagraph = createSingleLineParagraph(lines[i], block.element);
+                block.parent.splice(idx + 1, 0, newParagraph);
+              }
+            } else {
+              // Single line - use createSingleLineParagraph for consistency
+              const newParagraph = createSingleLineParagraph(content, block.element);
+              block.parent.splice(idx + 1, 0, newParagraph);
+            }
+          }
+        }
+      }
+
+      // ============================================================
+      // PHASE 5: Apply Deletions in REVERSE Order
+      //
+      // Process deletions from highest index to lowest for the same reason
+      // as insertions: removing from the end preserves earlier indices.
+      //
+      // We use indexOf() because both replacements and insertions may have
+      // shifted block positions since we collected them.
+      // ============================================================
+      for (let i = blocksToDelete.length - 1; i >= 0; i--) {
+        const block = blocksToDelete[i];
+        if (block.parent && Array.isArray(block.parent)) {
+          // Use indexOf() to get CURRENT position (block.index is stale)
+          const idx = block.parent.indexOf(block.element);
+          if (idx >= 0) {
+            block.parent.splice(idx, 1);
+          }
+        }
+      }
+    }
+
+    // Process text-based replacements
+    if (Object.keys(textReplacements).length > 0) {
+      replaceXmlDocText(doc, textReplacements);
+    }
+
+    const newXml = xmlBuilder.build(doc);
+    zip.file(path, newXml);
+  }
+
+  // Return the modified DOCX
+  return await zip.generateAsync({ type: 'uint8array' });
+}
+
+/**
+ * Apply text to a block element (paragraph or table cell).
+ *
+ * For multi-line text, this function creates new paragraphs instead of using
+ * w:br line breaks. This avoids over-justification issues in justified text.
+ *
+ * ## Multi-line Handling
+ *
+ * When `newText` contains newlines:
+ * 1. The first line replaces the existing paragraph's content
+ * 2. New paragraphs are created for subsequent lines
+ * 3. New paragraphs are inserted AFTER the current element
+ * 4. Insertion happens in reverse line order to maintain correct positions
+ *
+ * ## IMPORTANT: elementIndex Must Be Current
+ *
+ * The `elementIndex` parameter MUST be the CURRENT position of the element in
+ * the parent array, obtained via `parent.indexOf(element)`. Do NOT pass a
+ * cached/stale index value, as insertions from processing earlier blocks will
+ * have shifted positions.
+ *
+ * @param {Object} element - The block element
+ * @param {string} type - 'paragraph' or 'cell'
+ * @param {string} newText - The text to apply (may contain \n for multi-line)
+ * @param {Array} parent - Parent array containing the element (for paragraph insertion)
+ * @param {number} elementIndex - CURRENT index of element in parent array (use indexOf!)
+ */
+function applyTextToBlock(element, type, newText, parent = null, elementIndex = -1) {
+  if (type === 'paragraph') {
+    // Check if we need to split into multiple paragraphs
+    if (newText.includes('\n') && parent && Array.isArray(parent) && elementIndex >= 0) {
+      const lines = newText.split('\n');
+
+      // Apply first line to existing paragraph (no newlines)
+      applyTextToParagraph({ element }, lines[0]);
+
+      // Create new paragraphs for remaining lines and insert after
+      // Insert in reverse order so indices stay correct
+      for (let i = lines.length - 1; i >= 1; i--) {
+        const newPara = createSingleLineParagraph(lines[i], element);
+        parent.splice(elementIndex + 1, 0, newPara);
+      }
+    } else {
+      applyTextToParagraph({ element }, newText);
+    }
+  } else if (type === 'cell') {
+    // For table cells, find the first paragraph and apply text there
+    const tcContent = element['w:tc'];
+    if (!Array.isArray(tcContent)) return;
+
+    // Find first paragraph in the cell
+    for (let cellIdx = 0; cellIdx < tcContent.length; cellIdx++) {
+      const item = tcContent[cellIdx];
+      if (item && typeof item === 'object' && 'w:p' in item) {
+        // Check if we need to split into multiple paragraphs within the cell
+        if (newText.includes('\n')) {
+          const lines = newText.split('\n');
+
+          // Apply first line to existing paragraph
+          applyTextToParagraph({ element: item }, lines[0]);
+
+          // Create new paragraphs for remaining lines and insert into cell
+          // Insert in reverse order so indices stay correct
+          for (let i = lines.length - 1; i >= 1; i--) {
+            const newPara = createSingleLineParagraph(lines[i], item);
+            tcContent.splice(cellIdx + 1, 0, newPara);
+          }
+        } else {
+          applyTextToParagraph({ element: item }, newText);
+        }
+
+        // Clear text from other original paragraphs in the cell
+        // Note: we inserted new paragraphs right after cellIdx, so original paragraphs
+        // are now further down in the array. Find them by looking for paragraphs
+        // that existed before our insertions.
+        const numInserted = newText.includes('\n') ? newText.split('\n').length - 1 : 0;
+        for (let i = cellIdx + 1 + numInserted; i < tcContent.length; i++) {
+          const otherItem = tcContent[i];
+          if (otherItem && typeof otherItem === 'object' && 'w:p' in otherItem) {
+            applyTextToParagraph({ element: otherItem }, '');
+          }
+        }
+        return;
+      }
+    }
+
+    // If no paragraph exists, we need to create one (rare case)
+    // For now, just log a warning
+    console.warn('Table cell has no paragraph to apply text to');
+  }
+}
+
+/**
+ * Create a single-line paragraph (no w:br elements) copying style from source.
+ *
+ * This function is used when splitting multi-line replacement text into
+ * separate paragraphs. Using separate paragraphs instead of w:br line breaks
+ * avoids over-justification issues in Word's justified text alignment.
+ *
+ * The new paragraph copies the style (w:pPr) from the source element to
+ * maintain consistent formatting (font, spacing, indentation, etc.).
+ *
+ * @param {string} text - Single line of text (should not contain \n)
+ * @param {Object} styleFrom - w:p element to copy style from
+ * @returns {Object} New paragraph element in fast-xml-parser format
+ */
+function createSingleLineParagraph(text, styleFrom) {
+  // Build the run with a single w:t element
+  const runContent = [{
+    'w:t': [{
+      '#text': text || ''
+    }],
+    ':@': { '@_xml:space': 'preserve' }
+  }];
+
+  // Build the paragraph structure
+  const pContent = [];
+
+  // Copy paragraph style if provided
+  if (styleFrom && styleFrom['w:p']) {
+    const pPr = styleFrom['w:p'].find(item => item && typeof item === 'object' && 'w:pPr' in item);
+    if (pPr) {
+      pContent.push(JSON.parse(JSON.stringify(pPr)));
+    }
+  }
+
+  // Add the run containing the text
+  pContent.push({
+    'w:r': runContent
+  });
+
+  return {
+    'w:p': pContent
+  };
+}
+
+/**
+ * Find all paragraph elements (w:p) in document order
+ * @returns {Array<{element: Object, parent: Array, index: number}>}
+ */
+function findParagraphs(node, results = [], parent = null, index = -1) {
+  if (Array.isArray(node)) {
+    for (let i = 0; i < node.length; i++) {
+      const item = node[i];
+      if (typeof item === 'object' && item !== null) {
+        if ('w:p' in item) {
+          results.push({ element: item, parent: node, index: i });
+        }
+        findParagraphs(item, results, node, i);
+      }
+    }
+  } else if (typeof node === 'object' && node !== null) {
+    for (const key in node) {
+      if (key === 'w:p') {
+        // This is the paragraph content itself, parent object contains it
+        // Already handled above
+      }
+      findParagraphs(node[key], results, null, -1);
+    }
+  }
+  return results;
+}
+
+/**
+ * Build combined text from paragraphs (like mammoth.extractRawText)
+ * Returns the combined text and offset mapping for each paragraph
+ * @param {boolean} normalized - If true, skip empty paragraphs for offset calculation (matches normalized text)
+ */
+function buildCombinedText(paragraphs, normalized = false) {
+  const paragraphData = [];
+  let offset = 0;
+  let prevWasEmpty = false;
+
+  for (const p of paragraphs) {
+    const textNodes = collectTextNodes(p.element);
+    const text = textNodes.map(n => n['#text'] || '').join('');
+
+    const isEmpty = text.length === 0;
+
+    // For normalized mode, consecutive empty paragraphs don't add to offset
+    // (they get collapsed to a single \n)
+    const skipOffset = normalized && isEmpty && prevWasEmpty;
+
+    paragraphData.push({
+      ...p,
+      textNodes,
+      text,
+      startOffset: offset,
+      endOffset: offset + text.length
+    });
+
+    if (!skipOffset) {
+      offset += text.length + 1; // +1 for the \n separator
+    }
+    prevWasEmpty = isEmpty;
+  }
+
+  const combinedText = paragraphData.map(p => p.text).join('\n');
+  return { combinedText, paragraphData };
+}
+
+/**
+ * Build normalized combined text where consecutive empty paragraphs are collapsed
+ * Computes offsets by building the text incrementally, so offsets match actual positions
+ * Uses extractParagraphText to properly handle w:br elements as newlines
+ */
+function buildNormalizedCombinedText(paragraphs) {
+  const paragraphData = [];
+
+  // First, collect text from all paragraphs using extractParagraphText
+  // which properly converts w:br to \n
+  for (const p of paragraphs) {
+    const textNodes = collectTextNodes(p.element);
+    const text = extractParagraphText(p.element);
+    paragraphData.push({
+      ...p,
+      textNodes,
+      text,
+      startOffset: 0,  // Will be calculated below
+      endOffset: 0
+    });
+  }
+
+  // Build combined text incrementally, tracking where each paragraph's content lands
+  let combinedText = '';
+  let needsSeparator = false;
+
+  for (const p of paragraphData) {
+    if (p.text.length > 0) {
+      // Non-empty paragraph: add separator if needed, then add text
+      if (needsSeparator) {
+        combinedText += '\n';
+      }
+      p.startOffset = combinedText.length;
+      combinedText += p.text;
+      p.endOffset = combinedText.length;
+      needsSeparator = true;
+    } else {
+      // Empty paragraph: exists at current position but contributes no text
+      // Don't add separator or change needsSeparator (consecutive empties collapse)
+      p.startOffset = combinedText.length;
+      p.endOffset = combinedText.length;
+    }
+  }
+
+  return { combinedText, paragraphData };
+}
+
+/**
+ * Find which paragraphs a match spans based on character offsets
+ */
+function findAffectedParagraphs(matchStart, matchEnd, paragraphData) {
+  const affected = [];
+  for (let i = 0; i < paragraphData.length; i++) {
+    const p = paragraphData[i];
+    // Check if this paragraph overlaps with the match range
+    // Account for \n separators: paragraph i ends at endOffset, then \n, then paragraph i+1 starts
+    const pStart = p.startOffset;
+    const pEnd = p.endOffset;
+
+    if (matchEnd > pStart && matchStart < pEnd) {
+      affected.push({ ...p, paragraphIndex: i });
+    } else if (i > 0) {
+      // Check if match includes the \n between paragraphs
+      const prevEnd = paragraphData[i - 1].endOffset;
+      const newlinePos = prevEnd; // The \n is at position prevEnd in combined text
+      if (matchStart <= newlinePos && matchEnd > newlinePos && matchEnd > pStart) {
+        affected.push({ ...p, paragraphIndex: i });
+      }
+    }
+  }
+  return affected;
+}
+
+/**
+ * Apply text to a paragraph's text nodes (single line only)
+ * Newlines should be handled at a higher level by splitting into multiple paragraphs
+ * to avoid over-justification issues from w:br elements in justified text
+ * Removes unused w:t elements to clean up the paragraph structure
+ */
+function applyTextToParagraph(paragraph, newText) {
+  const textNodesWithCtx = collectTextNodesWithContext(paragraph.element);
+
+  if (textNodesWithCtx.length === 0) {
     return;
   }
 
-  // If translation is similar length, distribute proportionally
-  if (Math.abs(translated.length - totalOriginal) < totalOriginal * 0.5) {
-    let cursor = 0;
-    for (let i = 0; i < textNodes.length; i++) {
-      const proportion = lengths[i] / totalOriginal;
-      const targetLength = Math.round(translated.length * proportion);
-      const slice = translated.slice(cursor, cursor + targetLength);
-      textNodes[i]['#text'] = slice;
-      cursor += targetLength;
+  // If newText still contains newlines (fallback case), replace with spaces
+  // This prevents w:br insertion which causes over-justification
+  const cleanText = newText.replace(/\n/g, ' ');
+
+  // Put ALL text in first node
+  textNodesWithCtx[0].textNode['#text'] = cleanText;
+
+  // Remove subsequent w:t elements from their runs
+  // This cleans up the paragraph structure and prevents any spacing issues
+  const toRemove = textNodesWithCtx.slice(1)
+    .filter(ctx => ctx.runContent && ctx.indexInRun >= 0);
+
+  // Group by runContent to handle multiple w:t elements in same run
+  const byRun = new Map();
+  for (const ctx of toRemove) {
+    if (!byRun.has(ctx.runContent)) {
+      byRun.set(ctx.runContent, []);
     }
-    // Put any remainder in last node
-    if (cursor < translated.length) {
-      textNodes[textNodes.length - 1]['#text'] += translated.slice(cursor);
-    }
-  } else {
-    // Length changed significantly, put everything in first node, clear others
-    textNodes[0]['#text'] = translated;
-    for (let i = 1; i < textNodes.length; i++) {
-      textNodes[i]['#text'] = '';
+    byRun.get(ctx.runContent).push(ctx);
+  }
+
+  // Process each run's removals in REVERSE index order to avoid shifting indices
+  for (const [runContent, items] of byRun) {
+    items.sort((a, b) => b.indexInRun - a.indexInRun);
+    for (const ctx of items) {
+      runContent.splice(ctx.indexInRun, 1);
     }
   }
+}
+
+/**
+ * Merge multiple paragraphs into one (for cross-paragraph replacements)
+ * Keeps first paragraph, removes others
+ * Splits newlines in replacement text into multiple paragraphs to avoid over-justification
+ */
+function mergeParagraphs(affectedParagraphs, newText, paragraphData) {
+  if (affectedParagraphs.length === 0) return;
+
+  const firstPara = affectedParagraphs[0];
+
+  // Remove subsequent paragraphs from their parents first
+  for (let i = 1; i < affectedParagraphs.length; i++) {
+    const p = affectedParagraphs[i];
+    if (p.parent && Array.isArray(p.parent) && p.index >= 0) {
+      // Find and remove this paragraph from parent
+      const idx = p.parent.indexOf(p.element);
+      if (idx >= 0) {
+        p.parent.splice(idx, 1);
+      }
+    }
+  }
+
+  // Handle newlines by creating multiple paragraphs
+  if (newText.includes('\n') && firstPara.parent && Array.isArray(firstPara.parent)) {
+    const lines = newText.split('\n');
+
+    // Apply first line to existing paragraph
+    applyTextToParagraph(firstPara, lines[0]);
+
+    // Find current index of first paragraph
+    const currentIdx = firstPara.parent.indexOf(firstPara.element);
+    if (currentIdx >= 0) {
+      // Create new paragraphs for remaining lines and insert after
+      // Insert in reverse order so indices stay correct
+      for (let i = lines.length - 1; i >= 1; i--) {
+        const newPara = createSingleLineParagraph(lines[i], firstPara.element);
+        firstPara.parent.splice(currentIdx + 1, 0, newPara);
+      }
+    }
+  } else {
+    // No newlines or no parent info, apply directly
+    applyTextToParagraph(firstPara, newText);
+  }
+}
+
+/**
+ * Normalize text for matching: collapse multiple newlines and surrounding whitespace
+ * This handles the difference between mammoth (uses \n\n between paragraphs) and our combined text (\n)
+ * Also handles patterns like \n\n \n\n (newlines with spaces between)
+ * Also removes tabs since mammoth renders tables with tabs but our extraction doesn't
+ */
+function normalizeForMatching(text) {
+  // First, collapse sequences of whitespace containing newlines into single \n
+  // This handles \n\n, \n \n, \n\n \n\n, etc.
+  let result = text.replace(/[\s]*\n[\s\n]*/g, '\n');
+  // Remove tabs (mammoth uses tabs in tables, but our extraction doesn't)
+  result = result.replace(/\t+/g, '');
+  return result;
+}
+
+/**
+ * Replace text in XML document using mammoth-style combined text matching
+ * @param {Object} doc - Parsed XML document
+ * @param {Object} replacements - Map of {"original text": "replacement text"} or {"key": ["val1", "val2"]}
+ */
+function replaceXmlDocText(doc, replacements) {
+  const occurrenceCounts = {};
+
+  // Build mammoth-style combined text view
+  const paragraphs = findParagraphs(doc);
+  if (paragraphs.length === 0) return;
+
+  let { combinedText, paragraphData } = buildCombinedText(paragraphs);
+
+  // Check if any replacement keys contain \n (cross-paragraph patterns)
+  const hasMultiLineKeys = Object.keys(replacements).some(k => k.includes('\n'));
+
+  if (hasMultiLineKeys) {
+    // Process multi-line patterns first (these may modify document structure)
+    // Build normalized combined text with matching offsets
+    let normalizedResult = buildNormalizedCombinedText(paragraphs);
+    let normalizedCombined = normalizedResult.combinedText;
+    let normalizedParagraphData = normalizedResult.paragraphData;
+
+    for (const [find, replace] of Object.entries(replacements)) {
+      if (!find.includes('\n')) continue;
+
+      // Normalize search key too (mammoth uses \n\n, we use \n)
+      const normalizedFind = normalizeForMatching(find);
+
+      let searchStart = 0;
+      let matchIndex;
+
+      while ((matchIndex = normalizedCombined.indexOf(normalizedFind, searchStart)) !== -1) {
+        const matchEnd = matchIndex + normalizedFind.length;
+        const affected = findAffectedParagraphs(matchIndex, matchEnd, normalizedParagraphData);
+
+        if (affected.length > 0) {
+          // Get replacement value (handle arrays)
+          let replaceValue;
+          if (Array.isArray(replace)) {
+            const count = occurrenceCounts[find] || 0;
+            replaceValue = replace[Math.min(count, replace.length - 1)];
+            occurrenceCounts[find] = count + 1;
+          } else {
+            replaceValue = replace;
+          }
+
+          // Merge paragraphs and apply replacement
+          mergeParagraphs(affected, replaceValue, normalizedParagraphData);
+
+          // Rebuild combined text after modification
+          const newParagraphs = findParagraphs(doc);
+          normalizedResult = buildNormalizedCombinedText(newParagraphs);
+          normalizedCombined = normalizedResult.combinedText;
+          normalizedParagraphData = normalizedResult.paragraphData;
+
+          // Continue searching from beginning (structure changed)
+          searchStart = 0;
+        } else {
+          searchStart = matchEnd;
+        }
+      }
+    }
+  }
+
+  // Process single-line patterns (paragraph by paragraph)
+  // Rebuild paragraph data in case structure changed
+  const finalParagraphs = findParagraphs(doc);
+  for (const p of finalParagraphs) {
+    const textNodes = collectTextNodes(p.element);
+    if (textNodes.length === 0) continue;
+
+    const originalText = textNodes.map(n => n['#text'] || '').join('');
+    if (!originalText) continue;
+
+    // Apply single-line replacements only
+    const singleLineReplacements = {};
+    for (const [find, replace] of Object.entries(replacements)) {
+      if (!find.includes('\n')) {
+        singleLineReplacements[find] = replace;
+      }
+    }
+
+    const replacedText = replaceAllText(originalText, singleLineReplacements, occurrenceCounts);
+
+    if (replacedText !== originalText) {
+      // Handle newlines by splitting into multiple paragraphs to avoid over-justification
+      if (replacedText.includes('\n') && p.parent && Array.isArray(p.parent) && p.index >= 0) {
+        const lines = replacedText.split('\n');
+
+        // Apply first line to existing paragraph
+        applyTextToParagraph({ element: p.element }, lines[0]);
+
+        // Create new paragraphs for remaining lines and insert after
+        // Find current index (may have changed if earlier paragraphs were modified)
+        const currentIdx = p.parent.indexOf(p.element);
+        if (currentIdx >= 0) {
+          // Insert in reverse order so indices stay correct
+          for (let i = lines.length - 1; i >= 1; i--) {
+            const newPara = createSingleLineParagraph(lines[i], p.element);
+            p.parent.splice(currentIdx + 1, 0, newPara);
+          }
+        }
+      } else {
+        applyTextToParagraph({ element: p.element }, replacedText);
+      }
+    }
+  }
+}
+
+/**
+ * Apply multiple string replacements to text
+ * @param {string} text - Original text
+ * @param {Object} replacements - Map of {"find": "replace"} or {"find": ["replace1", "replace2"]}
+ * @param {Object} occurrenceCounts - Tracks occurrence count per key for array replacements
+ * @returns {string} Text with all replacements applied
+ */
+function replaceAllText(text, replacements, occurrenceCounts = {}) {
+  let result = text;
+  for (const [find, replace] of Object.entries(replacements)) {
+    if (Array.isArray(replace)) {
+      // Handle array: each occurrence gets next item, use last item if exhausted
+      let searchStart = 0;
+      let output = '';
+      let idx;
+      while ((idx = result.indexOf(find, searchStart)) !== -1) {
+        output += result.slice(searchStart, idx);
+        const count = occurrenceCounts[find] || 0;
+        const replaceValue = replace[Math.min(count, replace.length - 1)];
+        output += replaceValue;
+        occurrenceCounts[find] = count + 1;
+        searchStart = idx + find.length;
+      }
+      output += result.slice(searchStart);
+      result = output;
+    } else {
+      result = result.split(find).join(replace);
+    }
+  }
+  return result;
 }

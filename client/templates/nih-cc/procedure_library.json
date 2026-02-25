@@ -1,0 +1,741 @@
+{
+  "bone_marrow_aspiration_biopsy": {
+    "primary_name": "Bone Marrow Aspiration/Biopsy",
+    "synonyms": [
+      "bone marrow biopsy",
+      "bone marrow aspiration", 
+      "BMA",
+      "BMBx",
+      "BMA/BMBx",
+      "marrow biopsy",
+      "bone marrow sampling"
+    ],
+    "procedure_text": "We will ask you to have a bone marrow biopsy and will collect a small amount of bone marrow tissue and cells from your {{site}}. Bone marrow is the soft material in the center of bones that makes new blood cells. The area will be numbed with lidocaine. Once numb, a large needle will be inserted through a small cut in your skin. We will then take about {{volume}} of marrow out of your bone (this is called aspiration). We may also take a small piece of bone. We will check your pain level during the procedure, so please tell us how you are doing. We may give you more numbing medicine if needed. The procedure will take about {{duration}} to complete. We will call you in about {{followup_time}} to see how you are doing.",
+    "risks_text": "The bone marrow collection and biopsy may cause pain, bruising, bleeding, and infection. Soreness may last for a couple of days. You may have more pain, bleeding, and bruising if you have both aspiration and biopsy rather than just the aspiration. If your pain is severe or if you have a fever, tell the study team right away.",
+    "variables": {
+      "site": {"default": "hip"},
+      "volume": {"default": "4 tablespoons"},
+      "duration": {"default": "1 hour"},
+      "followup_time": {"default": "2 days"}
+    }
+  },
+  "blood_draw": {
+    "primary_name": "Blood Draw",
+    "synonyms": [
+      "blood collection", "phlebotomy", "blood test", "blood sample", 
+      "venipuncture", "blood work"
+    ],
+    "procedure_text": "You will have blood drawn from a vein. This may require a needle stick in your arm or hand. If you already have an IV in place, we might be able to use that instead. The amount of blood we will draw is about {{amount}} at {{visit_timing}}.",
+    "risks_text": "Blood draws may cause pain, redness, bruising, or infection where we put the needle. Some people might faint, but this is rare. We can put numbing cream on the area, so the needle won't hurt as much.",
+    "variables": {
+      "amount": {},
+      "visit_timing": {}
+    }
+  },
+  "allergic_reaction": {
+    "primary_name": "Allergic Reaction",
+    "synonyms": [
+      "drug allergy", "medication allergy", "hypersensitivity reaction", 
+      "adverse reaction", "allergic response"
+    ],
+    "procedure_text": "",
+    "risks_text": "You might be allergic to the study drug. You could get a mild reaction, like a skin rash. Sometimes, it could be worse, like throat swelling, low blood pressure, or trouble breathing. In rare cases, a severe reaction could cause death.",
+    "variables": {
+      "study_drug": {"default": "study drug"}
+    }
+  },
+  "anesthesia": {
+    "primary_name": "Anesthesia",
+    "synonyms": [
+      "general anesthesia", "sedation", "being put to sleep", "anesthetic",
+      "general anesthetic", "going under anesthesia"
+    ],
+    "procedure_text": "",
+    "risks_text": "We will give you anesthesia to make you sleep during the procedure. Risks include slower breathing and breathing in saliva or stomach contents, which is called aspiration. Other risks are a drop in heart rate or blood pressure. If these happen, the doctor may put a longer breathing tube into your mouth and windpipe. They might use a machine to help you breathe and give you medicine to raise your blood pressure. Please tell us if you or any family member has had problems with sedation or anesthesia before.",
+    "variables": {}
+  },
+  "anesthesia_pediatrics": {
+    "primary_name": "Anesthesia in Pediatrics",
+    "synonyms": [
+      "pediatric anesthesia", "anesthesia in children", "child anesthesia",
+      "anesthesia for children", "pediatric sedation", "anesthesia for kids"
+    ],
+    "procedure_text": "",
+    "risks_text": "The FDA has given a safety warning about using anesthesia in children, especially if it lasts more than 3 hours or if it is used more than once, even for a short time. Studies have shown that animals can have learning and behavior problems after getting anesthesia for a long time or repeatedly. These problems might also happen in children. So far, no problems have been found after just one short use of anesthesia. An anesthesiologist will discuss the risks and benefits of the anesthesia with you for your child in this study.",
+    "variables": {}
+  },
+  "local_anesthesia": {
+    "primary_name": "Local Anesthesia",
+    "synonyms": [
+      "local anesthetic", "numbing medicine", "lidocaine injection", 
+      "local numbing", "novocaine", "local injection"
+    ],
+    "procedure_text": "",
+    "risks_text": "Biopsies can be done with local anesthesia. Possible side effects include feeling sleepy, headaches, blurred vision, muscle twitching or shivering, ongoing numbness, weakness, or a pins and needles feeling. These side effects usually go away quickly.",
+    "variables": {}
+  },
+  "privacy_confidentiality_risk": {
+    "primary_name": "Invasion of Privacy/Breach in Confidentiality",
+    "synonyms": [
+      "privacy breach", "confidentiality breach", "data breach", 
+      "privacy risk", "confidentiality risk", "information security risk"
+    ],
+    "procedure_text": "",
+    "risks_text": "Because we will collect personal, identifiable information about you, it is possible that people who are not supposed to see your information might somehow get access to it. We will take precautions to prevent this, but we cannot be completely sure it won't happen. To minimize this chance, we will label your information with a study number instead of your name or medical record number. All the information we collect about you will be securely stored, such as in locked cabinets or password-protected computer files.",
+    "variables": {},
+    "special_handling": "include_once_in_risks_discomforts"
+  },
+  "audio_video_recording": {
+    "primary_name": "Audio-taping and/or Video-recording",
+    "synonyms": [
+      "audio recording", "video recording", "videotaping", "audiotaping",
+      "interview recording", "session recording", "filming"
+    ],
+    "procedure_text": "We will record your interview. After the interview, we will create a written transcript from the recording. Your name will not be included in the transcript. Once the transcript is done, the recording will be destroyed. We would also like to videotape one of your sessions. The videotape will help us review and study your body language and reactions during the session. The videotape will be stored until the study is finished, and then it will be destroyed. Letting us videotape one of your sessions is optional.",
+    "risks_text": "REFERENCES: privacy_confidentiality_risk",
+    "variables": {}
+  },
+  "bronchoscopy": {
+    "primary_name": "Bronchoscopy",
+    "synonyms": [
+      "bronchoscopic examination", "lung scope", "respiratory endoscopy",
+      "bronchoscopic procedure", "flexible bronchoscopy"
+    ],
+    "procedure_text": "If you decide to join this study, you will have a bronchoscopy. We will pass a long tube with a light on it through your nose or mouth and into your lungs. Before we begin, we will use a numbing spray in your nose and throat. An IV (intravenous) needle with a tube attached will be put in your arm. The IV will give you medication to make you drowsy and to help you stay comfortable during the procedure. The test will take about 20-40 minutes to complete. You can go home once you're fully awake, but someone else must drive you home.{{bal_procedure_text}}{{biopsy_procedure_text}}",
+    "risks_text": "The bronchoscopy is not typically painful, but it may cause throat numbness, coughing, a sore throat, and fever. Sometimes, the bronchoscopy can cause your blood oxygen levels to drop. We will watch your oxygen levels during the entire procedure and afterwards until you are recovered. The numbing spray may make your mouth feel funny and has an unpleasant taste. Common side effects of the drug given to you through the IV include feeling dizzy, faint, lightheaded, tired, or out of breath. We will watch you closely throughout the procedure, and we will treat any side effects that happen.{{bal_risks_text}}{{biopsy_risks_text}}",
+    "variables": {
+      "bal_procedure_text": {
+        "conditional": "While the tube is in your lungs, we will do a procedure called bronchoalveolar lavage (BAL) to collect cells to look at in the lab. We do this by putting a small amount of salt water in your lungs through the tube and then pulling it back out."
+      },
+      "biopsy_procedure_text": {
+        "conditional": "We also plan to collect small pieces of lung tissue during the bronchoscopy. We will do this by inserting very small tweezers (\"forceps\") into your lung through the bronchoscope. We will then collect several very small pieces of your lung tissue.{{fluoroscopy_text}}"
+      },
+      "fluoroscopy_text": {
+        "conditional": "We will use x-ray pictures to see where the forceps are inside the lung while we collect the samples."
+      },
+      "bal_risks_text": {
+        "conditional": "In addition to the risks of the bronchoscopy, you may have a slight fever after the bronchoscopy with BAL. This usually goes away quickly. If it does not go away, you should tell the study team or your doctor."
+      },
+      "biopsy_risks_text": {
+        "conditional": "The biopsy may cause bleeding in your lung. This usually is only a small amount and will stop on its own. You may cough up small amounts of blood for a few days. Rarely, (less than 1 in 100 times) the biopsy can cause a pneumothorax. This is where the lung is punctured and may partially collapse. If this happens, we may need to insert a tube called a chest tube to re-expand your lung. A chest tube is a tube placed through your skin into the space between your lung and your chest wall. Depending on how you are doing, we may need to watch you in the hospital."
+      }
+    }
+  },
+  "central_line": {
+    "primary_name": "Central Line",
+    "synonyms": [
+      "central catheter", "central venous catheter", "tunneled catheter", 
+      "central venous line", "CVC", "central access", "port catheter"
+    ],
+    "procedure_text": "Before your {{procedure_reason}}, you may need to have a \"tunneled\" catheter inserted. This type of catheter is a thin, long tube made of flexible silicone rubber that is surgically put into one of the main blood vessels leading to your heart. One end of the catheter is inserted through a small cut into the main blood vessel leading into your heart. The other end of the catheter is tunneled under your skin and comes out through a second small cut in your skin.\n\nYour doctor or nurse will explain the procedure in detail and ask you to sign a separate consent form. Before you go home, we will give you instructions on how to care for the catheter.",
+    "risks_text": "Many people get central catheters, and they are generally well tolerated. The most common risk is infection, which can be treated with antibiotics or by removing the catheter. Other risks include blood clots inside or near the catheter. These clots can break off and travel to the veins near your neck, face, chest, arms, or lungs (called a pulmonary embolism). If you get blood clots, your doctor will treat you, possibly with blood thinners. Uncommon side effects include swelling of the face and arm, and/or lung collapse. If your lung collapses, you might need a tube placed between your ribs to allow the lung to re-expand. Rarely, the catheter can break, or air could get inside it and travel to the veins near your neck, face, chest, arms, or lungs.",
+    "variables": {
+      "procedure_reason": {}
+    }
+  },
+  "chart_review": {
+    "primary_name": "Chart Review",
+    "synonyms": [
+      "medical record review", "record review", "chart abstraction", 
+      "medical chart review", "clinical record review", "EMR review"
+    ],
+    "procedure_text": "As part of this study, we will collect some information from your medical record. This will include your age, sex, race, height and weight, pain level, number of blood transfusions, medicines you are taking and the results of any lab or diagnostic tests.",
+    "risks_text": "REFERENCES: privacy_confidentiality_risk",
+    "variables": {}
+  },
+  "cognitive_testing": {
+    "primary_name": "Cognitive Testing",
+    "synonyms": [
+      "neuropsychological testing", "cognitive assessment", "memory testing",
+      "mental function testing", "psychological testing", "neurocognitive testing"
+    ],
+    "procedure_text": "You will have tests to check your mood, memory, attention, and mental functioning. We will ask you to answer questions, take paper and pencil tests, and do a test on the computer. This testing will take about {{duration}} to complete.",
+    "risks_text": "You may feel frustrated while taking the tests. These tests are meant to be challenging. You can take breaks as needed.",
+    "variables": {
+      "duration": {}
+    }
+  },
+  "conscious_sedation": {
+    "primary_name": "Conscious Sedation",
+    "synonyms": [
+      "moderate sedation", "twilight sedation", "procedural sedation",
+      "IV sedation", "monitored anesthesia care", "MAC"
+    ],
+    "procedure_text": "",
+    "risks_text": "The most common risks of conscious sedation last up to a few hours after being given can include drowsiness, feeling slow or sluggish, low blood pressure, headache, and nausea.",
+    "variables": {}
+  },
+  "discarded_tissue": {
+    "primary_name": "Discarded Tissue",
+    "synonyms": [
+      "surgical tissue collection", "excess tissue collection", "tissue sampling",
+      "surgical waste tissue", "leftover tissue"
+    ],
+    "procedure_text": "Normally during surgery small amounts of tissue are removed and thrown away. At the end of your surgery, instead of throwing it away, we will keep that tissue. Taking your tissue for this study will not affect your surgery. No extra tissue will be taken from you for this study.",
+    "risks_text": "",
+    "variables": {}
+  },
+  "incidental_findings": {
+    "primary_name": "Discovery of Previously Unknown Condition(s)",
+    "synonyms": [
+      "incidental findings", "unexpected findings", "unrelated findings",
+      "unknown medical condition discovery", "accidental discovery"
+    ],
+    "procedure_text": "",
+    "risks_text": "As a result of the study tests, we may discover that you have a medical condition that you did not know about. If we find something, we will inform you. We will discuss the findings with you and explain your options. You may be advised to follow up with your regular doctor or other specialists for future care.",
+    "variables": {}
+  },
+  "dose_escalation": {
+    "primary_name": "Dose Escalation",
+    "synonyms": [
+      "dose finding", "dose escalation study", "phase I dosing",
+      "escalating doses", "dose titration"
+    ],
+    "procedure_text": "How much {{drug_name}} you get will depend on when you join the study. We will start by using a low dose when people join the study. If participants on one particular dose don't have serious side effects, the next group of participants will get a higher dose.\n\nIf you have a serious side effect, you will stop taking the drug. You will be asked to continue in the study for the rest of the visits even if you stop taking the study drug.",
+    "risks_text": "",
+    "variables": {
+      "drug_name": {}
+    }
+  },
+  "echocardiogram": {
+    "primary_name": "Transthoracic Echocardiogram",
+    "synonyms": [
+      "echocardiogram", "echo", "TTE", "cardiac echo", 
+      "heart ultrasound", "cardiac ultrasound"
+    ],
+    "procedure_text": "You {{may_will}} need to have an echocardiogram done as part of this study. An echocardiogram is a painless test that uses sound waves to take a picture of your heart. During this test, we will put some jelly on your chest. We will then place the ultrasound probe on your chest to take the picture. We may ask you to lie on your side to get a better picture. For some pictures, we may put the probe on the upper part of your abdomen and push down firmly. This can be uncomfortable. The scan takes about 30 minutes to complete.",
+    "risks_text": "Other than mild discomfort during the test, there are no known risks to an echocardiogram. REFERENCES: incidental_findings",
+    "variables": {
+      "may_will": {}
+    }
+  },
+  "ecg": {
+    "primary_name": "Electrocardiogram",
+    "synonyms": [
+      "ECG", "EKG", "12-lead ECG", "electrocardiograph", "heart tracing"
+    ],
+    "procedure_text": "An electrocardiogram (ECG) is a test that looks at the electrical activity of your heart. You will need to lie still for about 5 minutes. We will place electrodes on your chest, arms, and legs. Electrodes are small stickers attached to wires that go to the machine. The signals are recorded by the machine. If you have a lot of hair on your chest, it may hurt a little bit when we remove the stickers.",
+    "risks_text": "Other than having some minor skin irritation from the electrodes, there are no known risks related to the ECG.",
+    "variables": {}
+  },
+  "exercise_testing": {
+    "primary_name": "Exercise Testing",
+    "synonyms": [
+      "exercise test", "stress test", "treadmill test", "exercise stress test",
+      "cardiac stress test", "exercise ECG", "graded exercise test"
+    ],
+    "procedure_text": "At study visit {{visit_number}}, you will have an exercise test. This test involves walking and running on a treadmill while hooked up to a monitor. The monitor will measure your heart rate, heart rhythm, and blood pressure. You may also be asked to wear a mouthpiece and a clip on your nose so that we can check your breathing. To start, the treadmill will be set at a slow walk speed but will change to slightly faster speeds and higher inclines (slope) every few minutes. You will be encouraged to give as much effort as you can and to keep going until you feel too tired to continue. Once you reach that point, you can tell the study team, and they will slow down the treadmill and lessen the incline. We will ask you to keep walking on the treadmill until you are comfortable walking again. Your blood pressure, heart rate, and breathing rates will still be checked for 15 minutes after you complete the test.",
+    "risks_text": "The exercise test may cause muscle soreness, dizziness, shortness of breath, lightheadedness, abnormal heart rhythm, chest pain, or you might feel faint. You could also trip or fall while on the treadmill. You will be watched during the entire test by the study doctor.",
+    "variables": {
+      "visit_number": {}
+    }
+  },
+  "fibroscan": {
+    "primary_name": "Fibroscan",
+    "synonyms": [
+      "FibroScan", "liver elastography", "transient elastography",
+      "liver stiffness measurement", "hepatic elastography"
+    ],
+    "procedure_text": "A Fibroscan® exam is like a regular ultrasound but it only looks at the liver. It has a special probe to look at the toughness of the liver.\n\nYou will be asked to lie flat on the exam table. We will put a small amount of warm jelly on your skin. We will slide a special probe over your liver so the Fibroscan® can measure the toughness of your liver.",
+    "risks_text": "",
+    "variables": {}
+  },
+  "fluorescein_angiography": {
+    "primary_name": "Fluorescein Angiography",
+    "synonyms": [
+      "FA", "fundus fluorescein angiography", "retinal angiography",
+      "eye angiography", "fluorescein dye test"
+    ],
+    "procedure_text": "This test is done to confirm your diagnosis of {{disease}}. A small amount of dye will be injected into your arm. Your skin may turn pale yellow for a few hours, and your urine will turn a bright yellow-orange. This is normal and may take 2 days to wear off. We will take special pictures of the back of your eye, which will show the dye in the blood vessels of your eye. If you are allergic to fluorescein dye, please tell us. You will not be able to be in this study if you have a fluorescein allergy.",
+    "risks_text": "For angiography, you will get an injection (shot) in your arm of a dye that glows when exposed to certain kinds of light. You may have some discomfort from the bright lights that will be shined into your eyes to take the pictures. You may have mild discomfort from the needle that injects the dye. The dye may leak into the tissue in your arm near the needle stick, causing discomfort that lasts only a short time. It is also possible, but not likely, that you will get an infection. Some people feel dizzy and may faint during the procedure. Occasionally, people have mild nausea. You may have an allergic reaction to the dye. This can include vomiting, fever, hives/rash, itching, and trouble breathing. Very rarely, people have a serious allergic reaction to the dye. We will watch you closely during and after this procedure for any signs of side effects.",
+    "variables": {
+      "disease": {}
+    }
+  },
+  "focus_group": {
+    "primary_name": "Focus Group",
+    "synonyms": [
+      "group discussion", "focus group discussion", "group interview",
+      "facilitated group discussion", "group session"
+    ],
+    "procedure_text": "You will be asked to take part in a focus group discussion led by one of the investigators. The focus group will have about {{group_size}} members. The discussion will last for about {{duration}}. During that time, you and the other group members will be asked questions about your opinions and experiences with {{topic}}. We ask you to keep what is said during the group discussion confidential between the focus group members only.",
+    "risks_text": "REFERENCES: privacy_confidentiality_risk",
+    "variables": {
+      "group_size": {},
+      "duration": {},
+      "topic": {}
+    }
+  },
+  "hiv_testing": {
+    "primary_name": "HIV Testing",
+    "synonyms": [
+      "HIV test", "human immunodeficiency virus testing", "AIDS testing",
+      "HIV screening", "HIV blood test"
+    ],
+    "procedure_text": "As part of this study, we will test you for infection with the human immunodeficiency virus (HIV), the virus that causes AIDS. If you are infected with HIV, you will {{eligibility_status}} be able to be in this study. We will tell you what the results mean, how to find care, how to avoid infecting others, how we report HIV infection, and the importance of informing your partners who are at possible risk because of your HIV infection.",
+    "risks_text": "",
+    "variables": {
+      "eligibility_status": {}
+    }
+  },
+  "interview": {
+    "primary_name": "Interview",
+    "synonyms": [
+      "research interview", "clinical interview", "structured interview",
+      "questionnaire", "survey interview", "one-on-one interview"
+    ],
+    "procedure_text": "We will interview you in a private location for about {{duration}}. We will ask you questions about your experiences with {{topics}}.",
+    "risks_text": "Some of the questions may be upsetting or make you feel uncomfortable. You do not have to answer any questions you do not want to answer. You can stop the interview at any time. REFERENCES: privacy_confidentiality_risk",
+    "variables": {
+      "duration": {},
+      "topics": {}
+    }
+  },
+  "iv_catheter": {
+    "primary_name": "IV (Intravenous Catheter)",
+    "synonyms": [
+      "intravenous catheter", "IV line", "IV insertion", "peripheral IV",
+      "intravenous line", "IV access", "IV placement", "peripheral catheter"
+    ],
+    "procedure_text": "We will put a small plastic tube called an intravenous (IV) catheter into a vein in your arm using a needle.",
+    "risks_text": "The risks of putting an IV in your arm include temporary pain, bleeding, and bruising where the IV goes into your skin. There is a small chance that fluid might leak into the tissue near the IV, which can cause swelling and discomfort. Rarely, the IV site might get infected. If you get an infection, we may have to give you antibiotics.",
+    "variables": {}
+  },
+  "leukapheresis": {
+    "primary_name": "Leukapheresis",
+    "synonyms": [
+      "white blood cell collection", "leukocyte collection", "WBC collection",
+      "apheresis", "white cell apheresis", "immune cell collection"
+    ],
+    "procedure_text": "Leukapheresis is a procedure where we separate white blood cells, a type of immune cell, from your blood using a machine.\n\nTwo large needles will be placed in your veins near each elbow. These needles are the same size as those used by the Red Cross for blood donations. The needles are connected to a machine that will process your blood. During the procedure, your blood will flow from one arm to the machine and back to your other arm. The machine will remove some of your white blood cells and return the rest of your blood to your body.\n\nSometimes we use a central line instead of needles in your arms. A central line is a large catheter placed in your neck or under your collarbone.\n\nTo keep your blood from clotting inside the machine, we add a chemical called citrate. We also add some saline (fluid) to your blood. The amount of saline depends on your blood pressure and how long the procedure takes. Your kidneys will remove the extra saline quickly, so it won't affect you. The citrate might cause tingling in your lips and fingers. If this happens, we will give you calcium (like Tums) to stop the symptoms.\n\nWe will use standard medical procedures to collect your white blood cells. We will check your pulse, blood pressure, and temperature before and after the procedure. You will also be asked to tell us about any new symptoms, like lightheadedness, tingling lips or fingers, or shortness of breath. The procedure could last about 2-4 hours, and you will be watched for about 1 hour or more afterward. You will return for a check-up.",
+    "risks_text": "The risks of leukapheresis include pain, bruising, lightheadedness, dizziness, nausea, vomiting, and chills. Bruising may last up to 72 hours. You might have tingling around your mouth, fingers, or toes, or mild muscle cramps because your blood calcium may drop slightly from the blood thinner used during the procedure. These symptoms can be treated by stopping the procedure temporarily or by giving you a calcium pill.\n\nLeukapheresis uses a completely closed sterile system. We minimize the risk of infection by cleaning your skin before inserting the needle. No infections from leukapheresis have been reported in thousands of procedures done over the last 10 years at the NIH.\n\nRarely, the machine can malfunction and prevent the return of your blood to your body. The amount of blood lost would be very small and is not harmful. It is also rare for people to faint, have seizures, or have air trapped in the bloodstream. Nerve damage may occur where we place the needle, but this is very rare. So far, there have been no cases of permanent nerve damage with leukapheresis at the NIH.\n\nDuring leukapheresis, your platelet count may drop because platelets are collected with the white blood cells. Platelets help your blood to clot. Taking aspirin while you have a lowered platelet count may increase your chance of bleeding. Therefore, you should not take aspirin or drugs that contain aspirin for 2 weeks after leukapheresis unless your doctor approves it.",
+    "variables": {}
+  },
+  "liver_biopsy_percutaneous": {
+    "primary_name": "Liver Biopsy, Percutaneous",
+    "synonyms": [
+      "percutaneous liver biopsy", "needle liver biopsy", "transcutaneous liver biopsy",
+      "liver needle biopsy", "percutaneous hepatic biopsy"
+    ],
+    "procedure_text": "The percutaneous liver biopsy will be done with you lying on your back. The doctor will clean the skin over your liver on the right side of your chest. You will be awake for the procedure. We will give you a numbing medication. When your skin is numb, the doctor will insert the liver biopsy needle into your skin. The doctor will then quickly pass the needle into and out of your liver to take the biopsy.\n\nThe biopsy itself is a quick procedure. You may or may not feel it, but some people feel slight pain when the needle enters the liver.\n\nAfter the biopsy, you will be asked to roll onto your right side and lie on that side for {{right_side_time}}. This puts pressure on the biopsy site and helps stop any bleeding. Then you will need to stay on your back in bed for {{bed_rest_time}}.",
+    "risks_text": "",
+    "variables": {
+      "right_side_time": {},
+      "bed_rest_time": {}
+    }
+  },
+  "liver_biopsy_transjugular": {
+    "primary_name": "Liver Biopsy, Transjugular",
+    "synonyms": [
+      "transjugular liver biopsy", "TJLB", "transjugular hepatic biopsy",
+      "jugular vein liver biopsy", "transvenous liver biopsy"
+    ],
+    "procedure_text": "We will access your liver through a large vein in your neck. This procedure is done while you are sedated. We will insert a needle into a large vein in your neck area. Through this site, a thin tube (catheter) will be moved along the large veins of your chest until it reaches the veins of your liver. About {{tissue_amount}} of liver tissue will be taken using a needle. After the biopsy, you will need to stay in bed for {{bed_rest_time}}.",
+    "risks_text": "",
+    "variables": {
+      "tissue_amount": {},
+      "bed_rest_time": {}
+    }
+  },
+  "lumbar_puncture": {
+    "primary_name": "Lumbar Puncture",
+    "synonyms": [
+      "spinal tap", "LP", "cerebrospinal fluid collection", "CSF tap",
+      "spinal fluid collection"
+    ],
+    "procedure_text": "You will have a lumbar puncture (also called a \"spinal tap\") so we can get cerebrospinal fluid (CSF) samples at visits {{visit_timing}}. We will insert a small needle into your lower back. Then we will help you lie on your side or sit up. We will clean the lower part of your back with antiseptic, and then we will inject a small amount of local anesthetic to numb the area. Once numb, a very thin needle will be inserted into the spinal canal in your lower back (well below where the spinal cord ends). About {{volume}} of spinal fluid will be removed for analysis and storage. Your body usually replaces this fluid within 1-2 hours.\n\nAfter the lumbar puncture (LP) is complete, you will be watched for about 30 minutes. To prevent side effects, it is important that you do not do any strenuous physical activity for 24 hours after the procedure. For example, you should not do any lifting, bending, housework, gardening, or exercising.",
+    "risks_text": "The lumbar puncture (LP) may cause pain where the needle goes into your skin and where the spinal fluid is taken. There is a small risk of infection or bleeding.\n\nYou may get a headache after the LP. About 1 in 3 adults report a headache after an LP. To minimize the risk of a headache, the doctor will use a small needle during the procedure. The doctor may also prescribe bed rest for one or more hours afterward. If you get a headache, it is usually mild and can be controlled with bed rest, drinking lots of fluids, and taking a pain pill, such as acetaminophen. Rarely, the headache is severe and may require additional treatment with a \"blood patch.\" In this procedure, a small amount of your own blood is injected into the lumbar puncture site. This usually stops the headache.\n\nA rare but serious complication of an LP is known as a medullary herniation, which can cause death. This can happen if the LP is done when the pressure inside your head is higher than normal (such as when there is a brain tumor). Increased pressure inside your head is very unlikely. We will not do the LP if there are any signs that you have increased pressure inside your head. We will also not do the LP if you have a skin infection in your lower back area, or if you have bone defects of the lower back (including severe scoliosis) which would make an LP difficult to do.\n\nTo minimize these risks, the LP will be done by a medical professional specifically trained to perform this procedure. REFERENCES: allergic_reaction",
+    "variables": {
+      "visit_timing": {},
+      "volume": {}
+    }
+  },
+  "mri_scan": {
+    "primary_name": "Magnetic Resonance Imaging",
+    "synonyms": [
+      "MRI", "MRI scan", "magnetic resonance imaging", "MR imaging",
+      "fMRI", "functional MRI", "MRS", "MR spectroscopy", "brain MRI"
+    ],
+    "procedure_text": "At visit {{visit_timing}}, you will have an MRI (Magnetic Resonance Imaging) done at {{location}}. An MRI makes pictures of the inside of your body using strong magnets instead of X-ray energy. At each scan, you will be asked to fill out a screening form to confirm that it is safe for you to have the scan. You will also be asked to remove any metallic objects you are wearing (such as watches, earrings, or piercings). We may ask you to change into a hospital gown.\n\nThen you'll be asked to lie on a narrow bed that will move into the MRI scanner.{{head_padding_text}} The scanner is a long, narrow tube that is open at each end. Once you are comfortable, the table will be moved into the scanner. You will need to lie still on the table during the scan. The scan will take about {{duration}} to complete. You will hear normal \"hammering,\" clicking, and squealing noises during the scan. We will give you earplugs or earmuffs to muffle the sound. You will be able to communicate with the technician running the scan the entire time. We will also give you an emergency button to squeeze at any time if you want the scan to stop.{{functional_mri_text}}{{spectroscopy_text}}{{positioning_assistance_text}}{{gadolinium_procedure_text}}{{investigational_mri_text}}{{mri_pet_combined_text}}",
+    "risks_text": "You might be at risk for injury from the MRI magnet if you have certain kinds of metal in your body. It may be unsafe for you to have an MRI scan if you have:\n•\tPacemakers or other implanted electrical devices\n•\tBrain stimulators\n•\tSome types of dental implants\n•\tAneurysm clips (metal clips on the wall of a large artery)\n•\tMetal prostheses (including metal pins and rods, heart valves, and cochlear implants)\n•\tPermanent eyeliner\n•\tTattoos\n•\tAn implanted delivery pump\n•\tShrapnel fragments (pieces of metal from injuries)\n•\tSmall metal fragments in the eye (common for welders and metal workers)\n\nYou will be screened for these conditions before having any MRI scan. If you have a question about metal in your body, you should tell us. You will be asked to fill out an MRI screening form before each MRI scan you have.\n\nIn addition, all magnetic objects (like watches, coins, jewelry, and credit cards) must be removed before you enter the MRI scan room.\n\nIf you are afraid of confined (small, cramped) spaces, you may get anxious during an MRI. If you have back problems, you may have back pain or discomfort from lying in the scanner.\n\nThe noise from the scanner is loud enough to damage your hearing, especially if you already have hearing loss. We will give you hearing protection. If the hearing protection comes loose during the scan, you should let us know right away.\n\nThere are no known long-term risks of MRI scans.{{gadolinium_risks_text}}{{seven_tesla_risks_text}}",
+    "variables": {
+      "visit_timing": {},
+      "location": {},
+      "duration": {},
+      "head_padding_text": {
+        "conditional": " Before moving you into the scanner, special padding will be placed around your head to help keep your head still."
+      },
+      "functional_mri_text": {
+        "conditional": " Functional MRI (fMRI) lets us see which parts of your brain are used when you do a task. A device called a \"coil\" will be placed over your head. For your fMRI scan, you will {{fmri_task}}.{{fmri_screen_text}}"
+      },
+      "fmri_task": {},
+      "fmri_screen_text": {
+        "conditional": " There is a computer screen that you can see when you are inside the scanner. The screen will show you task information."
+      },
+      "spectroscopy_text": {
+        "conditional": " Magnetic resonance spectroscopy (MRS) lets us take pictures of various chemicals in your {{mrs_body_part}}. We will place soft padding or a coil around your {{mrs_body_part}}."
+      },
+      "mrs_body_part": {},
+      "positioning_assistance_text": {
+        "conditional": " It is very important that you do not move your {{positioning_body_part}} inside the scanner. We will use padding around your {{positioning_body_part}} to help keep it in place.{{mouth_bar_text}}"
+      },
+      "positioning_body_part": {},
+      "mouth_bar_text": {
+        "conditional": " We may place a bar in your mouth to help keep your head still."
+      },
+      "gadolinium_procedure_text": {
+        "conditional": " During part of the MRI we will give you gadolinium, a contrast agent, through an intravenous (IV) catheter (small tube). It will be done for {{gadolinium_purpose}} uses.{{pregnancy_gadolinium_text}}"
+      },
+      "gadolinium_purpose": {},
+      "pregnancy_gadolinium_text": {
+        "conditional": " We do not know if MRI with contrast is completely safe for a developing fetus. Therefore, all women who could become pregnant will have a pregnancy test done no more than 24 hours before each MRI scan with contrast. We will not do the scan if your pregnancy test is positive."
+      },
+      "investigational_mri_text": {
+        "conditional": " We will use the MRI in this study for research purposes. This means that the way the MRI is making the images may be different than what is normally done in a routine clinical scan. We plan to use {{investigational_components}}. These are the parts of the machine that help make or analyze the image. These MRI research tools have not been cleared by the FDA and are considered investigational.{{investigational_machine_text}} However, all MRI scans done under this protocol will be done within the stated FDA safety parameters and meet all relevant safety guidelines."
+      },
+      "investigational_components": {},
+      "investigational_machine_text": {
+        "conditional": " The MRI machine that we will use is also considered investigational (not yet cleared by the FDA)."
+      },
+      "mri_pet_combined_text": {
+        "conditional": " The MRI and PET scans may be done on a combined MRI-PET scanner during the same session."
+      },
+      "gadolinium_risks_text": {
+        "conditional": "\n\nGadolinium-based contrast agents (GBCAs) used in MRIs are generally safe, but there are some risks to consider:\n•\tSide effects\nCommon side effects include headache, nausea, dizziness, and a cold feeling at the injection site. Less common side effects include itchy skin rash and severe allergic reactions.\n•\tGadolinium retention\nMost of the gadolinium contrast will leave your body in the urine. However, small amounts of gadolinium can remain in the body for months or years, and can be detected in the brain, skin, kidney, bone, and lymph nodes. When you get the scan, we will give you additional information called a \"Medication Guide\". If you ask, we will give you individual information about any remaining gadolinium we see on your scans.\n•\tNephrogenic systemic fibrosis (NSF)\nPeople with kidney disease are at risk for a serious reaction to gadolinium contrast called \"nephrogenic systemic fibrosis (NSF).\" NSF can cause skin contractures and internal organ damage. The risk of NSF is believed to be low for patients with less severe kidney disease, but it can still occur."
+      },
+      "seven_tesla_risks_text": {
+        "conditional": "\n\nIn this study, we are using an MRI scanner that has a strong 7 Tesla magnet. Because of the strong magnetic field, some people briefly experience:\n•\tMuscle twitching\n•\tEye discomfort\n•\tDizziness\n•\tMild nausea\n•\tHeadache\n•\tA metallic taste in their mouth\n•\tA sensation of flashing lights\n\nMany of these effects are caused by moving too quickly in the magnetic field, so you will be asked to walk slowly to the MRI table. Once you lie down, we will move the table slowly into the scanner. You can ask us to stop the scan at any time if you feel too uncomfortable. There is no evidence that scanning using a high magnetic field is dangerous. However, we do not know if there are any long-term effects."
+      }
+    },
+    "special_notes": {
+      "incidental_findings_note": "A credentialed radiologist (or neuroradiologist) will read your MRI scan. They might find unexpected findings on your MRI scan or from other tests we perform. We may not know the significance or importance of some findings, which could make you anxious. We will only inform you about any findings that require further evaluation or care. We are not able to evaluate or treat these conditions at NIH. If needed, we will refer you to a healthcare provider.",
+      "incidental_findings_placement": "This text should be placed in the Return_Results field, not in Risks_Discomforts"
+    }
+  },
+  "nasal_wash": {
+    "primary_name": "Nasal Wash",
+    "synonyms": [
+      "nasal lavage", "nasal irrigation", "nasal rinse", "nasal saline wash",
+      "nasal sampling"
+    ],
+    "procedure_text": "We will do a nasal wash at study visits {{visit_timing}}. To do this, a small amount of salt water will be put into each side of your nose and then suctioned out.",
+    "risks_text": "The nasal wash may cause sneezing and minor irritation of your nose and throat.",
+    "variables": {
+      "visit_timing": {}
+    }
+  },
+  "oct_scan": {
+    "primary_name": "Optical Coherence Tomography (OCT)",
+    "synonyms": [
+      "OCT", "optical coherence tomography", "retinal OCT", "OCT scan",
+      "retinal thickness measurement", "OCT imaging"
+    ],
+    "procedure_text": "A machine will measure the thickness of your retina by taking pictures of your eyes.{{repeat_monitoring_text}}",
+    "risks_text": "There are no known medical risks to measuring retinal thickness using OCT or having pictures taken of the eye.",
+    "variables": {
+      "repeat_monitoring_text": {
+        "conditional": " OCT will be repeated during the study to see whether retinal thickening is getting worse, getting better, or staying the same."
+      }
+    }
+  },
+  "ogtt": {
+    "primary_name": "Oral Glucose Tolerance Test",
+    "synonyms": [
+      "OGTT", "glucose tolerance test", "GTT", "oral GTT",
+      "glucose challenge test", "sugar tolerance test"
+    ],
+    "procedure_text": "An Oral Glucose Tolerance Test (OGTT) will be done during visits {{visit_timing}} to measure the levels of glucose (sugar) and insulin in your blood. We will give you specific instructions for your diet the day before the testing. The instructions will be tailored to you. Generally, the test will include the following procedures:\n•\tDrink only water. Have no other foods or liquids after 10 pm the night before the test and on the morning of the test. This is called \"fasting.\"\n•\tWe will insert an intravenous (IV) needle and thin tube in your arm so that we can take blood multiple times without having to \"stick\" you each time. The needle will stay in your arm for the entire test.\n•\tWe will ask you to drink {{glucose_drink}}.\n•\tWe will take some blood about every ½ hour from the IV over 4 hours.",
+    "risks_text": "Fasting before the OGTT may make you feel light-headed or dizzy. You may also feel weak, hungry, nervous, or restless towards the end of the test because your blood glucose levels may drop. The risks of putting an IV in your arm may include temporary pain, bleeding, or bruising where the IV enters your skin. There is a small chance of fluid leaking into the tissue near the IV. There is a small chance the IV might get infected. We will give you antibiotics if you get an infection. Rarely, the IV may need to be removed, and we will have to insert a second one.",
+    "variables": {
+      "visit_timing": {},
+      "glucose_drink": {}
+    }
+  },
+  "pet_scan": {
+    "primary_name": "PET Scan",
+    "synonyms": [
+      "PET", "positron emission tomography", "PET imaging", "PET-CT",
+      "PET/CT", "PET scan"
+    ],
+    "procedure_text": "You will have a PET (Positron Emission Tomography) scan at visits {{visit_timing}}. The PET scanner is a donut-shaped machine that uses X-rays combined with a dose of radioactive material (tracer) to make computer pictures showing the inside of your body.\n\nBefore the scan, we will give you an injection (shot) of radioactive material into a vein in your arm. After the shot, you will need to wait for about 1-2 hours for the material to be absorbed by your body. After this time, you'll lie on a narrow, padded table. We will position your body for the scan. The scan itself is painless and won't make noise. During the scan, you will need to lie very still. The scan will take about another 30 minutes to complete.",
+    "risks_text": "This procedure involves radiation exposure. See radiation risks section below.",
+    "variables": {
+      "visit_timing": {}
+    }
+  },
+  "questionnaires": {
+    "primary_name": "Questionnaires",
+    "synonyms": [
+      "questionnaire", "survey", "surveys", "written questionnaire",
+      "assessment forms", "research questionnaires", "self-report questionnaires"
+    ],
+    "procedure_text": "We will ask you to answer {{number}} questionnaires that will take about {{duration}} to complete. The questionnaires will ask you about {{topics}}.",
+    "risks_text": "Some of the questions in the questionnaire may be upsetting or make you feel uncomfortable. You can skip any of the questions you do not want to answer. You can stop at any time. REFERENCES: privacy_confidentiality_risk",
+    "variables": {
+      "number": {},
+      "duration": {},
+      "topics": {}
+    }
+  },
+  "saliva_sample": {
+    "primary_name": "Saliva Sample",
+    "synonyms": [
+      "saliva collection", "oral swab", "buccal swab", "cheek swab",
+      "mouth swab", "saliva specimen"
+    ],
+    "procedure_text": "We will give you a saliva collection tube with a mini cotton swab that you will swirl around the inside of your mouth and put the cotton swab back in the collection tube.",
+    "risks_text": "",
+    "variables": {}
+  },
+  "skin_biopsy": {
+    "primary_name": "Skin Biopsy",
+    "synonyms": [
+      "punch biopsy", "skin sample", "dermatology biopsy", "cutaneous biopsy",
+      "skin tissue biopsy"
+    ],
+    "procedure_text": "We will numb an area of your skin with a shot of local anesthetic, which might cause a little burning discomfort. Then, we will remove a small piece of skin about the size of a pencil eraser using a special tool. Skin biopsies are generally safe procedures. Bleeding usually stops quickly, and the risk of infection is very small. You will get a scar at the biopsy site, but it usually heals well and stays flat.{{frequency_limits_text}}",
+    "risks_text": "You will be given a local anesthetic for this procedure. There might be a small burning feeling from the shot of anesthetic. You could have some bruising where the needle went in. There might be minor bleeding or redness near the biopsy site. A skin biopsy will leave a scar, and we can't say for sure what the scar will look like.\n\nThere is a very small chance that a scar could become raised and hard, called a \"keloid.\" If this happens, we might be able to treat it to make it softer and flatter. Very rarely, the biopsy site might get infected. If it does, you might need to use an antibiotic ointment or take antibiotic pills for a few days. You must watch the site and let us, or your regular doctor, know if it looks infected.",
+    "variables": {
+      "frequency_limits_text": {
+        "conditional": " Up to {{max_per_session}} skin biopsies may be done at one time, with a maximum of {{max_per_period}} skin biopsies allowed per {{time_period}}."
+      },
+      "max_per_session": {},
+      "max_per_period": {},
+      "time_period": {}
+    }
+  },
+  "stem_cell_transplant": {
+    "primary_name": "Stem Cell Transplant",
+    "synonyms": [
+      "bone marrow transplant", "BMT", "hematopoietic stem cell transplant",
+      "HSCT", "allogeneic transplant", "stem cell infusion"
+    ],
+    "procedure_text": "Doctors collect stem cells from people with healthy immune systems (donors) and give the cells to people with weak immune systems (recipients). Stem cells are special cells found in the blood and in bone marrow inside bones. Stem cells make all the different cells in the blood, including the blood cells that fight infection and make up the immune system. After a stem cell transplant, if the new healthy stem cells survive and grow inside the recipient, the stem cells could fix the recipient's immune system.\n\nStem cell transplants can be challenging:\n•\tOne challenge is finding a donor. Recipients need a donor who is a good \"match\" with them to have the best chance of a successful transplant. The donor could be a sibling or family member or someone unrelated. If there is not a donor available who is a good match, the stem cell transplant could have higher risks.\n•\tAnother challenge is that stem cell transplants can have serious complications. For example, the recipient's own immune system could fight or \"reject\" the donor's cells, or the donor's cells could attack the recipient's body. These complications can be life-threatening.\n\nBecause of these challenges, some people are not eligible to have a stem cell transplant, or they choose not to have it because the risks are too high, even though it could cure them.",
+    "risks_text": "",
+    "variables": {}
+  },
+  "stool_sample": {
+    "primary_name": "Stool Sample",
+    "synonyms": [
+      "fecal sample", "stool collection", "feces sample", "bowel movement sample",
+      "stool specimen", "fecal specimen"
+    ],
+    "procedure_text": "We will give you a stool sample collection kit and instructions to collect the stool. You will give your sample to the study team for testing and storage.",
+    "risks_text": "",
+    "variables": {}
+  },
+  "viral_reactivation": {
+    "primary_name": "Immunosuppression: Reactivation of Viral Infections",
+    "synonyms": [
+      "viral reactivation", "virus reactivation", "immunosuppression risks",
+      "opportunistic infections", "latent virus reactivation", "EBV reactivation",
+      "CMV reactivation", "hepatitis B reactivation"
+    ],
+    "procedure_text": "Many people have had infections with different viruses without knowing it or without having symptoms. Some of these viruses can stay inactive in your body but might become active again after certain cancer treatments, including the study drug and chemotherapy.\n\nViruses like Epstein Barr virus (EBV), cytomegalovirus (CMV), herpes zoster virus (HZV), and Hepatitis B virus (HBV) can become active again after cancer treatment, including T-cell therapy. If the EBV virus becomes active, it may cause a condition called lymphoproliferative disease, which makes certain white blood cells multiply quickly in lymph glands or other organs. Rarely, reactivation of these viruses can lead to new cancers.\n\nBefore you join the study, we will check to see if you have had any of these viruses in the past. If the study doctor thinks any of these viruses have become active after your treatment, we will do a blood test to confirm it and provide treatment if needed.",
+    "risks_text": "",
+    "variables": {}
+  },
+  "ips_cells": {
+    "primary_name": "iPS Cells",
+    "synonyms": [
+      "induced pluripotent stem cells", "iPSC", "stem cell generation",
+      "cell reprogramming", "pluripotent stem cells"
+    ],
+    "procedure_text": "We may use some of your blood or skin samples to make special cells called induced pluripotent stem cells, or iPS cells. iPS cells can be used in the lab to create many other types of cells. They can help us make an unlimited supply of stem cells (cell lines) for research. Using iPS cells from your samples can help us understand your condition better. We can use your cells to find out if changes in your genes are causing your disease or to see how your cells work.",
+    "risks_text": "",
+    "variables": {}
+  },
+  "washout_period": {
+    "primary_name": "Washout Periods/Withdrawing Current Medication",
+    "synonyms": [
+      "medication washout", "drug washout", "treatment withdrawal",
+      "medication discontinuation", "washout phase", "stopping current medication"
+    ],
+    "procedure_text": "You will need to stop taking the medication you normally take for your condition about {{washout_days}} before you can start taking the study drug. You will not be able to start taking your normal medication again until after you have completed or left the study.{{placebo_warning_text}} The study drug may not be a dose that will help your condition. As a result, you may have an increase in symptoms, including {{symptoms}}. If your symptoms worsen or make you uncomfortable, talk to the study doctor about leaving the study.",
+    "risks_text": "",
+    "variables": {
+      "washout_days": {},
+      "symptoms": {},
+      "placebo_warning_text": {
+        "conditional": " Based on your randomization assignment, you may get no active medication (placebo) or"
+      }
+    }
+  },
+  "xray": {
+    "primary_name": "X-ray",
+    "synonyms": [
+      "X-ray", "radiograph", "plain film", "chest X-ray", "X-ray imaging",
+      "diagnostic X-ray"
+    ],
+    "procedure_text": "As part of your regular care, you will have x-rays of your {{body_part}} taken at {{standard_timing}} after your {{procedure_context}}. For this study, we will ask you to have additional x-rays done at {{study_timing}}.",
+    "risks_text": "This procedure involves radiation exposure. See radiation risks section below.",
+    "variables": {
+      "body_part": {},
+      "standard_timing": {},
+      "procedure_context": {},
+      "study_timing": {}
+    }
+  },
+  "gene_therapy": {
+    "primary_name": "Gene Therapy",
+    "synonyms": [
+      "lentiviral gene transfer", "gene transfer", "gene therapy treatment",
+      "viral vector gene therapy", "genetic modification"
+    ],
+    "procedure_text": "Gene therapy corrects a gene mutation in your cells. In this study, we use an experimental procedure called \"lentiviral gene transfer.\" This procedure is considered investigational, which means it has not been approved by the U.S. Food and Drug Administration (FDA). We are testing it in this study.\n\nThe gene therapy you will get on this study uses a lentiviral vector. A lentiviral vector is like a virus, but it does not make people sick. We use it because it can add its own DNA into other cells. Our lentiviral vector holds a working, \"healthy\" gene. When we mix it with some of your stem cells in the lab, the vector uses its own DNA to add the working gene into your stem cells. This means that your stem cells will then have a working version of the gene. Then we will infuse the stem cells back into you.",
+    "risks_text": "Gene therapy can cause serious complications and even death. The risk of death or other complications can vary greatly. You should discuss your individual risk with the study doctor. Your risk depends on your age, the way the gene therapy is done, the amount of damage your body may have from infections and treatments you have had in the past, and other reasons.\n\nLentivirus Vector: The process of making the changed T cells involves permanently transferring genetic material into your T cells. The \"vehicle\" or \"carrier\" for this transfer is a lentivirus vector, which is related to the HIV virus. The lentivirus vector cannot replicate like a virus and therefore cannot cause HIV infection or disease. The lentivirus vector contains some proteins related to HIV. As we explain above, there is no risk of getting HIV from the vector. However, it is possible that future HIV testing may falsely indicate that you are HIV positive when you are not. Since simple screening tests could detect HIV antibodies in your blood, additional tests will need to be done to determine your true HIV status.\n\nDNA Integration: When lentivirus vectors enter a normal cell in the body, the genetic material (DNA) of the vector is put into the normal DNA in that cell. This process is called DNA integration. Most DNA integration will not cause any harm to the cell or to you. However, there is a chance that this process could damage your healthy cells and could even make these cells become cancerous. Continued follow-up with your Study Doctor is important to check if you still have the changed T cells and to monitor for any new medical conditions.\n\nReplication Competent Lentivirus: There is a risk when receiving changed T cells that the lentivirus can cause an infection. This is called Replication Competent Lentivirus (RCL). We do not know the risks of RCL since it has not been seen yet in participants receiving changed T cells. To lower the chance of RCL, tests will be performed on the T cells during the manufacturing process to make sure RCL is not found in them. The FDA requires that you continue to be tested for RCL after receiving the changed T cells. After you receive the changed T cells, you will have blood tests done to test for RCL while you are in the active and long-term follow-up parts of the study. If at any time your blood test is positive for RCL, you will have additional tests to confirm the result. If it is found that you have RCL, your Study Doctor will work with you to come up with the best treatment plan for you.{{longterm_followup_retroviral_text}}{{longterm_followup_nonretroviral_text}}",
+    "variables": {
+      "longterm_followup_retroviral_text": {
+        "conditional": "\n\nLong-term risks and follow-up: There are risks and complications that can happen months or years after gene therapy:\n•\tExtra gene copies: Some people who get gene therapy develop blood cells that have more copies of the added genes than we meant to put in each cell. We do not know whether the extra genes are harmful. It is possible that these people may have a higher risk of getting leukemia or other blood disorders in the future. We will monitor this and tell you if we see any important changes.\n•\tCancer and other health problems: We are unsure if this type of gene therapy will cause you to become sick in the future. It is possible that it may cause a sickness of your blood cells or even a cancer such as leukemia. We do not know if you will develop any of these disorders, but you need to be aware of this possible risk. Children in France and England received gene therapy for a particular disease of the immune system. Most of the children were cured, but 5 children out of 22 later developed leukemia, and one child died. Experts who looked at these cases thought that the gene therapy caused the leukemia in these children. To watch you for this risk, we will test your blood during the study follow-up.\n•\tFailure: Sometimes, even if the modified cells engraft in the bone marrow and you recover, the cells can fail at a later time. We will regularly monitor for failure after the gene therapy using blood tests at 1, 2, 3, 6, and 12 months after the gene therapy. If your modified cells appear stable by 1 year, it is unlikely that they would fail later, so after that, we will monitor you much less often.\n\nBecause we do not know the long-term side effects of gene therapy, we will ask you to take part in long-term follow-up for the next 15 years. The Food and Drug Administration (FDA) requires that people who get gene therapy are seen by a doctor for follow-up visits even after they complete the study. We will ask you questions about your health and ask you to have a physical exam every year for {{followup_years}} years. We will also take blood samples from you for at least one year, but maybe longer. We will take blood samples (2 teaspoons each time) right after you get the {{product_name}}, and at 3, 6, and 12 months after gene therapy. We may also take blood samples over the next several years if you have any tests that show a retrovirus in your blood. This testing will help us learn if the cells have grown or changed in your body. For this reason, we ask that you continue to give us your current address and telephone number, even after you complete this research study. If you return to your referring doctor after being in the study, we will ask you to have your doctor send us a copy of your physical exam and any blood samples. When you die, no matter the cause, we may ask for consent from your family for an autopsy. This will allow us to learn important information about the safety of this gene therapy. Please talk about this with your family to inform them about this potential request."
+      },
+      "followup_years": {},
+      "product_name": {},
+      "longterm_followup_nonretroviral_text": {
+        "conditional": "\n\nLong-term follow-up: The Food and Drug Administration (FDA) requires that people who get gene therapy be monitored even after they complete the gene therapy study. Once you have finished the gene therapy study, you will be monitored for up to {{followup_years}} years to see how well you are doing. This will be done under a separate NIH study that you have enrolled in even before enrolling in this study. At the least, you will be asked to have a routine physical exam each year for five years after gene therapy. We will ask questions about your health, such as whether you have any new cancers or problems with your blood or immune system. You will also be asked whether you have had a hospital stay for something you did not expect. You will be asked what medicines you are taking. You will be called on the telephone for more information about your health each year for {{followup_years}} years following the gene therapy. The FDA will have access to this information. For this reason, we ask that you continue to give us your current address and telephone number, even after you complete this research study."
+      }
+    }
+  },
+  "genomic_sequencing": {
+    "primary_name": "Genomic Sequencing",
+    "synonyms": [
+      "genetic sequencing", "DNA sequencing", "genome sequencing", "exome sequencing",
+      "whole genome sequencing", "genetic analysis", "genomic analysis"
+    ],
+    "procedure_text": "We are asking for your permission to do {{analysis_type}} on your {{specimen_type}} and to link the results to your medical and/or family history. Your {{specimen_type}} contain genes, which are made up of DNA (deoxyribonucleic acid) which serves as the \"instruction book\" for the cells that make up our bodies. Sequencing {{analysis_type}} tells us the exact order of the chemical letters in {{sequencing_target}}. Your sample(s), along with {{correlation_data}} will help us study how genes {{analysis_purpose}}.{{secondary_findings_return_text}}{{secondary_findings_no_return_text}}",
+    "risks_text": "",
+    "variables": {
+      "analysis_type": {},
+      "specimen_type": {},
+      "sequencing_target": {},
+      "correlation_data": {},
+      "analysis_purpose": {},
+      "secondary_findings_return_text": {
+        "conditional": "\n\nSecondary Findings: In this study, we will use a test to look at most or all of your genes or DNA. This test might find changes in your genes that are not related to what we are studying. These are called \"secondary findings.\" Most of the time, we do not find anything. If we looked at 100 people, we might find these changes in only about 2 to 4 people.\n\nIf we find a secondary finding that might be important for your or your family's health, we will tell you. But first, we may need to do the test again in another lab to make sure the result is correct. We might need you to give another sample for testing. Once we have the results, we will invite you to come to the NIH (at our expense), schedule a telemedicine visit, or use another way to explain the result and help you get follow-up care if needed. The NIH will not usually provide any further testing or care for this condition for you or your family.\n\nWe might not test your samples for several years. So, if you don't hear from us, it doesn't mean you don't have any important gene changes. Also, we do not know all the gene changes that cause health problems. In the future, we might learn that some gene changes we don't think are important now could cause health problems.\n\nYou can choose if you want to know about any secondary findings. You can tell us at any time that you don't want to be contacted about these findings. We will only give these results to you. If you want us to tell someone else, you must give us a signed written release.\n\nIt is very important to keep us updated on how to contact you. If we don't have your current contact information, we won't be able to reach you to collect another sample or tell you about a secondary finding. If your contact information changes, you need to let us know. {{contact_update_instructions}}\n\nIf you have questions or concerns about learning this kind of genetic information, please talk to someone from the study team.{{minor_disclosure_text}}\n\nRisks of returning secondary genetic findings:\n•\tThe test for unexpected gene changes is limited. It might not be as thorough as the clinical genetic tests you could get outside of this research study.\n•\tIf we confirm an unexpected gene change, the test result will go into your NIH medical record. These records are private, but other NIH researchers can see them.\n•\tLearning about gene changes might affect your family members and could cause stress for you or them. Before joining the study, it might be helpful to talk with your family about whether they want to know your results.\n•\tIf we find a gene change, it might show which parent passed it to a biological child.\n•\tWe might tell you about a gene change that doesn't actually cause the health problem we think it does. This might cause you unnecessary worry or lead to extra medical tests that aren't needed and cost money.\n\nBenefits of returning secondary genetic findings:\n•\tAn unexpected gene change result may be useful because you may be able to do something about it to protect your health or to plan for your future."
+      },
+      "contact_update_instructions": {},
+      "minor_disclosure_text": {
+        "conditional": "\n\nDisclosure to minors: If we find a gene change that is known to cause a health problem in children, we will tell you so you can get care for your child. Some gene changes cause health problems only in adults. If we find a risk of an adult-onset condition in your child's genes, we will also tell you. You can choose to include your child in this discussion, or you can tell them yourself when you think it's the right time."
+      },
+      "secondary_findings_no_return_text": {
+        "conditional": "\n\nSecondary Findings: In this study, we will use a test called genetic sequencing that looks at most or all of your genes or DNA. There is a small chance that we might find gene changes that are not related to this research study. We do not plan to give you any individual results from your genetic sequencing because {{no_return_reason}}. If you want to learn more about your genes, you can get clinical genetic testing through your healthcare providers."
+      },
+      "no_return_reason": {}
+    }
+  },
+  "dxa_scan": {
+    "primary_name": "DXA",
+    "synonyms": [
+      "DXA scan", "DEXA", "DEXA scan", "dual energy X-ray absorptiometry",
+      "bone density scan", "bone densitometry", "BMD test"
+    ],
+    "procedure_text": "You will have a DXA (Dual energy X-Ray Absorptiometry) scan to check your bone density. This scan will take place at {{location}} and will take about {{duration}} to complete. During that time, you will need to lie still on a padded table while your body is scanned. We will do {{number_scans}} different scans: {{scan_types}}.",
+    "risks_text": "This procedure involves radiation exposure. See radiation risks section below.",
+    "variables": {
+      "location": {},
+      "duration": {},
+      "number_scans": {},
+      "scan_types": {}
+    }
+  },
+  "ct_scan": {
+    "primary_name": "CT Scan",
+    "synonyms": [
+      "CT", "computed tomography", "CAT scan", "CT imaging",
+      "computed tomography scan"
+    ],
+    "procedure_text": "You will have a CT (Computed Tomography) scan at months {{visit_timing}}. The CT scanner is a donut-shaped machine that uses x-rays to make computer pictures of the inside of your body. During the procedure, you will need to lie still on a table inside the CT machine. The table will move you in and out of the machine during the scan, and you will be told to hold your breath. The scan itself will only take a few minutes, and the entire visit will take about {{duration}}.",
+    "risks_text": "This procedure involves radiation exposure. See radiation risks section below.",
+    "variables": {
+      "visit_timing": {},
+      "duration": {}
+    }
+  },
+  "contrast_agent": {
+    "primary_name": "Contrast Agent",
+    "synonyms": [
+      "contrast dye", "contrast material", "IV contrast", "oral contrast",
+      "contrast injection", "radiographic contrast"
+    ],
+    "procedure_text": "",
+    "risks_text": "{{iv_contrast_risks}}{{oral_contrast_risks}}",
+    "variables": {
+      "iv_contrast_risks": {
+        "conditional": "IV Contrast: You may feel discomfort when the contrast is injected. You may feel warm or flushed. You may get a metallic taste in your mouth or, rarely, you may vomit or feel sick to your stomach. You could have an allergic reaction to the contrast, which may cause side effects ranging from mild itching or a rash to severe trouble breathing, shock, or, rarely, death. The contrast may also cause kidney problems. The study doctors will do a blood test to make sure it is safe for you to get the contrast."
+      },
+      "oral_contrast_risks": {
+        "conditional": "Oral Contrast: You may have vomiting, nausea, cramping, bloating, constipation, or diarrhea after drinking the contrast."
+      }
+    },
+    "special_handling": "include_once_in_risks_discomforts"
+  },
+  "tms": {
+    "primary_name": "Transcranial Magnetic Stimulation (TMS)",
+    "synonyms": [
+      "TMS", "transcranial magnetic stimulation", "rTMS", "repetitive TMS",
+      "magnetic brain stimulation", "TMS therapy"
+    ],
+    "procedure_text": "Transcranial Magnetic Stimulation (TMS) uses a brief, pulsed magnetic field to affect brain activity. During the TMS session(s), a device called a \"coil\" will be placed on your head. A brief electrical current will then pass through the coil and create a magnetic field. You will hear a click, and you may feel a tapping or pulling sensation on your skin under the coil. You may feel a twitch in your face, neck, arm, or leg muscles. You will be given hearing protection that must be worn during TMS because the clicking noise can be loud enough to damage your hearing. We may ask you to tense certain muscles or do simple actions or tasks during TMS.\n\n{{emg_eeg_mri_text}}The TMS session will take about {{session_duration}}. This study involves {{number_sessions}} sessions. You will always be able to talk with the study staff during the TMS session. You may ask to stop the session at any time.{{single_paired_pulse_text}}{{repetitive_tms_text}}{{sham_tms_text}}{{double_blind_text}}{{investigational_tms_text}}",
+    "risks_text": "It may not be safe for you to get TMS if you have certain kinds of metal in your body including:\n•\tMetal staples or screws in the head or neck\n•\tPacemakers or other implanted electrical devices\n•\tBrain stimulators\n•\tAneurysm clips (metal clips on the wall of a large artery)\n•\tCochlear implants\n•\tAn implanted delivery pump\n•\tShrapnel fragments. Welders and metal workers may have small metal fragments in the eye.\n\nIt may also not be safe for you to get TMS if you have a history of certain medical conditions or if you are taking certain drugs. You will be asked to complete a screening form before you get TMS. This screening form will be updated at each session. If you have questions about metal in your body or other potential risks mentioned on the screening form, you should let us know.\n\nTMS may give you a headache. The TMS pulse may also activate nerves or muscles in your head and neck that may cause pain or discomfort in or around your head or neck. If you have any pain during or after TMS, you can take medicine to make it feel better.\n\nThe clicking noise that the machine makes is loud enough to damage hearing, especially if you already have hearing loss. We will give you hearing protection. If your hearing protection comes loose during the session, tell us right away.\n\nVery rarely, TMS has led to seizures (abnormal activity in the brain that can cause muscle spasms and can happen with or without losing consciousness).{{rtms_cognitive_risks_text}}\n\nSafety Plan: A safety plan is in place, and a licensed clinician will be available during each TMS session in case you have a seizure or other side effect. There may be other risks that we don't currently know about. There are no known long-term risks of TMS.{{pregnancy_tms_text}}",
+    "variables": {
+      "session_duration": {},
+      "number_sessions": {},
+      "emg_eeg_mri_text": {
+        "conditional": "Electromyography (EMG), Electroencephalography (EEG), or Magnetic Resonance Imaging (MRI) may be used with TMS to measure the effects of TMS on your brain and body. "
+      },
+      "single_paired_pulse_text": {
+        "conditional": " Single Pulse or Paired Pulse TMS: When TMS pulses are given one or two at a time, several seconds apart, this is called \"Single Pulse\" or \"Paired Pulse\" TMS. These types of TMS let us study your brain's reaction to the pulses. It can also tell us about the role of a brain region in certain behaviors or how the brain is connected. During the TMS session(s) you will get about {{pulse_number}} {{pulse_type}}."
+      },
+      "pulse_number": {},
+      "pulse_type": {},
+      "repetitive_tms_text": {
+        "conditional": " Repetitive TMS (rTMS): A series of repeated TMS pulses can lead to brain and behavior changes even after you stop getting TMS. This type of TMS is called \"repetitive TMS\" or \"rTMS\" and can be used to study the brain or as a treatment. During the rTMS session(s) you will get {{rtms_total_pulses}} pulses of rTMS. The pulses will be given {{rtms_frequency}} times every second for a total of {{rtms_total_pulses}} over {{rtms_duration}}."
+      },
+      "rtms_total_pulses": {},
+      "rtms_frequency": {},
+      "rtms_duration": {},
+      "sham_tms_text": {
+        "conditional": " Sham TMS: Sham (fake) TMS is a type of TMS that looks, sounds, and feels like active TMS but doesn't include any active pulses."
+      },
+      "double_blind_text": {
+        "conditional": " Double Blinded Study: Neither you nor the study team will know whether you are getting active or sham (fake) TMS. If there is an emergency and it is important for your care, the study team will find out quickly whether you got active or sham TMS."
+      },
+      "rtms_cognitive_risks_text": {
+        "conditional": " Also rarely, rTMS may lead to a short-term change in your ability to remember, your ability to pay attention, or your mood. If these effects happen, they do not usually last long and will go away without treatment.{{additional_rtms_risks}}"
+      },
+      "additional_rtms_risks": {},
+      "pregnancy_tms_text": {
+        "conditional": " The effects of TMS on a developing fetus are not known. You will not be able to have TMS if you are pregnant. Women who can get pregnant will have a pregnancy test before their TMS sessions."
+      },
+      "investigational_tms_text": {
+        "conditional": " Investigational Use of TMS: We will be using the TMS System and the coil for research purposes. This means that we are using it to study brain function, not to treat patients. However, all sessions done under this protocol will follow safety guidelines. There is no increased risk in the use of these research techniques compared with clinical uses. The use of the TMS system and coil for research has not been approved by the FDA and is considered investigational."
+      }
+    }
+  },
+  "blinding": {
+    "primary_name": "Blinding",
+    "synonyms": [
+      "blinding process", "double blind", "single blind", "masked study",
+      "treatment blinding", "group assignment blinding"
+    ],
+    "procedure_text": "{{blinding_type_text}}",
+    "risks_text": "",
+    "variables": {
+      "blinding_type_text": {}
+    },
+    "blinding_options": {
+      "double_blind": "You and the study team will not know which study drug you will get. If there is an emergency and it is important for your care, the study team can quickly find out which group you are in.",
+      "participant_blind": "You will not know which study drug you will get, but your study team will know.",
+      "investigator_blind": "Your study team will not know which study drug you will get, but you will know."
+    }
+  },
+  "placebo": {
+    "primary_name": "Placebo",
+    "synonyms": [
+      "placebo treatment", "inactive treatment", "sugar pill", "placebo drug",
+      "placebo control", "inactive pill"
+    ],
+    "procedure_text": "A placebo looks like the study drug but doesn't include any medicine.",
+    "risks_text": "",
+    "variables": {}
+  }
+}

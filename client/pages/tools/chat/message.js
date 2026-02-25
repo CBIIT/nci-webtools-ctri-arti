@@ -3,12 +3,14 @@ import html from "solid-js/html";
 
 import { X } from "lucide-solid";
 
+import { AlertContainer } from "../../../components/alert.js";
 import BrowseTool from "../../../components/chat-tools/browse-tool.js";
 import CodeTool from "../../../components/chat-tools/code-tool.js";
 import EditorTool from "../../../components/chat-tools/editor-tool.js";
 import ReasoningTool from "../../../components/chat-tools/reasoning-tool.js";
 import SearchTool from "../../../components/chat-tools/search-tool.js";
 import TextContent from "../../../components/chat-tools/text-content.js";
+import { alerts, clearAlert, handleError } from "../../../utils/alerts.js";
 
 const TOOL_COMPONENTS = {
   search: SearchTool,
@@ -132,7 +134,12 @@ export default function Message(p) {
       </form>
     </dialog>
 
-    <${ErrorBoundary} fallback=${(error) => console.log(error)}>
+    <${ErrorBoundary}
+      fallback=${(error) => {
+        handleError(error, "Message Component Error");
+        return html`<${AlertContainer} alerts=${alerts} onDismiss=${clearAlert} />`;
+      }}
+    >
       <${For} each=${p.message?.content}>
         ${(c, i) => {
           if (c.text !== undefined) {

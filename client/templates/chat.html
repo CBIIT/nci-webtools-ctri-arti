@@ -1,0 +1,2624 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AWS Bedrock Chat</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1/font/bootstrap-icons.min.css" />
+    <style>
+      :root {
+        --bs-light-rgb: 250, 249, 245;
+        --bs-secondary-bg-subtle: #f0eee6;
+        --bs-border-radius: 0.75rem;
+        --bs-border-radius-sm: 0.5rem;
+      }
+      /* Form element overrides */
+      input, button, label, select, .btn, .form-control[type="file"], .form-select, .form-check-label { font-weight: 500; }
+      .form-select, .form-check-input, .form-check-label { cursor: pointer; }
+      /* Utilities */
+      .text-pre { white-space: pre-wrap !important; }
+      .tabular-nums { font-variant-numeric: tabular-nums; }
+      .resize-y { resize: vertical; }
+      .min-w-10 { min-width: 2.5rem; }
+      /* Hover utilities: parent reveals children */
+      .hover-fade { opacity: 0; transition: opacity 0.15s ease-in-out; }
+      .hover-parent:hover .hover-fade { opacity: 1; }
+      .hover-show { visibility: hidden; }
+      .hover-parent:hover .hover-show { visibility: visible !important; }
+      /* Subagent streaming styles */
+      @keyframes subagent-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .subagent-spin { animation: subagent-spin 1s linear infinite; }
+      .subagent-stream { background: #fafaf8; }
+      .subagent-message.streaming { opacity: 0.8; }
+      .subagent-streaming-indicator {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: currentColor;
+        border-radius: 50%;
+        animation: subagent-pulse 1s ease-in-out infinite;
+      }
+      @keyframes subagent-pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+      }
+      .subagent-conversation { background: #fafaf8; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "@aws-sdk/client-bedrock-runtime": "https://cdn.jsdelivr.net/npm/@aws-sdk/client-bedrock-runtime@3/+esm",
+          "@google/genai": "https://cdn.jsdelivr.net/npm/@google/genai@1/+esm",
+          "idb": "https://cdn.jsdelivr.net/npm/idb@8/+esm",
+          "solid-js": "https://cdn.jsdelivr.net/npm/solid-js@1/dist/solid.min.js",
+          "solid-js/html": "https://cdn.jsdelivr.net/npm/solid-js@1/html/dist/html.min.js",
+          "solid-js/store": "https://cdn.jsdelivr.net/npm/solid-js@1/store/dist/store.min.js",
+          "solid-js/web": "https://cdn.jsdelivr.net/npm/solid-js@1/web/dist/web.min.js"
+        }
+      }
+    </script>
+    <!--
+      CHAT.HTML - AI Chat Interface
+      ==============================
+      Buildless SolidJS chat with AWS Bedrock & Google Gemini.
+      Features: branching conversations, IndexedDB storage, file uploads, tool use.
+
+      DEVELOP: Open chat.html in browser. No build. Dependencies via CDN import maps.
+      TEST: Open ?test=1 and check console, or run headless:
+            npm install playwright && node -e "const {chromium}=require('playwright');(async()=>{const b=await chromium.launch(),p=await b.newPage({ignoreHTTPSErrors:true});p.on('console',m=>console.log(m.text()));p.on('pageerror',e=>console.error('PAGE ERROR:',e.message));await p.goto('file://'+process.cwd()+'/chat.html?test=1');await p.waitForFunction(()=>window.TESTS_DONE,{timeout:30000});await b.close()})()"
+
+      SOLIDJS: COMPONENTS RUN ONCE
+      ----------------------------
+      No re-renders. Reactivity = 0-arg functions, auto-wrapped and re-executed on change.
+        ${() => val}  → reactive     ${val}  → static (evaluated once)
+
+      Signals:  ${count}              ✓ (signals are 0-arg functions)
+                ${count()}            ✗ (called immediately, static)
+      Stores:   ${() => store.prop}   ✓ (wrap store access)
+      Props:    ${() => props.title}  ✓ (props have getters, but templates need () => for tracking)
+                Never destructure - loses the getter
+      Handlers: onClick=${e => fn()}  ✓ always use param (avoids 0-arg auto-wrap issues)
+
+      STORE ARRAYS: TRACKING GOTCHA
+      Accessing store.array tracks the PROPERTY, not mutations.
+      Accessing store.array.length tracks LENGTH changes.
+      Accessing store.array[i] tracks INDEX changes.
+        for (let i = arr.length - 1; i >= 0; i--) arr[i]  ✓ tracks length + indices
+        for (const x of arr.slice()) ...                 ✗ slice() breaks tracking
+        <${For} each=${() => arr}>                       ✓ For tracks internally
+
+      SYNTAX
+      ------
+      <${Comp} prop=${val} />            Self-closing
+      <${Comp}>children<//>              With children
+      <${Show} when=${cond}>...<//>      Conditional
+      <${For} each=${items}>${x=>...}<//>  Loop
+      class=${() => `a ${b() ? 'c' : ''}`}
+      classList=${{ active: isActiveSignal, disabled: () => store.x }}
+      style=${{ width: () => w() + 'px' }}
+    -->
+  </head>
+  <body class="vh-100 bg-light d-flex flex-column">
+    <div id="app" class="h-100"></div>
+    <script type="module">
+      // #region 1. IMPORTS & INITIALIZATION
+      // =============================================================================
+      // External dependencies, database setup, and app bootstrap.
+      // =============================================================================
+
+      import { BedrockRuntimeClient, ConverseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
+      import { GoogleGenAI } from "@google/genai";
+      import { openDB } from "idb";
+      import { render } from "solid-js/web";
+      import { For, Switch, Match, Show, createEffect, createSignal } from "solid-js";
+      import { createStore, produce, unwrap } from "solid-js/store";
+      import html from "solid-js/html";
+
+      const TOOL_DOCUMENTATION = `
+## Tools
+
+### code
+Execute JavaScript or HTML. Supports top-level await for async operations.
+- Run JS: { "source": "console.log('hello')" }
+- Run from file: { "filename": "app.js" }
+- Fetch from web: { "source": "const r = await fetch('https://api.example.com'); console.log(await r.json())" }
+- Run HTML: { "source": "<h1>Hello</h1>", "language": "html" }
+
+The \`resources\` API is available for file operations:
+- await resources.create("path.txt", "content") - create/overwrite file
+- await resources.view("path.txt") - read file (returns {content, path})
+- await resources.list("/") - list directory (returns {entries})
+- await resources.delete("path.txt") - delete file
+- await resources.rename("old.txt", "new.txt") - rename file
+- await resources.replace("file.txt", "old", "new") - replace text in file
+
+### think
+Dedicated space for reasoning. Use before complex decisions.
+- { "thought": "Let me analyze the structure..." }
+
+### editor
+Virtual filesystem for creating, viewing, editing files.
+- List directory: { "command": "view", "path": "/" }
+- View file: { "command": "view", "path": "app.js" }
+- Create file: { "command": "create", "path": "notes.md", "file_text": "# Notes" }
+- Edit file: { "command": "str_replace", "path": "app.js", "old_str": "foo", "new_str": "bar" }
+- Delete: { "command": "delete", "path": "old.txt" }
+- Rename: { "command": "rename", "path": "old.txt", "new_path": "new.txt" }
+
+### mcp
+Connect to MCP servers for external tools/resources.
+- List servers: { "command": "list_servers" }
+- List tools: { "command": "list_tools", "server": "server-name" }
+- Call tool: { "command": "call_tool", "server": "server-name", "tool": "tool-name", "args": {} }
+- Save result: { "command": "call_tool", "server": "...", "tool": "...", "filename": "result.json" }
+
+### task
+Spawn sub-agents for exploration or planning (main agent only).
+- Explore: { "type": "explore", "prompt": "Find auth code", "folder": "auth" }
+- Plan: { "type": "plan", "prompt": "Design feature based on /explore/auth/" }
+`;
+
+      const db = await initDB();
+      await ensureDefaultAgent(db);
+
+      // Module-level signal for tracking running subagent state
+      // Map: toolUseId -> { threadId, messages, currentMessage, status, type }
+      const [runningSubagents, setRunningSubagents] = createSignal(new Map());
+
+      // TOOLS must be defined before useAgent which references it as default parameter
+      const TOOLS = [
+        {
+          fn: code,
+          toolSpec: {
+            name: "code",
+            description: "Execute JavaScript or HTML code. Provide source directly, or use filename to run a file from the editor.",
+            inputSchema: {
+              json: {
+                type: "object",
+                properties: {
+                  source: { type: "string", description: "The code to execute (ignored if filename provided)" },
+                  filename: { type: "string", description: "Path to a file in resources to run instead of source" },
+                  language: { type: "string", description: "Language (js/html). Auto-detected from filename extension.", default: "javascript" },
+                },
+              },
+            },
+          },
+        },
+        {
+          fn: think,
+          toolSpec: {
+            name: "think",
+            description: "Use this tool to create a dedicated thinking space for complex reasoning. Use it when you need to analyze information, plan steps, or work through problems before providing a final answer.",
+            inputSchema: {
+              json: {
+                type: "object",
+                properties: {
+                  thought: { type: "string", description: "Your detailed thought process, analysis, or reasoning steps." },
+                },
+                required: ["thought"],
+              },
+            },
+          },
+        },
+        {
+          fn: editor,
+          toolSpec: {
+            name: "editor",
+            description: `Create, view, edit, delete, and rename files.
+
+Examples:
+- View file: {"command": "view", "path": "app.js"}
+- View lines 1-10: {"command": "view", "path": "app.js", "view_range": [1, 10]}
+- List directory: {"command": "view", "path": "/"}
+- Create file: {"command": "create", "path": "hello.py", "file_text": "print('hello')"}
+- Replace text: {"command": "str_replace", "path": "app.js", "old_str": "foo", "new_str": "bar"}
+- Insert at line 5: {"command": "insert", "path": "app.js", "insert_line": 5, "new_str": "// comment"}
+- Delete file: {"command": "delete", "path": "old.txt"}
+- Rename file: {"command": "rename", "path": "old.txt", "new_path": "new.txt"}`,
+            inputSchema: {
+              json: {
+                type: "object",
+                properties: {
+                  command: { type: "string", enum: ["view", "create", "str_replace", "insert", "delete", "rename"], description: "The operation to perform" },
+                  path: { type: "string", description: "The file or directory path (end with / for directories)" },
+                  view_range: { type: "array", items: { type: "integer" }, description: "Optional [start, end] line numbers (1-indexed, -1 for end). Only for view command on files." },
+                  old_str: { type: "string", description: "Text to replace (for str_replace command)" },
+                  new_str: { type: "string", description: "Replacement text (for str_replace and insert commands)" },
+                  file_text: { type: "string", description: "File content (for create command)" },
+                  insert_line: { type: "integer", description: "Line number to insert after (0 for beginning, for insert command)" },
+                  new_path: { type: "string", description: "New path for rename command" },
+                },
+                required: ["command", "path"],
+              },
+            },
+          },
+        },
+        {
+          fn: mcp,
+          toolSpec: {
+            name: "mcp",
+            description: `Interact with MCP (Model Context Protocol) servers. Commands:
+- list_servers: Show configured MCP servers and their status
+- list_tools [server]: List tools available from an MCP server
+- call_tool [server] [tool] [args]: Call a tool on an MCP server
+- list_resources [server]: List available resources from an MCP server
+- read_resource [server] [uri]: Read a resource by URI
+- list_prompts [server]: List available prompts from an MCP server
+- get_prompt [server] [name] [args]: Get an expanded prompt
+- Use filename parameter to save any result to a resource file`,
+            inputSchema: {
+              json: {
+                type: "object",
+                properties: {
+                  command: { type: "string", enum: ["list_servers", "list_tools", "call_tool", "list_resources", "read_resource", "list_prompts", "get_prompt"], description: "The MCP command to execute" },
+                  server: { type: "string", description: "MCP server name (required for all commands except list_servers)" },
+                  tool: { type: "string", description: "Tool name (required for call_tool)" },
+                  uri: { type: "string", description: "Resource URI (required for read_resource)" },
+                  name: { type: "string", description: "Prompt name (required for get_prompt)" },
+                  args: { type: "object", description: "Arguments object for call_tool or get_prompt" },
+                  filename: { type: "string", description: "Optional path to save results to a resource file" },
+                },
+                required: ["command"],
+              },
+            },
+          },
+        },
+        {
+          fn: task,
+          toolSpec: {
+            name: "task",
+            description: `Spawn a sub-agent for exploration or planning.
+- explore: Finds information, saves EXACT raw data to /explore/{folder}/
+- plan: Designs implementation approach, can read explore findings`,
+            inputSchema: {
+              json: {
+                type: "object",
+                properties: {
+                  prompt: { type: "string", description: "What the sub-agent should do" },
+                  type: { type: "string", enum: ["explore", "plan"], description: "Agent type" },
+                  folder: { type: "string", description: "For explore: folder name under /explore/ to save findings" },
+                },
+                required: ["prompt", "type"],
+              },
+            },
+          },
+        },
+      ];
+
+      render(App, document.getElementById("app"));
+
+      async function initDB() {
+        return openDB("chat", 3, {  // Version 3: added path index on resources
+          upgrade(db, oldVersion, newVersion, transaction) {
+            const createIndex = (stores, name, key = name, options) =>
+              stores.indexNames.contains(name) || stores.createIndex(name, key, options);
+            const stores = {};
+            for (const name of ["agents", "threads", "messages", "resources"]) {
+              stores[name] = db.objectStoreNames.contains(name)
+                ? transaction.objectStore(name)
+                : db.createObjectStore(name, { keyPath: "id", autoIncrement: true });
+              createIndex(stores[name], "id", "id", { unique: true });
+            }
+            createIndex(stores.messages, "agentId");
+            createIndex(stores.messages, "threadId");
+            createIndex(stores.messages, "parentId");
+            createIndex(stores.threads, "agentId");
+            // New indexes for subagent thread support
+            createIndex(stores.threads, "parentToolUseId");
+            createIndex(stores.threads, "type");
+            createIndex(stores.resources, "agentId");
+            createIndex(stores.resources, "threadId");
+            createIndex(stores.resources, "messageId");
+            createIndex(stores.resources, "path");
+          },
+        });
+      }
+
+      async function ensureDefaultAgent(db) {
+        const existing = await db.get("agents", 1);
+        if (existing) return; // Don't overwrite saved settings
+
+        await db.put("agents", {
+          id: 1,
+          name: "default",
+          systemPrompt: `You are terse and direct. No emojis. No capability lists. No performative helpfulness ("Happy to help!", "Great question!").
+
+Don't announce what you'll do—do it. Don't self-describe—embody. Match the user's energy and register. Humor is fine. Engage with absurdity. Be a person, not a task router.
+
+Never make things up. Use only information from your sources. When uncertain, say so plainly. Prefer direct quotes over paraphrase when the source matters.
+
+When writing: surgical economy. Specific nouns, active verbs, no unearned adjectives. Trust your reader to complete the circuit. The right word sounds inevitable; its cousin sounds written.
+
+${TOOL_DOCUMENTATION}
+
+## Code Environment
+Code runs in a browser sandbox. No Node.js, no build tools.
+
+Patterns:
+- CDN imports: import { x } from 'https://cdn.jsdelivr.net/npm/pkg@version/+esm'
+- Top-level await supported
+- fetch() works (proxied for CORS)
+- resources.create/view/list/delete/rename/replace for files
+
+Secrets: Store at path, read as plain text (keeps values out of visible code):
+  // Save once with editor: create /secrets/openai with value sk-xxx
+  // Read in code:
+  const apiKey = (await resources.view('secrets/openai')).content;
+
+## Skills
+Reusable expertise stored in /skills/. List with: editor view /skills/
+When relevant, read full instructions: editor view /skills/{name}.md
+
+Create skills to capture workflows:
+---
+name: skill-name
+description: When to use this skill
+---
+[Instructions]
+
+## Memory Protocol
+1. At conversation START, list /memories/ for prior context: editor view /memories/
+2. Save important progress, decisions, context to /memories/ files
+3. Keep memory files organized. Delete irrelevant ones.
+4. ASSUME INTERRUPTION: Save progress you don't want to lose.
+
+HTML files created with the editor tool are automatically rendered in the preview - no need to run them with the code tool.
+
+## Sub-agents
+Use the task tool to delegate work:
+- explore: Research agent - gathers info, saves EXACT raw data to /explore/{folder}/
+- plan: Planning agent - designs implementation, reads /explore/ findings
+
+When to use:
+- explore: When you need to investigate, research, or gather evidence
+- plan: When you need to design an approach before implementing
+- Chain them: explore first for context, then plan based on findings
+
+After sub-agent completes, review its saved files before proceeding.
+
+## MCP Servers
+Use mcp tool to interact with configured servers for external capabilities.`,
+          tools: ["code", "think", "editor", "mcp", "task"],
+          mcpServers: [],
+          proxyConfig: null,
+          resources: [],
+        });
+
+        // Seed default skills (agent-scoped, not thread-scoped)
+        await db.add("resources", {
+          agentId: 1,
+          path: "skills/frontend-design.md",
+          content: `---
+name: frontend-design
+description: Build distinctive, production-grade UI. Use when creating web components, pages, or applications.
+---
+
+Pick a BOLD aesthetic direction and commit fully. No safe defaults.
+
+Directions (pick one, go hard): brutalist, maximalist, minimal-refined, retro-futuristic, editorial, art-deco, organic, industrial, playful, luxury
+
+Focus on:
+- Typography: Distinctive fonts, never Inter/Roboto/Arial
+- Color: Dominant + sharp accents, not timid even distribution
+- Motion: One well-orchestrated moment > scattered micro-interactions
+- Layout: Asymmetry, overlap, grid-breaking, intentional negative space
+- Texture: Gradients, noise, patterns, shadows - not flat solid colors
+
+Anti-patterns: purple gradients on white, generic rounded cards, safe corporate feel
+
+Match complexity to vision: maximalist = elaborate code, minimalist = precise restraint.`,
+          createdAt: Date.now(),
+        });
+      }
+
+      // #endregion
+
+      // #region 2. APP & MAIN STATE
+      // =============================================================================
+      // Main App component and useAgent hook for state management.
+      // =============================================================================
+
+      function App() {
+        const searchParams = new URLSearchParams(window.location.search);
+        const urlParams = Object.fromEntries(searchParams.entries());
+        const { agent, sendMessage, switchBranch, params, setAgent } = useAgent(urlParams, db);
+
+        createEffect(() => setSearchParams(params));
+        const [editingMessageId, setEditingMessageId] = createSignal(null);
+        const [showConfigModal, setShowConfigModal] = createSignal(false);
+        const [mcpServers, setMCPServers] = createSignal([]);
+        const [proxyConfig, setProxyConfigSignal] = createSignal(null);
+        const displayRole = msg => msg.content?.some(c => c.toolResult) ? "assistant" : msg.role;
+
+        // Load agent settings when agent loads
+        createEffect(async () => {
+          const agentId = params.agentId || 1;
+          const agentRecord = await db.get("agents", agentId);
+          if (agentRecord?.mcpServers) setMCPServers(agentRecord.mcpServers);
+          if (agentRecord?.proxyConfig) {
+            setProxyConfigSignal(agentRecord.proxyConfig);
+            setProxyConfig(agentRecord.proxyConfig); // Update module-level for proxyFetch
+          }
+        });
+
+        // Settings modal handlers
+        async function handleSaveSettings(servers, proxy) {
+          const agentId = params.agentId || 1;
+          const agentRecord = await db.get("agents", agentId);
+          if (agentRecord) {
+            await db.put("agents", { ...agentRecord, mcpServers: servers, proxyConfig: proxy });
+            setMCPServers(servers);
+            setProxyConfigSignal(proxy);
+            setProxyConfig(proxy); // Update module-level for proxyFetch
+            mcpSessions.clear();
+          }
+          setShowConfigModal(false);
+        }
+
+        // Event handlers
+        function handleKeyDown(event) {
+          if (event.key === "Enter" && !event.shiftKey && !agent.loading) {
+            event.preventDefault();
+            event.target?.closest("form")?.requestSubmit();
+          }
+        }
+
+        async function handleSubmit(event) {
+          event.preventDefault();
+          const form = event.target;
+          const text = form.userMessage.value;
+          const files = Array.from(form.userFiles.files || []);
+          const modelId = form.modelId.value;
+          const reasoningMode = form.reasoningMode.checked;
+          form.userMessage.value = "";
+          form.userFiles.value = "";
+          await sendMessage(text, files, modelId, reasoningMode);
+        }
+
+        async function saveEdit(messageId, newText) {
+          const msg = agent.messageTree?.nodes.get(messageId)?.message;
+          const originalText = msg?.content.find(c => c.text)?.text;
+          if (msg && newText && newText !== originalText) {
+            const form = document.getElementById("inputForm");
+            await sendMessage(newText, [], form?.modelId?.value || "us.anthropic.claude-haiku-4-5-20251001-v1:0", form?.reasoningMode?.checked || false, messageId);
+          }
+          setEditingMessageId(null);
+        }
+
+        async function handleCopy(message) {
+          const text = message.content?.find(c => c.text)?.text;
+          if (text) await navigator.clipboard.writeText(text);
+        }
+
+        async function handleRetry(message) {
+          const form = document.getElementById("inputForm");
+          const modelId = form?.modelId?.value;
+          const reasoningMode = form?.reasoningMode?.checked;
+
+          if (message.role === "user") {
+            const text = message.content.find(c => c.text)?.text;
+            if (text) await sendMessage(text, [], modelId, reasoningMode, message.id);
+          } else if (message.role === "assistant") {
+            const idx = agent.messages.findIndex(m => m.id === message.id);
+            const userMsg = agent.messages.slice(0, idx).reverse().find(m => m.role === "user");
+            if (userMsg) {
+              const text = userMsg.content.find(c => c.text)?.text;
+              if (text) await sendMessage(text, [], modelId, reasoningMode, userMsg.id);
+            }
+          }
+        }
+
+        return html`
+          <div class="container my-5">
+            <${For} each=${() => agent.messages}>
+              ${message => html`
+                <div class="message-block hover-parent d-flex flex-column mb-2" classList=${{ "align-items-end": displayRole(message) === "user" }}>
+                  <${For} each=${() => message.content}>
+                    ${content => html`
+                      <${MessageContent}
+                        message=${message}
+                        content=${content}
+                        allMessages=${() => agent.messages}
+                        editingId=${editingMessageId}
+                        onSave=${saveEdit}
+                        onCancel=${_ => setEditingMessageId(null)} />
+                    `}
+                  <//>
+                  <${Show} when=${() => message.id && agent.messageTree && editingMessageId() !== message.id}>
+                    <div class="message-controls hover-show d-flex align-items-center gap-2 px-2">
+                      <${Show} when=${() => displayRole(message) === "user"}>
+                        <${Show} when=${() => !agent.loading}>
+                          <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => handleRetry(message)} title="Retry">
+                            <i class="bi bi-arrow-clockwise"></i>
+                          </button>
+                        <//>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => setEditingMessageId(message.id)} title="Edit">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => handleCopy(message)} title="Copy">
+                          <i class="bi bi-clipboard"></i>
+                        </button>
+                      <//>
+                      <${Show} when=${() => displayRole(message) === "assistant"}>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => handleCopy(message)} title="Copy">
+                          <i class="bi bi-clipboard"></i>
+                        </button>
+                        <${Show} when=${() => !agent.loading}>
+                          <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" onClick=${e => handleRetry(message)} title="Retry">
+                            <i class="bi bi-arrow-clockwise"></i>
+                          </button>
+                        <//>
+                      <//>
+                      <${BranchNav} tree=${() => agent.messageTree} messageId=${message.id} onSwitch=${switchBranch} />
+                    </div>
+                  <//>
+                </div>
+              `}
+            <//>
+
+            <${InputForm} onSubmit=${handleSubmit} onKeyDown=${handleKeyDown} onOpenConfig=${_ => setShowConfigModal(true)} />
+
+            <${Show} when=${showConfigModal}>
+              <${AgentConfigModal}
+                servers=${mcpServers}
+                proxyConfig=${proxyConfig}
+                onClose=${_ => setShowConfigModal(false)}
+                onSave=${handleSaveSettings} />
+            <//>
+          </div>
+        `;
+      }
+
+      function useAgent({ agentId, threadId }, db, tools = TOOLS) {
+        agentId = +agentId || 1;
+        threadId = +threadId || null;
+
+        const [params, setParams] = createStore({ agentId, threadId });
+        const [agent, setAgent] = createStore({
+          id: null,
+          name: null,
+          thread: { id: null, name: null },
+          modelId: null,
+          reasoningMode: false,
+          systemPrompt: null,
+          loading: false,
+          tools: [],
+          messages: [],
+          messageTree: null,
+          activePath: [],
+          activeLeafId: null,
+        });
+
+        // Effects: Load history
+        createEffect(async () => {
+          if (!params.threadId) return;
+          const history = await db.getAllFromIndex("messages", "threadId", params.threadId);
+          if (!history?.length) return;
+
+          const thread = await db.get("threads", params.threadId);
+          const tree = buildMessageTree(history);
+          const path = getMostRecentPath(tree);
+          const leafId = path.length > 0 ? path[path.length - 1] : null;
+          const messages = path.map(id => tree.nodes.get(id)?.message).filter(Boolean);
+
+          setAgent({ messages, thread: { name: thread?.name || "Untitled" }, messageTree: tree, activePath: path, activeLeafId: leafId });
+        });
+
+        // Effects: Save changes
+        createEffect(async () => {
+          if (!params.agentId || !agent.id) return;
+          await upsert(db, "agents", { id: params.agentId, name: agent.name, systemPrompt: agent.systemPrompt, tools: agent.tools.map(t => t.toolSpec.name) });
+          if (!params.threadId || !agent.thread.id) return;
+          await upsert(db, "threads", { id: params.threadId, agentId: params.agentId, name: agent.thread.name });
+        });
+
+        // Actions
+        async function sendMessage(text, files = [], modelId, reasoningMode, forkFromId = null) {
+          setAgent("loading", true);
+
+          if (!params.threadId) {
+            setAgent("thread", "name", "Untitled");
+            const thread = { agentId, name: agent.thread.name };
+            const threadId = await db.add("threads", thread);
+            setParams("threadId", threadId);
+          }
+
+          const record = await db.get("agents", +params.agentId);
+          const agentTools = tools.filter(t => record.tools.includes(t.toolSpec.name));
+          const client = await getConverseClient(modelId.includes("gemini") ? "google" : "aws");
+          const content = await getMessageContent(text, files);
+
+          const parentId = forkFromId !== null
+            ? agent.messageTree?.nodes.get(forkFromId)?.message?.parentId ?? null
+            : agent.activeLeafId ?? null;
+
+          const userMessage = { role: "user", content, parentId, createdAt: Date.now() };
+          const savedId = await db.add("messages", { ...userMessage, agentId: params.agentId, threadId: params.threadId });
+          userMessage.id = savedId;
+
+          const allMessages = await db.getAllFromIndex("messages", "threadId", params.threadId);
+          const tree = buildMessageTree(allMessages);
+          const newPath = extendPath(tree, getPathToMessage(tree, userMessage.id));
+          const pathMessages = newPath.map(id => tree.nodes.get(id)?.message).filter(Boolean);
+
+          setAgent({
+            id: record.id,
+            thread: { id: params.threadId },
+            modelId,
+            reasoningMode,
+            name: record.name,
+            systemPrompt: record.systemPrompt,
+            resources: record.resources,
+            tools: agentTools,
+            messages: pathMessages,
+            messageTree: tree,
+            activePath: newPath,
+            activeLeafId: userMessage.id,
+          });
+
+          await runAgentWithBranching(agent, setAgent, client, userMessage.id, params, db);
+          setAgent("loading", false);
+        }
+
+        function switchBranch(newMessageId) {
+          const tree = agent.messageTree;
+          if (!tree) return;
+          const pathToMessage = getPathToMessage(tree, newMessageId);
+          const fullPath = extendPath(tree, pathToMessage);
+          const newLeafId = fullPath.length > 0 ? fullPath[fullPath.length - 1] : null;
+          const pathMessages = fullPath.map(id => tree.nodes.get(id)?.message).filter(Boolean);
+          setAgent({ activePath: fullPath, activeLeafId: newLeafId, messages: pathMessages });
+        }
+
+        return { agent, params, setAgent, sendMessage, switchBranch };
+      }
+
+      function setSearchParams(obj) {
+        const params = new URLSearchParams(window.location.search);
+        Object.entries(obj).forEach(([k, v]) => v != null && params.set(k, v));
+        window.history.replaceState({}, "", `${window.location.pathname}?${params}`);
+      }
+
+      async function upsert(db, table, obj, key = "id") {
+        const existing = await db.get(table, obj[key]);
+        if (existing) {
+          const updated = { ...existing, ...obj };
+          await db.put(table, updated);
+          return updated;
+        } else {
+          const id = await db.add(table, obj);
+          return { ...obj, [key]: id };
+        }
+      }
+
+      // #endregion
+
+      // #region 3. UI COMPONENTS
+      // =============================================================================
+      // Presentational components for messages, branching, and input.
+      // =============================================================================
+
+      function HtmlPreview(props) {
+        let iframeRef;
+        const resize = () => {
+          try {
+            const doc = iframeRef?.contentDocument;
+            // Use documentElement.scrollHeight (includes body margins) + buffer for edge cases
+            const height = doc?.documentElement?.scrollHeight || doc?.body?.scrollHeight || 0;
+            if (height) iframeRef.style.height = (height + 20) + "px";
+          } catch (e) { /* cross-origin */ }
+        };
+        return html`
+          <iframe
+            ref=${el => iframeRef = el}
+            srcdoc=${() => props.content}
+            onLoad=${resize}
+            style="border:none; width:100%; min-height:50px;"
+          ></iframe>
+        `;
+      }
+
+      function InputForm(props) {
+        return html`
+          <form id="inputForm" onSubmit=${props.onSubmit} class="shadow-sm bg-white border rounded">
+            <textarea
+              id="userMessage"
+              class="form-control form-control-sm rounded p-2 border-0 shadow-none"
+              rows="3"
+              placeholder="Enter message"
+              aria-label="User message"
+              onKeyDown=${props.onKeyDown}
+              required></textarea>
+            <div class="d-flex align-items-center justify-content-between gap-2 p-2">
+              <div class="d-flex flex-grow-1 gap-2 align-items-center">
+                <input type="file" name="userFiles" id="userFiles" class="visually-hidden" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.tsv,.md,.json,text/*" multiple />
+                <label for="userFiles" class="btn btn-sm btn-secondary">
+                  <span class="visually-hidden">Attach Files</span>
+                  <i class="bi bi-paperclip"></i>
+                </label>
+                <div class="form-check form-switch form-control-sm">
+                  <input class="form-check-input" type="checkbox" role="switch" id="reasoningMode" name="reasoningMode" title="Enable extended reasoning mode" />
+                  <label class="form-check-label" for="reasoningMode">
+                    <span class="visually-hidden">Reasoning Mode</span>
+                    <i class="bi bi-lightbulb-fill text-secondary"></i>
+                  </label>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-link text-secondary p-1" onClick=${_ => props.onOpenConfig?.()} title="Settings">
+                  <i class="bi bi-gear"></i>
+                </button>
+                <select id="modelId" class="form-select form-select-sm w-auto border-0 shadow-none" required>
+                  <optgroup label="AWS Bedrock">
+                    <option value="global.anthropic.claude-opus-4-5-20251101-v1:0">Opus 4.5</option>
+                    <option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0">Sonnet 4.5</option>
+                    <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0" selected>Haiku 4.5</option>
+                  </optgroup>
+                  <optgroup label="Google Vertex">
+                    <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
+                    <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
+                    <option value="imagen-4.0-generate-001" hidden>Imagen 4.0</option>
+                    <option value="veo-3.0-generate-preview" hidden>Veo 3.0</option>
+                  </optgroup>
+                  <optgroup label="Test" hidden>
+                    <option value="echo">Echo</option>
+                  </optgroup>
+                </select>
+                <button type="submit" class="btn btn-sm btn-dark">Send</button>
+              </div>
+            </div>
+          </form>
+        `;
+      }
+
+      function MessageContent(props) {
+        // IMPORTANT: Access store array indices directly to track reactivity.
+        // Using .slice() breaks SolidJS store tracking since it creates a plain array.
+        const findToolResult = toolUseId => {
+          const msgs = typeof props.allMessages === "function" ? props.allMessages() : props.allMessages;
+          if (!msgs) return;
+          for (let i = msgs.length - 1; i >= 0; i--) {
+            const { content } = msgs[i];
+            for (const c of content) {
+              if (c.toolResult?.toolUseId === toolUseId) {
+                return c.toolResult;
+              }
+            }
+          }
+        };
+
+        const c = () => props.content;
+        const m = () => props.message;
+        const isText = () => c().text !== undefined;
+
+        return html`
+          <${Switch}>
+            <${Match} when=${() => isText() && m().role === "user"}>
+              <${Show}
+                when=${() => props.editingId === m().id}
+                fallback=${html`<div class="small rounded p-2 text-dark bg-secondary-subtle d-inline-block text-pre">${() => c().text}</div>`}>
+                <${EditableMessage} text=${() => c().text} onSave=${text => props.onSave?.(m().id, text)} onCancel=${props.onCancel} />
+              <//>
+            <//>
+            <${Match} when=${() => isText() && m().role === "assistant"}>
+              <div class="small p-2 text-pre">${() => c().text}</div>
+            <//>
+            <${Match} when=${() => c().reasoningContent || c().toolUse?.name === "think"}>
+              <details class="small rounded border p-2">
+                <summary class="cursor-pointer text-dark">View Reasoning</summary>
+                <p class="my-2 text-muted">${() => c().reasoningContent?.reasoningText?.text || parseJSON(c().toolUse?.input)?.thought}</p>
+              </details>
+            <//>
+            <${Match} when=${() => c().toolUse?.name === "editor"}>
+              <${EditorResult} result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result} />
+            <//>
+            <${Match} when=${() => c().toolUse?.name === "code"}>
+              <${CodeResult}
+                input=${() => parseJSON(c().toolUse?.input)}
+                result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result} />
+            <//>
+            <${Match} when=${() => c().toolUse?.name === "mcp"}>
+              <${McpResult} result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result} />
+            <//>
+            <${Match} when=${() => c().toolUse?.name === "task"}>
+              <${TaskResult}
+                result=${() => findToolResult(c().toolUse.toolUseId)?.content?.[0]?.json?.result}
+                toolUseId=${() => c().toolUse.toolUseId} />
+            <//>
+            <${Match} when=${() => c().toolUse && !["think", "editor", "code", "mcp", "task"].includes(c().toolUse?.name)}>
+              <details class="small rounded border p-2">
+                <summary class="cursor-pointer text-dark">${() => c().toolUse.name}</summary>
+                <div class="my-2 text-muted text-pre">
+                  ${() => JSON.stringify(parseJSON(c().toolUse.input || "{}"), null, 2)}
+                  <hr />
+                  ${() => JSON.stringify(findToolResult(c().toolUse.toolUseId) || {}, null, 2)}
+                </div>
+              </details>
+            <//>
+          <//>
+        `;
+      }
+
+      function BranchNav(props) {
+        const siblings = () => (props.tree && props.messageId ? getSiblings(props.tree, props.messageId) : [props.messageId]);
+        const index = () => siblings().indexOf(props.messageId);
+
+        return html`
+          <${Show} when=${() => siblings().length > 1}>
+            <span class="branch-nav d-inline-flex align-items-center gap-2 small text-muted">
+              <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" disabled=${() => index() <= 0} onClick=${e => props.onSwitch(siblings()[index() - 1])} title="Previous version">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <span class="tabular-nums min-w-10 text-center">${() => index() + 1}/${() => siblings().length}</span>
+              <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" disabled=${() => index() >= siblings().length - 1} onClick=${e => props.onSwitch(siblings()[index() + 1])} title="Next version">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </span>
+          <//>
+        `;
+      }
+
+      function EditableMessage(props) {
+        let textareaRef;
+        return html`
+          <div class="edit-message-container">
+            <textarea
+              ref=${el => { textareaRef = el; el.focus(); el.select(); }}
+              class="form-control form-control-sm resize-y mb-2"
+              rows="3"
+              onKeyDown=${e => {
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); props.onSave(textareaRef.value); }
+                else if (e.key === "Escape") props.onCancel();
+              }}>${() => props.text}</textarea>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-primary" onClick=${e => props.onSave(textareaRef.value)}>Save & Submit</button>
+              <button type="button" class="btn btn-sm btn-secondary" onClick=${props.onCancel}>Cancel</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function EditorResult(props) {
+        const r = () => props.result;
+        const isHtml = () => r()?.path?.endsWith(".html");
+        const download = () => {
+          const content = r()?.content;
+          const path = r()?.path || "file.txt";
+          if (content === undefined) return;
+          const blob = new Blob([content], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = path.split("/").pop() || "file.txt";
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+        return html`
+          <div class="editor-result small border rounded overflow-hidden mb-1">
+            <div class="px-2 py-1 bg-secondary-subtle text-muted border-bottom d-flex justify-content-between align-items-center">
+              <span>${() => r()?.path || (r()?.error ? "Error" : "...")}</span>
+              <${Show} when=${() => r()?.content !== undefined}>
+                <button type="button" class="btn btn-sm btn-link p-0 text-muted" onClick=${download} title="Download">
+                  <i class="bi bi-download"></i>
+                </button>
+              <//>
+            </div>
+            <${Show} when=${() => isHtml() && r()?.content !== undefined}>
+              <${HtmlPreview} content=${() => r().content} />
+            <//>
+            <${Show} when=${() => !isHtml() && r()?.content !== undefined}>
+              <pre class="m-0 p-2 text-pre" style="max-height: 300px; overflow: auto;">${() => r().content}</pre>
+            <//>
+            <${Show} when=${() => r()?.entries}>
+              <div class="p-2 text-pre">${() => r().entries.length ? r().entries.join("\n") : "(empty)"}</div>
+            <//>
+            <${Show} when=${() => r()?.error}>
+              <div class="p-2 text-danger">${() => r().error}</div>
+            <//>
+            <${Show} when=${() => r()?.status === "deleted"}>
+              <div class="p-2 text-muted">Deleted</div>
+            <//>
+          </div>
+        `;
+      }
+
+      function CodeResult(props) {
+        const input = () => props.input;
+        const result = () => props.result;
+        const lang = () => input()?.language || (input()?.filename?.endsWith(".html") ? "html" : "js");
+        const isHtml = () => lang() === "html";
+
+        return html`
+          <div class="code-result small border rounded overflow-hidden mb-1">
+            <div class="px-2 py-1 bg-secondary-subtle text-muted border-bottom">
+              <span>${() => input()?.filename || lang()}</span>
+            </div>
+            <${Show} when=${() => isHtml() && result()?.source}>
+              <${HtmlPreview} content=${() => result().source} />
+            <//>
+            <${Show} when=${() => !isHtml() && input()?.source}>
+              <pre class="m-0 p-2 text-pre bg-light" style="max-height: 300px; overflow: auto;">${() => input().source}</pre>
+            <//>
+            <${Show} when=${() => result()?.logs?.length}>
+              <pre class="m-0 p-2 text-pre border-top" style="max-height: 200px; overflow: auto;">${() => result().logs.join("\n")}</pre>
+            <//>
+            <${Show} when=${() => result()?.error}>
+              <div class="p-2 text-danger">${() => result().error}</div>
+            <//>
+          </div>
+        `;
+      }
+
+      function McpResult(props) {
+        const r = () => props.result;
+        const formatText = text => {
+          try { return JSON.stringify(JSON.parse(text), null, 2); }
+          catch { return text; }
+        };
+        return html`
+          <div class="mcp-result small border rounded overflow-hidden mb-1">
+            <div class="px-2 py-1 bg-secondary-subtle text-muted border-bottom">
+              <span>${() => r()?.server || "mcp"}</span>
+            </div>
+            <${Show} when=${() => r()?.error}>
+              <div class="p-2 text-danger">${() => r().error}</div>
+            <//>
+            <${Show} when=${() => r()?.servers}>
+              <div class="p-2 text-pre">${() => r().servers.map(s => `${s.enabled ? "●" : "○"} ${s.name} - ${s.url}`).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.tools}>
+              <div class="p-2 text-pre">${() => r().tools.map(t => `${t.name}${t.description ? ` - ${t.description}` : ""}`).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.resources}>
+              <div class="p-2 text-pre">${() => r().resources.map(res => `${res.name || res.uri}`).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.prompts}>
+              <div class="p-2 text-pre">${() => r().prompts.map(p => `${p.name}${p.description ? ` - ${p.description}` : ""}`).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.contents}>
+              <div class="p-2 text-pre">${() => r().contents.map(c => c.text ? formatText(c.text) : JSON.stringify(c, null, 2)).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.content}>
+              <div class="p-2 text-pre">${() => r().content.map(c => c.text ? formatText(c.text) : JSON.stringify(c, null, 2)).join("\n")}</div>
+            <//>
+            <${Show} when=${() => r()?.messages}>
+              <div class="p-2 text-pre">${() => r().messages.map(m => `[${m.role}] ${m.content?.text || JSON.stringify(m.content)}`).join("\n")}</div>
+            <//>
+          </div>
+        `;
+      }
+
+      // Renders a single message from a subagent conversation
+      function SubagentMessageBubble(props) {
+        const m = () => props.message;
+        const isToolResult = () => m()?.content?.some(c => c.toolResult);
+        const displayRole = () => isToolResult() ? "tool" : m()?.role;
+
+        const renderContent = (content) => {
+          if (!content) return "";
+          return content.map(c => {
+            if (c.text) return c.text;
+            if (c.toolUse) return `[${c.toolUse.name}] ${JSON.stringify(c.toolUse.input || {}, null, 2).slice(0, 200)}...`;
+            if (c.toolResult) {
+              const result = c.toolResult.content?.[0]?.json?.result;
+              const preview = typeof result === "string" ? result.slice(0, 200) : JSON.stringify(result || {}, null, 2).slice(0, 200);
+              return `Result: ${preview}${preview.length >= 200 ? "..." : ""}`;
+            }
+            if (c.reasoningContent) return `[Thinking...] ${(c.reasoningContent.reasoningText?.text || "").slice(0, 100)}...`;
+            return "";
+          }).filter(Boolean).join("\n");
+        };
+
+        return html`
+          <div class="subagent-message mb-2" classList=${{ "ps-3 border-start border-2": () => displayRole() === "tool" }}>
+            <div class="d-flex align-items-center gap-1 text-muted small mb-1">
+              <span class="fw-semibold">${displayRole}</span>
+            </div>
+            <div class="text-pre small" style="max-height: 150px; overflow: auto;">
+              ${() => renderContent(m()?.content)}
+            </div>
+          </div>
+        `;
+      }
+
+      function TaskResult(props) {
+        const r = () => props.result;
+        const toolUseId = () => typeof props.toolUseId === "function" ? props.toolUseId() : props.toolUseId;
+
+        // Get running state for this tool call from the signal
+        const runningState = () => runningSubagents().get(toolUseId());
+        const isRunning = () => runningState()?.status === "running";
+        const isCompleted = () => runningState()?.status === "completed" || r();
+
+        // State for expanded view of completed conversation
+        const [expanded, setExpanded] = createSignal(false);
+        const [fullMessages, setFullMessages] = createSignal([]);
+
+        // Load full conversation when expanded
+        createEffect(async () => {
+          if (expanded() && r()?.subagentThreadId) {
+            const msgs = await db.getAllFromIndex("messages", "threadId", r().subagentThreadId);
+            setFullMessages(msgs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)));
+          }
+        });
+
+        return html`
+          <div class="task-result small border rounded overflow-hidden mb-1">
+            <div class="px-2 py-1 bg-secondary-subtle d-flex justify-content-between align-items-center">
+              <span class="text-muted">
+                <i class="bi bi-robot me-1"></i>
+                ${() => r()?.type || runningState()?.type || "task"} agent
+              </span>
+              <span class="text-muted">
+                ${() => isRunning() ? html`<i class="bi bi-arrow-repeat subagent-spin me-1"></i> Running...` : ""}
+                ${() => r()?.turns ? `${r().turns} turns` : ""}
+              </span>
+            </div>
+
+            <!-- Real-time streaming display while running -->
+            <${Show} when=${isRunning}>
+              <div class="subagent-stream p-2 border-top" style="max-height: 400px; overflow: auto;">
+                <${For} each=${() => runningState()?.messages || []}>
+                  ${msg => html`<${SubagentMessageBubble} message=${msg} />`}
+                <//>
+                <!-- Current streaming message -->
+                <${Show} when=${() => runningState()?.currentMessage?.content?.length > 0}>
+                  <div class="subagent-message streaming mb-2">
+                    <div class="d-flex align-items-center gap-1 text-muted small mb-1">
+                      <span class="fw-semibold">assistant</span>
+                      <span class="subagent-streaming-indicator"></span>
+                    </div>
+                    <div class="text-pre small" style="max-height: 150px; overflow: auto;">
+                      ${() => {
+                        const content = runningState()?.currentMessage?.content || [];
+                        return content.map(c => c.text || "").filter(Boolean).join("\n");
+                      }}
+                    </div>
+                  </div>
+                <//>
+              </div>
+            <//>
+
+            <!-- Completed state: show error, summary, or expand option -->
+            <${Show} when=${() => !isRunning()}>
+              <${Show} when=${() => r()?.error}>
+                <div class="p-2 text-danger">${() => r().error}</div>
+              <//>
+              <${Show} when=${() => r()?.summary}>
+                <div class="p-2 text-pre">${() => r().summary}</div>
+              <//>
+              <${Show} when=${() => r()?.folder}>
+                <div class="px-2 pb-2 text-muted small">
+                  Saved to: ${() => r().folder}
+                </div>
+              <//>
+              <${Show} when=${() => r()?.subagentThreadId}>
+                <div class="px-2 pb-2">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-link p-0 text-muted"
+                    onClick=${_ => setExpanded(e => !e)}>
+                    <i class=${() => `bi ${expanded() ? 'bi-chevron-up' : 'bi-chevron-down'} me-1`}></i>
+                    ${() => expanded() ? "Hide conversation" : "View full conversation"}
+                  </button>
+                </div>
+              <//>
+
+              <!-- Expanded conversation view -->
+              <${Show} when=${expanded}>
+                <div class="subagent-conversation border-top p-2" style="max-height: 500px; overflow: auto;">
+                  <${For} each=${fullMessages}>
+                    ${msg => html`<${SubagentMessageBubble} message=${msg} />`}
+                  <//>
+                  <${Show} when=${() => fullMessages().length === 0}>
+                    <div class="text-muted small">Loading conversation...</div>
+                  <//>
+                </div>
+              <//>
+            <//>
+          </div>
+        `;
+      }
+
+      function AgentConfigModal(props) {
+        const [servers, setServers] = createSignal([...(props.servers || [])]);
+        const [newName, setNewName] = createSignal("");
+        const [newUrl, setNewUrl] = createSignal("");
+
+        // Proxy settings from props (not localStorage)
+        const pc = props.proxyConfig || {};
+        const [proxyEndpoint, setProxyEndpoint] = createSignal(pc.endpoint || "");
+        const [proxyHeaderName, setProxyHeaderName] = createSignal(pc.headerName || "");
+        const [proxyHeaderValue, setProxyHeaderValue] = createSignal(pc.headerValue || "");
+
+        const addServer = () => {
+          const name = newName().trim();
+          const url = newUrl().trim();
+          if (!name || !url) return;
+          setServers([...servers(), { name, url, enabled: true }]);
+          setNewName("");
+          setNewUrl("");
+        };
+
+        const removeServer = index => {
+          setServers(servers().filter((_, i) => i !== index));
+        };
+
+        const toggleServer = index => {
+          setServers(servers().map((s, i) => i === index ? { ...s, enabled: !s.enabled } : s));
+        };
+
+        const updateServer = (index, field, value) => {
+          setServers(servers().map((s, i) => i === index ? { ...s, [field]: value } : s));
+        };
+
+        const handleSave = () => {
+          // Build proxy config object
+          const endpoint = proxyEndpoint().trim();
+          const proxy = endpoint ? {
+            endpoint,
+            headerName: proxyHeaderName().trim(),
+            headerValue: proxyHeaderValue().trim()
+          } : null;
+          // Save both MCP servers and proxy config
+          props.onSave?.(servers(), proxy);
+        };
+
+        return html`
+          <div class="modal show d-block" style="background: rgba(0,0,0,0.5)" onClick=${e => e.target === e.currentTarget && props.onClose?.()}>
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Settings</h5>
+                  <button type="button" class="btn-close" onClick=${_ => props.onClose?.()}></button>
+                </div>
+                <div class="modal-body">
+                  <!-- Proxy Settings -->
+                  <h6 class="mb-2">CORS Proxy</h6>
+                  <p class="small text-muted mb-2">Route external requests through a proxy to bypass CORS restrictions.</p>
+                  <div class="mb-2">
+                    <input
+                      class="form-control form-control-sm"
+                      placeholder="Proxy endpoint (e.g., https://proxy.example.com/)"
+                      value=${proxyEndpoint}
+                      onInput=${e => setProxyEndpoint(e.target.value)} />
+                  </div>
+                  <div class="d-flex gap-2 mb-3">
+                    <input
+                      class="form-control form-control-sm"
+                      style="flex: 1"
+                      placeholder="Header name (e.g., X-PROXY-API-KEY)"
+                      value=${proxyHeaderName}
+                      onInput=${e => setProxyHeaderName(e.target.value)} />
+                    <input
+                      class="form-control form-control-sm"
+                      style="flex: 2"
+                      type="password"
+                      placeholder="Header value (API key)"
+                      value=${proxyHeaderValue}
+                      onInput=${e => setProxyHeaderValue(e.target.value)} />
+                  </div>
+
+                  <!-- MCP Servers -->
+                  <h6 class="mb-2 mt-4 pt-3 border-top">MCP Servers</h6>
+                  <p class="small text-muted mb-2">Configure MCP servers. Servers must support SSE/HTTP transport.</p>
+
+                  <${Show} when=${() => servers().length === 0}>
+                    <div class="text-muted small mb-3">No servers configured yet.</div>
+                  <//>
+
+                  <${For} each=${servers}>
+                    ${(server, index) => html`
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          class="form-check-input"
+                          checked=${() => server.enabled}
+                          onChange=${_ => toggleServer(index())}
+                          title="Enable/disable server" />
+                        <input
+                          class="form-control form-control-sm"
+                          style="flex: 1"
+                          value=${() => server.name}
+                          placeholder="Name"
+                          onChange=${e => updateServer(index(), "name", e.target.value)} />
+                        <input
+                          class="form-control form-control-sm"
+                          style="flex: 2"
+                          value=${() => server.url}
+                          placeholder="URL"
+                          onChange=${e => updateServer(index(), "url", e.target.value)} />
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-danger"
+                          onClick=${_ => removeServer(index())}
+                          title="Remove server">
+                          <i class="bi bi-x"></i>
+                        </button>
+                      </div>
+                    `}
+                  <//>
+
+                  <div class="d-flex gap-2 mt-2">
+                    <input
+                      class="form-control form-control-sm"
+                      style="flex: 1"
+                      placeholder="Name"
+                      value=${newName}
+                      onInput=${e => setNewName(e.target.value)}
+                      onKeyDown=${e => e.key === "Enter" && addServer()} />
+                    <input
+                      class="form-control form-control-sm"
+                      style="flex: 2"
+                      placeholder="https://server.com/mcp"
+                      value=${newUrl}
+                      onInput=${e => setNewUrl(e.target.value)}
+                      onKeyDown=${e => e.key === "Enter" && addServer()} />
+                    <button type="button" class="btn btn-sm btn-secondary" onClick=${_ => addServer()}>
+                      <i class="bi bi-plus"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" onClick=${_ => props.onClose?.()}>Cancel</button>
+                  <button type="button" class="btn btn-primary" onClick=${handleSave}>Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // #endregion
+
+      // #region 4. AGENT LOOP & STREAMING
+      // =============================================================================
+      // Core agent loop, streaming response processing, and command construction.
+      // =============================================================================
+
+      async function runAgentWithBranching(store, setStore, client, lastMessageId, params, db) {
+        const saveMsg = msg => db.add("messages", { ...unwrap(msg), agentId: params.agentId, threadId: params.threadId });
+        const toolMap = Object.fromEntries(store.tools.map(t => [t.toolSpec.name, t.fn]));
+        let parentId = lastMessageId;
+
+        while (true) {
+          const input = getConverseCommand({ ...store, messages: store.messages.map(({ role, content }) => ({ role, content })) });
+          const output = await client.send(input);
+
+          setStore("messages", store.messages.length, { role: "assistant", content: [], parentId, createdAt: Date.now() });
+
+          let stopReason = null;
+          for await (const msg of output.stream) {
+            setStore(produce(s => processContentBlock(s, msg)));
+            if (msg.messageStop) stopReason = msg.messageStop.stopReason;
+          }
+
+          const savedId = await saveMsg(store.messages.at(-1));
+          setStore("messages", store.messages.length - 1, "id", savedId);
+          setStore("activeLeafId", savedId);
+          parentId = savedId;
+
+          if (stopReason !== "tool_use") break;
+
+          const toolResults = { ...(await getToolResults(store.messages.at(-1).content, toolMap, { db, threadId: params.threadId, agentId: params.agentId, modelId: store.modelId })), parentId: savedId, createdAt: Date.now() };
+          setStore("messages", store.messages.length, toolResults);
+          parentId = await saveMsg(toolResults);
+          setStore("messages", store.messages.length - 1, "id", parentId);
+        }
+
+        const allMessages = await db.getAllFromIndex("messages", "threadId", params.threadId);
+        const tree = buildMessageTree(allMessages);
+        setStore("messageTree", tree);
+        setStore("activePath", getMostRecentPath(tree));
+      }
+
+      function getConverseCommand(config) {
+        const cachePoint = { type: "default" };
+        const additionalModelRequestFields = {};
+        if (config.reasoningMode) {
+          additionalModelRequestFields.thinking = { type: "enabled", budget_tokens: +32_000 };
+        }
+        const tools = config.tools.map(({ toolSpec }) => ({ toolSpec })).filter(Boolean);
+
+        return {
+          modelId: config.modelId,
+          messages: config.messages,
+          system: [{ text: config.systemPrompt }, { cachePoint }],
+          toolConfig: { tools: [...tools, { cachePoint }] },
+          additionalModelRequestFields,
+        };
+      }
+
+      function processContentBlock(s, message) {
+        const { contentBlockStart, contentBlockDelta, contentBlockStop } = message;
+        const content = s.messages.at(-1).content;
+
+        if (contentBlockStart?.start?.toolUse) {
+          content[contentBlockStart.contentBlockIndex] = { toolUse: contentBlockStart.start.toolUse };
+          return;
+        }
+        if (contentBlockStop) {
+          const block = content[contentBlockStop.contentBlockIndex];
+          if (block?.toolUse) block.toolUse.input = parseJSON(block.toolUse.input);
+          return;
+        }
+        if (!contentBlockDelta) return;
+
+        const { contentBlockIndex, delta } = contentBlockDelta;
+        content[contentBlockIndex] ||= {};
+        const block = content[contentBlockIndex];
+
+        if (delta.reasoningContent) appendReasoning(block, delta.reasoningContent);
+        else if (delta.text) block.text = (block.text || "") + delta.text;
+        else if (delta.toolUse) block.toolUse.input = (block.toolUse.input || "") + delta.toolUse.input;
+      }
+
+      function appendReasoning(block, rc) {
+        block.reasoningContent ||= { reasoningText: {} };
+        const t = block.reasoningContent;
+        if (rc.text) t.reasoningText.text = (t.reasoningText.text || "") + rc.text;
+        else if (rc.signature) t.reasoningText.signature = (t.reasoningText.signature || "") + rc.signature;
+        else if (rc.redactedContent) t.redactedContent = (t.redactedContent || "") + rc.redactedContent;
+      }
+
+      // #endregion
+
+      // #region 5. PROVIDERS & CLIENTS
+      // =============================================================================
+      // AI provider clients (AWS Bedrock, Google Gemini) and configuration.
+      // =============================================================================
+
+      async function getConverseClient(type = "aws") {
+        if (type === "aws") {
+          const config = await withStorage(getAwsConfig, localStorage, "aws-config");
+          const client = new BedrockRuntimeClient(config);
+          const send = input => client.send(new ConverseStreamCommand(input));
+          return { client, send };
+        }
+        if (type === "google") {
+          const config = await withStorage(getGoogleConfig, localStorage, "google-config");
+          return getGeminiClient(new GoogleGenAI(config));
+        }
+        if (type === "echo") {
+          return getEchoClient();
+        }
+      }
+
+      // Echo client for testing - echoes back a summary of the input
+      function getEchoClient() {
+        async function* stream(input) {
+          yield { messageStart: { role: "assistant" } };
+
+          // Extract user message text
+          const lastUserMsg = input.messages?.filter(m => m.role === "user").pop();
+          const userText = lastUserMsg?.content?.find(c => c.text)?.text || "no input";
+
+          // Echo back a response
+          const responseText = `Echo: received "${userText.slice(0, 100)}${userText.length > 100 ? '...' : ''}"`;
+
+          yield { contentBlockStart: { contentBlockIndex: 0, start: {} } };
+          // Stream character by character for realistic simulation
+          for (const char of responseText) {
+            yield { contentBlockDelta: { contentBlockIndex: 0, delta: { text: char } } };
+            await new Promise(r => setTimeout(r, 2));
+          }
+          yield { contentBlockStop: { contentBlockIndex: 0 } };
+          yield { messageStop: { stopReason: "end_turn" } };
+        }
+
+        return { send: input => Promise.resolve({ stream: stream(input) }) };
+      }
+
+      export function getGeminiClient(client) {
+        const toB64 = b => btoa(b.reduce((s, x) => s + String.fromCharCode(x), ""));
+        const MIME = { png: "image/png", jpeg: "image/jpeg", jpg: "image/jpeg", gif: "image/gif", webp: "image/webp", pdf: "application/pdf" };
+
+        async function* stream(input) {
+          const toolNames = new Map();
+          const toGeminiPart = b => {
+            if (b.text) return { text: b.text };
+            if (b.image) return { inlineData: { data: toB64(b.image.source.bytes), mimeType: MIME[b.image.format] } };
+            if (b.document) return { inlineData: { data: toB64(b.document.source.bytes), mimeType: MIME[b.document.format] || "application/octet-stream" } };
+            if (b.toolUse) {
+              toolNames.set(b.toolUse.toolUseId, b.toolUse.name);
+              return { functionCall: { name: b.toolUse.name, args: typeof b.toolUse.input === "string" ? JSON.parse(b.toolUse.input) : b.toolUse.input, id: b.toolUse.toolUseId } };
+            }
+            if (b.toolResult) {
+              const c = b.toolResult.content?.[0];
+              return { functionResponse: { id: b.toolResult.toolUseId, name: toolNames.get(b.toolResult.toolUseId) || b.toolResult.toolUseId, response: c?.json ?? { output: c?.text } } };
+            }
+          };
+
+          const geminiReq = {
+            model: input.modelId,
+            contents: input.messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: m.content.map(toGeminiPart).filter(Boolean) })),
+            config: {
+              systemInstruction: input.system?.find(s => s.text)?.text,
+              tools: input.toolConfig?.tools
+                ?.filter(t => t.toolSpec)
+                .map(t => ({
+                  functionDeclarations: [{
+                    name: t.toolSpec.name,
+                    description: t.toolSpec.description,
+                    parametersJsonSchema: t.toolSpec.inputSchema?.json,
+                  }],
+                })),
+              ...(input.additionalModelRequestFields?.thinking && {
+                thinkingConfig: { thinkingBudget: input.additionalModelRequestFields.thinking.budget_tokens },
+              }),
+            },
+          }
+
+          const response = await client.models.generateContentStream(geminiReq);
+          yield { messageStart: { role: "assistant" } };
+
+          let idx = 0, active = null, toolNum = 0;
+
+          for await (const chunk of response) {
+            const parts = chunk.candidates?.[0]?.content?.parts ?? [];
+            const done = chunk.candidates?.[0]?.finishReason;
+
+            for (const p of parts) {
+              let type, start, delta;
+
+              if (p.thought && p.text != null) {
+                type = "reasoning";
+                delta = { reasoningContent: { text: p.text, ...(p.thoughtSignature && { signature: p.thoughtSignature }) } };
+              } else if (p.text != null) {
+                type = "text";
+                delta = { text: p.text };
+              } else if (p.functionCall) {
+                type = "tool";
+                const id = `gemini_${toolNum++}`;
+                start = { toolUse: { toolUseId: id, name: p.functionCall.name } };
+                delta = { toolUse: { input: JSON.stringify(p.functionCall.args ?? {}) } };
+              } else continue;
+
+              if (type !== active) {
+                if (active) yield { contentBlockStop: { contentBlockIndex: idx++ } };
+                if (start) yield { contentBlockStart: { contentBlockIndex: idx, start } };
+                active = type;
+              }
+              yield { contentBlockDelta: { contentBlockIndex: idx, delta } };
+            }
+
+            if (done) {
+              if (active) yield { contentBlockStop: { contentBlockIndex: idx } };
+              yield { messageStop: { stopReason: parts.some(p => p.functionCall) ? "tool_use" : "end_turn" } };
+            }
+          }
+        }
+
+        return { client, send: input => Promise.resolve({ stream: stream(input) }) };
+      }
+
+      async function withStorage(getConfig, storage, key) {
+        const cached = storage.getItem(key);
+        if (cached) return JSON.parse(cached);
+        const config = await getConfig();
+        storage.setItem(key, JSON.stringify(config));
+        return config;
+      }
+
+      function getGoogleConfig(prompt = window.prompt) {
+        const apiKey = prompt("Google GenAI API Key:");
+        return { apiKey };
+      }
+
+      function getAwsConfig(prompt = window.prompt) {
+        const region = prompt("AWS region [us-east-1]:");
+        const accessKeyId = prompt("AWS Access Key ID:");
+        const secretAccessKey = prompt("AWS Secret Access Key:");
+        const sessionToken = prompt("AWS Session Token [optional]:");
+        return {
+          region: region || "us-east-1",
+          credentials: { accessKeyId, secretAccessKey, sessionToken: sessionToken || undefined },
+        };
+      }
+
+      // #endregion
+
+      const mcpSessions = new Map();
+
+      // Proxy configuration - module-level variable (set by App when loading agent)
+      let currentProxyConfig = null;
+
+      function getProxyConfig() {
+        return currentProxyConfig;
+      }
+
+      function setProxyConfig(config) {
+        currentProxyConfig = config;
+      }
+
+      // Proxied fetch for non-localhost URLs
+      async function proxyFetch(url, options = {}) {
+        const proxy = getProxyConfig();
+        const urlObj = new URL(url, window.location.origin);
+        const isLocalhost = ["localhost", "127.0.0.1", "[::1]"].some(h => urlObj.hostname === h || urlObj.hostname.endsWith(".localhost"));
+
+        if (!proxy?.endpoint || isLocalhost) {
+          return fetch(url, options);
+        }
+
+        // Construct proxied URL: proxy endpoint + target URL
+        const targetUrl = urlObj.href;
+        const proxyUrl = proxy.endpoint.replace(/\/+$/, "") + "/" + targetUrl;
+
+        // Add proxy auth header
+        const headers = new Headers(options.headers || {});
+        if (proxy.headerName && proxy.headerValue) {
+          headers.set(proxy.headerName, proxy.headerValue);
+        }
+
+        return fetch(proxyUrl, { ...options, headers });
+      }
+
+      // #region 6. TOOLS
+      // =============================================================================
+      // Tool function implementations and file/message content handling.
+      // =============================================================================
+
+      async function code({ language, source, filename, timeout = 5000 }, context = {}) {
+        // If filename provided, load from resources
+        if (filename && context.db) {
+          const { db, threadId } = context;
+          const resources = threadId
+            ? await db.getAllFromIndex("resources", "threadId", threadId)
+            : await db.getAll("resources");
+          const file = resources.find(r => r.path === filename.replace(/^\/+/, ""));
+          if (!file) return { error: `File not found: ${filename}`, logs: [] };
+          source = file.content;
+          if (!language) {
+            const ext = filename.split(".").pop()?.toLowerCase();
+            language = ext === "html" ? "html" : "js";
+          }
+        }
+        language = language || "js";
+
+        return new Promise(resolve => {
+          const logs = [];
+          const frame = document.createElement("iframe");
+          frame.sandbox = "allow-scripts allow-same-origin";
+          frame.style.cssText = "position:absolute;left:-9999px;top:-9999px;width:0;height:0;border:0";
+          document.body.appendChild(frame);
+
+          const onMsg = async e => {
+            if (e.source !== frame.contentWindow) return;
+            const d = e.data || {};
+            if (d.type === "log") logs.push(String(d.msg));
+            if (d.type === "done") cleanup();
+            // Handle resource operations from sandbox
+            if (d.type === "resources") {
+              const { id, command, args } = d;
+              try {
+                const result = await editor({ command, ...args }, { db: context.db, threadId: context.threadId });
+                frame.contentWindow?.postMessage({ type: "resources_result", id, result }, "*");
+              } catch (e) {
+                frame.contentWindow?.postMessage({ type: "resources_result", id, error: e.message }, "*");
+              }
+            }
+          };
+          window.addEventListener("message", onMsg);
+
+          const cleanup = () => {
+            clearTimeout(kill);
+            window.removeEventListener("message", onMsg);
+            frame.remove();
+            resolve({ logs, source });
+          };
+
+          // Read proxy config and origin in parent scope, serialize into bridge
+          const proxyConfigJson = JSON.stringify(getProxyConfig());
+          const parentOrigin = JSON.stringify(window.location.origin);
+
+          const bridge = `
+      (()=>{
+        const send=(t,m)=>parent.postMessage({type:t,msg:m},"*");
+        ["log","warn","error","info","debug"].forEach(k=>{
+          const o=console[k]; console[k]=(...a)=>{try{send("log",a.join(" "))}catch{}; o&&o.apply(console,a);};
+        });
+        addEventListener("error",e=>send("log",String(e.message||e.error||"error")));
+        addEventListener("unhandledrejection",e=>send("log","UnhandledRejection: "+(e?.reason?.message||e?.reason||"")));
+
+        // Proxy fetch override for non-localhost URLs (config serialized from parent)
+        const _fetch = fetch;
+        const proxyConfig = ${proxyConfigJson};
+        const parentOrigin = ${parentOrigin};
+        window.fetch = async (url, opts = {}) => {
+          try {
+            const u = new URL(url, parentOrigin);
+            const isLocal = ["localhost","127.0.0.1","[::1]"].some(h => u.hostname === h || u.hostname.endsWith(".localhost"));
+            if (!proxyConfig?.endpoint || isLocal) return _fetch(url, opts);
+
+            const proxyUrl = proxyConfig.endpoint.replace(/\\/+$/, "") + "/" + u.href;
+            const headers = new Headers(opts.headers || {});
+            if (proxyConfig.headerName && proxyConfig.headerValue) {
+              headers.set(proxyConfig.headerName, proxyConfig.headerValue);
+            }
+            return _fetch(proxyUrl, { ...opts, headers });
+          } catch (e) { console.log(e); return _fetch(url, opts); }
+        };
+
+        // Resources API - provides access to virtual filesystem
+        const _resPending = new Map();
+        let _resId = 0;
+        const _resCall = (command, args) => new Promise((resolve, reject) => {
+          const id = ++_resId;
+          _resPending.set(id, { resolve, reject });
+          parent.postMessage({ type: "resources", id, command, args }, "*");
+        });
+        window.resources = {
+          create: (path, content) => _resCall("create", { path, file_text: content }),
+          view: (path) => _resCall("view", { path }),
+          list: (path = "/") => _resCall("view", { path: path.endsWith("/") ? path : path + "/" }),
+          delete: (path) => _resCall("delete", { path }),
+          rename: (path, new_path) => _resCall("rename", { path, new_path }),
+          replace: (path, old_str, new_str) => _resCall("str_replace", { path, old_str, new_str }),
+        };
+        addEventListener("message", e => {
+          if (e.data?.type === "resources_result") {
+            const { id, result, error } = e.data;
+            const p = _resPending.get(id);
+            if (p) { _resPending.delete(id); error ? p.reject(new Error(error)) : p.resolve(result); }
+          }
+        });
+      })();
+    `;
+
+          const jsDoc = `<!doctype html><meta charset=utf-8><scr` + `ipt>${bridge}</scr` + `ipt><scr` + `ipt type="module">${source || ""};parent.postMessage({type:"done"},"*");</scr` + `ipt>`;
+          const htmlDoc = `<!doctype html><meta charset=utf-8><scr` + `ipt>${bridge}</scr` + `ipt>${source || ""}<scr` + `ipt async>addEventListener("load",()=>parent.postMessage({type:"done"},"*"));</scr` + `ipt>`;
+
+          const kill = setTimeout(cleanup, timeout);
+          frame.srcdoc = !language || ["js", "javascript"].includes(language) ? jsDoc : htmlDoc;
+        });
+      }
+
+      function think(input) {
+        return "Thinking complete.";
+      }
+
+      async function editor({ command, path, view_range, old_str, new_str, file_text, insert_line, new_path }, context = {}) {
+        const { db, threadId, agentId } = context;
+        if (!db) return "Error: Database not available";
+
+        const normPath = path.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
+        const isDir = path.endsWith("/");
+
+        // Get resources: thread-scoped + agent-scoped (skills, etc.)
+        const getResources = async () => {
+          const threadResources = threadId ? await db.getAllFromIndex("resources", "threadId", threadId) : [];
+          const agentResources = agentId ? await db.getAllFromIndex("resources", "agentId", agentId) : [];
+          // Combine, thread resources take precedence (by path)
+          const byPath = new Map();
+          for (const r of agentResources) byPath.set(r.path, r);
+          for (const r of threadResources) byPath.set(r.path, r);
+          return Array.from(byPath.values());
+        };
+
+        const getResource = async p => {
+          const all = await getResources();
+          return all.find(r => r.path === p);
+        };
+
+        const saveResource = async (p, content) => {
+          const existing = await getResource(p);
+          if (existing) {
+            await db.put("resources", { ...existing, content, updatedAt: Date.now() });
+          } else {
+            // skills/ and memories/ are agent-scoped, others are thread-scoped
+            const isAgentScoped = p.startsWith("skills/") || p.startsWith("memories/");
+            const resource = { path: p, content, agentId, createdAt: Date.now() };
+            if (!isAgentScoped) resource.threadId = threadId;
+            await db.add("resources", resource);
+          }
+        };
+
+        switch (command) {
+          case "view": {
+            const resources = await getResources();
+            const file = resources.find(r => r.path === normPath);
+            if (file && !isDir) return { status: "viewed", path, content: file.content };
+
+            // List as directory (with or without trailing slash)
+            const prefix = normPath ? normPath + "/" : "";
+            const entries = new Set();
+            for (const r of resources) {
+              if (r.path.startsWith(prefix)) {
+                const rest = r.path.slice(prefix.length);
+                const first = rest.split("/")[0];
+                if (first) entries.add(rest.includes("/") ? first + "/" : first);
+              }
+            }
+            if (entries.size > 0) return { status: "directory", path: prefix || "/", entries: Array.from(entries).sort() };
+            return { status: "error", error: `Not found: ${path}` };
+          }
+
+          case "create": {
+            if (!file_text && file_text !== "") return { status: "error", error: "file_text is required for create" };
+            const existing = await getResource(normPath);
+            if (existing) return { status: "error", error: `File already exists: ${path}. Use str_replace to edit.` };
+            await saveResource(normPath, file_text);
+            return { status: "created", path, content: file_text };
+          }
+
+          case "str_replace": {
+            if (!old_str) return { status: "error", error: "old_str is required for str_replace" };
+            if (new_str === undefined) return { status: "error", error: "new_str is required for str_replace" };
+            const resource = await getResource(normPath);
+            if (!resource) return { status: "error", error: `File not found: ${path}` };
+            const escaped = old_str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const count = (resource.content.match(new RegExp(escaped, "g")) || []).length;
+            if (count === 0) return { status: "error", error: "old_str not found in file" };
+            if (count > 1) return { status: "error", error: `old_str appears ${count} times. Be more specific.` };
+            const newContent = resource.content.replace(old_str, new_str);
+            await saveResource(normPath, newContent);
+            return { status: "replaced", path, content: newContent };
+          }
+
+          case "insert": {
+            if (insert_line === undefined) return { status: "error", error: "insert_line is required for insert" };
+            if (!new_str && new_str !== "") return { status: "error", error: "new_str is required for insert" };
+            const resource = await getResource(normPath);
+            if (!resource) return { status: "error", error: `File not found: ${path}` };
+            const lines = resource.content.split("\n");
+            const idx = Math.max(0, Math.min(lines.length, insert_line));
+            lines.splice(idx, 0, new_str);
+            const newContent = lines.join("\n");
+            await saveResource(normPath, newContent);
+            return { status: "inserted", path, content: newContent };
+          }
+
+          case "delete": {
+            const resource = await getResource(normPath);
+            if (!resource) return { status: "error", error: `Path not found: ${path}` };
+            await db.delete("resources", resource.id);
+            return { status: "deleted", path };
+          }
+
+          case "rename": {
+            if (!new_path) return { status: "error", error: "new_path is required for rename" };
+            const resource = await getResource(normPath);
+            if (!resource) return { status: "error", error: `Path not found: ${path}` };
+            const newNormPath = new_path.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
+            const existing = await getResource(newNormPath);
+            if (existing) return { status: "error", error: `Destination already exists: ${new_path}` };
+            await db.put("resources", { ...resource, path: newNormPath, updatedAt: Date.now() });
+            return { status: "renamed", old_path: path, new_path };
+          }
+
+          default:
+            return { status: "error", error: `Unknown command: ${command}` };
+        }
+      }
+
+      async function mcp({ command, server, tool, uri, name, args, filename }, context = {}) {
+        const { db, agentId, threadId } = context;
+        if (!db) return { error: "Database not available" };
+
+        const servers = (await db.get("agents", agentId || 1))?.mcpServers || [];
+
+        if (command === "list_servers") {
+          return { servers: servers.map(s => ({ name: s.name, url: s.url, enabled: s.enabled !== false })) };
+        }
+
+        const cfg = servers.find(s => s.name === server && s.enabled !== false);
+        if (!cfg) return { error: server ? `Server not found: ${server}` : "Server name required" };
+
+        const send = async (method, params = {}) => {
+          const s = mcpSessions.get(cfg.url) || { id: null, seq: 0 };
+          const res = await proxyFetch(cfg.url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream", ...(s.id && { "Mcp-Session-Id": s.id }) },
+            body: JSON.stringify({ jsonrpc: "2.0", id: ++s.seq, method, params })
+          });
+          s.id = res.headers.get("Mcp-Session-Id") || s.id;
+          mcpSessions.set(cfg.url, s);
+
+          if (!res.ok) throw new Error(`MCP ${res.status}: ${(await res.text()).slice(0, 500)}`);
+          if (res.status === 202 || res.status === 204) return null;
+
+          const text = await res.text();
+          if (!text?.trim()) return null;
+
+          // Parse SSE or JSON - extract "data: {...}" lines or parse directly
+          const isSSE = (res.headers.get("Content-Type") || "").includes("text/event-stream");
+          const jsonStr = isSSE
+            ? text.match(/^data: (.+)$/m)?.[1]
+            : text;
+
+          if (!jsonStr) return null;
+          const { result, error } = JSON.parse(jsonStr);
+          if (error) throw new Error(error.message);
+          return result;
+        };
+
+        try {
+          if (!mcpSessions.has(cfg.url)) {
+            mcpSessions.set(cfg.url, { id: null, seq: 0 });
+            await send("initialize", { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "chat-html", version: "1.0.0" } });
+            await send("notifications/initialized", {});
+          }
+
+          const methods = {
+            list_tools: () => send("tools/list"),
+            call_tool: () => send("tools/call", { name: tool, arguments: args || {} }),
+            list_resources: () => send("resources/list"),
+            read_resource: () => send("resources/read", { uri }),
+            list_prompts: () => send("prompts/list"),
+            get_prompt: () => send("prompts/get", { name, arguments: args || {} }),
+          };
+
+          const fn = methods[command];
+          if (!fn) return { error: `Unknown command: ${command}` };
+
+          const result = { server, ...await fn() };
+
+          // Save to file if filename provided
+          if (filename && !result.error) {
+            const normPath = filename.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
+            // Parse JSON text fields to avoid double-encoding
+            const parsed = JSON.parse(JSON.stringify(result), (k, v) => {
+              if (typeof v === "string" && (v.startsWith("{") || v.startsWith("["))) {
+                try { return JSON.parse(v); } catch { return v; }
+              }
+              return v;
+            });
+            const content = JSON.stringify(parsed, null, 2);
+            const resources = threadId ? await db.getAllFromIndex("resources", "threadId", threadId) : await db.getAll("resources");
+            const existing = resources.find(r => r.path === normPath);
+            if (existing) {
+              await db.put("resources", { ...existing, content, updatedAt: Date.now() });
+            } else {
+              await db.add("resources", { path: normPath, content, threadId, createdAt: Date.now() });
+            }
+            result.saved = filename;
+          }
+
+          return result;
+        } catch (e) {
+          return { error: e.message };
+        }
+      }
+
+      async function task({ prompt, type, folder }, context = {}) {
+        const { db, threadId, agentId, modelId, toolUseId } = context;
+        if (!db) return { error: "Database not available" };
+        if (!["explore", "plan"].includes(type)) return { error: `Unknown type: ${type}. Use "explore" or "plan".` };
+
+        const folderName = folder || "findings";
+
+        // Create subagent thread in DB for persistence
+        let subagentThreadId = null;
+        if (toolUseId) {
+          subagentThreadId = await db.add("threads", {
+            agentId,
+            parentThreadId: threadId,
+            parentToolUseId: toolUseId,
+            type: "subagent",
+            subagentType: type,
+            status: "running",
+            createdAt: Date.now()
+          });
+
+          // Register as running in signal
+          setRunningSubagents(prev => {
+            const next = new Map(prev);
+            next.set(toolUseId, {
+              threadId: subagentThreadId,
+              messages: [],
+              currentMessage: null,
+              status: "running",
+              type
+            });
+            return next;
+          });
+        }
+
+        // Sub-agent configuration based on type
+        // Note: Sub-agents get all tools EXCEPT task (no sub-agent chaining)
+        const subAgentToolDocs = TOOL_DOCUMENTATION.replace(/### task[\s\S]*$/, '');
+        const configs = {
+          explore: {
+            system: `You are a research agent. Explore and document findings WITH EXACT EVIDENCE.
+
+${subAgentToolDocs}
+
+## Your Task
+
+CRITICAL RULES:
+1. Save findings to /explore/${folderName}/ using the editor tool
+2. NEVER paraphrase - save EXACT quotes, full JSON, complete code blocks
+3. Include source paths and context in saved files
+4. Use descriptive filenames (e.g., api-endpoints.json, auth-code.txt)
+
+WORKFLOW:
+1. Use editor to view "/" and understand existing files
+2. Use code tool with fetch() to get web resources if needed
+3. Use mcp tool if external tools are configured
+4. Save findings to /explore/${folderName}/
+5. Summarize what you found and list files created
+
+Be thorough. Save evidence, not opinions.`,
+            tools: ["code", "think", "editor", "mcp"]
+          },
+          plan: {
+            system: `You are a planning agent. Design clear implementation approaches.
+
+${subAgentToolDocs}
+
+## Your Task
+
+Read /explore/ files for context from previous exploration.
+
+WORKFLOW:
+1. View /explore/ to see what research exists
+2. Read relevant findings files
+3. Design your implementation plan
+
+Return a structured plan:
+1. Overview - what we're building and why
+2. Steps - specific actions in order
+3. Files - exact paths to create/modify
+4. Dependencies - what must happen first
+5. Risks - potential issues
+
+Be specific. Reference evidence from /explore/ files.`,
+            tools: ["code", "think", "editor", "mcp"]
+          }
+        };
+
+        const config = configs[type];
+        const subTools = TOOLS.filter(t => config.tools.includes(t.toolSpec.name));
+        const toolMap = Object.fromEntries(subTools.map(t => [t.toolSpec.name, t.fn]));
+
+        // Get client (detect provider from model)
+        const effectiveModelId = modelId || "us.anthropic.claude-haiku-4-5-20251001-v1:0";
+        const clientType = effectiveModelId === "echo" ? "echo" : effectiveModelId.includes("gemini") ? "google" : "aws";
+        const client = await getConverseClient(clientType);
+
+        // Isolated message context for sub-agent
+        const messages = [{ role: "user", content: [{ text: prompt }] }];
+        const subContext = { db, threadId, agentId };
+
+        // Save initial user message to subagent thread
+        if (subagentThreadId) {
+          await db.add("messages", {
+            ...messages[0],
+            threadId: subagentThreadId,
+            agentId,
+            createdAt: Date.now()
+          });
+        }
+
+        // Run sub-agent loop (max 15 turns)
+        for (let turn = 0; turn < 15; turn++) {
+          const input = {
+            modelId: effectiveModelId,
+            messages: messages.map(({ role, content }) => ({ role, content })),
+            system: [{ text: config.system }],
+            toolConfig: { tools: subTools.map(({ toolSpec }) => ({ toolSpec })) },
+            additionalModelRequestFields: {}
+          };
+
+          const output = await client.send(input);
+          const assistantMsg = { role: "assistant", content: [], createdAt: Date.now() };
+          let stopReason = null;
+
+          // Process streaming response
+          for await (const msg of output.stream) {
+            processSubAgentBlock(assistantMsg, msg);
+            if (msg.messageStop) stopReason = msg.messageStop.stopReason;
+
+            // Update signal for real-time display
+            if (toolUseId) {
+              setRunningSubagents(prev => {
+                const next = new Map(prev);
+                const entry = next.get(toolUseId);
+                if (entry) {
+                  entry.currentMessage = { ...assistantMsg };
+                }
+                return next;
+              });
+            }
+          }
+
+          messages.push(assistantMsg);
+
+          // Save assistant message to DB and update signal with completed message
+          if (subagentThreadId) {
+            await db.add("messages", {
+              ...assistantMsg,
+              threadId: subagentThreadId,
+              agentId
+            });
+
+            // Update signal with completed message in messages array
+            setRunningSubagents(prev => {
+              const next = new Map(prev);
+              const entry = next.get(toolUseId);
+              if (entry) {
+                entry.messages = [...entry.messages, { ...assistantMsg }];
+                entry.currentMessage = null;
+              }
+              return next;
+            });
+          }
+
+          if (stopReason !== "tool_use") break;
+
+          // Execute tools
+          const toolResults = await getToolResults(assistantMsg.content, toolMap, subContext);
+          messages.push(toolResults);
+
+          // Save tool results to DB and update signal
+          if (subagentThreadId) {
+            await db.add("messages", {
+              ...toolResults,
+              threadId: subagentThreadId,
+              agentId,
+              createdAt: Date.now()
+            });
+
+            setRunningSubagents(prev => {
+              const next = new Map(prev);
+              const entry = next.get(toolUseId);
+              if (entry) {
+                entry.messages = [...entry.messages, { ...toolResults }];
+              }
+              return next;
+            });
+          }
+        }
+
+        // Update thread status and signal to completed
+        if (subagentThreadId) {
+          const thread = await db.get("threads", subagentThreadId);
+          if (thread) {
+            await db.put("threads", { ...thread, status: "completed", updatedAt: Date.now() });
+          }
+
+          setRunningSubagents(prev => {
+            const next = new Map(prev);
+            const entry = next.get(toolUseId);
+            if (entry) {
+              entry.status = "completed";
+            }
+            return next;
+          });
+        }
+
+        // Extract summary from last assistant message
+        const lastAssistant = messages.filter(m => m.role === "assistant").pop();
+        const summary = lastAssistant?.content?.find(c => c.text)?.text || "Completed";
+
+        return {
+          type,
+          summary,
+          folder: type === "explore" ? `/explore/${folderName}/` : null,
+          turns: messages.filter(m => m.role === "assistant").length,
+          subagentThreadId
+        };
+      }
+
+      // Simplified content block processor for sub-agents (no store, just builds message)
+      function processSubAgentBlock(msg, message) {
+        const { contentBlockStart, contentBlockDelta, contentBlockStop } = message;
+        const content = msg.content;
+
+        if (contentBlockStart?.start?.toolUse) {
+          content[contentBlockStart.contentBlockIndex] = { toolUse: contentBlockStart.start.toolUse };
+          return;
+        }
+        if (contentBlockStop) {
+          const block = content[contentBlockStop.contentBlockIndex];
+          if (block?.toolUse) block.toolUse.input = parseJSON(block.toolUse.input);
+          return;
+        }
+        if (!contentBlockDelta) return;
+
+        const { contentBlockIndex, delta } = contentBlockDelta;
+        content[contentBlockIndex] ||= {};
+        const block = content[contentBlockIndex];
+
+        if (delta.reasoningContent) appendReasoning(block, delta.reasoningContent);
+        else if (delta.text) block.text = (block.text || "") + delta.text;
+        else if (delta.toolUse) block.toolUse.input = (block.toolUse.input || "") + delta.toolUse.input;
+      }
+
+      async function getToolResults(toolUseContent, tools, context = {}) {
+        const content = await Promise.all(
+          toolUseContent
+            .filter(c => c.toolUse)
+            .map(async ({ toolUse }) => {
+              const { toolUseId, name, input } = toolUse;
+              try {
+                // Pass toolUseId in context for task tool to use
+                const result = await tools?.[name]?.(input, { ...context, toolUseId });
+                return { toolResult: { toolUseId, content: [{ json: { result } }] } };
+              } catch (error) {
+                console.error("Tool error:", error);
+                return { toolResult: { toolUseId, content: [{ json: { result: error.stack || error.message || String(error) } }] } };
+              }
+            })
+        );
+        return { role: "user", content };
+      }
+
+      async function getMessageContent(text, files) {
+        const blocks = await Promise.all(files.map(getContentBlock));
+        return [{ text }, ...blocks.filter(Boolean)];
+      }
+
+      async function getContentBlock(file) {
+        const DOC_TYPES = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
+        const IMG_TYPES = ["png", "jpg", "jpeg", "gif", "webp"];
+
+        let ext = file.name.split(".").pop().toLowerCase();
+        const isText = file.type.startsWith("text/") || /json|xml/.test(file.type);
+
+        if (isText && !DOC_TYPES.includes(ext)) ext = "txt";
+        if (ext === "htm") ext = "html";
+        if (ext === "jpeg") ext = "jpg";
+
+        const type = IMG_TYPES.includes(ext) ? "image" : DOC_TYPES.includes(ext) ? "document" : null;
+        if (!type) return null;
+
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const name = file.name.replace(/[^A-Z0-9 _\-\(\)\[\]]/gi, "_").replace(/\s+/g, " ").trim();
+        return { [type]: { format: ext, name, source: { bytes } } };
+      }
+
+      // #endregion
+
+      // #region 7. UTILITIES
+      // =============================================================================
+      // Incremental JSON parser and tree/branching utilities.
+      // =============================================================================
+
+      /**
+       * Parses a JSON string incrementally, returning partial results for incomplete inputs.
+       * Essential for streaming responses where JSON arrives in chunks.
+       */
+      function parseJSON(input) {
+        if (typeof input !== "string") return input;
+        const jsonString = input.trim();
+        if (jsonString === "") return null;
+
+        let index = 0;
+        const LITERALS = { true: true, false: false, null: null, NaN: NaN, Infinity: Infinity, "-Infinity": -Infinity };
+
+        function skipWhitespace() {
+          while (index < jsonString.length && " \n\r\t".includes(jsonString[index])) index++;
+        }
+
+        function parseValue() {
+          skipWhitespace();
+          if (index >= jsonString.length) throw new Error("Unexpected end of input");
+
+          const char = jsonString[index];
+          if (char === "{") return parseObject();
+          if (char === "[") return parseArray();
+          if (char === '"') return parseString();
+
+          const remainingText = jsonString.substring(index);
+          for (const [key, value] of Object.entries(LITERALS)) {
+            if (jsonString.startsWith(key, index)) {
+              const endPos = index + key.length;
+              if (endPos === jsonString.length || ",]} \n\r\t".includes(jsonString[endPos])) {
+                index = endPos;
+                return value;
+              }
+            }
+            if (key.startsWith(remainingText)) {
+              index = jsonString.length;
+              return value;
+            }
+          }
+
+          if (char === "-" || (char >= "0" && char <= "9")) return parseNumber();
+          throw new Error(`Unexpected token '${char}' at position ${index}`);
+        }
+
+        function parseArray() {
+          index++;
+          const arr = [];
+          while (index < jsonString.length && jsonString[index] !== "]") {
+            try {
+              arr.push(parseValue());
+              skipWhitespace();
+              if (jsonString[index] === ",") index++;
+              else if (jsonString[index] !== "]") break;
+            } catch (e) { return arr; }
+          }
+          if (index < jsonString.length && jsonString[index] === "]") index++;
+          return arr;
+        }
+
+        function parseObject() {
+          index++;
+          const obj = {};
+          while (index < jsonString.length && jsonString[index] !== "}") {
+            try {
+              skipWhitespace();
+              if (jsonString[index] !== '"') break;
+              const key = parseString();
+              skipWhitespace();
+              if (index >= jsonString.length || jsonString[index] !== ":") break;
+              index++;
+              obj[key] = parseValue();
+              skipWhitespace();
+              if (jsonString[index] === ",") index++;
+              else if (jsonString[index] !== "}") break;
+            } catch (e) { return obj; }
+          }
+          if (index < jsonString.length && jsonString[index] === "}") index++;
+          return obj;
+        }
+
+        function parseString() {
+          if (jsonString[index] !== '"') throw new Error("Expected '\"' to start a string");
+          const startIndex = index;
+          index++;
+          let escape = false;
+          while (index < jsonString.length) {
+            if (jsonString[index] === '"' && !escape) {
+              const fullString = jsonString.substring(startIndex, ++index);
+              return JSON.parse(fullString);
+            }
+            escape = jsonString[index] === "\\" ? !escape : false;
+            index++;
+          }
+          const partialStr = jsonString.substring(startIndex);
+          try {
+            return JSON.parse(partialStr + '"');
+          } catch (e) {
+            const lastBackslash = partialStr.lastIndexOf("\\");
+            if (lastBackslash > 0) return JSON.parse(partialStr.substring(0, lastBackslash) + '"');
+            return partialStr.substring(1);
+          }
+        }
+
+        function parseNumber() {
+          const startIndex = index;
+          const numberChars = "0123456789eE.+-";
+          while (index < jsonString.length && numberChars.includes(jsonString[index])) index++;
+          const numStr = jsonString.substring(startIndex, index);
+          if (!numStr) throw new Error("Empty number literal");
+          try { return parseFloat(numStr); }
+          catch (e) {
+            if (numStr.length > 1) return parseFloat(numStr.slice(0, -1));
+            throw e;
+          }
+        }
+
+        return parseValue();
+      }
+
+      // Tree/Branching utilities
+
+      export function buildMessageTree(messages) {
+        const nodes = new Map();
+        const rootIds = [];
+
+        for (const msg of messages) {
+          nodes.set(msg.id, { message: msg, childIds: [] });
+        }
+
+        for (const msg of messages) {
+          if (msg.parentId === null || msg.parentId === undefined) {
+            rootIds.push(msg.id);
+          } else if (nodes.has(msg.parentId)) {
+            nodes.get(msg.parentId).childIds.push(msg.id);
+          }
+        }
+
+        for (const [_, node] of nodes) {
+          node.childIds.sort((a, b) => nodes.get(a).message.createdAt - nodes.get(b).message.createdAt);
+        }
+        rootIds.sort((a, b) => nodes.get(a).message.createdAt - nodes.get(b).message.createdAt);
+
+        return { rootIds, nodes };
+      }
+
+      export function getMostRecentPath(tree) {
+        if (tree.rootIds.length === 0) return [];
+        const path = [];
+        let currentId = tree.rootIds[tree.rootIds.length - 1];
+
+        while (currentId !== undefined) {
+          path.push(currentId);
+          const node = tree.nodes.get(currentId);
+          if (!node || node.childIds.length === 0) break;
+          currentId = node.childIds[node.childIds.length - 1];
+        }
+        return path;
+      }
+
+      export function getSiblings(tree, messageId) {
+        const node = tree.nodes.get(messageId);
+        if (!node) return [messageId];
+        const parentId = node.message.parentId;
+        if (parentId === null || parentId === undefined) return tree.rootIds;
+        const parentNode = tree.nodes.get(parentId);
+        return parentNode ? parentNode.childIds : [messageId];
+      }
+
+      export function getPathToMessage(tree, messageId) {
+        const path = [];
+        let currentId = messageId;
+        while (currentId !== null && currentId !== undefined) {
+          path.unshift(currentId);
+          const node = tree.nodes.get(currentId);
+          if (!node) break;
+          currentId = node.message.parentId;
+        }
+        return path;
+      }
+
+      export function extendPath(tree, path) {
+        if (path.length === 0) return [];
+        const extended = [...path];
+        let currentId = extended[extended.length - 1];
+
+        while (true) {
+          const node = tree.nodes.get(currentId);
+          if (!node || node.childIds.length === 0) break;
+          currentId = node.childIds[node.childIds.length - 1];
+          extended.push(currentId);
+        }
+        return extended;
+      }
+
+      // #endregion
+
+      // #region 8. TESTS
+      // =============================================================================
+      // Test suite activated with ?test=1 query parameter.
+      // =============================================================================
+
+      if (new URLSearchParams(window.location.search).get("test") === "1") {
+        const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+        const assert = (cond, msg) => { if (!cond) throw new Error(msg || "Assertion failed"); };
+
+        async function runTests(tests) {
+          let passed = 0, failed = 0;
+          for (const test of tests) {
+            try {
+              await test();
+              console.log(`PASS: ${test.name}`);
+              passed++;
+            } catch (e) {
+              console.error(`FAIL: ${test.name}\n   ${e.message}`);
+              failed++;
+            }
+          }
+          console.log(`Results: ${passed} passed, ${failed} failed`);
+          return { passed, failed };
+        }
+
+        async function testBranchingAndParseJSON() {
+          // Test branching: create tree with branches, verify navigation
+          const messages = [
+            { id: 1, parentId: null, createdAt: 1000, role: "user", content: [] },
+            { id: 2, parentId: 1, createdAt: 2000, role: "assistant", content: [] },
+            { id: 3, parentId: 1, createdAt: 3000, role: "assistant", content: [] },
+            { id: 4, parentId: 3, createdAt: 4000, role: "user", content: [] },
+          ];
+          const tree = buildMessageTree(messages);
+
+          assert(eq(tree.rootIds, [1]), "rootIds should be [1]");
+          assert(eq(tree.nodes.get(1).childIds, [2, 3]), "children sorted by createdAt");
+          assert(eq(getMostRecentPath(tree), [1, 3, 4]), "most recent path follows newest branch");
+          assert(eq(getSiblings(tree, 2), [2, 3]), "siblings include both branches");
+          assert(eq(getPathToMessage(tree, 4), [1, 3, 4]), "path from root to message");
+          assert(eq(extendPath(tree, [1]), [1, 3, 4]), "extend path to leaf");
+
+          const empty = buildMessageTree([]);
+          assert(eq(empty.rootIds, []), "empty tree has no roots");
+          assert(eq(getMostRecentPath(empty), []), "empty tree has no path");
+
+          // Test parseJSON
+          assert(eq(parseJSON('{"a": 1}'), { a: 1 }), "complete object");
+          assert(eq(parseJSON("[1, 2, 3]"), [1, 2, 3]), "complete array");
+          assert(parseJSON('{"name": "test", "val').name === "test", "partial object");
+          assert(eq(parseJSON("[1, 2, 3"), [1, 2, 3]), "partial array");
+          assert(eq(parseJSON("true"), true), "literal true");
+          assert(eq(parseJSON("null"), null), "literal null");
+          assert(eq(parseJSON(""), null), "empty string");
+          assert(eq(parseJSON({ x: 1 }), { x: 1 }), "non-string passthrough");
+        }
+
+        async function testUIRendering() {
+          await new Promise(r => setTimeout(r, 100));
+          const app = document.getElementById("app");
+          assert(app, "App container exists");
+          assert(app.querySelector("form#inputForm"), "Input form renders");
+          assert(app.querySelector("textarea#userMessage"), "Message textarea renders");
+          assert(app.querySelector("button[type='submit']"), "Send button renders");
+          const modelSelect = app.querySelector("#modelId");
+          assert(modelSelect?.options?.length > 0, "Model select has options");
+          assert(app.querySelector("#reasoningMode")?.type === "checkbox", "Reasoning toggle is checkbox");
+          assert(app.querySelector("#userFiles")?.type === "file", "File input exists");
+        }
+
+        // Mock client that simulates streaming responses
+        function createMockClient(responses) {
+          let callIndex = 0;
+          return {
+            async send(input) {
+              const response = responses[callIndex++] || responses[responses.length - 1];
+              return {
+                stream: (async function* () {
+                  for (const block of response.blocks) {
+                    yield block;
+                    await new Promise(r => setTimeout(r, 5));
+                  }
+                  yield { messageStop: { stopReason: response.stopReason || "end_turn" } };
+                })()
+              };
+            }
+          };
+        }
+
+        // Helper to create streaming blocks
+        function mockTextBlock(text, index = 0) {
+          return [
+            { contentBlockStart: { contentBlockIndex: index, start: {} } },
+            { contentBlockDelta: { contentBlockIndex: index, delta: { text } } },
+            { contentBlockStop: { contentBlockIndex: index } }
+          ];
+        }
+
+        function mockToolUseBlock(name, input, toolUseId, index = 0) {
+          return [
+            { contentBlockStart: { contentBlockIndex: index, start: { toolUse: { toolUseId, name } } } },
+            { contentBlockDelta: { contentBlockIndex: index, delta: { toolUse: { input: JSON.stringify(input) } } } },
+            { contentBlockStop: { contentBlockIndex: index } }
+          ];
+        }
+
+        async function testTaskIntegration() {
+          // Integration test: call task() with Echo model and verify full behavior
+          const testToolUseId = "integration-test-" + Date.now();
+          const testPrompt = "Find information about testing";
+
+          // Call task() with Echo model
+          const result = await task(
+            { prompt: testPrompt, type: "explore", folder: "test-findings" },
+            { db, threadId: null, agentId: 1, modelId: "echo", toolUseId: testToolUseId }
+          );
+
+          // 1. Verify result structure
+          assert(result.type === "explore", "Result should have correct type");
+          assert(result.subagentThreadId, "Result should have subagentThreadId");
+          assert(result.turns >= 1, "Result should have at least 1 turn");
+          assert(result.summary, "Result should have summary");
+          assert(result.summary.includes("Echo:"), "Summary should be from Echo client");
+
+          // 2. Verify thread was created in DB
+          const thread = await db.get("threads", result.subagentThreadId);
+          assert(thread, "Thread should exist in DB");
+          assert(thread.type === "subagent", "Thread type should be subagent");
+          assert(thread.subagentType === "explore", "Subagent type should be explore");
+          assert(thread.parentToolUseId === testToolUseId, "Thread should link to tool use");
+          assert(thread.status === "completed", "Thread status should be completed");
+
+          // 3. Verify messages were saved to DB
+          const messages = await db.getAllFromIndex("messages", "threadId", result.subagentThreadId);
+          assert(messages.length >= 2, "Should have at least 2 messages (user + assistant)");
+          const userMsg = messages.find(m => m.role === "user");
+          const assistantMsg = messages.find(m => m.role === "assistant");
+          assert(userMsg, "Should have user message");
+          assert(assistantMsg, "Should have assistant message");
+          assert(userMsg.content[0].text === testPrompt, "User message should match prompt");
+
+          // 4. Verify signal was updated (should be completed now)
+          const signalState = runningSubagents().get(testToolUseId);
+          assert(signalState, "Signal state should exist");
+          assert(signalState.status === "completed", "Signal status should be completed");
+          assert(signalState.messages.length >= 1, "Signal should have messages");
+
+          // Cleanup
+          for (const msg of messages) await db.delete("messages", msg.id);
+          await db.delete("threads", result.subagentThreadId);
+          setRunningSubagents(prev => { const next = new Map(prev); next.delete(testToolUseId); return next; });
+        }
+
+        async function testTaskWithoutToolUseId() {
+          // Test that task() works without toolUseId (no thread/signal tracking)
+          const result = await task(
+            { prompt: "Simple test", type: "plan" },
+            { db, threadId: null, agentId: 1, modelId: "echo" }
+          );
+
+          assert(result.type === "plan", "Result should have correct type");
+          assert(result.summary, "Result should have summary");
+          assert(!result.subagentThreadId, "Should not have subagentThreadId without toolUseId");
+        }
+
+        async function testEchoClient() {
+          // Test that Echo client returns expected streaming format
+          const client = await getConverseClient("echo");
+          const output = await client.send({
+            messages: [{ role: "user", content: [{ text: "Hello world" }] }]
+          });
+
+          const blocks = [];
+          for await (const block of output.stream) {
+            blocks.push(block);
+          }
+
+          assert(blocks.some(b => b.messageStart), "Should have messageStart");
+          assert(blocks.some(b => b.contentBlockStart), "Should have contentBlockStart");
+          assert(blocks.some(b => b.contentBlockDelta), "Should have contentBlockDelta");
+          assert(blocks.some(b => b.contentBlockStop), "Should have contentBlockStop");
+          assert(blocks.some(b => b.messageStop), "Should have messageStop");
+
+          // Reconstruct text from deltas
+          const text = blocks
+            .filter(b => b.contentBlockDelta?.delta?.text)
+            .map(b => b.contentBlockDelta.delta.text)
+            .join("");
+          assert(text.includes("Echo:"), "Response should be echo format");
+          assert(text.includes("Hello world"), "Response should echo input");
+        }
+
+        async function testTaskResultRendering() {
+          await new Promise(r => setTimeout(r, 100));
+
+          // Create a test result object
+          const testResult = {
+            type: "explore",
+            summary: "Found test data",
+            folder: "/explore/test/",
+            turns: 2,
+            subagentThreadId: 12345
+          };
+
+          // Render TaskResult component
+          const container = document.createElement("div");
+          document.body.appendChild(container);
+
+          render(() => html`<${TaskResult}
+            result=${() => testResult}
+            toolUseId=${() => "render-test-001"} />`, container);
+
+          await new Promise(r => setTimeout(r, 50));
+
+          const taskResult = container.querySelector(".task-result");
+          assert(taskResult, "TaskResult should render");
+          assert(taskResult.textContent.includes("explore"), "Should show agent type");
+          assert(taskResult.textContent.includes("Found test data"), "Should show summary");
+          assert(taskResult.textContent.includes("2 turns"), "Should show turns");
+
+          // Check for expand button - wait a bit more for reactive content
+          await new Promise(r => setTimeout(r, 100));
+          const expandBtn = taskResult.querySelector("button");
+          assert(expandBtn, "Should have expand button");
+          assert(expandBtn.textContent.includes("View"), "Expand button should say View");
+
+          container.remove();
+        }
+
+        runTests([
+          testBranchingAndParseJSON,
+          testUIRendering,
+          testEchoClient,
+          testTaskIntegration,
+          testTaskWithoutToolUseId,
+          testTaskResultRendering
+        ]).then(({ failed }) => {
+          window.TESTS_DONE = true;
+          if (failed > 0) console.error(`\n${failed} test(s) failed!`);
+        });
+      }
+
+      // #endregion
+    </script>
+  </body>
+</html>

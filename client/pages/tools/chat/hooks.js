@@ -119,7 +119,9 @@ export function useChat() {
       }
     } catch (error) {
       console.error("Failed to initialize database:", error);
-      handleError(error, "initializing user session");
+      const wrappedError = new Error("Something went wrong while initializing your session.");
+      wrappedError.cause = error;
+      handleError(wrappedError, "Session Initialization Error");
     }
   };
 
@@ -158,7 +160,9 @@ export function useChat() {
       }
     } catch (error) {
       console.error("Failed to load conversation:", error);
-      handleError(error, "loading conversation");
+      const wrappedError = new Error("Something went wrong while loading the conversation.");
+      wrappedError.cause = error;
+      handleError(wrappedError, "Load Conversation Error");
     }
   };
 
@@ -181,7 +185,9 @@ export function useChat() {
       );
     } catch (error) {
       console.error("Failed to load conversations:", error);
-      handleError(error, "loading conversations");
+      const wrappedError = new Error("Something went wrong while loading conversations.");
+      wrappedError.cause = error;
+      handleError(wrappedError, "Load Conversations Error");
     }
   };
 
@@ -204,7 +210,9 @@ export function useChat() {
       }
     } catch (error) {
       console.error("Failed to update conversation:", error);
-      handleError(error, "updating conversation");
+      const wrappedError = new Error("Something went wrong while updating the conversation.");
+      wrappedError.cause = error;
+      handleError(wrappedError, "Update Conversation Error");
     }
   };
 
@@ -285,7 +293,11 @@ export function useChat() {
       await updateConversation({ title: sanitizedTitle });
     } catch (error) {
       console.error("Failed to generate conversation title:", error);
-      handleError(error, "generating conversation title");
+      const wrappedError = new Error(
+        "Something went wrong while generating the conversation title."
+      );
+      wrappedError.cause = error;
+      handleError(wrappedError, "Generate Title Error");
     }
   };
 
@@ -313,7 +325,7 @@ export function useChat() {
       await database.deleteConversation(targetConversationId);
     } catch (error) {
       console.error("Failed to delete conversation:", error);
-      showError("Failed to delete conversation. Please try again.");
+      showError("Something went wrong while deleting the conversation.");
     }
 
     // If deleting current conversation, clear state
@@ -411,7 +423,9 @@ export function useChat() {
         await loadRecentConversations();
       } catch (error) {
         console.error("Failed to create conversation:", error);
-        handleError(error, "creating new conversation");
+        const wrappedError = new Error("Something went wrong while creating the conversation.");
+        wrappedError.cause = error;
+        handleError(wrappedError, "Create Conversation Error");
         // Fallback to local storage behavior
         const currentProjectId = getCurrentProjectId();
         setConversation({
@@ -465,7 +479,9 @@ export function useChat() {
         });
       } catch (error) {
         console.error("Failed to store user message:", error);
-        handleError(error, "storing user message");
+        const wrappedError = new Error("Something went wrong while storing your message.");
+        wrappedError.cause = error;
+        handleError(wrappedError, "Store Message Error");
       }
     }
 
@@ -508,7 +524,9 @@ export function useChat() {
             assistantMessageId = storedMessage.id;
           } catch (error) {
             console.error("Failed to store initial assistant message:", error);
-            handleError(error, "storing assistant message");
+            const wrappedError = new Error("Something went wrong while storing the response.");
+            wrappedError.cause = error;
+            handleError(wrappedError, "Store Response Error");
           }
         }
 
@@ -647,7 +665,11 @@ export function useChat() {
                   }
                 } catch (error) {
                   console.error("Failed to update assistant message:", error);
-                  handleError(error, "updating assistant message");
+                  const wrappedError = new Error(
+                    "Something went wrong while updating the response."
+                  );
+                  wrappedError.cause = error;
+                  handleError(wrappedError, "Update Response Error");
                 }
               }
 
@@ -672,7 +694,11 @@ export function useChat() {
                     });
                   } catch (error) {
                     console.error("Failed to store tool results message:", error);
-                    handleError(error, "storing tool results");
+                    const wrappedError = new Error(
+                      "Something went wrong while storing tool results."
+                    );
+                    wrappedError.cause = error;
+                    handleError(wrappedError, "Store Tool Results Error");
                   }
                 }
               } else {
@@ -691,7 +717,9 @@ export function useChat() {
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      handleError(error, "sending message");
+      const wrappedError = new Error("Something went wrong while sending your message.");
+      wrappedError.cause = error;
+      handleError(wrappedError, "Send Message Error");
     } finally {
       setLoading(false);
     }

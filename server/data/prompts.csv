@@ -1,0 +1,4 @@
+id,name,version,content
+1,ada-system-prompt,1,file:prompts/ada.txt
+2,fedpulse-system-prompt,1,file:prompts/fedpulse.txt
+3,eagle-system-prompt,1,file:prompts/eagle.txt

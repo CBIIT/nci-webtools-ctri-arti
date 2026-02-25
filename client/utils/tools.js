@@ -1,5 +1,9 @@
+import mammoth from "mammoth";
+
 import { parseDocument } from "./parsers.js";
+import { downloadBlob } from "./files.js";
 import { jsonToXml } from "./xml.js";
+import { docxReplace, docxExtractTextBlocks } from "./docx.js";
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.
@@ -7,7 +11,7 @@ import { jsonToXml } from "./xml.js";
  * @param {any} tools - The tools object with tool names as keys and functions as values.
  * @returns {Promise<any>} - The tool output
  */
-export async function runTool(toolUse, tools = { search, browse, code, editor, think, data }) {
+export async function runTool(toolUse, tools = { search, browse, code, editor, think, data, docxTemplate }) {
   let { toolUseId, name, input } = toolUse;
   try {
     const results = await tools?.[name]?.(input);
@@ -181,6 +185,89 @@ export async function data({ bucket, key }) {
   }
 
   return text;
+}
+
+/**
+ * Fill DOCX documents by finding and replacing text
+ * @param {object} params
+ * @param {string} params.docxUrl - URL to the DOCX document (s3://bucket/key or https://)
+ * @param {object} [params.replacements] - Optional map of {"text to find": "replacement text"}
+ * @returns {Promise<object>} - Document text content or generated HTML
+ */
+export async function docxTemplate({ docxUrl, replacements }) {
+  // 1. Fetch the document
+  let templateBuffer;
+
+  if (docxUrl.startsWith("s3://")) {
+    const s3Match = docxUrl.match(/^s3:\/\/([^/]+)\/(.+)$/);
+    if (!s3Match) throw new Error("Invalid S3 URL format. Expected: s3://bucket/key");
+    const [, bucket, key] = s3Match;
+    const response = await fetch(
+      `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
+    );
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
+    templateBuffer = await response.arrayBuffer();
+  } else {
+    const response = await fetch("/api/browse/" + docxUrl);
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
+    templateBuffer = await response.arrayBuffer();
+  }
+
+  // 2. Discovery mode: return document blocks with metadata
+  if (!replacements) {
+    const { blocks } = await docxExtractTextBlocks(templateBuffer);
+    return { blocks, templateDownloadUrl: docxUrl };
+  }
+
+  // 3. Replace mode: apply replacements and return HTML preview
+  const modifiedBuffer = await docxReplace(templateBuffer, replacements);
+  const result = await mammoth.convertToHtml({ arrayBuffer: modifiedBuffer });
+
+  return {
+    html: result.value,
+    warnings: result.messages.filter((m) => m.type === "warning").map((m) => m.message),
+  };
+}
+
+/**
+ * Download a filled DOCX document
+ * @param {object} params
+ * @param {string} params.docxUrl - URL to the DOCX document (s3://bucket/key or https://)
+ * @param {object} params.replacements - Map of {"text to find": "replacement text"}
+ * @param {string} params.filename - Filename for the downloaded file
+ * @returns {Promise<void>}
+ */
+export async function downloadDocxTemplate({
+  docxUrl,
+  replacements,
+  filename,
+}) {
+  // 1. Fetch the document
+  let templateBuffer;
+
+  if (docxUrl.startsWith("s3://")) {
+    const s3Match = docxUrl.match(/^s3:\/\/([^/]+)\/(.+)$/);
+    if (!s3Match) throw new Error("Invalid S3 URL format. Expected: s3://bucket/key");
+    const [, bucket, key] = s3Match;
+    const response = await fetch(
+      `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
+    );
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
+    templateBuffer = await response.arrayBuffer();
+  } else {
+    const response = await fetch("/api/browse/" + docxUrl);
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
+    templateBuffer = await response.arrayBuffer();
+  }
+
+  // 2. Apply replacements
+  const buffer = await docxReplace(templateBuffer, replacements);
+
+  // 3. Trigger download
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  });
+  downloadBlob(filename, blob);
 }
 
 /**
@@ -502,7 +589,7 @@ function truncate(str, maxLength = 10_000, suffix = "\n ... (truncated)") {
 }
 
 // Export tools object for backward compatibility
-export const TOOLS = { search, browse, code, editor, think, data };
+export const TOOLS = { search, browse, code, editor, think, data, docxTemplate };
 
 export function getSearchResults(results) {
   return [...(results?.web || []), ...(results?.news || [])];

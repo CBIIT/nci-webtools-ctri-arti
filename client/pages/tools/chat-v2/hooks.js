@@ -5,6 +5,8 @@
 import { openDB } from "idb";
 import { createEffect } from "solid-js";
 import { createStore, produce, unwrap } from "solid-js/store";
+import mammoth from "mammoth";
+import { docxReplace, docxExtractTextBlocks } from "/utils/docx.js";
 
 import { tools as toolSpecs, systemPrompt as defaultSystemPrompt } from "../chat/config.js";
 
@@ -276,6 +278,10 @@ export const TOOLS = [
   {
     fn: data,
     toolSpec: toolSpecs.find((t) => t.toolSpec.name === "data")?.toolSpec,
+  },
+  {
+    fn: docxTemplate,
+    toolSpec: toolSpecs.find((t) => t.toolSpec.name === "docxTemplate")?.toolSpec,
   },
 ].filter((t) => t.toolSpec);
 
@@ -614,7 +620,7 @@ async function runAgent(store, setStore) {
     setStore("messages", store.messages.length, assistantMessage);
 
     for await (const message of output.stream) {
-      console.log(message);
+      // console.log(message);
       setStore(produce((s) => processContentBlock(s, message)));
 
       const stopReason = message.messageStop?.stopReason;
@@ -1034,6 +1040,42 @@ async function data({ bucket, key }) {
   }
 
   return text;
+}
+
+// DocxTemplate tool - fill DOCX documents with batch find-and-replace
+async function docxTemplate({ docxUrl, replacements }) {
+  // 1. Fetch the document
+  let templateBuffer;
+
+  if (docxUrl.startsWith("s3://")) {
+    const s3Match = docxUrl.match(/^s3:\/\/([^/]+)\/(.+)$/);
+    if (!s3Match) throw new Error("Invalid S3 URL format. Expected: s3://bucket/key");
+    const [, bucket, key] = s3Match;
+    const response = await fetch(
+      `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
+    );
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
+    templateBuffer = await response.arrayBuffer();
+  } else {
+    const response = await fetch("/api/browse/" + docxUrl);
+    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
+    templateBuffer = await response.arrayBuffer();
+  }
+
+  // 2. Discovery mode: return document blocks with metadata
+  if (!replacements) {
+    const { blocks } = await docxExtractTextBlocks(templateBuffer);
+    return { blocks, templateDownloadUrl: docxUrl };
+  }
+
+  // 3. Replace mode: apply replacements and return HTML preview
+  const modifiedBuffer = await docxReplace(templateBuffer, replacements);
+  const result = await mammoth.convertToHtml({ arrayBuffer: modifiedBuffer });
+
+  return {
+    html: result.value,
+    warnings: result.messages.filter((m) => m.type === "warning").map((m) => m.message),
+  };
 }
 
 // =================================================================================
