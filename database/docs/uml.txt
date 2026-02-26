@@ -1,0 +1,464 @@
+
+Core Conversation Data
+
+Message
+
+Columns:
+
+id: int
+
+conversationID: int
+
+serialNumber: int
+
+role: string
+
+content: jsonb
+
+tokens: int
+
+createdAt: datetime
+
+updatedAt: datetime
+
+Notes: role values: ['system', 'user', 'assistant', 'tool']
+
+Relationships:
+
+conversationID belongs to Conversation.id
+
+Conversation
+
+Columns:
+
+id: int
+
+agentID: int
+
+userID: int
+
+deleted: boolean
+
+deletedAt: datetime
+
+createdAt: datetime
+
+updatedAt: datetime
+
+title: string
+
+latestSummarySN: int
+
+Relationships:
+
+agentID belongs to Agent.id
+
+userID belongs to User.id
+
+User & Access Management
+
+User
+
+Columns:
+
+id: int
+
+firstName: string
+
+lastName: string
+
+email: string
+
+roleID: int
+
+createdAt: datetime
+
+updatedAt: datetime
+
+status: string
+
+apikey: string
+
+budget: float
+
+remaining: float
+
+Notes: status values: ['Active', 'Inactive', 'Disabled']
+
+Relationships:
+
+roleID belongs to Roles.id
+
+Roles
+
+Columns:
+
+id: int
+
+name: string
+
+displayOrder: int
+
+createdAt: datetime
+
+updatedAt: datetime
+
+Notes: name values: ['Admin', 'Super User', 'User']
+
+RolePolicy
+
+Columns:
+
+roleID: int
+
+policyID: int
+
+createdAt: datetime
+
+updatedAt: datetime
+
+Relationships:
+
+roleID belongs to Roles.id
+
+policyID belongs to Policy.id
+
+Policy
+
+Columns:
+
+id: int
+
+name: string
+
+resource: string
+
+action: string
+
+createdAt: datetime
+
+updatedAt: datetime
+
+Agent & AI Configuration
+
+Agent
+
+Columns:
+
+id: int
+
+name: string
+
+description: string
+
+promptId: int
+
+modelID: int
+
+modelParameters: jsonb
+
+createdAt: datetime
+
+updatedAt: datetime
+
+creatorID: int
+
+Notes: The modelParameters JSONB structure includes properties like: temperature, maxToken, topP, topK, etc.
+
+Relationships:
+
+promptId belongs to Prompt.id
+
+modelID belongs to Model.id
+
+creatorID belongs to User.id
+
+Prompt
+
+Columns:
+
+id: int
+
+agentID: int
+
+version: int
+
+content: string
+
+createdAt: datetime
+
+updatedAt: datetime
+
+name: string
+
+Relationships:
+
+agentID belongs to Agent.id
+
+Model
+
+Columns:
+
+id: int
+
+name: string
+
+type: string
+
+description: string
+
+providerId: int
+
+createdAt: datetime
+
+updatedAt: datetime
+
+internalName: string
+
+summarizeThreshold: int
+
+defaultParameters: jsonb
+
+maxContext: int
+
+maxOutput: int
+
+maxReasoning: int
+
+cost1kInput: float
+
+cost1KOutput: float
+
+cost1kCacheReason: float
+
+cost1kCacheWrite: float
+
+Notes: type values: ['chat', 'embedding', 'reranking']
+
+Relationships:
+
+providerId belongs to Providers.id
+
+Providers
+
+Columns:
+
+id: int
+
+name: string
+
+apiKey: string
+
+endpoint: string
+
+createdAt: datetime
+
+updatedAt: datetime
+
+Tools & Resources
+
+Tool
+
+Columns:
+
+id: int
+
+name: string
+
+description: string
+
+type: string
+
+authenticationType: string
+
+endpoint: string
+
+transportType: string
+
+customConfig: jsonb
+
+createdAt: datetime
+
+updatedAt: datetime
+
+Notes:
+
+type values: ['MCP', 'custom']
+
+The customConfig JSONB structure acts as a Configuration holding: McpType, embeddingModelID, rerankingModelID, chunkSize, overlap, retrieveTopN, rerankTopN, etc.
+
+McpType values: ['knowledgebase', 'API', 'database']
+
+Resource
+
+Columns:
+
+id: int
+
+toolID: int
+
+conversationID: int
+
+messageID: int
+
+name: string
+
+description: string
+
+metadata: jsonb
+
+s3Uri: string
+
+createdAt: datetime
+
+updatedAt: datetime
+
+MIMEType: string
+
+content: string
+
+Relationships:
+
+conversationID belongs to Conversation.id
+
+toolID belongs to Tool.id
+
+Vector
+
+Columns:
+
+id: int
+
+toolID: int
+
+resourceID: int
+
+order: int
+
+embedding: jsonb
+
+content: string
+
+createdAt: datetime
+
+updatedAt: datetime
+
+conversationID: int
+
+Relationships:
+
+resourceID belongs to Resource.id
+
+Relational / Join Tables
+
+UserAgent
+
+Columns:
+
+userID: int
+
+agentID: int
+
+role: string
+
+createdAt: datetime
+
+updatedAt: datetime
+
+Notes: role values: ['admin', 'user']
+
+Relationships:
+
+userID belongs to User.id
+
+agentID belongs to Agent.id
+
+UserTool
+
+Columns:
+
+userID: int
+
+toolID: int
+
+credential: jsonb
+
+createdAt: datetime
+
+updatedAt: datetime
+
+Relationships:
+
+userID belongs to User.id
+
+toolID belongs to Tool.id
+
+AgentTool
+
+Columns:
+
+toolID: int
+
+agentID: int
+
+createdAt: datetime
+
+updatedAt: datetime
+
+Relationships:
+
+toolID belongs to Tool.id
+
+agentID belongs to Agent.id
+
+System & Metrics
+
+Usages
+
+Columns:
+
+id: int
+
+type: string
+
+userID: int
+
+agentID: int
+
+messageID: int
+
+modelId: int
+
+inputTokens: float
+
+outputtokens: float
+
+cacheReadToken: float
+
+cacheWriteToken: float
+
+cost: float
+
+createdAt: datetime
+
+updatedAt: datetime
+
+Notes: type values: ['user', 'agent', 'guardrail']
+
+Relationships:
+
+userID belongs to User.id
+
+Sessions
+
+Columns:
+
+sid: string
+
+expires: datetime
+
+data: string
+
+createdAt: datetime
+
+updatedAt: datetime

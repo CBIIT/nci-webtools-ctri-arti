@@ -1,0 +1,15 @@
+{
+  "name": "database",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./schema.js": "./schema.js",
+    "./csv-loader.js": "./csv-loader.js"
+  },
+  "dependencies": {
+    "shared": "*",
+    "pg": "^8.18.0",
+    "sequelize": "^6.37.7"
+  }
+}
