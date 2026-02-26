@@ -1,0 +1,680 @@
+openapi: 3.1.0
+info:
+  title: CMS (Conversation Management Service) API
+  description: |
+    Internal service for managing agents, threads, messages, resources, and vectors.
+    All requests must include an `X-User-Id` header. All data is scoped to the
+    authenticated user, except global agents (userId=null) which are readable by all.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3002
+    description: Local development
+
+security:
+  - userIdHeader: []
+
+paths:
+  # ===== AGENTS =====
+  /api/agents:
+    post:
+      operationId: createAgent
+      summary: Create an agent
+      tags: [Agents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                promptId:
+                  type: integer
+                tools:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "201":
+          description: Agent created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "400":
+          description: Missing X-User-Id header
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      operationId: getAgents
+      summary: List agents
+      description: Returns the user's agents plus global agents (userId=null), ordered by createdAt DESC.
+      tags: [Agents]
+      responses:
+        "200":
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+
+  /api/agents/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ResourceId"
+    get:
+      operationId: getAgent
+      summary: Get agent by ID
+      description: Returns agent with resolved Prompt. Flattens `Prompt.content` to `systemPrompt`.
+      tags: [Agents]
+      responses:
+        "200":
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      operationId: updateAgent
+      summary: Update an agent
+      description: Only updates agents owned by the user. Returns 403 for global agents.
+      tags: [Agents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                promptId:
+                  type: integer
+                tools:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Agent updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "403":
+          description: Cannot modify global agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteAgent
+      summary: Delete an agent
+      description: Cascading delete — removes all threads, messages, resources, and vectors.
+      tags: [Agents]
+      responses:
+        "200":
+          description: Agent deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+
+  # ===== THREADS =====
+  /api/threads:
+    post:
+      operationId: createThread
+      summary: Create a thread
+      tags: [Threads]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                agentId:
+                  type: integer
+      responses:
+        "201":
+          description: Thread created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Thread"
+    get:
+      operationId: getThreads
+      summary: List threads (paginated)
+      tags: [Threads]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Paginated thread list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedThreads"
+
+  /api/threads/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ResourceId"
+    get:
+      operationId: getThread
+      summary: Get thread by ID
+      tags: [Threads]
+      responses:
+        "200":
+          description: Thread details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Thread"
+        "404":
+          description: Thread not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      operationId: updateThread
+      summary: Update a thread
+      tags: [Threads]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                summary:
+                  type: string
+      responses:
+        "200":
+          description: Thread updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Thread"
+        "404":
+          description: Thread not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteThread
+      summary: Delete a thread
+      description: Cascading delete — removes all messages, resources, and vectors.
+      tags: [Threads]
+      responses:
+        "200":
+          description: Thread deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+
+  # ===== MESSAGES =====
+  /api/threads/{threadId}/messages:
+    parameters:
+      - name: threadId
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: addMessage
+      summary: Add a message to a thread
+      tags: [Messages]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role, content]
+              properties:
+                role:
+                  type: string
+                  enum: [user, assistant]
+                content:
+                  type: object
+                  description: JSON content (text blocks, tool use, etc.)
+                agentId:
+                  type: integer
+      responses:
+        "201":
+          description: Message created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+    get:
+      operationId: getMessages
+      summary: Get all messages in a thread
+      description: Ordered by createdAt ASC.
+      tags: [Messages]
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+
+  /api/messages/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ResourceId"
+    put:
+      operationId: updateMessage
+      summary: Update a message
+      tags: [Messages]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: object
+      responses:
+        "200":
+          description: Message updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "404":
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteMessage
+      summary: Delete a message
+      tags: [Messages]
+      responses:
+        "200":
+          description: Message deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+
+  # ===== RESOURCES =====
+  /api/resources:
+    post:
+      operationId: addResource
+      summary: Create a resource
+      tags: [Resources]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type, content]
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                content:
+                  type: string
+                threadId:
+                  type: integer
+                s3Uri:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        "201":
+          description: Resource created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+
+  /api/resources/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ResourceId"
+    get:
+      operationId: getResource
+      summary: Get resource by ID
+      tags: [Resources]
+      responses:
+        "200":
+          description: Resource details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+        "404":
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteResource
+      summary: Delete a resource
+      description: Cascading delete — removes associated vectors.
+      tags: [Resources]
+      responses:
+        "200":
+          description: Resource deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+
+  /api/threads/{threadId}/resources:
+    parameters:
+      - name: threadId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getResourcesByThread
+      summary: Get resources for a thread
+      description: Ordered by createdAt ASC.
+      tags: [Resources]
+      responses:
+        "200":
+          description: List of resources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Resource"
+
+  # ===== VECTORS =====
+  /api/threads/{threadId}/vectors:
+    parameters:
+      - name: threadId
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: addVectors
+      summary: Add vectors to a thread
+      description: Bulk create. Order defaults to array index.
+      tags: [Vectors]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vectors]
+              properties:
+                vectors:
+                  type: array
+                  items:
+                    type: object
+                    required: [text]
+                    properties:
+                      text:
+                        type: string
+                      embedding:
+                        type: array
+                        items:
+                          type: number
+                      resourceId:
+                        type: integer
+                      order:
+                        type: integer
+      responses:
+        "201":
+          description: Vectors created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vector"
+    get:
+      operationId: getVectorsByThread
+      summary: Get vectors for a thread
+      description: Ordered by order ASC.
+      tags: [Vectors]
+      responses:
+        "200":
+          description: List of vectors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vector"
+
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+components:
+  securitySchemes:
+    userIdHeader:
+      type: apiKey
+      in: header
+      name: X-User-Id
+      description: User ID for ownership scoping. Required on all endpoints except /health.
+
+  parameters:
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  schemas:
+    Agent:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+          nullable: true
+          description: "null for global agents"
+        modelId:
+          type: integer
+        name:
+          type: string
+        promptId:
+          type: integer
+        tools:
+          type: array
+          items:
+            type: string
+        systemPrompt:
+          type: string
+          description: Flattened from Prompt.content (read-only)
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Thread:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        agentId:
+          type: integer
+        name:
+          type: string
+        summary:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        threadId:
+          type: integer
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Resource:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        agentId:
+          type: integer
+        threadId:
+          type: integer
+        messageId:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        content:
+          type: string
+        s3Uri:
+          type: string
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Vector:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        threadId:
+          type: integer
+        agentId:
+          type: integer
+        resourceId:
+          type: integer
+        order:
+          type: integer
+        text:
+          type: string
+        embedding:
+          type: array
+          items:
+            type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PaginatedThreads:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Thread"
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
