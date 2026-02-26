@@ -29,7 +29,7 @@ popd
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
 # Build and push main image first
-docker build -t $MAIN_IMAGE -t $MAIN_IMAGE_LATEST -f server/Dockerfile .
+docker build -t $MAIN_IMAGE -t $MAIN_IMAGE_LATEST -f Dockerfile .
 docker push $MAIN_IMAGE
 docker push $MAIN_IMAGE_LATEST
 
@@ -38,13 +38,13 @@ docker build -t $GATEWAY_IMAGE -t $GATEWAY_IMAGE_LATEST \
   --build-arg ECR_REGISTRY=$ECR_REGISTRY \
   --build-arg PREFIX=$PREFIX \
   --build-arg GITHUB_SHA=$GITHUB_SHA \
-  -f server/Dockerfile.gateway .
+  -f gateway/Dockerfile .
 
 docker build -t $CMS_IMAGE -t $CMS_IMAGE_LATEST \
   --build-arg ECR_REGISTRY=$ECR_REGISTRY \
   --build-arg PREFIX=$PREFIX \
   --build-arg GITHUB_SHA=$GITHUB_SHA \
-  -f server/Dockerfile.cms .
+  -f cms/Dockerfile .
 
 docker push $GATEWAY_IMAGE
 docker push $GATEWAY_IMAGE_LATEST

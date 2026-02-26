@@ -1,3 +1,5 @@
+# DEPRECATED: Use the root /Dockerfile instead (workspace-aware build).
+# This file is kept for reference only.
 FROM public.ecr.aws/docker/library/almalinux:10
 
 RUN dnf -y update \
