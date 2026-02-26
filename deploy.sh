@@ -20,7 +20,7 @@ export CMS_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:cms-latest
 export SERVER_IMAGE=$MAIN_IMAGE
 export SERVER_IMAGE_LATEST=$MAIN_IMAGE_LATEST
 
-pushd infrastructure-v2
+pushd infrastructure
 pip install -r requirements.txt
 cdk deploy $PREFIX-ecr-repository --require-approval never
 # cdk deploy $PREFIX-rds-cluster --require-approval never
@@ -51,6 +51,6 @@ docker push $GATEWAY_IMAGE_LATEST
 docker push $CMS_IMAGE
 docker push $CMS_IMAGE_LATEST
 
-pushd infrastructure-v2
+pushd infrastructure
 cdk deploy $PREFIX-ecs-service --require-approval never
 popd
