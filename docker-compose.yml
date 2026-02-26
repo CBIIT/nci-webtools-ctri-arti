@@ -3,7 +3,7 @@ services:
   server:
     build:
       context: .
-      dockerfile: server/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "443:443"
     environment:
@@ -16,24 +16,33 @@ services:
       # Internal service URLs (docker network)
       - GATEWAY_URL=http://gateway:3001
       - CMS_URL=http://cms:3002
+      - CLIENT_FOLDER=/app/client
     env_file:
       - ./server/.env
     develop:
       watch:
       - action: sync+restart
+        path: ./shared
+        target: /app/shared
+        ignore:
+          - ./shared/node_modules
+      - action: sync+restart
+        path: ./database
+        target: /app/database
+        ignore:
+          - ./database/node_modules
+      - action: sync+restart
         path: ./server
-        target: /server
+        target: /app/server
         ignore:
           - ./server/node_modules
       - action: sync
         path: ./client
-        target: /client
+        target: /app/client
         ignore:
           - ./client/node_modules
       - action: rebuild
-        path: server/package.json
-        ignore:
-          - ./server/node_modules
+        path: package.json
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,8 +55,8 @@ services:
   gateway:
     build:
       context: .
-      dockerfile: server/Dockerfile
-    command: ["npm", "run", "start:gateway"]
+      dockerfile: Dockerfile
+    command: ["npm", "start", "-w", "gateway"]
     environment:
       - PORT=3001
       - DB_DIALECT=postgres
@@ -61,14 +70,22 @@ services:
     develop:
       watch:
       - action: sync+restart
-        path: ./server
-        target: /server
+        path: ./shared
+        target: /app/shared
         ignore:
-          - ./server/node_modules
+          - ./shared/node_modules
+      - action: sync+restart
+        path: ./database
+        target: /app/database
+        ignore:
+          - ./database/node_modules
+      - action: sync+restart
+        path: ./gateway
+        target: /app/gateway
+        ignore:
+          - ./gateway/node_modules
       - action: rebuild
-        path: server/package.json
-        ignore:
-          - ./server/node_modules
+        path: package.json
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,8 +94,8 @@ services:
   cms:
     build:
       context: .
-      dockerfile: server/Dockerfile
-    command: ["npm", "run", "start:cms"]
+      dockerfile: Dockerfile
+    command: ["npm", "start", "-w", "cms"]
     environment:
       - PORT=3002
       - DB_DIALECT=postgres
@@ -92,14 +109,22 @@ services:
     develop:
       watch:
       - action: sync+restart
-        path: ./server
-        target: /server
+        path: ./shared
+        target: /app/shared
         ignore:
-          - ./server/node_modules
+          - ./shared/node_modules
+      - action: sync+restart
+        path: ./database
+        target: /app/database
+        ignore:
+          - ./database/node_modules
+      - action: sync+restart
+        path: ./cms
+        target: /app/cms
+        ignore:
+          - ./cms/node_modules
       - action: rebuild
-        path: server/package.json
-        ignore:
-          - ./server/node_modules
+        path: package.json
     depends_on:
       postgres:
         condition: service_healthy
