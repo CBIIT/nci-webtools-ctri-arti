@@ -1,4 +1,6 @@
-# Research Optimizer Infrastructure
+# Research Optimizer Infrastructure (v1 — Deprecated)
+
+> **Deprecated:** This infrastructure uses CDK v2 with TypeScript/JavaScript. The active deployment infrastructure is in [`infrastructure-v2/`](../infrastructure-v2/), which uses CDK v2 with Python and supports the multi-container (server + gateway + cms) architecture.
 
 AWS CDK v2 infrastructure for deploying the Research Optimizer application.
 
