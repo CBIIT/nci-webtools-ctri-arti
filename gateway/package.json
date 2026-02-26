@@ -1,0 +1,24 @@
+{
+  "name": "gateway",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./api.js": "./api.js",
+    "./inference.js": "./inference.js",
+    "./usage.js": "./usage.js",
+    "./providers/bedrock.js": "./providers/bedrock.js",
+    "./providers/gemini.js": "./providers/gemini.js",
+    "./providers/mock.js": "./providers/mock.js"
+  },
+  "scripts": {
+    "start": "node --env-file .env index.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.982.0",
+    "@google/genai": "^1.39.0",
+    "database": "*",
+    "express": "^5.2.1",
+    "shared": "*"
+  }
+}
