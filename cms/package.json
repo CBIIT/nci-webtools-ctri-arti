@@ -1,0 +1,19 @@
+{
+  "name": "cms",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./api.js": "./api.js",
+    "./conversation.js": "./conversation.js"
+  },
+  "scripts": {
+    "start": "node --env-file .env index.js"
+  },
+  "dependencies": {
+    "database": "*",
+    "express": "^5.2.1",
+    "sequelize": "^6.37.7",
+    "shared": "*"
+  }
+}
