@@ -1,0 +1,14 @@
+{
+  "name": "research-optimizer",
+  "private": true,
+  "type": "module",
+  "workspaces": ["shared", "database", "gateway", "cms", "agents", "users", "server"],
+  "scripts": {
+    "start": "npm start -w server",
+    "start:gateway": "npm start -w gateway",
+    "start:cms": "npm start -w cms",
+    "start:agents": "npm start -w agents",
+    "start:users": "npm start -w users",
+    "test": "npm test -w server"
+  }
+}
