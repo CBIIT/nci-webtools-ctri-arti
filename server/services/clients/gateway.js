@@ -8,9 +8,9 @@
  * Uses a factory pattern — the mode is resolved once at module load time.
  */
 
-import { Model, User } from "../database.js";
-import { runModel as directRunModel } from "../gateway/inference.js";
-import { trackModelUsage } from "../gateway/usage.js";
+import { Model, User } from "database";
+import { runModel as directRunModel } from "gateway/inference.js";
+import { trackModelUsage } from "gateway/usage.js";
 
 const GATEWAY_URL = process.env.GATEWAY_URL;
 

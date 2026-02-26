@@ -8,7 +8,7 @@
  * Uses a factory pattern — the mode is resolved once at module load time.
  */
 
-import { ConversationService } from "../cms/conversation.js";
+import { ConversationService } from "cms/conversation.js";
 
 const CMS_URL = process.env.CMS_URL;
 
