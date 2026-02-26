@@ -6,8 +6,6 @@
   "scripts": {
     "start": "node --env-file .env server.js",
     "start:dev": "node --env-file .env --watch-path=. server.js",
-    "start:gateway": "node --env-file .env gateway.js",
-    "start:cms": "node --env-file .env cms.js",
     "test:setup": "npx playwright install chromium",
     "test": "node --env-file test.env --test --experimental-test-coverage --test-reporter=tap && npm run test:integration",
     "test:unit": "node --env-file test.env --test --experimental-test-coverage --test-reporter=tap",
@@ -23,14 +21,15 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.982.0",
     "@aws-sdk/client-s3": "^3.982.0",
     "@aws-sdk/client-textract": "^3.982.0",
     "@aws-sdk/client-translate": "^3.982.0",
-    "@google/genai": "^1.39.0",
+    "cms": "*",
     "connect-session-sequelize": "^8.0.5",
+    "database": "*",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "gateway": "*",
     "handlebars": "^4.7.8",
     "lodash": "^4.17.23",
     "mammoth": "^1.11.0",
@@ -44,6 +43,7 @@
     "pdfjs-dist": "^5.4.624",
     "pg": "^8.18.0",
     "sequelize": "^6.37.7",
+    "shared": "*",
     "winston": "^3.19.0"
   },
   "devDependencies": {
