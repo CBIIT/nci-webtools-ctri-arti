@@ -1,0 +1,13 @@
+{
+  "name": "users",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file .env index.js"
+  },
+  "dependencies": {
+    "database": "*",
+    "express": "^5.2.1",
+    "shared": "*"
+  }
+}
