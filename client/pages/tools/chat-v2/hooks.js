@@ -210,7 +210,7 @@ class ServerAdapter {
     if (data.agentId !== undefined) body.agentID = data.agentId;
     const conv = await this.#fetch(`/conversations/${id}`, {
       method: "PUT",
-      body: JSON.stringify({ ...data, ...body }),
+      body: JSON.stringify(body),
     });
     return this.#mapConversation(conv);
   }
@@ -390,7 +390,7 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     if (!params.agentId || !agent.id) return;
     // Check if this is a global agent (userId is null) - don't auto-save
     const record = await db.getAgent(params.agentId);
-    if (record && record.userId === null) return;
+    if (record && record.userID === null) return;
     await db.updateAgent(params.agentId, {
       name: agent.name,
       tools: agent.tools.map((t) => t.toolSpec.name),
@@ -414,7 +414,8 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     }
 
     const record = await db.getAgent(+params.agentId);
-    const agentTools = tools.filter((t) => record.tools.includes(t.toolSpec.name));
+    if (!record) return setAgent("loading", false);
+    const agentTools = record.tools?.length ? tools.filter((t) => record.tools.includes(t.toolSpec.name)) : tools;
 
     const content = await getMessageContent(text, files);
     const userMessage = { role: "user", content };

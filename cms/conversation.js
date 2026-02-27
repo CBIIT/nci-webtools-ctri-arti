@@ -20,13 +20,17 @@ export class ConversationService {
         id: agentId,
         [Op.or]: [{ userID: userId }, { userID: null }],
       },
-      include: [{ model: Prompt, attributes: ["id", "name", "content"] }],
+      include: [
+        { model: Prompt, attributes: ["id", "name", "content"] },
+        { model: AgentTool, include: [{ model: Tool, attributes: ["name"] }] },
+      ],
     });
 
     if (!agent) return null;
 
     const result = agent.toJSON();
     result.systemPrompt = result.Prompt?.content || null;
+    result.tools = (result.AgentTools || []).map((at) => at.Tool?.name).filter(Boolean);
     return result;
   }
 
@@ -35,20 +39,34 @@ export class ConversationService {
       where: {
         [Op.or]: [{ userID: userId }, { userID: null }],
       },
-      include: [{ model: Prompt, attributes: ["id", "name", "content"] }],
+      include: [
+        { model: Prompt, attributes: ["id", "name", "content"] },
+        { model: AgentTool, include: [{ model: Tool, attributes: ["name"] }] },
+      ],
       order: [["createdAt", "DESC"]],
     });
 
     return agents.map((agent) => {
       const result = agent.toJSON();
       result.systemPrompt = result.Prompt?.content || null;
+      result.tools = (result.AgentTools || []).map((at) => at.Tool?.name).filter(Boolean);
       return result;
     });
   }
 
   async updateAgent(userId, agentId, updates) {
-    const [count] = await Agent.update(updates, { where: { id: agentId, userID: userId } });
+    const { tools, ...agentFields } = updates;
+    const [count] = await Agent.update(agentFields, { where: { id: agentId, userID: userId } });
     if (count === 0) return null;
+
+    // Sync AgentTool junction table when tools array is provided
+    if (Array.isArray(tools)) {
+      await AgentTool.destroy({ where: { agentID: agentId } });
+      const toolRecords = await Tool.findAll({ where: { name: tools } });
+      const agentTools = toolRecords.map((t) => ({ agentID: agentId, toolID: t.id }));
+      if (agentTools.length) await AgentTool.bulkCreate(agentTools);
+    }
+
     return this.getAgent(userId, agentId);
   }
 
