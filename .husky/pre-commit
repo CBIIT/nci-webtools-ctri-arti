@@ -1,0 +1,2 @@
+npx drizzle-kit generate 2>&1
+git add database/migrations/
