@@ -2,9 +2,10 @@ openapi: 3.1.0
 info:
   title: CMS (Conversation Management Service) API
   description: |
-    Internal service for managing agents, threads, messages, resources, and vectors.
+    Internal service for managing agents, conversations, messages, tools, prompts,
+    resources, and vectors. All routes are mounted under `/api/v1`.
     All requests must include an `X-User-Id` header. All data is scoped to the
-    authenticated user, except global agents (userId=null) which are readable by all.
+    authenticated user, except global agents (userID=null) which are readable by all.
   version: 1.0.0
 
 servers:
@@ -16,7 +17,7 @@ security:
 
 paths:
   # ===== AGENTS =====
-  /api/agents:
+  /api/v1/agents:
     post:
       operationId: createAgent
       summary: Create an agent
@@ -31,12 +32,12 @@ paths:
               properties:
                 name:
                   type: string
-                promptId:
+                description:
+                  type: string
+                promptID:
                   type: integer
-                tools:
-                  type: array
-                  items:
-                    type: string
+                modelParameters:
+                  type: object
       responses:
         "201":
           description: Agent created
@@ -53,7 +54,7 @@ paths:
     get:
       operationId: getAgents
       summary: List agents
-      description: Returns the user's agents plus global agents (userId=null), ordered by createdAt DESC.
+      description: Returns the user's agents plus global agents (userID=null), ordered by createdAt DESC.
       tags: [Agents]
       responses:
         "200":
@@ -65,13 +66,13 @@ paths:
                 items:
                   $ref: "#/components/schemas/Agent"
 
-  /api/agents/{id}:
+  /api/v1/agents/{id}:
     parameters:
       - $ref: "#/components/parameters/ResourceId"
     get:
       operationId: getAgent
       summary: Get agent by ID
-      description: Returns agent with resolved Prompt. Flattens `Prompt.content` to `systemPrompt`.
+      description: Returns agent with resolved Prompt. Flattens `Prompt.content` to `systemPrompt`. Resolves tools via AgentTool junction.
       tags: [Agents]
       responses:
         "200":
@@ -89,7 +90,7 @@ paths:
     put:
       operationId: updateAgent
       summary: Update an agent
-      description: Only updates agents owned by the user. Returns 403 for global agents.
+      description: Only updates agents owned by the user. Returns 403 for global agents. Syncs AgentTool junction when `tools` array provided.
       tags: [Agents]
       requestBody:
         required: true
@@ -100,12 +101,17 @@ paths:
               properties:
                 name:
                   type: string
-                promptId:
+                description:
+                  type: string
+                promptID:
                   type: integer
+                modelParameters:
+                  type: object
                 tools:
                   type: array
                   items:
                     type: string
+                  description: Tool names to sync via AgentTool junction table
       responses:
         "200":
           description: Agent updated
@@ -128,7 +134,7 @@ paths:
     delete:
       operationId: deleteAgent
       summary: Delete an agent
-      description: Cascading delete — removes all threads, messages, resources, and vectors.
+      description: Cascading delete — removes all conversations, messages, resources, and vectors.
       tags: [Agents]
       responses:
         "200":
@@ -138,12 +144,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Success"
 
-  # ===== THREADS =====
-  /api/threads:
+  # ===== CONVERSATIONS =====
+  /api/v1/conversations:
     post:
-      operationId: createThread
-      summary: Create a thread
-      tags: [Threads]
+      operationId: createConversation
+      summary: Create a conversation
+      tags: [Conversations]
       requestBody:
         required: true
         content:
@@ -151,21 +157,22 @@ paths:
             schema:
               type: object
               properties:
-                name:
+                title:
                   type: string
-                agentId:
+                agentID:
                   type: integer
       responses:
         "201":
-          description: Thread created
+          description: Conversation created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Thread"
+                $ref: "#/components/schemas/Conversation"
     get:
-      operationId: getThreads
-      summary: List threads (paginated)
-      tags: [Threads]
+      operationId: getConversations
+      summary: List conversations (paginated)
+      description: Excludes soft-deleted conversations.
+      tags: [Conversations]
       parameters:
         - name: limit
           in: query
@@ -179,36 +186,36 @@ paths:
             default: 0
       responses:
         "200":
-          description: Paginated thread list
+          description: Paginated conversation list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaginatedThreads"
+                $ref: "#/components/schemas/PaginatedConversations"
 
-  /api/threads/{id}:
+  /api/v1/conversations/{id}:
     parameters:
       - $ref: "#/components/parameters/ResourceId"
     get:
-      operationId: getThread
-      summary: Get thread by ID
-      tags: [Threads]
+      operationId: getConversation
+      summary: Get conversation by ID
+      tags: [Conversations]
       responses:
         "200":
-          description: Thread details
+          description: Conversation details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Thread"
+                $ref: "#/components/schemas/Conversation"
         "404":
-          description: Thread not found
+          description: Conversation not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
     put:
-      operationId: updateThread
-      summary: Update a thread
-      tags: [Threads]
+      operationId: updateConversation
+      summary: Update a conversation
+      tags: [Conversations]
       requestBody:
         required: true
         content:
@@ -216,47 +223,111 @@ paths:
             schema:
               type: object
               properties:
-                name:
-                  type: string
-                summary:
+                title:
                   type: string
       responses:
         "200":
-          description: Thread updated
+          description: Conversation updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Thread"
+                $ref: "#/components/schemas/Conversation"
         "404":
-          description: Thread not found
+          description: Conversation not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
     delete:
-      operationId: deleteThread
-      summary: Delete a thread
-      description: Cascading delete — removes all messages, resources, and vectors.
-      tags: [Threads]
+      operationId: deleteConversation
+      summary: Delete a conversation
+      description: Soft delete — sets `deleted: true` and `deletedAt`.
+      tags: [Conversations]
       responses:
         "200":
-          description: Thread deleted
+          description: Conversation deleted
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Success"
 
-  # ===== MESSAGES =====
-  /api/threads/{threadId}/messages:
+  /api/v1/conversations/{id}/context:
     parameters:
-      - name: threadId
+      - $ref: "#/components/parameters/ResourceId"
+    get:
+      operationId: getContext
+      summary: Get conversation context
+      description: Returns conversation with all messages and message-linked resources.
+      tags: [Conversations]
+      responses:
+        "200":
+          description: Conversation context
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversation:
+                    $ref: "#/components/schemas/Conversation"
+                  messages:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Message"
+                  resources:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Resource"
+        "404":
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/conversations/{id}/compress:
+    parameters:
+      - $ref: "#/components/parameters/ResourceId"
+    post:
+      operationId: compressConversation
+      summary: Compress a conversation
+      description: Sets a summary message ID on the conversation for context windowing.
+      tags: [Conversations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                summary:
+                  type: string
+                summaryMessageID:
+                  type: integer
+      responses:
+        "200":
+          description: Conversation compressed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+        "404":
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ===== MESSAGES =====
+  /api/v1/conversations/{conversationId}/messages:
+    parameters:
+      - name: conversationId
         in: path
         required: true
         schema:
           type: integer
     post:
       operationId: addMessage
-      summary: Add a message to a thread
+      summary: Add a message to a conversation
       tags: [Messages]
       requestBody:
         required: true
@@ -272,8 +343,9 @@ paths:
                 content:
                   type: object
                   description: JSON content (text blocks, tool use, etc.)
-                agentId:
+                parentID:
                   type: integer
+                  description: Parent message ID for threading
       responses:
         "201":
           description: Message created
@@ -283,7 +355,7 @@ paths:
                 $ref: "#/components/schemas/Message"
     get:
       operationId: getMessages
-      summary: Get all messages in a thread
+      summary: Get all messages in a conversation
       description: Ordered by createdAt ASC.
       tags: [Messages]
       responses:
@@ -296,7 +368,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Message"
 
-  /api/messages/{id}:
+  /api/v1/messages/{id}:
     parameters:
       - $ref: "#/components/parameters/ResourceId"
     put:
@@ -337,8 +409,218 @@ paths:
               schema:
                 $ref: "#/components/schemas/Success"
 
+  # ===== TOOLS =====
+  /api/v1/tools:
+    post:
+      operationId: createTool
+      summary: Create a tool
+      tags: [Tools]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+      responses:
+        "201":
+          description: Tool created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tool"
+    get:
+      operationId: getTools
+      summary: List tools
+      description: Returns builtin tools plus user's tools (via UserTool junction).
+      tags: [Tools]
+      responses:
+        "200":
+          description: List of tools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tool"
+
+  /api/v1/tools/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ResourceId"
+    get:
+      operationId: getTool
+      summary: Get tool by ID
+      tags: [Tools]
+      responses:
+        "200":
+          description: Tool details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tool"
+        "404":
+          description: Tool not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      operationId: updateTool
+      summary: Update a tool
+      tags: [Tools]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Tool updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tool"
+        "404":
+          description: Tool not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteTool
+      summary: Delete a tool
+      description: Cascading delete — removes associated vectors, AgentTool, and UserTool records.
+      tags: [Tools]
+      responses:
+        "200":
+          description: Tool deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+
+  /api/v1/tools/{id}/vectors:
+    parameters:
+      - $ref: "#/components/parameters/ResourceId"
+    get:
+      operationId: getToolVectors
+      summary: Get vectors for a tool
+      tags: [Tools]
+      responses:
+        "200":
+          description: List of vectors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vector"
+
+  # ===== PROMPTS =====
+  /api/v1/prompts:
+    post:
+      operationId: createPrompt
+      summary: Create a prompt
+      tags: [Prompts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, content]
+              properties:
+                name:
+                  type: string
+                content:
+                  type: string
+                version:
+                  type: integer
+      responses:
+        "201":
+          description: Prompt created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prompt"
+    get:
+      operationId: getPrompts
+      summary: List prompts
+      description: Ordered by name ASC, version DESC.
+      tags: [Prompts]
+      responses:
+        "200":
+          description: List of prompts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Prompt"
+
+  /api/v1/prompts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ResourceId"
+    get:
+      operationId: getPrompt
+      summary: Get prompt by ID
+      tags: [Prompts]
+      responses:
+        "200":
+          description: Prompt details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prompt"
+        "404":
+          description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      operationId: updatePrompt
+      summary: Update a prompt
+      tags: [Prompts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Prompt updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prompt"
+        "404":
+          description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deletePrompt
+      summary: Delete a prompt
+      tags: [Prompts]
+      responses:
+        "200":
+          description: Prompt deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+
   # ===== RESOURCES =====
-  /api/resources:
+  /api/v1/resources:
     post:
       operationId: addResource
       summary: Create a resource
@@ -357,7 +639,9 @@ paths:
                   type: string
                 content:
                   type: string
-                threadId:
+                agentID:
+                  type: integer
+                messageID:
                   type: integer
                 s3Uri:
                   type: string
@@ -371,7 +655,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Resource"
 
-  /api/resources/{id}:
+  /api/v1/resources/{id}:
     parameters:
       - $ref: "#/components/parameters/ResourceId"
     get:
@@ -404,16 +688,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/Success"
 
-  /api/threads/{threadId}/resources:
+  /api/v1/agents/{agentId}/resources:
     parameters:
-      - name: threadId
+      - name: agentId
         in: path
         required: true
         schema:
           type: integer
     get:
-      operationId: getResourcesByThread
-      summary: Get resources for a thread
+      operationId: getResourcesByAgent
+      summary: Get resources for an agent
       description: Ordered by createdAt ASC.
       tags: [Resources]
       responses:
@@ -427,16 +711,10 @@ paths:
                   $ref: "#/components/schemas/Resource"
 
   # ===== VECTORS =====
-  /api/threads/{threadId}/vectors:
-    parameters:
-      - name: threadId
-        in: path
-        required: true
-        schema:
-          type: integer
+  /api/v1/vectors:
     post:
       operationId: addVectors
-      summary: Add vectors to a thread
+      summary: Add vectors
       description: Bulk create. Order defaults to array index.
       tags: [Vectors]
       requestBody:
@@ -447,19 +725,23 @@ paths:
               type: object
               required: [vectors]
               properties:
+                conversationID:
+                  type: integer
                 vectors:
                   type: array
                   items:
                     type: object
-                    required: [text]
+                    required: [content]
                     properties:
-                      text:
+                      content:
                         type: string
                       embedding:
                         type: array
                         items:
                           type: number
-                      resourceId:
+                      resourceID:
+                        type: integer
+                      toolID:
                         type: integer
                       order:
                         type: integer
@@ -472,9 +754,52 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Vector"
+
+  /api/v1/vectors/search:
     get:
-      operationId: getVectorsByThread
-      summary: Get vectors for a thread
+      operationId: searchVectors
+      summary: Search vectors by similarity
+      description: Cosine similarity search when embedding is provided.
+      tags: [Vectors]
+      parameters:
+        - name: toolID
+          in: query
+          schema:
+            type: integer
+        - name: conversationID
+          in: query
+          schema:
+            type: integer
+        - name: embedding
+          in: query
+          schema:
+            type: string
+          description: JSON-encoded embedding array
+        - name: topN
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Matching vectors (with similarity score if embedding provided)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vector"
+
+  /api/v1/conversations/{conversationId}/vectors:
+    parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getVectorsByConversation
+      summary: Get vectors for a conversation
       description: Ordered by order ASC.
       tags: [Vectors]
       responses:
@@ -526,20 +851,23 @@ components:
       properties:
         id:
           type: integer
-        userId:
+        userID:
           type: integer
           nullable: true
           description: "null for global agents"
-        modelId:
-          type: integer
         name:
           type: string
-        promptId:
+        description:
+          type: string
+        promptID:
           type: integer
+        modelParameters:
+          type: object
         tools:
           type: array
           items:
             type: string
+          description: Tool names resolved from AgentTool junction (read-only)
         systemPrompt:
           type: string
           description: Flattened from Prompt.content (read-only)
@@ -550,19 +878,26 @@ components:
           type: string
           format: date-time
 
-    Thread:
+    Conversation:
       type: object
       properties:
         id:
           type: integer
-        userId:
+        userID:
           type: integer
-        agentId:
+        agentID:
           type: integer
-        name:
+        title:
           type: string
-        summary:
+        deleted:
+          type: boolean
+        deletedAt:
           type: string
+          format: date-time
+          nullable: true
+        summaryMessageID:
+          type: integer
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -575,10 +910,11 @@ components:
       properties:
         id:
           type: integer
-        userId:
+        conversationID:
           type: integer
-        threadId:
+        parentID:
           type: integer
+          nullable: true
         role:
           type: string
           enum: [user, assistant]
@@ -591,18 +927,48 @@ components:
           type: string
           format: date-time
 
+    Tool:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Prompt:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        content:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
     Resource:
       type: object
       properties:
         id:
           type: integer
-        userId:
+        agentID:
           type: integer
-        agentId:
-          type: integer
-        threadId:
-          type: integer
-        messageId:
+        messageID:
           type: integer
         name:
           type: string
@@ -626,22 +992,23 @@ components:
       properties:
         id:
           type: integer
-        userId:
+        conversationID:
           type: integer
-        threadId:
+        resourceID:
           type: integer
-        agentId:
-          type: integer
-        resourceId:
+        toolID:
           type: integer
         order:
           type: integer
-        text:
+        content:
           type: string
         embedding:
           type: array
           items:
             type: number
+        similarity:
+          type: number
+          description: Cosine similarity score (only present in search results)
         createdAt:
           type: string
           format: date-time
@@ -649,13 +1016,13 @@ components:
           type: string
           format: date-time
 
-    PaginatedThreads:
+    PaginatedConversations:
       type: object
       properties:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/Thread"
+            $ref: "#/components/schemas/Conversation"
         meta:
           type: object
           properties:

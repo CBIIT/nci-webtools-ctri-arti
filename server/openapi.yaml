@@ -23,7 +23,7 @@ paths:
       description: |
         Redirects to OIDC provider for authentication. On callback, creates user
         if first login (first user gets admin role, subsequent users get user role
-        with limit=5). Redirects to `?destination` or `/`.
+        with budget=5). Redirects to `?destination` or `/`.
       tags: [Auth]
       security: []
       parameters:
@@ -497,8 +497,12 @@ paths:
               properties:
                 name:
                   type: string
-                promptId:
+                description:
+                  type: string
+                promptID:
                   type: integer
+                modelParameters:
+                  type: object
                 tools:
                   type: array
                   items:
@@ -511,7 +515,7 @@ paths:
     get:
       operationId: getAgents
       summary: List agents
-      description: User's agents plus global agents (userId=null).
+      description: User's agents plus global agents (userID=null).
       tags: [Conversations]
       security:
         - sessionCookie: []
@@ -570,10 +574,10 @@ paths:
         "200":
           description: Agent deleted
 
-  /api/threads:
+  /api/conversations:
     post:
-      operationId: createThread
-      summary: Create a thread
+      operationId: createConversation
+      summary: Create a conversation
       tags: [Conversations]
       security:
         - sessionCookie: []
@@ -585,16 +589,16 @@ paths:
             schema:
               type: object
               properties:
-                name:
+                title:
                   type: string
-                agentId:
+                agentID:
                   type: integer
       responses:
         "201":
-          description: Thread created
+          description: Conversation created
     get:
-      operationId: getThreads
-      summary: List threads (paginated)
+      operationId: getConversations
+      summary: List conversations (paginated)
       tags: [Conversations]
       security:
         - sessionCookie: []
@@ -612,7 +616,7 @@ paths:
             default: 0
       responses:
         "200":
-          description: Paginated thread list
+          description: Paginated conversation list
           content:
             application/json:
               schema:
@@ -632,7 +636,7 @@ paths:
                       offset:
                         type: integer
 
-  /api/threads/{id}:
+  /api/conversations/{id}:
     parameters:
       - name: id
         in: path
@@ -640,20 +644,20 @@ paths:
         schema:
           type: integer
     get:
-      operationId: getThread
-      summary: Get thread by ID
+      operationId: getConversation
+      summary: Get conversation by ID
       tags: [Conversations]
       security:
         - sessionCookie: []
         - apiKey: []
       responses:
         "200":
-          description: Thread details
+          description: Conversation details
         "404":
           description: Not found
     put:
-      operationId: updateThread
-      summary: Update a thread
+      operationId: updateConversation
+      summary: Update a conversation
       tags: [Conversations]
       security:
         - sessionCookie: []
@@ -665,28 +669,94 @@ paths:
             schema:
               type: object
               properties:
-                name:
-                  type: string
-                summary:
+                title:
                   type: string
       responses:
         "200":
-          description: Thread updated
+          description: Conversation updated
     delete:
-      operationId: deleteThread
-      summary: Delete a thread
-      description: Cascading delete.
+      operationId: deleteConversation
+      summary: Delete a conversation
+      description: Soft delete.
       tags: [Conversations]
       security:
         - sessionCookie: []
         - apiKey: []
       responses:
         "200":
-          description: Thread deleted
+          description: Conversation deleted
 
-  /api/threads/{threadId}/messages:
+  /api/conversations/{id}/context:
     parameters:
-      - name: threadId
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getContext
+      summary: Get conversation context
+      description: Returns conversation with all messages and message-linked resources.
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Conversation context
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversation:
+                    type: object
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                  resources:
+                    type: array
+                    items:
+                      type: object
+        "404":
+          description: Conversation not found
+
+  /api/conversations/{id}/compress:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: compressConversation
+      summary: Compress a conversation
+      description: Sets summary message ID for context windowing.
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                summary:
+                  type: string
+                summaryMessageID:
+                  type: integer
+      responses:
+        "200":
+          description: Conversation compressed
+        "404":
+          description: Conversation not found
+
+  /api/conversations/{conversationId}/messages:
+    parameters:
+      - name: conversationId
         in: path
         required: true
         schema:
@@ -710,12 +780,14 @@ paths:
                   type: string
                 content:
                   type: object
+                parentID:
+                  type: integer
       responses:
         "201":
           description: Message created
     get:
       operationId: getMessages
-      summary: Get messages in a thread
+      summary: Get messages in a conversation
       description: Ordered by createdAt ASC.
       tags: [Conversations]
       security:
@@ -781,7 +853,9 @@ paths:
                   type: string
                 content:
                   type: string
-                threadId:
+                agentID:
+                  type: integer
+                messageID:
                   type: integer
                 s3Uri:
                   type: string
@@ -820,16 +894,16 @@ paths:
         "200":
           description: Resource deleted
 
-  /api/threads/{threadId}/resources:
+  /api/agents/{agentId}/resources:
     parameters:
-      - name: threadId
+      - name: agentId
         in: path
         required: true
         schema:
           type: integer
     get:
-      operationId: getResourcesByThread
-      summary: Get resources for a thread
+      operationId: getResourcesByAgent
+      summary: Get resources for an agent
       tags: [Conversations]
       security:
         - sessionCookie: []
@@ -838,16 +912,16 @@ paths:
         "200":
           description: List of resources
 
-  /api/threads/{threadId}/vectors:
+  /api/conversations/{conversationId}/vectors:
     parameters:
-      - name: threadId
+      - name: conversationId
         in: path
         required: true
         schema:
           type: integer
     post:
       operationId: addVectors
-      summary: Add vectors to a thread
+      summary: Add vectors to a conversation
       tags: [Conversations]
       security:
         - sessionCookie: []
@@ -864,15 +938,17 @@ paths:
                   type: array
                   items:
                     type: object
-                    required: [text]
+                    required: [content]
                     properties:
-                      text:
+                      content:
                         type: string
                       embedding:
                         type: array
                         items:
                           type: number
-                      resourceId:
+                      resourceID:
+                        type: integer
+                      toolID:
                         type: integer
                       order:
                         type: integer
@@ -880,8 +956,8 @@ paths:
         "201":
           description: Vectors created
     get:
-      operationId: getVectorsByThread
-      summary: Get vectors for a thread
+      operationId: getVectorsByConversation
+      summary: Get vectors for a conversation
       tags: [Conversations]
       security:
         - sessionCookie: []
@@ -920,7 +996,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [name, email, status, role, limit, createdAt]
+            enum: [name, email, status, role, budget, createdAt]
         - name: sortOrder
           in: query
           schema:
@@ -965,9 +1041,9 @@ paths:
                   type: string
                 email:
                   type: string
-                roleId:
+                roleID:
                   type: integer
-                limit:
+                budget:
                   type: number
                 generateApiKey:
                   type: boolean
@@ -1216,9 +1292,9 @@ components:
           type: string
         status:
           type: string
-        roleId:
+        roleID:
           type: integer
-        limit:
+        budget:
           type: number
           nullable: true
         remaining:

@@ -57,10 +57,12 @@ All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for ful
 | Resource | Endpoints | Auth |
 |----------|-----------|------|
 | Agents | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | `requireRole()` |
-| Threads | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | `requireRole()` |
+| Conversations | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | `requireRole()` |
+| Context | `GET /conversations/:id/context` | `requireRole()` |
+| Compress | `POST /conversations/:id/compress` | `requireRole()` |
 | Messages | `POST`, `GET`, `PUT /:id`, `DELETE /:id` | `requireRole()` |
-| Resources | `POST`, `GET /:id`, `GET` by thread, `DELETE /:id` | `requireRole()` |
-| Vectors | `POST`, `GET` by thread | `requireRole()` |
+| Resources | `POST`, `GET /:id`, `GET` by agent, `DELETE /:id` | `requireRole()` |
+| Vectors | `POST`, `GET` by conversation | `requireRole()` |
 
 ### Admin
 
@@ -74,8 +76,8 @@ All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for ful
 | GET | `/admin/roles` | admin | List all roles |
 | GET | `/admin/users/:id/usage` | admin | Get user's usage history |
 | GET | `/admin/usage` | admin | Get all usage records |
-| POST | `/admin/usage/reset` | admin | Reset all weekly limits |
-| POST | `/admin/users/:id/reset-limit` | admin | Reset single user's limit |
+| POST | `/admin/usage/reset` | admin | Reset all weekly budgets |
+| POST | `/admin/users/:id/reset-limit` | admin | Reset single user's budget |
 | GET | `/admin/analytics` | admin | Aggregated usage analytics |
 
 ## Architecture
@@ -105,18 +107,18 @@ All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for ful
 
 Both service clients use a factory pattern resolved at module load time:
 
-**`services/clients/gateway.js`** — Exports `infer()` and `listModels()`.
+**`services/clients/gateway.js`** — Exports `invoke()` and `listModels()`.
 - Direct mode: calls `runModel()` from `gateway/inference.js`, handles rate limiting and usage tracking locally.
-- HTTP mode: POSTs to `GATEWAY_URL/api/infer`, parses newline-delimited JSON streaming.
+- HTTP mode: POSTs to `GATEWAY_URL/api/v1/model/invoke`, parses newline-delimited JSON streaming.
 
-**`services/clients/cms.js`** — Exports 23 conversation methods (`createAgent`, `getThreads`, `addMessage`, etc.).
+**`services/clients/cms.js`** — Exports 30+ conversation methods (`createAgent`, `createConversation`, `addMessage`, `createTool`, `createPrompt`, etc.).
 - Direct mode: instantiates `ConversationService` from `cms/conversation.js`.
-- HTTP mode: makes HTTP requests with `X-User-Id` header to `CMS_URL/api/...`.
+- HTTP mode: makes HTTP requests with `X-User-Id` header to `CMS_URL/api/v1/...`.
 
 ### Authentication
 
 Three methods:
-1. **Session** — OAuth/OIDC login sets `session.user`. First user gets admin role; subsequent users get user role with `limit=5`.
+1. **Session** — OAuth/OIDC login sets `session.user`. First user gets admin role; subsequent users get user role with `budget=5`.
 2. **API Key** — `X-API-Key` header looked up in User table. Generates `rsk_...` format keys.
 3. **Internal** — `X-User-Id` header for microservice communication (used by CMS).
 

@@ -15,7 +15,7 @@ Client (SolidJS) ──► Server (:443) ──┬──► Gateway (:3001) ─�
 | [client](client/) | Frontend | — | Buildless SolidJS chat interface with local IndexedDB storage |
 | [server](server/) | Service | 443/8080 | Edge server — HTTPS, OAuth, static files, API routing |
 | [gateway](gateway/) | Service | 3001 | AI inference — multi-provider abstraction, usage tracking |
-| [cms](cms/) | Service | 3002 | Conversation management — agents, threads, messages CRUD |
+| [cms](cms/) | Service | 3002 | Conversation management — agents, conversations, messages, tools, prompts CRUD |
 | [agents](agents/) | Service (stub) | 3003 | Chat orchestration (planned) |
 | [users](users/) | Service (stub) | 3004 | Identity and access management (planned) |
 | [database](database/) | Library | — | Sequelize models, associations, seed data |
@@ -107,12 +107,12 @@ The deploy script builds 3 Docker images (main, gateway, cms), pushes to ECR, an
 
 ```
 research-optimizer/
-├── package.json              # Root workspace config
+├── package.json              # Root workspace config (shared, database, gateway, cms, agents, users, server)
 ├── docker-compose.yml        # Multi-service development
 ├── deploy.sh                 # CI/CD deployment script
 ├── Dockerfile                # Multi-service container image
 │
-├── client/                   # Frontend (buildless SolidJS)
+├── client/                   # Frontend (buildless SolidJS, not an npm workspace)
 │   ├── components/           # Reusable UI components
 │   ├── models/               # IndexedDB, embeddings, data models
 │   ├── pages/tools/chat/     # Main chat interface
