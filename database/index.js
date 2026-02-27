@@ -1,4 +1,9 @@
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 import logger from "shared/logger.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const migrationsFolder = resolve(__dirname, "migrations");
 
 const {
   DB_DIALECT = "postgres",
@@ -20,13 +25,13 @@ if (DB_DIALECT === "pglite") {
   // PGlite mode (local dev / tests) — embedded PostgreSQL via WASM
   const { PGlite } = await import("@electric-sql/pglite");
   const { drizzle } = await import("drizzle-orm/pglite");
+  const { migrate } = await import("drizzle-orm/pglite/migrator");
 
   const client = new PGlite(DB_STORAGE || undefined);
   db = drizzle({ client, schema });
 
   if (DB_SKIP_SYNC !== "true") {
-    const { pushSchema } = await import("./sync.js");
-    await pushSchema((s) => client.exec(s));
+    await migrate(db, { migrationsFolder });
 
     const { seedDatabase } = schema;
     await seedDatabase(db);
@@ -35,6 +40,7 @@ if (DB_DIALECT === "pglite") {
   // PostgreSQL mode (production)
   const postgres = (await import("postgres")).default;
   const { drizzle } = await import("drizzle-orm/postgres-js");
+  const { migrate } = await import("drizzle-orm/postgres-js/migrator");
 
   const sql = postgres({
     host: PGHOST,
@@ -47,8 +53,7 @@ if (DB_DIALECT === "pglite") {
   db = drizzle(sql, { schema });
 
   if (DB_SKIP_SYNC !== "true") {
-    const { pushSchema } = await import("./sync.js");
-    await pushSchema((s) => sql.unsafe(s));
+    await migrate(db, { migrationsFolder });
 
     const { seedDatabase } = schema;
     await seedDatabase(db);

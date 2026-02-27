@@ -12,6 +12,8 @@
     "test": "npm test -w server",
     "lint": "eslint . --cache --cache-location ./node_modules/.cache/eslint/",
     "lint:fix": "eslint . --fix --cache --cache-location ./node_modules/.cache/eslint/",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
     "db:dev": "npx @electric-sql/pglite-socket",
     "db:dev:persistent": "npx @electric-sql/pglite-socket --db=./data/pglite --port=5433",
     "format": "prettier . --check",

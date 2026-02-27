@@ -41,7 +41,7 @@ export async function createApp(env = process.env) {
     store = new PgStore({
       conString: `postgres://${env.PGUSER}:${env.PGPASSWORD}@${env.PGHOST}:${env.PGPORT}/${env.PGDATABASE}`,
       tableName: "session",
-      createTableIfMissing: false, // handled by sync.js
+      createTableIfMissing: true,
     });
   }
 

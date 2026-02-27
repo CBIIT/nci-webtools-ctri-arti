@@ -5,7 +5,6 @@
   "exports": {
     ".": "./index.js",
     "./schema.js": "./schema.js",
-    "./sync.js": "./sync.js",
     "./csv-loader.js": "./csv-loader.js"
   },
   "dependencies": {
