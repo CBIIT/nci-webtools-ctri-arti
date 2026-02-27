@@ -20,8 +20,9 @@
     "@aws-sdk/client-textract": "^3.982.0",
     "@aws-sdk/client-translate": "^3.982.0",
     "cms": "*",
-    "connect-session-sequelize": "^8.0.5",
+    "connect-pg-simple": "^10.0.0",
     "database": "*",
+    "drizzle-orm": "^0.44.0",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "gateway": "*",
@@ -36,14 +37,11 @@
     "openid-client": "^6.8.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.4.624",
-    "pg": "^8.18.0",
-    "sequelize": "^6.37.7",
     "shared": "*",
     "winston": "^3.19.0"
   },
   "devDependencies": {
     "playwright": "^1.58.1",
-    "sqlite3": "^5.1.7",
     "supertest": "^7.2.2"
   }
 }

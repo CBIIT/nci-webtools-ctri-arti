@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "database": "*",
+    "drizzle-orm": "^0.44.0",
     "express": "^5.2.1",
-    "sequelize": "^6.37.7",
     "shared": "*"
   }
 }

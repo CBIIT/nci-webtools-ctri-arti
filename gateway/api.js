@@ -1,4 +1,5 @@
-import { Model, User } from "database";
+import db, { Model, User } from "database";
+import { eq } from "drizzle-orm";
 
 import { json, Router } from "express";
 import { logErrors, logRequests } from "shared/middleware.js";
@@ -19,7 +20,9 @@ api.post("/v1/model/invoke", async (req, res, next) => {
 
   try {
     // Resolve model from DB to check type
-    const modelRecord = model ? await Model.findOne({ where: { internalName: model } }) : null;
+    const [modelRecord] = model
+      ? await db.select().from(Model).where(eq(Model.internalName, model)).limit(1)
+      : [null];
     if (!modelRecord) {
       return res.status(404).json({ error: "Model not found", code: "GATEWAY_MODEL_NOT_FOUND" });
     }
@@ -31,7 +34,7 @@ api.post("/v1/model/invoke", async (req, res, next) => {
 
     // Rate limit check
     if (userID) {
-      const user = await User.findByPk(userID);
+      const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
       if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
         return res.status(429).json({
           error: "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.",
@@ -73,13 +76,21 @@ api.post("/v1/model/invoke", async (req, res, next) => {
  * GET /api/v1/models - List available models with optional type filter
  */
 api.get("/v1/models", async (req, res) => {
-  const where = { providerID: 1 };
-  if (req.query.type) where.type = req.query.type;
+  const where = [eq(Model.providerID, 1)];
+  if (req.query.type) where.push(eq(Model.type, req.query.type));
 
-  const results = await Model.findAll({
-    attributes: ["name", "internalName", "type", "maxContext", "maxOutput", "maxReasoning"],
-    where,
-  });
+  const { and } = await import("drizzle-orm");
+  const results = await db
+    .select({
+      name: Model.name,
+      internalName: Model.internalName,
+      type: Model.type,
+      maxContext: Model.maxContext,
+      maxOutput: Model.maxOutput,
+      maxReasoning: Model.maxReasoning,
+    })
+    .from(Model)
+    .where(and(...where));
   res.json(results);
 });
 

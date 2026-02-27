@@ -1,353 +1,424 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
-import { DataTypes } from "sequelize";
+import {
+  pgTable,
+  serial,
+  text,
+  integer,
+  doublePrecision,
+  boolean,
+  timestamp,
+  json,
+  uniqueIndex,
+  index,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 import { loadCsv } from "./csv-loader.js";
 
 const dataDir = resolve(dirname(fileURLToPath(import.meta.url)), "data");
 
-// Model definitions as plain objects
-export const modelDefinitions = {
-  User: {
-    attributes: {
-      email: DataTypes.STRING,
-      firstName: DataTypes.STRING,
-      lastName: DataTypes.STRING,
-      status: DataTypes.STRING,
-      roleID: DataTypes.INTEGER,
-      apiKey: DataTypes.STRING,
-      budget: DataTypes.FLOAT,
-      remaining: DataTypes.FLOAT,
-    },
-    options: {
-      indexes: [{ fields: ["email"] }, { fields: ["roleID"] }],
-    },
-  },
+// ===== Table Definitions =====
 
-  Role: {
-    attributes: {
-      name: DataTypes.STRING,
-      displayOrder: DataTypes.INTEGER,
-    },
-    options: {
-      indexes: [{ fields: ["displayOrder"] }],
-    },
+export const User = pgTable(
+  "User",
+  {
+    id: serial("id").primaryKey(),
+    email: text("email"),
+    firstName: text("firstName"),
+    lastName: text("lastName"),
+    status: text("status"),
+    roleID: integer("roleID"),
+    apiKey: text("apiKey"),
+    budget: doublePrecision("budget"),
+    remaining: doublePrecision("remaining"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [index("User_email_idx").on(t.email), index("User_roleID_idx").on(t.roleID)],
+);
 
-  Policy: {
-    attributes: {
-      name: DataTypes.STRING,
-      resource: DataTypes.STRING,
-      action: DataTypes.STRING,
-    },
-    options: {},
+export const Role = pgTable(
+  "Role",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name"),
+    displayOrder: integer("displayOrder"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [index("Role_displayOrder_idx").on(t.displayOrder)],
+);
 
-  RolePolicy: {
-    attributes: {
-      roleID: DataTypes.INTEGER,
-      policyID: DataTypes.INTEGER,
-    },
-    options: {
-      indexes: [{ fields: ["roleID", "policyID"], unique: true }],
-    },
-  },
+export const Policy = pgTable("Policy", {
+  id: serial("id").primaryKey(),
+  name: text("name"),
+  resource: text("resource"),
+  action: text("action"),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+});
 
-  Provider: {
-    attributes: {
-      name: DataTypes.STRING,
-      apiKey: DataTypes.STRING,
-      endpoint: DataTypes.STRING,
-    },
-    options: {},
+export const RolePolicy = pgTable(
+  "RolePolicy",
+  {
+    id: serial("id").primaryKey(),
+    roleID: integer("roleID"),
+    policyID: integer("policyID"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [uniqueIndex("RolePolicy_roleID_policyID_idx").on(t.roleID, t.policyID)],
+);
 
-  Model: {
-    attributes: {
-      providerID: DataTypes.INTEGER,
-      name: DataTypes.STRING,
-      internalName: DataTypes.STRING,
-      type: DataTypes.STRING,
-      description: DataTypes.STRING,
-      maxContext: DataTypes.INTEGER,
-      maxOutput: DataTypes.INTEGER,
-      maxReasoning: DataTypes.INTEGER,
-      cost1kInput: DataTypes.FLOAT,
-      cost1kOutput: DataTypes.FLOAT,
-      cost1kCacheRead: DataTypes.FLOAT,
-      cost1kCacheWrite: DataTypes.FLOAT,
-      defaultParameters: DataTypes.JSON,
-    },
-    options: {
-      indexes: [{ fields: ["internalName"] }, { fields: ["providerID"] }],
-    },
-  },
+export const Provider = pgTable("Provider", {
+  id: serial("id").primaryKey(),
+  name: text("name"),
+  apiKey: text("apiKey"),
+  endpoint: text("endpoint"),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+});
 
-  Usage: {
-    attributes: {
-      userID: DataTypes.INTEGER,
-      modelID: DataTypes.INTEGER,
-      type: DataTypes.STRING,
-      agentID: DataTypes.INTEGER,
-      messageID: DataTypes.INTEGER,
-      inputTokens: DataTypes.FLOAT,
-      outputTokens: DataTypes.FLOAT,
-      cacheReadTokens: DataTypes.FLOAT,
-      cacheWriteTokens: DataTypes.FLOAT,
-      cost: DataTypes.FLOAT,
-    },
-    options: {
-      indexes: [
-        { fields: ["userID"] },
-        { fields: ["modelID"] },
-        { fields: ["createdAt"] },
-        { fields: ["userID", "createdAt"] },
-      ],
-    },
+export const Model = pgTable(
+  "Model",
+  {
+    id: serial("id").primaryKey(),
+    providerID: integer("providerID"),
+    name: text("name"),
+    internalName: text("internalName"),
+    type: text("type"),
+    description: text("description"),
+    maxContext: integer("maxContext"),
+    maxOutput: integer("maxOutput"),
+    maxReasoning: integer("maxReasoning"),
+    cost1kInput: doublePrecision("cost1kInput"),
+    cost1kOutput: doublePrecision("cost1kOutput"),
+    cost1kCacheRead: doublePrecision("cost1kCacheRead"),
+    cost1kCacheWrite: doublePrecision("cost1kCacheWrite"),
+    defaultParameters: json("defaultParameters"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [
+    index("Model_internalName_idx").on(t.internalName),
+    index("Model_providerID_idx").on(t.providerID),
+  ],
+);
 
-  Prompt: {
-    attributes: {
-      name: DataTypes.STRING,
-      version: DataTypes.INTEGER,
-      content: DataTypes.TEXT,
-    },
-    options: {
-      indexes: [
-        { fields: ["name"] },
-        { fields: ["name", "version"], unique: true },
-      ],
-    },
+export const Usage = pgTable(
+  "Usage",
+  {
+    id: serial("id").primaryKey(),
+    userID: integer("userID"),
+    modelID: integer("modelID"),
+    type: text("type"),
+    agentID: integer("agentID"),
+    messageID: integer("messageID"),
+    inputTokens: doublePrecision("inputTokens"),
+    outputTokens: doublePrecision("outputTokens"),
+    cacheReadTokens: doublePrecision("cacheReadTokens"),
+    cacheWriteTokens: doublePrecision("cacheWriteTokens"),
+    cost: doublePrecision("cost"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [
+    index("Usage_userID_idx").on(t.userID),
+    index("Usage_modelID_idx").on(t.modelID),
+    index("Usage_createdAt_idx").on(t.createdAt),
+    index("Usage_userID_createdAt_idx").on(t.userID, t.createdAt),
+  ],
+);
 
-  Agent: {
-    attributes: {
-      userID: DataTypes.INTEGER,
-      modelID: DataTypes.INTEGER,
-      name: DataTypes.STRING,
-      description: DataTypes.STRING,
-      promptID: DataTypes.INTEGER,
-      modelParameters: DataTypes.JSON,
-    },
-    options: {
-      indexes: [
-        { fields: ["userID"] },
-        { fields: ["modelID"] },
-        { fields: ["promptID"] },
-      ],
-    },
+export const Prompt = pgTable(
+  "Prompt",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name"),
+    version: integer("version"),
+    content: text("content"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [
+    index("Prompt_name_idx").on(t.name),
+    uniqueIndex("Prompt_name_version_idx").on(t.name, t.version),
+  ],
+);
 
-  Tool: {
-    attributes: {
-      name: DataTypes.STRING,
-      description: DataTypes.STRING,
-      type: DataTypes.STRING,
-      authenticationType: DataTypes.STRING,
-      endpoint: DataTypes.STRING,
-      transportType: DataTypes.STRING,
-      customConfig: DataTypes.JSON,
-    },
-    options: {},
+export const Agent = pgTable(
+  "Agent",
+  {
+    id: serial("id").primaryKey(),
+    userID: integer("userID"),
+    modelID: integer("modelID"),
+    name: text("name"),
+    description: text("description"),
+    promptID: integer("promptID"),
+    modelParameters: json("modelParameters"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [
+    index("Agent_userID_idx").on(t.userID),
+    index("Agent_modelID_idx").on(t.modelID),
+    index("Agent_promptID_idx").on(t.promptID),
+  ],
+);
 
-  Conversation: {
-    attributes: {
-      userID: DataTypes.INTEGER,
-      agentID: DataTypes.INTEGER,
-      title: DataTypes.STRING,
-      deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
-      deletedAt: DataTypes.DATE,
-      summaryMessageID: { type: DataTypes.INTEGER, defaultValue: 0 },
-    },
-    options: {
-      indexes: [
-        { fields: ["agentID"] },
-        { fields: ["userID", "createdAt"] },
-        { fields: ["deleted"] },
-      ],
-    },
-  },
+export const Tool = pgTable("Tool", {
+  id: serial("id").primaryKey(),
+  name: text("name"),
+  description: text("description"),
+  type: text("type"),
+  authenticationType: text("authenticationType"),
+  endpoint: text("endpoint"),
+  transportType: text("transportType"),
+  customConfig: json("customConfig"),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+});
 
-  Message: {
-    attributes: {
-      conversationID: DataTypes.INTEGER,
-      parentID: DataTypes.INTEGER,
-      role: DataTypes.STRING,
-      content: DataTypes.JSON,
-    },
-    options: {
-      indexes: [
-        { fields: ["conversationID"] },
-        { fields: ["conversationID", "createdAt"] },
-      ],
-    },
+export const Conversation = pgTable(
+  "Conversation",
+  {
+    id: serial("id").primaryKey(),
+    userID: integer("userID"),
+    agentID: integer("agentID"),
+    title: text("title"),
+    deleted: boolean("deleted").default(false),
+    deletedAt: timestamp("deletedAt", { withTimezone: true }),
+    summaryMessageID: integer("summaryMessageID").default(0),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [
+    index("Conversation_agentID_idx").on(t.agentID),
+    index("Conversation_userID_createdAt_idx").on(t.userID, t.createdAt),
+    index("Conversation_deleted_idx").on(t.deleted),
+  ],
+);
 
-  Resource: {
-    attributes: {
-      agentID: DataTypes.INTEGER,
-      messageID: DataTypes.INTEGER,
-      name: DataTypes.STRING,
-      type: DataTypes.STRING,
-      content: DataTypes.TEXT,
-      s3Uri: DataTypes.STRING,
-      metadata: DataTypes.JSON,
-    },
-    options: {
-      indexes: [
-        { fields: ["agentID"] },
-        { fields: ["messageID"] },
-      ],
-    },
+export const Message = pgTable(
+  "Message",
+  {
+    id: serial("id").primaryKey(),
+    conversationID: integer("conversationID"),
+    parentID: integer("parentID"),
+    role: text("role"),
+    content: json("content"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [
+    index("Message_conversationID_idx").on(t.conversationID),
+    index("Message_conversationID_createdAt_idx").on(t.conversationID, t.createdAt),
+  ],
+);
 
-  Vector: {
-    attributes: {
-      conversationID: DataTypes.INTEGER,
-      resourceID: DataTypes.INTEGER,
-      toolID: DataTypes.INTEGER,
-      order: DataTypes.INTEGER,
-      content: DataTypes.TEXT,
-      embedding: DataTypes.JSON,
-    },
-    options: {
-      indexes: [
-        { fields: ["conversationID"] },
-        { fields: ["toolID"] },
-        { fields: ["resourceID", "order"] },
-      ],
-    },
+export const Resource = pgTable(
+  "Resource",
+  {
+    id: serial("id").primaryKey(),
+    agentID: integer("agentID"),
+    messageID: integer("messageID"),
+    name: text("name"),
+    type: text("type"),
+    content: text("content"),
+    s3Uri: text("s3Uri"),
+    metadata: json("metadata"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [
+    index("Resource_agentID_idx").on(t.agentID),
+    index("Resource_messageID_idx").on(t.messageID),
+  ],
+);
 
-  UserAgent: {
-    attributes: {
-      userID: DataTypes.INTEGER,
-      agentID: DataTypes.INTEGER,
-      role: DataTypes.STRING,
-    },
-    options: {
-      indexes: [{ fields: ["userID", "agentID"], unique: true }],
-    },
+export const Vector = pgTable(
+  "Vector",
+  {
+    id: serial("id").primaryKey(),
+    conversationID: integer("conversationID"),
+    resourceID: integer("resourceID"),
+    toolID: integer("toolID"),
+    order: integer("order"),
+    content: text("content"),
+    embedding: json("embedding"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [
+    index("Vector_conversationID_idx").on(t.conversationID),
+    index("Vector_toolID_idx").on(t.toolID),
+    index("Vector_resourceID_order_idx").on(t.resourceID, t.order),
+  ],
+);
 
-  UserTool: {
-    attributes: {
-      userID: DataTypes.INTEGER,
-      toolID: DataTypes.INTEGER,
-      credential: DataTypes.JSON,
-    },
-    options: {
-      indexes: [{ fields: ["userID", "toolID"], unique: true }],
-    },
+export const UserAgent = pgTable(
+  "UserAgent",
+  {
+    id: serial("id").primaryKey(),
+    userID: integer("userID"),
+    agentID: integer("agentID"),
+    role: text("role"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [uniqueIndex("UserAgent_userID_agentID_idx").on(t.userID, t.agentID)],
+);
 
-  AgentTool: {
-    attributes: {
-      toolID: DataTypes.INTEGER,
-      agentID: DataTypes.INTEGER,
-    },
-    options: {
-      indexes: [{ fields: ["toolID", "agentID"], unique: true }],
-    },
+export const UserTool = pgTable(
+  "UserTool",
+  {
+    id: serial("id").primaryKey(),
+    userID: integer("userID"),
+    toolID: integer("toolID"),
+    credential: json("credential"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
+  (t) => [uniqueIndex("UserTool_userID_toolID_idx").on(t.userID, t.toolID)],
+);
+
+export const AgentTool = pgTable(
+  "AgentTool",
+  {
+    id: serial("id").primaryKey(),
+    toolID: integer("toolID"),
+    agentID: integer("agentID"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+  },
+  (t) => [uniqueIndex("AgentTool_toolID_agentID_idx").on(t.toolID, t.agentID)],
+);
+
+// ===== Relations =====
+
+export const userRelations = relations(User, ({ one, many }) => ({
+  Role: one(Role, { fields: [User.roleID], references: [Role.id] }),
+  Agents: many(Agent),
+  Conversations: many(Conversation),
+  Usages: many(Usage),
+  UserAgents: many(UserAgent),
+  UserTools: many(UserTool),
+}));
+
+export const roleRelations = relations(Role, ({ many }) => ({
+  Users: many(User),
+  RolePolicies: many(RolePolicy),
+}));
+
+export const policyRelations = relations(Policy, ({ many }) => ({
+  RolePolicies: many(RolePolicy),
+}));
+
+export const rolePolicyRelations = relations(RolePolicy, ({ one }) => ({
+  Role: one(Role, { fields: [RolePolicy.roleID], references: [Role.id] }),
+  Policy: one(Policy, { fields: [RolePolicy.policyID], references: [Policy.id] }),
+}));
+
+export const providerRelations = relations(Provider, ({ many }) => ({
+  Models: many(Model),
+}));
+
+export const modelRelations = relations(Model, ({ one, many }) => ({
+  Provider: one(Provider, { fields: [Model.providerID], references: [Provider.id] }),
+  Usages: many(Usage),
+}));
+
+export const usageRelations = relations(Usage, ({ one }) => ({
+  User: one(User, { fields: [Usage.userID], references: [User.id] }),
+  Model: one(Model, { fields: [Usage.modelID], references: [Model.id] }),
+  Agent: one(Agent, { fields: [Usage.agentID], references: [Agent.id] }),
+  Message: one(Message, { fields: [Usage.messageID], references: [Message.id] }),
+}));
+
+export const promptRelations = relations(Prompt, ({ many }) => ({
+  Agents: many(Agent),
+}));
+
+export const agentRelations = relations(Agent, ({ one, many }) => ({
+  User: one(User, { fields: [Agent.userID], references: [User.id] }),
+  Model: one(Model, { fields: [Agent.modelID], references: [Model.id] }),
+  Prompt: one(Prompt, { fields: [Agent.promptID], references: [Prompt.id] }),
+  Conversations: many(Conversation),
+  Resources: many(Resource),
+  UserAgents: many(UserAgent),
+  AgentTools: many(AgentTool),
+}));
+
+export const toolRelations = relations(Tool, ({ many }) => ({
+  Vectors: many(Vector),
+  UserTools: many(UserTool),
+  AgentTools: many(AgentTool),
+}));
+
+export const conversationRelations = relations(Conversation, ({ one, many }) => ({
+  User: one(User, { fields: [Conversation.userID], references: [User.id] }),
+  Agent: one(Agent, { fields: [Conversation.agentID], references: [Agent.id] }),
+  Messages: many(Message),
+  Vectors: many(Vector),
+}));
+
+export const messageRelations = relations(Message, ({ one, many }) => ({
+  Conversation: one(Conversation, { fields: [Message.conversationID], references: [Conversation.id] }),
+  Resources: many(Resource),
+  Usages: many(Usage),
+}));
+
+export const resourceRelations = relations(Resource, ({ one, many }) => ({
+  Agent: one(Agent, { fields: [Resource.agentID], references: [Agent.id] }),
+  Message: one(Message, { fields: [Resource.messageID], references: [Message.id] }),
+  Vectors: many(Vector),
+}));
+
+export const vectorRelations = relations(Vector, ({ one }) => ({
+  Conversation: one(Conversation, { fields: [Vector.conversationID], references: [Conversation.id] }),
+  Resource: one(Resource, { fields: [Vector.resourceID], references: [Resource.id] }),
+  Tool: one(Tool, { fields: [Vector.toolID], references: [Tool.id] }),
+}));
+
+export const userAgentRelations = relations(UserAgent, ({ one }) => ({
+  User: one(User, { fields: [UserAgent.userID], references: [User.id] }),
+  Agent: one(Agent, { fields: [UserAgent.agentID], references: [Agent.id] }),
+}));
+
+export const userToolRelations = relations(UserTool, ({ one }) => ({
+  User: one(User, { fields: [UserTool.userID], references: [User.id] }),
+  Tool: one(Tool, { fields: [UserTool.toolID], references: [Tool.id] }),
+}));
+
+export const agentToolRelations = relations(AgentTool, ({ one }) => ({
+  Agent: one(Agent, { fields: [AgentTool.agentID], references: [Agent.id] }),
+  Tool: one(Tool, { fields: [AgentTool.toolID], references: [Tool.id] }),
+}));
+
+// ===== All tables (for iteration) =====
+
+export const tables = {
+  User, Role, Policy, RolePolicy,
+  Provider, Model, Usage,
+  Prompt, Agent, Tool,
+  Conversation, Message, Resource, Vector,
+  UserAgent, UserTool, AgentTool,
 };
 
-// Association definitions
-export const associations = [
-  // User -> Role
-  { source: "User", target: "Role", type: "belongsTo", options: { foreignKey: "roleID" } },
-  { source: "Role", target: "User", type: "hasMany", options: { foreignKey: "roleID" } },
+// ===== Seed database =====
 
-  // RolePolicy join
-  { source: "RolePolicy", target: "Role", type: "belongsTo", options: { foreignKey: "roleID" } },
-  { source: "RolePolicy", target: "Policy", type: "belongsTo", options: { foreignKey: "policyID" } },
-  { source: "Role", target: "RolePolicy", type: "hasMany", options: { foreignKey: "roleID" } },
-  { source: "Policy", target: "RolePolicy", type: "hasMany", options: { foreignKey: "policyID" } },
+/**
+ * Seeds the database with initial data from CSV files.
+ * Accepts `db` (drizzle instance) and optionally `t` (table references).
+ * When `t` is omitted, uses this module's PG tables. For SQLite, pass the SQLite tables.
+ */
+export async function seedDatabase(db) {
+  const { sql, eq } = await import("drizzle-orm");
 
-  // Model -> Provider
-  { source: "Model", target: "Provider", type: "belongsTo", options: { foreignKey: "providerID" } },
+  const T = { Role, Policy, RolePolicy, Provider, Model, Prompt, Agent, Tool, AgentTool, User };
 
-  // Usage
-  { source: "Usage", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
-  { source: "Usage", target: "Model", type: "belongsTo", options: { foreignKey: "modelID" } },
-  { source: "Usage", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID" } },
-  { source: "Usage", target: "Message", type: "belongsTo", options: { foreignKey: "messageID" } },
-  { source: "User", target: "Usage", type: "hasMany", options: { foreignKey: "userID" } },
-  { source: "Model", target: "Usage", type: "hasMany", options: { foreignKey: "modelID" } },
-
-  // Agent -> Prompt (agent's active prompt)
-  { source: "Agent", target: "Prompt", type: "belongsTo", options: { foreignKey: "promptID" } },
-  { source: "Prompt", target: "Agent", type: "hasMany", options: { foreignKey: "promptID" } },
-
-  // Agent -> User
-  { source: "Agent", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
-  { source: "User", target: "Agent", type: "hasMany", options: { foreignKey: "userID" } },
-
-  // Conversation
-  { source: "Conversation", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
-  { source: "Conversation", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID", onDelete: "SET NULL" } },
-  { source: "Agent", target: "Conversation", type: "hasMany", options: { foreignKey: "agentID" } },
-
-  // Message -> Conversation
-  { source: "Message", target: "Conversation", type: "belongsTo", options: { foreignKey: "conversationID" } },
-  { source: "Conversation", target: "Message", type: "hasMany", options: { foreignKey: "conversationID" } },
-
-  // Resource
-  { source: "Resource", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID" } },
-  { source: "Resource", target: "Message", type: "belongsTo", options: { foreignKey: "messageID" } },
-
-  // Vector
-  { source: "Vector", target: "Conversation", type: "belongsTo", options: { foreignKey: "conversationID" } },
-  { source: "Vector", target: "Resource", type: "belongsTo", options: { foreignKey: "resourceID" } },
-  { source: "Vector", target: "Tool", type: "belongsTo", options: { foreignKey: "toolID" } },
-  { source: "Conversation", target: "Vector", type: "hasMany", options: { foreignKey: "conversationID" } },
-  { source: "Agent", target: "Resource", type: "hasMany", options: { foreignKey: "agentID" } },
-
-  // UserAgent join
-  { source: "UserAgent", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
-  { source: "UserAgent", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID", onDelete: "CASCADE" } },
-  { source: "User", target: "UserAgent", type: "hasMany", options: { foreignKey: "userID" } },
-  { source: "Agent", target: "UserAgent", type: "hasMany", options: { foreignKey: "agentID" } },
-
-  // UserTool join
-  { source: "UserTool", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
-  { source: "UserTool", target: "Tool", type: "belongsTo", options: { foreignKey: "toolID" } },
-  { source: "User", target: "UserTool", type: "hasMany", options: { foreignKey: "userID" } },
-  { source: "Tool", target: "UserTool", type: "hasMany", options: { foreignKey: "toolID" } },
-
-  // AgentTool join
-  { source: "AgentTool", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID", onDelete: "CASCADE" } },
-  { source: "AgentTool", target: "Tool", type: "belongsTo", options: { foreignKey: "toolID" } },
-  { source: "Agent", target: "AgentTool", type: "hasMany", options: { foreignKey: "agentID" } },
-  { source: "Tool", target: "AgentTool", type: "hasMany", options: { foreignKey: "toolID" } },
-];
-
-// Helper function to create models from definitions
-export function createModels(sequelize) {
-  const models = {};
-
-  // Create all models
-  for (const [modelName, definition] of Object.entries(modelDefinitions)) {
-    models[modelName] = sequelize.define(modelName, definition.attributes, {
-      ...definition.options,
-      freezeTableName: true,
-    });
-  }
-
-  // Set up associations
-  for (const association of associations) {
-    const sourceModel = models[association.source];
-    const targetModel = models[association.target];
-    sourceModel[association.type](targetModel, association.options);
-  }
-
-  return models;
-}
-
-// Helper function to seed database
-export async function seedDatabase(models) {
   const roles = loadCsv(resolve(dataDir, "roles.csv"));
   const policies = loadCsv(resolve(dataDir, "policies.csv"));
   const rolePolicies = loadCsv(resolve(dataDir, "role-policies.csv"));
@@ -358,36 +429,46 @@ export async function seedDatabase(models) {
   const tools = loadCsv(resolve(dataDir, "tools.csv"));
   const agentTools = loadCsv(resolve(dataDir, "agent-tools.csv"));
 
-  await models.Role.bulkCreate(roles, { updateOnDuplicate: ["name", "displayOrder"] });
-  await models.Policy.bulkCreate(policies, { updateOnDuplicate: ["name", "resource", "action"] });
-  await models.RolePolicy.bulkCreate(rolePolicies, { updateOnDuplicate: ["roleID", "policyID"] });
-  await models.Provider.bulkCreate(providers, { updateOnDuplicate: ["name"] });
-  await models.Model.bulkCreate(modelRows, {
-    updateOnDuplicate: [
-      "providerID",
-      "name",
-      "internalName",
-      "type",
-      "cost1kInput",
-      "cost1kOutput",
-      "cost1kCacheRead",
-      "cost1kCacheWrite",
-      "maxContext",
-      "maxOutput",
-      "maxReasoning",
-    ],
-  });
-  // Seed prompts before agents (agents reference prompts via promptID)
-  await models.Prompt.bulkCreate(prompts, { updateOnDuplicate: ["name", "version", "content"] });
-  await models.Agent.bulkCreate(agents, { updateOnDuplicate: ["name", "promptID"] });
-  await models.Tool.bulkCreate(tools, { updateOnDuplicate: ["name", "description", "type"] });
-  await models.AgentTool.bulkCreate(agentTools, { updateOnDuplicate: ["agentID", "toolID"] });
+  // Helper: upsert rows by inserting and updating on conflict (id column)
+  async function upsert(table, rows, conflictTarget, updateCols) {
+    if (!rows.length) return;
+    const setObj = {};
+    for (const col of updateCols) {
+      setObj[col] = sql.raw(`excluded."${col}"`);
+    }
+    await db.insert(table).values(rows).onConflictDoUpdate({
+      target: conflictTarget,
+      set: setObj,
+    });
+  }
+
+  await upsert(T.Role, roles, T.Role.id, ["name", "displayOrder"]);
+  await upsert(T.Policy, policies, T.Policy.id, ["name", "resource", "action"]);
+  await upsert(T.RolePolicy, rolePolicies, T.RolePolicy.id, ["roleID", "policyID"]);
+  await upsert(T.Provider, providers, T.Provider.id, ["name"]);
+  await upsert(T.Model, modelRows, T.Model.id, [
+    "providerID", "name", "internalName", "type",
+    "cost1kInput", "cost1kOutput", "cost1kCacheRead", "cost1kCacheWrite",
+    "maxContext", "maxOutput", "maxReasoning",
+  ]);
+  await upsert(T.Prompt, prompts, T.Prompt.id, ["name", "version", "content"]);
+  await upsert(T.Agent, agents, T.Agent.id, ["name", "promptID"]);
+  await upsert(T.Tool, tools, T.Tool.id, ["name", "description", "type"]);
+  await upsert(T.AgentTool, agentTools, T.AgentTool.id, ["agentID", "toolID"]);
+
+  // Reset serial sequences to max(id) so auto-increment works after explicit-ID inserts
+  for (const [name, table] of Object.entries(T)) {
+    if (table.id) {
+      await db.execute(sql`SELECT setval(pg_get_serial_sequence('"${sql.raw(name)}"', 'id'), COALESCE((SELECT MAX("id") FROM "${sql.raw(name)}"), 0) + 1, false)`);
+    }
+  }
 
   // Create test admin user if TEST_API_KEY is set
   if (process.env.TEST_API_KEY) {
-    await models.User.findOrCreate({
-      where: { email: "test@test.com" },
-      defaults: {
+    const existing = await db.select().from(T.User).where(eq(T.User.email, "test@test.com")).limit(1);
+    if (!existing.length) {
+      await db.insert(T.User).values({
+        email: "test@test.com",
         firstName: "Test",
         lastName: "Admin",
         status: "active",
@@ -395,7 +476,7 @@ export async function seedDatabase(models) {
         apiKey: process.env.TEST_API_KEY,
         budget: 1000,
         remaining: 1000,
-      },
-    });
+      });
+    }
   }
 }

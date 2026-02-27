@@ -1,54 +1,52 @@
-import { Agent, Conversation, Message, Resource, Vector, Prompt, Tool, AgentTool, UserTool } from "database";
-
-import { Op } from "sequelize";
+import db, { Agent, Conversation, Message, Resource, Vector, Prompt, Tool, AgentTool, UserTool } from "database";
+import { eq, and, or, isNull, isNotNull, inArray, asc, desc } from "drizzle-orm";
 
 export class ConversationService {
   // ===== AGENT METHODS =====
 
   async createAgent(userId, data) {
-    return Agent.create({
+    const [agent] = await db.insert(Agent).values({
       userID: userId,
       name: data.name,
       description: data.description || null,
       promptID: data.promptID || null,
       modelParameters: data.modelParameters || null,
-    });
+    }).returning();
+    return agent;
   }
 
   async getAgent(userId, agentId) {
-    const agent = await Agent.findOne({
-      where: {
-        id: agentId,
-        [Op.or]: [{ userID: userId }, { userID: null }],
+    const agent = await db.query.Agent.findFirst({
+      where: and(
+        eq(Agent.id, agentId),
+        or(eq(Agent.userID, userId), isNull(Agent.userID)),
+      ),
+      with: {
+        Prompt: { columns: { id: true, name: true, content: true } },
+        AgentTools: { with: { Tool: { columns: { name: true } } } },
       },
-      include: [
-        { model: Prompt, attributes: ["id", "name", "content"] },
-        { model: AgentTool, include: [{ model: Tool, attributes: ["name"] }] },
-      ],
     });
 
     if (!agent) return null;
 
-    const result = agent.toJSON();
+    const result = { ...agent };
     result.systemPrompt = result.Prompt?.content || null;
     result.tools = (result.AgentTools || []).map((at) => at.Tool?.name).filter(Boolean);
     return result;
   }
 
   async getAgents(userId) {
-    const agents = await Agent.findAll({
-      where: {
-        [Op.or]: [{ userID: userId }, { userID: null }],
+    const agents = await db.query.Agent.findMany({
+      where: or(eq(Agent.userID, userId), isNull(Agent.userID)),
+      with: {
+        Prompt: { columns: { id: true, name: true, content: true } },
+        AgentTools: { with: { Tool: { columns: { name: true } } } },
       },
-      include: [
-        { model: Prompt, attributes: ["id", "name", "content"] },
-        { model: AgentTool, include: [{ model: Tool, attributes: ["name"] }] },
-      ],
-      order: [["createdAt", "DESC"]],
+      orderBy: desc(Agent.createdAt),
     });
 
     return agents.map((agent) => {
-      const result = agent.toJSON();
+      const result = { ...agent };
       result.systemPrompt = result.Prompt?.content || null;
       result.tools = (result.AgentTools || []).map((at) => at.Tool?.name).filter(Boolean);
       return result;
@@ -57,69 +55,86 @@ export class ConversationService {
 
   async updateAgent(userId, agentId, updates) {
     const { tools, ...agentFields } = updates;
-    const [count] = await Agent.update(agentFields, { where: { id: agentId, userID: userId } });
-    if (count === 0) return null;
+    const result = await db.update(Agent).set(agentFields)
+      .where(and(eq(Agent.id, agentId), eq(Agent.userID, userId)))
+      .returning();
+    if (result.length === 0) return null;
 
     // Sync AgentTool junction table when tools array is provided
     if (Array.isArray(tools)) {
-      await AgentTool.destroy({ where: { agentID: agentId } });
-      const toolRecords = await Tool.findAll({ where: { name: tools } });
+      await db.delete(AgentTool).where(eq(AgentTool.agentID, agentId));
+      const toolRecords = await db.select().from(Tool).where(inArray(Tool.name, tools));
       const agentTools = toolRecords.map((t) => ({ agentID: agentId, toolID: t.id }));
-      if (agentTools.length) await AgentTool.bulkCreate(agentTools);
+      if (agentTools.length) await db.insert(AgentTool).values(agentTools);
     }
 
     return this.getAgent(userId, agentId);
   }
 
   async deleteAgent(userId, agentId) {
-    const conversations = await Conversation.findAll({ where: { agentID: agentId, userID: userId } });
+    const conversations = await db.select().from(Conversation)
+      .where(and(eq(Conversation.agentID, agentId), eq(Conversation.userID, userId)));
     for (const conversation of conversations) {
       await this.deleteConversation(userId, conversation.id);
     }
-    return Agent.destroy({ where: { id: agentId, userID: userId } });
+    const result = await db.delete(Agent).where(and(eq(Agent.id, agentId), eq(Agent.userID, userId)));
+    return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 
   // ===== CONVERSATION METHODS =====
 
   async createConversation(userId, data) {
-    return Conversation.create({
+    const [conversation] = await db.insert(Conversation).values({
       userID: userId,
       agentID: data.agentID || null,
       title: data.title || "",
-    });
+    }).returning();
+    return conversation;
   }
 
   async getConversation(userId, conversationId) {
-    return Conversation.findOne({
-      where: { id: conversationId, userID: userId, deleted: false },
+    const result = await db.query.Conversation.findFirst({
+      where: and(
+        eq(Conversation.id, conversationId),
+        eq(Conversation.userID, userId),
+        eq(Conversation.deleted, false),
+      ),
     });
+    return result || null;
   }
 
   async getConversations(userId, options = {}) {
     const { limit = 20, offset = 0 } = options;
-    return Conversation.findAndCountAll({
-      where: { userID: userId, deleted: false },
-      order: [["createdAt", "DESC"]],
-      limit,
-      offset,
-    });
+    const where = and(eq(Conversation.userID, userId), eq(Conversation.deleted, false));
+
+    const [rows, [{ value: countVal }]] = await Promise.all([
+      db.select().from(Conversation).where(where)
+        .orderBy(desc(Conversation.createdAt)).limit(limit).offset(offset),
+      db.select({ value: (await import("drizzle-orm")).count() }).from(Conversation).where(where),
+    ]);
+
+    return { count: countVal, rows };
   }
 
   async updateConversation(userId, conversationId, updates) {
-    const [count] = await Conversation.update(updates, {
-      where: { id: conversationId, userID: userId, deleted: false },
-    });
-    if (count === 0) return null;
+    const result = await db.update(Conversation).set(updates)
+      .where(and(
+        eq(Conversation.id, conversationId),
+        eq(Conversation.userID, userId),
+        eq(Conversation.deleted, false),
+      ))
+      .returning();
+    if (result.length === 0) return null;
     return this.getConversation(userId, conversationId);
   }
 
   async deleteConversation(userId, conversationId) {
     // Soft delete
-    const [count] = await Conversation.update(
-      { deleted: true, deletedAt: new Date() },
-      { where: { id: conversationId, userID: userId } }
-    );
-    return count;
+    const result = await db.update(Conversation)
+      .set({ deleted: true, deletedAt: new Date() })
+      .where(and(eq(Conversation.id, conversationId), eq(Conversation.userID, userId)))
+      .returning();
+    return result.length;
   }
 
   // ===== CONTEXT METHOD =====
@@ -128,15 +143,15 @@ export class ConversationService {
     const conversation = await this.getConversation(userId, conversationId);
     if (!conversation) return null;
 
-    const messages = await Message.findAll({
-      where: { conversationID: conversationId },
-      order: [["createdAt", "ASC"]],
-    });
+    const messages = await db.select().from(Message)
+      .where(eq(Message.conversationID, conversationId))
+      .orderBy(asc(Message.createdAt));
     const messageIds = messages.map(m => m.id);
-    const resources = await Resource.findAll({
-      where: { messageID: { [Op.in]: messageIds } },
-      order: [["createdAt", "ASC"]],
-    });
+    const resources = messageIds.length
+      ? await db.select().from(Resource)
+          .where(inArray(Resource.messageID, messageIds))
+          .orderBy(asc(Resource.createdAt))
+      : [];
 
     return { conversation, messages, resources };
   }
@@ -147,10 +162,9 @@ export class ConversationService {
     const conversation = await this.getConversation(userId, conversationId);
     if (!conversation) return null;
 
-    await Conversation.update(
-      { summaryMessageID },
-      { where: { id: conversationId, userID: userId } }
-    );
+    await db.update(Conversation)
+      .set({ summaryMessageID })
+      .where(and(eq(Conversation.id, conversationId), eq(Conversation.userID, userId)));
 
     return this.getConversation(userId, conversationId);
   }
@@ -158,101 +172,108 @@ export class ConversationService {
   // ===== MESSAGE METHODS =====
 
   async addMessage(userId, conversationId, data) {
-    return Message.create({
+    const [msg] = await db.insert(Message).values({
       conversationID: conversationId,
       parentID: data.parentID || null,
       role: data.role,
       content: data.content,
-    });
+    }).returning();
+    return msg;
   }
 
   async getMessages(userId, conversationId) {
-    return Message.findAll({
-      where: { conversationID: conversationId },
-      order: [["createdAt", "ASC"]],
-    });
+    return db.select().from(Message)
+      .where(eq(Message.conversationID, conversationId))
+      .orderBy(asc(Message.createdAt));
   }
 
   async getMessage(userId, messageId) {
-    return Message.findByPk(messageId);
+    const [msg] = await db.select().from(Message).where(eq(Message.id, messageId)).limit(1);
+    return msg || null;
   }
 
   async updateMessage(userId, messageId, updates) {
-    const [count] = await Message.update(updates, { where: { id: messageId } });
-    if (count === 0) return null;
+    const result = await db.update(Message).set(updates).where(eq(Message.id, messageId)).returning();
+    if (result.length === 0) return null;
     return this.getMessage(userId, messageId);
   }
 
   async deleteMessage(userId, messageId) {
-    return Message.destroy({ where: { id: messageId } });
+    const result = await db.delete(Message).where(eq(Message.id, messageId));
+    return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 
   // ===== TOOL METHODS =====
 
   async createTool(data) {
-    return Tool.create(data);
+    const [tool] = await db.insert(Tool).values(data).returning();
+    return tool;
   }
 
   async getTool(toolId) {
-    return Tool.findByPk(toolId);
+    const [tool] = await db.select().from(Tool).where(eq(Tool.id, toolId)).limit(1);
+    return tool || null;
   }
 
   async getTools(userId) {
-    const builtinTools = await Tool.findAll({
-      where: { type: "builtin" },
-    });
+    const builtinTools = await db.select().from(Tool).where(eq(Tool.type, "builtin"));
     if (!userId) return builtinTools;
 
-    const userTools = await Tool.findAll({
-      include: [{ model: UserTool, where: { userID: userId }, required: true }],
+    const userTools = await db.query.Tool.findMany({
+      with: { UserTools: true },
     });
-    return [...builtinTools, ...userTools];
+    const filteredUserTools = userTools.filter(
+      (t) => t.type !== "builtin" && t.UserTools?.some((ut) => ut.userID === userId),
+    );
+    return [...builtinTools, ...filteredUserTools];
   }
 
   async updateTool(toolId, updates) {
-    const [count] = await Tool.update(updates, { where: { id: toolId } });
-    if (count === 0) return null;
+    const result = await db.update(Tool).set(updates).where(eq(Tool.id, toolId)).returning();
+    if (result.length === 0) return null;
     return this.getTool(toolId);
   }
 
   async deleteTool(toolId) {
-    await Vector.destroy({ where: { toolID: toolId } });
-    await AgentTool.destroy({ where: { toolID: toolId } });
-    await UserTool.destroy({ where: { toolID: toolId } });
-    return Tool.destroy({ where: { id: toolId } });
+    await db.delete(Vector).where(eq(Vector.toolID, toolId));
+    await db.delete(AgentTool).where(eq(AgentTool.toolID, toolId));
+    await db.delete(UserTool).where(eq(UserTool.toolID, toolId));
+    const result = await db.delete(Tool).where(eq(Tool.id, toolId));
+    return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 
   // ===== PROMPT METHODS =====
 
   async createPrompt(data) {
-    return Prompt.create(data);
+    const [prompt] = await db.insert(Prompt).values(data).returning();
+    return prompt;
   }
 
   async getPrompt(promptId) {
-    return Prompt.findByPk(promptId);
+    const [prompt] = await db.select().from(Prompt).where(eq(Prompt.id, promptId)).limit(1);
+    return prompt || null;
   }
 
   async getPrompts(options = {}) {
-    return Prompt.findAll({
-      order: [["name", "ASC"], ["version", "DESC"]],
-      ...options,
-    });
+    return db.select().from(Prompt)
+      .orderBy(asc(Prompt.name), desc(Prompt.version));
   }
 
   async updatePrompt(promptId, updates) {
-    const [count] = await Prompt.update(updates, { where: { id: promptId } });
-    if (count === 0) return null;
+    const result = await db.update(Prompt).set(updates).where(eq(Prompt.id, promptId)).returning();
+    if (result.length === 0) return null;
     return this.getPrompt(promptId);
   }
 
   async deletePrompt(promptId) {
-    return Prompt.destroy({ where: { id: promptId } });
+    const result = await db.delete(Prompt).where(eq(Prompt.id, promptId));
+    return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 
   // ===== RESOURCE METHODS =====
 
   async addResource(userId, data) {
-    return Resource.create({
+    const [resource] = await db.insert(Resource).values({
       agentID: data.agentID || null,
       messageID: data.messageID || null,
       name: data.name,
@@ -260,23 +281,25 @@ export class ConversationService {
       content: data.content,
       s3Uri: data.s3Uri || null,
       metadata: data.metadata || {},
-    });
+    }).returning();
+    return resource;
   }
 
   async getResource(userId, resourceId) {
-    return Resource.findByPk(resourceId);
+    const [resource] = await db.select().from(Resource).where(eq(Resource.id, resourceId)).limit(1);
+    return resource || null;
   }
 
   async getResourcesByAgent(userId, agentId) {
-    return Resource.findAll({
-      where: { agentID: agentId },
-      order: [["createdAt", "ASC"]],
-    });
+    return db.select().from(Resource)
+      .where(eq(Resource.agentID, agentId))
+      .orderBy(asc(Resource.createdAt));
   }
 
   async deleteResource(userId, resourceId) {
-    await Vector.destroy({ where: { resourceID: resourceId } });
-    return Resource.destroy({ where: { id: resourceId } });
+    await db.delete(Vector).where(eq(Vector.resourceID, resourceId));
+    const result = await db.delete(Resource).where(eq(Resource.id, resourceId));
+    return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 
   // ===== VECTOR METHODS =====
@@ -290,31 +313,29 @@ export class ConversationService {
       content: vector.content,
       embedding: vector.embedding || null,
     }));
-    return Vector.bulkCreate(records);
+    return db.insert(Vector).values(records).returning();
   }
 
   async getVectorsByConversation(userId, conversationId) {
-    return Vector.findAll({
-      where: { conversationID: conversationId },
-      order: [["order", "ASC"]],
-    });
+    return db.select().from(Vector)
+      .where(eq(Vector.conversationID, conversationId))
+      .orderBy(asc(Vector.order));
   }
 
   async getVectorsByResource(userId, resourceId) {
-    return Vector.findAll({
-      where: { resourceID: resourceId },
-      order: [["order", "ASC"]],
-    });
+    return db.select().from(Vector)
+      .where(eq(Vector.resourceID, resourceId))
+      .orderBy(asc(Vector.order));
   }
 
   async searchVectors({ toolID, conversationID, embedding, topN = 10 }) {
-    const where = {};
-    if (toolID) where.toolID = toolID;
-    if (conversationID) where.conversationID = conversationID;
+    const conditions = [];
+    if (toolID) conditions.push(eq(Vector.toolID, toolID));
+    if (conversationID) conditions.push(eq(Vector.conversationID, conversationID));
+    conditions.push(isNotNull(Vector.embedding));
 
-    const vectors = await Vector.findAll({
-      where: { ...where, embedding: { [Op.ne]: null } },
-    });
+    const where = and(...conditions);
+    const vectors = await db.select().from(Vector).where(where);
 
     if (!embedding || !vectors.length) return vectors;
 
@@ -328,7 +349,7 @@ export class ConversationService {
         normB += (stored[i] || 0) * (stored[i] || 0);
       }
       const similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
-      return { ...v.toJSON(), similarity };
+      return { ...v, similarity };
     });
 
     scored.sort((a, b) => b.similarity - a.similarity);
@@ -336,7 +357,8 @@ export class ConversationService {
   }
 
   async deleteVectorsByConversation(userId, conversationId) {
-    return Vector.destroy({ where: { conversationID: conversationId } });
+    const result = await db.delete(Vector).where(eq(Vector.conversationID, conversationId));
+    return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 }
 

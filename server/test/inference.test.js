@@ -1,4 +1,3 @@
-import db from "database";
 import assert from "node:assert";
 import { after, before, test } from "node:test";
 
@@ -8,14 +7,6 @@ import BedrockProvider from "gateway/providers/bedrock.js";
 const HAIKU_MODEL = "us.anthropic.claude-3-5-haiku-20241022-v1:0";
 
 test.skip("Cache System Tests", async (t) => {
-  before(async () => {
-    await db.authenticate();
-  });
-
-  after(async () => {
-    await db.close();
-  });
-
   await t.test("Basic Cache Write and Read", async () => {
     // Generate content that exceeds 2048 token minimum (16k+ chars)
     const largeContent = "This is a comprehensive test of the caching system. ".repeat(350); // ~17.5k chars

@@ -1,4 +1,5 @@
-import { Model, Provider } from "database";
+import db, { Model } from "database";
+import { eq } from "drizzle-orm";
 
 import bedrock from "./providers/bedrock.js";
 import gemini from "./providers/gemini.js";
@@ -6,9 +7,12 @@ import mock from "./providers/mock.js";
 
 export async function getModelProvider(value) {
   const providers = { bedrock, gemini, mock };
-  const model = await Model.findOne({ where: { internalName: value }, include: Provider });
-  const provider = new providers[model?.Provider?.name]();
-  return { model, provider };
+  const result = await db.query.Model.findFirst({
+    where: eq(Model.internalName, value),
+    with: { Provider: true },
+  });
+  const provider = new providers[result?.Provider?.name]();
+  return { model: result, provider };
 }
 
 /**

@@ -1,9 +1,7 @@
-import db from "database";
 import http from "http";
 import https from "https";
 import { pathToFileURL } from "url";
 
-import SequelizeStore from "connect-session-sequelize";
 import express from "express";
 import session from "express-session";
 import logger from "shared/logger.js";
@@ -13,27 +11,39 @@ import api from "./services/api.js";
 import { startScheduler } from "./services/scheduler.js";
 import { createCertificate } from "./services/utils.js";
 
-const { PORT = 8080, SESSION_MAX_AGE } = process.env;
+const { PORT = 8080, SESSION_MAX_AGE, DB_DIALECT } = process.env;
 const sessionMaxAge = parseInt(SESSION_MAX_AGE, 10) || 30 * 60 * 1000;
 
 // Only start server if this file is run directly (not imported)
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const app = createApp(process.env);
+  const app = await createApp(process.env);
   const _scheduler = startScheduler();
   createServer(app, process.env).listen(PORT, () =>
     logger.info(`Server is running on port ${PORT}`)
   );
 }
 
-export function createApp(env = process.env) {
+export async function createApp(env = process.env) {
   const { CLIENT_FOLDER = "../client", SESSION_SECRET } = env;
   const app = express();
   app.set("trust proxy", true);
   app.disable("x-powered-by");
   app.use(nocache);
-  const SessionStore = SequelizeStore(session.Store);
-  const store = new SessionStore({ db });
-  store.sync({ force: true });
+
+  let store;
+  if (DB_DIALECT === "pglite") {
+    // Use memory store for PGlite (local dev / tests)
+    store = new session.MemoryStore();
+  } else {
+    // Use PostgreSQL session store for production
+    const pgSession = (await import("connect-pg-simple")).default;
+    const PgStore = pgSession(session);
+    store = new PgStore({
+      conString: `postgres://${env.PGUSER}:${env.PGPASSWORD}@${env.PGHOST}:${env.PGPORT}/${env.PGDATABASE}`,
+      tableName: "session",
+      createTableIfMissing: false, // handled by sync.js
+    });
+  }
 
   app.use(
     session({

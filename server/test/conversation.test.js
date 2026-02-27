@@ -1,4 +1,5 @@
-import { User, Agent, Conversation, Message, Resource, Vector } from "database";
+import db, { User, Conversation } from "database";
+import { eq } from "drizzle-orm";
 import assert from "node:assert";
 import { test } from "node:test";
 
@@ -10,7 +11,7 @@ test("ConversationService", async (t) => {
   let testUser;
 
   await t.test("setup: get test user", async () => {
-    testUser = await User.findOne({ where: { email: "test@test.com" } });
+    [testUser] = await db.select().from(User).where(eq(User.email, "test@test.com")).limit(1);
     assert.ok(testUser, "Test user should exist from seed");
   });
 
@@ -107,7 +108,7 @@ test("ConversationService", async (t) => {
       assert.strictEqual(conversation, null);
 
       // But should still exist in DB with deleted flag
-      const raw = await Conversation.findByPk(conversationId);
+      const [raw] = await db.select().from(Conversation).where(eq(Conversation.id, conversationId)).limit(1);
       assert.ok(raw);
       assert.strictEqual(raw.deleted, true);
       assert.ok(raw.deletedAt);

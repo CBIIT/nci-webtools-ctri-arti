@@ -1,21 +1,22 @@
-import { User, Model, Usage } from "database";
+import db, { User, Model, Usage } from "database";
+import { eq } from "drizzle-orm";
 import assert from "node:assert";
 import { after, test } from "node:test";
 
 import { trackModelUsage } from "gateway/usage.js";
 
 test("trackModelUsage", async (t) => {
-  // The DB is auto-seeded via database.js (test.env sets DB_DIALECT=sqlite)
+  // The DB is auto-seeded via database.js (test.env sets DB_DIALECT=pglite)
   // test.env also creates a test user via TEST_API_KEY
 
   let testUser;
   let testModel;
 
   await t.test("setup: find test fixtures", async () => {
-    testUser = await User.findOne({ where: { email: "test@test.com" } });
+    [testUser] = await db.select().from(User).where(eq(User.email, "test@test.com")).limit(1);
     assert.ok(testUser, "Test user should exist from seed");
 
-    testModel = await Model.findOne({ where: { internalName: "mock-model" } });
+    [testModel] = await db.select().from(Model).where(eq(Model.internalName, "mock-model")).limit(1);
     assert.ok(testModel, "Mock model should exist from seed");
   });
 
@@ -48,7 +49,7 @@ test("trackModelUsage", async (t) => {
   });
 
   await t.test("deducts from user remaining balance", async () => {
-    const userBefore = await User.findByPk(testUser.id);
+    const [userBefore] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
     const balanceBefore = userBefore.remaining;
 
     const usageData = {
@@ -60,7 +61,7 @@ test("trackModelUsage", async (t) => {
 
     await trackModelUsage(testUser.id, "mock-model", "127.0.0.1", usageData);
 
-    const userAfter = await User.findByPk(testUser.id);
+    const [userAfter] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
     assert.ok(userAfter.remaining <= balanceBefore, "Balance should decrease or stay same");
   });
 

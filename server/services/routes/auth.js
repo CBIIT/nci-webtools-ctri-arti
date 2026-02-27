@@ -1,4 +1,5 @@
-import { Role, User } from "database";
+import db, { Role, User } from "database";
+import { eq, count as countFn } from "drizzle-orm";
 
 import { json, Router } from "express";
 
@@ -17,11 +18,13 @@ api.get("/login", loginMiddleware, async (req, res) => {
   const { session } = req;
   const { email, first_name: firstName, last_name: lastName } = session.userinfo;
   if (!email) return res.redirect("/?error=missing_email");
-  const isFirstUser = (await User.count()) === 0;
+  const [{ value: userCount }] = await db.select({ value: countFn() }).from(User);
+  const isFirstUser = userCount === 0;
   const newUser = isFirstUser ? { roleID: 1 } : { roleID: 3, budget: 5 };
+  const [existing] = await db.select().from(User).where(eq(User.email, email)).limit(1);
   session.user =
-    (await User.findOne({ where: { email } })) ||
-    (await User.create({ email, firstName, lastName, status: "active", ...newUser }));
+    existing ||
+    (await db.insert(User).values({ email, firstName, lastName, status: "active", ...newUser }).returning())[0];
   res.redirect(session.destination || "/");
 });
 
@@ -35,7 +38,10 @@ api.get("/session", async (req, res) => {
   session.touch();
   session.expires = session.cookie.expires;
   if (session?.user?.id) {
-    session.user = await User.findByPk(session.user.id, { include: [{ model: Role }] });
+    session.user = await db.query.User.findFirst({
+      where: eq(User.id, session.user.id),
+      with: { Role: true },
+    });
   }
   res.json({ user: session.user, expires: session.expires });
 });

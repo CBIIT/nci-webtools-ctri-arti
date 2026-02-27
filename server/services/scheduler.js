@@ -1,12 +1,13 @@
-import { User } from "database";
+import db, { User } from "database";
+import { isNotNull } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 import cron from "node-cron";
-import { Op } from "sequelize";
 
 
 const { USAGE_RESET_SCHEDULE = "0 0 * * 0" } = process.env;
 
 export const resetUsageLimits = () =>
-  User.update({ remaining: User.sequelize.col("budget") }, { where: { budget: { [Op.ne]: null } } });
+  db.update(User).set({ remaining: sql`${User.budget}` }).where(isNotNull(User.budget));
 
 export const startScheduler = () => cron.schedule(USAGE_RESET_SCHEDULE, resetUsageLimits);

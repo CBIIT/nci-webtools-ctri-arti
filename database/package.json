@@ -5,11 +5,13 @@
   "exports": {
     ".": "./index.js",
     "./schema.js": "./schema.js",
+    "./sync.js": "./sync.js",
     "./csv-loader.js": "./csv-loader.js"
   },
   "dependencies": {
     "shared": "*",
-    "pg": "^8.18.0",
-    "sequelize": "^6.37.7"
+    "@electric-sql/pglite": "^0.3.15",
+    "drizzle-orm": "^0.44.0",
+    "postgres": "^3.4.7"
   }
 }

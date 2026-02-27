@@ -3,7 +3,7 @@ import { chromium } from "playwright";
 import { createApp, createServer } from "./server.js";
 
 const env = process.env;
-const app = createApp(env);
+const app = await createApp(env);
 createServer(app, env).listen(env.PORT, runTests);
 // app.listen(env.PORT, runTests);
 

@@ -1,4 +1,5 @@
-import { Role, User } from "database";
+import db, { Role, User } from "database";
+import { eq } from "drizzle-orm";
 
 import Provider from "oidc-provider";
 import * as client from "openid-client";
@@ -161,14 +162,14 @@ export function requireRole(requiredRole) {
       if (!apiKey && !id) {
         return res.status(401).json({ error: "Authentication required" });
       }
-      const user = await User.findOne({
-        where: apiKey ? { apiKey } : { id },
-        include: [{ model: Role }],
+      const result = await db.query.User.findFirst({
+        where: apiKey ? eq(User.apiKey, apiKey) : eq(User.id, id),
+        with: { Role: true },
       });
-      if (!user) {
+      if (!result) {
         return res.status(401).json({ error: "Authentication required" });
       }
-      const role = user.Role;
+      const role = result.Role;
       // Check role requirement (1 = admin, always allowed)
       if (
         requiredRole &&
@@ -179,7 +180,7 @@ export function requireRole(requiredRole) {
       }
       // Set user in session for downstream handlers
       req.session ||= {};
-      req.session.user = user;
+      req.session.user = result;
       next();
     } catch (err) {
       next(err);

@@ -8,7 +8,8 @@
  * Uses a factory pattern — the mode is resolved once at module load time.
  */
 
-import { Model, User } from "database";
+import db, { Model, User } from "database";
+import { eq, and } from "drizzle-orm";
 
 import { runModel as directRunModel } from "gateway/inference.js";
 import { trackModelUsage } from "gateway/usage.js";
@@ -20,7 +21,7 @@ const RATE_LIMIT_MESSAGE =
 
 async function checkRateLimit(userID) {
   if (!userID) return null;
-  const user = await User.findByPk(userID);
+  const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
   if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
     return { error: RATE_LIMIT_MESSAGE, status: 429 };
   }
@@ -58,13 +59,20 @@ function buildDirectClient() {
     },
 
     async listModels({ type } = {}) {
-      const where = { providerID: 1 };
-      if (type) where.type = type;
+      const where = [eq(Model.providerID, 1)];
+      if (type) where.push(eq(Model.type, type));
 
-      return Model.findAll({
-        attributes: ["name", "internalName", "type", "maxContext", "maxOutput", "maxReasoning"],
-        where,
-      });
+      return db
+        .select({
+          name: Model.name,
+          internalName: Model.internalName,
+          type: Model.type,
+          maxContext: Model.maxContext,
+          maxOutput: Model.maxOutput,
+          maxReasoning: Model.maxReasoning,
+        })
+        .from(Model)
+        .where(and(...where));
     },
   };
 }
@@ -135,4 +143,3 @@ function buildHttpClient() {
 const client = GATEWAY_URL ? buildHttpClient() : buildDirectClient();
 
 export const { invoke, listModels } = client;
-

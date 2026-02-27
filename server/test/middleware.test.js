@@ -1,4 +1,5 @@
-import { User, Role } from "database";
+import db, { User, Role } from "database";
+import { eq } from "drizzle-orm";
 import assert from "node:assert";
 import { after, test } from "node:test";
 
@@ -61,9 +62,11 @@ test("requireRole", async (t) => {
 
   await t.test("returns 403 for wrong role", async () => {
     // Create a non-admin user for this test
-    const [testUser] = await User.findOrCreate({
-      where: { email: "roletest@test.com" },
-      defaults: {
+    const [existing] = await db.select().from(User).where(eq(User.email, "roletest@test.com")).limit(1);
+    let testUser;
+    if (!existing) {
+      [testUser] = await db.insert(User).values({
+        email: "roletest@test.com",
         firstName: "Role",
         lastName: "Test",
         status: "active",
@@ -71,8 +74,10 @@ test("requireRole", async (t) => {
         apiKey: "role-test-api-key",
         budget: 100,
         remaining: 100,
-      },
-    });
+      }).returning();
+    } else {
+      testUser = existing;
+    }
 
     const middleware = requireRole("super user");
     const req = createMockReq({ headers: { "x-api-key": "role-test-api-key" } });
@@ -81,13 +86,15 @@ test("requireRole", async (t) => {
     assert.strictEqual(res._status, 403);
     assert.deepStrictEqual(res._json, { error: "Authorization required" });
 
-    await testUser.destroy();
+    await db.delete(User).where(eq(User.id, testUser.id));
   });
 
   await t.test("passes with correct role", async () => {
-    const [testUser] = await User.findOrCreate({
-      where: { email: "roletest2@test.com" },
-      defaults: {
+    const [existing] = await db.select().from(User).where(eq(User.email, "roletest2@test.com")).limit(1);
+    let testUser;
+    if (!existing) {
+      [testUser] = await db.insert(User).values({
+        email: "roletest2@test.com",
         firstName: "Role",
         lastName: "Test2",
         status: "active",
@@ -95,8 +102,10 @@ test("requireRole", async (t) => {
         apiKey: "role-test-api-key-2",
         budget: 100,
         remaining: 100,
-      },
-    });
+      }).returning();
+    } else {
+      testUser = existing;
+    }
 
     const middleware = requireRole("user");
     const req = createMockReq({ headers: { "x-api-key": "role-test-api-key-2" } });
@@ -105,7 +114,7 @@ test("requireRole", async (t) => {
     await middleware(req, res, () => { nextCalled = true; });
     assert.ok(nextCalled, "next() should have been called for matching role");
 
-    await testUser.destroy();
+    await db.delete(User).where(eq(User.id, testUser.id));
   });
 
   await t.test("sets user in session for downstream handlers", async () => {

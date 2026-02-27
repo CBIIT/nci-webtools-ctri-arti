@@ -1,7 +1,7 @@
 import db from "database";
+import { sql } from "drizzle-orm";
 
 import { json, Router } from "express";
-import { QueryTypes } from "sequelize";
 
 import { sendFeedback, sendLogReport } from "../email.js";
 import { requireRole } from "../middleware.js";
@@ -17,10 +17,11 @@ const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
 
 api.get("/status", async (req, res) => {
+  const [health] = await db.execute(sql`SELECT 'ok' AS health`);
   res.json({
     version: VERSION,
     uptime: process.uptime(),
-    database: await db.query("SELECT 'ok' AS health", { plain: true, type: QueryTypes.SELECT }),
+    database: health,
   });
 });
 
