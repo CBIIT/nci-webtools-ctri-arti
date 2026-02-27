@@ -158,11 +158,6 @@ v1.delete("/tools/:id", routeHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
-v1.get("/tools/:id/resources", routeHandler(async (req, res) => {
-  const resources = await service.getResourcesByTool(req.params.id);
-  res.json(resources);
-}));
-
 v1.get("/tools/:id/vectors", routeHandler(async (req, res) => {
   const vectors = await service.searchVectors({ toolID: req.params.id });
   res.json(vectors);
@@ -210,8 +205,8 @@ v1.get("/resources/:id", routeHandler(async (req, res) => {
   res.json(resource);
 }));
 
-v1.get("/conversations/:conversationId/resources", routeHandler(async (req, res) => {
-  const resources = await service.getResourcesByConversation(req.userId, req.params.conversationId);
+v1.get("/agents/:agentId/resources", routeHandler(async (req, res) => {
+  const resources = await service.getResourcesByAgent(req.userId, req.params.agentId);
   res.json(resources);
 }));
 

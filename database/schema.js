@@ -76,7 +76,6 @@ export const modelDefinitions = {
       cost1kOutput: DataTypes.FLOAT,
       cost1kCacheRead: DataTypes.FLOAT,
       cost1kCacheWrite: DataTypes.FLOAT,
-      summarizeThreshold: DataTypes.INTEGER,
       defaultParameters: DataTypes.JSON,
     },
     options: {
@@ -112,13 +111,11 @@ export const modelDefinitions = {
       name: DataTypes.STRING,
       version: DataTypes.INTEGER,
       content: DataTypes.TEXT,
-      agentID: DataTypes.INTEGER,
     },
     options: {
       indexes: [
         { fields: ["name"] },
         { fields: ["name", "version"], unique: true },
-        { fields: ["agentID"] },
       ],
     },
   },
@@ -161,7 +158,7 @@ export const modelDefinitions = {
       title: DataTypes.STRING,
       deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
       deletedAt: DataTypes.DATE,
-      latestSummarySN: { type: DataTypes.INTEGER, defaultValue: 0 },
+      summaryMessageID: { type: DataTypes.INTEGER, defaultValue: 0 },
     },
     options: {
       indexes: [
@@ -175,10 +172,9 @@ export const modelDefinitions = {
   Message: {
     attributes: {
       conversationID: DataTypes.INTEGER,
+      parentID: DataTypes.INTEGER,
       role: DataTypes.STRING,
       content: DataTypes.JSON,
-      serialNumber: DataTypes.INTEGER,
-      tokens: DataTypes.INTEGER,
     },
     options: {
       indexes: [
@@ -190,21 +186,18 @@ export const modelDefinitions = {
 
   Resource: {
     attributes: {
-      conversationID: DataTypes.INTEGER,
+      agentID: DataTypes.INTEGER,
       messageID: DataTypes.INTEGER,
-      toolID: DataTypes.INTEGER,
       name: DataTypes.STRING,
       type: DataTypes.STRING,
-      description: DataTypes.STRING,
-      MIMEType: DataTypes.STRING,
       content: DataTypes.TEXT,
       s3Uri: DataTypes.STRING,
       metadata: DataTypes.JSON,
     },
     options: {
       indexes: [
-        { fields: ["conversationID"] },
-        { fields: ["toolID"] },
+        { fields: ["agentID"] },
+        { fields: ["messageID"] },
       ],
     },
   },
@@ -287,9 +280,6 @@ export const associations = [
   { source: "Agent", target: "Prompt", type: "belongsTo", options: { foreignKey: "promptID" } },
   { source: "Prompt", target: "Agent", type: "hasMany", options: { foreignKey: "promptID" } },
 
-  // Prompt -> Agent (agent-scoped prompt)
-  { source: "Prompt", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID", as: "OwnerAgent" } },
-
   // Agent -> User
   { source: "Agent", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
   { source: "User", target: "Agent", type: "hasMany", options: { foreignKey: "userID" } },
@@ -304,16 +294,15 @@ export const associations = [
   { source: "Conversation", target: "Message", type: "hasMany", options: { foreignKey: "conversationID" } },
 
   // Resource
-  { source: "Resource", target: "Conversation", type: "belongsTo", options: { foreignKey: "conversationID" } },
+  { source: "Resource", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID" } },
   { source: "Resource", target: "Message", type: "belongsTo", options: { foreignKey: "messageID" } },
-  { source: "Resource", target: "Tool", type: "belongsTo", options: { foreignKey: "toolID" } },
 
   // Vector
   { source: "Vector", target: "Conversation", type: "belongsTo", options: { foreignKey: "conversationID" } },
   { source: "Vector", target: "Resource", type: "belongsTo", options: { foreignKey: "resourceID" } },
   { source: "Vector", target: "Tool", type: "belongsTo", options: { foreignKey: "toolID" } },
   { source: "Conversation", target: "Vector", type: "hasMany", options: { foreignKey: "conversationID" } },
-  { source: "Conversation", target: "Resource", type: "hasMany", options: { foreignKey: "conversationID" } },
+  { source: "Agent", target: "Resource", type: "hasMany", options: { foreignKey: "agentID" } },
 
   // UserAgent join
   { source: "UserAgent", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },

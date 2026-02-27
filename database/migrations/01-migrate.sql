@@ -52,20 +52,20 @@ FROM "Users"
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Conversation" ("id", "userID", "agentID", "title",
-  "deleted", "latestSummarySN", "createdAt", "updatedAt")
+  "deleted", "summaryMessageID", "createdAt", "updatedAt")
 SELECT "id", "userId", "agentId", "name",
   false, 0, "createdAt", "updatedAt"
 FROM "Threads"
 ON CONFLICT ("id") DO NOTHING;
 
-INSERT INTO "Message" ("id", "conversationID", "role", "content", "createdAt", "updatedAt")
-SELECT "id", "threadId", "role", "content", "createdAt", "updatedAt"
+INSERT INTO "Message" ("id", "conversationID", "parentID", "role", "content", "createdAt", "updatedAt")
+SELECT "id", "threadId", NULL, "role", "content", "createdAt", "updatedAt"
 FROM "Messages"
 ON CONFLICT ("id") DO NOTHING;
 
-INSERT INTO "Resource" ("id", "conversationID", "messageID",
+INSERT INTO "Resource" ("id", "agentID", "messageID",
   "name", "type", "content", "s3Uri", "metadata", "createdAt", "updatedAt")
-SELECT "id", "threadId", "messageId",
+SELECT "id", NULL, "messageId",
   "name", "type", "content", "s3Uri", "metadata", "createdAt", "updatedAt"
 FROM "Resources"
 ON CONFLICT ("id") DO NOTHING;

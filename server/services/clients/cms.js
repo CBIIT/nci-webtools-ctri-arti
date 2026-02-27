@@ -64,7 +64,6 @@ function buildDirectClient() {
     getTools: (userId) => s.getTools(userId),
     updateTool: (toolId, updates) => s.updateTool(toolId, updates),
     deleteTool: (toolId) => s.deleteTool(toolId),
-    getResourcesByTool: (toolID) => s.getResourcesByTool(toolID),
 
     createPrompt: (data) => s.createPrompt(data),
     getPrompt: (promptId) => s.getPrompt(promptId),
@@ -74,7 +73,7 @@ function buildDirectClient() {
 
     addResource: (userId, data) => s.addResource(userId, data),
     getResource: (userId, resourceId) => s.getResource(userId, resourceId),
-    getResourcesByConversation: (userId, conversationId) => s.getResourcesByConversation(userId, conversationId),
+    getResourcesByAgent: (userId, agentId) => s.getResourcesByAgent(userId, agentId),
     deleteResource: (userId, resourceId) => s.deleteResource(userId, resourceId),
 
     addVectors: (userId, conversationId, vectors) => s.addVectors(userId, conversationId, vectors),
@@ -117,7 +116,6 @@ function buildHttpClient() {
     getTools: (userId) => httpRequest("GET", "/api/v1/tools", null, userId),
     updateTool: (toolId, updates) => httpRequest("PUT", `/api/v1/tools/${toolId}`, updates, null),
     deleteTool: (toolId) => httpRequest("DELETE", `/api/v1/tools/${toolId}`, null, null),
-    getResourcesByTool: (toolID) => httpRequest("GET", `/api/v1/tools/${toolID}/resources`, null, null),
 
     createPrompt: (data) => httpRequest("POST", "/api/v1/prompts", data, null),
     getPrompt: (promptId) => httpRequest("GET", `/api/v1/prompts/${promptId}`, null, null),
@@ -127,7 +125,7 @@ function buildHttpClient() {
 
     addResource: (userId, data) => httpRequest("POST", "/api/v1/resources", data, userId),
     getResource: (userId, resourceId) => httpRequest("GET", `/api/v1/resources/${resourceId}`, null, userId),
-    getResourcesByConversation: (userId, conversationId) => httpRequest("GET", `/api/v1/conversations/${conversationId}/resources`, null, userId),
+    getResourcesByAgent: (userId, agentId) => httpRequest("GET", `/api/v1/agents/${agentId}/resources`, null, userId),
     deleteResource: (userId, resourceId) => httpRequest("DELETE", `/api/v1/resources/${resourceId}`, null, userId),
 
     addVectors: (userId, conversationId, vectors) => httpRequest("POST", "/api/v1/vectors", { conversationID: conversationId, vectors }, userId),
@@ -164,7 +162,6 @@ export const {
   getTools,
   updateTool,
   deleteTool,
-  getResourcesByTool,
   createPrompt,
   getPrompt,
   getPrompts,
@@ -172,7 +169,7 @@ export const {
   deletePrompt,
   addResource,
   getResource,
-  getResourcesByConversation,
+  getResourcesByAgent,
   deleteResource,
   addVectors,
   getVectorsByConversation,

@@ -149,9 +149,9 @@ api.get("/resources/:id", requireRole(), routeHandler(async (req, res) => {
   res.json(resource);
 }));
 
-api.get("/conversations/:conversationId/resources", requireRole(), routeHandler(async (req, res) => {
+api.get("/agents/:agentId/resources", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const resources = await cmsClient.getResourcesByConversation(userId, req.params.conversationId);
+  const resources = await cmsClient.getResourcesByAgent(userId, req.params.agentId);
   res.json(resources);
 }));
 

@@ -125,32 +125,23 @@ test("ConversationService", async (t) => {
       conversationId = conversation.id;
     });
 
-    await mt.test("addMessage auto-assigns serialNumber", async () => {
+    await mt.test("addMessage", async () => {
       const msg = await svc.addMessage(testUser.id, conversationId, {
         role: "user",
         content: [{ text: "Hello" }],
       });
       assert.ok(msg.id);
       assert.strictEqual(msg.role, "user");
-      assert.strictEqual(msg.serialNumber, 1);
       messageId = msg.id;
     });
 
-    await mt.test("addMessage increments serialNumber", async () => {
+    await mt.test("addMessage with parentID", async () => {
       const msg = await svc.addMessage(testUser.id, conversationId, {
         role: "assistant",
         content: [{ text: "Hi there" }],
+        parentID: messageId,
       });
-      assert.strictEqual(msg.serialNumber, 2);
-    });
-
-    await mt.test("addMessage accepts tokens param", async () => {
-      const msg = await svc.addMessage(testUser.id, conversationId, {
-        role: "assistant",
-        content: [{ text: "response" }],
-        tokens: 150,
-      });
-      assert.strictEqual(msg.tokens, 150);
+      assert.strictEqual(msg.parentID, messageId);
     });
 
     await mt.test("getMessage", async () => {
@@ -191,10 +182,10 @@ test("ConversationService", async (t) => {
     await ct.test("setup conversation with messages and resources", async () => {
       const conversation = await svc.createConversation(testUser.id, { title: "Context Test" });
       conversationId = conversation.id;
-      await svc.addMessage(testUser.id, conversationId, { role: "user", content: [{ text: "q1" }] });
+      const msg1 = await svc.addMessage(testUser.id, conversationId, { role: "user", content: [{ text: "q1" }] });
       await svc.addMessage(testUser.id, conversationId, { role: "assistant", content: [{ text: "a1" }] });
       await svc.addResource(testUser.id, {
-        conversationID: conversationId,
+        messageID: msg1.id,
         name: "doc.txt",
         type: "text/plain",
         content: "doc content",
@@ -225,30 +216,30 @@ test("ConversationService", async (t) => {
       conversationId = conversation.id;
     });
 
-    await ct.test("updates latestSummarySN", async () => {
+    await ct.test("updates summaryMessageID", async () => {
       const result = await svc.compressConversation(testUser.id, conversationId, {
         summary: "summarized",
-        serialNumber: 5,
+        summaryMessageID: 5,
       });
       assert.ok(result);
-      assert.strictEqual(result.latestSummarySN, 5);
+      assert.strictEqual(result.summaryMessageID, 5);
     });
   });
 
   // ===== RESOURCE CRUD =====
 
   await t.test("Resource CRUD", async (rt) => {
-    let conversationId;
+    let agentId;
     let resourceId;
 
-    await rt.test("setup conversation", async () => {
-      const conversation = await svc.createConversation(testUser.id, { title: "Resource Test Conversation" });
-      conversationId = conversation.id;
+    await rt.test("setup agent", async () => {
+      const agent = await svc.createAgent(testUser.id, { name: "Resource Test Agent" });
+      agentId = agent.id;
     });
 
     await rt.test("addResource", async () => {
       const resource = await svc.addResource(testUser.id, {
-        conversationID: conversationId,
+        agentID: agentId,
         name: "document.txt",
         type: "text/plain",
         content: "file content",
@@ -265,14 +256,15 @@ test("ConversationService", async (t) => {
       assert.strictEqual(resource.content, "file content");
     });
 
-    await rt.test("getResourcesByConversation", async () => {
-      const resources = await svc.getResourcesByConversation(testUser.id, conversationId);
+    await rt.test("getResourcesByAgent", async () => {
+      const resources = await svc.getResourcesByAgent(testUser.id, agentId);
       assert.ok(resources.length >= 1);
     });
 
     await rt.test("deleteResource cascades vectors", async () => {
-      // Add vectors linked to resource
-      await svc.addVectors(testUser.id, conversationId, [
+      // Create a conversation for vectors (vectors still use conversationID)
+      const conv = await svc.createConversation(testUser.id, { title: "Resource Vector Test" });
+      await svc.addVectors(testUser.id, conv.id, [
         { resourceID: resourceId, content: "chunk 1", embedding: [0.1] },
         { resourceID: resourceId, content: "chunk 2", embedding: [0.2] },
       ]);
@@ -377,7 +369,6 @@ test("ConversationService", async (t) => {
       const conversation = await svc.createConversation(testUser.id, { title: "Vector Test Conversation" });
       conversationId = conversation.id;
       const resource = await svc.addResource(testUser.id, {
-        conversationID: conversationId,
         name: "vec-doc.txt",
         type: "text/plain",
         content: "vector test content",

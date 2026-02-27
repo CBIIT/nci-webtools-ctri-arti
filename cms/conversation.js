@@ -113,8 +113,9 @@ export class ConversationService {
       where: { conversationID: conversationId },
       order: [["createdAt", "ASC"]],
     });
+    const messageIds = messages.map(m => m.id);
     const resources = await Resource.findAll({
-      where: { conversationID: conversationId },
+      where: { messageID: { [Op.in]: messageIds } },
       order: [["createdAt", "ASC"]],
     });
 
@@ -123,12 +124,12 @@ export class ConversationService {
 
   // ===== COMPRESS METHOD =====
 
-  async compressConversation(userId, conversationId, { summary, serialNumber }) {
+  async compressConversation(userId, conversationId, { summary, summaryMessageID }) {
     const conversation = await this.getConversation(userId, conversationId);
     if (!conversation) return null;
 
     await Conversation.update(
-      { latestSummarySN: serialNumber },
+      { summaryMessageID },
       { where: { id: conversationId, userID: userId } }
     );
 
@@ -138,18 +139,11 @@ export class ConversationService {
   // ===== MESSAGE METHODS =====
 
   async addMessage(userId, conversationId, data) {
-    // Auto-assign serialNumber
-    const maxSN = await Message.max("serialNumber", {
-      where: { conversationID: conversationId },
-    });
-    const serialNumber = (maxSN || 0) + 1;
-
     return Message.create({
       conversationID: conversationId,
+      parentID: data.parentID || null,
       role: data.role,
       content: data.content,
-      serialNumber,
-      tokens: data.tokens || null,
     });
   }
 
@@ -203,7 +197,6 @@ export class ConversationService {
   }
 
   async deleteTool(toolId) {
-    await Resource.destroy({ where: { toolID: toolId } });
     await Vector.destroy({ where: { toolID: toolId } });
     await AgentTool.destroy({ where: { toolID: toolId } });
     await UserTool.destroy({ where: { toolID: toolId } });
@@ -241,13 +234,10 @@ export class ConversationService {
 
   async addResource(userId, data) {
     return Resource.create({
-      conversationID: data.conversationID || null,
+      agentID: data.agentID || null,
       messageID: data.messageID || null,
-      toolID: data.toolID || null,
       name: data.name,
       type: data.type,
-      description: data.description || null,
-      MIMEType: data.MIMEType || null,
       content: data.content,
       s3Uri: data.s3Uri || null,
       metadata: data.metadata || {},
@@ -258,16 +248,9 @@ export class ConversationService {
     return Resource.findByPk(resourceId);
   }
 
-  async getResourcesByConversation(userId, conversationId) {
+  async getResourcesByAgent(userId, agentId) {
     return Resource.findAll({
-      where: { conversationID: conversationId },
-      order: [["createdAt", "ASC"]],
-    });
-  }
-
-  async getResourcesByTool(toolID) {
-    return Resource.findAll({
-      where: { toolID },
+      where: { agentID: agentId },
       order: [["createdAt", "ASC"]],
     });
   }
