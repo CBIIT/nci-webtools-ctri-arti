@@ -322,7 +322,7 @@
     },
     "payment_exceeds": {
       "type": "boolean",
-      "description": "True if payment could equal or exceed $2000 (not including and reimbursements)."
+      "description": "True if payment could equal or exceed $2000 (not including any reimbursements)."
     },
     "reimbursement_true": {
       "type": "boolean",
@@ -331,23 +331,23 @@
     "reimbursement_info": {
       "type": "string",
       "description": "Reimbursement details excluding any per diem or flat rate amounts and excluding travel arrangement information."
-    }
+    },
     "reimbursement_flat_rate": {
       "type": "boolean",
       "description": "True if providing a flat rate or per diem reimbursement."
-    }
+    },
     "per_diem_amount": {
       "type": "string",
       "description": "The amount reimbursed through a flat rate or per diem or empty string."
-    }
+    },
     "reimbursement_travel_arranged": {
       "type": "boolean",
       "description": "True if travel is arranged and paid for by the NIH."
-    }
+    },
     "reimbursement_false": {
       "type": "boolean",
       "description": "True if the cost for travel, lodging or meals will not be reimbursed or there is no mention of reimbursement."
-    }
+    },
     "cost_additional": {
       "type": "string",
       "description": "Additional cost info or empty string."
@@ -355,7 +355,7 @@
     "covered_protocol": {
       "type": "boolean",
       "description": "True if the protocol involves an investigational drug or device, asks a research question about a commercially available drug or device, involves a for-profit entity or substantially affected organization (SAO), involves specimens to develop a product, or evaluates/compares a technology not developed at NIH."
-    }
+    },
     "coi_no_agreements": {
       "type": "boolean",
       "description": "True ONLY when none of the other COI types apply (no tech license, no CRADA, no CTA). If ANY of coi_tech_license, coi_crada, or coi_cta is true, this MUST be false."
@@ -399,15 +399,15 @@
     "ct_gov_registration": {
       "type": "boolean",
       "description": "True if the study will be registered on clinicaltrials.gov."
-    }
-    "confidentiality_general" {
+    },
+    "confidentiality_general": {
       "type": "string",
       "description": "Describe how the study team will protect the confidentiality of participant records. If social security numbers are collected, disclose this and inform participants that providing their SSN is optional, though declining may affect their ability to receive compensation."
-    }
-    "study_sponsor" {
+    },
+    "study_sponsor": {
       "type": "boolean",
       "description": "True if there are study sponsors, study partners, or study collaborators."
-    }
+    },
     "sponsor_name": {
       "type": "string",
       "description": "Study sponsor organization name."
@@ -506,6 +506,7 @@
     "coi_program_name",
     "ct_gov_registration",
     "confidentiality_general",
+    "study_sponsor",
     "sponsor_name",
     "manufacturer_name",
     "product_name"

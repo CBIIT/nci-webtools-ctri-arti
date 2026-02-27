@@ -5,7 +5,7 @@
  *
  * Uses 2 Bedrock calls with a shared, cached system prompt:
  *   Chunk 1: Study identity & procedures (38 fields)
- *   Chunk 2: Risks, benefits, alternatives & COI (42 fields)
+ *   Chunk 2: Risks, benefits, alternatives & COI (52 fields)
  *
  * The full schema, consent library, and protocol go in the system prompt.
  * The user message is a short instruction requesting specific fields as raw JSON.
@@ -48,10 +48,17 @@ const SCHEMA_CHUNKS = [
       "may_anonymize", "will_not_anonymize",
       "specimen_storage_duration",
       "no_payment", "has_payment", "payment_details", "partial_payment_details",
-      "reimbursement_info", "cost_additional",
+      "payment_exceeds",
+      "reimbursement_true", "reimbursement_info", "reimbursement_flat_rate",
+      "per_diem_amount", "reimbursement_travel_arranged", "reimbursement_false",
+      "cost_additional",
+      "covered_protocol",
       "coi_no_agreements", "coi_tech_license", "coi_product_description", "coi_product_name",
       "coi_crada", "coi_cta", "coi_company_name", "coi_product_provision",
       "coi_through_program", "coi_program_name",
+      "ct_gov_registration",
+      "confidentiality_general",
+      "study_sponsor",
       "sponsor_name", "manufacturer_name", "product_name",
     ],
   },
