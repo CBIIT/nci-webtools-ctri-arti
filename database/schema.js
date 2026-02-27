@@ -14,24 +14,42 @@ export const modelDefinitions = {
       firstName: DataTypes.STRING,
       lastName: DataTypes.STRING,
       status: DataTypes.STRING,
-      roleId: DataTypes.INTEGER,
+      roleID: DataTypes.INTEGER,
       apiKey: DataTypes.STRING,
-      limit: DataTypes.FLOAT,
+      budget: DataTypes.FLOAT,
       remaining: DataTypes.FLOAT,
     },
     options: {
-      indexes: [{ fields: ["email"] }, { fields: ["roleId"] }],
+      indexes: [{ fields: ["email"] }, { fields: ["roleID"] }],
     },
   },
 
   Role: {
     attributes: {
       name: DataTypes.STRING,
-      policy: DataTypes.JSON,
-      order: DataTypes.INTEGER,
+      displayOrder: DataTypes.INTEGER,
     },
     options: {
-      indexes: [{ fields: ["order"] }],
+      indexes: [{ fields: ["displayOrder"] }],
+    },
+  },
+
+  Policy: {
+    attributes: {
+      name: DataTypes.STRING,
+      resource: DataTypes.STRING,
+      action: DataTypes.STRING,
+    },
+    options: {},
+  },
+
+  RolePolicy: {
+    attributes: {
+      roleID: DataTypes.INTEGER,
+      policyID: DataTypes.INTEGER,
+    },
+    options: {
+      indexes: [{ fields: ["roleID", "policyID"], unique: true }],
     },
   },
 
@@ -46,9 +64,11 @@ export const modelDefinitions = {
 
   Model: {
     attributes: {
-      providerId: DataTypes.INTEGER,
+      providerID: DataTypes.INTEGER,
       name: DataTypes.STRING,
       internalName: DataTypes.STRING,
+      type: DataTypes.STRING,
+      description: DataTypes.STRING,
       maxContext: DataTypes.INTEGER,
       maxOutput: DataTypes.INTEGER,
       maxReasoning: DataTypes.INTEGER,
@@ -56,17 +76,21 @@ export const modelDefinitions = {
       cost1kOutput: DataTypes.FLOAT,
       cost1kCacheRead: DataTypes.FLOAT,
       cost1kCacheWrite: DataTypes.FLOAT,
+      summarizeThreshold: DataTypes.INTEGER,
+      defaultParameters: DataTypes.JSON,
     },
     options: {
-      indexes: [{ fields: ["internalName"] }, { fields: ["providerId"] }],
+      indexes: [{ fields: ["internalName"] }, { fields: ["providerID"] }],
     },
   },
 
   Usage: {
     attributes: {
-      userId: DataTypes.INTEGER,
-      modelId: DataTypes.INTEGER,
-      ip: DataTypes.STRING,
+      userID: DataTypes.INTEGER,
+      modelID: DataTypes.INTEGER,
+      type: DataTypes.STRING,
+      agentID: DataTypes.INTEGER,
+      messageID: DataTypes.INTEGER,
       inputTokens: DataTypes.FLOAT,
       outputTokens: DataTypes.FLOAT,
       cacheReadTokens: DataTypes.FLOAT,
@@ -75,10 +99,10 @@ export const modelDefinitions = {
     },
     options: {
       indexes: [
-        { fields: ["userId"] },
-        { fields: ["modelId"] },
+        { fields: ["userID"] },
+        { fields: ["modelID"] },
         { fields: ["createdAt"] },
-        { fields: ["userId", "createdAt"] },
+        { fields: ["userID", "createdAt"] },
       ],
     },
   },
@@ -88,144 +112,226 @@ export const modelDefinitions = {
       name: DataTypes.STRING,
       version: DataTypes.INTEGER,
       content: DataTypes.TEXT,
+      agentID: DataTypes.INTEGER,
     },
     options: {
       indexes: [
         { fields: ["name"] },
         { fields: ["name", "version"], unique: true },
+        { fields: ["agentID"] },
       ],
     },
   },
 
   Agent: {
     attributes: {
-      userId: DataTypes.INTEGER,
-      modelId: DataTypes.INTEGER,
+      userID: DataTypes.INTEGER,
+      modelID: DataTypes.INTEGER,
       name: DataTypes.STRING,
-      promptId: DataTypes.INTEGER,
-      tools: DataTypes.JSON,
+      description: DataTypes.STRING,
+      promptID: DataTypes.INTEGER,
+      modelParameters: DataTypes.JSON,
     },
     options: {
       indexes: [
-        { fields: ["userId"] },
-        { fields: ["modelId"] },
-        { fields: ["promptId"] },
+        { fields: ["userID"] },
+        { fields: ["modelID"] },
+        { fields: ["promptID"] },
       ],
     },
   },
 
-  Thread: {
+  Tool: {
     attributes: {
-      agentId: DataTypes.INTEGER,
       name: DataTypes.STRING,
-      summary: DataTypes.TEXT,
+      description: DataTypes.STRING,
+      type: DataTypes.STRING,
+      authenticationType: DataTypes.STRING,
+      endpoint: DataTypes.STRING,
+      transportType: DataTypes.STRING,
+      customConfig: DataTypes.JSON,
+    },
+    options: {},
+  },
+
+  Conversation: {
+    attributes: {
+      userID: DataTypes.INTEGER,
+      agentID: DataTypes.INTEGER,
+      title: DataTypes.STRING,
+      deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
+      deletedAt: DataTypes.DATE,
+      latestSummarySN: { type: DataTypes.INTEGER, defaultValue: 0 },
     },
     options: {
       indexes: [
-        { fields: ["agentId"] },
-        { fields: ["userId", "createdAt"] },
+        { fields: ["agentID"] },
+        { fields: ["userID", "createdAt"] },
+        { fields: ["deleted"] },
       ],
     },
   },
 
   Message: {
     attributes: {
-      userId: DataTypes.INTEGER,
-      threadId: DataTypes.INTEGER,
+      conversationID: DataTypes.INTEGER,
       role: DataTypes.STRING,
       content: DataTypes.JSON,
+      serialNumber: DataTypes.INTEGER,
+      tokens: DataTypes.INTEGER,
     },
     options: {
       indexes: [
-        { fields: ["userId"] },
-        { fields: ["threadId"] },
-        { fields: ["threadId", "createdAt"] },
+        { fields: ["conversationID"] },
+        { fields: ["conversationID", "createdAt"] },
       ],
     },
   },
 
   Resource: {
     attributes: {
-      userId: DataTypes.INTEGER,
-      agentId: DataTypes.INTEGER,
-      threadId: DataTypes.INTEGER,
-      messageId: DataTypes.INTEGER,
+      conversationID: DataTypes.INTEGER,
+      messageID: DataTypes.INTEGER,
+      toolID: DataTypes.INTEGER,
       name: DataTypes.STRING,
       type: DataTypes.STRING,
+      description: DataTypes.STRING,
+      MIMEType: DataTypes.STRING,
       content: DataTypes.TEXT,
       s3Uri: DataTypes.STRING,
       metadata: DataTypes.JSON,
     },
     options: {
       indexes: [
-        { fields: ["userId"] },
-        { fields: ["agentId"] },
-        { fields: ["threadId"] },
+        { fields: ["conversationID"] },
+        { fields: ["toolID"] },
       ],
     },
   },
 
   Vector: {
     attributes: {
-      userId: DataTypes.INTEGER,
-      threadId: DataTypes.INTEGER,
-      agentId: DataTypes.INTEGER,
-      resourceId: DataTypes.INTEGER,
+      conversationID: DataTypes.INTEGER,
+      resourceID: DataTypes.INTEGER,
+      toolID: DataTypes.INTEGER,
       order: DataTypes.INTEGER,
-      text: DataTypes.TEXT,
+      content: DataTypes.TEXT,
       embedding: DataTypes.JSON,
     },
     options: {
       indexes: [
-        { fields: ["userId"] },
-        { fields: ["threadId"] },
-        { fields: ["agentId"] },
-        { fields: ["resourceId", "order"] },
+        { fields: ["conversationID"] },
+        { fields: ["toolID"] },
+        { fields: ["resourceID", "order"] },
       ],
+    },
+  },
+
+  UserAgent: {
+    attributes: {
+      userID: DataTypes.INTEGER,
+      agentID: DataTypes.INTEGER,
+      role: DataTypes.STRING,
+    },
+    options: {
+      indexes: [{ fields: ["userID", "agentID"], unique: true }],
+    },
+  },
+
+  UserTool: {
+    attributes: {
+      userID: DataTypes.INTEGER,
+      toolID: DataTypes.INTEGER,
+      credential: DataTypes.JSON,
+    },
+    options: {
+      indexes: [{ fields: ["userID", "toolID"], unique: true }],
+    },
+  },
+
+  AgentTool: {
+    attributes: {
+      toolID: DataTypes.INTEGER,
+      agentID: DataTypes.INTEGER,
+    },
+    options: {
+      indexes: [{ fields: ["toolID", "agentID"], unique: true }],
     },
   },
 };
 
 // Association definitions
 export const associations = [
-  { source: "User", target: "Role", type: "belongsTo", options: { foreignKey: "roleId" } },
-  { source: "Model", target: "Provider", type: "belongsTo", options: { foreignKey: "providerId" } },
-  { source: "Usage", target: "User", type: "belongsTo", options: { foreignKey: "userId" } },
-  { source: "Usage", target: "Model", type: "belongsTo", options: { foreignKey: "modelId" } },
-  { source: "User", target: "Usage", type: "hasMany", options: { foreignKey: "userId" } },
-  { source: "Model", target: "Usage", type: "hasMany", options: { foreignKey: "modelId" } },
+  // User -> Role
+  { source: "User", target: "Role", type: "belongsTo", options: { foreignKey: "roleID" } },
+  { source: "Role", target: "User", type: "hasMany", options: { foreignKey: "roleID" } },
 
-  // Prompt associations
-  { source: "Agent", target: "Prompt", type: "belongsTo", options: { foreignKey: "promptId" } },
-  { source: "Prompt", target: "Agent", type: "hasMany", options: { foreignKey: "promptId" } },
+  // RolePolicy join
+  { source: "RolePolicy", target: "Role", type: "belongsTo", options: { foreignKey: "roleID" } },
+  { source: "RolePolicy", target: "Policy", type: "belongsTo", options: { foreignKey: "policyID" } },
+  { source: "Role", target: "RolePolicy", type: "hasMany", options: { foreignKey: "roleID" } },
+  { source: "Policy", target: "RolePolicy", type: "hasMany", options: { foreignKey: "policyID" } },
 
-  // Agent associations
-  { source: "Agent", target: "User", type: "belongsTo", options: { foreignKey: "userId" } },
-  { source: "User", target: "Agent", type: "hasMany", options: { foreignKey: "userId" } },
+  // Model -> Provider
+  { source: "Model", target: "Provider", type: "belongsTo", options: { foreignKey: "providerID" } },
 
-  // Thread associations
-  { source: "Thread", target: "User", type: "belongsTo", options: { foreignKey: "userId" } },
-  { source: "Thread", target: "Agent", type: "belongsTo", options: { foreignKey: "agentId" } },
-  { source: "Agent", target: "Thread", type: "hasMany", options: { foreignKey: "agentId" } },
+  // Usage
+  { source: "Usage", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
+  { source: "Usage", target: "Model", type: "belongsTo", options: { foreignKey: "modelID" } },
+  { source: "Usage", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID" } },
+  { source: "Usage", target: "Message", type: "belongsTo", options: { foreignKey: "messageID" } },
+  { source: "User", target: "Usage", type: "hasMany", options: { foreignKey: "userID" } },
+  { source: "Model", target: "Usage", type: "hasMany", options: { foreignKey: "modelID" } },
 
-  // Message associations
-  { source: "Message", target: "User", type: "belongsTo", options: { foreignKey: "userId" } },
-  { source: "User", target: "Message", type: "hasMany", options: { foreignKey: "userId" } },
-  { source: "Message", target: "Thread", type: "belongsTo", options: { foreignKey: "threadId" } },
-  { source: "Thread", target: "Message", type: "hasMany", options: { foreignKey: "threadId" } },
+  // Agent -> Prompt (agent's active prompt)
+  { source: "Agent", target: "Prompt", type: "belongsTo", options: { foreignKey: "promptID" } },
+  { source: "Prompt", target: "Agent", type: "hasMany", options: { foreignKey: "promptID" } },
 
-  // Resource associations
-  { source: "Resource", target: "User", type: "belongsTo", options: { foreignKey: "userId" } },
-  { source: "User", target: "Resource", type: "hasMany", options: { foreignKey: "userId" } },
-  { source: "Resource", target: "Thread", type: "belongsTo", options: { foreignKey: "threadId" } },
-  { source: "Resource", target: "Message", type: "belongsTo", options: { foreignKey: "messageId" } },
+  // Prompt -> Agent (agent-scoped prompt)
+  { source: "Prompt", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID", as: "OwnerAgent" } },
 
-  // Vector associations
-  { source: "Vector", target: "User", type: "belongsTo", options: { foreignKey: "userId" } },
-  { source: "User", target: "Vector", type: "hasMany", options: { foreignKey: "userId" } },
-  { source: "Vector", target: "Thread", type: "belongsTo", options: { foreignKey: "threadId" } },
-  { source: "Vector", target: "Resource", type: "belongsTo", options: { foreignKey: "resourceId" } },
-  { source: "Thread", target: "Vector", type: "hasMany", options: { foreignKey: "threadId" } },
+  // Agent -> User
+  { source: "Agent", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
+  { source: "User", target: "Agent", type: "hasMany", options: { foreignKey: "userID" } },
+
+  // Conversation
+  { source: "Conversation", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
+  { source: "Conversation", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID", onDelete: "SET NULL" } },
+  { source: "Agent", target: "Conversation", type: "hasMany", options: { foreignKey: "agentID" } },
+
+  // Message -> Conversation
+  { source: "Message", target: "Conversation", type: "belongsTo", options: { foreignKey: "conversationID" } },
+  { source: "Conversation", target: "Message", type: "hasMany", options: { foreignKey: "conversationID" } },
+
+  // Resource
+  { source: "Resource", target: "Conversation", type: "belongsTo", options: { foreignKey: "conversationID" } },
+  { source: "Resource", target: "Message", type: "belongsTo", options: { foreignKey: "messageID" } },
+  { source: "Resource", target: "Tool", type: "belongsTo", options: { foreignKey: "toolID" } },
+
+  // Vector
+  { source: "Vector", target: "Conversation", type: "belongsTo", options: { foreignKey: "conversationID" } },
+  { source: "Vector", target: "Resource", type: "belongsTo", options: { foreignKey: "resourceID" } },
+  { source: "Vector", target: "Tool", type: "belongsTo", options: { foreignKey: "toolID" } },
+  { source: "Conversation", target: "Vector", type: "hasMany", options: { foreignKey: "conversationID" } },
+  { source: "Conversation", target: "Resource", type: "hasMany", options: { foreignKey: "conversationID" } },
+
+  // UserAgent join
+  { source: "UserAgent", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
+  { source: "UserAgent", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID", onDelete: "CASCADE" } },
+  { source: "User", target: "UserAgent", type: "hasMany", options: { foreignKey: "userID" } },
+  { source: "Agent", target: "UserAgent", type: "hasMany", options: { foreignKey: "agentID" } },
+
+  // UserTool join
+  { source: "UserTool", target: "User", type: "belongsTo", options: { foreignKey: "userID" } },
+  { source: "UserTool", target: "Tool", type: "belongsTo", options: { foreignKey: "toolID" } },
+  { source: "User", target: "UserTool", type: "hasMany", options: { foreignKey: "userID" } },
+  { source: "Tool", target: "UserTool", type: "hasMany", options: { foreignKey: "toolID" } },
+
+  // AgentTool join
+  { source: "AgentTool", target: "Agent", type: "belongsTo", options: { foreignKey: "agentID", onDelete: "CASCADE" } },
+  { source: "AgentTool", target: "Tool", type: "belongsTo", options: { foreignKey: "toolID" } },
+  { source: "Agent", target: "AgentTool", type: "hasMany", options: { foreignKey: "agentID" } },
+  { source: "Tool", target: "AgentTool", type: "hasMany", options: { foreignKey: "toolID" } },
 ];
 
 // Helper function to create models from definitions
@@ -234,7 +340,10 @@ export function createModels(sequelize) {
 
   // Create all models
   for (const [modelName, definition] of Object.entries(modelDefinitions)) {
-    models[modelName] = sequelize.define(modelName, definition.attributes, definition.options);
+    models[modelName] = sequelize.define(modelName, definition.attributes, {
+      ...definition.options,
+      freezeTableName: true,
+    });
   }
 
   // Set up associations
@@ -250,18 +359,25 @@ export function createModels(sequelize) {
 // Helper function to seed database
 export async function seedDatabase(models) {
   const roles = loadCsv(resolve(dataDir, "roles.csv"));
+  const policies = loadCsv(resolve(dataDir, "policies.csv"));
+  const rolePolicies = loadCsv(resolve(dataDir, "role-policies.csv"));
   const providers = loadCsv(resolve(dataDir, "providers.csv"));
   const modelRows = loadCsv(resolve(dataDir, "models.csv"));
   const prompts = loadCsv(resolve(dataDir, "prompts.csv"));
   const agents = loadCsv(resolve(dataDir, "agents.csv"));
+  const tools = loadCsv(resolve(dataDir, "tools.csv"));
+  const agentTools = loadCsv(resolve(dataDir, "agent-tools.csv"));
 
-  await models.Role.bulkCreate(roles, { updateOnDuplicate: ["name", "policy", "order"] });
+  await models.Role.bulkCreate(roles, { updateOnDuplicate: ["name", "displayOrder"] });
+  await models.Policy.bulkCreate(policies, { updateOnDuplicate: ["name", "resource", "action"] });
+  await models.RolePolicy.bulkCreate(rolePolicies, { updateOnDuplicate: ["roleID", "policyID"] });
   await models.Provider.bulkCreate(providers, { updateOnDuplicate: ["name"] });
   await models.Model.bulkCreate(modelRows, {
     updateOnDuplicate: [
-      "providerId",
+      "providerID",
       "name",
       "internalName",
+      "type",
       "cost1kInput",
       "cost1kOutput",
       "cost1kCacheRead",
@@ -271,9 +387,11 @@ export async function seedDatabase(models) {
       "maxReasoning",
     ],
   });
-  // Seed prompts before agents (agents reference prompts via promptId)
+  // Seed prompts before agents (agents reference prompts via promptID)
   await models.Prompt.bulkCreate(prompts, { updateOnDuplicate: ["name", "version", "content"] });
-  await models.Agent.bulkCreate(agents, { updateOnDuplicate: ["name", "tools", "promptId"] });
+  await models.Agent.bulkCreate(agents, { updateOnDuplicate: ["name", "promptID"] });
+  await models.Tool.bulkCreate(tools, { updateOnDuplicate: ["name", "description", "type"] });
+  await models.AgentTool.bulkCreate(agentTools, { updateOnDuplicate: ["agentID", "toolID"] });
 
   // Create test admin user if TEST_API_KEY is set
   if (process.env.TEST_API_KEY) {
@@ -283,9 +401,9 @@ export async function seedDatabase(models) {
         firstName: "Test",
         lastName: "Admin",
         status: "active",
-        roleId: 1,
+        roleID: 1,
         apiKey: process.env.TEST_API_KEY,
-        limit: 1000,
+        budget: 1000,
         remaining: 1000,
       },
     });

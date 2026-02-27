@@ -42,5 +42,12 @@ if (DB_SKIP_SYNC !== "true") {
   await seedDatabase(models);
 }
 
-export const { User, Role, Provider, Model, Usage, Prompt, Agent, Thread, Message, Resource, Vector } = models;
+export const {
+  User, Role, Policy, RolePolicy,
+  Provider, Model,
+  Prompt, Agent, Conversation, Message,
+  Tool, Resource, Vector,
+  UserAgent, UserTool, AgentTool,
+  Usage,
+} = models;
 export default db;

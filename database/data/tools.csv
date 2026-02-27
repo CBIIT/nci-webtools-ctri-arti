@@ -1,0 +1,8 @@
+id,name,description,type
+1,search,Web search,builtin
+2,browse,Browse URL,builtin
+3,code,Code execution,builtin
+4,editor,Text editor,builtin
+5,think,Extended thinking,builtin
+6,data,Data analysis,builtin
+7,docxTemplate,DOCX template generation,builtin
