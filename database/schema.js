@@ -1,6 +1,7 @@
-import { DataTypes } from "sequelize";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+
+import { DataTypes } from "sequelize";
 
 import { loadCsv } from "./csv-loader.js";
 

@@ -1,6 +1,5 @@
 import { createContext, createEffect, createMemo, onCleanup, useContext } from "solid-js";
 import html from "solid-js/html";
-
 import { createStore } from "solid-js/store";
 
 import { safeParseJson } from "../utils/parsers.js";

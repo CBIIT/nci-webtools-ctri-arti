@@ -1,3 +1,4 @@
+import { useLocation } from "@solidjs/router";
 import {
   createEffect,
   createMemo,
@@ -11,7 +12,6 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-import { useLocation } from "@solidjs/router";
 
 import { AlertContainer } from "../../components/alert.js";
 import { DataTable } from "../../components/table.js";

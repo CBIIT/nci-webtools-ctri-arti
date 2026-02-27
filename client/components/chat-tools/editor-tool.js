@@ -1,8 +1,8 @@
+import { Download, File } from "lucide-solid";
+import { parse } from "marked";
 import { Show } from "solid-js";
 import html from "solid-js/html";
 
-import { Download, File } from "lucide-solid";
-import { parse } from "marked";
 
 import { downloadText } from "../../utils/files.js";
 import { getToolResult } from "../../utils/tools.js";

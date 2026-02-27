@@ -1,7 +1,7 @@
+import { X } from "lucide-solid";
 import { createEffect, createResource, createSignal, onCleanup, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { X } from "lucide-solid";
 
 import { useAuthContext } from "../contexts/auth-context.js";
 import { secondsToMinuteString } from "../utils/utils.js";

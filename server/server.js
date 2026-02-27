@@ -1,3 +1,4 @@
+import db from "database";
 import http from "http";
 import https from "https";
 import { pathToFileURL } from "url";
@@ -5,11 +6,10 @@ import { pathToFileURL } from "url";
 import SequelizeStore from "connect-session-sequelize";
 import express from "express";
 import session from "express-session";
-
-import api from "./services/api.js";
-import db from "database";
 import logger from "shared/logger.js";
 import { nocache } from "shared/middleware.js";
+
+import api from "./services/api.js";
 import { startScheduler } from "./services/scheduler.js";
 import { createCertificate } from "./services/utils.js";
 

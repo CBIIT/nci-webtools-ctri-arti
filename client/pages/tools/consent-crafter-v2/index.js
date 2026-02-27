@@ -10,10 +10,9 @@
  */
 
 // #region Imports
+import { openDB } from "idb";
 import { createEffect, createMemo, createResource, For, Show } from "solid-js";
 import html from "solid-js/html";
-
-import { openDB } from "idb";
 import { createStore, reconcile, unwrap } from "solid-js/store";
 
 import { AlertContainer } from "../../../components/alert.js";
@@ -27,6 +26,7 @@ import { parseDocument } from "../../../utils/parsers.js";
 
 import { getTemplateConfigsByCategory, templateConfigs } from "./config.js";
 import { runFieldExtraction } from "./extract.js";
+
 // #endregion
 
 // #region Database

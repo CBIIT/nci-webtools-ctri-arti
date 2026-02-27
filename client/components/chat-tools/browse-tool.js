@@ -1,7 +1,7 @@
-import html from "solid-js/html";
 
 import { Globe } from "lucide-solid";
 import { parse } from "marked";
+import html from "solid-js/html";
 
 import { getToolResult } from "../../utils/tools.js";
 

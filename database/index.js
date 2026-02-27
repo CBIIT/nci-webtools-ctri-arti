@@ -1,6 +1,6 @@
 import { Sequelize } from "sequelize";
-
 import logger from "shared/logger.js";
+
 import { createModels, seedDatabase } from "./schema.js";
 
 const {

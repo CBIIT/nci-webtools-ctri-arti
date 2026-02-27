@@ -1,7 +1,7 @@
+import { User, Model, Usage } from "database";
 import assert from "node:assert";
 import { after, test } from "node:test";
 
-import { User, Model, Usage } from "database";
 import { trackModelUsage } from "gateway/usage.js";
 
 test("trackModelUsage", async (t) => {

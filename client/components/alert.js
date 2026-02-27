@@ -1,7 +1,7 @@
+import { Check, Flag } from "lucide-solid";
 import { createEffect, createSignal, For, Match, onCleanup, Show, Switch } from "solid-js";
 import html from "solid-js/html";
 
-import { Check, Flag } from "lucide-solid";
 
 import { reportErrorToServer } from "../utils/error-reporter.js";
 

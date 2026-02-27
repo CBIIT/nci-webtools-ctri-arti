@@ -3,10 +3,10 @@
 // Combines V1's UI components with V2's succinct tool result finding logic
 // =================================================================================
 
+import { X } from "lucide-solid";
 import { createSignal, ErrorBoundary, For, onCleanup } from "solid-js";
 import html from "solid-js/html";
 
-import { X } from "lucide-solid";
 
 import BrowseTool from "../../../components/chat-tools/browse-tool.js";
 import CodeTool from "../../../components/chat-tools/code-tool.js";

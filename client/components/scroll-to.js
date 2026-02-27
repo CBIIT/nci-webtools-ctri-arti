@@ -1,6 +1,6 @@
+import { ArrowDown } from "lucide-solid";
 import html from "solid-js/html";
 
-import { ArrowDown } from "lucide-solid";
 
 /**
  * Scrolls the target element into view.

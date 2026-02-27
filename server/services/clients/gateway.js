@@ -9,6 +9,7 @@
  */
 
 import { Model, User } from "database";
+
 import { runModel as directRunModel } from "gateway/inference.js";
 import { trackModelUsage } from "gateway/usage.js";
 

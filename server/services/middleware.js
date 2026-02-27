@@ -1,9 +1,11 @@
+import { Role, User } from "database";
+
 import Provider from "oidc-provider";
 import * as client from "openid-client";
-
-import { Role, User } from "database";
-import { sendLogReport } from "./email.js";
 import logger, { formatObject } from "shared/logger.js";
+
+import { sendLogReport } from "./email.js";
+
 
 const {
   HOSTNAME,

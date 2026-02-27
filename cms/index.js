@@ -1,6 +1,8 @@
 import http from "http";
+
 import express from "express";
 import logger from "shared/logger.js";
+
 import { v1Router } from "./api.js";
 
 const { PORT = 3002 } = process.env;
