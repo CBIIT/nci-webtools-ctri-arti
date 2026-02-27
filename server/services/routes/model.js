@@ -1,6 +1,6 @@
 import { json, Router } from "express";
 
-import { infer, listModels } from "../clients/gateway.js";
+import { invoke, listModels } from "../clients/gateway.js";
 import { requireRole } from "../middleware.js";
 import { createHttpError } from "../utils.js";
 
@@ -12,8 +12,8 @@ api.post("/model", requireRole(), async (req, res, next) => {
   const ip = req.ip || req.socket.remoteAddress;
 
   try {
-    const result = await infer({
-      userId: user.id,
+    const result = await invoke({
+      userID: user.id,
       ip,
       ...req.body,
     });

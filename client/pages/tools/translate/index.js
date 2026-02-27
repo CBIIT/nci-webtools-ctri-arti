@@ -1,6 +1,5 @@
 import { createMemo, createSignal, ErrorBoundary, For, onCleanup, onMount, Show } from "solid-js";
 import html from "solid-js/html";
-
 import { createStore, reconcile } from "solid-js/store";
 
 import { AlertContainer } from "../../../components/alert.js";
@@ -109,7 +108,7 @@ function buildTranslationPrompt(targetLang, sourceLang, options = {}) {
 }
 
 async function runModel(params) {
-  const res = await fetch("/api/model", {
+  const res = await fetch("/api/v1/model", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
@@ -128,7 +127,7 @@ async function translateBatch(texts, engine, options) {
 
   if (engine === "aws") {
     const joined = texts.join(BATCH_DELIMITER);
-    const res = await fetch("/api/translate", {
+    const res = await fetch("/api/v1/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -201,7 +200,7 @@ async function translateDocument(jobConfig) {
 }
 
 async function handleAwsDocument(jobConfig) {
-  const res = await fetch("/api/translate", {
+  const res = await fetch("/api/v1/translate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

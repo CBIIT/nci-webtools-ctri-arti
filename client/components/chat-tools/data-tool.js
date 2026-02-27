@@ -1,7 +1,7 @@
+import { Database, Download } from "lucide-solid";
 import { For, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { Database, Download } from "lucide-solid";
 
 import { getToolResult } from "../../utils/tools.js";
 import Tooltip from "../tooltip.js";
@@ -53,7 +53,7 @@ export default function DataTool(props) {
   const downloadUrl = () => {
     const { bucket, key } = input();
     if (!bucket || !key || key.endsWith("/")) return null;
-    return `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`;
+    return `/api/v1/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`;
   };
 
   const filename = () => {

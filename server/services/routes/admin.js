@@ -1,7 +1,9 @@
-import { Router } from "express";
-import { col, fn, Op, where as sequelizeWhere } from "sequelize";
+import db, { Model, Role, Usage, User } from "database";
 
-import { Model, Role, Usage, User } from "../database.js";
+import { Router } from "express";
+
+
+const { fn, col, Op, where: sequelizeWhere } = db.Sequelize;
 import { requireRole } from "../middleware.js";
 import { resetUsageLimits } from "../scheduler.js";
 import { createHttpError, getDateRange, routeHandler } from "../utils.js";
@@ -33,9 +35,9 @@ function getGroupColumn(groupBy) {
     case "month":
       return fn("DATE_FORMAT", col("createdAt"), "%Y-%m");
     case "user":
-      return col("userId");
+      return col("userID");
     case "model":
-      return col("modelId");
+      return col("modelID");
     default:
       return fn("DATE", col("createdAt"));
   }
@@ -78,7 +80,7 @@ function buildUserAnalyticsQuery(baseQuery, { search, roleFilter, statusFilter, 
   const includeOpts = [
     {
       model: User,
-      attributes: ["id", "email", "firstName", "lastName", "limit", "remaining", "roleId"],
+      attributes: ["id", "email", "firstName", "lastName", "budget", "remaining", "roleID"],
       include: [{ model: Role, attributes: ["name"], where: roleWhere }],
       where: userWhere,
     },
@@ -114,7 +116,7 @@ api.get("/admin/users", requireRole("admin"), routeHandler(async (req, res) => {
     email: ["email"],
     status: ["status"],
     role: [{ model: Role }, "name"],
-    limit: ["limit"],
+    budget: ["budget"],
     createdAt: ["createdAt"],
   };
 
@@ -204,7 +206,7 @@ api.get("/admin/users/:id/usage", requireRole("admin"), routeHandler(async (req,
   const offset = parseInt(req.query.offset) || 0;
 
   const { count, rows } = await Usage.findAndCountAll({
-    where: { userId, createdAt: { [Op.between]: [startDate, endDate] } },
+    where: { userID: userId, createdAt: { [Op.between]: [startDate, endDate] } },
     include: [{ model: Model, attributes: ["id", "name"] }],
     order: [["createdAt", "DESC"]],
     limit,
@@ -214,8 +216,8 @@ api.get("/admin/users/:id/usage", requireRole("admin"), routeHandler(async (req,
   res.json({
     data: rows.map((usage) => ({
       id: usage.id,
-      userId: usage.userId,
-      modelId: usage.modelId,
+      userID: usage.userID,
+      modelID: usage.modelID,
       modelName: usage.Model?.name,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
@@ -231,7 +233,7 @@ api.get("/admin/users/:id/usage", requireRole("admin"), routeHandler(async (req,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        limit: user.limit,
+        budget: user.budget,
         remaining: user.remaining,
       },
     },
@@ -239,7 +241,7 @@ api.get("/admin/users/:id/usage", requireRole("admin"), routeHandler(async (req,
 }));
 
 api.get("/admin/roles", requireRole("admin"), routeHandler(async (req, res) => {
-  const roles = await Role.findAll({ order: [["order"]] });
+  const roles = await Role.findAll({ order: [["displayOrder"]] });
   res.json(roles);
 }));
 
@@ -250,7 +252,7 @@ api.get("/admin/usage", requireRole("admin"), routeHandler(async (req, res) => {
   const userId = req.query.userId;
 
   const where = { createdAt: { [Op.between]: [startDate, endDate] } };
-  if (userId) where.userId = userId;
+  if (userId) where.userID = userId;
 
   const { count, rows } = await Usage.findAndCountAll({
     where,
@@ -258,7 +260,7 @@ api.get("/admin/usage", requireRole("admin"), routeHandler(async (req, res) => {
       { model: Model, attributes: ["id", "name"] },
       {
         model: User,
-        attributes: ["id", "email", "firstName", "lastName", "limit", "remaining"],
+        attributes: ["id", "email", "firstName", "lastName", "budget", "remaining"],
         include: [{ model: Role, attributes: ["id", "name"] }],
       },
     ],
@@ -270,8 +272,8 @@ api.get("/admin/usage", requireRole("admin"), routeHandler(async (req, res) => {
   res.json({
     data: rows.map((usage) => ({
       id: usage.id,
-      userId: usage.userId,
-      modelId: usage.modelId,
+      userID: usage.userID,
+      modelID: usage.modelID,
       modelName: usage.Model?.name,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
@@ -282,7 +284,7 @@ api.get("/admin/usage", requireRole("admin"), routeHandler(async (req, res) => {
         email: usage.User.email,
         firstName: usage.User.firstName,
         lastName: usage.User.lastName,
-        limit: usage.User.limit,
+        budget: usage.User.budget,
         remaining: usage.User.remaining,
         role: usage.User.Role?.name,
       },
@@ -303,7 +305,7 @@ api.post("/admin/users/:id/reset-limit", requireRole("admin"), routeHandler(asyn
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const [updated] = await User.update(
-      { remaining: User.sequelize.col("limit") },
+      { remaining: User.sequelize.col("budget") },
       { where: { id: userId } }
     );
 
@@ -338,7 +340,7 @@ api.get("/admin/analytics", requireRole("admin"), routeHandler(async (req, res) 
   const baseQuery = {
     where: {
       createdAt: { [Op.between]: [startDate, endDate] },
-      ...(userId && { userId }),
+      ...(userId && { userID: userId }),
     },
   };
 
@@ -356,22 +358,23 @@ api.get("/admin/analytics", requireRole("admin"), routeHandler(async (req, res) 
         },
       ],
       distinct: true,
-      col: "userId",
+      col: "userID",
     });
 
     const data = await Usage.findAll({
       ...baseQuery,
-      attributes: ["userId", ...aggregateAttributes],
+      subQuery: false,
+      attributes: ["userID", ...aggregateAttributes],
       include: includeOpts,
       group: [
-        "userId",
+        "userID",
         "User.id",
         "User.email",
         "User.firstName",
         "User.lastName",
-        "User.limit",
+        "User.budget",
         "User.remaining",
-        "User.roleId",
+        "User.roleID",
         "User->Role.id",
         "User->Role.name",
       ],
@@ -398,9 +401,9 @@ api.get("/admin/analytics", requireRole("admin"), routeHandler(async (req, res) 
   if (groupBy === "model") {
     const data = await Usage.findAll({
       ...baseQuery,
-      attributes: ["modelId", ...aggregateAttributes],
+      attributes: ["modelID", ...aggregateAttributes],
       include: [{ model: Model, attributes: ["name"] }],
-      group: ["modelId", "Model.id", "Model.name"],
+      group: ["modelID", "Model.id", "Model.name"],
       order: [[fn("SUM", col("cost")), "DESC"]],
     });
     return res.json({ data, meta: { groupBy } });
@@ -412,7 +415,7 @@ api.get("/admin/analytics", requireRole("admin"), routeHandler(async (req, res) 
     attributes: [
       [groupCol, "period"],
       ...aggregateAttributes,
-      [fn("COUNT", fn("DISTINCT", col("userId"))), "uniqueUsers"],
+      [fn("COUNT", fn("DISTINCT", col("userID"))), "uniqueUsers"],
     ],
     group: [groupCol],
     order: [[groupCol, "DESC"]],

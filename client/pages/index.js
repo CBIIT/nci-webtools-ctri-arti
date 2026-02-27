@@ -1,7 +1,7 @@
+import { Router } from "@solidjs/router";
 import html from "solid-js/html";
 import { render } from "solid-js/web";
 
-import { Router } from "@solidjs/router";
 
 import { AuthProvider } from "../contexts/auth-context.js";
 

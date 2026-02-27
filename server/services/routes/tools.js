@@ -1,10 +1,12 @@
+import db from "database";
+
 import { json, Router } from "express";
 import { QueryTypes } from "sequelize";
 
-import db from "../database.js";
 import { sendFeedback, sendLogReport } from "../email.js";
-import { proxyMiddleware, requireRole } from "../middleware.js";
+import { requireRole } from "../middleware.js";
 import { parseDocument } from "../parsers.js";
+import { proxyMiddleware } from "../proxy.js";
 import { getFile, listFiles } from "../s3.js";
 import { textract } from "../textract.js";
 import { getLanguages, translate } from "../translate.js";

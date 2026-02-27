@@ -8,3 +8,7 @@ venv
 database.sqlite
 .DS_Store
 .vscode
+__pycache__
+cdk.out
+/scripts
+/docs

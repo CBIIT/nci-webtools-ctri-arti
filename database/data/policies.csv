@@ -1,0 +1,7 @@
+id,name,resource,action
+1,Admin All,*,*
+2,Use Chat,chat,use
+3,Read Agents,agents,read
+4,Write Agents,agents,write
+5,Manage Users,users,manage
+6,View Analytics,analytics,view

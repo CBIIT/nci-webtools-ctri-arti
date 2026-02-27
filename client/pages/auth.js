@@ -11,10 +11,10 @@ export function Authorized(props) {
 }
 
 export async function getAuthorizedUser(props) {
-  const session = await fetch("/api/session").then((r) => r.json());
+  const session = await fetch("/api/v1/session").then((r) => r.json());
   const { user } = session;
   if (!user) {
-    location.href = "/api/login?destination=" + encodeURIComponent(location.pathname);
+    location.href = "/api/v1/login?destination=" + encodeURIComponent(location.pathname);
   } else if (props.roles && !props.roles.includes(user.Role.id)) {
     location.href = "/";
   }

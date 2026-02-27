@@ -30,7 +30,7 @@ async function runModel(params) {
   const headers = { "Content-Type": "application/json" };
   if (TEST_API_KEY) headers["x-api-key"] = TEST_API_KEY;
 
-  const response = await fetch("/api/model", {
+  const response = await fetch("/api/v1/model", {
     method: "POST",
     headers,
     body: JSON.stringify(params),

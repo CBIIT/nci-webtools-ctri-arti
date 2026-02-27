@@ -1,3 +1,4 @@
+import { useLocation } from "@solidjs/router";
 import {
   createEffect,
   createMemo,
@@ -11,7 +12,6 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-import { useLocation } from "@solidjs/router";
 
 import { AlertContainer } from "../../components/alert.js";
 import { DataTable } from "../../components/table.js";
@@ -42,7 +42,7 @@ function UsersList() {
 
   const [rolesResource] = createResource(async () => {
     try {
-      const response = await fetch("/api/admin/roles");
+      const response = await fetch("/api/v1/admin/roles");
       if (!response.ok) {
         await handleHttpError(response, "fetching roles");
         return [];
@@ -78,7 +78,7 @@ function UsersList() {
   // Server-side users resource with all parameters
   const usersParams = createMemo(() => ({
     search: searchQuery().length >= 3 ? searchQuery() : undefined,
-    roleId:
+    roleID:
       selectedRole() === "All"
         ? undefined
         : rolesResource()?.find((r) => r.name === selectedRole())?.id,
@@ -97,12 +97,12 @@ function UsersList() {
       });
 
       if (params.search) queryParams.set("search", params.search);
-      if (params.roleId) queryParams.set("roleId", params.roleId.toString());
+      if (params.roleID) queryParams.set("roleID", params.roleID.toString());
       if (params.status) queryParams.set("status", params.status);
       if (params.sortBy) queryParams.set("sortBy", params.sortBy);
       if (params.sortOrder) queryParams.set("sortOrder", params.sortOrder);
 
-      const response = await fetch(`/api/admin/users?${queryParams}`);
+      const response = await fetch(`/api/v1/admin/users?${queryParams}`);
       if (!response.ok) {
         await handleHttpError(response, "fetching users");
         return { data: [], meta: { total: 0 } };
@@ -126,7 +126,7 @@ function UsersList() {
       email: user.email || "-",
       status: user.status || "unknown",
       role: user.Role?.name || "No Role",
-      limit: user.limit === null ? "Unlimited" : user.limit,
+      limit: user.budget === null ? "Unlimited" : user.budget,
       rawUser: user,
     }));
   });

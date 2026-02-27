@@ -2,8 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import Handlebars from "handlebars";
 import { createTransport } from "nodemailer";
-
-import { formatObject } from "./logger.js";
+import { formatObject } from "shared/logger.js";
 
 const EMAIL_TEMPLATE_URL = new URL("../templates/error-log-report.hbs", import.meta.url);
 

@@ -1,7 +1,7 @@
+import { useParams, useSearchParams } from "@solidjs/router";
 import { createMemo, createResource, createSignal, ErrorBoundary, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { useParams, useSearchParams } from "@solidjs/router";
 
 import { AlertContainer } from "../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
@@ -42,7 +42,7 @@ function UserUsage() {
   // Create resources for fetching data
   const [userResource] = createResource(async () => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}`);
+      const response = await fetch(`/api/v1/admin/users/${userId}`);
       if (!response.ok) {
         await handleHttpError(response, "fetching user details");
         return null;
@@ -61,7 +61,7 @@ function UserUsage() {
     async ({ startDate, endDate }) => {
       try {
         const response = await fetch(
-          `/api/admin/analytics?groupBy=user&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
+          `/api/v1/admin/analytics?groupBy=user&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
         );
         if (!response.ok) {
           await handleHttpError(response, "fetching usage analytics");
@@ -83,7 +83,7 @@ function UserUsage() {
     async ({ startDate, endDate }) => {
       try {
         const response = await fetch(
-          `/api/admin/analytics?groupBy=day&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
+          `/api/v1/admin/analytics?groupBy=day&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
         );
         if (!response.ok) {
           await handleHttpError(response, "fetching daily analytics");
@@ -105,7 +105,7 @@ function UserUsage() {
     async ({ startDate, endDate }) => {
       try {
         const response = await fetch(
-          `/api/admin/analytics?groupBy=model&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
+          `/api/v1/admin/analytics?groupBy=model&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
         );
         if (!response.ok) {
           await handleHttpError(response, "fetching model analytics");
@@ -127,7 +127,7 @@ function UserUsage() {
     async ({ startDate, endDate }) => {
       try {
         const response = await fetch(
-          `/api/admin/usage?startDate=${startDate}&endDate=${endDate}&userId=${userId}&limit=20`
+          `/api/v1/admin/usage?startDate=${startDate}&endDate=${endDate}&userId=${userId}&limit=20`
         );
         if (!response.ok) {
           await handleHttpError(response, "fetching usage history");
@@ -207,9 +207,9 @@ function UserUsage() {
                   <span class="fw-bold">Limit: </span>
                   <span
                     >${() =>
-                      userResource()?.limit === null
+                      userResource()?.budget === null
                         ? "Unlimited"
-                        : formatCurrency(userResource()?.limit || 0)}</span
+                        : formatCurrency(userResource()?.budget || 0)}</span
                   >
                 </div>
                 <div>

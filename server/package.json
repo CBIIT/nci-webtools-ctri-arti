@@ -10,12 +10,7 @@
     "test": "node --env-file test.env --test --experimental-test-coverage --test-reporter=tap && npm run test:integration",
     "test:unit": "node --env-file test.env --test --experimental-test-coverage --test-reporter=tap",
     "test:integration": "node --env-file test.env integration.js",
-    "cert": "openssl req -x509 -newkey rsa:2048 -nodes -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost' -keyout key.tmp -out cert.tmp && cat key.tmp cert.tmp > key.pem && rm key.tmp cert.tmp",
-    "lint": "eslint . --cache --cache-location ./node_modules/.cache/eslint/ --report-unused-inline-configs error",
-    "lint:ci": "eslint . --max-warnings 0 --report-unused-inline-configs error",
-    "lint:fix": "eslint . --fix --cache --cache-location ./node_modules/.cache/eslint/",
-    "format": "prettier . --check",
-    "format:fix": "prettier . --write"
+    "cert": "openssl req -x509 -newkey rsa:2048 -nodes -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost' -keyout key.tmp -out cert.tmp && cat key.tmp cert.tmp > key.pem && rm key.tmp cert.tmp"
   },
   "author": "",
   "license": "ISC",
@@ -47,10 +42,7 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
-    "@arti/eslint-config": "file:../packages/eslint-config",
-    "eslint": "^9.39.2",
     "playwright": "^1.58.1",
-    "prettier": "3.8.1",
     "sqlite3": "^5.1.7",
     "supertest": "^7.2.2"
   }

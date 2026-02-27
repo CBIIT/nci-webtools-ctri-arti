@@ -66,7 +66,7 @@ export default function Page() {
               <${Show} when=${() => !user()}>
                 <a
                   class="btn btn-wide btn-wide-primary text-decoration-none"
-                  href="/api/login"
+                  href="/api/v1/login"
                   target="_self"
                   >Login</a
                 >

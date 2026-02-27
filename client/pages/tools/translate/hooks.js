@@ -1,6 +1,5 @@
-import { createEffect, createResource } from "solid-js";
-
 import { openDB } from "idb";
+import { createEffect, createResource } from "solid-js";
 import { reconcile, unwrap } from "solid-js/store";
 
 /**
@@ -27,7 +26,7 @@ export function useSessionPersistence({
   let db = null;
   const pendingRetries = [];
 
-  const [session] = createResource(() => fetch("/api/session").then((r) => r.json()));
+  const [session] = createResource(() => fetch("/api/v1/session").then((r) => r.json()));
 
   function setParam(key, value) {
     const url = new URL(window.location);

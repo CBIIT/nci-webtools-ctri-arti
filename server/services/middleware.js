@@ -1,15 +1,11 @@
+import { Role, User } from "database";
+
 import Provider from "oidc-provider";
 import * as client from "openid-client";
+import logger, { formatObject } from "shared/logger.js";
 
-import { Role, User } from "./database.js";
 import { sendLogReport } from "./email.js";
-import logger, { formatObject } from "./logger.js";
 
-// Re-export shared middleware
-export { logRequests, nocache } from "shared/middleware.js";
-
-// Re-export proxy concerns for backward compatibility
-export { WHITELIST, proxyMiddleware, getAuthorizedUrl, getAuthorizedHeaders } from "./proxy.js";
 
 const {
   HOSTNAME,

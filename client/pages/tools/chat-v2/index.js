@@ -2,6 +2,7 @@
 // CHAT V2 - Full UI (V1 Design) with V2 Logic
 // =================================================================================
 
+import { EllipsisVertical, Pencil, Trash2 } from "lucide-solid";
 import {
   createEffect,
   createMemo,
@@ -16,7 +17,6 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-import { EllipsisVertical, Pencil, Trash2 } from "lucide-solid";
 
 import { AlertContainer } from "../../../components/alert.js";
 import AttachmentsPreview from "../../../components/attachments-preview.js";
@@ -24,7 +24,6 @@ import ClassToggle from "../../../components/class-toggle.js";
 import Loader from "../../../components/loader.js";
 import ScrollTo from "../../../components/scroll-to.js";
 import Tooltip from "../../../components/tooltip.js";
-
 import { useAuthContext } from "../../../contexts/auth-context.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
@@ -78,7 +77,7 @@ function ChatApp(props) {
 
   // Fetch available agents for the dropdown
   const fetchAgents = async () => {
-    const response = await fetch("/api/agents");
+    const response = await fetch("/api/v1/agents");
     if (!response.ok) return [];
     return response.json();
   };

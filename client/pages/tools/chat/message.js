@@ -1,7 +1,7 @@
+import { X } from "lucide-solid";
 import { createSignal, ErrorBoundary, For, onCleanup } from "solid-js";
 import html from "solid-js/html";
 
-import { X } from "lucide-solid";
 
 import { AlertContainer } from "../../../components/alert.js";
 import BrowseTool from "../../../components/chat-tools/browse-tool.js";
@@ -54,7 +54,7 @@ export default function Message(p) {
     }
 
     const comment = e.target.comment.value;
-    await fetch("/api/feedback", {
+    await fetch("/api/v1/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

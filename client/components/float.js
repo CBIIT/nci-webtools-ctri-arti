@@ -1,7 +1,7 @@
-import { Show, createSignal, createEffect, onMount, onCleanup } from "solid-js";
-import { Portal } from "solid-js/web";
-import html from "solid-js/html";
 import { computePosition, autoUpdate, arrow, flip, shift, offset } from "@floating-ui/dom";
+import { Show, createSignal, createEffect, onMount, onCleanup } from "solid-js";
+import html from "solid-js/html";
+import { Portal } from "solid-js/web";
 
 /**
  * Floating element component using Floating UI (successor to Popper.js)

@@ -1,8 +1,8 @@
+import { User, Model, Usage } from "database";
 import assert from "node:assert";
 import { after, test } from "node:test";
 
-import { User, Model, Usage } from "../services/database.js";
-import { trackModelUsage } from "../services/gateway/usage.js";
+import { trackModelUsage } from "gateway/usage.js";
 
 test("trackModelUsage", async (t) => {
   // The DB is auto-seeded via database.js (test.env sets DB_DIALECT=sqlite)
@@ -31,8 +31,8 @@ test("trackModelUsage", async (t) => {
 
     const record = await trackModelUsage(testUser.id, "mock-model", "127.0.0.1", usageData);
     assert.ok(record, "Should create a usage record");
-    assert.strictEqual(record.userId, testUser.id);
-    assert.strictEqual(record.modelId, testModel.id);
+    assert.strictEqual(record.userID, testUser.id);
+    assert.strictEqual(record.modelID, testModel.id);
     assert.strictEqual(record.inputTokens, 1000);
     assert.strictEqual(record.outputTokens, 500);
     assert.ok(record.cost >= 0, "Cost should be non-negative");

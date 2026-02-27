@@ -3,9 +3,9 @@
 // =================================================================================
 
 import { openDB } from "idb";
+import mammoth from "mammoth";
 import { createEffect } from "solid-js";
 import { createStore, produce, unwrap } from "solid-js/store";
-import mammoth from "mammoth";
 import { docxReplace, docxExtractTextBlocks } from "/utils/docx.js";
 
 import { tools as toolSpecs, systemPrompt as defaultSystemPrompt } from "../chat/config.js";
@@ -129,9 +129,10 @@ class IndexedDBAdapter {
 
 /**
  * Server API adapter - stores data on the backend
+ * Maps server field names (title, agentID) to client field names (name, agentId)
  */
 class ServerAdapter {
-  constructor(baseUrl = "/api") {
+  constructor(baseUrl = "/api/v1") {
     this.baseUrl = baseUrl;
   }
 
@@ -149,6 +150,12 @@ class ServerAdapter {
       throw new Error(error.error || `API error: ${res.status}`);
     }
     return res.json();
+  }
+
+  // Map server conversation fields to client-expected thread fields
+  #mapConversation(conv) {
+    if (!conv) return conv;
+    return { ...conv, name: conv.title ?? conv.name, agentId: conv.agentID ?? conv.agentId };
   }
 
   // Agents
@@ -174,45 +181,51 @@ class ServerAdapter {
     });
   }
 
-  // Threads
+  // Conversations (mapped as "threads" for UI compatibility)
   async getThread(id) {
-    return this.#fetch(`/threads/${id}`);
+    const conv = await this.#fetch(`/conversations/${id}`);
+    return this.#mapConversation(conv);
   }
 
   async getThreads(agentId = null) {
-    const result = await this.#fetch("/threads");
-    const threads = result.data || result;
+    const result = await this.#fetch("/conversations");
+    const conversations = (result.data || result).map((c) => this.#mapConversation(c));
     if (agentId) {
-      return threads.filter((t) => t.agentId === agentId);
+      return conversations.filter((t) => t.agentId == agentId || t.agentID == agentId);
     }
-    return threads;
+    return conversations;
   }
 
   async createThread(data) {
-    return this.#fetch("/threads", {
+    const conv = await this.#fetch("/conversations", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ title: data.name, agentID: data.agentId }),
     });
+    return this.#mapConversation(conv);
   }
 
   async updateThread(id, data) {
-    return this.#fetch(`/threads/${id}`, {
+    const body = {};
+    if (data.name !== undefined) body.title = data.name;
+    if (data.agentId !== undefined) body.agentID = data.agentId;
+    const conv = await this.#fetch(`/conversations/${id}`, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: JSON.stringify(body),
     });
+    return this.#mapConversation(conv);
   }
 
   async deleteThread(id) {
-    return this.#fetch(`/threads/${id}`, { method: "DELETE" });
+    return this.#fetch(`/conversations/${id}`, { method: "DELETE" });
   }
 
   // Messages
   async getMessages(threadId) {
-    return this.#fetch(`/threads/${threadId}/messages`);
+    return this.#fetch(`/conversations/${threadId}/messages`);
   }
 
   async addMessage(threadId, data) {
-    return this.#fetch(`/threads/${threadId}/messages`, {
+    return this.#fetch(`/conversations/${threadId}/messages`, {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -377,7 +390,7 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     if (!params.agentId || !agent.id) return;
     // Check if this is a global agent (userId is null) - don't auto-save
     const record = await db.getAgent(params.agentId);
-    if (record && record.userId === null) return;
+    if (record && record.userID === null) return;
     await db.updateAgent(params.agentId, {
       name: agent.name,
       tools: agent.tools.map((t) => t.toolSpec.name),
@@ -401,7 +414,8 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     }
 
     const record = await db.getAgent(+params.agentId);
-    const agentTools = tools.filter((t) => record.tools.includes(t.toolSpec.name));
+    if (!record) return setAgent("loading", false);
+    const agentTools = record.tools?.length ? tools.filter((t) => record.tools.includes(t.toolSpec.name)) : tools;
 
     const content = await getMessageContent(text, files);
     const userMessage = { role: "user", content };
@@ -442,7 +456,7 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
         ],
       };
 
-      const response = await fetch("/api/model", {
+      const response = await fetch("/api/v1/model", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -576,7 +590,7 @@ async function sendToModel(config) {
     }),
   }));
 
-  const response = await fetch("/api/model", {
+  const response = await fetch("/api/v1/model", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -718,7 +732,7 @@ async function getContentBlock(file) {
   const arrayBuffer = await file.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
   const name = file.name
-    .replace(/[^A-Z0-9 _\-\(\)\[\]]/gi, "_")
+    .replace(/[^A-Z0-9 _\-()[\]]/gi, "_")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -755,7 +769,7 @@ async function getToolResult(toolUse, tools, store, setStore) {
 
 // Search tool - calls /api/search
 async function search({ query }) {
-  const response = await fetch("/api/search?" + new URLSearchParams({ q: query }));
+  const response = await fetch("/api/v1/search?" + new URLSearchParams({ q: query }));
   if (!response.ok) {
     throw new Error(`Search failed: ${response.status}`);
   }
@@ -783,7 +797,7 @@ async function browse({ url, topic }) {
 
   const results = await Promise.all(
     urls.map(async (u) => {
-      const response = await fetch("/api/browse/" + u);
+      const response = await fetch("/api/v1/browse/" + u);
       if (!response.ok) {
         return `Failed to read ${u}: ${response.status} ${response.statusText}`;
       }
@@ -829,7 +843,7 @@ If the document doesn't contain information relevant to the question, state this
   const prompt = `Answer this question about the document: "${topic}"`;
   const messages = [{ role: "user", content: [{ text: prompt }] }];
 
-  const response = await fetch("/api/model", {
+  const response = await fetch("/api/v1/model", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ model, messages, system }),
@@ -1016,7 +1030,7 @@ async function data({ bucket, key }) {
   const params = new URLSearchParams({ bucket });
   if (key) params.set("key", key);
 
-  const response = await fetch("/api/data?" + params);
+  const response = await fetch("/api/v1/data?" + params);
 
   if (!response.ok) {
     throw new Error(`Failed to access data: ${response.status} ${response.statusText}`);
@@ -1052,12 +1066,12 @@ async function docxTemplate({ docxUrl, replacements }) {
     if (!s3Match) throw new Error("Invalid S3 URL format. Expected: s3://bucket/key");
     const [, bucket, key] = s3Match;
     const response = await fetch(
-      `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
+      `/api/v1/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
     );
     if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   } else {
-    const response = await fetch("/api/browse/" + docxUrl);
+    const response = await fetch("/api/v1/browse/" + docxUrl);
     if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   }

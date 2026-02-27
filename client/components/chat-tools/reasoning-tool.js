@@ -1,7 +1,6 @@
+import { Brain } from "lucide-solid";
 import { Show } from "solid-js";
 import html from "solid-js/html";
-
-import { Brain } from "lucide-solid";
 import { stringify } from "yaml";
 
 import { getToolResult } from "../../utils/tools.js";

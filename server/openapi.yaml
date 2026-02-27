@@ -1,0 +1,1317 @@
+openapi: 3.1.0
+info:
+  title: Research Optimizer API
+  description: |
+    Public-facing API for the Research Optimizer platform. Served by the main
+    server process which handles HTTPS termination, authentication, and proxying
+    to internal services (gateway, cms).
+
+    All `/api` endpoints require authentication unless noted otherwise. Authentication
+    is via session cookie (after OAuth login) or `X-API-Key` header.
+  version: 1.0.0
+
+servers:
+  - url: https://localhost
+    description: Local development
+
+paths:
+  # ===== AUTH =====
+  /api/login:
+    get:
+      operationId: login
+      summary: Initiate OAuth/OIDC login
+      description: |
+        Redirects to OIDC provider for authentication. On callback, creates user
+        if first login (first user gets admin role, subsequent users get user role
+        with budget=5). Redirects to `?destination` or `/`.
+      tags: [Auth]
+      security: []
+      parameters:
+        - name: destination
+          in: query
+          schema:
+            type: string
+          description: URL to redirect to after login
+      responses:
+        "302":
+          description: Redirect to OIDC provider
+
+  /api/logout:
+    get:
+      operationId: logout
+      summary: Destroy session and logout
+      tags: [Auth]
+      security: []
+      parameters:
+        - name: destination
+          in: query
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to destination or /
+
+  /api/session:
+    get:
+      operationId: getSession
+      summary: Get current session info
+      description: Returns user info and session expiry. Touches session (rolling expiry).
+      tags: [Auth]
+      security: []
+      responses:
+        "200":
+          description: Session info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+                  expires:
+                    type: string
+                    format: date-time
+
+  /api/session-ttl:
+    get:
+      operationId: getSessionTtl
+      summary: Get session time-to-live
+      tags: [Auth]
+      security: []
+      responses:
+        "200":
+          description: Session TTL in seconds
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ttl:
+                    type: integer
+                    nullable: true
+                  error:
+                    type: string
+
+  /api/config:
+    get:
+      operationId: getConfig
+      summary: Get client configuration
+      tags: [Auth]
+      security: []
+      responses:
+        "200":
+          description: Client config
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionTtlPollMs:
+                    type: integer
+                    default: 10000
+
+  # ===== MODEL INFERENCE =====
+  /api/model:
+    post:
+      operationId: infer
+      summary: Run AI model inference
+      description: |
+        Main inference endpoint. Proxies to the gateway service. Supports streaming
+        (newline-delimited JSON) and non-streaming responses.
+      tags: [Model]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [model, messages]
+              properties:
+                model:
+                  type: string
+                  description: Model internal name
+                  example: us.anthropic.claude-opus-4-6-v1
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum: [user, assistant]
+                      content:
+                        type: array
+                        items:
+                          type: object
+                system:
+                  type: string
+                tools:
+                  type: array
+                  items:
+                    type: object
+                thoughtBudget:
+                  type: integer
+                  default: 0
+                stream:
+                  type: boolean
+                  default: false
+      responses:
+        "200":
+          description: Inference result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      type: object
+                  usage:
+                    type: object
+                    properties:
+                      inputTokens:
+                        type: number
+                      outputTokens:
+                        type: number
+                  stopReason:
+                    type: string
+            application/x-ndjson:
+              description: Streaming — newline-delimited JSON chunks
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/model/list:
+    get:
+      operationId: listModels
+      summary: List available AI models
+      tags: [Model]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: List of models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    internalName:
+                      type: string
+                    maxContext:
+                      type: integer
+                    maxOutput:
+                      type: integer
+                    maxReasoning:
+                      type: integer
+
+  # ===== TOOLS =====
+  /api/status:
+    get:
+      operationId: getStatus
+      summary: Health check
+      tags: [Tools]
+      security: []
+      responses:
+        "200":
+          description: Service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  uptime:
+                    type: number
+                  database:
+                    type: object
+                    properties:
+                      health:
+                        type: string
+
+  /api/search:
+    get:
+      operationId: search
+      summary: Web search
+      description: Runs parallel searches across Brave Web, Brave News, and GovInfo APIs.
+      tags: [Tools]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  web:
+                    type: object
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          type: object
+                  news:
+                    type: object
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          type: object
+                  summary:
+                    type: object
+                  gov:
+                    type: object
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          type: object
+
+  /api/browse/{url}:
+    parameters:
+      - name: url
+        in: path
+        required: true
+        schema:
+          type: string
+        description: URL to proxy (without protocol prefix)
+    get:
+      operationId: browse
+      summary: CORS proxy
+      description: |
+        Forwards requests to external URLs. Adds API keys for known domains
+        (govinfo.gov, congress.gov, brave.com). Streams response back.
+      tags: [Tools]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Proxied response
+
+  /api/textract:
+    post:
+      operationId: textract
+      summary: Extract text from document
+      description: Uses AWS Textract for OCR/document extraction.
+      tags: [Tools]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [document, contentType]
+              properties:
+                document:
+                  type: string
+                  description: Base64-encoded document
+                contentType:
+                  type: string
+      responses:
+        "200":
+          description: Extracted text
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/translate:
+    post:
+      operationId: translate
+      summary: Translate text
+      description: Uses AWS Translate.
+      tags: [Tools]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text, sourceLanguage, targetLanguage]
+              properties:
+                text:
+                  type: string
+                sourceLanguage:
+                  type: string
+                targetLanguage:
+                  type: string
+      responses:
+        "200":
+          description: Translated text
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/translate/languages:
+    get:
+      operationId: getTranslateLanguages
+      summary: List supported translation languages
+      tags: [Tools]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Language list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/feedback:
+    post:
+      operationId: sendFeedback
+      summary: Send user feedback
+      description: Sends feedback email to configured recipients.
+      tags: [Tools]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feedback:
+                  type: string
+                context:
+                  type: object
+      responses:
+        "200":
+          description: Feedback sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+
+  /api/log:
+    post:
+      operationId: sendLog
+      summary: Send error/log report
+      description: Sends log report email.
+      tags: [Tools]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  type: object
+                reportSource:
+                  type: string
+      responses:
+        "200":
+          description: Log sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+
+  /api/data:
+    get:
+      operationId: getData
+      summary: Access S3 data
+      description: |
+        S3 bucket access with document parsing. Validates bucket against S3_BUCKETS
+        whitelist. PDFs and DOCX files are automatically parsed to text.
+      tags: [Tools]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      parameters:
+        - name: bucket
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: key
+          in: query
+          schema:
+            type: string
+          description: "S3 object key. If ends with / or missing, lists files."
+        - name: raw
+          in: query
+          schema:
+            type: boolean
+          description: "If true, returns raw binary content."
+      responses:
+        "200":
+          description: File content or directory listing
+
+  # ===== CONVERSATIONS =====
+  /api/agents:
+    post:
+      operationId: createAgent
+      summary: Create an agent
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                promptID:
+                  type: integer
+                modelParameters:
+                  type: object
+                tools:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "201":
+          description: Agent created
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    get:
+      operationId: getAgents
+      summary: List agents
+      description: User's agents plus global agents (userID=null).
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: List of agents
+
+  /api/agents/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getAgent
+      summary: Get agent by ID
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Agent details
+        "404":
+          description: Not found
+    put:
+      operationId: updateAgent
+      summary: Update an agent
+      description: Returns 403 for global agents.
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Agent updated
+        "403":
+          description: Cannot modify global agent
+    delete:
+      operationId: deleteAgent
+      summary: Delete an agent
+      description: Cascading delete.
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Agent deleted
+
+  /api/conversations:
+    post:
+      operationId: createConversation
+      summary: Create a conversation
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                agentID:
+                  type: integer
+      responses:
+        "201":
+          description: Conversation created
+    get:
+      operationId: getConversations
+      summary: List conversations (paginated)
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Paginated conversation list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+
+  /api/conversations/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getConversation
+      summary: Get conversation by ID
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Conversation details
+        "404":
+          description: Not found
+    put:
+      operationId: updateConversation
+      summary: Update a conversation
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+      responses:
+        "200":
+          description: Conversation updated
+    delete:
+      operationId: deleteConversation
+      summary: Delete a conversation
+      description: Soft delete.
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Conversation deleted
+
+  /api/conversations/{id}/context:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getContext
+      summary: Get conversation context
+      description: Returns conversation with all messages and message-linked resources.
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Conversation context
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversation:
+                    type: object
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                  resources:
+                    type: array
+                    items:
+                      type: object
+        "404":
+          description: Conversation not found
+
+  /api/conversations/{id}/compress:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: compressConversation
+      summary: Compress a conversation
+      description: Sets summary message ID for context windowing.
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                summary:
+                  type: string
+                summaryMessageID:
+                  type: integer
+      responses:
+        "200":
+          description: Conversation compressed
+        "404":
+          description: Conversation not found
+
+  /api/conversations/{conversationId}/messages:
+    parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: addMessage
+      summary: Add a message
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role, content]
+              properties:
+                role:
+                  type: string
+                content:
+                  type: object
+                parentID:
+                  type: integer
+      responses:
+        "201":
+          description: Message created
+    get:
+      operationId: getMessages
+      summary: Get messages in a conversation
+      description: Ordered by createdAt ASC.
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: List of messages
+
+  /api/messages/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      operationId: updateMessage
+      summary: Update a message
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Message updated
+    delete:
+      operationId: deleteMessage
+      summary: Delete a message
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Message deleted
+
+  /api/resources:
+    post:
+      operationId: addResource
+      summary: Create a resource
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type, content]
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                content:
+                  type: string
+                agentID:
+                  type: integer
+                messageID:
+                  type: integer
+                s3Uri:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        "201":
+          description: Resource created
+
+  /api/resources/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getResource
+      summary: Get resource by ID
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Resource details
+    delete:
+      operationId: deleteResource
+      summary: Delete a resource
+      description: Cascading delete — removes vectors.
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Resource deleted
+
+  /api/agents/{agentId}/resources:
+    parameters:
+      - name: agentId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getResourcesByAgent
+      summary: Get resources for an agent
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: List of resources
+
+  /api/conversations/{conversationId}/vectors:
+    parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: addVectors
+      summary: Add vectors to a conversation
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vectors]
+              properties:
+                vectors:
+                  type: array
+                  items:
+                    type: object
+                    required: [content]
+                    properties:
+                      content:
+                        type: string
+                      embedding:
+                        type: array
+                        items:
+                          type: number
+                      resourceID:
+                        type: integer
+                      toolID:
+                        type: integer
+                      order:
+                        type: integer
+      responses:
+        "201":
+          description: Vectors created
+    get:
+      operationId: getVectorsByConversation
+      summary: Get vectors for a conversation
+      tags: [Conversations]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: List of vectors
+
+  # ===== ADMIN =====
+  /api/admin/users:
+    get:
+      operationId: listUsers
+      summary: List users
+      description: Search, sort, and paginate users.
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Case-insensitive search across name and email
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [name, email, status, role, budget, createdAt]
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [ASC, DESC]
+      responses:
+        "200":
+          description: Paginated user list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+                  meta:
+                    type: object
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createOrUpdateUser
+      summary: Create or update a user
+      description: If `id` is provided, updates existing user. If `generateApiKey` is true, generates `rsk_...` API key.
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                roleID:
+                  type: integer
+                budget:
+                  type: number
+                generateApiKey:
+                  type: boolean
+      responses:
+        "200":
+          description: User created/updated
+
+  /api/admin/users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getUser
+      summary: Get user by ID
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: User details
+    delete:
+      operationId: deleteUser
+      summary: Delete a user
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: User deleted
+
+  /api/admin/users/{id}/usage:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getUserUsage
+      summary: Get usage history for a user
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Usage records
+
+  /api/admin/users/{id}/reset-limit:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: resetUserLimit
+      summary: Reset a single user's usage limit
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Limit reset
+
+  /api/admin/profile:
+    post:
+      operationId: updateProfile
+      summary: Update own profile
+      description: Any authenticated user can update their own firstName and lastName.
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+      responses:
+        "200":
+          description: Profile updated
+
+  /api/admin/roles:
+    get:
+      operationId: listRoles
+      summary: List all roles
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: List of roles
+
+  /api/admin/usage:
+    get:
+      operationId: getAllUsage
+      summary: Get all usage records
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: Usage records
+
+  /api/admin/usage/reset:
+    post:
+      operationId: resetAllLimits
+      summary: Reset all users' weekly limits
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      responses:
+        "200":
+          description: All limits reset
+
+  /api/admin/analytics:
+    get:
+      operationId: getAnalytics
+      summary: Aggregated usage analytics
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: groupBy
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month, user, model]
+            default: day
+        - name: userId
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Only for groupBy=user
+        - name: role
+          in: query
+          schema:
+            type: string
+          description: Only for groupBy=user
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Only for groupBy=user
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [ASC, DESC]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: object
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: Session cookie set after OAuth login
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key (rsk_... format) for programmatic access
+
+  responses:
+    Unauthorized:
+      description: Not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Insufficient permissions (admin required)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        status:
+          type: string
+        roleID:
+          type: integer
+        budget:
+          type: number
+          nullable: true
+        remaining:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string

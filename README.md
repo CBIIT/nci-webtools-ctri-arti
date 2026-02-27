@@ -1,116 +1,173 @@
 # Research Optimizer
 
-AI research platform for biomedical and regulatory information analysis. Built with buildless SolidJS frontend and Express.js backend with multi-provider AI integration.
+AI research platform for biomedical and regulatory information analysis. Features a streaming chat interface with multi-model AI support, document analysis, web search, and privacy-first local conversation storage.
+
+## Architecture
+
+```
+Client (SolidJS) ──► Server (:443) ──┬──► Gateway (:3001) ──► AI Providers
+                                     ├──► CMS (:3002)           (Bedrock, Gemini)
+                                     └──► PostgreSQL (:5432)
+```
+
+| Package | Type | Port | Description |
+|---------|------|------|-------------|
+| [client](client/) | Frontend | — | Buildless SolidJS chat interface with local IndexedDB storage |
+| [server](server/) | Service | 443/8080 | Edge server — HTTPS, OAuth, static files, API routing |
+| [gateway](gateway/) | Service | 3001 | AI inference — multi-provider abstraction, usage tracking |
+| [cms](cms/) | Service | 3002 | Conversation management — agents, conversations, messages, tools, prompts CRUD |
+| [agents](agents/) | Service (stub) | 3003 | Chat orchestration (planned) |
+| [users](users/) | Service (stub) | 3004 | Identity and access management (planned) |
+| [database](database/) | Library | — | Sequelize models, associations, seed data |
+| [shared](shared/) | Library | — | Logger, middleware, utilities |
+| [infrastructure](infrastructure/) | CDK | — | AWS deployment (ECR, ECS Fargate, RDS Aurora) |
 
 ## Quick Start
 
 ```bash
-# Start server
-cd server && npm install && npm start
-
-# Optional: Start full development environment (Docker)
+# Start full development environment
 docker compose up --build -w
 
-# Run tests
-cd server && npm test           # Backend unit tests + full application integration tests
-cd server && npm run test:integration  # Integration tests only (full app in browser)
+# Access at https://localhost (ignore cert warnings for dev)
 ```
 
-**Access**: https://localhost (ignore cert warnings for dev)  
-**Important**: Client must be served through server (needs HTTPS, OAuth, API proxy)
+The client must be served through the server (needs HTTPS, OAuth, API proxy).
 
-## Architecture Overview
+## Development Modes
 
-| Component | Technology | Key Features |
-|-----------|------------|--------------|
-| **Frontend** | Buildless SolidJS, CDN deps | Chat interface, local database, client-side embeddings |
-| **Backend** | Express.js, PostgreSQL | Multi-provider AI, research tools, authentication |
-| **Testing** | Node.js test + Playwright | No mocking, real services, browser testing |
-| **Infrastructure** | AWS CDK | Container deployment |
+### Docker (recommended)
 
-## Testing Philosophy
+Runs all services as separate containers with hot reload:
 
-Real-world testing approach with no mocking:
+```bash
+docker compose up --build -w
+```
 
-- All tests use real AWS Bedrock, databases, and API calls
-- Client tests run in actual Chromium browser via Playwright
-- Custom TAP-compliant test framework for buildless client testing
-- `npm test` runs both backend unit tests and integration tests
+### Single-Process Monolith
 
-## Development Guide
+All services run in one process. No `GATEWAY_URL`/`CMS_URL` set — factory clients call service code directly:
 
-### Frontend (Client)
-
-**Key Gotcha**: Buildless SolidJS - no webpack/vite, dependencies via CDN import maps. Test via integration tests: `npm run test:integration`
-
-| What | Where | Notes |
-|------|-------|-------|
-| **Chat Interface** | `pages/tools/chat/` | Main app feature with streaming AI |
-| **Chat Hooks** | `pages/tools/chat/hooks.js` | Core chat functionality and database interactions |
-| **Client Database** | `models/database.js` | IndexedDB with vector search for conversation storage |
-| **Client Models** | `models/models.js` | Project, Conversation, Message data structures |
-| **Embeddings** | `models/embedders.js` | Client-side vector embeddings for search |
-| **Components** | `components/` | Use `html` tagged templates, not JSX |
-| **Dependencies** | `index.html` | Import maps point to CDN, no npm install |
-| **Tests** | `test/` | Custom TAP framework, runs in browser via `?test=1` |
-
-### Backend (Server)
-
-**Key Services:**
-
-| What | Where | Purpose |
-|------|-------|---------|
-| **AI Integration** | `services/inference.js` | Multi-provider AI with streaming |
-| **API Routes** | `services/routes/` | model, tools, auth, admin endpoints |
-| **Database** | `services/database.js` | PostgreSQL with Sequelize ORM |
-| **Research Tools** | `services/routes/tools.js` | Search, translation, web proxy |
-
-**Key Features:**
-- Multi-provider AI (AWS Bedrock, Google Gemini)
-- Web browsing proxy for CORS bypass
-- OpenID Connect authentication  
-- Usage tracking and rate limiting
-
-**Development:**
 ```bash
 cd server
+cp .env.example .env   # Configure with sqlite for easy setup
 npm install
-cp .env.example .env           # Configure environment
-npm run start:dev              # Watch mode with auto-restart
+npm run start:dev
 ```
 
-### Environment Setup
+### Multi-Process Microservices
 
-Copy `server/.env.example` to `server/.env` and configure:
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_SESSION_TOKEN=
+Each service runs separately. Set `GATEWAY_URL` and `CMS_URL` to enable HTTP mode:
+
+```bash
+npm start -w gateway   # Port 3001
+npm start -w cms       # Port 3002
+GATEWAY_URL=http://localhost:3001 CMS_URL=http://localhost:3002 npm start -w server
 ```
 
-### Testing Guide
+## Environment Variables
 
-| Command | What It Does |
-|---------|--------------|
-| `cd server && npm test` | Backend unit tests + integration tests |
-| `cd server && npm run test:integration` | Integration tests only (full app in browser) |
+Core variables needed across services. See individual service READMEs for complete lists.
 
-**Writing Tests:**
-```javascript
-// Backend (Node.js)
-import { test } from 'node:test';
-import assert from 'node:assert';
+| Variable | Services | Description |
+|----------|----------|-------------|
+| `SESSION_SECRET` | server | Cookie signing secret |
+| `AWS_ACCESS_KEY_ID` | server, gateway | AWS credentials |
+| `AWS_SECRET_ACCESS_KEY` | server, gateway | AWS credentials |
+| `GEMINI_API_KEY` | gateway | Google Gemini API key |
+| `DB_DIALECT` | all | `postgres` or `sqlite` |
+| `DB_SKIP_SYNC` | gateway, cms | Skip schema sync (`true` in microservice mode) |
+| `PGHOST`, `PGUSER`, `PGPASSWORD` | all (postgres) | PostgreSQL connection |
+| `GATEWAY_URL` | server | Gateway service URL (enables HTTP mode) |
+| `CMS_URL` | server | CMS service URL (enables HTTP mode) |
+| `OAUTH_CLIENT_ID` | server | OIDC client ID |
+| `OAUTH_CLIENT_SECRET` | server | OIDC client secret |
+| `BRAVE_SEARCH_API_KEY` | server | Brave Search API key |
 
-// Client (Browser)  
-import test from '../test.js';
-import assert from '../assert.js';
+## Testing
+
+```bash
+cd server && npm test               # Backend unit tests (Jest)
+cd server && npm run test:integration  # Full integration tests (Playwright + API)
 ```
 
-**Setup:** Tests use `server/test.env`, integration tests start full server with HTTPS, client tests triggered via `?test=1`
+Tests use real services (AWS Bedrock, PostgreSQL/SQLite). No mocking.
 
-## Detailed Documentation
+## Deployment
 
-For comprehensive guides and API references:
+Deployed to AWS using CDK. See [infrastructure/](infrastructure/) for details.
 
-- **[`client/README.md`](client/README.md)** - SolidJS development patterns, component guide, test framework details
-- **[`server/README.md`](server/README.md)** - API documentation, database models, provider integration
-- **[`infrastructure/`](infrastructure/)** - AWS CDK deployment configuration
+```bash
+# CI/CD pipeline
+./deploy.sh
+```
+
+The deploy script builds 3 Docker images (main, gateway, cms), pushes to ECR, and deploys via CDK to ECS Fargate with Aurora Serverless PostgreSQL.
+
+## Project Structure
+
+```
+research-optimizer/
+├── package.json              # Root workspace config (shared, database, gateway, cms, agents, users, server)
+├── docker-compose.yml        # Multi-service development
+├── deploy.sh                 # CI/CD deployment script
+├── Dockerfile                # Multi-service container image
+│
+├── client/                   # Frontend (buildless SolidJS, not an npm workspace)
+│   ├── components/           # Reusable UI components
+│   ├── models/               # IndexedDB, embeddings, data models
+│   ├── pages/tools/chat/     # Main chat interface
+│   └── utils/                # Client utilities
+│
+├── server/                   # Edge server (HTTPS, auth, routing)
+│   ├── server.js             # Entry point
+│   ├── services/
+│   │   ├── routes/           # API endpoints (auth, model, tools, admin)
+│   │   └── clients/          # Factory clients (gateway.js, cms.js)
+│   └── openapi.yaml          # Public API spec
+│
+├── gateway/                  # AI inference service
+│   ├── inference.js          # Provider orchestration
+│   ├── providers/            # Bedrock, Gemini, Mock
+│   ├── usage.js              # Token tracking
+│   └── openapi.yaml          # Service API spec
+│
+├── cms/                      # Conversation management service
+│   ├── conversation.js       # ConversationService class
+│   ├── api.js                # REST routes
+│   └── openapi.yaml          # Service API spec
+│
+├── agents/                   # Chat orchestration (stub)
+├── users/                    # Identity management (stub)
+│
+├── database/                 # Shared database package
+│   ├── schema.js             # Model definitions + associations
+│   ├── csv-loader.js         # Seed data parser
+│   └── data/                 # Seed CSVs
+│
+├── shared/                   # Shared utilities
+│   ├── logger.js             # Winston logging
+│   ├── middleware.js          # Request/error logging, nocache
+│   └── utils.js              # routeHandler, createHttpError
+│
+└── infrastructure/        # AWS CDK deployment
+    ├── stacks/               # ECR, ECS, RDS stacks
+    └── config.py             # Environment configuration
+```
+
+## Documentation Index
+
+| Document | Description |
+|----------|-------------|
+| [client/readme.md](client/readme.md) | Frontend architecture and components |
+| [server/README.md](server/README.md) | Edge server, API reference |
+| [server/openapi.yaml](server/openapi.yaml) | Public API spec (OpenAPI 3.1) |
+| [gateway/README.md](gateway/README.md) | Inference service architecture |
+| [gateway/openapi.yaml](gateway/openapi.yaml) | Gateway API spec (OpenAPI 3.1) |
+| [cms/README.md](cms/README.md) | Conversation management service |
+| [cms/openapi.yaml](cms/openapi.yaml) | CMS API spec (OpenAPI 3.1) |
+| [database/README.md](database/README.md) | Data models, ownership matrix, seed data |
+| [shared/README.md](shared/README.md) | Shared library reference |
+| [agents/README.md](agents/README.md) | Chat orchestration (stub) |
+| [users/README.md](users/README.md) | Identity management (stub) |
+| [infrastructure/README.md](infrastructure/README.md) | AWS CDK deployment |
+| [CLAUDE.md](CLAUDE.md) | AI assistant guidance for this codebase |

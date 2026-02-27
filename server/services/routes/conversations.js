@@ -32,7 +32,7 @@ api.put("/agents/:id", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
   const existingAgent = await cmsClient.getAgent(userId, req.params.id);
   if (!existingAgent) return res.status(404).json({ error: "Agent not found" });
-  if (existingAgent.userId === null) {
+  if (existingAgent.userID === null) {
     return res.status(403).json({ error: "Cannot modify global agent" });
   }
   const agent = await cmsClient.updateAgent(userId, req.params.id, req.body);
@@ -45,20 +45,20 @@ api.delete("/agents/:id", requireRole(), routeHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
-// ===== THREAD ROUTES =====
+// ===== CONVERSATION ROUTES =====
 
-api.post("/threads", requireRole(), routeHandler(async (req, res) => {
+api.post("/conversations", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const thread = await cmsClient.createThread(userId, req.body);
-  res.status(201).json(thread);
+  const conversation = await cmsClient.createConversation(userId, req.body);
+  res.status(201).json(conversation);
 }));
 
-api.get("/threads", requireRole(), routeHandler(async (req, res) => {
+api.get("/conversations", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
   const { limit, offset } = req.query;
   const parsedLimit = parseInt(limit) || 20;
   const parsedOffset = parseInt(offset) || 0;
-  const result = await cmsClient.getThreads(userId, { limit: parsedLimit, offset: parsedOffset });
+  const result = await cmsClient.getConversations(userId, { limit: parsedLimit, offset: parsedOffset });
 
   // Normalize response format — both modes return { data, meta }
   if (result.data !== undefined) {
@@ -71,37 +71,53 @@ api.get("/threads", requireRole(), routeHandler(async (req, res) => {
   }
 }));
 
-api.get("/threads/:id", requireRole(), routeHandler(async (req, res) => {
+api.get("/conversations/:id", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const thread = await cmsClient.getThread(userId, req.params.id);
-  if (!thread) return res.status(404).json({ error: "Thread not found" });
-  res.json(thread);
+  const conversation = await cmsClient.getConversation(userId, req.params.id);
+  if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+  res.json(conversation);
 }));
 
-api.put("/threads/:id", requireRole(), routeHandler(async (req, res) => {
+api.put("/conversations/:id", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const thread = await cmsClient.updateThread(userId, req.params.id, req.body);
-  if (!thread) return res.status(404).json({ error: "Thread not found" });
-  res.json(thread);
+  const conversation = await cmsClient.updateConversation(userId, req.params.id, req.body);
+  if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+  res.json(conversation);
 }));
 
-api.delete("/threads/:id", requireRole(), routeHandler(async (req, res) => {
+api.delete("/conversations/:id", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  await cmsClient.deleteThread(userId, req.params.id);
+  await cmsClient.deleteConversation(userId, req.params.id);
   res.json({ success: true });
+}));
+
+// ===== CONTEXT + COMPRESS ROUTES =====
+
+api.get("/conversations/:id/context", requireRole(), routeHandler(async (req, res) => {
+  const userId = req.session.user.id;
+  const context = await cmsClient.getContext(userId, req.params.id);
+  if (!context) return res.status(404).json({ error: "Conversation not found" });
+  res.json(context);
+}));
+
+api.post("/conversations/:id/compress", requireRole(), routeHandler(async (req, res) => {
+  const userId = req.session.user.id;
+  const conversation = await cmsClient.compressConversation(userId, req.params.id, req.body);
+  if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+  res.json(conversation);
 }));
 
 // ===== MESSAGE ROUTES =====
 
-api.post("/threads/:threadId/messages", requireRole(), routeHandler(async (req, res) => {
+api.post("/conversations/:conversationId/messages", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const message = await cmsClient.addMessage(userId, req.params.threadId, req.body);
+  const message = await cmsClient.addMessage(userId, req.params.conversationId, req.body);
   res.status(201).json(message);
 }));
 
-api.get("/threads/:threadId/messages", requireRole(), routeHandler(async (req, res) => {
+api.get("/conversations/:conversationId/messages", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const messages = await cmsClient.getMessages(userId, req.params.threadId);
+  const messages = await cmsClient.getMessages(userId, req.params.conversationId);
   res.json(messages);
 }));
 
@@ -133,9 +149,9 @@ api.get("/resources/:id", requireRole(), routeHandler(async (req, res) => {
   res.json(resource);
 }));
 
-api.get("/threads/:threadId/resources", requireRole(), routeHandler(async (req, res) => {
+api.get("/agents/:agentId/resources", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const resources = await cmsClient.getResourcesByThread(userId, req.params.threadId);
+  const resources = await cmsClient.getResourcesByAgent(userId, req.params.agentId);
   res.json(resources);
 }));
 
@@ -147,15 +163,15 @@ api.delete("/resources/:id", requireRole(), routeHandler(async (req, res) => {
 
 // ===== VECTOR ROUTES =====
 
-api.post("/threads/:threadId/vectors", requireRole(), routeHandler(async (req, res) => {
+api.post("/conversations/:conversationId/vectors", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const vectors = await cmsClient.addVectors(userId, req.params.threadId, req.body.vectors);
+  const vectors = await cmsClient.addVectors(userId, req.params.conversationId, req.body.vectors);
   res.status(201).json(vectors);
 }));
 
-api.get("/threads/:threadId/vectors", requireRole(), routeHandler(async (req, res) => {
+api.get("/conversations/:conversationId/vectors", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const vectors = await cmsClient.getVectorsByThread(userId, req.params.threadId);
+  const vectors = await cmsClient.getVectorsByConversation(userId, req.params.conversationId);
   res.json(vectors);
 }));
 

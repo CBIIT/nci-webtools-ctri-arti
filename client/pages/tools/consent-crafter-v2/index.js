@@ -10,10 +10,9 @@
  */
 
 // #region Imports
+import { openDB } from "idb";
 import { createEffect, createMemo, createResource, For, Show } from "solid-js";
 import html from "solid-js/html";
-
-import { openDB } from "idb";
 import { createStore, reconcile, unwrap } from "solid-js/store";
 
 import { AlertContainer } from "../../../components/alert.js";
@@ -27,6 +26,7 @@ import { parseDocument } from "../../../utils/parsers.js";
 
 import { getTemplateConfigsByCategory, templateConfigs } from "./config.js";
 import { runFieldExtraction } from "./extract.js";
+
 // #endregion
 
 // #region Database
@@ -141,7 +141,7 @@ export default function Page() {
   };
   const [store, setStore] = createStore(structuredClone(defaultStore));
 
-  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
+  const [session] = createResource(() => fetch("/api/v1/session").then((res) => res.json()));
   // #endregion
 
   // #region Session Persistence
@@ -515,7 +515,7 @@ export default function Page() {
   }
 
   async function runModel(params) {
-    const response = await fetch("/api/model", {
+    const response = await fetch("/api/v1/model", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),

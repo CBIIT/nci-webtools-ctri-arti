@@ -1,3 +1,5 @@
+import { createReport, listCommands } from "docx-templates";
+import { openDB } from "idb";
 import {
   createEffect,
   createMemo,
@@ -9,9 +11,6 @@ import {
   Show,
 } from "solid-js";
 import html from "solid-js/html";
-
-import { createReport, listCommands } from "docx-templates";
-import { openDB } from "idb";
 import { createStore, reconcile, unwrap } from "solid-js/store";
 import yaml from "yaml";
 
@@ -97,7 +96,7 @@ export default function Page() {
   };
   const [store, setStore] = createStore(structuredClone(defaultStore));
 
-  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
+  const [session] = createResource(() => fetch("/api/v1/session").then((res) => res.json()));
 
   // ============= Session Persistence =============
 
@@ -444,7 +443,7 @@ export default function Page() {
   // ============= Utility Functions =============
 
   async function runModel(params) {
-    const response = await fetch("/api/model", {
+    const response = await fetch("/api/v1/model", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),

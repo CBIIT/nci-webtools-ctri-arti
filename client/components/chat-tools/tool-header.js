@@ -1,6 +1,6 @@
+import { ChevronDown } from "lucide-solid";
 import html from "solid-js/html";
 
-import { ChevronDown } from "lucide-solid";
 
 /**
  * Tool Header Component

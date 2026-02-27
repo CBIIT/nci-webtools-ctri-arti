@@ -1,6 +1,5 @@
 import { createContext, createEffect, createMemo, onCleanup, useContext } from "solid-js";
 import html from "solid-js/html";
-
 import { createStore } from "solid-js/store";
 
 import { safeParseJson } from "../utils/parsers.js";
@@ -65,7 +64,7 @@ export const AuthProvider = (props) => {
 
   const getMyUser = async () => {
     try {
-      const response = await fetch("/api/session");
+      const response = await fetch("/api/v1/session");
 
       if (!response.ok) {
         return { error: new Error("Failed to fetch session"), data: null };
@@ -83,7 +82,7 @@ export const AuthProvider = (props) => {
       return;
     }
 
-    window.location.href = "/api/logout";
+    window.location.href = "/api/v1/logout";
 
     return;
   };

@@ -5,7 +5,7 @@ import {
   estimateContentTokens,
   calculateCacheBoundaries,
   addCachePointsToMessages,
-} from "../services/gateway/inference.js";
+} from "gateway/inference.js";
 
 test("estimateContentTokens", async (t) => {
   await t.test("estimates text content", () => {

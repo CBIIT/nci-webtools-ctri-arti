@@ -1,3 +1,4 @@
+import db from "database";
 import http from "http";
 import https from "https";
 import { pathToFileURL } from "url";
@@ -5,11 +6,10 @@ import { pathToFileURL } from "url";
 import SequelizeStore from "connect-session-sequelize";
 import express from "express";
 import session from "express-session";
+import logger from "shared/logger.js";
+import { nocache } from "shared/middleware.js";
 
 import api from "./services/api.js";
-import db from "./services/database.js";
-import logger from "./services/logger.js";
-import { nocache } from "./services/middleware.js";
 import { startScheduler } from "./services/scheduler.js";
 import { createCertificate } from "./services/utils.js";
 
@@ -45,7 +45,8 @@ export function createApp(env = process.env) {
       store,
     })
   );
-  app.use("/api", api);
+  app.use("/api/v1", api);
+  app.use("/api", api); // backward compat (deprecated)
   app.use(express.static(CLIENT_FOLDER));
   app.get(/.*/, (req, res) => res.sendFile("index.html", { root: CLIENT_FOLDER }));
   return app;

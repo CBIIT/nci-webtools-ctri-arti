@@ -1,4 +1,4 @@
-id,name,policy,order
-1,admin,"[{""actions"":""*"",""resources"":""*""}]",2
-2,super user,"[{""actions"":""*"",""resources"":""dev""}]",1
-3,user,null,0
+id,name,displayOrder
+1,admin,2
+2,super user,1
+3,user,0

@@ -1,6 +1,7 @@
+import { Role, User } from "database";
+
 import { json, Router } from "express";
 
-import { Role, User } from "../database.js";
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
 
 const { OAUTH_PROVIDER_ENABLED, SESSION_TTL_POLL_MS } = process.env;
@@ -17,7 +18,7 @@ api.get("/login", loginMiddleware, async (req, res) => {
   const { email, first_name: firstName, last_name: lastName } = session.userinfo;
   if (!email) return res.redirect("/?error=missing_email");
   const isFirstUser = (await User.count()) === 0;
-  const newUser = isFirstUser ? { roleId: 1 } : { roleId: 3, limit: 5 };
+  const newUser = isFirstUser ? { roleID: 1 } : { roleID: 3, budget: 5 };
   session.user =
     (await User.findOne({ where: { email } })) ||
     (await User.create({ email, firstName, lastName, status: "active", ...newUser }));

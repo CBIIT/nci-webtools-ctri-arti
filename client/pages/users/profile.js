@@ -11,7 +11,7 @@ function UserProfile() {
   // Fetch current user session
   const [session] = createResource(async () => {
     try {
-      const response = await fetch("/api/session");
+      const response = await fetch("/api/v1/session");
       if (!response.ok) {
         await handleHttpError(response, "fetching your profile");
         return null;
@@ -36,7 +36,7 @@ function UserProfile() {
         lastName: formData.get("lastName"),
       };
 
-      const response = await fetch("/api/admin/profile", {
+      const response = await fetch("/api/v1/admin/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profileData),
@@ -229,10 +229,10 @@ function UserProfile() {
                 <div>
                   ${() => {
                     const user = session()?.user;
-                    if (user?.limit === null) {
+                    if (user?.budget === null) {
                       return "Unlimited";
                     } else {
-                      return user?.limit;
+                      return user?.budget;
                     }
                   }}
                 </div>

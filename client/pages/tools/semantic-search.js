@@ -1,8 +1,7 @@
-import { createMemo, For, Show } from "solid-js";
-import html from "solid-js/html";
-
 import { pipeline } from "@huggingface/transformers";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { createMemo, For, Show } from "solid-js";
+import html from "solid-js/html";
 import { createStore } from "solid-js/store";
 
 import { HNSW } from "../../utils/hnsw.js";

@@ -65,7 +65,7 @@ export class Project extends BaseModel {
 
     // Flexible API configuration
     this.apiConfig = data.apiConfig || {
-      baseUrl: "/api/model", // Default to local API
+      baseUrl: "/api/v1/model", // Default to local API
       method: "POST",
       headers: {},
       // Template variables that can be used in requests
