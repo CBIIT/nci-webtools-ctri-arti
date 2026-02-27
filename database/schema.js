@@ -447,7 +447,7 @@ export async function seedDatabase(db) {
   const tools = loadCsv(resolve(dataDir, "tools.csv"));
   const agentTools = loadCsv(resolve(dataDir, "agent-tools.csv"));
 
-  // Helper: upsert rows by inserting and updating on conflict (id column)
+  // Helper: upsert rows by inserting and updating on conflict
   async function upsert(table, rows, conflictTarget, updateCols) {
     if (!rows.length) return;
     const setObj = {};
@@ -462,12 +462,7 @@ export async function seedDatabase(db) {
 
   await upsert(T.Role, roles, T.Role.id, ["name", "displayOrder"]);
   await upsert(T.Policy, policies, T.Policy.id, ["name", "resource", "action"]);
-  await upsert(
-    T.RolePolicy,
-    rolePolicies,
-    [T.RolePolicy.roleID, T.RolePolicy.policyID],
-    ["roleID", "policyID"]
-  );
+  await upsert(T.RolePolicy, rolePolicies, T.RolePolicy.id, ["roleID", "policyID"]);
   await upsert(T.Provider, providers, T.Provider.id, ["name"]);
   await upsert(T.Model, modelRows, T.Model.id, [
     "providerID",
@@ -485,12 +480,7 @@ export async function seedDatabase(db) {
   await upsert(T.Prompt, prompts, T.Prompt.id, ["name", "version", "content"]);
   await upsert(T.Agent, agents, T.Agent.id, ["name", "promptID"]);
   await upsert(T.Tool, tools, T.Tool.id, ["name", "description", "type"]);
-  await upsert(
-    T.AgentTool,
-    agentTools,
-    [T.AgentTool.toolID, T.AgentTool.agentID],
-    ["agentID", "toolID"]
-  );
+  await upsert(T.AgentTool, agentTools, T.AgentTool.id, ["agentID", "toolID"]);
 
   // Reset serial sequences to max(id) so auto-increment works after explicit-ID inserts
   for (const [name, table] of Object.entries(T)) {
