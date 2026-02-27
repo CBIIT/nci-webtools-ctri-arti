@@ -45,7 +45,8 @@ export function createApp(env = process.env) {
       store,
     })
   );
-  app.use("/api", api);
+  app.use("/api/v1", api);
+  app.use("/api", api); // backward compat (deprecated)
   app.use(express.static(CLIENT_FOLDER));
   app.get(/.*/, (req, res) => res.sendFile("index.html", { root: CLIENT_FOLDER }));
   return app;

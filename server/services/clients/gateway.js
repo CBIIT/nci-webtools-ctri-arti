@@ -17,10 +17,10 @@ const GATEWAY_URL = process.env.GATEWAY_URL;
 const RATE_LIMIT_MESSAGE =
   "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.";
 
-async function checkRateLimit(userId) {
-  if (!userId) return null;
-  const user = await User.findByPk(userId);
-  if (user?.limit !== null && user?.remaining !== null && user?.remaining <= 0) {
+async function checkRateLimit(userID) {
+  if (!userID) return null;
+  const user = await User.findByPk(userID);
+  if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
     return { error: RATE_LIMIT_MESSAGE, status: 429 };
   }
   return null;
@@ -28,15 +28,15 @@ async function checkRateLimit(userId) {
 
 function buildDirectClient() {
   return {
-    async infer({ userId, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }) {
-      const limited = await checkRateLimit(userId);
+    async invoke({ userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }) {
+      const limited = await checkRateLimit(userID);
       if (limited) return limited;
 
       const result = await directRunModel({ model, messages, system, tools, thoughtBudget, stream, outputConfig });
 
       // For non-streaming responses, track usage inline
-      if (!result?.stream && userId) {
-        await trackModelUsage(userId, model, ip, result.usage);
+      if (!result?.stream && userID) {
+        await trackModelUsage(userID, model, ip, result.usage);
       }
 
       // For streaming, wrap to track usage on metadata
@@ -44,8 +44,8 @@ function buildDirectClient() {
         return {
           stream: (async function* () {
             for await (const message of result.stream) {
-              if (message.metadata && userId) {
-                await trackModelUsage(userId, model, ip, message.metadata.usage);
+              if (message.metadata && userID) {
+                await trackModelUsage(userID, model, ip, message.metadata.usage);
               }
               yield message;
             }
@@ -56,10 +56,13 @@ function buildDirectClient() {
       return result;
     },
 
-    async listModels() {
+    async listModels({ type } = {}) {
+      const where = { providerID: 1 };
+      if (type) where.type = type;
+
       return Model.findAll({
-        attributes: ["name", "internalName", "maxContext", "maxOutput", "maxReasoning"],
-        where: { providerId: 1 },
+        attributes: ["name", "internalName", "type", "maxContext", "maxOutput", "maxReasoning"],
+        where,
       });
     },
   };
@@ -67,11 +70,11 @@ function buildDirectClient() {
 
 function buildHttpClient() {
   return {
-    async infer({ userId, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }) {
-      const response = await fetch(`${GATEWAY_URL}/api/infer`, {
+    async invoke({ userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }) {
+      const response = await fetch(`${GATEWAY_URL}/api/v1/model/invoke`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }),
+        body: JSON.stringify({ userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }),
       });
 
       if (response.status === 429) {
@@ -118,8 +121,11 @@ function buildHttpClient() {
       return response.json();
     },
 
-    async listModels() {
-      const response = await fetch(`${GATEWAY_URL}/api/models`);
+    async listModels({ type } = {}) {
+      const url = type
+        ? `${GATEWAY_URL}/api/v1/models?type=${type}`
+        : `${GATEWAY_URL}/api/v1/models`;
+      const response = await fetch(url);
       return response.json();
     },
   };
@@ -127,4 +133,7 @@ function buildHttpClient() {
 
 const client = GATEWAY_URL ? buildHttpClient() : buildDirectClient();
 
-export const { infer, listModels } = client;
+export const { invoke, listModels } = client;
+
+// Backward compatibility alias
+export const infer = invoke;
