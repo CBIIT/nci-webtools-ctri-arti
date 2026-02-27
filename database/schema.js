@@ -1,6 +1,7 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
+import { relations } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -13,7 +14,6 @@ import {
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
 
 import { loadCsv } from "./csv-loader.js";
 
@@ -36,7 +36,7 @@ export const User = pgTable(
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
-  (t) => [index("User_email_idx").on(t.email), index("User_roleID_idx").on(t.roleID)],
+  (t) => [index("User_email_idx").on(t.email), index("User_roleID_idx").on(t.roleID)]
 );
 
 export const Role = pgTable(
@@ -48,7 +48,7 @@ export const Role = pgTable(
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
-  (t) => [index("Role_displayOrder_idx").on(t.displayOrder)],
+  (t) => [index("Role_displayOrder_idx").on(t.displayOrder)]
 );
 
 export const Policy = pgTable("Policy", {
@@ -69,7 +69,7 @@ export const RolePolicy = pgTable(
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
-  (t) => [uniqueIndex("RolePolicy_roleID_policyID_idx").on(t.roleID, t.policyID)],
+  (t) => [uniqueIndex("RolePolicy_roleID_policyID_idx").on(t.roleID, t.policyID)]
 );
 
 export const Provider = pgTable("Provider", {
@@ -104,7 +104,7 @@ export const Model = pgTable(
   (t) => [
     index("Model_internalName_idx").on(t.internalName),
     index("Model_providerID_idx").on(t.providerID),
-  ],
+  ]
 );
 
 export const Usage = pgTable(
@@ -129,7 +129,7 @@ export const Usage = pgTable(
     index("Usage_modelID_idx").on(t.modelID),
     index("Usage_createdAt_idx").on(t.createdAt),
     index("Usage_userID_createdAt_idx").on(t.userID, t.createdAt),
-  ],
+  ]
 );
 
 export const Prompt = pgTable(
@@ -145,7 +145,7 @@ export const Prompt = pgTable(
   (t) => [
     index("Prompt_name_idx").on(t.name),
     uniqueIndex("Prompt_name_version_idx").on(t.name, t.version),
-  ],
+  ]
 );
 
 export const Agent = pgTable(
@@ -165,7 +165,7 @@ export const Agent = pgTable(
     index("Agent_userID_idx").on(t.userID),
     index("Agent_modelID_idx").on(t.modelID),
     index("Agent_promptID_idx").on(t.promptID),
-  ],
+  ]
 );
 
 export const Tool = pgTable("Tool", {
@@ -198,7 +198,7 @@ export const Conversation = pgTable(
     index("Conversation_agentID_idx").on(t.agentID),
     index("Conversation_userID_createdAt_idx").on(t.userID, t.createdAt),
     index("Conversation_deleted_idx").on(t.deleted),
-  ],
+  ]
 );
 
 export const Message = pgTable(
@@ -215,7 +215,7 @@ export const Message = pgTable(
   (t) => [
     index("Message_conversationID_idx").on(t.conversationID),
     index("Message_conversationID_createdAt_idx").on(t.conversationID, t.createdAt),
-  ],
+  ]
 );
 
 export const Resource = pgTable(
@@ -235,7 +235,7 @@ export const Resource = pgTable(
   (t) => [
     index("Resource_agentID_idx").on(t.agentID),
     index("Resource_messageID_idx").on(t.messageID),
-  ],
+  ]
 );
 
 export const Vector = pgTable(
@@ -255,7 +255,7 @@ export const Vector = pgTable(
     index("Vector_conversationID_idx").on(t.conversationID),
     index("Vector_toolID_idx").on(t.toolID),
     index("Vector_resourceID_order_idx").on(t.resourceID, t.order),
-  ],
+  ]
 );
 
 export const UserAgent = pgTable(
@@ -268,7 +268,7 @@ export const UserAgent = pgTable(
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
-  (t) => [uniqueIndex("UserAgent_userID_agentID_idx").on(t.userID, t.agentID)],
+  (t) => [uniqueIndex("UserAgent_userID_agentID_idx").on(t.userID, t.agentID)]
 );
 
 export const UserTool = pgTable(
@@ -281,7 +281,7 @@ export const UserTool = pgTable(
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
-  (t) => [uniqueIndex("UserTool_userID_toolID_idx").on(t.userID, t.toolID)],
+  (t) => [uniqueIndex("UserTool_userID_toolID_idx").on(t.userID, t.toolID)]
 );
 
 export const AgentTool = pgTable(
@@ -293,7 +293,7 @@ export const AgentTool = pgTable(
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
-  (t) => [uniqueIndex("AgentTool_toolID_agentID_idx").on(t.toolID, t.agentID)],
+  (t) => [uniqueIndex("AgentTool_toolID_agentID_idx").on(t.toolID, t.agentID)]
 );
 
 // ===== Relations =====
@@ -365,7 +365,10 @@ export const conversationRelations = relations(Conversation, ({ one, many }) => 
 }));
 
 export const messageRelations = relations(Message, ({ one, many }) => ({
-  Conversation: one(Conversation, { fields: [Message.conversationID], references: [Conversation.id] }),
+  Conversation: one(Conversation, {
+    fields: [Message.conversationID],
+    references: [Conversation.id],
+  }),
   Resources: many(Resource),
   Usages: many(Usage),
 }));
@@ -377,7 +380,10 @@ export const resourceRelations = relations(Resource, ({ one, many }) => ({
 }));
 
 export const vectorRelations = relations(Vector, ({ one }) => ({
-  Conversation: one(Conversation, { fields: [Vector.conversationID], references: [Conversation.id] }),
+  Conversation: one(Conversation, {
+    fields: [Vector.conversationID],
+    references: [Conversation.id],
+  }),
   Resource: one(Resource, { fields: [Vector.resourceID], references: [Resource.id] }),
   Tool: one(Tool, { fields: [Vector.toolID], references: [Tool.id] }),
 }));
@@ -400,11 +406,23 @@ export const agentToolRelations = relations(AgentTool, ({ one }) => ({
 // ===== All tables (for iteration) =====
 
 export const tables = {
-  User, Role, Policy, RolePolicy,
-  Provider, Model, Usage,
-  Prompt, Agent, Tool,
-  Conversation, Message, Resource, Vector,
-  UserAgent, UserTool, AgentTool,
+  User,
+  Role,
+  Policy,
+  RolePolicy,
+  Provider,
+  Model,
+  Usage,
+  Prompt,
+  Agent,
+  Tool,
+  Conversation,
+  Message,
+  Resource,
+  Vector,
+  UserAgent,
+  UserTool,
+  AgentTool,
 };
 
 // ===== Seed database =====
@@ -444,28 +462,52 @@ export async function seedDatabase(db) {
 
   await upsert(T.Role, roles, T.Role.id, ["name", "displayOrder"]);
   await upsert(T.Policy, policies, T.Policy.id, ["name", "resource", "action"]);
-  await upsert(T.RolePolicy, rolePolicies, T.RolePolicy.id, ["roleID", "policyID"]);
+  await upsert(
+    T.RolePolicy,
+    rolePolicies,
+    [T.RolePolicy.roleID, T.RolePolicy.policyID],
+    ["roleID", "policyID"]
+  );
   await upsert(T.Provider, providers, T.Provider.id, ["name"]);
   await upsert(T.Model, modelRows, T.Model.id, [
-    "providerID", "name", "internalName", "type",
-    "cost1kInput", "cost1kOutput", "cost1kCacheRead", "cost1kCacheWrite",
-    "maxContext", "maxOutput", "maxReasoning",
+    "providerID",
+    "name",
+    "internalName",
+    "type",
+    "cost1kInput",
+    "cost1kOutput",
+    "cost1kCacheRead",
+    "cost1kCacheWrite",
+    "maxContext",
+    "maxOutput",
+    "maxReasoning",
   ]);
   await upsert(T.Prompt, prompts, T.Prompt.id, ["name", "version", "content"]);
   await upsert(T.Agent, agents, T.Agent.id, ["name", "promptID"]);
   await upsert(T.Tool, tools, T.Tool.id, ["name", "description", "type"]);
-  await upsert(T.AgentTool, agentTools, T.AgentTool.id, ["agentID", "toolID"]);
+  await upsert(
+    T.AgentTool,
+    agentTools,
+    [T.AgentTool.toolID, T.AgentTool.agentID],
+    ["agentID", "toolID"]
+  );
 
   // Reset serial sequences to max(id) so auto-increment works after explicit-ID inserts
   for (const [name, table] of Object.entries(T)) {
     if (table.id) {
-      await db.execute(sql`SELECT setval(pg_get_serial_sequence('"${sql.raw(name)}"', 'id'), COALESCE((SELECT MAX("id") FROM "${sql.raw(name)}"), 0) + 1, false)`);
+      await db.execute(
+        sql`SELECT setval(pg_get_serial_sequence('"${sql.raw(name)}"', 'id'), COALESCE((SELECT MAX("id") FROM "${sql.raw(name)}"), 0) + 1, false)`
+      );
     }
   }
 
   // Create test admin user if TEST_API_KEY is set
   if (process.env.TEST_API_KEY) {
-    const existing = await db.select().from(T.User).where(eq(T.User.email, "test@test.com")).limit(1);
+    const existing = await db
+      .select()
+      .from(T.User)
+      .where(eq(T.User.email, "test@test.com"))
+      .limit(1);
     if (!existing.length) {
       await db.insert(T.User).values({
         email: "test@test.com",
