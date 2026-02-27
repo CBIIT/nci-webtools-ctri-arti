@@ -20,7 +20,7 @@ Client (SolidJS) ──► Server (:443) ──┬──► Gateway (:3001) ─�
 | [users](users/) | Service (stub) | 3004 | Identity and access management (planned) |
 | [database](database/) | Library | — | Sequelize models, associations, seed data |
 | [shared](shared/) | Library | — | Logger, middleware, utilities |
-| [infrastructure-v2](infrastructure-v2/) | CDK | — | AWS deployment (ECR, ECS Fargate, RDS Aurora) |
+| [infrastructure](infrastructure/) | CDK | — | AWS deployment (ECR, ECS Fargate, RDS Aurora) |
 
 ## Quick Start
 
@@ -94,7 +94,7 @@ Tests use real services (AWS Bedrock, PostgreSQL/SQLite). No mocking.
 
 ## Deployment
 
-Deployed to AWS using CDK. See [infrastructure-v2/](infrastructure-v2/) for details.
+Deployed to AWS using CDK. See [infrastructure/](infrastructure/) for details.
 
 ```bash
 # CI/CD pipeline
@@ -149,7 +149,7 @@ research-optimizer/
 │   ├── middleware.js          # Request/error logging, nocache
 │   └── utils.js              # routeHandler, createHttpError
 │
-└── infrastructure-v2/        # AWS CDK deployment
+└── infrastructure/        # AWS CDK deployment
     ├── stacks/               # ECR, ECS, RDS stacks
     └── config.py             # Environment configuration
 ```
@@ -169,5 +169,5 @@ research-optimizer/
 | [shared/README.md](shared/README.md) | Shared library reference |
 | [agents/README.md](agents/README.md) | Chat orchestration (stub) |
 | [users/README.md](users/README.md) | Identity management (stub) |
-| [infrastructure-v2/README.md](infrastructure-v2/README.md) | AWS CDK deployment |
+| [infrastructure/README.md](infrastructure/README.md) | AWS CDK deployment |
 | [CLAUDE.md](CLAUDE.md) | AI assistant guidance for this codebase |
