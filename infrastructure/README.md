@@ -2,6 +2,129 @@
 
 AWS CDK v2 (Python) infrastructure for deploying the Research Optimizer platform.
 
+## Architecture
+
+### System Overview
+
+```mermaid
+graph LR
+    User([User]) --> ALB
+
+    subgraph AWS Cloud
+        ALB[Application<br/>Load Balancer]
+
+        subgraph ECS Fargate Task
+            Main["main :80<br/>(server)"]
+            GW["gateway :3001<br/>(inference)"]
+            CMS["cms :3002<br/>(conversations)"]
+
+            Main -- "localhost:3001" --> GW
+            Main -- "localhost:3002" --> CMS
+        end
+
+        ALB -- ":443 HTTPS" --> Main
+        GW --> Bedrock[Amazon Bedrock]
+        GW --> Gemini[Google Gemini]
+        GW --> RDS[(Aurora PostgreSQL)]
+        CMS --> RDS
+        Main --> S3[Amazon S3]
+        Main --> Translate[Amazon Translate]
+    end
+
+    subgraph Secrets Manager
+        Creds[DB Credentials]
+    end
+
+    RDS -. "generated" .-> Creds
+    Creds -. "injected" .-> ECS Fargate Task
+```
+
+### CDK Stacks
+
+```mermaid
+graph TB
+    subgraph "CDK App"
+        ECR["<b>ecr-repository</b><br/>Container registry<br/>Image scanning + cleanup"]
+        ECSStack["<b>ecs-service</b><br/>Fargate cluster + service<br/>ALB target group<br/>Auto-scaling 1–4 tasks"]
+        RDSStack["<b>rds-cluster</b><br/>Aurora Serverless v2<br/>PostgreSQL 16.6<br/>0–1 ACU"]
+    end
+
+    ECR -- "image URIs" --> ECSStack
+    RDSStack -- "credentials via<br/>Secrets Manager" --> ECSStack
+
+    subgraph "Existing Resources"
+        VPC[VPC]
+        ALB[ALB + HTTPS Listener]
+        Subnets[Subnets]
+    end
+
+    VPC --> ECSStack
+    VPC --> RDSStack
+    ALB --> ECSStack
+    Subnets --> ECSStack
+    Subnets --> RDSStack
+```
+
+### ECS Task Containers
+
+```mermaid
+graph TB
+    subgraph "Fargate Task &ensp; (2 vCPU, 4 GB)"
+        subgraph "main container :80"
+            Server["Express.js Server<br/>HTTPS, OAuth, static files<br/>API routing, CORS proxy"]
+        end
+
+        subgraph "gateway container :3001"
+            Gateway["AI Inference<br/>Multi-provider abstraction<br/>Usage tracking, rate limiting"]
+        end
+
+        subgraph "cms container :3002"
+            CMS["Conversation Management<br/>Agents, conversations, messages<br/>Tools, prompts, resources, vectors"]
+        end
+    end
+
+    subgraph "Shared Resources"
+        DB[(Aurora PostgreSQL<br/>Secrets Manager creds)]
+        CW[CloudWatch Logs<br/>1-month retention]
+        SSM[SSM Parameters<br/>App secrets]
+    end
+
+    Server --> DB
+    Gateway --> DB
+    CMS --> DB
+    Server --> CW
+    Gateway --> CW
+    CMS --> CW
+    SSM --> Server
+    SSM --> Gateway
+    SSM --> CMS
+```
+
+### Deployment Pipeline
+
+```mermaid
+graph LR
+    subgraph "deploy.sh"
+        A["1. Deploy<br/>ECR stack"] --> B["2. Build<br/>Docker images"]
+        B --> C["3. Push to ECR<br/>(main, gateway, cms)"]
+        C --> D["4. Deploy<br/>ECS stack"]
+    end
+
+    subgraph "Docker Build"
+        Base[Dockerfile<br/>base image] --> MainImg[main image<br/>npm start -w server]
+        Base --> GWImg[gateway image<br/>npm start -w gateway]
+        Base --> CMSImg[cms image<br/>npm start -w cms]
+    end
+
+    B --> Base
+    C --> ECR[(ECR Registry)]
+    ECR --> D
+
+    Note["RDS deployed separately<br/>(not in pipeline)"]
+
+    style Note fill:none,stroke:none
+```
+
 ## Overview
 
 Three CDK stacks deploy the application to AWS:
