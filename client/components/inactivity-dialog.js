@@ -15,7 +15,7 @@ const timeoutThresholdSeconds = 300;
  * An inactivity dialog that handles session the TTL ping and timeout.
  */
 export default function InactivityDialog() {
-  const [env] = createResource(() => fetch("/api/config").then((res) => res.json()));
+  const [env] = createResource(() => fetch("/api/v1/config").then((res) => res.json()));
   const { isLoggedIn, logout } = useAuthContext() || {};
 
   const [warning, setWarning] = createSignal(false);
@@ -26,7 +26,7 @@ export default function InactivityDialog() {
 
   const extendSession = async () => {
     try {
-      const res = await fetch("/api/session");
+      const res = await fetch("/api/v1/session");
       const data = await res.json();
 
       if (data?.user) {
@@ -51,7 +51,7 @@ export default function InactivityDialog() {
 
   const loadData = async () => {
     try {
-      const res = await fetch("/api/session-ttl");
+      const res = await fetch("/api/v1/session-ttl");
       const data = await res.json();
       const { ttl } = data;
 
@@ -174,7 +174,7 @@ export default function InactivityDialog() {
                     class="btn btn-primary button-group login-button"
                     onClick=${() => {
                       setTimedOut(false);
-                      window.location.href = "/api/login";
+                      window.location.href = "/api/v1/login";
                     }}
                   >
                     LOGIN

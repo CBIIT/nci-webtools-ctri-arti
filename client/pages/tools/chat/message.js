@@ -54,7 +54,7 @@ export default function Message(p) {
     }
 
     const comment = e.target.comment.value;
-    await fetch("/api/feedback", {
+    await fetch("/api/v1/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

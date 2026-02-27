@@ -79,7 +79,7 @@ export default function getRoutes() {
     },
     {
       path: "/_",
-      rawPath: !user?.() ? "/api/login" : undefined,
+      rawPath: !user?.() ? "/api/v1/login" : undefined,
       title: user?.() ? user?.().firstName || "User" : "Login",
       class: "ms-lg-auto",
       children: user?.()?.id && [
@@ -113,7 +113,7 @@ export default function getRoutes() {
           hidden: true,
         },
         {
-          rawPath: "/api/logout",
+          rawPath: "/api/v1/logout",
           title: "Logout",
         },
       ],

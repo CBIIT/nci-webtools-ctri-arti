@@ -141,7 +141,7 @@ export default function Page() {
   };
   const [store, setStore] = createStore(structuredClone(defaultStore));
 
-  const [session] = createResource(() => fetch("/api/session").then((res) => res.json()));
+  const [session] = createResource(() => fetch("/api/v1/session").then((res) => res.json()));
   // #endregion
 
   // #region Session Persistence
@@ -515,7 +515,7 @@ export default function Page() {
   }
 
   async function runModel(params) {
-    const response = await fetch("/api/model", {
+    const response = await fetch("/api/v1/model", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),

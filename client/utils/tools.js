@@ -32,7 +32,7 @@ export async function runTool(toolUse, tools = { search, browse, code, editor, t
  * @returns {Promise<Array>} - Array of search results
  */
 export async function search({ query }) {
-  const response = await fetch("/api/search?" + new URLSearchParams({ q: query })).then((r) =>
+  const response = await fetch("/api/v1/search?" + new URLSearchParams({ q: query })).then((r) =>
     r.json()
   );
   const extract = (r) => ({
@@ -64,7 +64,7 @@ export async function browse({ url, topic }) {
   if (url.length === 0) return "No URLs provided";
   const results = await Promise.all(
     url.map(async (u) => {
-      const response = await fetch("/api/browse/" + u);
+      const response = await fetch("/api/v1/browse/" + u);
       const bytes = await response.arrayBuffer();
       // const text = new TextDecoder("utf-8").decode(bytes);
 
@@ -125,7 +125,7 @@ The document is as follows:
   const prompt = `Answer this question about the document: "${topic}"`;
 
   const messages = [{ role: "user", content: [{ text: prompt }] }];
-  const response = await fetch("/api/model", {
+  const response = await fetch("/api/v1/model", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ model, messages, system }),
@@ -161,7 +161,7 @@ export async function data({ bucket, key }) {
   const params = new URLSearchParams({ bucket });
   if (key) params.set("key", key);
 
-  const response = await fetch("/api/data?" + params);
+  const response = await fetch("/api/v1/data?" + params);
 
   if (!response.ok) {
     throw new Error(`Failed to access data: ${response.status} ${response.statusText}`);
@@ -203,12 +203,12 @@ export async function docxTemplate({ docxUrl, replacements }) {
     if (!s3Match) throw new Error("Invalid S3 URL format. Expected: s3://bucket/key");
     const [, bucket, key] = s3Match;
     const response = await fetch(
-      `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
+      `/api/v1/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
     );
     if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   } else {
-    const response = await fetch("/api/browse/" + docxUrl);
+    const response = await fetch("/api/v1/browse/" + docxUrl);
     if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   }
@@ -250,12 +250,12 @@ export async function downloadDocxTemplate({
     if (!s3Match) throw new Error("Invalid S3 URL format. Expected: s3://bucket/key");
     const [, bucket, key] = s3Match;
     const response = await fetch(
-      `/api/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
+      `/api/v1/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
     );
     if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   } else {
-    const response = await fetch("/api/browse/" + docxUrl);
+    const response = await fetch("/api/v1/browse/" + docxUrl);
     if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
     templateBuffer = await response.arrayBuffer();
   }

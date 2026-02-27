@@ -101,7 +101,7 @@ export function useChat() {
   // Initialize user session and database
   const initializeDatabase = async () => {
     try {
-      const { user } = await fetch("/api/session").then((res) => res.json());
+      const { user } = await fetch("/api/v1/session").then((res) => res.json());
       if (user?.email) {
         setUserEmail(user.email);
         const database = await getDB(user.email);
@@ -255,7 +255,7 @@ export function useChat() {
         ],
       };
 
-      const response = await fetch("/api/model", {
+      const response = await fetch("/api/v1/model", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -490,7 +490,7 @@ export function useChat() {
       setLoading(true);
 
       while (!isComplete) {
-        const response = await fetch("/api/model", {
+        const response = await fetch("/api/v1/model", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({

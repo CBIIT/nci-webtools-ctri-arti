@@ -129,14 +129,14 @@ function UsersList() {
   const [_analyticsResource] = createResource(
     () => currentDateRange(),
     ({ startDate, endDate }) =>
-      fetch(`/api/admin/analytics?groupBy=user&startDate=${startDate}&endDate=${endDate}`).then(
+      fetch(`/api/v1/admin/analytics?groupBy=user&startDate=${startDate}&endDate=${endDate}`).then(
         (res) => res.json()
       )
   );
 
   const [rolesResource] = createResource(async () => {
     try {
-      const response = await fetch("/api/admin/roles");
+      const response = await fetch("/api/v1/admin/roles");
       if (!response.ok) {
         await handleHttpError(response, "fetching roles");
         return [];
@@ -199,7 +199,7 @@ function UsersList() {
       if (params.sortBy) queryParams.set("sortBy", params.sortBy);
       if (params.sortOrder) queryParams.set("sortOrder", params.sortOrder);
 
-      const response = await fetch(`/api/admin/analytics?${queryParams}`);
+      const response = await fetch(`/api/v1/admin/analytics?${queryParams}`);
       if (!response.ok) {
         await handleHttpError(response, "fetching usage analytics");
         return { data: [], meta: { total: 0 } };
@@ -219,17 +219,17 @@ function UsersList() {
     if (!serverAnalyticsResource()?.data) return [];
     return serverAnalyticsResource().data.map((userStats) => {
       const user = userStats.User;
-      const limitDisplay = user.limit === null ? "Unlimited" : `$${user.limit}`;
+      const limitDisplay = user.budget === null ? "Unlimited" : `$${user.budget}`;
       const fullName =
         `${user.lastName || ""}, ${user.firstName || ""}`.replace(/^,\s*|,\s*$/g, "").trim() ||
         user.email;
 
       return {
-        id: userStats.userId,
+        id: userStats.userID,
         name: fullName,
         email: user.email,
         role: user.Role?.name || "No Role",
-        roleId: user.roleId,
+        roleID: user.roleID,
         inputTokens: Math.round(userStats.totalInputTokens || 0),
         outputTokens: Math.round(userStats.totalOutputTokens || 0),
         weeklyCostLimit: limitDisplay,

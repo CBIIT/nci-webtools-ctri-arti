@@ -40,7 +40,7 @@ export async function reportErrorToServer(options = {}) {
   }
 
   try {
-    const response = await fetch("/api/log", {
+    const response = await fetch("/api/v1/log", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "Error", reportSource, metadata }),

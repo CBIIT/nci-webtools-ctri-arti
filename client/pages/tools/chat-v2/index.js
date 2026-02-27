@@ -78,7 +78,7 @@ function ChatApp(props) {
 
   // Fetch available agents for the dropdown
   const fetchAgents = async () => {
-    const response = await fetch("/api/agents");
+    const response = await fetch("/api/v1/agents");
     if (!response.ok) return [];
     return response.json();
   };
