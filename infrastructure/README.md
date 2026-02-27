@@ -10,10 +10,10 @@ AWS CDK v2 (Python) infrastructure for deploying the Research Optimizer platform
 graph LR
     User([User]) --> ALB
 
-    subgraph AWS Cloud
+    subgraph AWS_Cloud [AWS Cloud]
         ALB[Application<br/>Load Balancer]
 
-        subgraph ECS Fargate Task
+        subgraph ECSTask [ECS Fargate Task]
             Main["main :80<br/>(server)"]
             GW["gateway :3001<br/>(inference)"]
             CMS["cms :3002<br/>(conversations)"]
@@ -31,12 +31,12 @@ graph LR
         Main --> Translate[Amazon Translate]
     end
 
-    subgraph Secrets Manager
+    subgraph SM [Secrets Manager]
         Creds[DB Credentials]
     end
 
     RDS -. "generated" .-> Creds
-    Creds -. "injected" .-> ECS Fargate Task
+    Creds -. "injected" .-> ECSTask
 ```
 
 ### CDK Stacks
