@@ -31,8 +31,8 @@ test("trackModelUsage", async (t) => {
 
     const record = await trackModelUsage(testUser.id, "mock-model", "127.0.0.1", usageData);
     assert.ok(record, "Should create a usage record");
-    assert.strictEqual(record.userId, testUser.id);
-    assert.strictEqual(record.modelId, testModel.id);
+    assert.strictEqual(record.userID, testUser.id);
+    assert.strictEqual(record.modelID, testModel.id);
     assert.strictEqual(record.inputTokens, 1000);
     assert.strictEqual(record.outputTokens, 500);
     assert.ok(record.cost >= 0, "Cost should be non-negative");

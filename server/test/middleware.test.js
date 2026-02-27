@@ -48,7 +48,7 @@ test("requireRole", async (t) => {
     assert.strictEqual(res._status, 401);
   });
 
-  await t.test("allows admin (roleId 1) through any role check", async () => {
+  await t.test("allows admin (roleID 1) through any role check", async () => {
     const middleware = requireRole("user");
     const req = createMockReq({ headers: { "x-api-key": process.env.TEST_API_KEY } });
     const res = createMockRes();
@@ -65,9 +65,9 @@ test("requireRole", async (t) => {
         firstName: "Role",
         lastName: "Test",
         status: "active",
-        roleId: 3, // "user" role
+        roleID: 3, // "user" role
         apiKey: "role-test-api-key",
-        limit: 100,
+        budget: 100,
         remaining: 100,
       },
     });
@@ -89,9 +89,9 @@ test("requireRole", async (t) => {
         firstName: "Role",
         lastName: "Test2",
         status: "active",
-        roleId: 3,
+        roleID: 3,
         apiKey: "role-test-api-key-2",
-        limit: 100,
+        budget: 100,
         remaining: 100,
       },
     });

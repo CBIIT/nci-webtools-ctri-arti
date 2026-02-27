@@ -7,8 +7,11 @@ import { createTestDb, createSeededTestDb } from "./setup.js";
 test("modelDefinitions", async (t) => {
   await t.test("contains all expected model names", () => {
     const expectedModels = [
-      "User", "Role", "Provider", "Model", "Usage",
-      "Prompt", "Agent", "Thread", "Message", "Resource", "Vector",
+      "User", "Role", "Policy", "RolePolicy",
+      "Provider", "Model", "Usage",
+      "Prompt", "Agent", "Conversation", "Message",
+      "Tool", "Resource", "Vector",
+      "UserAgent", "UserTool", "AgentTool",
     ];
     for (const name of expectedModels) {
       assert.ok(modelDefinitions[name], `Missing model definition: ${name}`);
@@ -52,7 +55,7 @@ test("createModels", async (t) => {
   await t.test("sets up associations", async () => {
     const { db, models } = await createTestDb();
     // Verify User has Role association
-    const user = models.User.build({ email: "test@test.com", roleId: 1 });
+    const user = models.User.build({ email: "test@test.com", roleID: 1 });
     assert.ok(typeof models.User.associations === "object");
     assert.ok(models.User.associations.Role, "User should have Role association");
     await db.close();
@@ -95,6 +98,34 @@ test("seedDatabase", async (t) => {
     const { db, models } = await createSeededTestDb();
     const agents = await models.Agent.findAll();
     assert.ok(agents.length >= 1, `Expected at least 1 agent, got ${agents.length}`);
+    await db.close();
+  });
+
+  await t.test("seeds policies", async () => {
+    const { db, models } = await createSeededTestDb();
+    const policies = await models.Policy.findAll();
+    assert.ok(policies.length >= 1, `Expected at least 1 policy, got ${policies.length}`);
+    await db.close();
+  });
+
+  await t.test("seeds tools", async () => {
+    const { db, models } = await createSeededTestDb();
+    const tools = await models.Tool.findAll();
+    assert.ok(tools.length >= 7, `Expected at least 7 tools, got ${tools.length}`);
+    await db.close();
+  });
+
+  await t.test("seeds role-policies", async () => {
+    const { db, models } = await createSeededTestDb();
+    const rolePolicies = await models.RolePolicy.findAll();
+    assert.ok(rolePolicies.length >= 1, `Expected at least 1 role-policy, got ${rolePolicies.length}`);
+    await db.close();
+  });
+
+  await t.test("seeds agent-tools", async () => {
+    const { db, models } = await createSeededTestDb();
+    const agentTools = await models.AgentTool.findAll();
+    assert.ok(agentTools.length >= 1, `Expected at least 1 agent-tool, got ${agentTools.length}`);
     await db.close();
   });
 });
