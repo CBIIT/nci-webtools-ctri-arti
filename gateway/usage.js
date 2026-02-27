@@ -4,9 +4,9 @@ import { Model, Usage, User } from "database";
  * Track model usage and update user's remaining balance.
  * Shared between monolith mode (gateway client) and microservice mode (gateway api).
  */
-export async function trackModelUsage(userId, modelValue, ip, usageData) {
+export async function trackModelUsage(userID, modelValue, ip, usageData, { type, agentID, messageID } = {}) {
   try {
-    if (!userId || !usageData || !modelValue) return;
+    if (!userID || !usageData || !modelValue) return;
 
     const model = await Model.findOne({ where: { internalName: modelValue } });
     if (!model) return;
@@ -23,9 +23,11 @@ export async function trackModelUsage(userId, modelValue, ip, usageData) {
     const totalCost = inputCost + outputCost + cacheReadCost + cacheWriteCost;
 
     const usageRecord = await Usage.create({
-      userId,
-      modelId: model.id,
-      ip,
+      userID,
+      modelID: model.id,
+      type: type || null,
+      agentID: agentID || null,
+      messageID: messageID || null,
       inputTokens,
       outputTokens,
       cacheReadTokens,
@@ -34,8 +36,8 @@ export async function trackModelUsage(userId, modelValue, ip, usageData) {
     });
 
     if (totalCost > 0) {
-      const user = await User.findByPk(userId);
-      if (user && user.remaining !== null && user.limit !== null) {
+      const user = await User.findByPk(userID);
+      if (user && user.remaining !== null && user.budget !== null) {
         await user.update({
           remaining: Math.max(0, (user.remaining || 0) - totalCost),
         });
