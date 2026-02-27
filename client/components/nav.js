@@ -1,8 +1,8 @@
+import { A } from "@solidjs/router";
 import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import html from "solid-js/html";
 import { Portal } from "solid-js/web";
 
-import { A } from "@solidjs/router";
 
 export default function Nav(props) {
   const [menuRef, setMenuRef] = createSignal(null);

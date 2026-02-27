@@ -1,9 +1,9 @@
 // Test all patterns from client README.md
 import { createMemo, createSignal, For, Show } from "solid-js";
 import html from "solid-js/html";
+import { createStore } from "solid-js/store";
 import { render } from "solid-js/web";
 
-import { createStore } from "solid-js/store";
 
 import assert from "./assert.js";
 import test from "./test.js";

@@ -1,7 +1,7 @@
+import { Database, Download } from "lucide-solid";
 import { For, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { Database, Download } from "lucide-solid";
 
 import { getToolResult } from "../../utils/tools.js";
 import Tooltip from "../tooltip.js";

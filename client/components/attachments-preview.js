@@ -1,7 +1,7 @@
+import { File as FileIcon, X } from "lucide-solid";
 import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { File as FileIcon, X } from "lucide-solid";
 
 import { attachmentFileTypes } from "../configs/attachment-file-types.js";
 

@@ -1,7 +1,7 @@
+import { X } from "lucide-solid";
 import { createSignal, onCleanup, onMount } from "solid-js";
 import html from "solid-js/html";
 
-import { X } from "lucide-solid";
 
 export default function DeleteConversation(props) {
   const [dialog, setDialog] = createSignal(null);

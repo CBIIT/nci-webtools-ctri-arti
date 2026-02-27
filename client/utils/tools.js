@@ -1,9 +1,9 @@
 import mammoth from "mammoth";
 
-import { parseDocument } from "./parsers.js";
-import { downloadBlob } from "./files.js";
-import { jsonToXml } from "./xml.js";
 import { docxReplace, docxExtractTextBlocks } from "./docx.js";
+import { downloadBlob } from "./files.js";
+import { parseDocument } from "./parsers.js";
+import { jsonToXml } from "./xml.js";
 
 /**
  * Runs JSON tools with the given input and returns the results. Each tool is a function that takes a JSON input and returns a JSON output.

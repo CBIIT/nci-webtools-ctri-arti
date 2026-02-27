@@ -1,8 +1,8 @@
+import { Check, Copy, Download, ThumbsDown, ThumbsUp } from "lucide-solid";
+import { marked } from "marked";
 import { Show } from "solid-js";
 import html from "solid-js/html";
 
-import { Check, Copy, Download, ThumbsDown, ThumbsUp } from "lucide-solid";
-import { marked } from "marked";
 
 import { downloadCsv } from "../../utils/files.js";
 import Tooltip from "../tooltip.js";

@@ -1,7 +1,7 @@
+import { X } from "lucide-solid";
 import { createSignal, ErrorBoundary, For, onCleanup } from "solid-js";
 import html from "solid-js/html";
 
-import { X } from "lucide-solid";
 
 import { AlertContainer } from "../../../components/alert.js";
 import BrowseTool from "../../../components/chat-tools/browse-tool.js";

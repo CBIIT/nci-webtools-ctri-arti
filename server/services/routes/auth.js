@@ -1,6 +1,7 @@
+import { Role, User } from "database";
+
 import { json, Router } from "express";
 
-import { Role, User } from "database";
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
 
 const { OAUTH_PROVIDER_ENABLED, SESSION_TTL_POLL_MS } = process.env;

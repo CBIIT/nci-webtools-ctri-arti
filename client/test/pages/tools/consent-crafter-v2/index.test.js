@@ -266,8 +266,13 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
       "genomic_non_sensitive", "genomic_sensitive",
       "may_anonymize", "will_not_anonymize",
       "no_payment", "has_payment",
+      "payment_exceeds",
+      "reimbursement_true", "reimbursement_flat_rate",
+      "reimbursement_travel_arranged", "reimbursement_false",
+      "covered_protocol",
       "coi_no_agreements", "coi_tech_license",
       "coi_crada", "coi_cta", "coi_through_program",
+      "ct_gov_registration", "study_sponsor",
     ];
     for (const field of booleanFields) {
       const ok = typeof extraction[field] === "boolean";

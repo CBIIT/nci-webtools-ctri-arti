@@ -1,7 +1,7 @@
+import { useNavigate, useParams } from "@solidjs/router";
 import { createResource, createSignal, ErrorBoundary, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { useNavigate, useParams } from "@solidjs/router";
 
 import { AlertContainer } from "../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";

@@ -1,3 +1,5 @@
+import { createReport, listCommands } from "docx-templates";
+import { openDB } from "idb";
 import {
   createEffect,
   createMemo,
@@ -9,9 +11,6 @@ import {
   Show,
 } from "solid-js";
 import html from "solid-js/html";
-
-import { createReport, listCommands } from "docx-templates";
-import { openDB } from "idb";
 import { createStore, reconcile, unwrap } from "solid-js/store";
 import yaml from "yaml";
 

@@ -1,6 +1,6 @@
+import { marked } from "marked";
 import { createMemo } from "solid-js";
 
-import { marked } from "marked";
 
 import { TOOLS } from "./tools.js";
 

@@ -1,12 +1,12 @@
+import { Download, FileText } from "lucide-solid";
 import { Show, For } from "solid-js";
 import html from "solid-js/html";
 
-import { Download, FileText } from "lucide-solid";
 
 import { downloadDocxTemplate, getToolResult } from "../../utils/tools.js";
+import Tooltip from "../tooltip.js";
 
 import ToolHeader from "./tool-header.js";
-import Tooltip from "../tooltip.js";
 
 /**
  * DocxTemplate Tool Component - displays DOCX template processing results

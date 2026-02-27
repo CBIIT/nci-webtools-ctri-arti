@@ -12,20 +12,20 @@ servers:
     description: Local development
 
 paths:
-  /api/infer:
+  /api/v1/model/invoke:
     post:
-      operationId: infer
+      operationId: invoke
       summary: Run AI model inference
       description: |
         Main inference endpoint. Supports streaming and non-streaming responses.
-        If `userId` is provided, checks rate limits before inference and tracks
+        If `userID` is provided, checks rate limits before inference and tracks
         usage after completion.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/InferRequest"
+              $ref: "#/components/schemas/InvokeRequest"
       responses:
         "200":
           description: Inference result (non-streaming)
@@ -40,6 +40,15 @@ paths:
                 Streaming response — newline-delimited JSON. Each line is a
                 separate message object. The final message contains
                 `metadata.usage` for token tracking.
+        "404":
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Model not found"
+                code: "GATEWAY_MODEL_NOT_FOUND"
         "429":
           description: Rate limit exceeded
           content:
@@ -48,18 +57,34 @@ paths:
                 $ref: "#/components/schemas/Error"
               example:
                 error: "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM."
+                code: "GATEWAY_RATE_LIMITED"
         "500":
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "501":
+          description: Embedding models not yet implemented
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Embedding not yet implemented"
+                code: "GATEWAY_NOT_IMPLEMENTED"
 
-  /api/models:
+  /api/v1/models:
     get:
       operationId: listModels
       summary: List available models
-      description: Returns all models with `providerId: 1` (Bedrock).
+      description: Returns all models with `providerID: 1` (Bedrock). Supports optional type filter.
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Filter models by type (e.g., "chat", "embedding")
       responses:
         "200":
           description: List of available models
@@ -88,13 +113,13 @@ paths:
 
 components:
   schemas:
-    InferRequest:
+    InvokeRequest:
       type: object
       required:
         - model
         - messages
       properties:
-        userId:
+        userID:
           type: integer
           nullable: true
           description: User ID for rate limiting and usage tracking. Optional.
@@ -194,6 +219,9 @@ components:
         internalName:
           type: string
           description: Provider model ID (e.g., "us.anthropic.claude-opus-4-6-v1").
+        type:
+          type: string
+          description: Model type (e.g., "chat", "embedding").
         maxContext:
           type: integer
           description: Maximum context window in tokens.
@@ -221,3 +249,6 @@ components:
       properties:
         error:
           type: string
+        code:
+          type: string
+          description: Machine-readable error code (e.g., GATEWAY_MODEL_NOT_FOUND, GATEWAY_RATE_LIMITED, GATEWAY_NOT_IMPLEMENTED).

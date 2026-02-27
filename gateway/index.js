@@ -1,6 +1,8 @@
 import http from "http";
+
 import express from "express";
 import logger from "shared/logger.js";
+
 import gatewayApi from "./api.js";
 
 const { PORT = 3001 } = process.env;

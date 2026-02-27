@@ -20,29 +20,40 @@ docker compose up --build -w
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/infer` | Run AI inference with optional rate limiting and usage tracking |
-| GET | `/api/models` | List available models (Bedrock provider) |
+| POST | `/api/v1/model/invoke` | Run AI inference with optional rate limiting and usage tracking |
+| GET | `/api/v1/models` | List available models (Bedrock provider) |
 
 See [openapi.yaml](openapi.yaml) for full request/response schemas.
 
-### POST /api/infer
+### POST /api/v1/model/invoke
 
 Accepts a model name, messages, optional system prompt, tools, and thought budget. Returns an AI response either as a single JSON object or as a newline-delimited JSON stream.
 
-**Rate limiting:** If `userId` is provided and the user's `remaining` balance is `<= 0`, returns `429`.
+**Rate limiting:** If `userID` is provided and the user's `remaining` balance is `<= 0`, returns `429`.
 
 **Streaming protocol:** Each line is a JSON object. The final message contains `metadata.usage` for token tracking.
 
-### GET /api/models
+**Error responses:**
+- `404` — Model not found (`GATEWAY_MODEL_NOT_FOUND`)
+- `429` — Rate limit exceeded (`GATEWAY_RATE_LIMITED`)
+- `501` — Embedding models not yet implemented (`GATEWAY_NOT_IMPLEMENTED`)
 
-Returns models with `providerId: 1` (Bedrock). Response includes `name`, `internalName`, `maxContext`, `maxOutput`, `maxReasoning`.
+### GET /api/v1/models
+
+Returns models with `providerID: 1` (Bedrock). Response includes `name`, `internalName`, `type`, `maxContext`, `maxOutput`, `maxReasoning`.
+
+Supports optional `?type=` query parameter to filter by model type (e.g., `?type=chat`).
 
 ## Architecture
 
 ```
-POST /api/infer
+POST /api/v1/model/invoke
   │
-  ├── Rate limit check (if userId provided)
+  ├── Model lookup (by internalName)
+  │   ├── 404 if not found
+  │   └── 501 if embedding type
+  │
+  ├── Rate limit check (if userID provided)
   │
   ├── runModel()
   │   ├── processMessages()
@@ -85,10 +96,14 @@ Cache points are added to:
 
 ### Usage Tracking
 
-`trackModelUsage(userId, model, ip, usageData)`:
+`trackModelUsage(userID, model, ip, usageData, { type, agentID, messageID })`:
 1. Looks up model by `internalName`
-2. Calculates cost: `(tokens / 1000) * cost1kRate` for input, output, cache read, cache write
-3. Creates `Usage` record
+2. Calculates cost per component:
+   - Input: `(inputTokens / 1000) * cost1kInput`
+   - Output: `(outputTokens / 1000) * cost1kOutput`
+   - Cache read: `(cacheReadTokens / 1000) * cost1kCacheRead`
+   - Cache write: `(cacheWriteTokens / 1000) * cost1kCacheWrite`
+3. Creates `Usage` record (with optional `type`, `agentID`, `messageID`)
 4. Decrements `user.remaining` by total cost
 
 ## Configuration
@@ -118,13 +133,13 @@ Cache points are added to:
 The server connects to gateway via `server/services/clients/gateway.js`, a factory-pattern client:
 
 - **Direct mode** (no `GATEWAY_URL`): Calls `runModel()` directly, handles rate limiting and usage tracking in-process.
-- **HTTP mode** (`GATEWAY_URL` set): POSTs to `GATEWAY_URL/api/infer`, parses streaming responses from newline-delimited JSON.
+- **HTTP mode** (`GATEWAY_URL` set): POSTs to `GATEWAY_URL/api/v1/model/invoke`, parses streaming responses from newline-delimited JSON.
 
 ```js
-import { infer, listModels } from "./services/clients/gateway.js";
+import { invoke, listModels } from "./services/clients/gateway.js";
 
-const result = await infer({
-  userId: 1,
+const result = await invoke({
+  userID: 1,
   model: "us.anthropic.claude-opus-4-6-v1",
   messages: [{ role: "user", content: [{ text: "Hello" }] }],
   stream: true,

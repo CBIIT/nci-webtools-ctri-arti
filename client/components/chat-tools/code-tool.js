@@ -1,7 +1,7 @@
+import { CodeXml, Download, Eye, EyeOff } from "lucide-solid";
 import { createMemo, createSignal, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { CodeXml, Download, Eye, EyeOff } from "lucide-solid";
 
 import { downloadText } from "../../utils/files.js";
 import { getToolResult } from "../../utils/tools.js";

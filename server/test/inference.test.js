@@ -1,7 +1,7 @@
+import db from "database";
 import assert from "node:assert";
 import { after, before, test } from "node:test";
 
-import db from "database";
 import { runModel } from "gateway/inference.js";
 import BedrockProvider from "gateway/providers/bedrock.js";
 

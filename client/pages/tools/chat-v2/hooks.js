@@ -3,9 +3,9 @@
 // =================================================================================
 
 import { openDB } from "idb";
+import mammoth from "mammoth";
 import { createEffect } from "solid-js";
 import { createStore, produce, unwrap } from "solid-js/store";
-import mammoth from "mammoth";
 import { docxReplace, docxExtractTextBlocks } from "/utils/docx.js";
 
 import { tools as toolSpecs, systemPrompt as defaultSystemPrompt } from "../chat/config.js";
@@ -732,7 +732,7 @@ async function getContentBlock(file) {
   const arrayBuffer = await file.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
   const name = file.name
-    .replace(/[^A-Z0-9 _\-\(\)\[\]]/gi, "_")
+    .replace(/[^A-Z0-9 _\-()[\]]/gi, "_")
     .replace(/\s+/g, " ")
     .trim();
 

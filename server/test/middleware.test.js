@@ -1,8 +1,9 @@
+import { User, Role } from "database";
 import assert from "node:assert";
 import { after, test } from "node:test";
 
-import { User, Role } from "database";
 import { logRequests, nocache } from "shared/middleware.js";
+
 import { requireRole, logErrors } from "../services/middleware.js";
 
 function createMockReq(overrides = {}) {

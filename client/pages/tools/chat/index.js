@@ -1,3 +1,4 @@
+import { EllipsisVertical, Pencil, Trash2 } from "lucide-solid";
 import {
   createEffect,
   createMemo,
@@ -10,7 +11,6 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-import { EllipsisVertical, Pencil, Trash2 } from "lucide-solid";
 
 import { AlertContainer } from "../../../components/alert.js";
 import AttachmentsPreview from "../../../components/attachments-preview.js";

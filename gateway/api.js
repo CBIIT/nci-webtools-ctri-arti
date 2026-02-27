@@ -1,6 +1,8 @@
+import { Model, User } from "database";
+
 import { json, Router } from "express";
 import { logErrors, logRequests } from "shared/middleware.js";
-import { Model, User } from "database";
+
 import { runModel } from "./inference.js";
 import { trackModelUsage } from "./usage.js";
 

@@ -1,7 +1,7 @@
+import { Search } from "lucide-solid";
 import { For } from "solid-js";
 import html from "solid-js/html";
 
-import { Search } from "lucide-solid";
 
 import { getSearchResults, getToolResult } from "../../utils/tools.js";
 
