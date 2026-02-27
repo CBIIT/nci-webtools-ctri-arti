@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import db, { Model, Role, Usage, User } from "../database.js";
+import db, { Model, Role, Usage, User } from "database";
 
 const { fn, col, Op, where: sequelizeWhere } = db.Sequelize;
 import { requireRole } from "../middleware.js";

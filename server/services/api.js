@@ -1,6 +1,7 @@
 import { json, Router } from "express";
 
-import { logErrors, logRequests } from "./middleware.js";
+import { logRequests } from "shared/middleware.js";
+import { logErrors } from "./middleware.js";
 import adminRoutes from "./routes/admin.js";
 import authRoutes from "./routes/auth.js";
 import conversationRoutes from "./routes/conversations.js";

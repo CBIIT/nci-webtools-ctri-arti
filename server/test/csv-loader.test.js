@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { parseCsv } from "../services/csv-loader.js";
+import { parseCsv } from "database/csv-loader.js";
 
 test("parseCsv", async (t) => {
   await t.test("parses basic CSV", () => {

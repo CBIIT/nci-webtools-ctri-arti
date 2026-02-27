@@ -7,9 +7,9 @@ import express from "express";
 import session from "express-session";
 
 import api from "./services/api.js";
-import db from "./services/database.js";
-import logger from "./services/logger.js";
-import { nocache } from "./services/middleware.js";
+import db from "database";
+import logger from "shared/logger.js";
+import { nocache } from "shared/middleware.js";
 import { startScheduler } from "./services/scheduler.js";
 import { createCertificate } from "./services/utils.js";
 

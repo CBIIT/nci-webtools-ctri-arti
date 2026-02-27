@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { modelDefinitions, associations, createModels, seedDatabase } from "../services/schema.js";
+import { modelDefinitions, associations, createModels, seedDatabase } from "database/schema.js";
 import { createTestDb, createSeededTestDb } from "./setup.js";
 
 test("modelDefinitions", async (t) => {

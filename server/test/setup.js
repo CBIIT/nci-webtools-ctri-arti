@@ -1,5 +1,5 @@
 import { Sequelize } from "sequelize";
-import { createModels, seedDatabase } from "../services/schema.js";
+import { createModels, seedDatabase } from "database/schema.js";
 
 export async function createTestDb() {
   const db = new Sequelize({ dialect: "sqlite", storage: ":memory:", logging: false });

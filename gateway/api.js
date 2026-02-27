@@ -81,62 +81,6 @@ api.get("/v1/models", async (req, res) => {
   res.json(results);
 });
 
-// ===== LEGACY ROUTES (kept temporarily for transition) =====
-
-/**
- * POST /api/infer - Legacy inference endpoint
- */
-api.post("/infer", async (req, res, next) => {
-  const { userId, userID, model, messages, system, tools, thoughtBudget, stream, ip } = req.body;
-  const effectiveUserID = userID || userId;
-
-  try {
-    if (effectiveUserID) {
-      const user = await User.findByPk(effectiveUserID);
-      if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
-        return res.status(429).json({
-          error: "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.",
-        });
-      }
-    }
-
-    const results = await runModel({ model, messages, system, tools, thoughtBudget, stream });
-
-    if (!results?.stream) {
-      if (effectiveUserID) {
-        await trackModelUsage(effectiveUserID, model, ip, results.usage);
-      }
-      return res.json(results);
-    }
-
-    for await (const message of results.stream) {
-      try {
-        if (message.metadata && effectiveUserID) {
-          await trackModelUsage(effectiveUserID, model, ip, message.metadata.usage);
-        }
-        res.write(JSON.stringify(message) + "\n");
-      } catch (err) {
-        console.error("Error processing stream message:", err);
-      }
-    }
-    res.end();
-  } catch (error) {
-    console.error("Error in gateway infer:", error);
-    next(error);
-  }
-});
-
-/**
- * GET /api/models - Legacy model listing
- */
-api.get("/models", async (req, res) => {
-  const results = await Model.findAll({
-    attributes: ["name", "internalName", "maxContext", "maxOutput", "maxReasoning"],
-    where: { providerID: 1 },
-  });
-  res.json(results);
-});
-
 api.use(logErrors());
 
 export default api;

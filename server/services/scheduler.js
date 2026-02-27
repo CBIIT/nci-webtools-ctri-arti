@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import { Op } from "sequelize";
 
-import { User } from "./database.js";
+import { User } from "database";
 
 const { USAGE_RESET_SCHEDULE = "0 0 * * 0" } = process.env;
 

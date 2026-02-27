@@ -1,9 +1,10 @@
 import { json, Router } from "express";
 import { QueryTypes } from "sequelize";
 
-import db from "../database.js";
+import db from "database";
 import { sendFeedback, sendLogReport } from "../email.js";
-import { proxyMiddleware, requireRole } from "../middleware.js";
+import { proxyMiddleware } from "../proxy.js";
+import { requireRole } from "../middleware.js";
 import { parseDocument } from "../parsers.js";
 import { getFile, listFiles } from "../s3.js";
 import { textract } from "../textract.js";

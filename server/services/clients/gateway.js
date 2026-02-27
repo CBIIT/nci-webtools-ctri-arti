@@ -135,5 +135,3 @@ const client = GATEWAY_URL ? buildHttpClient() : buildDirectClient();
 
 export const { invoke, listModels } = client;
 
-// Backward compatibility alias
-export const infer = invoke;

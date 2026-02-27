@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { formatObject, createLogger } from "../services/logger.js";
+import { formatObject, createLogger } from "shared/logger.js";
 
 test("formatObject", async (t) => {
   await t.test("formats string input", () => {

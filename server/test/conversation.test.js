@@ -1,8 +1,8 @@
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { User, Agent, Conversation, Message, Resource, Vector } from "../services/database.js";
-import { ConversationService } from "../services/cms/conversation.js";
+import { User, Agent, Conversation, Message, Resource, Vector } from "database";
+import { ConversationService } from "cms/conversation.js";
 
 const svc = new ConversationService();
 

@@ -1,8 +1,8 @@
 import assert from "node:assert";
 import { after, test } from "node:test";
 
-import { User, Model, Usage } from "../services/database.js";
-import { trackModelUsage } from "../services/gateway/usage.js";
+import { User, Model, Usage } from "database";
+import { trackModelUsage } from "gateway/usage.js";
 
 test("trackModelUsage", async (t) => {
   // The DB is auto-seeded via database.js (test.env sets DB_DIALECT=sqlite)
