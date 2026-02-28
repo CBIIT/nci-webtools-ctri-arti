@@ -35,14 +35,8 @@ export async function createApp(env = process.env) {
     // Use memory store for PGlite (local dev / tests)
     store = new session.MemoryStore();
   } else {
-    // Use PostgreSQL session store for production
-    const pgSession = (await import("connect-pg-simple")).default;
-    const PgStore = pgSession(session);
-    store = new PgStore({
-      conString: `postgres://${env.PGUSER}:${env.PGPASSWORD}@${env.PGHOST}:${env.PGPORT}/${env.PGDATABASE}?sslmode=require`,
-      tableName: "session",
-      createTableIfMissing: true,
-    });
+    const { createSessionStore } = await import("./services/session-store.js");
+    store = createSessionStore(session);
   }
 
   app.use(
