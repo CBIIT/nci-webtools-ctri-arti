@@ -9,8 +9,8 @@
  */
 
 import db, { Model, User } from "database";
-import { eq, and } from "drizzle-orm";
 
+import { eq, and } from "drizzle-orm";
 import { runModel as directRunModel } from "gateway/inference.js";
 import { trackModelUsage } from "gateway/usage.js";
 
@@ -30,11 +30,29 @@ async function checkRateLimit(userID) {
 
 function buildDirectClient() {
   return {
-    async invoke({ userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }) {
+    async invoke({
+      userID,
+      model,
+      messages,
+      system,
+      tools,
+      thoughtBudget,
+      stream,
+      ip,
+      outputConfig,
+    }) {
       const limited = await checkRateLimit(userID);
       if (limited) return limited;
 
-      const result = await directRunModel({ model, messages, system, tools, thoughtBudget, stream, outputConfig });
+      const result = await directRunModel({
+        model,
+        messages,
+        system,
+        tools,
+        thoughtBudget,
+        stream,
+        outputConfig,
+      });
 
       // For non-streaming responses, track usage inline
       if (!result?.stream && userID) {
@@ -79,11 +97,31 @@ function buildDirectClient() {
 
 function buildHttpClient() {
   return {
-    async invoke({ userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }) {
+    async invoke({
+      userID,
+      model,
+      messages,
+      system,
+      tools,
+      thoughtBudget,
+      stream,
+      ip,
+      outputConfig,
+    }) {
       const response = await fetch(`${GATEWAY_URL}/api/v1/model/invoke`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig }),
+        body: JSON.stringify({
+          userID,
+          model,
+          messages,
+          system,
+          tools,
+          thoughtBudget,
+          stream,
+          ip,
+          outputConfig,
+        }),
       });
 
       if (response.status === 429) {

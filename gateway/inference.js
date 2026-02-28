@@ -1,4 +1,5 @@
 import db, { Model } from "database";
+
 import { eq } from "drizzle-orm";
 
 import bedrock from "./providers/bedrock.js";
@@ -158,9 +159,23 @@ function processMessages(messages, thoughtBudget) {
  * Look up the provider and assemble the full inference input object
  * (model config, cache points, system prompt, tool config, thinking config).
  */
-async function buildInferenceParams(modelId, messages, systemPrompt, tools, thoughtBudget, outputConfig) {
+async function buildInferenceParams(
+  modelId,
+  messages,
+  systemPrompt,
+  tools,
+  thoughtBudget,
+  outputConfig
+) {
   const {
-    model: { maxOutput, maxReasoning, cost1kInput, _cost1kOutput, cost1kCacheRead, _cost1kCacheWrite },
+    model: {
+      maxOutput,
+      maxReasoning,
+      cost1kInput,
+      _cost1kOutput,
+      cost1kCacheRead,
+      _cost1kCacheWrite,
+    },
     provider,
   } = await getModelProvider(modelId);
   const hasCache = !!cost1kCacheRead;
@@ -223,8 +238,14 @@ export async function runModel({
 
   messages = processMessages(messages, thoughtBudget);
 
-  const { input, provider, hasCache, cost1kInput, cost1kCacheRead } =
-    await buildInferenceParams(model, messages, systemPrompt, tools, thoughtBudget, outputConfig);
+  const { input, provider, hasCache, cost1kInput, cost1kCacheRead } = await buildInferenceParams(
+    model,
+    messages,
+    systemPrompt,
+    tools,
+    thoughtBudget,
+    outputConfig
+  );
 
   const response = stream ? provider.converseStream(input) : provider.converse(input);
   const result = await response;
@@ -235,7 +256,9 @@ export async function runModel({
       (sum, m) => sum + m.content.reduce((s, c) => s + estimateContentTokens(c), 0),
       0
     );
-    const messagesWithCache = input.messages.filter((m) => m.content.some((c) => c.cachePoint)).length;
+    const messagesWithCache = input.messages.filter((m) =>
+      m.content.some((c) => c.cachePoint)
+    ).length;
     const cacheRead = result.usage.cacheReadInputTokens || 0;
     const cacheWrite = result.usage.cacheWriteInputTokens || 0;
 

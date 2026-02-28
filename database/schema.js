@@ -450,11 +450,17 @@ export async function seedDatabase(db) {
   // Helper: upsert rows by inserting and updating on conflict
   async function upsert(table, rows, conflictTarget, updateCols) {
     if (!rows.length) return;
+    const now = new Date();
+    const rowsWithTimestamps = rows.map((row) => ({
+      ...row,
+      createdAt: row.createdAt || now,
+      updatedAt: now,
+    }));
     const setObj = {};
     for (const col of updateCols) {
       setObj[col] = sql.raw(`excluded."${col}"`);
     }
-    await db.insert(table).values(rows).onConflictDoUpdate({
+    await db.insert(table).values(rowsWithTimestamps).onConflictDoUpdate({
       target: conflictTarget,
       set: setObj,
     });

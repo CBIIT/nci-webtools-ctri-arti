@@ -1,6 +1,6 @@
 import db, { Role, User } from "database";
-import { eq, count as countFn } from "drizzle-orm";
 
+import { eq, count as countFn } from "drizzle-orm";
 import { json, Router } from "express";
 
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
@@ -24,7 +24,12 @@ api.get("/login", loginMiddleware, async (req, res) => {
   const [existing] = await db.select().from(User).where(eq(User.email, email)).limit(1);
   session.user =
     existing ||
-    (await db.insert(User).values({ email, firstName, lastName, status: "active", ...newUser }).returning())[0];
+    (
+      await db
+        .insert(User)
+        .values({ email, firstName, lastName, status: "active", ...newUser })
+        .returning()
+    )[0];
   res.redirect(session.destination || "/");
 });
 

@@ -1,5 +1,6 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+
 import logger from "shared/logger.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -61,11 +62,22 @@ if (DB_DIALECT === "pglite") {
 }
 
 export const {
-  User, Role, Policy, RolePolicy,
-  Provider, Model,
-  Prompt, Agent, Conversation, Message,
-  Tool, Resource, Vector,
-  UserAgent, UserTool, AgentTool,
+  User,
+  Role,
+  Policy,
+  RolePolicy,
+  Provider,
+  Model,
+  Prompt,
+  Agent,
+  Conversation,
+  Message,
+  Tool,
+  Resource,
+  Vector,
+  UserAgent,
+  UserTool,
+  AgentTool,
   Usage,
 } = schema;
 

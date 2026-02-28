@@ -1,8 +1,8 @@
 import db, { User, Model, Usage } from "database";
-import { eq } from "drizzle-orm";
 import assert from "node:assert";
 import { after, test } from "node:test";
 
+import { eq } from "drizzle-orm";
 import { trackModelUsage } from "gateway/usage.js";
 
 test("trackModelUsage", async (t) => {
@@ -16,7 +16,11 @@ test("trackModelUsage", async (t) => {
     [testUser] = await db.select().from(User).where(eq(User.email, "test@test.com")).limit(1);
     assert.ok(testUser, "Test user should exist from seed");
 
-    [testModel] = await db.select().from(Model).where(eq(Model.internalName, "mock-model")).limit(1);
+    [testModel] = await db
+      .select()
+      .from(Model)
+      .where(eq(Model.internalName, "mock-model"))
+      .limit(1);
     assert.ok(testModel, "Mock model should exist from seed");
   });
 
@@ -40,11 +44,10 @@ test("trackModelUsage", async (t) => {
 
     // Verify cost calculation: (1000/1000 * cost1kInput) + (500/1000 * cost1kOutput)
     const expectedCost =
-      (1000 / 1000) * testModel.cost1kInput +
-      (500 / 1000) * testModel.cost1kOutput;
+      (1000 / 1000) * testModel.cost1kInput + (500 / 1000) * testModel.cost1kOutput;
     assert.ok(
       Math.abs(record.cost - expectedCost) < 0.0001,
-      `Expected cost ~${expectedCost}, got ${record.cost}`,
+      `Expected cost ~${expectedCost}, got ${record.cost}`
     );
   });
 

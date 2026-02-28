@@ -1,9 +1,9 @@
 import db, { User, Conversation } from "database";
-import { eq } from "drizzle-orm";
 import assert from "node:assert";
 import { test } from "node:test";
 
 import { ConversationService } from "cms/conversation.js";
+import { eq } from "drizzle-orm";
 
 const svc = new ConversationService();
 
@@ -48,7 +48,10 @@ test("ConversationService", async (t) => {
 
     await at.test("deleteAgent cascades to conversations", async () => {
       // Create a conversation under this agent
-      const conversation = await svc.createConversation(testUser.id, { agentID: agentId, title: "Agent Conversation" });
+      const conversation = await svc.createConversation(testUser.id, {
+        agentID: agentId,
+        title: "Agent Conversation",
+      });
       const msg = await svc.addMessage(testUser.id, conversation.id, {
         role: "user",
         content: [{ text: "hello" }],
@@ -71,7 +74,9 @@ test("ConversationService", async (t) => {
     let conversationId;
 
     await ct.test("createConversation", async () => {
-      const conversation = await svc.createConversation(testUser.id, { title: "Test Conversation" });
+      const conversation = await svc.createConversation(testUser.id, {
+        title: "Test Conversation",
+      });
       assert.ok(conversation.id);
       assert.strictEqual(conversation.title, "Test Conversation");
       assert.strictEqual(conversation.deleted, false);
@@ -95,7 +100,9 @@ test("ConversationService", async (t) => {
     });
 
     await ct.test("updateConversation", async () => {
-      const updated = await svc.updateConversation(testUser.id, conversationId, { title: "Updated Conversation" });
+      const updated = await svc.updateConversation(testUser.id, conversationId, {
+        title: "Updated Conversation",
+      });
       assert.ok(updated);
       assert.strictEqual(updated.title, "Updated Conversation");
     });
@@ -108,7 +115,11 @@ test("ConversationService", async (t) => {
       assert.strictEqual(conversation, null);
 
       // But should still exist in DB with deleted flag
-      const [raw] = await db.select().from(Conversation).where(eq(Conversation.id, conversationId)).limit(1);
+      const [raw] = await db
+        .select()
+        .from(Conversation)
+        .where(eq(Conversation.id, conversationId))
+        .limit(1);
       assert.ok(raw);
       assert.strictEqual(raw.deleted, true);
       assert.ok(raw.deletedAt);
@@ -122,7 +133,9 @@ test("ConversationService", async (t) => {
     let messageId;
 
     await mt.test("setup conversation", async () => {
-      const conversation = await svc.createConversation(testUser.id, { title: "Message Test Conversation" });
+      const conversation = await svc.createConversation(testUser.id, {
+        title: "Message Test Conversation",
+      });
       conversationId = conversation.id;
     });
 
@@ -183,8 +196,14 @@ test("ConversationService", async (t) => {
     await ct.test("setup conversation with messages and resources", async () => {
       const conversation = await svc.createConversation(testUser.id, { title: "Context Test" });
       conversationId = conversation.id;
-      const msg1 = await svc.addMessage(testUser.id, conversationId, { role: "user", content: [{ text: "q1" }] });
-      await svc.addMessage(testUser.id, conversationId, { role: "assistant", content: [{ text: "a1" }] });
+      const msg1 = await svc.addMessage(testUser.id, conversationId, {
+        role: "user",
+        content: [{ text: "q1" }],
+      });
+      await svc.addMessage(testUser.id, conversationId, {
+        role: "assistant",
+        content: [{ text: "a1" }],
+      });
       await svc.addResource(testUser.id, {
         messageID: msg1.id,
         name: "doc.txt",
@@ -367,7 +386,9 @@ test("ConversationService", async (t) => {
     let resourceId;
 
     await vt.test("setup conversation and resource", async () => {
-      const conversation = await svc.createConversation(testUser.id, { title: "Vector Test Conversation" });
+      const conversation = await svc.createConversation(testUser.id, {
+        title: "Vector Test Conversation",
+      });
       conversationId = conversation.id;
       const resource = await svc.addResource(testUser.id, {
         name: "vec-doc.txt",

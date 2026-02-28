@@ -1,11 +1,11 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { PGlite } from "@electric-sql/pglite";
-import { drizzle } from "drizzle-orm/pglite";
-import { migrate } from "drizzle-orm/pglite/migrator";
 
+import { PGlite } from "@electric-sql/pglite";
 import * as schema from "database/schema.js";
 import { seedDatabase } from "database/schema.js";
+import { drizzle } from "drizzle-orm/pglite";
+import { migrate } from "drizzle-orm/pglite/migrator";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const migrationsFolder = resolve(__dirname, "../../database/migrations");

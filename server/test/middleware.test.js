@@ -1,8 +1,8 @@
 import db, { User, Role } from "database";
-import { eq } from "drizzle-orm";
 import assert from "node:assert";
 import { after, test } from "node:test";
 
+import { eq } from "drizzle-orm";
 import { logRequests, nocache } from "shared/middleware.js";
 
 import { requireRole, logErrors } from "../services/middleware.js";
@@ -21,9 +21,18 @@ function createMockRes() {
     _status: 200,
     _json: null,
     _headers: {},
-    status(code) { res._status = code; return res; },
-    json(data) { res._json = data; return res; },
-    set(headers) { Object.assign(res._headers, headers); return res; },
+    status(code) {
+      res._status = code;
+      return res;
+    },
+    json(data) {
+      res._json = data;
+      return res;
+    },
+    set(headers) {
+      Object.assign(res._headers, headers);
+      return res;
+    },
   };
   return res;
 }
@@ -56,25 +65,34 @@ test("requireRole", async (t) => {
     const req = createMockReq({ headers: { "x-api-key": process.env.TEST_API_KEY } });
     const res = createMockRes();
     let nextCalled = false;
-    await middleware(req, res, () => { nextCalled = true; });
+    await middleware(req, res, () => {
+      nextCalled = true;
+    });
     assert.ok(nextCalled, "next() should have been called for admin user");
   });
 
   await t.test("returns 403 for wrong role", async () => {
     // Create a non-admin user for this test
-    const [existing] = await db.select().from(User).where(eq(User.email, "roletest@test.com")).limit(1);
+    const [existing] = await db
+      .select()
+      .from(User)
+      .where(eq(User.email, "roletest@test.com"))
+      .limit(1);
     let testUser;
     if (!existing) {
-      [testUser] = await db.insert(User).values({
-        email: "roletest@test.com",
-        firstName: "Role",
-        lastName: "Test",
-        status: "active",
-        roleID: 3, // "user" role
-        apiKey: "role-test-api-key",
-        budget: 100,
-        remaining: 100,
-      }).returning();
+      [testUser] = await db
+        .insert(User)
+        .values({
+          email: "roletest@test.com",
+          firstName: "Role",
+          lastName: "Test",
+          status: "active",
+          roleID: 3, // "user" role
+          apiKey: "role-test-api-key",
+          budget: 100,
+          remaining: 100,
+        })
+        .returning();
     } else {
       testUser = existing;
     }
@@ -90,19 +108,26 @@ test("requireRole", async (t) => {
   });
 
   await t.test("passes with correct role", async () => {
-    const [existing] = await db.select().from(User).where(eq(User.email, "roletest2@test.com")).limit(1);
+    const [existing] = await db
+      .select()
+      .from(User)
+      .where(eq(User.email, "roletest2@test.com"))
+      .limit(1);
     let testUser;
     if (!existing) {
-      [testUser] = await db.insert(User).values({
-        email: "roletest2@test.com",
-        firstName: "Role",
-        lastName: "Test2",
-        status: "active",
-        roleID: 3,
-        apiKey: "role-test-api-key-2",
-        budget: 100,
-        remaining: 100,
-      }).returning();
+      [testUser] = await db
+        .insert(User)
+        .values({
+          email: "roletest2@test.com",
+          firstName: "Role",
+          lastName: "Test2",
+          status: "active",
+          roleID: 3,
+          apiKey: "role-test-api-key-2",
+          budget: 100,
+          remaining: 100,
+        })
+        .returning();
     } else {
       testUser = existing;
     }
@@ -111,7 +136,9 @@ test("requireRole", async (t) => {
     const req = createMockReq({ headers: { "x-api-key": "role-test-api-key-2" } });
     const res = createMockRes();
     let nextCalled = false;
-    await middleware(req, res, () => { nextCalled = true; });
+    await middleware(req, res, () => {
+      nextCalled = true;
+    });
     assert.ok(nextCalled, "next() should have been called for matching role");
 
     await db.delete(User).where(eq(User.id, testUser.id));
@@ -132,7 +159,9 @@ test("logRequests", async (t) => {
     const middleware = logRequests();
     const req = createMockReq();
     let nextCalled = false;
-    middleware(req, {}, () => { nextCalled = true; });
+    middleware(req, {}, () => {
+      nextCalled = true;
+    });
     assert.ok(nextCalled);
   });
 
@@ -178,7 +207,9 @@ test("nocache", async (t) => {
   await t.test("sets correct cache headers", () => {
     const res = createMockRes();
     let nextCalled = false;
-    nocache({}, res, () => { nextCalled = true; });
+    nocache({}, res, () => {
+      nextCalled = true;
+    });
     assert.ok(res._headers["Cache-Control"].includes("no-store"));
     assert.strictEqual(res._headers["Expires"], "0");
     assert.strictEqual(res._headers["Pragma"], "no-cache");
@@ -189,7 +220,9 @@ test("nocache", async (t) => {
   await t.test("calls next", () => {
     const res = createMockRes();
     let nextCalled = false;
-    nocache({}, res, () => { nextCalled = true; });
+    nocache({}, res, () => {
+      nextCalled = true;
+    });
     assert.ok(nextCalled);
   });
 });

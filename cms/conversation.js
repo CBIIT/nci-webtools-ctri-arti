@@ -1,26 +1,37 @@
-import db, { Agent, Conversation, Message, Resource, Vector, Prompt, Tool, AgentTool, UserTool } from "database";
+import db, {
+  Agent,
+  Conversation,
+  Message,
+  Resource,
+  Vector,
+  Prompt,
+  Tool,
+  AgentTool,
+  UserTool,
+} from "database";
+
 import { eq, and, or, isNull, isNotNull, inArray, asc, desc } from "drizzle-orm";
 
 export class ConversationService {
   // ===== AGENT METHODS =====
 
   async createAgent(userId, data) {
-    const [agent] = await db.insert(Agent).values({
-      userID: userId,
-      name: data.name,
-      description: data.description || null,
-      promptID: data.promptID || null,
-      modelParameters: data.modelParameters || null,
-    }).returning();
+    const [agent] = await db
+      .insert(Agent)
+      .values({
+        userID: userId,
+        name: data.name,
+        description: data.description || null,
+        promptID: data.promptID || null,
+        modelParameters: data.modelParameters || null,
+      })
+      .returning();
     return agent;
   }
 
   async getAgent(userId, agentId) {
     const agent = await db.query.Agent.findFirst({
-      where: and(
-        eq(Agent.id, agentId),
-        or(eq(Agent.userID, userId), isNull(Agent.userID)),
-      ),
+      where: and(eq(Agent.id, agentId), or(eq(Agent.userID, userId), isNull(Agent.userID))),
       with: {
         Prompt: { columns: { id: true, name: true, content: true } },
         AgentTools: { with: { Tool: { columns: { name: true } } } },
@@ -55,7 +66,9 @@ export class ConversationService {
 
   async updateAgent(userId, agentId, updates) {
     const { tools, ...agentFields } = updates;
-    const result = await db.update(Agent).set(agentFields)
+    const result = await db
+      .update(Agent)
+      .set(agentFields)
       .where(and(eq(Agent.id, agentId), eq(Agent.userID, userId)))
       .returning();
     if (result.length === 0) return null;
@@ -72,23 +85,30 @@ export class ConversationService {
   }
 
   async deleteAgent(userId, agentId) {
-    const conversations = await db.select().from(Conversation)
+    const conversations = await db
+      .select()
+      .from(Conversation)
       .where(and(eq(Conversation.agentID, agentId), eq(Conversation.userID, userId)));
     for (const conversation of conversations) {
       await this.deleteConversation(userId, conversation.id);
     }
-    const result = await db.delete(Agent).where(and(eq(Agent.id, agentId), eq(Agent.userID, userId)));
+    const result = await db
+      .delete(Agent)
+      .where(and(eq(Agent.id, agentId), eq(Agent.userID, userId)));
     return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 
   // ===== CONVERSATION METHODS =====
 
   async createConversation(userId, data) {
-    const [conversation] = await db.insert(Conversation).values({
-      userID: userId,
-      agentID: data.agentID || null,
-      title: data.title || "",
-    }).returning();
+    const [conversation] = await db
+      .insert(Conversation)
+      .values({
+        userID: userId,
+        agentID: data.agentID || null,
+        title: data.title || "",
+      })
+      .returning();
     return conversation;
   }
 
@@ -97,7 +117,7 @@ export class ConversationService {
       where: and(
         eq(Conversation.id, conversationId),
         eq(Conversation.userID, userId),
-        eq(Conversation.deleted, false),
+        eq(Conversation.deleted, false)
       ),
     });
     return result || null;
@@ -108,21 +128,33 @@ export class ConversationService {
     const where = and(eq(Conversation.userID, userId), eq(Conversation.deleted, false));
 
     const [rows, [{ value: countVal }]] = await Promise.all([
-      db.select().from(Conversation).where(where)
-        .orderBy(desc(Conversation.createdAt)).limit(limit).offset(offset),
-      db.select({ value: (await import("drizzle-orm")).count() }).from(Conversation).where(where),
+      db
+        .select()
+        .from(Conversation)
+        .where(where)
+        .orderBy(desc(Conversation.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ value: (await import("drizzle-orm")).count() })
+        .from(Conversation)
+        .where(where),
     ]);
 
     return { count: countVal, rows };
   }
 
   async updateConversation(userId, conversationId, updates) {
-    const result = await db.update(Conversation).set(updates)
-      .where(and(
-        eq(Conversation.id, conversationId),
-        eq(Conversation.userID, userId),
-        eq(Conversation.deleted, false),
-      ))
+    const result = await db
+      .update(Conversation)
+      .set(updates)
+      .where(
+        and(
+          eq(Conversation.id, conversationId),
+          eq(Conversation.userID, userId),
+          eq(Conversation.deleted, false)
+        )
+      )
       .returning();
     if (result.length === 0) return null;
     return this.getConversation(userId, conversationId);
@@ -130,7 +162,8 @@ export class ConversationService {
 
   async deleteConversation(userId, conversationId) {
     // Soft delete
-    const result = await db.update(Conversation)
+    const result = await db
+      .update(Conversation)
       .set({ deleted: true, deletedAt: new Date() })
       .where(and(eq(Conversation.id, conversationId), eq(Conversation.userID, userId)))
       .returning();
@@ -143,12 +176,16 @@ export class ConversationService {
     const conversation = await this.getConversation(userId, conversationId);
     if (!conversation) return null;
 
-    const messages = await db.select().from(Message)
+    const messages = await db
+      .select()
+      .from(Message)
       .where(eq(Message.conversationID, conversationId))
       .orderBy(asc(Message.createdAt));
-    const messageIds = messages.map(m => m.id);
+    const messageIds = messages.map((m) => m.id);
     const resources = messageIds.length
-      ? await db.select().from(Resource)
+      ? await db
+          .select()
+          .from(Resource)
           .where(inArray(Resource.messageID, messageIds))
           .orderBy(asc(Resource.createdAt))
       : [];
@@ -162,7 +199,8 @@ export class ConversationService {
     const conversation = await this.getConversation(userId, conversationId);
     if (!conversation) return null;
 
-    await db.update(Conversation)
+    await db
+      .update(Conversation)
       .set({ summaryMessageID })
       .where(and(eq(Conversation.id, conversationId), eq(Conversation.userID, userId)));
 
@@ -172,17 +210,22 @@ export class ConversationService {
   // ===== MESSAGE METHODS =====
 
   async addMessage(userId, conversationId, data) {
-    const [msg] = await db.insert(Message).values({
-      conversationID: conversationId,
-      parentID: data.parentID || null,
-      role: data.role,
-      content: data.content,
-    }).returning();
+    const [msg] = await db
+      .insert(Message)
+      .values({
+        conversationID: conversationId,
+        parentID: data.parentID || null,
+        role: data.role,
+        content: data.content,
+      })
+      .returning();
     return msg;
   }
 
   async getMessages(userId, conversationId) {
-    return db.select().from(Message)
+    return db
+      .select()
+      .from(Message)
       .where(eq(Message.conversationID, conversationId))
       .orderBy(asc(Message.createdAt));
   }
@@ -193,7 +236,11 @@ export class ConversationService {
   }
 
   async updateMessage(userId, messageId, updates) {
-    const result = await db.update(Message).set(updates).where(eq(Message.id, messageId)).returning();
+    const result = await db
+      .update(Message)
+      .set(updates)
+      .where(eq(Message.id, messageId))
+      .returning();
     if (result.length === 0) return null;
     return this.getMessage(userId, messageId);
   }
@@ -223,7 +270,7 @@ export class ConversationService {
       with: { UserTools: true },
     });
     const filteredUserTools = userTools.filter(
-      (t) => t.type !== "builtin" && t.UserTools?.some((ut) => ut.userID === userId),
+      (t) => t.type !== "builtin" && t.UserTools?.some((ut) => ut.userID === userId)
     );
     return [...builtinTools, ...filteredUserTools];
   }
@@ -255,8 +302,7 @@ export class ConversationService {
   }
 
   async getPrompts(options = {}) {
-    return db.select().from(Prompt)
-      .orderBy(asc(Prompt.name), desc(Prompt.version));
+    return db.select().from(Prompt).orderBy(asc(Prompt.name), desc(Prompt.version));
   }
 
   async updatePrompt(promptId, updates) {
@@ -273,15 +319,18 @@ export class ConversationService {
   // ===== RESOURCE METHODS =====
 
   async addResource(userId, data) {
-    const [resource] = await db.insert(Resource).values({
-      agentID: data.agentID || null,
-      messageID: data.messageID || null,
-      name: data.name,
-      type: data.type,
-      content: data.content,
-      s3Uri: data.s3Uri || null,
-      metadata: data.metadata || {},
-    }).returning();
+    const [resource] = await db
+      .insert(Resource)
+      .values({
+        agentID: data.agentID || null,
+        messageID: data.messageID || null,
+        name: data.name,
+        type: data.type,
+        content: data.content,
+        s3Uri: data.s3Uri || null,
+        metadata: data.metadata || {},
+      })
+      .returning();
     return resource;
   }
 
@@ -291,7 +340,9 @@ export class ConversationService {
   }
 
   async getResourcesByAgent(userId, agentId) {
-    return db.select().from(Resource)
+    return db
+      .select()
+      .from(Resource)
       .where(eq(Resource.agentID, agentId))
       .orderBy(asc(Resource.createdAt));
   }
@@ -317,13 +368,17 @@ export class ConversationService {
   }
 
   async getVectorsByConversation(userId, conversationId) {
-    return db.select().from(Vector)
+    return db
+      .select()
+      .from(Vector)
       .where(eq(Vector.conversationID, conversationId))
       .orderBy(asc(Vector.order));
   }
 
   async getVectorsByResource(userId, resourceId) {
-    return db.select().from(Vector)
+    return db
+      .select()
+      .from(Vector)
       .where(eq(Vector.resourceID, resourceId))
       .orderBy(asc(Vector.order));
   }
@@ -342,7 +397,9 @@ export class ConversationService {
     // Cosine similarity search
     const scored = vectors.map((v) => {
       const stored = v.embedding;
-      let dotProduct = 0, normA = 0, normB = 0;
+      let dotProduct = 0,
+        normA = 0,
+        normB = 0;
       for (let i = 0; i < embedding.length; i++) {
         dotProduct += embedding[i] * (stored[i] || 0);
         normA += embedding[i] * embedding[i];

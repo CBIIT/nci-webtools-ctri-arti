@@ -1,12 +1,11 @@
 import db, { Role, User } from "database";
-import { eq } from "drizzle-orm";
 
+import { eq } from "drizzle-orm";
 import Provider from "oidc-provider";
 import * as client from "openid-client";
 import logger, { formatObject } from "shared/logger.js";
 
 import { sendLogReport } from "./email.js";
-
 
 const {
   HOSTNAME,

@@ -1,6 +1,6 @@
 import db, { Model, User } from "database";
-import { eq } from "drizzle-orm";
 
+import { eq } from "drizzle-orm";
 import { json, Router } from "express";
 import { logErrors, logRequests } from "shared/middleware.js";
 
@@ -16,7 +16,8 @@ api.use(logRequests());
  * Handles both chat and embedding model types.
  */
 api.post("/v1/model/invoke", async (req, res, next) => {
-  const { userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig } = req.body;
+  const { userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig } =
+    req.body;
 
   try {
     // Resolve model from DB to check type
@@ -29,7 +30,9 @@ api.post("/v1/model/invoke", async (req, res, next) => {
 
     // Embedding models are stubbed for now
     if (modelRecord.type === "embedding") {
-      return res.status(501).json({ error: "Embedding not yet implemented", code: "GATEWAY_NOT_IMPLEMENTED" });
+      return res
+        .status(501)
+        .json({ error: "Embedding not yet implemented", code: "GATEWAY_NOT_IMPLEMENTED" });
     }
 
     // Rate limit check
@@ -37,14 +40,23 @@ api.post("/v1/model/invoke", async (req, res, next) => {
       const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
       if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
         return res.status(429).json({
-          error: "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.",
+          error:
+            "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.",
           code: "GATEWAY_RATE_LIMITED",
         });
       }
     }
 
     // Run inference
-    const results = await runModel({ model, messages, system, tools, thoughtBudget, stream, outputConfig });
+    const results = await runModel({
+      model,
+      messages,
+      system,
+      tools,
+      thoughtBudget,
+      stream,
+      outputConfig,
+    });
 
     // For non-streaming responses
     if (!results?.stream) {
