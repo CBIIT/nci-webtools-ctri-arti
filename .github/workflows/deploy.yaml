@@ -40,4 +40,4 @@ jobs:
       - run: npm install -g aws-cdk
       - run: pip install -r infrastructure/requirements.txt
       - run: echo "${{ secrets.ENV_FILE }}" > infrastructure/.env
-      - run: bash deploy.sh
+      - run: bash infrastructure/deploy.sh

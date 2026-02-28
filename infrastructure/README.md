@@ -104,7 +104,7 @@ graph TB
 
 ```mermaid
 graph LR
-    subgraph "deploy.sh"
+    subgraph "infrastructure/deploy.sh"
         A["1. Deploy<br/>ECR stack"] --> B["2. Build<br/>Docker images"]
         B --> C["3. Push to ECR<br/>(main, gateway, cms)"]
         C --> D["4. Deploy<br/>ECS stack"]
@@ -129,11 +129,11 @@ graph LR
 
 Three CDK stacks deploy the application to AWS:
 
-| Stack | Resource | Description |
-|-------|----------|-------------|
-| `{prefix}-ecr-repository` | ECR | Docker image registry with auto-cleanup |
-| `{prefix}-ecs-service` | ECS Fargate | 3-container task (main, gateway, cms) behind ALB |
-| `{prefix}-rds-cluster` | RDS Aurora | Serverless v2 PostgreSQL |
+| Stack                     | Resource    | Description                                      |
+| ------------------------- | ----------- | ------------------------------------------------ |
+| `{prefix}-ecr-repository` | ECR         | Docker image registry with auto-cleanup          |
+| `{prefix}-ecs-service`    | ECS Fargate | 3-container task (main, gateway, cms) behind ALB |
+| `{prefix}-rds-cluster`    | RDS Aurora  | Serverless v2 PostgreSQL                         |
 
 The `prefix` is `{NAMESPACE}-{APPLICATION}-{TIER}` (e.g., `ctri-research-optimizer-dev`).
 
@@ -161,49 +161,49 @@ Configuration is loaded from environment variables via `config.py`.
 
 ### Required Variables
 
-| Variable | Description |
-|----------|-------------|
-| `AWS_ACCOUNT_ID` | AWS account ID |
-| `AWS_REGION` | AWS region |
-| `VPC` | VPC name (looked up by name, not ID) |
-| `SUBNETS` | Comma-separated subnet IDs |
-| `NAMESPACE` | Resource namespace (e.g., `ctri`) |
-| `APPLICATION` | Application name (e.g., `research-optimizer`) |
-| `TIER` | Environment tier (e.g., `dev`, `staging`, `prod`) |
-| `DOMAIN_NAME` | Application domain name |
-| `ALT_DOMAIN_NAME` | Optional alternate domain (redirects to primary) |
+| Variable          | Description                                       |
+| ----------------- | ------------------------------------------------- |
+| `AWS_ACCOUNT_ID`  | AWS account ID                                    |
+| `AWS_REGION`      | AWS region                                        |
+| `VPC`             | VPC name (looked up by name, not ID)              |
+| `SUBNETS`         | Comma-separated subnet IDs                        |
+| `NAMESPACE`       | Resource namespace (e.g., `ctri`)                 |
+| `APPLICATION`     | Application name (e.g., `research-optimizer`)     |
+| `TIER`            | Environment tier (e.g., `dev`, `staging`, `prod`) |
+| `DOMAIN_NAME`     | Application domain name                           |
+| `ALT_DOMAIN_NAME` | Optional alternate domain (redirects to primary)  |
 
 ### Container Images
 
-| Variable | Description |
-|----------|-------------|
-| `MAIN_IMAGE` | Main server container image URI (falls back to `SERVER_IMAGE`, then `httpd`) |
-| `GATEWAY_IMAGE` | Gateway service container image URI (falls back to `httpd`) |
-| `CMS_IMAGE` | CMS service container image URI (falls back to `httpd`) |
+| Variable        | Description                                                                  |
+| --------------- | ---------------------------------------------------------------------------- |
+| `MAIN_IMAGE`    | Main server container image URI (falls back to `SERVER_IMAGE`, then `httpd`) |
+| `GATEWAY_IMAGE` | Gateway service container image URI (falls back to `httpd`)                  |
+| `CMS_IMAGE`     | CMS service container image URI (falls back to `httpd`)                      |
 
 ### Application Secrets
 
 Stored as SSM Parameters, injected into containers at runtime:
 
-| Variable | Container | Description |
-|----------|-----------|-------------|
-| `SESSION_SECRET` | main | Cookie signing secret |
-| `OAUTH_CLIENT_ID` | main | OIDC client ID |
-| `OAUTH_CLIENT_SECRET` | main | OIDC client secret |
-| `OAUTH_CALLBACK_URL` | main | OIDC redirect URI |
-| `OAUTH_DISCOVERY_URL` | main | OIDC discovery URL |
-| `GEMINI_API_KEY` | gateway | Google Gemini API key |
-| `BRAVE_SEARCH_API_KEY` | main | Brave Search API key |
-| `DATA_GOV_API_KEY` | main | GovInfo API key |
-| `CONGRESS_GOV_API_KEY` | main | Congress.gov API key |
-| `S3_BUCKETS` | main | Allowed S3 buckets |
-| `EMAIL_ADMIN` | main | Admin notification email |
-| `EMAIL_DEV` | main | Developer error report email |
-| `EMAIL_USER_REPORTS` | main | User feedback email |
-| `SMTP_HOST` | main | SMTP server host |
-| `SMTP_PORT` | main | SMTP server port |
-| `SMTP_USER` | main | SMTP username |
-| `SMTP_PASSWORD` | main | SMTP password |
+| Variable               | Container | Description                  |
+| ---------------------- | --------- | ---------------------------- |
+| `SESSION_SECRET`       | main      | Cookie signing secret        |
+| `OAUTH_CLIENT_ID`      | main      | OIDC client ID               |
+| `OAUTH_CLIENT_SECRET`  | main      | OIDC client secret           |
+| `OAUTH_CALLBACK_URL`   | main      | OIDC redirect URI            |
+| `OAUTH_DISCOVERY_URL`  | main      | OIDC discovery URL           |
+| `GEMINI_API_KEY`       | gateway   | Google Gemini API key        |
+| `BRAVE_SEARCH_API_KEY` | main      | Brave Search API key         |
+| `DATA_GOV_API_KEY`     | main      | GovInfo API key              |
+| `CONGRESS_GOV_API_KEY` | main      | Congress.gov API key         |
+| `S3_BUCKETS`           | main      | Allowed S3 buckets           |
+| `EMAIL_ADMIN`          | main      | Admin notification email     |
+| `EMAIL_DEV`            | main      | Developer error report email |
+| `EMAIL_USER_REPORTS`   | main      | User feedback email          |
+| `SMTP_HOST`            | main      | SMTP server host             |
+| `SMTP_PORT`            | main      | SMTP server port             |
+| `SMTP_USER`            | main      | SMTP username                |
+| `SMTP_PASSWORD`        | main      | SMTP password                |
 
 Database credentials (PGHOST, PGUSER, PGPASSWORD, PGPORT, PGDATABASE) are pulled from Secrets Manager, created by the RDS stack. They are injected into all 3 containers.
 
@@ -211,16 +211,16 @@ Database credentials (PGHOST, PGUSER, PGPASSWORD, PGPORT, PGDATABASE) are pulled
 
 These are set automatically by config.py (not user-configurable):
 
-| Variable | Container | Value |
-|----------|-----------|-------|
-| `PORT` | main | `80` |
-| `PORT` | gateway | `3001` |
-| `PORT` | cms | `3002` |
-| `GATEWAY_URL` | main | `http://localhost:3001` |
-| `CMS_URL` | main | `http://localhost:3002` |
-| `DB_SKIP_SYNC` | gateway, cms | `true` |
-| `VERSION` | main | `GITHUB_SHA` or `latest` |
-| `TIER` | main | Environment tier |
+| Variable       | Container    | Value                    |
+| -------------- | ------------ | ------------------------ |
+| `PORT`         | main         | `80`                     |
+| `PORT`         | gateway      | `3001`                   |
+| `PORT`         | cms          | `3002`                   |
+| `GATEWAY_URL`  | main         | `http://localhost:3001`  |
+| `CMS_URL`      | main         | `http://localhost:3002`  |
+| `DB_SKIP_SYNC` | gateway, cms | `true`                   |
+| `VERSION`      | main         | `GITHUB_SHA` or `latest` |
+| `TIER`         | main         | Environment tier         |
 
 ## Stack Details
 
@@ -240,6 +240,7 @@ These are set automatically by config.py (not user-configurable):
 - **Logging:** CloudWatch with 1-month retention
 
 IAM permissions granted to tasks:
+
 - Amazon Bedrock (AI inference)
 - Amazon RDS Data API
 - Secrets Manager
@@ -268,7 +269,7 @@ cms/Dockerfile  → cms image     (FROM main, CMD: npm start -w cms)
 
 ## CI/CD Pipeline
 
-The `deploy.sh` script at the project root orchestrates deployment:
+The `infrastructure/deploy.sh` script orchestrates deployment:
 
 1. Deploy ECR stack
 2. Build and push 3 Docker images (main, gateway, cms)
@@ -276,15 +277,24 @@ The `deploy.sh` script at the project root orchestrates deployment:
 
 Note: RDS deployment is handled separately (not part of the automated pipeline).
 
-```bash
-# Required environment variables
-export AWS_ACCOUNT_ID=...
-export AWS_REGION=...
-export TIER=dev
-export GITHUB_SHA=$(git rev-parse HEAD)
+### Local Deployment
 
-./deploy.sh
+```bash
+# Prerequisites: Docker, Python 3.9+, AWS CDK, Node.js, AWS SSO login
+cd infrastructure
+cp .env.example .env   # Fill in values (see .env.example for reference)
+
+# Authenticate with AWS
+aws sso login --profile <your-profile>
+export AWS_PROFILE=<your-profile>
+
+# Run deployment
+bash deploy.sh
 ```
+
+### CI/CD Deployment
+
+Pushes to `*dev` or `*qa` branches trigger the GitHub Actions deploy workflow, which injects `infrastructure/.env` from the `ENV_FILE` repository secret.
 
 ## Deployment Order
 

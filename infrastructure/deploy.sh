@@ -1,6 +1,14 @@
 #!/bin/bash
 set -ex
 
+# Run from project root
+cd "$(dirname "$0")/.."
+
+export TIER=${TIER:-dev}
+export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID:-311141531877}
+export AWS_REGION=${AWS_REGION:-us-east-1}
+export GITHUB_SHA=${GITHUB_SHA:-$(git rev-parse HEAD)}
+
 export PREFIX=ctri-research-optimizer-$TIER
 export ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
@@ -20,11 +28,11 @@ export CMS_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:cms-latest
 export SERVER_IMAGE=$MAIN_IMAGE
 export SERVER_IMAGE_LATEST=$MAIN_IMAGE_LATEST
 
-pushd infrastructure
+cd infrastructure
 pip install -r requirements.txt
 cdk deploy $PREFIX-ecr-repository --require-approval never
 # cdk deploy $PREFIX-rds-cluster --require-approval never
-popd
+cd ..
 
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
@@ -47,6 +55,5 @@ docker push $GATEWAY_IMAGE_LATEST
 docker push $CMS_IMAGE
 docker push $CMS_IMAGE_LATEST
 
-pushd infrastructure
+cd infrastructure
 cdk deploy $PREFIX-ecs-service --require-approval never
-popd
