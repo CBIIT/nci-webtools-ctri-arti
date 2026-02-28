@@ -149,25 +149,36 @@ export function oauthMiddleware() {
 }
 
 /**
- * Middleware that requires user to have a specific role
- * @param {string} requiredRole - Name or ID of the required role (e.g., "admin")
- * @returns {Function} Middleware function
+ * Auth middleware that resolves X-API-Key / session and optionally enforces a role.
+ *
+ * - Global usage  `api.use(requireRole())` — resolves API key into session
+ *   without blocking unauthenticated requests (soft auth).
+ * - Route usage   `requireRole("admin")` — requires authentication *and*
+ *   the specified role (hard auth).  Role ID 1 (admin) bypasses all checks.
+ *
+ * @param {string} [requiredRole] - Role name or ID to enforce.  Omit for soft auth.
+ * @returns {Function} Express middleware
  */
 export function requireRole(requiredRole) {
   return async (req, res, next) => {
     try {
       const apiKey = req.headers["x-api-key"];
       const id = req.session?.user?.id;
+
+      // Soft auth: no credentials → skip silently
       if (!apiKey && !id) {
-        return res.status(401).json({ error: "Authentication required" });
+        return requiredRole ? res.status(401).json({ error: "Authentication required" }) : next();
       }
+
       const result = await db.query.User.findFirst({
         where: apiKey ? eq(User.apiKey, apiKey) : eq(User.id, id),
         with: { Role: true },
       });
+
       if (!result) {
-        return res.status(401).json({ error: "Authentication required" });
+        return requiredRole ? res.status(401).json({ error: "Authentication required" }) : next();
       }
+
       const role = result.Role;
       // Check role requirement (1 = admin, always allowed)
       if (
@@ -177,6 +188,7 @@ export function requireRole(requiredRole) {
       ) {
         return res.status(403).json({ error: "Authorization required" });
       }
+
       // Set user in session for downstream handlers
       req.session ||= {};
       req.session.user = result;

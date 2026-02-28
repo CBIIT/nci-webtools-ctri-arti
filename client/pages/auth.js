@@ -11,7 +11,9 @@ export function Authorized(props) {
 }
 
 export async function getAuthorizedUser(props) {
-  const session = await fetch("/api/v1/session").then((r) => r.json());
+  const apiKey = new URLSearchParams(location.search).get("apiKey");
+  const headers = apiKey ? { "x-api-key": apiKey } : undefined;
+  const session = await fetch("/api/v1/session", { headers }).then((r) => r.json());
   const { user } = session;
   if (!user) {
     location.href = "/api/v1/login?destination=" + encodeURIComponent(location.pathname);

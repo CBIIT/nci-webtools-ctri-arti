@@ -143,7 +143,20 @@ api.post(
   "/admin/users",
   requireRole("admin"),
   routeHandler(async (req, res) => {
-    const { id, generateApiKey, ...userData } = req.body;
+    const { id, generateApiKey } = req.body;
+    const allowedKeys = [
+      "email",
+      "firstName",
+      "lastName",
+      "status",
+      "roleID",
+      "apiKey",
+      "budget",
+      "remaining",
+    ];
+    const userData = Object.fromEntries(
+      allowedKeys.filter((k) => req.body[k] !== undefined).map((k) => [k, req.body[k]])
+    );
 
     if (generateApiKey) {
       userData.apiKey = `rsk_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;

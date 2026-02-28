@@ -64,7 +64,9 @@ export const AuthProvider = (props) => {
 
   const getMyUser = async () => {
     try {
-      const response = await fetch("/api/v1/session");
+      const apiKey = new URLSearchParams(location.search).get("apiKey");
+      const headers = apiKey ? { "x-api-key": apiKey } : undefined;
+      const response = await fetch("/api/v1/session", { headers });
 
       if (!response.ok) {
         return { error: new Error("Failed to fetch session"), data: null };

@@ -12,6 +12,11 @@ import db, {
 
 import { eq, and, or, isNull, isNotNull, inArray, asc, desc } from "drizzle-orm";
 
+function stripAutoFields(obj) {
+  const { id, createdAt, updatedAt, ...rest } = obj;
+  return rest;
+}
+
 export class ConversationService {
   // ===== AGENT METHODS =====
 
@@ -68,7 +73,7 @@ export class ConversationService {
     const { tools, ...agentFields } = updates;
     const result = await db
       .update(Agent)
-      .set(agentFields)
+      .set(stripAutoFields(agentFields))
       .where(and(eq(Agent.id, agentId), eq(Agent.userID, userId)))
       .returning();
     if (result.length === 0) return null;
@@ -147,7 +152,7 @@ export class ConversationService {
   async updateConversation(userId, conversationId, updates) {
     const result = await db
       .update(Conversation)
-      .set(updates)
+      .set(stripAutoFields(updates))
       .where(
         and(
           eq(Conversation.id, conversationId),
@@ -238,7 +243,7 @@ export class ConversationService {
   async updateMessage(userId, messageId, updates) {
     const result = await db
       .update(Message)
-      .set(updates)
+      .set(stripAutoFields(updates))
       .where(eq(Message.id, messageId))
       .returning();
     if (result.length === 0) return null;
@@ -276,7 +281,11 @@ export class ConversationService {
   }
 
   async updateTool(toolId, updates) {
-    const result = await db.update(Tool).set(updates).where(eq(Tool.id, toolId)).returning();
+    const result = await db
+      .update(Tool)
+      .set(stripAutoFields(updates))
+      .where(eq(Tool.id, toolId))
+      .returning();
     if (result.length === 0) return null;
     return this.getTool(toolId);
   }
@@ -306,7 +315,11 @@ export class ConversationService {
   }
 
   async updatePrompt(promptId, updates) {
-    const result = await db.update(Prompt).set(updates).where(eq(Prompt.id, promptId)).returning();
+    const result = await db
+      .update(Prompt)
+      .set(stripAutoFields(updates))
+      .where(eq(Prompt.id, promptId))
+      .returning();
     if (result.length === 0) return null;
     return this.getPrompt(promptId);
   }

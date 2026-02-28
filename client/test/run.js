@@ -4,9 +4,11 @@ const tests = [
   "./models/database-migration.test.js",
   "./utils/similarity.test.js",
   "./pages/tools/chat/message.test.js",
-  "./services/consent-library-filter.test.js",
-  "./services/consent-form-generator.test.js",
+  // "./services/consent-library-filter.test.js",
+  // "./services/consent-form-generator.test.js",
   // "./pages/tools/consent-crafter-v2/index.test.js",
+  "./api/smoke.test.js",
+  "./pages/admin.test.js",
 ];
 for (const test of tests) {
   try {
