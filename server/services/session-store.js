@@ -61,13 +61,13 @@ export function createSessionStore(session) {
       const expireMs = sess?.cookie?.expires
         ? new Date(sess.cookie.expires).getTime()
         : Date.now() + 86400000;
-      const expire = new Date(expireMs);
+      const expire = new Date(expireMs).toISOString();
       const sessJson = JSON.stringify(sess);
       this.#query(
         "set",
-        { sid, expire: expire.toISOString() },
+        { sid, expire },
         db.execute(
-          sql`INSERT INTO "session" (sid, sess, expire) VALUES (${sid}, ${sessJson}::json, ${expire})
+          sql`INSERT INTO "session" (sid, sess, expire) VALUES (${sid}, ${sessJson}::json, ${expire}::timestamp)
               ON CONFLICT (sid) DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire`
         ),
         cb
@@ -87,11 +87,11 @@ export function createSessionStore(session) {
       const expireMs = sess?.cookie?.expires
         ? new Date(sess.cookie.expires).getTime()
         : Date.now() + 86400000;
-      const expire = new Date(expireMs);
+      const expire = new Date(expireMs).toISOString();
       this.#query(
         "touch",
-        { sid, expire: expire.toISOString() },
-        db.execute(sql`UPDATE "session" SET expire = ${expire} WHERE sid = ${sid}`),
+        { sid, expire },
+        db.execute(sql`UPDATE "session" SET expire = ${expire}::timestamp WHERE sid = ${sid}`),
         cb
       );
     }

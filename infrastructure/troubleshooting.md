@@ -144,6 +144,46 @@ aws ecs update-service \
   --profile $PROFILE --region $REGION
 ```
 
+### Connect to a running container (ECS Exec)
+
+ECS Exec is enabled on all containers, allowing interactive shell access. Requires the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) installed locally.
+
+```bash
+# Get a running task ID
+TASK_ID=$(aws ecs list-tasks --cluster $PREFIX \
+  --query "taskArns[0]" --output text \
+  --profile $PROFILE --region $REGION)
+
+# Shell into the main container
+aws ecs execute-command \
+  --cluster $PREFIX \
+  --task $TASK_ID \
+  --container main \
+  --interactive \
+  --command "/bin/sh" \
+  --profile $PROFILE --region $REGION
+```
+
+Container names: `main`, `gateway`, `cms`. Useful for:
+
+- Checking running processes: `ps aux`
+- Viewing stdout/stderr: `cat /proc/1/fd/1` (stdout) / `cat /proc/1/fd/2` (stderr)
+- Checking environment variables: `env | grep PG`
+- Testing database connectivity: `node -e "import('postgres').then(m => m.default({ssl:{rejectUnauthorized:false}})\`SELECT 1\`.then(console.log))"`
+- Checking memory/cpu: `cat /proc/meminfo`, `top -bn1`
+- Inspecting files, logs, or node_modules
+- Running one-off scripts
+
+### Verify ECS Exec agent status
+
+```bash
+aws ecs describe-tasks \
+  --cluster $PREFIX \
+  --tasks $TASK_ID \
+  --query "tasks[0].containers[*].{name:name,execAgent:managedAgents[?name=='ExecuteCommandAgent'].lastStatus|[0]}" \
+  --profile $PROFILE --region $REGION
+```
+
 ## 3. Aurora PostgreSQL (via RDS Data API)
 
 The Data API lets you run SQL without a direct database connection. You need the cluster ARN and the Secrets Manager ARN for credentials.
