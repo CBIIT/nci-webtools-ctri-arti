@@ -17,7 +17,7 @@ COPY users/package.json /app/users/
 COPY server/package.json /app/server/
 
 # Install production dependencies only (skips devDeps like eslint, playwright, sqlite3)
-RUN npm ci --omit=dev
+RUN HUSKY=0 npm ci --omit=dev
 
 # Copy all source directories
 COPY shared /app/shared
