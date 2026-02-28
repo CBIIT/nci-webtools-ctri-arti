@@ -27,7 +27,7 @@ export function createLogger(name, level = "info") {
   return new createWinstonLogger({
     level: level,
     format: format.combine(
-      format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+      format.timestamp({ format: "YYYY-MM-DD HH:mm:ss Z" }),
       format.label({ label: name }),
       format.printf(
         (e) => `[${e.label}] [${e.timestamp}] [${e.level}] - ${formatObject(e.message)}`

@@ -136,8 +136,8 @@ export default function Page() {
       total: 0,
       message: "",
     },
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
   const [store, setStore] = createStore(structuredClone(defaultStore));
 
@@ -152,14 +152,18 @@ export default function Page() {
   }
 
   async function createSession() {
-    const session = { ...unwrap(store), createdAt: Date.now(), updatedAt: Date.now() };
+    const session = {
+      ...unwrap(store),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
     delete session.id;
     const id = await db.add("sessions", session);
     return id;
   }
 
   async function saveSession() {
-    const session = { ...unwrap(store), updatedAt: Date.now() };
+    const session = { ...unwrap(store), updatedAt: new Date().toISOString() };
     return await db.put("sessions", session);
   }
 
@@ -322,10 +326,10 @@ export default function Page() {
         }
       }
 
-      const promptText = store.promptCache[jobConfig.promptUrl]
-        || await fetchAndCachePrompt(jobConfig.templateId);
-      const schema = store.schemaCache[jobConfig.schemaUrl]
-        || await fetchAndCacheSchema(jobConfig.templateId);
+      const promptText =
+        store.promptCache[jobConfig.promptUrl] || (await fetchAndCachePrompt(jobConfig.templateId));
+      const schema =
+        store.schemaCache[jobConfig.schemaUrl] || (await fetchAndCacheSchema(jobConfig.templateId));
 
       // Analyze template structure so the model sees exact sentence frames
       const templateAnalysis = await analyzeTemplate(templateBuffer);
@@ -366,7 +370,8 @@ export default function Page() {
 
       for (const variable of variables) {
         if (extractedData[variable.name] === undefined || extractedData[variable.name] === null) {
-          extractedData[variable.name] = variable.type === "array" ? [] : variable.type === "boolean" ? false : "";
+          extractedData[variable.name] =
+            variable.type === "array" ? [] : variable.type === "boolean" ? false : "";
         }
       }
 
@@ -763,7 +768,9 @@ export default function Page() {
                       <//>
                     </div>
                     <!-- Progress bar -->
-                    <${Show} when=${() => !allJobsProcessed() && store.extractionProgress.total > 0}>
+                    <${Show}
+                      when=${() => !allJobsProcessed() && store.extractionProgress.total > 0}
+                    >
                       <div class="progress" style="height: 6px;">
                         <div
                           class="progress-bar"

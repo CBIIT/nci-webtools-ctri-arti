@@ -184,15 +184,14 @@ export function createCertificate(opts = {}) {
 export function getDateRange(startDateParam, endDateParam) {
   const now = new Date();
 
-  const startDate = startDateParam
-    ? new Date(new Date(startDateParam).setHours(0, 0, 0, 0))
-    : new Date(new Date(now).setDate(now.getDate() - 30)).setHours(0, 0, 0, 0);
+  const start = startDateParam ? new Date(startDateParam) : new Date(now);
+  if (!startDateParam) start.setDate(start.getDate() - 30);
+  start.setHours(0, 0, 0, 0);
 
-  const endDate = endDateParam
-    ? new Date(new Date(endDateParam).setHours(23, 59, 59, 999))
-    : new Date(new Date(now).setHours(23, 59, 59, 999));
+  const end = endDateParam ? new Date(endDateParam) : new Date(now);
+  end.setHours(23, 59, 59, 999);
 
-  return { startDate: new Date(startDate), endDate: new Date(endDate) };
+  return { startDate: start, endDate: end };
 }
 
 /**

@@ -324,7 +324,7 @@ export class ConversationDB {
     const data = await this.db.getAllFromIndex("conversations", "projectId", projectId);
     return data
       .map((d) => Conversation.fromJSON(d))
-      .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+      .sort((a, b) => (b.lastMessageAt || "").localeCompare(a.lastMessageAt || ""));
   }
 
   /**
@@ -337,7 +337,7 @@ export class ConversationDB {
     return data
       .map((d) => Conversation.fromJSON(d))
       .filter((c) => !c.archived)
-      .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))
+      .sort((a, b) => (b.lastMessageAt || "").localeCompare(a.lastMessageAt || ""))
       .slice(0, limit);
   }
 
@@ -354,7 +354,7 @@ export class ConversationDB {
       return allData
         .map((d) => Conversation.fromJSON(d))
         .filter((c) => !c.archived && c.projectId !== "2")
-        .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))
+        .sort((a, b) => (b.lastMessageAt || "").localeCompare(a.lastMessageAt || ""))
         .slice(0, limit);
     } else {
       // For other projects (like FedPulse), only show conversations with exact projectId match
@@ -362,7 +362,7 @@ export class ConversationDB {
       return data
         .map((d) => Conversation.fromJSON(d))
         .filter((c) => !c.archived)
-        .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))
+        .sort((a, b) => (b.lastMessageAt || "").localeCompare(a.lastMessageAt || ""))
         .slice(0, limit);
     }
   }
@@ -465,7 +465,7 @@ export class ConversationDB {
     const data = await this.db.getAllFromIndex("messages", "conversationId", conversationId);
     return data
       .map((d) => Message.fromJSON(d))
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      .sort((a, b) => (a.timestamp || "").localeCompare(b.timestamp || ""));
   }
 
   /**
