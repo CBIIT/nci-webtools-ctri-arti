@@ -2,6 +2,7 @@ import { mkdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
+import { sql } from "drizzle-orm";
 import logger from "shared/logger.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -81,6 +82,19 @@ export const {
   UserTool,
   AgentTool,
   Usage,
+  Session,
 } = schema;
+
+/**
+ * Tagged template for raw SQL that returns rows as an array.
+ * Normalizes the result format across postgres-js (returns array)
+ * and PGlite (returns { rows: [...] }).
+ *
+ * Usage: const rows = await rawSql`SELECT * FROM "User" WHERE id = ${id}`;
+ */
+export function rawSql(strings, ...values) {
+  const query = sql(strings, ...values);
+  return db.execute(query).then((result) => (Array.isArray(result) ? result : (result.rows ?? [])));
+}
 
 export default db;

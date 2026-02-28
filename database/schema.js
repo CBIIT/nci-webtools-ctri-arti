@@ -6,6 +6,7 @@ import {
   pgTable,
   serial,
   text,
+  varchar,
   integer,
   doublePrecision,
   boolean,
@@ -322,6 +323,16 @@ export const AgentTool = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [uniqueIndex("AgentTool_toolID_agentID_idx").on(t.toolID, t.agentID)]
+);
+
+export const Session = pgTable(
+  "session",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire", { precision: 6 }).notNull(),
+  },
+  (t) => [index("IDX_session_expire").on(t.expire)]
 );
 
 // ===== Relations =====

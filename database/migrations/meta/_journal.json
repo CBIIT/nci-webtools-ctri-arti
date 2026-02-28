@@ -15,6 +15,13 @@
       "when": 1772320523128,
       "tag": "0001_fix_conversation_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772273327798,
+      "tag": "0002_session",
+      "breakpoints": true
     }
   ]
 }

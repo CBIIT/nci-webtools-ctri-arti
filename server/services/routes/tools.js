@@ -1,6 +1,5 @@
-import db from "database";
+import db, { rawSql } from "database";
 
-import { sql } from "drizzle-orm";
 import { json, Router } from "express";
 
 import { sendFeedback, sendLogReport } from "../email.js";
@@ -17,7 +16,7 @@ const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
 
 api.get("/status", async (req, res) => {
-  const [health] = await db.execute(sql`SELECT 'ok' AS health`);
+  const [health] = await rawSql`SELECT 'ok' AS health`;
   res.json({
     version: VERSION,
     uptime: process.uptime(),

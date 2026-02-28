@@ -1,9 +1,16 @@
-import db from "database";
+import db, { Session } from "database";
 
-import { sql } from "drizzle-orm";
+import { sql, eq, gte, lt, and } from "drizzle-orm";
 import logger from "shared/logger.js";
 
 const PRUNE_INTERVAL = 15 * 60 * 1000;
+const DEFAULT_TTL_MS = 86400000; // 24 hours
+
+function resolveExpire(sess) {
+  const raw = sess?.cookie?.expires;
+  const ms = raw ? new Date(raw).getTime() : NaN;
+  return new Date(Number.isFinite(ms) ? ms : Date.now() + DEFAULT_TTL_MS);
+}
 
 export function createSessionStore(session) {
   const Store = session.Store;
@@ -23,7 +30,7 @@ export function createSessionStore(session) {
 
     async #prune() {
       try {
-        await db.execute(sql`DELETE FROM "session" WHERE expire < NOW()`);
+        await db.delete(Session).where(lt(Session.expire, sql`NOW()`));
       } catch (err) {
         logger.error("Failed to prune sessions:", err);
       }
@@ -48,7 +55,9 @@ export function createSessionStore(session) {
         "get",
         { sid },
         db
-          .execute(sql`SELECT sess FROM "session" WHERE sid = ${sid} AND expire >= NOW()`)
+          .select({ sess: Session.sess })
+          .from(Session)
+          .where(and(eq(Session.sid, sid), gte(Session.expire, sql`NOW()`)))
           .then((rows) => {
             const row = rows[0];
             return row ? (typeof row.sess === "string" ? JSON.parse(row.sess) : row.sess) : null;
@@ -58,40 +67,28 @@ export function createSessionStore(session) {
     }
 
     set(sid, sess, cb) {
-      const expireMs = sess?.cookie?.expires
-        ? new Date(sess.cookie.expires).getTime()
-        : Date.now() + 86400000;
-      const expire = new Date(expireMs).toISOString();
-      const sessJson = JSON.stringify(sess);
+      const expire = resolveExpire(sess);
       this.#query(
         "set",
-        { sid, expire },
-        db.execute(
-          sql`INSERT INTO "session" (sid, sess, expire) VALUES (${sid}, ${sessJson}::json, ${expire}::timestamp)
-              ON CONFLICT (sid) DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire`
-        ),
+        { sid, expire: expire.toISOString() },
+        db.insert(Session).values({ sid, sess, expire }).onConflictDoUpdate({
+          target: Session.sid,
+          set: { sess, expire },
+        }),
         cb
       );
     }
 
     destroy(sid, cb) {
-      this.#query(
-        "destroy",
-        { sid },
-        db.execute(sql`DELETE FROM "session" WHERE sid = ${sid}`),
-        cb
-      );
+      this.#query("destroy", { sid }, db.delete(Session).where(eq(Session.sid, sid)), cb);
     }
 
     touch(sid, sess, cb) {
-      const expireMs = sess?.cookie?.expires
-        ? new Date(sess.cookie.expires).getTime()
-        : Date.now() + 86400000;
-      const expire = new Date(expireMs).toISOString();
+      const expire = resolveExpire(sess);
       this.#query(
         "touch",
-        { sid, expire },
-        db.execute(sql`UPDATE "session" SET expire = ${expire}::timestamp WHERE sid = ${sid}`),
+        { sid, expire: expire.toISOString() },
+        db.update(Session).set({ expire }).where(eq(Session.sid, sid)),
         cb
       );
     }
