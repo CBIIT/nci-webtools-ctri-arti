@@ -26,7 +26,7 @@
     "db:dev:persistent": "npx @electric-sql/pglite-socket --db=./data/pglite --port=5433",
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "lint-staged": {
     "*.js": [
