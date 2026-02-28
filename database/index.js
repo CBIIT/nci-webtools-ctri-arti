@@ -16,6 +16,7 @@ const {
   PGDATABASE,
   PGUSER,
   PGPASSWORD,
+  DB_SSL,
 } = process.env;
 
 let db;
@@ -23,14 +24,17 @@ let db;
 // Always use the same PG schema
 const schema = await import("./schema.js");
 
-if (DB_STORAGE) {
-  // PGlite mode — embedded PostgreSQL with persistent data directory
+const usePg = !!PGHOST;
+
+if (!usePg) {
+  // PGlite mode — embedded PostgreSQL (in-memory by default, or persistent with DB_STORAGE)
+  const storage = DB_STORAGE || "memory://";
   const { PGlite } = await import("@electric-sql/pglite");
   const { drizzle } = await import("drizzle-orm/pglite");
   const { migrate } = await import("drizzle-orm/pglite/migrator");
 
-  if (!DB_STORAGE.startsWith("memory://")) mkdirSync(DB_STORAGE, { recursive: true });
-  const client = new PGlite(DB_STORAGE);
+  if (!storage.startsWith("memory://")) mkdirSync(storage, { recursive: true });
+  const client = new PGlite(storage);
   db = drizzle({ client, schema });
 
   if (DB_SKIP_SYNC !== "true") {
@@ -51,7 +55,7 @@ if (DB_STORAGE) {
     database: PGDATABASE,
     username: PGUSER,
     password: PGPASSWORD,
-    ssl: { rejectUnauthorized: false },
+    ssl: DB_SSL === "1" ? { rejectUnauthorized: false } : false,
     onnotice: () => {},
   });
   db = drizzle(sql, { schema });

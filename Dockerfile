@@ -33,6 +33,7 @@ RUN touch /app/server/.env /app/gateway/.env /app/cms/.env /app/agents/.env /app
 
 ENV PORT=80
 ENV NODE_ENV=production
+ENV DB_SSL=1
 ENV CLIENT_FOLDER=/app/client
 ENV AWS_MAX_ATTEMPTS=20
 
