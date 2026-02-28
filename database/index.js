@@ -29,7 +29,7 @@ if (DB_STORAGE) {
   const { drizzle } = await import("drizzle-orm/pglite");
   const { migrate } = await import("drizzle-orm/pglite/migrator");
 
-  mkdirSync(DB_STORAGE, { recursive: true });
+  if (!DB_STORAGE.startsWith("memory://")) mkdirSync(DB_STORAGE, { recursive: true });
   const client = new PGlite(DB_STORAGE);
   db = drizzle({ client, schema });
 
