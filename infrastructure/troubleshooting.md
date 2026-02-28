@@ -288,7 +288,47 @@ aws ecs describe-task-definition \
   --profile $PROFILE --region $REGION
 ```
 
-## 5. Debugging Workflow
+## 5. CloudFormation Stacks
+
+### Check stack status
+
+```bash
+# All stacks for this prefix
+aws cloudformation describe-stacks \
+  --query "Stacks[?starts_with(StackName, '$PREFIX')].{Name:StackName,Status:StackStatus,Updated:LastUpdatedTime}" \
+  --output table \
+  --profile $PROFILE --region $REGION
+```
+
+### Check a specific stack
+
+```bash
+aws cloudformation describe-stacks \
+  --stack-name "$PREFIX-ecs-service" \
+  --query "Stacks[0].{Status:StackStatus,StatusReason:StackStatusReason,Updated:LastUpdatedTime,Outputs:Outputs}" \
+  --profile $PROFILE --region $REGION
+```
+
+### View recent stack events (deployments, errors)
+
+```bash
+aws cloudformation describe-stack-events \
+  --stack-name "$PREFIX-ecs-service" \
+  --query "StackEvents[:20].{Time:Timestamp,Status:ResourceStatus,Type:ResourceType,Reason:ResourceStatusReason}" \
+  --output table \
+  --profile $PROFILE --region $REGION
+```
+
+### Check for failed or in-progress stacks
+
+```bash
+aws cloudformation list-stacks \
+  --stack-status-filter CREATE_FAILED UPDATE_FAILED ROLLBACK_COMPLETE UPDATE_ROLLBACK_COMPLETE UPDATE_IN_PROGRESS CREATE_IN_PROGRESS \
+  --query "StackSummaries[?starts_with(StackName, '$PREFIX')].{Name:StackName,Status:StackStatus}" \
+  --profile $PROFILE --region $REGION
+```
+
+## 6. Debugging Workflow
 
 When a service is unhealthy, follow this order:
 

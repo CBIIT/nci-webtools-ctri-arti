@@ -4,9 +4,21 @@ set -ex
 # Run from project root
 cd "$(dirname "$0")/.."
 
-export TIER=${TIER:-dev}
-export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID:-311141531877}
-export AWS_REGION=${AWS_REGION:-us-east-1}
+# Load .env if present
+if [ -f infrastructure/.env ]; then
+  set -a
+  source infrastructure/.env
+  set +a
+fi
+
+# Local dev: clear explicit credentials so AWS_PROFILE takes effect
+if [ -z "$CI" ] && [ -n "$AWS_PROFILE" ]; then
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+fi
+
+export TIER=${TIER:?TIER must be set}
+export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID:?AWS_ACCOUNT_ID must be set}
+export AWS_REGION=${AWS_REGION:?AWS_REGION must be set}
 export GITHUB_SHA=${GITHUB_SHA:-$(git rev-parse HEAD)}
 
 export PREFIX=ctri-research-optimizer-$TIER
