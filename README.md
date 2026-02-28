@@ -10,17 +10,17 @@ Client (SolidJS) ──► Server (:443) ──┬──► Gateway (:3001) ─�
                                      └──► PostgreSQL (:5432)
 ```
 
-| Package | Type | Port | Description |
-|---------|------|------|-------------|
-| [client](client/) | Frontend | — | Buildless SolidJS chat interface with local IndexedDB storage |
-| [server](server/) | Service | 443/8080 | Edge server — HTTPS, OAuth, static files, API routing |
-| [gateway](gateway/) | Service | 3001 | AI inference — multi-provider abstraction, usage tracking |
-| [cms](cms/) | Service | 3002 | Conversation management — agents, conversations, messages, tools, prompts CRUD |
-| [agents](agents/) | Service (stub) | 3003 | Chat orchestration (planned) |
-| [users](users/) | Service (stub) | 3004 | Identity and access management (planned) |
-| [database](database/) | Library | — | Sequelize models, associations, seed data |
-| [shared](shared/) | Library | — | Logger, middleware, utilities |
-| [infrastructure](infrastructure/) | CDK | — | AWS deployment (ECR, ECS Fargate, RDS Aurora) |
+| Package                           | Type           | Port     | Description                                                                    |
+| --------------------------------- | -------------- | -------- | ------------------------------------------------------------------------------ |
+| [client](client/)                 | Frontend       | —        | Buildless SolidJS chat interface with local IndexedDB storage                  |
+| [server](server/)                 | Service        | 443/8080 | Edge server — HTTPS, OAuth, static files, API routing                          |
+| [gateway](gateway/)               | Service        | 3001     | AI inference — multi-provider abstraction, usage tracking                      |
+| [cms](cms/)                       | Service        | 3002     | Conversation management — agents, conversations, messages, tools, prompts CRUD |
+| [agents](agents/)                 | Service (stub) | 3003     | Chat orchestration (planned)                                                   |
+| [users](users/)                   | Service (stub) | 3004     | Identity and access management (planned)                                       |
+| [database](database/)             | Library        | —        | Sequelize models, associations, seed data                                      |
+| [shared](shared/)                 | Library        | —        | Logger, middleware, utilities                                                  |
+| [infrastructure](infrastructure/) | CDK            | —        | AWS deployment (ECR, ECS Fargate, RDS Aurora)                                  |
 
 ## Quick Start
 
@@ -68,20 +68,20 @@ GATEWAY_URL=http://localhost:3001 CMS_URL=http://localhost:3002 npm start -w ser
 
 Core variables needed across services. See individual service READMEs for complete lists.
 
-| Variable | Services | Description |
-|----------|----------|-------------|
-| `SESSION_SECRET` | server | Cookie signing secret |
-| `AWS_ACCESS_KEY_ID` | server, gateway | AWS credentials |
-| `AWS_SECRET_ACCESS_KEY` | server, gateway | AWS credentials |
-| `GEMINI_API_KEY` | gateway | Google Gemini API key |
-| `DB_DIALECT` | all | `postgres` or `sqlite` |
-| `DB_SKIP_SYNC` | gateway, cms | Skip schema sync (`true` in microservice mode) |
-| `PGHOST`, `PGUSER`, `PGPASSWORD` | all (postgres) | PostgreSQL connection |
-| `GATEWAY_URL` | server | Gateway service URL (enables HTTP mode) |
-| `CMS_URL` | server | CMS service URL (enables HTTP mode) |
-| `OAUTH_CLIENT_ID` | server | OIDC client ID |
-| `OAUTH_CLIENT_SECRET` | server | OIDC client secret |
-| `BRAVE_SEARCH_API_KEY` | server | Brave Search API key |
+| Variable                         | Services        | Description                                       |
+| -------------------------------- | --------------- | ------------------------------------------------- |
+| `SESSION_SECRET`                 | server          | Cookie signing secret                             |
+| `AWS_ACCESS_KEY_ID`              | server, gateway | AWS credentials                                   |
+| `AWS_SECRET_ACCESS_KEY`          | server, gateway | AWS credentials                                   |
+| `GEMINI_API_KEY`                 | gateway         | Google Gemini API key                             |
+| `DB_STORAGE`                     | all             | PGlite data directory (uses embedded PG when set) |
+| `DB_SKIP_SYNC`                   | gateway, cms    | Skip schema sync (`true` in microservice mode)    |
+| `PGHOST`, `PGUSER`, `PGPASSWORD` | all (postgres)  | PostgreSQL connection                             |
+| `GATEWAY_URL`                    | server          | Gateway service URL (enables HTTP mode)           |
+| `CMS_URL`                        | server          | CMS service URL (enables HTTP mode)               |
+| `OAUTH_CLIENT_ID`                | server          | OIDC client ID                                    |
+| `OAUTH_CLIENT_SECRET`            | server          | OIDC client secret                                |
+| `BRAVE_SEARCH_API_KEY`           | server          | Brave Search API key                              |
 
 ## Testing
 
@@ -156,18 +156,18 @@ research-optimizer/
 
 ## Documentation Index
 
-| Document | Description |
-|----------|-------------|
-| [client/readme.md](client/readme.md) | Frontend architecture and components |
-| [server/README.md](server/README.md) | Edge server, API reference |
-| [server/openapi.yaml](server/openapi.yaml) | Public API spec (OpenAPI 3.1) |
-| [gateway/README.md](gateway/README.md) | Inference service architecture |
-| [gateway/openapi.yaml](gateway/openapi.yaml) | Gateway API spec (OpenAPI 3.1) |
-| [cms/README.md](cms/README.md) | Conversation management service |
-| [cms/openapi.yaml](cms/openapi.yaml) | CMS API spec (OpenAPI 3.1) |
-| [database/README.md](database/README.md) | Data models, ownership matrix, seed data |
-| [shared/README.md](shared/README.md) | Shared library reference |
-| [agents/README.md](agents/README.md) | Chat orchestration (stub) |
-| [users/README.md](users/README.md) | Identity management (stub) |
-| [infrastructure/README.md](infrastructure/README.md) | AWS CDK deployment |
-| [CLAUDE.md](CLAUDE.md) | AI assistant guidance for this codebase |
+| Document                                             | Description                              |
+| ---------------------------------------------------- | ---------------------------------------- |
+| [client/readme.md](client/readme.md)                 | Frontend architecture and components     |
+| [server/README.md](server/README.md)                 | Edge server, API reference               |
+| [server/openapi.yaml](server/openapi.yaml)           | Public API spec (OpenAPI 3.1)            |
+| [gateway/README.md](gateway/README.md)               | Inference service architecture           |
+| [gateway/openapi.yaml](gateway/openapi.yaml)         | Gateway API spec (OpenAPI 3.1)           |
+| [cms/README.md](cms/README.md)                       | Conversation management service          |
+| [cms/openapi.yaml](cms/openapi.yaml)                 | CMS API spec (OpenAPI 3.1)               |
+| [database/README.md](database/README.md)             | Data models, ownership matrix, seed data |
+| [shared/README.md](shared/README.md)                 | Shared library reference                 |
+| [agents/README.md](agents/README.md)                 | Chat orchestration (stub)                |
+| [users/README.md](users/README.md)                   | Identity management (stub)               |
+| [infrastructure/README.md](infrastructure/README.md) | AWS CDK deployment                       |
+| [CLAUDE.md](CLAUDE.md)                               | AI assistant guidance for this codebase  |

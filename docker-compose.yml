@@ -8,7 +8,6 @@ services:
       - "443:443"
     environment:
       - PORT=443
-      - DB_DIALECT=postgres
       - PGHOST=postgres
       - PGUSER=postgres
       - PGPASSWORD=postgres
@@ -59,7 +58,6 @@ services:
     command: ["npm", "start", "-w", "gateway"]
     environment:
       - PORT=3001
-      - DB_DIALECT=postgres
       - DB_SKIP_SYNC=true
       - PGHOST=postgres
       - PGUSER=postgres
@@ -98,7 +96,6 @@ services:
     command: ["npm", "start", "-w", "cms"]
     environment:
       - PORT=3002
-      - DB_DIALECT=postgres
       - DB_SKIP_SYNC=true
       - PGHOST=postgres
       - PGUSER=postgres

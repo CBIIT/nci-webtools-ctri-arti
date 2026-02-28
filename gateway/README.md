@@ -18,10 +18,10 @@ docker compose up --build -w
 
 ## API Reference
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/v1/model/invoke` | Run AI inference with optional rate limiting and usage tracking |
-| GET | `/api/v1/models` | List available models (Bedrock provider) |
+| Method | Path                   | Description                                                     |
+| ------ | ---------------------- | --------------------------------------------------------------- |
+| POST   | `/api/v1/model/invoke` | Run AI inference with optional rate limiting and usage tracking |
+| GET    | `/api/v1/models`       | List available models (Bedrock provider)                        |
 
 See [openapi.yaml](openapi.yaml) for full request/response schemas.
 
@@ -34,6 +34,7 @@ Accepts a model name, messages, optional system prompt, tools, and thought budge
 **Streaming protocol:** Each line is a JSON object. The final message contains `metadata.usage` for token tracking.
 
 **Error responses:**
+
 - `404` — Model not found (`GATEWAY_MODEL_NOT_FOUND`)
 - `429` — Rate limit exceeded (`GATEWAY_RATE_LIMITED`)
 - `501` — Embedding models not yet implemented (`GATEWAY_NOT_IMPLEMENTED`)
@@ -76,20 +77,22 @@ POST /api/v1/model/invoke
 ### Provider Interface
 
 All providers implement:
+
 - `converse(input)` → `{ content, usage, stopReason }`
 - `converseStream(input)` → `{ stream: AsyncGenerator<message> }`
 
-| Provider | Module | Description |
-|----------|--------|-------------|
+| Provider  | Module                 | Description                 |
+| --------- | ---------------------- | --------------------------- |
 | `bedrock` | `providers/bedrock.js` | AWS Bedrock (Claude, Llama) |
-| `gemini` | `providers/gemini.js` | Google Gemini |
-| `mock` | `providers/mock.js` | Test provider |
+| `gemini`  | `providers/gemini.js`  | Google Gemini               |
+| `mock`    | `providers/mock.js`    | Test provider               |
 
 ### Cache Point Strategy
 
 Uses a sqrt(2) scaling factor to place cache boundaries at exponentially increasing intervals starting at 1024 tokens. Only the last 2 positions are kept to stay within provider limits.
 
 Cache points are added to:
+
 - **Messages** — at the message crossing each boundary
 - **System prompt** — after the text content
 - **Tools** — after the last tool spec
@@ -97,6 +100,7 @@ Cache points are added to:
 ### Usage Tracking
 
 `trackModelUsage(userID, model, ip, usageData, { type, agentID, messageID })`:
+
 1. Looks up model by `internalName`
 2. Calculates cost per component:
    - Input: `(inputTokens / 1000) * cost1kInput`
@@ -108,25 +112,25 @@ Cache points are added to:
 
 ## Configuration
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | 3001 | Service port |
-| `AWS_ACCESS_KEY_ID` | Yes | — | AWS credentials for Bedrock |
-| `AWS_SECRET_ACCESS_KEY` | Yes | — | AWS credentials |
-| `AWS_REGION` | No | us-east-1 | AWS region |
-| `GEMINI_API_KEY` | No | — | Google Gemini API key |
-| `DB_DIALECT` | No | postgres | `postgres` or `sqlite` |
-| `DB_SKIP_SYNC` | No | false | Skip schema sync (set `true` in microservice mode) |
-| `PGHOST` | Prod | — | PostgreSQL host |
-| `PGUSER` | Prod | — | PostgreSQL user |
-| `PGPASSWORD` | Prod | — | PostgreSQL password |
+| Variable                | Required | Default   | Description                                        |
+| ----------------------- | -------- | --------- | -------------------------------------------------- |
+| `PORT`                  | No       | 3001      | Service port                                       |
+| `AWS_ACCESS_KEY_ID`     | Yes      | —         | AWS credentials for Bedrock                        |
+| `AWS_SECRET_ACCESS_KEY` | Yes      | —         | AWS credentials                                    |
+| `AWS_REGION`            | No       | us-east-1 | AWS region                                         |
+| `GEMINI_API_KEY`        | No       | —         | Google Gemini API key                              |
+| `DB_STORAGE`            | No       | —         | PGlite data directory (uses embedded PG when set)  |
+| `DB_SKIP_SYNC`          | No       | false     | Skip schema sync (set `true` in microservice mode) |
+| `PGHOST`                | Prod     | —         | PostgreSQL host                                    |
+| `PGUSER`                | Prod     | —         | PostgreSQL user                                    |
+| `PGPASSWORD`            | Prod     | —         | PostgreSQL password                                |
 
 ## Data Ownership
 
-| Operation | Models |
-|-----------|--------|
-| **Reads** | Model, Provider, User |
-| **Writes** | Usage |
+| Operation  | Models                |
+| ---------- | --------------------- |
+| **Reads**  | Model, Provider, User |
+| **Writes** | Usage                 |
 
 ## Client Integration
 

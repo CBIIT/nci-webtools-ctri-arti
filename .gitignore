@@ -7,6 +7,7 @@ venv
 /tmp
 database.sqlite
 /data
+/test-data
 .DS_Store
 .vscode
 __pycache__

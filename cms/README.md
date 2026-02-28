@@ -20,17 +20,17 @@ docker compose up --build -w
 
 All routes are mounted under `/api/v1`. All requests must include an `X-User-Id` header. Returns `400` if missing.
 
-| Resource | Endpoints | Description |
-|----------|-----------|-------------|
-| Agents | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Agent CRUD |
-| Conversations | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Conversation CRUD with pagination |
-| Context | `GET /conversations/:id/context` | Get conversation with messages and resources |
-| Compress | `POST /conversations/:id/compress` | Compress conversation with summary |
-| Messages | `POST`, `GET`, `PUT /:id`, `DELETE /:id` | Message CRUD |
-| Tools | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Tool CRUD |
-| Prompts | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Prompt CRUD |
-| Resources | `POST`, `GET /:id`, `GET` by agent, `DELETE /:id` | Resource CRUD |
-| Vectors | `POST`, `GET` by conversation, `GET /search` | Vector storage and search |
+| Resource      | Endpoints                                            | Description                                  |
+| ------------- | ---------------------------------------------------- | -------------------------------------------- |
+| Agents        | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Agent CRUD                                   |
+| Conversations | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Conversation CRUD with pagination            |
+| Context       | `GET /conversations/:id/context`                     | Get conversation with messages and resources |
+| Compress      | `POST /conversations/:id/compress`                   | Compress conversation with summary           |
+| Messages      | `POST`, `GET`, `PUT /:id`, `DELETE /:id`             | Message CRUD                                 |
+| Tools         | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Tool CRUD                                    |
+| Prompts       | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Prompt CRUD                                  |
+| Resources     | `POST`, `GET /:id`, `GET` by agent, `DELETE /:id`    | Resource CRUD                                |
+| Vectors       | `POST`, `GET` by conversation, `GET /search`         | Vector storage and search                    |
 
 See [openapi.yaml](openapi.yaml) for full request/response schemas.
 
@@ -53,107 +53,107 @@ Core business logic class. All methods take `userId` as first parameter for owne
 
 #### Agent Methods
 
-| Method | Parameters | Returns | Notes |
-|--------|-----------|---------|-------|
-| `createAgent(userId, data)` | `{ name, description?, promptID?, modelParameters? }` | Agent | Sets userID on creation |
-| `getAgent(userId, agentId)` | — | Agent \| null | User's OR global agents. Flattens `Prompt.content` → `systemPrompt`. Resolves tools via AgentTool junction. |
-| `getAgents(userId)` | — | Agent[] | User's + global agents, ordered by createdAt DESC |
-| `updateAgent(userId, agentId, updates)` | `{ ...fields, tools? }` | Agent \| null | Only updates user-owned agents. Syncs AgentTool junction when `tools` array provided. |
-| `deleteAgent(userId, agentId)` | — | number | Cascading: deletes conversations, messages, resources, vectors |
+| Method                                  | Parameters                                            | Returns       | Notes                                                                                                       |
+| --------------------------------------- | ----------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
+| `createAgent(userId, data)`             | `{ name, description?, promptID?, modelParameters? }` | Agent         | Sets userID on creation                                                                                     |
+| `getAgent(userId, agentId)`             | —                                                     | Agent \| null | User's OR global agents. Flattens `Prompt.content` → `systemPrompt`. Resolves tools via AgentTool junction. |
+| `getAgents(userId)`                     | —                                                     | Agent[]       | User's + global agents, ordered by createdAt DESC                                                           |
+| `updateAgent(userId, agentId, updates)` | `{ ...fields, tools? }`                               | Agent \| null | Only updates user-owned agents. Syncs AgentTool junction when `tools` array provided.                       |
+| `deleteAgent(userId, agentId)`          | —                                                     | number        | Cascading: deletes conversations, messages, resources, vectors                                              |
 
 #### Conversation Methods
 
-| Method | Parameters | Returns | Notes |
-|--------|-----------|---------|-------|
-| `createConversation(userId, data)` | `{ title?, agentID? }` | Conversation | |
-| `getConversation(userId, conversationId)` | — | Conversation \| null | Scoped to userId, excludes soft-deleted |
-| `getConversations(userId, options)` | `{ limit?, offset? }` | `{ count, rows }` | Paginated, ordered by createdAt DESC, excludes soft-deleted |
-| `updateConversation(userId, conversationId, updates)` | — | Conversation \| null | |
-| `deleteConversation(userId, conversationId)` | — | number | Soft delete (sets `deleted: true`, `deletedAt`) |
+| Method                                                | Parameters             | Returns              | Notes                                                       |
+| ----------------------------------------------------- | ---------------------- | -------------------- | ----------------------------------------------------------- |
+| `createConversation(userId, data)`                    | `{ title?, agentID? }` | Conversation         |                                                             |
+| `getConversation(userId, conversationId)`             | —                      | Conversation \| null | Scoped to userId, excludes soft-deleted                     |
+| `getConversations(userId, options)`                   | `{ limit?, offset? }`  | `{ count, rows }`    | Paginated, ordered by createdAt DESC, excludes soft-deleted |
+| `updateConversation(userId, conversationId, updates)` | —                      | Conversation \| null |                                                             |
+| `deleteConversation(userId, conversationId)`          | —                      | number               | Soft delete (sets `deleted: true`, `deletedAt`)             |
 
 #### Context & Compress
 
-| Method | Parameters | Returns | Notes |
-|--------|-----------|---------|-------|
-| `getContext(userId, conversationId)` | — | `{ conversation, messages, resources }` | Returns full conversation context including message-linked resources |
-| `compressConversation(userId, conversationId, data)` | `{ summary, summaryMessageID }` | Conversation | Sets summaryMessageID on the conversation |
+| Method                                               | Parameters                      | Returns                                 | Notes                                                                |
+| ---------------------------------------------------- | ------------------------------- | --------------------------------------- | -------------------------------------------------------------------- |
+| `getContext(userId, conversationId)`                 | —                               | `{ conversation, messages, resources }` | Returns full conversation context including message-linked resources |
+| `compressConversation(userId, conversationId, data)` | `{ summary, summaryMessageID }` | Conversation                            | Sets summaryMessageID on the conversation                            |
 
 #### Message Methods
 
-| Method | Parameters | Returns | Notes |
-|--------|-----------|---------|-------|
-| `addMessage(userId, conversationId, data)` | `{ role, content, parentID? }` | Message | |
-| `getMessages(userId, conversationId)` | — | Message[] | Ordered by createdAt ASC |
-| `getMessage(userId, messageId)` | — | Message \| null | |
-| `updateMessage(userId, messageId, updates)` | — | Message \| null | |
-| `deleteMessage(userId, messageId)` | — | number | |
+| Method                                      | Parameters                     | Returns         | Notes                    |
+| ------------------------------------------- | ------------------------------ | --------------- | ------------------------ |
+| `addMessage(userId, conversationId, data)`  | `{ role, content, parentID? }` | Message         |                          |
+| `getMessages(userId, conversationId)`       | —                              | Message[]       | Ordered by createdAt ASC |
+| `getMessage(userId, messageId)`             | —                              | Message \| null |                          |
+| `updateMessage(userId, messageId, updates)` | —                              | Message \| null |                          |
+| `deleteMessage(userId, messageId)`          | —                              | number          |                          |
 
 #### Tool Methods
 
-| Method | Parameters | Returns | Notes |
-|--------|-----------|---------|-------|
-| `createTool(data)` | `{ name, type, ... }` | Tool | |
-| `getTool(toolId)` | — | Tool \| null | |
-| `getTools(userId)` | — | Tool[] | Returns builtin tools + user's tools (via UserTool junction) |
-| `updateTool(toolId, updates)` | — | Tool \| null | |
-| `deleteTool(toolId)` | — | number | Cascading: destroys vectors, AgentTool, UserTool records |
+| Method                        | Parameters            | Returns      | Notes                                                        |
+| ----------------------------- | --------------------- | ------------ | ------------------------------------------------------------ |
+| `createTool(data)`            | `{ name, type, ... }` | Tool         |                                                              |
+| `getTool(toolId)`             | —                     | Tool \| null |                                                              |
+| `getTools(userId)`            | —                     | Tool[]       | Returns builtin tools + user's tools (via UserTool junction) |
+| `updateTool(toolId, updates)` | —                     | Tool \| null |                                                              |
+| `deleteTool(toolId)`          | —                     | number       | Cascading: destroys vectors, AgentTool, UserTool records     |
 
 #### Prompt Methods
 
-| Method | Parameters | Returns | Notes |
-|--------|-----------|---------|-------|
-| `createPrompt(data)` | `{ name, content, version?, ... }` | Prompt | |
-| `getPrompt(promptId)` | — | Prompt \| null | |
-| `getPrompts(options)` | — | Prompt[] | Ordered by name ASC, version DESC |
-| `updatePrompt(promptId, updates)` | — | Prompt \| null | |
-| `deletePrompt(promptId)` | — | number | |
+| Method                            | Parameters                         | Returns        | Notes                             |
+| --------------------------------- | ---------------------------------- | -------------- | --------------------------------- |
+| `createPrompt(data)`              | `{ name, content, version?, ... }` | Prompt         |                                   |
+| `getPrompt(promptId)`             | —                                  | Prompt \| null |                                   |
+| `getPrompts(options)`             | —                                  | Prompt[]       | Ordered by name ASC, version DESC |
+| `updatePrompt(promptId, updates)` | —                                  | Prompt \| null |                                   |
+| `deletePrompt(promptId)`          | —                                  | number         |                                   |
 
 #### Resource Methods
 
-| Method | Parameters | Returns | Notes |
-|--------|-----------|---------|-------|
-| `addResource(userId, data)` | `{ name, type, content, agentID?, messageID?, s3Uri?, metadata? }` | Resource | |
-| `getResource(userId, resourceId)` | — | Resource \| null | |
-| `getResourcesByAgent(userId, agentId)` | — | Resource[] | Ordered by createdAt ASC |
-| `deleteResource(userId, resourceId)` | — | number | Cascading: destroys vectors |
+| Method                                 | Parameters                                                         | Returns          | Notes                       |
+| -------------------------------------- | ------------------------------------------------------------------ | ---------------- | --------------------------- |
+| `addResource(userId, data)`            | `{ name, type, content, agentID?, messageID?, s3Uri?, metadata? }` | Resource         |                             |
+| `getResource(userId, resourceId)`      | —                                                                  | Resource \| null |                             |
+| `getResourcesByAgent(userId, agentId)` | —                                                                  | Resource[]       | Ordered by createdAt ASC    |
+| `deleteResource(userId, resourceId)`   | —                                                                  | number           | Cascading: destroys vectors |
 
 #### Vector Methods
 
-| Method | Parameters | Returns | Notes |
-|--------|-----------|---------|-------|
-| `addVectors(userId, conversationId, vectors)` | `[{ content, embedding?, resourceID?, toolID?, order? }]` | Vector[] | Bulk create. Order defaults to array index. |
-| `getVectorsByConversation(userId, conversationId)` | — | Vector[] | Ordered by order ASC |
-| `getVectorsByResource(userId, resourceId)` | — | Vector[] | Ordered by order ASC |
-| `searchVectors(params)` | `{ toolID?, conversationID?, embedding?, topN? }` | Vector[] | Cosine similarity search when embedding provided |
-| `deleteVectorsByConversation(userId, conversationId)` | — | number | |
+| Method                                                | Parameters                                                | Returns  | Notes                                            |
+| ----------------------------------------------------- | --------------------------------------------------------- | -------- | ------------------------------------------------ |
+| `addVectors(userId, conversationId, vectors)`         | `[{ content, embedding?, resourceID?, toolID?, order? }]` | Vector[] | Bulk create. Order defaults to array index.      |
+| `getVectorsByConversation(userId, conversationId)`    | —                                                         | Vector[] | Ordered by order ASC                             |
+| `getVectorsByResource(userId, resourceId)`            | —                                                         | Vector[] | Ordered by order ASC                             |
+| `searchVectors(params)`                               | `{ toolID?, conversationID?, embedding?, topN? }`         | Vector[] | Cosine similarity search when embedding provided |
+| `deleteVectorsByConversation(userId, conversationId)` | —                                                         | number   |                                                  |
 
 ### Ownership Model
 
 All operations enforce user ownership via `WHERE userID = :userId`. Exceptions:
+
 - `getAgent` and `getAgents` also return global agents where `userID IS NULL`
 - Global agents cannot be modified or deleted through user endpoints (returns `403`)
 - Tool and Prompt methods are not user-scoped (they use IDs directly)
 
 ## Configuration
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | 3002 | Service port |
-| `DB_DIALECT` | No | postgres | `postgres` or `sqlite` |
-| `DB_STORAGE` | No | :memory: | SQLite file path (only for sqlite dialect) |
-| `DB_SKIP_SYNC` | No | false | Skip schema sync (set `true` in microservice mode) |
-| `PGHOST` | Prod | — | PostgreSQL host |
-| `PGPORT` | Prod | — | PostgreSQL port |
-| `PGDATABASE` | Prod | — | PostgreSQL database name |
-| `PGUSER` | Prod | — | PostgreSQL user |
-| `PGPASSWORD` | Prod | — | PostgreSQL password |
+| Variable       | Required | Default | Description                                        |
+| -------------- | -------- | ------- | -------------------------------------------------- |
+| `PORT`         | No       | 3002    | Service port                                       |
+| `DB_STORAGE`   | No       | —       | PGlite data directory (uses embedded PG when set)  |
+| `DB_SKIP_SYNC` | No       | false   | Skip schema sync (set `true` in microservice mode) |
+| `PGHOST`       | Prod     | —       | PostgreSQL host                                    |
+| `PGPORT`       | Prod     | —       | PostgreSQL port                                    |
+| `PGDATABASE`   | Prod     | —       | PostgreSQL database name                           |
+| `PGUSER`       | Prod     | —       | PostgreSQL user                                    |
+| `PGPASSWORD`   | Prod     | —       | PostgreSQL password                                |
 
 ## Data Ownership
 
-| Operation | Models |
-|-----------|--------|
+| Operation               | Models                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------- |
 | **Owns (reads/writes)** | Agent, Conversation, Message, Resource, Vector, Tool, Prompt, AgentTool, UserTool |
-| **Reads** | Prompt (for agent resolution) |
+| **Reads**               | Prompt (for agent resolution)                                                     |
 
 ## Client Integration
 

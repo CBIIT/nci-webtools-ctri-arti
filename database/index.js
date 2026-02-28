@@ -8,7 +8,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const migrationsFolder = resolve(__dirname, "migrations");
 
 const {
-  DB_DIALECT = "postgres",
   DB_STORAGE,
   DB_SKIP_SYNC = "false",
   PGHOST,
@@ -23,14 +22,14 @@ let db;
 // Always use the same PG schema
 const schema = await import("./schema.js");
 
-if (DB_DIALECT === "pglite") {
-  // PGlite mode (local dev / tests) — embedded PostgreSQL via WASM
+if (DB_STORAGE) {
+  // PGlite mode — embedded PostgreSQL with persistent data directory
   const { PGlite } = await import("@electric-sql/pglite");
   const { drizzle } = await import("drizzle-orm/pglite");
   const { migrate } = await import("drizzle-orm/pglite/migrator");
 
-  if (DB_STORAGE) mkdirSync(DB_STORAGE, { recursive: true });
-  const client = new PGlite(DB_STORAGE || undefined);
+  mkdirSync(DB_STORAGE, { recursive: true });
+  const client = new PGlite(DB_STORAGE);
   db = drizzle({ client, schema });
 
   if (DB_SKIP_SYNC !== "true") {
