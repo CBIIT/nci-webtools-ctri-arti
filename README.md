@@ -18,7 +18,7 @@ Client (SolidJS) ──► Server (:443) ──┬──► Gateway (:3001) ─�
 | [cms](cms/)                       | Service        | 3002     | Conversation management — agents, conversations, messages, tools, prompts CRUD |
 | [agents](agents/)                 | Service (stub) | 3003     | Chat orchestration (planned)                                                   |
 | [users](users/)                   | Service (stub) | 3004     | Identity and access management (planned)                                       |
-| [database](database/)             | Library        | —        | Sequelize models, associations, seed data                                      |
+| [database](database/)             | Library        | —        | Drizzle ORM schema, relations, seed data                                       |
 | [shared](shared/)                 | Library        | —        | Logger, middleware, utilities                                                  |
 | [infrastructure](infrastructure/) | CDK            | —        | AWS deployment (ECR, ECS Fargate, RDS Aurora)                                  |
 
@@ -49,7 +49,7 @@ All services run in one process. No `GATEWAY_URL`/`CMS_URL` set — factory clie
 
 ```bash
 cd server
-cp .env.example .env   # Configure with sqlite for easy setup
+cp .env.example .env   # Configure with PGlite for easy setup
 npm install
 npm run start:dev
 ```
@@ -86,11 +86,11 @@ Core variables needed across services. See individual service READMEs for comple
 ## Testing
 
 ```bash
-cd server && npm test               # Backend unit tests (Jest)
+cd server && npm test               # Backend unit tests (Node built-in test runner)
 cd server && npm run test:integration  # Full integration tests (Playwright + API)
 ```
 
-Tests use real services (AWS Bedrock, PostgreSQL/SQLite). No mocking.
+Tests use real services (AWS Bedrock, PostgreSQL/PGlite). No mocking.
 
 ## Deployment
 
@@ -140,7 +140,7 @@ research-optimizer/
 ├── users/                    # Identity management (stub)
 │
 ├── database/                 # Shared database package
-│   ├── schema.js             # Model definitions + associations
+│   ├── schema.js             # Table definitions, relations, seed data
 │   ├── csv-loader.js         # Seed data parser
 │   └── data/                 # Seed CSVs
 │

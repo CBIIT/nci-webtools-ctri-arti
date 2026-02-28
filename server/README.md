@@ -13,7 +13,7 @@ cd server
 npm install
 cp .env.example .env   # Configure environment
 npm run start:dev      # Watch mode with auto-restart
-npm test               # Run Jest test suite
+npm test               # Run unit + integration tests
 npm run test:integration  # Full integration tests with browser
 ```
 
@@ -166,8 +166,8 @@ Three methods:
 ## Testing
 
 ```bash
-npm test                 # Unit tests (Jest)
+npm test                 # Unit tests (Node built-in test runner)
 npm run test:integration # Integration tests (Playwright browser + API)
 ```
 
-Tests use real services (AWS Bedrock, PostgreSQL/SQLite). No mocking.
+Tests use real services (AWS Bedrock, PostgreSQL/PGlite). No mocking.

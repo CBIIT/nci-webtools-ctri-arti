@@ -1,6 +1,6 @@
 # database
 
-Shared database package — Sequelize ORM configuration, model definitions, associations, and seed data.
+Shared database package — Drizzle ORM schema, migrations, relations, and seed data.
 
 ## Overview
 
@@ -10,10 +10,11 @@ Workspace library package (not a running service). Imported by all services that
 
 ```js
 import { User, Role, Model, Agent, Conversation, Message } from "database";
+import { eq } from "drizzle-orm";
 import db from "database";
 
-const user = await User.findByPk(1);
-const conversations = await Conversation.findAll({ where: { userID: 1 } });
+const [user] = await db.select().from(User).where(eq(User.id, 1));
+const conversations = await db.select().from(Conversation).where(eq(Conversation.userID, 1));
 ```
 
 ## Initialization Sequence
@@ -21,10 +22,8 @@ const conversations = await Conversation.findAll({ where: { userID: 1 } });
 When imported, the package:
 
 1. **Select dialect** — PGlite (when `DB_STORAGE` is set) or PostgreSQL (production)
-2. **Create models** — Defines all 17 models and their associations
-3. **Sync schema** (unless `DB_SKIP_SYNC=true`):
-   - SQLite: `sync({ force: false })`
-   - PostgreSQL: `sync({ alter: true })`
+2. **Create Drizzle instance** — Registers all table definitions and relations from `schema.js`
+3. **Run migrations** (unless `DB_SKIP_SYNC=true`) — Applies Drizzle migrations via `migrate()`
 4. **Seed data** — Upserts roles, policies, providers, models, prompts, agents, tools, and agent-tools from CSV files
 
 Microservices that connect to an already-initialized database should set `DB_SKIP_SYNC=true`.
@@ -90,6 +89,238 @@ User, Tool → UserTool (hasMany)
 
 AgentTool → Agent, Tool (belongsTo)
 Agent, Tool → AgentTool (hasMany)
+```
+
+## Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    Role {
+        int id PK
+        string name
+        int displayOrder
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Policy {
+        int id PK
+        string name
+        string resource
+        string action
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    RolePolicy {
+        int id PK
+        int roleID FK
+        int policyID FK
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    User {
+        int id PK
+        string email
+        string firstName
+        string lastName
+        string status
+        int roleID FK
+        string apiKey
+        float budget
+        float remaining
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Provider {
+        int id PK
+        string name
+        string apiKey
+        string endpoint
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Model {
+        int id PK
+        int providerID FK
+        string name
+        string internalName
+        string type
+        string description
+        int maxContext
+        int maxOutput
+        int maxReasoning
+        float cost1kInput
+        float cost1kOutput
+        float cost1kCacheRead
+        float cost1kCacheWrite
+        jsonb defaultParameters
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Usage {
+        int id PK
+        int userID FK
+        int modelID FK
+        string type
+        int agentID FK
+        int messageID FK
+        float inputTokens
+        float outputTokens
+        float cacheReadTokens
+        float cacheWriteTokens
+        float cost
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Prompt {
+        int id PK
+        string name
+        int version
+        string content
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Agent {
+        int id PK
+        int userID FK
+        int modelID FK
+        string name
+        string description
+        int promptID FK
+        jsonb modelParameters
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Tool {
+        int id PK
+        string name
+        string description
+        string type
+        string authenticationType
+        string endpoint
+        string transportType
+        jsonb customConfig
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Conversation {
+        int id PK
+        int userID FK
+        int agentID FK
+        string title
+        boolean deleted
+        datetime deletedAt
+        int summaryMessageID
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Message {
+        int id PK
+        int conversationID FK
+        int parentID
+        string role
+        jsonb content
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Resource {
+        int id PK
+        int agentID FK
+        int messageID FK
+        string name
+        string type
+        string content
+        string s3Uri
+        jsonb metadata
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Vector {
+        int id PK
+        int conversationID FK
+        int resourceID FK
+        int toolID FK
+        int order
+        string content
+        jsonb embedding
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    UserAgent {
+        int id PK
+        int userID FK
+        int agentID FK
+        string role
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    UserTool {
+        int id PK
+        int userID FK
+        int toolID FK
+        jsonb credential
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    AgentTool {
+        int id PK
+        int toolID FK
+        int agentID FK
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    %% Access Management
+    Role ||--o{ User : "roleID"
+    Role ||--o{ RolePolicy : "roleID"
+    Policy ||--o{ RolePolicy : "policyID"
+
+    %% AI Configuration
+    Provider ||--o{ Model : "providerID"
+    Model ||--o{ Agent : "modelID"
+    Prompt ||--o{ Agent : "promptID"
+    User ||--o{ Agent : "userID"
+
+    %% Usage Tracking
+    User ||--o{ Usage : "userID"
+    Model ||--o{ Usage : "modelID"
+    Agent ||--o{ Usage : "agentID"
+    Message ||--o{ Usage : "messageID"
+
+    %% Conversations
+    Agent ||--o{ Conversation : "agentID"
+    User ||--o{ Conversation : "userID"
+    Conversation ||--o{ Message : "conversationID"
+
+    %% Resources & Vectors
+    Agent ||--o{ Resource : "agentID"
+    Message ||--o{ Resource : "messageID"
+    Conversation ||--o{ Vector : "conversationID"
+    Resource ||--o{ Vector : "resourceID"
+    Tool ||--o{ Vector : "toolID"
+
+    %% Join Tables
+    User ||--o{ UserAgent : "userID"
+    Agent ||--o{ UserAgent : "agentID"
+    User ||--o{ UserTool : "userID"
+    Tool ||--o{ UserTool : "toolID"
+    Tool ||--o{ AgentTool : "toolID"
+    Agent ||--o{ AgentTool : "agentID"
 ```
 
 ## Data Ownership Matrix
@@ -161,16 +392,16 @@ import {
   Usage,
 } from "database";
 
-// Default export: Sequelize instance
+// Default export: Drizzle instance
 import db from "database";
 ```
 
 From `schema.js`:
 
-- `modelDefinitions` — Raw model definition objects
-- `associations` — Association configuration array
-- `createModels(sequelize)` — Creates and associates all models
-- `seedDatabase(models)` — Loads CSVs and upserts seed data
+- Table definitions (`User`, `Role`, `Policy`, etc.) — Drizzle `pgTable` objects
+- Relation definitions (`userRelations`, `roleRelations`, etc.) — Drizzle `relations()` objects
+- `tables` — Object containing all table references for iteration
+- `seedDatabase(db)` — Loads CSVs and upserts seed data
 
 ## Configuration
 
