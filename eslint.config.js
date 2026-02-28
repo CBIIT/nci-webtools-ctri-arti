@@ -1,16 +1,9 @@
 import js from "@eslint/js";
 import { defineConfig, globalIgnores } from "eslint/config";
-import importPlugin from "eslint-plugin-import";
+import importPlugin from "eslint-plugin-import-x";
 import globals from "globals";
 
-const workspacePackages = [
-  "shared",
-  "database",
-  "gateway",
-  "cms",
-  "agents",
-  "users",
-];
+const workspacePackages = ["shared", "database", "gateway", "cms", "agents", "users"];
 
 const cdnModules = [
   "@duckdb/duckdb-wasm",
@@ -64,7 +57,7 @@ export default defineConfig([
       sourceType: "module",
     },
     settings: {
-      "import/core-modules": [...workspacePackages, "eslint/config"],
+      "import-x/core-modules": [...workspacePackages, "eslint/config"],
     },
     rules: {
       "no-unused-vars": [
@@ -75,10 +68,10 @@ export default defineConfig([
           caughtErrorsIgnorePattern: "^_",
         },
       ],
-      "import/no-named-as-default": "off",
-      "import/prefer-default-export": "off",
-      "import/newline-after-import": ["error", { count: 1, considerComments: true }],
-      "import/order": [
+      "import-x/no-named-as-default": "off",
+      "import-x/prefer-default-export": "off",
+      "import-x/newline-after-import": ["error", { count: 1, considerComments: true }],
+      "import-x/order": [
         "warn",
         {
           groups: ["builtin", "external", "internal", "parent", ["sibling", "index"]],
@@ -113,11 +106,11 @@ export default defineConfig([
       globals: { ...globals.browser },
     },
     settings: {
-      "import/core-modules": [...workspacePackages, ...cdnModules],
+      "import-x/core-modules": [...workspacePackages, ...cdnModules],
     },
     rules: {
-      "import/no-unresolved": "off",
-      "import/named": "off",
+      "import-x/no-unresolved": "off",
+      "import-x/named": "off",
     },
   },
 
