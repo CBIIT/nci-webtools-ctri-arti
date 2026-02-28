@@ -50,7 +50,7 @@ if (DB_STORAGE) {
     database: PGDATABASE,
     username: PGUSER,
     password: PGPASSWORD,
-    ssl: true,
+    ssl: { rejectUnauthorized: false },
     onnotice: () => {},
   });
   db = drizzle(sql, { schema });
