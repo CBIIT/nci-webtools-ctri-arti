@@ -39,7 +39,7 @@ export async function createApp(env = process.env) {
     const pgSession = (await import("connect-pg-simple")).default;
     const PgStore = pgSession(session);
     store = new PgStore({
-      conString: `postgres://${env.PGUSER}:${env.PGPASSWORD}@${env.PGHOST}:${env.PGPORT}/${env.PGDATABASE}`,
+      conString: `postgres://${env.PGUSER}:${env.PGPASSWORD}@${env.PGHOST}:${env.PGPORT}/${env.PGDATABASE}?sslmode=require`,
       tableName: "session",
       createTableIfMissing: true,
     });
