@@ -35,15 +35,11 @@ docker push $MAIN_IMAGE_LATEST
 
 # Build gateway/cms from main image (just overrides CMD)
 docker build -t $GATEWAY_IMAGE -t $GATEWAY_IMAGE_LATEST \
-  --build-arg ECR_REGISTRY=$ECR_REGISTRY \
-  --build-arg PREFIX=$PREFIX \
-  --build-arg GITHUB_SHA=$GITHUB_SHA \
+  --build-arg BASE_IMAGE=$MAIN_IMAGE \
   -f gateway/Dockerfile .
 
 docker build -t $CMS_IMAGE -t $CMS_IMAGE_LATEST \
-  --build-arg ECR_REGISTRY=$ECR_REGISTRY \
-  --build-arg PREFIX=$PREFIX \
-  --build-arg GITHUB_SHA=$GITHUB_SHA \
+  --build-arg BASE_IMAGE=$MAIN_IMAGE \
   -f cms/Dockerfile .
 
 docker push $GATEWAY_IMAGE
