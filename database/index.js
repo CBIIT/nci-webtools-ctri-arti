@@ -1,3 +1,4 @@
+import { mkdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -28,6 +29,7 @@ if (DB_DIALECT === "pglite") {
   const { drizzle } = await import("drizzle-orm/pglite");
   const { migrate } = await import("drizzle-orm/pglite/migrator");
 
+  if (DB_STORAGE) mkdirSync(DB_STORAGE, { recursive: true });
   const client = new PGlite(DB_STORAGE || undefined);
   db = drizzle({ client, schema });
 

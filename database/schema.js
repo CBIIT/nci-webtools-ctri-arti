@@ -34,7 +34,9 @@ export const User = pgTable(
     budget: doublePrecision("budget"),
     remaining: doublePrecision("remaining"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [index("User_email_idx").on(t.email), index("User_roleID_idx").on(t.roleID)]
 );
@@ -46,7 +48,9 @@ export const Role = pgTable(
     name: text("name"),
     displayOrder: integer("displayOrder"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [index("Role_displayOrder_idx").on(t.displayOrder)]
 );
@@ -67,7 +71,9 @@ export const RolePolicy = pgTable(
     roleID: integer("roleID"),
     policyID: integer("policyID"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [uniqueIndex("RolePolicy_roleID_policyID_idx").on(t.roleID, t.policyID)]
 );
@@ -99,7 +105,9 @@ export const Model = pgTable(
     cost1kCacheWrite: doublePrecision("cost1kCacheWrite"),
     defaultParameters: json("defaultParameters"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     index("Model_internalName_idx").on(t.internalName),
@@ -122,7 +130,9 @@ export const Usage = pgTable(
     cacheWriteTokens: doublePrecision("cacheWriteTokens"),
     cost: doublePrecision("cost"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     index("Usage_userID_idx").on(t.userID),
@@ -140,7 +150,9 @@ export const Prompt = pgTable(
     version: integer("version"),
     content: text("content"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     index("Prompt_name_idx").on(t.name),
@@ -159,7 +171,9 @@ export const Agent = pgTable(
     promptID: integer("promptID"),
     modelParameters: json("modelParameters"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     index("Agent_userID_idx").on(t.userID),
@@ -192,7 +206,9 @@ export const Conversation = pgTable(
     deletedAt: timestamp("deletedAt", { withTimezone: true }),
     summaryMessageID: integer("summaryMessageID").default(0),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     index("Conversation_agentID_idx").on(t.agentID),
@@ -210,7 +226,9 @@ export const Message = pgTable(
     role: text("role"),
     content: json("content"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     index("Message_conversationID_idx").on(t.conversationID),
@@ -230,7 +248,9 @@ export const Resource = pgTable(
     s3Uri: text("s3Uri"),
     metadata: json("metadata"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     index("Resource_agentID_idx").on(t.agentID),
@@ -249,7 +269,9 @@ export const Vector = pgTable(
     content: text("content"),
     embedding: json("embedding"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     index("Vector_conversationID_idx").on(t.conversationID),
@@ -266,7 +288,9 @@ export const UserAgent = pgTable(
     agentID: integer("agentID"),
     role: text("role"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [uniqueIndex("UserAgent_userID_agentID_idx").on(t.userID, t.agentID)]
 );
@@ -279,7 +303,9 @@ export const UserTool = pgTable(
     toolID: integer("toolID"),
     credential: json("credential"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [uniqueIndex("UserTool_userID_toolID_idx").on(t.userID, t.toolID)]
 );
@@ -291,7 +317,9 @@ export const AgentTool = pgTable(
     toolID: integer("toolID"),
     agentID: integer("agentID"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [uniqueIndex("AgentTool_toolID_agentID_idx").on(t.toolID, t.agentID)]
 );

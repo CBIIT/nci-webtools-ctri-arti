@@ -6,6 +6,7 @@ venv
 /postgres
 /tmp
 database.sqlite
+/data
 .DS_Store
 .vscode
 __pycache__
