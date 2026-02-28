@@ -11,7 +11,7 @@ import api from "./services/api.js";
 import { startScheduler } from "./services/scheduler.js";
 import { createCertificate } from "./services/utils.js";
 
-const { PORT = 8080, SESSION_MAX_AGE, DB_STORAGE } = process.env;
+const { PORT = 8080, SESSION_MAX_AGE, PGHOST } = process.env;
 const sessionMaxAge = parseInt(SESSION_MAX_AGE, 10) || 30 * 60 * 1000;
 
 // Only start server if this file is run directly (not imported)
@@ -31,7 +31,7 @@ export async function createApp(env = process.env) {
   app.use(nocache);
 
   let store;
-  if (DB_STORAGE) {
+  if (!PGHOST) {
     // Use memory store for PGlite (local dev / tests)
     store = new session.MemoryStore();
   } else {

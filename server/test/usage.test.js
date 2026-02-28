@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { trackModelUsage } from "gateway/usage.js";
 
 test("trackModelUsage", async (t) => {
-  // The DB is auto-seeded via database.js (test.env sets DB_STORAGE for PGlite)
+  // The DB is auto-seeded via database.js (defaults to in-memory PGlite when PGHOST is not set)
   // test.env also creates a test user via TEST_API_KEY
 
   let testUser;
