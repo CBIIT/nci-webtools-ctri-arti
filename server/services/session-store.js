@@ -30,13 +30,31 @@ export function createSessionStore(session) {
       this.#schedulePrune();
     }
 
+    #query(op, context, promise, cb) {
+      promise
+        .then((result) => cb(null, result))
+        .catch((err) => {
+          logger.error(`Session store ${op} failed:`, {
+            ...context,
+            cause: err.message,
+            stack: err.stack,
+          });
+          cb(err);
+        });
+    }
+
     get(sid, cb) {
-      db.execute(sql`SELECT sess FROM "session" WHERE sid = ${sid} AND expire >= NOW()`)
-        .then((rows) => {
-          const row = rows[0];
-          cb(null, row ? (typeof row.sess === "string" ? JSON.parse(row.sess) : row.sess) : null);
-        })
-        .catch((err) => cb(err));
+      this.#query(
+        "get",
+        { sid },
+        db
+          .execute(sql`SELECT sess FROM "session" WHERE sid = ${sid} AND expire >= NOW()`)
+          .then((rows) => {
+            const row = rows[0];
+            return row ? (typeof row.sess === "string" ? JSON.parse(row.sess) : row.sess) : null;
+          }),
+        cb
+      );
     }
 
     set(sid, sess, cb) {
@@ -44,18 +62,25 @@ export function createSessionStore(session) {
         ? new Date(sess.cookie.expires).getTime()
         : Date.now() + 86400000;
       const expire = new Date(expireMs);
-      db.execute(
-        sql`INSERT INTO "session" (sid, sess, expire) VALUES (${sid}, ${JSON.stringify(sess)}, ${expire})
-            ON CONFLICT (sid) DO UPDATE SET sess = ${JSON.stringify(sess)}, expire = ${expire}`
-      )
-        .then(() => cb?.(null))
-        .catch((err) => cb?.(err));
+      const sessJson = JSON.stringify(sess);
+      this.#query(
+        "set",
+        { sid, expire: expire.toISOString() },
+        db.execute(
+          sql`INSERT INTO "session" (sid, sess, expire) VALUES (${sid}, ${sessJson}::json, ${expire})
+              ON CONFLICT (sid) DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire`
+        ),
+        cb
+      );
     }
 
     destroy(sid, cb) {
-      db.execute(sql`DELETE FROM "session" WHERE sid = ${sid}`)
-        .then(() => cb?.(null))
-        .catch((err) => cb?.(err));
+      this.#query(
+        "destroy",
+        { sid },
+        db.execute(sql`DELETE FROM "session" WHERE sid = ${sid}`),
+        cb
+      );
     }
 
     touch(sid, sess, cb) {
@@ -63,9 +88,12 @@ export function createSessionStore(session) {
         ? new Date(sess.cookie.expires).getTime()
         : Date.now() + 86400000;
       const expire = new Date(expireMs);
-      db.execute(sql`UPDATE "session" SET expire = ${expire} WHERE sid = ${sid}`)
-        .then(() => cb?.(null))
-        .catch((err) => cb?.(err));
+      this.#query(
+        "touch",
+        { sid, expire: expire.toISOString() },
+        db.execute(sql`UPDATE "session" SET expire = ${expire} WHERE sid = ${sid}`),
+        cb
+      );
     }
   }
 
