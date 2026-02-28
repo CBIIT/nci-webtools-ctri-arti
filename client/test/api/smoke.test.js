@@ -2,8 +2,9 @@
  * API smoke tests — exercise key endpoints against the real server.
  * Runs in-browser during integration tests via ?test=1&apiKey=...
  */
-import test from "/test/test.js";
 import assert from "/test/assert.js";
+import { mountApp, waitForElement } from "/test/helpers.js";
+import test from "/test/test.js";
 
 const urlParams = new URLSearchParams(window.location.search);
 const TEST_API_KEY = urlParams.get("apiKey");
@@ -88,5 +89,30 @@ test("API Smoke Tests", async (t) => {
     // Delete
     const delRes = await api("DELETE", `/conversations/${convo.id}`);
     assert.strictEqual(delRes.status, 200);
+  });
+
+  // ── Page smoke tests — mount app and visit authenticated pages ─────────
+  await t.test("/_/profile renders without errors", async () => {
+    const { container, dispose } = mountApp("/_/profile");
+    try {
+      const heading = await waitForElement(container, "h1", (el) =>
+        el.textContent.includes("Profile")
+      );
+      assert.ok(heading, "Should render Profile heading");
+    } finally {
+      dispose();
+      document.body.removeChild(container);
+    }
+  });
+
+  await t.test("/ home page renders without errors", async () => {
+    const { container, dispose } = mountApp("/");
+    try {
+      const el = await waitForElement(container, "[class]", 5000);
+      assert.ok(el, "Home page should render content");
+    } finally {
+      dispose();
+      document.body.removeChild(container);
+    }
   });
 });
