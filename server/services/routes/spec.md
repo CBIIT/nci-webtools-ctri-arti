@@ -230,6 +230,7 @@ User management, usage tracking, and analytics. All admin endpoints require `req
 | GET | `/admin/usage` | admin | Get all usage records. |
 | POST | `/admin/usage/reset` | admin | Reset all users' weekly limits. |
 | POST | `/admin/users/:id/reset-limit` | admin | Reset single user's limit. |
+| POST | `/admin/users/:id/budget` | admin | Set user's daily budget. Body: `{ budget: number \| null }`. Sets `remaining = budget`. |
 
 #### Analytics
 

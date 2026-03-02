@@ -305,6 +305,31 @@ api.post("/admin/users/:id/reset-budget", requireRole("admin"), async (req, res,
   }
 });
 
+// Set daily budget for a specific user (admin only)
+api.post("/admin/users/:id/budget", requireRole("admin"), async (req, res, next) => {
+  const userId = req.params.id;
+  const { budget } = req.body;
+
+  if (budget !== null && (typeof budget !== "number" || budget < 0)) {
+    return res.status(400).json({ error: "Budget must be a positive number or null" });
+  }
+
+  try {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    await user.update({ budget, remaining: budget });
+
+    const updatedUser = await User.findByPk(userId, { include: [{ model: Role }] });
+    res.json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error("Error updating user budget:", error);
+    next(createHttpError(500, error, "An error occurred while updating the user budget"));
+  }
+});
+
 // Type-aware SQL fragments — exclude guardrail rows from totals to avoid double-counting
 const COST_SQL = `CASE WHEN "Usage"."type" != 'guardrail' THEN "Usage"."cost" ELSE 0 END`;
 const GUARDRAIL_COST_SQL = `CASE WHEN "Usage"."type" = 'guardrail' THEN "Usage"."cost" ELSE 0 END`;
