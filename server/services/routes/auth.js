@@ -1,7 +1,7 @@
 import { json, Router } from "express";
 
 import { Role, User } from "../database.js";
-import { loginMiddleware, oauthMiddleware } from "../middleware.js";
+import { loginMiddleware, oauthMiddleware, requireRole } from "../middleware.js";
 
 const { OAUTH_PROVIDER_ENABLED, SESSION_TTL_POLL_MS } = process.env;
 
@@ -37,6 +37,18 @@ api.get("/session", async (req, res) => {
     session.user = await User.findByPk(session.user.id, { include: [{ model: Role }] });
   }
   res.json({ user: session.user, expires: session.expires });
+});
+
+api.get("/profile", requireRole(), async (req, res) => {
+  const user = req.session.user;
+  const profile = await User.findByPk(user.id, {
+    attributes: ["id", "email", "firstName", "lastName", "status", "budget", "remaining"],
+    include: [{ model: Role, attributes: ["id", "name"] }],
+  });
+  if (!profile) {
+    return res.status(404).json({ error: "User not found" });
+  }
+  res.json(profile);
 });
 
 api.get("/session-ttl", async (req, res) => {

@@ -27,8 +27,7 @@ function UserEdit() {
   // Default value mapping based on role ID
   const DEFAULT_ROLE_LIMITS = {
     1: { budget: null, noLimit: true }, // Admin
-    2: { budget: 10, noLimit: false }, // Super Admin
-    3: { budget: 5, noLimit: false }, // User
+    2: { budget: 1, noLimit: false }, // User ($1 daily)
   };
 
   // Fetch roles data using resource

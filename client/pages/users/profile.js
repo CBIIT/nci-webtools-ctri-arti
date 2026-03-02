@@ -8,10 +8,10 @@ function UserProfile() {
   const [saving, setSaving] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
 
-  // Fetch current user session
-  const [session] = createResource(async () => {
+  // Fetch current user profile
+  const [profile] = createResource(async () => {
     try {
-      const response = await fetch("/api/session");
+      const response = await fetch("/api/profile");
       if (!response.ok) {
         await handleHttpError(response, "fetching your profile");
         return null;
@@ -20,7 +20,7 @@ function UserProfile() {
     } catch (err) {
       const error = new Error("Something went wrong while retrieving your profile.");
       error.cause = err;
-      handleError(error, "Session API Error");
+      handleError(error, "Profile API Error");
       return null;
     }
   });
@@ -90,14 +90,14 @@ function UserProfile() {
         <//>
 
         <!-- Error Alert -->
-        <${Show} when=${() => session.error}>
+        <${Show} when=${() => profile.error}>
           <div class="alert alert-danger" role="alert">
-            ${() => session.error || "An error occurred while loading your profile"}
+            ${() => profile.error || "An error occurred while loading your profile"}
           </div>
         <//>
 
         <!-- Loading State -->
-        <${Show} when=${() => session.loading}>
+        <${Show} when=${() => profile.loading}>
           <div class="d-flex justify-content-center my-5">
             <div class="spinner-border text-primary" role="status">
               <span class="visually-hidden">Loading...</span>
@@ -115,7 +115,7 @@ function UserProfile() {
         </div>
         <div class="row mt-4 mb-5">
           <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto fs-3">
-            ${() => session()?.user?.email || ""}
+            ${() => profile()?.email || ""}
           </h1>
           <div class="position-relative offset-sm-2 offset-md-3 offset-xl-4">
             <img
@@ -135,7 +135,7 @@ function UserProfile() {
         </div>
 
         <!-- Profile Form -->
-        <${Show} when=${() => !session.loading}>
+        <${Show} when=${() => !profile.loading}>
           <form onSubmit=${handleSubmit} class="mb-5">
             <div class="row align-items-center mb-2">
               <!-- Account Type -->
@@ -155,7 +155,7 @@ function UserProfile() {
                 >Email</label
               >
               <div class="col-sm-3 col-xl-2">
-                <div>${() => session()?.user?.email || ""}</div>
+                <div>${() => profile()?.email || ""}</div>
               </div>
             </div>
 
@@ -172,7 +172,7 @@ function UserProfile() {
                   class="form-control"
                   id="firstName"
                   name="firstName"
-                  value=${() => session()?.user?.firstName || ""}
+                  value=${() => profile()?.firstName || ""}
                   placeholder="Enter first name"
                 />
               </div>
@@ -191,7 +191,7 @@ function UserProfile() {
                   class="form-control"
                   id="lastName"
                   name="lastName"
-                  value=${() => session()?.user?.lastName || ""}
+                  value=${() => profile()?.lastName || ""}
                   placeholder="Enter last name"
                 />
               </div>
@@ -204,7 +204,7 @@ function UserProfile() {
                 >Status</label
               >
               <div class="col-sm-3 col-xl-2">
-                <div class="text-capitalize">${() => session()?.user?.status}</div>
+                <div class="text-capitalize">${() => profile()?.status}</div>
               </div>
             </div>
 
@@ -215,7 +215,7 @@ function UserProfile() {
                 >Role</label
               >
               <div class="col-sm-3 col-xl-2">
-                <div class="text-capitalize">${() => session()?.user?.Role?.name}</div>
+                <div class="text-capitalize">${() => profile()?.Role?.name}</div>
               </div>
             </div>
 
@@ -228,7 +228,7 @@ function UserProfile() {
               <div class="col-sm-3 col-xl-2">
                 <div>
                   ${() => {
-                    const user = session()?.user;
+                    const user = profile();
                     if (user?.budget === null) {
                       return "Unlimited";
                     } else {

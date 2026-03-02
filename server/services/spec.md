@@ -219,20 +219,20 @@ api.get("/foo", routeHandler(async (req, res) => { ... }));
 
 ## Scheduler (`scheduler.js`)
 
-Weekly usage limit reset via cron.
+Daily usage limit reset via cron.
 
 ### Exports
 
 | Function | Description |
 |----------|-------------|
 | `resetUsageLimits()` | Sets `remaining = limit` for all users with non-null limits |
-| `startScheduler()` | Starts cron job on `USAGE_RESET_SCHEDULE` (default: Sunday midnight) |
+| `startScheduler()` | Starts cron job on `USAGE_RESET_SCHEDULE` (default: midnight daily) |
 
 ### Configuration
 
 | Env Variable | Default | Description |
 |-------------|---------|-------------|
-| `USAGE_RESET_SCHEDULE` | `0 0 * * 0` | Cron expression for reset schedule |
+| `USAGE_RESET_SCHEDULE` | `0 0 * * *` | Cron expression for reset schedule |
 
 ---
 

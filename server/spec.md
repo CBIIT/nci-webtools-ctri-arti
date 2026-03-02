@@ -112,7 +112,7 @@ Creates HTTP or HTTPS server:
 | `EMAIL_DEV` | — | Developer error report email |
 | `EMAIL_ADMIN` | — | Admin notification email |
 | `EMAIL_USER_REPORTS` | — | User feedback email |
-| `USAGE_RESET_SCHEDULE` | 0 0 * * 0 | Cron expression for weekly limit reset |
+| `USAGE_RESET_SCHEDULE` | 0 0 * * * | Cron expression for daily limit reset |
 | `VERSION` | — | Reported by /api/status |
 
 ## Data Model

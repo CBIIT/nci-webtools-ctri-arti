@@ -12,6 +12,7 @@ Handles OpenID Connect login, session management, and client configuration.
 |--------|------|------|-------------|
 | GET | `/login` | loginMiddleware | OIDC login with PKCE. Creates user on first login (first user gets admin role). Redirects to `?destination` or `/`. |
 | GET | `/logout` | None | Destroys session, redirects to `?destination` or `/`. |
+| GET | `/profile` | requireRole() | Returns current user's profile (id, email, name, status, budget, remaining, role). |
 | GET | `/session` | None | Returns `{ user, expires }`. Touches session (rolling expiry). Refreshes user from DB if logged in. |
 | GET | `/session-ttl` | None | Returns `{ ttl }` in seconds. Returns `{ ttl: null, error }` if no session. |
 | GET | `/config` | None | Returns `{ sessionTtlPollMs }` (default 10000ms). |
@@ -22,7 +23,7 @@ Handles OpenID Connect login, session management, and client configuration.
 2. Server generates PKCE challenge, state, nonce; redirects to OIDC provider
 3. Provider redirects back with `?code=...`
 4. Server exchanges code for tokens, fetches userinfo
-5. If user doesn't exist, creates one (first user = admin, subsequent = user role with limit=5)
+5. If user doesn't exist, creates one (first user = admin, subsequent = user role with limit=1)
 6. Sets `session.user`, redirects to destination
 
 ### Local OAuth Provider
@@ -62,7 +63,7 @@ Proxies AI inference requests through the gateway client.
 
 **Streaming Response:** Newline-delimited JSON. Each line is a separate message object. Connection closes when stream ends. The last message contains `metadata.usage` for token tracking.
 
-**Rate Limiting:** Returns `429` with `{ error: "..." }` when user's `remaining` balance is depleted. Resets weekly (default: Sunday midnight).
+**Rate Limiting:** Returns `429` with `{ error: "..." }` when user's `remaining` balance is depleted. Resets daily (default: midnight).
 
 ### GET /model/list
 
@@ -228,7 +229,7 @@ User management, usage tracking, and analytics. All admin endpoints require `req
 |--------|------|------|-------------|
 | GET | `/admin/users/:id/usage` | admin | Get usage history for user. |
 | GET | `/admin/usage` | admin | Get all usage records. |
-| POST | `/admin/usage/reset` | admin | Reset all users' weekly limits. |
+| POST | `/admin/usage/reset` | admin | Reset all users' daily limits. |
 | POST | `/admin/users/:id/reset-limit` | admin | Reset single user's limit. |
 | POST | `/admin/users/:id/budget` | admin | Set user's daily budget. Body: `{ budget: number \| null }`. Sets `remaining = budget`. |
 
