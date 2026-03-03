@@ -18,39 +18,6 @@ api.use((req, res, next) => {
   next();
 });
 
-// ===== AGENT ROUTES =====
-
-api.post("/agents", routeHandler(async (req, res) => {
-  const agent = await service.createAgent(req.userId, req.body);
-  res.status(201).json(agent);
-}));
-
-api.get("/agents", routeHandler(async (req, res) => {
-  const agents = await service.getAgents(req.userId);
-  res.json(agents);
-}));
-
-api.get("/agents/:id", routeHandler(async (req, res) => {
-  const agent = await service.getAgent(req.userId, req.params.id);
-  if (!agent) return res.status(404).json({ error: "Agent not found" });
-  res.json(agent);
-}));
-
-api.put("/agents/:id", routeHandler(async (req, res) => {
-  const existingAgent = await service.getAgent(req.userId, req.params.id);
-  if (!existingAgent) return res.status(404).json({ error: "Agent not found" });
-  if (existingAgent.userId === null) {
-    return res.status(403).json({ error: "Cannot modify global agent" });
-  }
-  const agent = await service.updateAgent(req.userId, req.params.id, req.body);
-  res.json(agent);
-}));
-
-api.delete("/agents/:id", routeHandler(async (req, res) => {
-  await service.deleteAgent(req.userId, req.params.id);
-  res.json({ success: true });
-}));
-
 // ===== THREAD ROUTES =====
 
 api.post("/threads", routeHandler(async (req, res) => {

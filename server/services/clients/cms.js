@@ -38,12 +38,6 @@ async function httpRequest(method, path, body, userId) {
 function buildDirectClient() {
   const s = new ConversationService();
   return {
-    createAgent: (userId, data) => s.createAgent(userId, data),
-    getAgents: (userId) => s.getAgents(userId),
-    getAgent: (userId, agentId) => s.getAgent(userId, agentId),
-    updateAgent: (userId, agentId, updates) => s.updateAgent(userId, agentId, updates),
-    deleteAgent: (userId, agentId) => s.deleteAgent(userId, agentId),
-
     createThread: (userId, data) => s.createThread(userId, data),
     getThreads: (userId, options) => s.getThreads(userId, options),
     getThread: (userId, threadId) => s.getThread(userId, threadId),
@@ -71,12 +65,6 @@ function buildDirectClient() {
 function buildHttpClient() {
   const s = new ConversationService(); // fallback for routes not yet exposed via HTTP
   return {
-    createAgent: (userId, data) => httpRequest("POST", "/api/agents", data, userId),
-    getAgents: (userId) => httpRequest("GET", "/api/agents", null, userId),
-    getAgent: (userId, agentId) => httpRequest("GET", `/api/agents/${agentId}`, null, userId),
-    updateAgent: (userId, agentId, updates) => httpRequest("PUT", `/api/agents/${agentId}`, updates, userId),
-    deleteAgent: (userId, agentId) => httpRequest("DELETE", `/api/agents/${agentId}`, null, userId),
-
     createThread: (userId, data) => httpRequest("POST", "/api/threads", data, userId),
     getThreads: (userId, options = {}) => {
       const { limit = 20, offset = 0 } = options;
@@ -106,13 +94,8 @@ function buildHttpClient() {
 
 export const cmsClient = CMS_URL ? buildHttpClient() : buildDirectClient();
 
-// Named exports for backward compatibility
+// Named exports for convenience
 export const {
-  createAgent,
-  getAgents,
-  getAgent,
-  updateAgent,
-  deleteAgent,
   createThread,
   getThreads,
   getThread,

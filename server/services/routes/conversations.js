@@ -1,5 +1,6 @@
 import { json, Router } from "express";
 
+import { amsClient } from "../clients/ams.js";
 import { cmsClient } from "../clients/cms.js";
 import { requireRole } from "../middleware.js";
 import { routeHandler } from "../utils.js";
@@ -11,37 +12,31 @@ api.use(json({ limit: 1024 ** 3 })); // 1GB for file uploads
 
 api.post("/agents", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const agent = await cmsClient.createAgent(userId, req.body);
+  const agent = await amsClient.createAgent(userId, req.body);
   res.status(201).json(agent);
 }));
 
 api.get("/agents", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const agents = await cmsClient.getAgents(userId);
+  const agents = await amsClient.getAgents(userId);
   res.json(agents);
 }));
 
 api.get("/agents/:id", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const agent = await cmsClient.getAgent(userId, req.params.id);
-  if (!agent) return res.status(404).json({ error: "Agent not found" });
+  const agent = await amsClient.getAgent(userId, req.params.id);
   res.json(agent);
 }));
 
 api.put("/agents/:id", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  const existingAgent = await cmsClient.getAgent(userId, req.params.id);
-  if (!existingAgent) return res.status(404).json({ error: "Agent not found" });
-  if (existingAgent.userId === null) {
-    return res.status(403).json({ error: "Cannot modify global agent" });
-  }
-  const agent = await cmsClient.updateAgent(userId, req.params.id, req.body);
+  const agent = await amsClient.updateAgent(userId, req.params.id, req.body);
   res.json(agent);
 }));
 
 api.delete("/agents/:id", requireRole(), routeHandler(async (req, res) => {
   const userId = req.session.user.id;
-  await cmsClient.deleteAgent(userId, req.params.id);
+  await amsClient.deleteAgent(userId, req.params.id);
   res.json({ success: true });
 }));
 
