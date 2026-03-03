@@ -46,33 +46,39 @@ export const templateConfigs = {
     disabled: true,
   },
 
-  // Lay Person Abstract Templates (disabled — requires block-based pipeline)
+  // Lay Person Abstract Templates
   "lpa-adult-patient": {
     label: "Adult affected patient",
     prefix: "LPA",
     category: "Lay Person Abstract (LPA)",
     templateUrl: "/templates/lay-person-abstract/lay-person-abstract-template.docx",
+    promptUrl: "/templates/lay-person-abstract/adult-affected-patient.txt",
     libraryUrl: null,
+    schemaUrl: null,
     filename: "lay-person-abstract-patient.docx",
-    disabled: true,
+    disabled: false,
   },
   "lpa-adult-healthy": {
     label: "Adult healthy volunteer",
     prefix: "LPA",
     category: "Lay Person Abstract (LPA)",
     templateUrl: "/templates/lay-person-abstract/lay-person-abstract-template.docx",
+    promptUrl: "/templates/lay-person-abstract/adult-healthy-volunteer.txt",
     libraryUrl: null,
+    schemaUrl: null,
     filename: "lay-person-abstract-healthy.docx",
-    disabled: true,
+    disabled: false,
   },
   "lpa-adult-family": {
     label: "Adult family member",
     prefix: "LPA",
     category: "Lay Person Abstract (LPA)",
     templateUrl: "/templates/lay-person-abstract/lay-person-abstract-template.docx",
+    promptUrl: "/templates/lay-person-abstract/adult-family-member.txt",
     libraryUrl: null,
+    schemaUrl: null,
     filename: "lay-person-abstract-family.docx",
-    disabled: true,
+    disabled: false,
   },
 };
 

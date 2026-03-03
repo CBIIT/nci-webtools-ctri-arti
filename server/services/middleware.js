@@ -25,7 +25,8 @@ const {
  */
 export function logErrors(formatter = (e) => ({ error: e.message })) {
   return (error, request, response, _next) => {
-    const fullErrorMessage = `${formatObject(error.message)}.\n${formatObject(error.additionalError)}`;
+    const cause = error.cause?.message ?? error.cause ?? "";
+    const fullErrorMessage = `${formatObject(error.message)}.\n${formatObject(error.additionalError)}${cause ? `\nCaused by: ${formatObject(cause)}` : ""}`;
     logger.error(fullErrorMessage);
 
     if (EMAIL_DEV && EMAIL_DEV.length > 0) {

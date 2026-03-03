@@ -205,7 +205,7 @@ export const Conversation = pgTable(
     title: text("title"),
     deleted: boolean("deleted").default(false),
     deletedAt: timestamp("deletedAt", { withTimezone: true }),
-    summaryMessageID: integer("summaryMessageID").default(0),
+    summaryMessageID: integer("summaryMessageID"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()

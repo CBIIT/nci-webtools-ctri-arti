@@ -25,7 +25,7 @@ import { createTimestamp, downloadBlob } from "../../../utils/files.js";
 import { parseDocument } from "../../../utils/parsers.js";
 
 import { getTemplateConfigsByCategory, templateConfigs } from "./config.js";
-import { runFieldExtraction } from "./extract.js";
+import { runFieldExtraction, runSimpleExtraction } from "./extract.js";
 
 // #endregion
 
@@ -140,6 +140,10 @@ export default function Page() {
     updatedAt: new Date().toISOString(),
   };
   const [store, setStore] = createStore(structuredClone(defaultStore));
+
+  if (new URLSearchParams(window.location.search).has("test")) {
+    window.__consentCrafterStore = store;
+  }
 
   const [session] = createResource(() => fetch("/api/v1/session").then((res) => res.json()));
   // #endregion
@@ -328,26 +332,43 @@ export default function Page() {
 
       const promptText =
         store.promptCache[jobConfig.promptUrl] || (await fetchAndCachePrompt(jobConfig.templateId));
-      const schema =
-        store.schemaCache[jobConfig.schemaUrl] || (await fetchAndCacheSchema(jobConfig.templateId));
 
-      // Analyze template structure so the model sees exact sentence frames
-      const templateAnalysis = await analyzeTemplate(templateBuffer);
-      const fieldDescriptions = getFieldDescriptions(schema);
+      let extractedData;
 
-      const extractedData = await runFieldExtraction({
-        protocolText: jobConfig.inputText,
-        promptTemplate: promptText,
-        consentLibrary: libraryText,
-        fullSchema: schema,
-        templateAnalysis,
-        fieldDescriptions,
-        model: jobConfig.model,
-        runModelFn: runModel,
-        onProgress: (progress) => {
-          setStore("extractionProgress", progress);
-        },
-      });
+      if (jobConfig.schemaUrl) {
+        // Full 2-chunk extraction (consent forms)
+        const schema =
+          store.schemaCache[jobConfig.schemaUrl] ||
+          (await fetchAndCacheSchema(jobConfig.templateId));
+
+        const templateAnalysis = await analyzeTemplate(templateBuffer);
+        const fieldDescriptions = getFieldDescriptions(schema);
+
+        extractedData = await runFieldExtraction({
+          protocolText: jobConfig.inputText,
+          promptTemplate: promptText,
+          consentLibrary: libraryText,
+          fullSchema: schema,
+          templateAnalysis,
+          fieldDescriptions,
+          model: jobConfig.model,
+          runModelFn: runModel,
+          onProgress: (progress) => {
+            setStore("extractionProgress", progress);
+          },
+        });
+      } else {
+        // Simple single-call extraction (LPA and other self-contained prompts)
+        extractedData = await runSimpleExtraction({
+          protocolText: jobConfig.inputText,
+          promptTemplate: promptText,
+          model: jobConfig.model,
+          runModelFn: runModel,
+          onProgress: (progress) => {
+            setStore("extractionProgress", progress);
+          },
+        });
+      }
 
       // Generate DOCX using docx-templates
       const { createReport, listCommands } = await import("docx-templates");

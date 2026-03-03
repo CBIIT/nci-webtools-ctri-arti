@@ -17,49 +17,102 @@ const SCHEMA_CHUNKS = [
   {
     label: "Study identity & procedures",
     fields: [
-      "references", "reasoning",
-      "pi_name", "study_title", "study_site", "cohort", "consent_version",
-      "contact_name", "contact_phone", "contact_email",
-      "other_contact_name", "other_contact_phone", "other_contact_email",
-      "key_info_why_asked", "key_info_purpose", "key_info_fda_status",
-      "key_info_phase", "key_info_phase_explanation",
-      "key_info_happenings", "key_info_benefits", "key_info_risks",
-      "key_info_alternatives", "key_info_voluntariness",
-      "parent_permission", "impaired_adults",
-      "study_purpose", "why_you_asked",
-      "is_investigational", "approach_investigational_drug_name", "investigational_condition",
-      "is_fda_approved_off_label", "fda_approved_indication", "research_testing_reason",
-      "study_procedures_intro", "study_procedures", "study_duration", "accrual_ceiling", "multisite_count",
+      "references",
+      "reasoning",
+      "pi_name",
+      "study_title",
+      "study_site",
+      "cohort",
+      "consent_version",
+      "contact_name",
+      "contact_phone",
+      "contact_email",
+      "other_contact_name",
+      "other_contact_phone",
+      "other_contact_email",
+      "key_info_why_asked",
+      "key_info_purpose",
+      "key_info_fda_status",
+      "key_info_phase",
+      "key_info_phase_explanation",
+      "key_info_happenings",
+      "key_info_benefits",
+      "key_info_risks",
+      "key_info_alternatives",
+      "key_info_voluntariness",
+      "parent_permission",
+      "impaired_adults",
+      "study_purpose",
+      "why_you_asked",
+      "is_investigational",
+      "approach_investigational_drug_name",
+      "investigational_condition",
+      "is_fda_approved_off_label",
+      "fda_approved_indication",
+      "research_testing_reason",
+      "study_procedures_intro",
+      "study_procedures",
+      "study_duration",
+      "accrual_ceiling",
+      "multisite_count",
     ],
   },
   {
     label: "Risks, benefits, alternatives & COI",
     fields: [
-      "references", "reasoning",
-      "risks_intro", "drug_risks", "procedure_risks",
-      "pregnancy_risks", "radiation_risks",
-      "has_potential_benefits", "no_potential_benefits",
-      "benefits_description", "benefits_others_reason",
-      "alternatives_list", "alternatives_advice",
-      "return_of_results", "early_withdrawal",
+      "references",
+      "reasoning",
+      "risks_intro",
+      "drug_risks",
+      "procedure_risks_intro",
+      "procedure_risks",
+      "pregnancy_risks",
+      "radiation_risks",
+      "has_potential_benefits",
+      "no_potential_benefits",
+      "benefits_description",
+      "benefits_others_reason",
+      "alternatives_list",
+      "alternatives_advice",
+      "return_of_results",
+      "early_withdrawal",
       "disease_condition",
-      "is_open_repository", "is_closed_repository",
-      "genomic_non_sensitive", "genomic_sensitive",
-      "may_anonymize", "will_not_anonymize",
+      "is_open_repository",
+      "is_closed_repository",
+      "genomic_non_sensitive",
+      "genomic_sensitive",
+      "may_anonymize",
+      "will_not_anonymize",
       "specimen_storage_duration",
-      "no_payment", "has_payment", "payment_details", "partial_payment_details",
+      "no_payment",
+      "has_payment",
+      "payment_details",
+      "partial_payment_details",
       "payment_exceeds",
-      "reimbursement_true", "reimbursement_info", "reimbursement_flat_rate",
-      "per_diem_amount", "reimbursement_travel_arranged", "reimbursement_false",
+      "reimbursement_true",
+      "reimbursement_info",
+      "reimbursement_flat_rate",
+      "per_diem_amount",
+      "reimbursement_travel_arranged",
+      "reimbursement_false",
       "cost_additional",
       "covered_protocol",
-      "coi_no_agreements", "coi_tech_license", "coi_product_description", "coi_product_name",
-      "coi_crada", "coi_cta", "coi_company_name", "coi_product_provision",
-      "coi_through_program", "coi_program_name",
+      "coi_no_agreements",
+      "coi_tech_license",
+      "coi_product_description",
+      "coi_product_name",
+      "coi_crada",
+      "coi_cta",
+      "coi_company_name",
+      "coi_product_provision",
+      "coi_through_program",
+      "coi_program_name",
       "ct_gov_registration",
       "confidentiality_general",
       "study_sponsor",
-      "sponsor_name", "manufacturer_name", "product_name",
+      "sponsor_name",
+      "manufacturer_name",
+      "product_name",
     ],
   },
 ];
@@ -81,7 +134,14 @@ const CONCAT_FIELDS = new Set(["references", "reasoning"]);
  * @param {string} [fieldDescriptions] - Optional field descriptions from schema
  * @returns {string} Fully assembled system prompt
  */
-function buildSystemPrompt(promptTemplate, protocolText, consentLibrary, fullSchema, templateAnalysis, fieldDescriptions) {
+function buildSystemPrompt(
+  promptTemplate,
+  protocolText,
+  consentLibrary,
+  fullSchema,
+  templateAnalysis,
+  fieldDescriptions
+) {
   const today = new Date();
   const todayStr = `${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}/${today.getFullYear()}`;
   const schemaJson = JSON.stringify(fullSchema, null, 2);
@@ -122,12 +182,24 @@ export async function runFieldExtraction({
   templateAnalysis,
   fieldDescriptions,
 }) {
-  const system = buildSystemPrompt(promptTemplate, protocolText, consentLibrary || "", fullSchema, templateAnalysis, fieldDescriptions);
+  const system = buildSystemPrompt(
+    promptTemplate,
+    protocolText,
+    consentLibrary || "",
+    fullSchema,
+    templateAnalysis,
+    fieldDescriptions
+  );
   const totalChunks = SCHEMA_CHUNKS.length;
 
   const merged = {};
 
-  onProgress?.({ status: "extracting", completed: 0, total: totalChunks, message: "Starting field extraction..." });
+  onProgress?.({
+    status: "extracting",
+    completed: 0,
+    total: totalChunks,
+    message: "Starting field extraction...",
+  });
 
   for (let i = 0; i < totalChunks; i++) {
     const chunk = SCHEMA_CHUNKS[i];
@@ -175,7 +247,10 @@ export async function runFieldExtraction({
     try {
       data = JSON.parse(jsonText);
     } catch (e) {
-      throw new Error(`Failed to parse JSON for chunk "${chunk.label}": ${e.message}\nResponse preview: ${responseText.slice(0, 500)}`);
+      throw new Error(
+        `Failed to parse JSON for chunk "${chunk.label}": ${e.message}\nResponse preview: ${responseText.slice(0, 500)}`,
+        { cause: e }
+      );
     }
 
     // Merge: concatenate array fields (references, reasoning), overwrite others
@@ -196,4 +271,72 @@ export async function runFieldExtraction({
   });
 
   return merged;
+}
+
+/**
+ * Run a single-call extraction for self-contained prompts (e.g. Lay Person Abstract).
+ *
+ * Unlike runFieldExtraction (2-chunk), this sends one API call where the prompt
+ * template is the system message (with ${protocol} replaced) and the user message
+ * asks for raw JSON. No schema, consent library, or chunking needed.
+ *
+ * @param {Object} options
+ * @param {string} options.protocolText - Full protocol document text
+ * @param {string} options.promptTemplate - Prompt text with ${protocol} placeholder
+ * @param {string} options.model - Model ID
+ * @param {Function} options.runModelFn - Function to call /api/model
+ * @param {Function} [options.onProgress] - Progress callback
+ * @returns {Promise<Object>} Extracted fields as JSON
+ */
+export async function runSimpleExtraction({
+  protocolText,
+  promptTemplate,
+  model,
+  runModelFn,
+  onProgress,
+}) {
+  const system = promptTemplate.replaceAll("${protocol}", protocolText);
+
+  onProgress?.({ status: "extracting", completed: 0, total: 1, message: "Extracting fields..." });
+
+  const responseText = await runModelFn({
+    model,
+    system,
+    messages: [
+      {
+        role: "user",
+        content: [{ text: "Extract fields from the protocol above. Return ONLY raw JSON." }],
+      },
+    ],
+  });
+
+  // Parse JSON from response — strip markdown fencing if present
+  let jsonText = responseText.trim();
+  if (jsonText.startsWith("```")) {
+    jsonText = jsonText.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  } else if (!jsonText.startsWith("{")) {
+    const fencedMatch = jsonText.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
+    if (fencedMatch) {
+      jsonText = fencedMatch[1];
+    } else {
+      const braceMatch = jsonText.match(/\{[\s\S]*\}/);
+      if (braceMatch) {
+        jsonText = braceMatch[0];
+      }
+    }
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch (e) {
+    throw new Error(
+      `Failed to parse JSON from simple extraction: ${e.message}\nResponse preview: ${responseText.slice(0, 500)}`,
+      { cause: e }
+    );
+  }
+
+  onProgress?.({ status: "applying", completed: 1, total: 1, message: "Generating document..." });
+
+  return parsed;
 }

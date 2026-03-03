@@ -442,18 +442,43 @@ description exceeds 30 words, split it into separate entries.
      BAD:  "Myocarditis (swelling of the heart muscle)"
 
 === PROCEDURE RISKS STYLE ===
-Each procedure_risks entry should be a SHORT heading followed by ONLY the
-risks on the SAME LINE — do NOT include procedure descriptions here (that
-belongs in study_procedures):
-     GOOD: "Biopsy: This procedure usually causes only brief discomfort..."
-     GOOD: "Blood Draws: Blood draws may cause pain, redness, bruising, or
-            infection where we put the needle. Some people might faint, but
-            this is rare."
-     BAD:  "Risks of Blood Draws: Blood draws may cause..."
-     BAD:  "IV: We will put a small plastic tube into a vein... The risks
-            include pain..." (procedure description does not belong here)
+This section fills TWO fields that render together in the "Risks of Study
+Procedures" section of the consent form:
 
-Keep each entry focused — one procedure per entry, short and scannable.
+  procedure_risks_intro — a short narrative paragraph (2-3 sentences)
+  procedure_risks       — an array of { "title", "description" } objects
+                          rendered as a two-column table
+
+--- procedure_risks_intro ---
+Write a warm, 2-3 sentence overview that orients the participant to the
+procedure risks that follow. Briefly say that the study involves certain
+procedures, each with its own risks described in the table below.
+
+Example:
+  "Some of the study procedures carry their own risks. These risks are
+   separate from the side effects of the study drug. The table below
+   describes what to watch for after each procedure."
+
+--- procedure_risks (array of objects) ---
+Return one object per procedure: { "title": "Procedure Name", "description": "..." }
+
+For each procedure's risks:
+1. CHECK THE CONSENT LIBRARY FIRST — if the procedure has a matching
+   consent library entry, use the library's Risks text VERBATIM (filling
+   [bracketed placeholders] with protocol-specific values).
+2. DO NOT include procedure descriptions here (those go in study_procedures).
+3. Keep each description focused on what could go wrong and what to watch for.
+
+     GOOD: { "title": "Blood Draws", "description": "Blood draws may cause
+             pain, redness, bruising, or infection where we put the needle.
+             Some people might faint, but this is rare." }
+     GOOD: { "title": "Biopsy", "description": "This procedure usually
+             causes only brief discomfort..." }
+     BAD:  { "title": "Blood Draws", "description": "Risks of Blood Draws:
+             Blood draws may cause..." } (do not repeat the title as a heading)
+     BAD:  { "title": "IV", "description": "We will put a small plastic tube
+             into a vein... The risks include pain..." }
+             (procedure description does not belong here — risks only)
 
 Include entries for ALL procedures in the protocol, even low-risk ones.
 

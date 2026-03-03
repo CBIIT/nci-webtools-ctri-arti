@@ -58,12 +58,6 @@ export default function getRoutes() {
           component: ConsentCrafterV2,
         },
         {
-          path: "consent-crafter-v2",
-          title: "ConsentCrafter",
-          component: ConsentCrafterV2,
-          hidden: true,
-        },
-        {
           path: "translator",
           title: "Translator",
           component: Translate,

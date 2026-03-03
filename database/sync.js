@@ -122,7 +122,7 @@ export async function pushSchema(exec) {
       "title" text,
       "deleted" boolean DEFAULT false,
       "deletedAt" timestamptz,
-      "summaryMessageID" integer DEFAULT 0,
+      "summaryMessageID" integer,
       "createdAt" timestamptz DEFAULT now(),
       "updatedAt" timestamptz DEFAULT now()
     )`,

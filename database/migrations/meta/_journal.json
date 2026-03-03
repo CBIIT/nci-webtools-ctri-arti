@@ -22,6 +22,13 @@
       "when": 1772273327798,
       "tag": "0002_session",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772531147314,
+      "tag": "0003_fix_summary_message_id",
+      "breakpoints": true
     }
   ]
 }

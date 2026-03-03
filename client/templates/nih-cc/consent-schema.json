@@ -226,10 +226,28 @@
         "additionalProperties": false
       }
     },
+    "procedure_risks_intro": {
+      "type": "string",
+      "description": "A short intro paragraph (2-3 sentences) for the procedure risks section. Briefly orient the reader to what follows — that the study involves certain procedures, each with its own risks, described below. Write in warm, direct language."
+    },
     "procedure_risks": {
       "type": "array",
-      "description": "ONLY the risks for each procedure — do NOT include procedure descriptions (those go in study_procedures). For matching consent library entries, use ONLY the Risks text verbatim. Format: 'Heading: Risks text...' (heading and text on the same line). Renders in the Risks section of the consent form.",
-      "items": { "type": "string" }
+      "description": "Risks for each study procedure. For matching consent library entries, use ONLY the Risks text verbatim (filling bracketed placeholders). Do NOT include procedure descriptions here (those go in study_procedures). Renders as a table in the Risks section.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Procedure name, e.g. 'Blood Draws', 'Biopsy', 'CT Scan'."
+          },
+          "description": {
+            "type": "string",
+            "description": "Risks of this procedure. Use consent library Risks text verbatim if available. Risks only — NO procedure descriptions."
+          }
+        },
+        "required": ["title", "description"],
+        "additionalProperties": false
+      }
     },
     "pregnancy_risks": {
       "type": "string",
@@ -462,6 +480,7 @@
     "multisite_count",
     "risks_intro",
     "drug_risks",
+    "procedure_risks_intro",
     "procedure_risks",
     "pregnancy_risks",
     "radiation_risks",

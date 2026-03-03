@@ -20,7 +20,10 @@
 import test from "/test/test.js";
 import assert from "/test/assert.js";
 import { docxExtractTextBlocks } from "/utils/docx.js";
-import { runFieldExtraction } from "/pages/tools/consent-crafter-v2/extract.js";
+import {
+  runFieldExtraction,
+  runSimpleExtraction,
+} from "/pages/tools/consent-crafter-v2/extract.js";
 
 const urlParams = new URLSearchParams(window.location.search);
 const TEST_API_KEY = urlParams.get("apiKey");
@@ -177,10 +180,10 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
         } else if (field === "procedure_risks") {
           for (const risk of value) {
             const preview =
-              typeof risk === "string" ? risk.slice(0, 80) : JSON.stringify(risk).slice(0, 80);
-            console.log(
-              `    - ${preview}${(typeof risk === "string" ? risk : "").length > 80 ? "..." : ""}`
-            );
+              typeof risk === "object" && risk !== null
+                ? `${risk.title}: ${risk.description}`.slice(0, 80)
+                : String(risk).slice(0, 80);
+            console.log(`    - ${preview}${preview.length >= 80 ? "..." : ""}`);
           }
         }
       } else if (type === "boolean") {
@@ -405,18 +408,36 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
       `[PASS] drug_risks: ${extraction.drug_risks.length} drug(s) with full risk tier structure`
     );
 
+    // procedure_risks_intro
+    console.log("\n--- procedure_risks_intro ---");
+    assert.ok(
+      typeof extraction.procedure_risks_intro === "string",
+      "procedure_risks_intro should be a string"
+    );
+    assert.ok(
+      extraction.procedure_risks_intro.length > 0,
+      "procedure_risks_intro should be non-empty"
+    );
+    console.log(
+      `[PASS] procedure_risks_intro: "${extraction.procedure_risks_intro.slice(0, 80)}..." (${extraction.procedure_risks_intro.length} chars)`
+    );
+
     // procedure_risks
     console.log("\n--- procedure_risks ---");
     assert.ok(Array.isArray(extraction.procedure_risks), "procedure_risks should be an array");
     assert.ok(extraction.procedure_risks.length > 0, "procedure_risks should be non-empty");
     for (const risk of extraction.procedure_risks) {
       assert.ok(
-        typeof risk === "string" && risk.length > 0,
-        "Each procedure_risk should be a non-empty string"
+        typeof risk.title === "string" && risk.title.length > 0,
+        "Each procedure_risks item should have a non-empty title"
+      );
+      assert.ok(
+        typeof risk.description === "string" && risk.description.length > 0,
+        "Each procedure_risks item should have a non-empty description"
       );
     }
     console.log(
-      `[PASS] procedure_risks: ${extraction.procedure_risks.length} entries, all non-empty strings`
+      `[PASS] procedure_risks: ${extraction.procedure_risks.length} entries, all with title and description`
     );
 
     // study_procedures
@@ -561,7 +582,10 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
 
     // Consent library fidelity
     console.log("\n--- Consent library fidelity ---");
-    const allProcedureRiskText = extraction.procedure_risks.join(" ").toLowerCase();
+    const allProcedureRiskText = extraction.procedure_risks
+      .map((r) => r.description)
+      .join(" ")
+      .toLowerCase();
     const expectedProcedureKeywords = ["blood draw", "needle", "ct", "ecg", "electrocardiogram"];
     for (const kw of expectedProcedureKeywords) {
       const found = allProcedureRiskText.includes(kw);
@@ -622,6 +646,161 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
 
     console.log("\n" + "=".repeat(80));
     console.log("=== All assertions passed ===");
+    console.log("=".repeat(80));
+  });
+});
+
+test("Lay Person Abstract — simple extraction", async (t) => {
+  await t.test("extract LPA fields from Atezolizumab protocol", async () => {
+    console.log("=".repeat(80));
+    console.log("=== Lay Person Abstract — Simple Extraction Test ===");
+    console.log("=".repeat(80));
+
+    // 1. Load resources
+    console.log("\n--- Loading resources ---");
+    const [protocolRes, promptRes, templateRes] = await Promise.all([
+      fetch("/templates/nih-cc/protocol.txt"),
+      fetch("/templates/lay-person-abstract/adult-affected-patient.txt"),
+      fetch("/templates/lay-person-abstract/lay-person-abstract-template.docx"),
+    ]);
+
+    assert.ok(protocolRes.ok, "protocol.txt should load");
+    assert.ok(promptRes.ok, "adult-affected-patient.txt should load");
+    assert.ok(templateRes.ok, "lay-person-abstract-template.docx should load");
+
+    const protocolText = await protocolRes.text();
+    const promptTemplate = await promptRes.text();
+    const templateBuffer = await templateRes.arrayBuffer();
+
+    console.log(`[load] protocol.txt: ${protocolText.length} chars`);
+    console.log(`[load] adult-affected-patient.txt: ${promptTemplate.length} chars`);
+
+    // 2. Run simple extraction
+    console.log("\n--- Running simple extraction ---");
+    const startTime = Date.now();
+
+    const extraction = await runSimpleExtraction({
+      protocolText,
+      promptTemplate,
+      model: "us.anthropic.claude-opus-4-6-v1",
+      runModelFn: runModel,
+      onProgress: ({ status, completed, total, message }) => {
+        console.log(`[progress] ${status}: ${message || `${completed}/${total}`}`);
+      },
+    });
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`\n--- Extraction completed in ${elapsed}s ---`);
+    console.log(`Fields returned: ${Object.keys(extraction).length}`);
+
+    // 3. Log full JSON
+    console.log("\n--- Full JSON ---");
+    console.log(JSON.stringify(extraction, null, 2));
+
+    // 4. Assertions — key fields exist and are correct types
+    console.log("\n--- Assertions ---");
+
+    assert.ok(
+      typeof extraction.study_title === "string" && extraction.study_title.length > 0,
+      "study_title should be non-empty string"
+    );
+    console.log(`[PASS] study_title: "${extraction.study_title}"`);
+
+    assert.ok(
+      typeof extraction.simple_summary === "string" && extraction.simple_summary.length > 0,
+      "simple_summary should be non-empty string"
+    );
+    console.log(`[PASS] simple_summary: "${extraction.simple_summary.slice(0, 100)}..."`);
+
+    assert.ok(
+      Array.isArray(extraction.procedures) && extraction.procedures.length > 0,
+      "procedures should be non-empty array"
+    );
+    console.log(`[PASS] procedures: ${extraction.procedures.length} items`);
+
+    assert.ok(
+      Array.isArray(extraction.potential_risks) && extraction.potential_risks.length > 0,
+      "potential_risks should be non-empty array"
+    );
+    console.log(`[PASS] potential_risks: ${extraction.potential_risks.length} items`);
+
+    assert.ok(
+      typeof extraction.contact_name === "string" && extraction.contact_name.length > 0,
+      "contact_name should be non-empty string"
+    );
+    console.log(`[PASS] contact_name: "${extraction.contact_name}"`);
+
+    assert.ok(
+      Array.isArray(extraction.who_can_participate) && extraction.who_can_participate.length > 0,
+      "who_can_participate should be non-empty array"
+    );
+    console.log(`[PASS] who_can_participate: ${extraction.who_can_participate.length} items`);
+
+    assert.ok(
+      typeof extraction.timeline === "string" && extraction.timeline.length > 0,
+      "timeline should be non-empty string"
+    );
+    console.log(`[PASS] timeline: "${extraction.timeline}"`);
+
+    // 5. DOCX generation
+    console.log("\n" + "=".repeat(80));
+    console.log("DOCX GENERATION");
+    console.log("=".repeat(80));
+
+    const { createReport, listCommands } = await import("docx-templates");
+    const cmdDelimiter = ["{{", "}}"];
+
+    const commands = await listCommands(templateBuffer, cmdDelimiter);
+    const variables = commands
+      .filter((c) => ["INS", "FOR", "IF"].includes(c.type))
+      .map((c) => {
+        if (c.type === "IF") return { type: "boolean", name: c.code.trim().split(/\s/)[0] };
+        return { type: c.type === "FOR" ? "array" : "string", name: c.code.split(" ").pop() };
+      })
+      .filter((c) => !c.name.startsWith("$") && !c.name.includes("."));
+
+    const docxData = { ...extraction };
+    for (const variable of variables) {
+      if (docxData[variable.name] === undefined || docxData[variable.name] === null) {
+        docxData[variable.name] =
+          variable.type === "array" ? [] : variable.type === "boolean" ? false : "";
+      }
+    }
+
+    const buffer = await createReport({
+      template: templateBuffer,
+      data: docxData,
+      cmdDelimiter,
+      processLineBreaks: true,
+    });
+
+    console.log(`\n[PASS] DOCX generated: ${buffer.byteLength} bytes`);
+
+    // Extract text from generated DOCX
+    const { blocks: docxBlocks } = await docxExtractTextBlocks(buffer, { includeEmpty: false });
+    const docxText = docxBlocks
+      .filter((b) => b.source === "document")
+      .map((b) => b.text)
+      .join("\n");
+
+    console.log(`\n--- Full DOCX text output (${docxText.length} chars) ---`);
+    console.log(docxText);
+
+    // Verify key content renders in the DOCX
+    const docxLower = docxText.toLowerCase();
+    assert.ok(
+      docxLower.includes("what will happen"),
+      "DOCX should contain 'What will happen' section"
+    );
+    assert.ok(docxLower.includes("what are some risks"), "DOCX should contain risks section");
+    assert.ok(
+      docxText.length > 500,
+      `DOCX text should be substantive (> 500 chars), got ${docxText.length}`
+    );
+    console.log("[PASS] DOCX content verified");
+
+    console.log("\n" + "=".repeat(80));
+    console.log("=== All LPA assertions passed ===");
     console.log("=".repeat(80));
   });
 });
