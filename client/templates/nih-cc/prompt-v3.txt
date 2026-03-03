@@ -393,7 +393,11 @@ Cover ALL of the following:
    - Side effects are unpredictable — doctors cannot tell who will have them
    - They vary in duration — some resolve quickly, some may last a long time
    - Some may affect fertility
-   - In rare cases, some can be serious or life-threatening
+   - REQUIRED: If death is a foreseeable outcome from the risks of ANY study
+     intervention, you MUST include a statement such as: "Some side effects
+     may be serious and may even result in death." This is a mandatory NIH
+     template requirement. For cancer drugs, immunotherapy, and most Phase I
+     studies, death IS a foreseeable risk and MUST be disclosed.
    - Some may not appear right away
 4. What the patient and study team can do:
    - Report anything that feels different
@@ -485,6 +489,43 @@ period, since the template provides one.
 
 Specific guidance for commonly mishandled fields:
 
+- key_info_purpose / study_purpose: These are the FIRST things the patient
+  reads about why this study exists. They set the tone for the entire
+  document. Write them the way you would actually talk to the person —
+  grounded in their body, their experience, their life. Not a pamphlet.
+
+  Lead with the patient-relevant WHY before the method. Read the protocol
+  and find the insight that motivates the study — what we think might be
+  true, and why it matters. That insight belongs here, front and center,
+  in plain cause-and-effect language.
+
+  Ground the language in the patient's body. Say "hurt your body", not
+  "adverse events." Say "fight the cancer", not "therapeutic efficacy."
+
+  But be honest about what we do not know. A consent form is not a pitch.
+  The study exists BECAUSE we do not have the answer yet. Present the
+  reasoning — why we think this is worth trying — and then immediately
+  present the honest uncertainty: it might not work. The patient is
+  taking a real bet, and they deserve to understand both sides.
+
+  BAD (procedural — describes method, skips motivation):
+    "This study tests a new way to decide when you need your next dose.
+     We use blood tests to find the right timing for each person."
+  BAD (sells the outcome — presents the hope as if it is settled):
+    "Right now, everyone gets the same amount of this drug. But too much
+     drug can hurt your body. A smaller amount may work just as well,
+     with fewer side effects and fewer trips to the clinic."
+  GOOD (honest — presents the reasoning AND the uncertainty):
+    "Right now, everyone gets the same amount of this drug. Studies
+     suggest that may be more than most people need — but we are not
+     sure. We want to find out if a smaller amount could still fight
+     the disease. If it can, that could mean less drug in your body.
+     But there is a chance that less drug may not work as well."
+
+  study_purpose is the longer version (the WHY IS THIS STUDY BEING DONE?
+  section); key_info_purpose is the 2-3 sentence summary in KEY
+  INFORMATION. Both must convey the motivation, not just the mechanism.
+
 - early_withdrawal: List the specific reasons from the protocol that
   participation could be stopped. Always end with reassurance that the study
   team will help plan next steps.
@@ -497,6 +538,28 @@ Specific guidance for commonly mishandled fields:
   ("you may have to pay") AND (b) study drug supply ("the drug will be
   supplied at no charge... it is possible the drug may not continue to be
   supplied"). Use the protocol/consent library language.
+- accrual_ceiling / multisite_count: The template renders two SEPARATE
+  sentences: "about {{accrual_ceiling}} people take part in this study at
+  the NIH" and "Up to {{multisite_count}} people might also take part at
+  other study sites." For multisite studies, accrual_ceiling MUST be the
+  NIH-specific enrollment count, NOT the total across all sites. Put the
+  non-NIH total in multisite_count. If the protocol gives only a total
+  (e.g., "40 participants across all sites") and mentions the NIH allocation
+  (e.g., "up to 15 at NIH"), use 15 for accrual_ceiling and 25 for
+  multisite_count. If no per-site breakdown is given but the study is
+  multisite, estimate based on the number of sites.
+- is_investigational: This is NOT mutually exclusive with
+  is_fda_approved_off_label. Both can be true. A drug can be FDA-approved
+  for other uses (is_fda_approved_off_label=true) while its use in THIS
+  study is still investigational (is_investigational=true). In the template,
+  these are SEQUENTIAL IF blocks — not IF/ELSE — so both sections render
+  when both are true. Set is_investigational=true when: (a) the drug itself
+  is not FDA-approved, (b) the drug is used under an IND for this study,
+  or (c) the protocol describes the use as "investigational." If the protocol
+  mentions an IND number, is_investigational should almost always be true.
+  For the Atezolizumab TDM protocol: the drug is approved for other cancers
+  (is_fda_approved_off_label=true) AND the TDM-based dosing approach is
+  investigational under an IND (is_investigational=true).
 - approach_investigational_drug_name: This field is required whenever
   is_investigational OR is_fda_approved_off_label is true — the template uses
   it in BOTH conditional sections. Use the short drug or approach name from

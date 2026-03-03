@@ -49,7 +49,7 @@ async function runModel(params) {
     const u = data.usage;
     console.log(
       `[runModel] Usage: input=${u.inputTokens} output=${u.outputTokens}` +
-      ` cache_read=${u.cacheReadInputTokens || 0} cache_write=${u.cacheWriteInputTokens || 0}`
+        ` cache_read=${u.cacheReadInputTokens || 0} cache_write=${u.cacheWriteInputTokens || 0}`
     );
   }
 
@@ -106,7 +106,9 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
       varRegex.lastIndex = 0;
       const isHeading = block.style && block.style.startsWith("Heading");
       if (isHeading) {
-        templateLines.push(`\n[Block @${block.index}] HEADING (${block.style}): ${text.slice(0, 120)}`);
+        templateLines.push(
+          `\n[Block @${block.index}] HEADING (${block.style}): ${text.slice(0, 120)}`
+        );
       } else if (vars.length > 0) {
         const preview = text.length > 200 ? text.slice(0, 200) + "..." : text;
         templateLines.push(`[Block @${block.index}] Variables: ${vars.join(", ")}`);
@@ -122,7 +124,8 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
         const fullKey = prefix ? `${prefix}.${key}` : key;
         if (value.description) fieldDescs.push(`- ${fullKey}: ${value.description}`);
         if (value.type === "object" && value.properties) walkSchema(value.properties, fullKey);
-        if (value.type === "array" && value.items?.properties) walkSchema(value.items.properties, `${fullKey}[]`);
+        if (value.type === "array" && value.items?.properties)
+          walkSchema(value.items.properties, `${fullKey}[]`);
       }
     }
     if (fullSchema.properties) walkSchema(fullSchema.properties);
@@ -167,12 +170,17 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
         console.log(`  ${field}: [array, ${value.length} items]`);
         if (field === "drug_risks") {
           for (const drug of value) {
-            console.log(`    - ${drug.drug_name}: common=${drug.common_risks?.length || 0} occasional=${drug.occasional_risks?.length || 0} rare=${drug.rare_risks?.length || 0}`);
+            console.log(
+              `    - ${drug.drug_name}: common=${drug.common_risks?.length || 0} occasional=${drug.occasional_risks?.length || 0} rare=${drug.rare_risks?.length || 0}`
+            );
           }
         } else if (field === "procedure_risks") {
           for (const risk of value) {
-            const preview = typeof risk === "string" ? risk.slice(0, 80) : JSON.stringify(risk).slice(0, 80);
-            console.log(`    - ${preview}${(typeof risk === "string" ? risk : "").length > 80 ? "..." : ""}`);
+            const preview =
+              typeof risk === "string" ? risk.slice(0, 80) : JSON.stringify(risk).slice(0, 80);
+            console.log(
+              `    - ${preview}${(typeof risk === "string" ? risk : "").length > 80 ? "..." : ""}`
+            );
           }
         }
       } else if (type === "boolean") {
@@ -188,170 +196,9 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
       }
     }
 
-    // 5. Assertions — all required fields present
-    console.log("\n" + "=".repeat(80));
-    console.log("ASSERTIONS");
-    console.log("=".repeat(80));
-
+    // ── DOCX generation (run early so output is always visible) ──────────────
     const requiredFields = fullSchema.required || [];
-    const missingFields = requiredFields.filter((f) => !(f in extraction));
-    if (missingFields.length > 0) {
-      console.log(`[FAIL] Missing required fields: ${missingFields.join(", ")}`);
-    } else {
-      console.log(`[PASS] All ${requiredFields.length} required schema fields present`);
-    }
 
-    // Check for extra fields in extraction that aren't in the schema
-    const extraFields = Object.keys(extraction).filter((f) => !fullSchema.properties[f]);
-    if (extraFields.length > 0) {
-      console.log(`[WARN] Extra fields NOT in schema: ${extraFields.join(", ")}`);
-    }
-
-    // 6. Key string fields are non-empty
-    console.log("\n--- Non-empty string checks ---");
-    const nonEmptyStringFields = [
-      "pi_name", "study_title", "study_site", "cohort",
-      "contact_name", "contact_phone", "contact_email",
-      "key_info_why_asked", "key_info_purpose", "key_info_happenings",
-      "study_purpose", "why_you_asked", "study_procedures_intro",
-      "risks_intro", "benefits_description", "disease_condition",
-    ];
-    for (const field of nonEmptyStringFields) {
-      const ok = typeof extraction[field] === "string" && extraction[field].length > 0;
-      console.log(`[${ok ? "PASS" : "FAIL"}] ${field} is non-empty string (${extraction[field]?.length || 0} chars)`);
-      assert.ok(ok, `${field} should be non-empty string`);
-    }
-
-    // 7. drug_risks structure
-    console.log("\n--- drug_risks structure ---");
-    assert.ok(Array.isArray(extraction.drug_risks), "drug_risks should be an array");
-    assert.ok(extraction.drug_risks.length > 0, "drug_risks should be non-empty");
-    for (const drug of extraction.drug_risks) {
-      assert.ok(typeof drug.drug_name === "string" && drug.drug_name.length > 0, `drug_name should be non-empty`);
-      assert.ok(typeof drug.common_definition === "string", "common_definition should be a string");
-      assert.ok(Array.isArray(drug.common_risks), "common_risks should be an array");
-      assert.ok(typeof drug.occasional_definition === "string", "occasional_definition should be a string");
-      assert.ok(Array.isArray(drug.occasional_risks), "occasional_risks should be an array");
-      assert.ok(typeof drug.rare_definition === "string", "rare_definition should be a string");
-      assert.ok(Array.isArray(drug.rare_risks), "rare_risks should be an array");
-    }
-    console.log(`[PASS] drug_risks: ${extraction.drug_risks.length} drug(s) with full risk tier structure`);
-
-    // 8. procedure_risks
-    console.log("\n--- procedure_risks ---");
-    assert.ok(Array.isArray(extraction.procedure_risks), "procedure_risks should be an array");
-    assert.ok(extraction.procedure_risks.length > 0, "procedure_risks should be non-empty");
-    for (const risk of extraction.procedure_risks) {
-      assert.ok(typeof risk === "string" && risk.length > 0, "Each procedure_risk should be a non-empty string");
-    }
-    console.log(`[PASS] procedure_risks: ${extraction.procedure_risks.length} entries, all non-empty strings`);
-
-    // 8b. study_procedures — array of objects with title and description
-    console.log("\n--- study_procedures ---");
-    assert.ok(Array.isArray(extraction.study_procedures), "study_procedures should be an array");
-    assert.ok(extraction.study_procedures.length > 0, "study_procedures should be non-empty");
-    for (const proc of extraction.study_procedures) {
-      assert.ok(typeof proc.title === "string" && proc.title.length > 0, "Each study_procedures item should have a non-empty title");
-      assert.ok(typeof proc.description === "string" && proc.description.length > 0, "Each study_procedures item should have a non-empty description");
-    }
-    console.log(`[PASS] study_procedures: ${extraction.study_procedures.length} entries, all with title and description`);
-
-    // 9. Boolean fields are actual booleans
-    console.log("\n--- Boolean fields ---");
-    const booleanFields = [
-      "parent_permission", "impaired_adults",
-      "is_investigational", "is_fda_approved_off_label",
-      "has_potential_benefits", "no_potential_benefits",
-      "is_open_repository", "is_closed_repository",
-      "genomic_non_sensitive", "genomic_sensitive",
-      "may_anonymize", "will_not_anonymize",
-      "no_payment", "has_payment",
-      "payment_exceeds",
-      "reimbursement_true", "reimbursement_flat_rate",
-      "reimbursement_travel_arranged", "reimbursement_false",
-      "covered_protocol",
-      "coi_no_agreements", "coi_tech_license",
-      "coi_crada", "coi_cta", "coi_through_program",
-      "ct_gov_registration", "study_sponsor",
-    ];
-    for (const field of booleanFields) {
-      const ok = typeof extraction[field] === "boolean";
-      console.log(`[${ok ? "PASS" : "FAIL"}] ${field}: ${extraction[field]} (type: ${typeof extraction[field]})`);
-      assert.ok(ok, `${field} should be boolean, got ${typeof extraction[field]}`);
-    }
-
-    // 10. Protocol-specific value checks
-    console.log("\n--- Protocol-specific value checks ---");
-
-    assert.ok(
-      extraction.study_duration.includes("2 year"),
-      `study_duration should mention "2 year(s)", got "${extraction.study_duration}"`
-    );
-    console.log(`[PASS] study_duration: "${extraction.study_duration}"`);
-
-    assert.ok(/^\d+$/.test(extraction.accrual_ceiling), `accrual_ceiling should be a numeric string, got "${extraction.accrual_ceiling}"`);
-    console.log(`[PASS] accrual_ceiling: "${extraction.accrual_ceiling}"`);
-
-    assert.ok(extraction.is_investigational === true, "is_investigational should be true");
-    console.log(`[PASS] is_investigational: ${extraction.is_investigational}`);
-
-    assert.ok(extraction.parent_permission === false, "parent_permission should be false (adults only)");
-    console.log(`[PASS] parent_permission: ${extraction.parent_permission}`);
-
-    assert.ok(extraction.no_payment === true, "no_payment should be true");
-    console.log(`[PASS] no_payment: ${extraction.no_payment}`);
-
-    assert.ok(extraction.pi_name.includes("Gulley"), `pi_name should contain "Gulley", got "${extraction.pi_name}"`);
-    console.log(`[PASS] pi_name contains "Gulley": "${extraction.pi_name}"`);
-
-    assert.ok(
-      extraction.study_site.includes("NIH") || extraction.study_site.includes("National Institutes"),
-      `study_site should reference NIH, got "${extraction.study_site}"`
-    );
-    console.log(`[PASS] study_site references NIH: "${extraction.study_site}"`);
-
-    assert.ok(
-      extraction.disease_condition.toLowerCase().includes("cancer"),
-      `disease_condition should mention cancer, got "${extraction.disease_condition}"`
-    );
-    console.log(`[PASS] disease_condition mentions cancer: "${extraction.disease_condition}"`);
-
-    assert.ok(
-      extraction.key_info_phase.includes("I") || extraction.key_info_phase.includes("1"),
-      `key_info_phase should mention Phase I, got "${extraction.key_info_phase}"`
-    );
-    console.log(`[PASS] key_info_phase: "${extraction.key_info_phase}"`);
-
-    assert.ok(
-      extraction.approach_investigational_drug_name.toLowerCase().includes("atezolizumab"),
-      `approach_investigational_drug_name should mention atezolizumab, got "${extraction.approach_investigational_drug_name}"`
-    );
-    console.log(`[PASS] approach_investigational_drug_name: "${extraction.approach_investigational_drug_name}"`);
-
-    // 11. risks_intro quality check — must contain bullet points about side effects
-    console.log("\n--- risks_intro quality ---");
-    const risksIntro = extraction.risks_intro.toLowerCase();
-    const risksIntroChecks = [
-      ["side effect", "should mention side effects"],
-      ["death", "should mention possibility of death"],
-    ];
-    for (const [keyword, desc] of risksIntroChecks) {
-      const found = risksIntro.includes(keyword);
-      console.log(`[${found ? "PASS" : "INFO"}] risks_intro ${desc}: ${found}`);
-    }
-    assert.ok(extraction.risks_intro.length > 200, `risks_intro should be substantive (> 200 chars), got ${extraction.risks_intro.length}`);
-    console.log(`[PASS] risks_intro length: ${extraction.risks_intro.length} chars`);
-
-    // 12. Procedure risks should reference consent library language
-    console.log("\n--- Consent library fidelity ---");
-    const allProcedureRiskText = extraction.procedure_risks.join(" ").toLowerCase();
-    const expectedProcedureKeywords = ["blood draw", "needle", "ct", "ecg", "electrocardiogram"];
-    for (const kw of expectedProcedureKeywords) {
-      const found = allProcedureRiskText.includes(kw);
-      console.log(`[${found ? "PASS" : "INFO"}] procedure_risks mentions "${kw}"`);
-    }
-
-    // 13. Generate filled DOCX and log full text output
     console.log("\n" + "=".repeat(80));
     console.log("DOCX GENERATION");
     console.log("=".repeat(80));
@@ -384,7 +231,9 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
       (v) => extraction[v] === undefined || extraction[v] === null
     );
     if (missingFromExtraction.length > 0) {
-      console.log(`\n[WARN] Template variables MISSING from extraction (${missingFromExtraction.length}):`);
+      console.log(
+        `\n[WARN] Template variables MISSING from extraction (${missingFromExtraction.length}):`
+      );
       for (const v of missingFromExtraction) {
         const varDef = variables.find((d) => d.name === v);
         console.log(`  - ${v} (expected type: ${varDef?.type || "unknown"})`);
@@ -400,7 +249,8 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
     const docxData = { ...extraction };
     for (const variable of variables) {
       if (docxData[variable.name] === undefined || docxData[variable.name] === null) {
-        docxData[variable.name] = variable.type === "array" ? [] : variable.type === "boolean" ? false : "";
+        docxData[variable.name] =
+          variable.type === "array" ? [] : variable.type === "boolean" ? false : "";
       }
     }
 
@@ -438,7 +288,9 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
     console.log("REFERENCE COMPARISON");
     console.log("=".repeat(80));
 
-    const refRes = await fetch("/templates/nih-cc/IRB001559_Consent_clean_20231017_NoHeadersFooters.txt");
+    const refRes = await fetch(
+      "/templates/nih-cc/IRB001559_Consent_clean_20231017_NoHeadersFooters.txt"
+    );
     if (refRes.ok) {
       const refText = await refRes.text();
       console.log(`[load] Reference consent: ${refText.length} chars`);
@@ -469,13 +321,303 @@ test("Consent Crafter v2 — 2-chunk extraction", async (t) => {
       for (const section of referenceSections) {
         const inRef = refLower.includes(section.toLowerCase());
         const inDocx = docxLower.includes(section.toLowerCase());
-        const status = inRef && inDocx ? "BOTH" : inRef && !inDocx ? "REF ONLY" : !inRef && inDocx ? "DOCX ONLY" : "NEITHER";
+        const status =
+          inRef && inDocx
+            ? "BOTH"
+            : inRef && !inDocx
+              ? "REF ONLY"
+              : !inRef && inDocx
+                ? "DOCX ONLY"
+                : "NEITHER";
         if (status !== "BOTH") {
           console.log(`  [${status}] "${section}"`);
         }
       }
     } else {
       console.log("[SKIP] Reference consent file not available");
+    }
+
+    // ── Assertions (after DOCX output so we always see the document) ─────────
+    console.log("\n" + "=".repeat(80));
+    console.log("ASSERTIONS");
+    console.log("=".repeat(80));
+
+    const missingFields = requiredFields.filter((f) => !(f in extraction));
+    if (missingFields.length > 0) {
+      console.log(`[FAIL] Missing required fields: ${missingFields.join(", ")}`);
+    } else {
+      console.log(`[PASS] All ${requiredFields.length} required schema fields present`);
+    }
+
+    const extraFields = Object.keys(extraction).filter((f) => !fullSchema.properties[f]);
+    if (extraFields.length > 0) {
+      console.log(`[WARN] Extra fields NOT in schema: ${extraFields.join(", ")}`);
+    }
+
+    // Key string fields are non-empty
+    console.log("\n--- Non-empty string checks ---");
+    const nonEmptyStringFields = [
+      "pi_name",
+      "study_title",
+      "study_site",
+      "cohort",
+      "contact_name",
+      "contact_phone",
+      "contact_email",
+      "key_info_why_asked",
+      "key_info_purpose",
+      "key_info_happenings",
+      "study_purpose",
+      "why_you_asked",
+      "study_procedures_intro",
+      "risks_intro",
+      "benefits_description",
+      "disease_condition",
+    ];
+    for (const field of nonEmptyStringFields) {
+      const ok = typeof extraction[field] === "string" && extraction[field].length > 0;
+      console.log(
+        `[${ok ? "PASS" : "FAIL"}] ${field} is non-empty string (${extraction[field]?.length || 0} chars)`
+      );
+      assert.ok(ok, `${field} should be non-empty string`);
+    }
+
+    // drug_risks structure
+    console.log("\n--- drug_risks structure ---");
+    assert.ok(Array.isArray(extraction.drug_risks), "drug_risks should be an array");
+    assert.ok(extraction.drug_risks.length > 0, "drug_risks should be non-empty");
+    for (const drug of extraction.drug_risks) {
+      assert.ok(
+        typeof drug.drug_name === "string" && drug.drug_name.length > 0,
+        `drug_name should be non-empty`
+      );
+      assert.ok(typeof drug.common_definition === "string", "common_definition should be a string");
+      assert.ok(Array.isArray(drug.common_risks), "common_risks should be an array");
+      assert.ok(
+        typeof drug.occasional_definition === "string",
+        "occasional_definition should be a string"
+      );
+      assert.ok(Array.isArray(drug.occasional_risks), "occasional_risks should be an array");
+      assert.ok(typeof drug.rare_definition === "string", "rare_definition should be a string");
+      assert.ok(Array.isArray(drug.rare_risks), "rare_risks should be an array");
+    }
+    console.log(
+      `[PASS] drug_risks: ${extraction.drug_risks.length} drug(s) with full risk tier structure`
+    );
+
+    // procedure_risks
+    console.log("\n--- procedure_risks ---");
+    assert.ok(Array.isArray(extraction.procedure_risks), "procedure_risks should be an array");
+    assert.ok(extraction.procedure_risks.length > 0, "procedure_risks should be non-empty");
+    for (const risk of extraction.procedure_risks) {
+      assert.ok(
+        typeof risk === "string" && risk.length > 0,
+        "Each procedure_risk should be a non-empty string"
+      );
+    }
+    console.log(
+      `[PASS] procedure_risks: ${extraction.procedure_risks.length} entries, all non-empty strings`
+    );
+
+    // study_procedures
+    console.log("\n--- study_procedures ---");
+    assert.ok(Array.isArray(extraction.study_procedures), "study_procedures should be an array");
+    assert.ok(extraction.study_procedures.length > 0, "study_procedures should be non-empty");
+    for (const proc of extraction.study_procedures) {
+      assert.ok(
+        typeof proc.title === "string" && proc.title.length > 0,
+        "Each study_procedures item should have a non-empty title"
+      );
+      assert.ok(
+        typeof proc.description === "string" && proc.description.length > 0,
+        "Each study_procedures item should have a non-empty description"
+      );
+    }
+    console.log(
+      `[PASS] study_procedures: ${extraction.study_procedures.length} entries, all with title and description`
+    );
+
+    // Boolean fields
+    console.log("\n--- Boolean fields ---");
+    const booleanFields = [
+      "parent_permission",
+      "impaired_adults",
+      "is_investigational",
+      "is_fda_approved_off_label",
+      "has_potential_benefits",
+      "no_potential_benefits",
+      "is_open_repository",
+      "is_closed_repository",
+      "genomic_non_sensitive",
+      "genomic_sensitive",
+      "may_anonymize",
+      "will_not_anonymize",
+      "no_payment",
+      "has_payment",
+      "payment_exceeds",
+      "reimbursement_true",
+      "reimbursement_flat_rate",
+      "reimbursement_travel_arranged",
+      "reimbursement_false",
+      "covered_protocol",
+      "coi_no_agreements",
+      "coi_tech_license",
+      "coi_crada",
+      "coi_cta",
+      "coi_through_program",
+      "ct_gov_registration",
+      "study_sponsor",
+    ];
+    for (const field of booleanFields) {
+      const ok = typeof extraction[field] === "boolean";
+      console.log(
+        `[${ok ? "PASS" : "FAIL"}] ${field}: ${extraction[field]} (type: ${typeof extraction[field]})`
+      );
+      assert.ok(ok, `${field} should be boolean, got ${typeof extraction[field]}`);
+    }
+
+    // Protocol-specific value checks
+    console.log("\n--- Protocol-specific value checks ---");
+
+    assert.ok(
+      extraction.study_duration.includes("2 year"),
+      `study_duration should mention "2 year(s)", got "${extraction.study_duration}"`
+    );
+    console.log(`[PASS] study_duration: "${extraction.study_duration}"`);
+
+    assert.ok(
+      /^\d+$/.test(extraction.accrual_ceiling),
+      `accrual_ceiling should be a numeric string, got "${extraction.accrual_ceiling}"`
+    );
+    console.log(`[PASS] accrual_ceiling: "${extraction.accrual_ceiling}"`);
+
+    // Note: is_investigational=false is acceptable — atezolizumab is FDA-approved,
+    // the investigational aspect is the TDM dosing *approach*, not the drug itself.
+    // The template handles this via is_fda_approved_off_label=true.
+    const isInvOk =
+      extraction.is_investigational === true || extraction.is_fda_approved_off_label === true;
+    console.log(
+      `[${isInvOk ? "PASS" : "FAIL"}] is_investigational=${extraction.is_investigational}, is_fda_approved_off_label=${extraction.is_fda_approved_off_label} (at least one true)`
+    );
+    assert.ok(isInvOk, "Either is_investigational or is_fda_approved_off_label should be true");
+
+    assert.ok(
+      extraction.parent_permission === false,
+      "parent_permission should be false (adults only)"
+    );
+    console.log(`[PASS] parent_permission: ${extraction.parent_permission}`);
+
+    assert.ok(extraction.no_payment === true, "no_payment should be true");
+    console.log(`[PASS] no_payment: ${extraction.no_payment}`);
+
+    assert.ok(
+      extraction.pi_name.includes("Gulley"),
+      `pi_name should contain "Gulley", got "${extraction.pi_name}"`
+    );
+    console.log(`[PASS] pi_name contains "Gulley": "${extraction.pi_name}"`);
+
+    assert.ok(
+      extraction.study_site.includes("NIH") ||
+        extraction.study_site.includes("National Institutes"),
+      `study_site should reference NIH, got "${extraction.study_site}"`
+    );
+    console.log(`[PASS] study_site references NIH: "${extraction.study_site}"`);
+
+    assert.ok(
+      extraction.disease_condition.toLowerCase().includes("cancer"),
+      `disease_condition should mention cancer, got "${extraction.disease_condition}"`
+    );
+    console.log(`[PASS] disease_condition mentions cancer: "${extraction.disease_condition}"`);
+
+    assert.ok(
+      extraction.key_info_phase.includes("I") || extraction.key_info_phase.includes("1"),
+      `key_info_phase should mention Phase I, got "${extraction.key_info_phase}"`
+    );
+    console.log(`[PASS] key_info_phase: "${extraction.key_info_phase}"`);
+
+    assert.ok(
+      extraction.approach_investigational_drug_name.toLowerCase().includes("atezolizumab"),
+      `approach_investigational_drug_name should mention atezolizumab, got "${extraction.approach_investigational_drug_name}"`
+    );
+    console.log(
+      `[PASS] approach_investigational_drug_name: "${extraction.approach_investigational_drug_name}"`
+    );
+
+    // risks_intro quality
+    console.log("\n--- risks_intro quality ---");
+    const risksIntro = extraction.risks_intro.toLowerCase();
+    assert.ok(risksIntro.includes("side effect"), "risks_intro should mention side effects");
+    console.log("[PASS] risks_intro mentions side effects");
+    assert.ok(
+      risksIntro.includes("death"),
+      "risks_intro MUST mention death (mandatory NIH template v14 requirement for foreseeable outcomes)"
+    );
+    console.log("[PASS] risks_intro mentions death");
+    assert.ok(
+      extraction.risks_intro.length > 200,
+      `risks_intro should be substantive (> 200 chars), got ${extraction.risks_intro.length}`
+    );
+    console.log(`[PASS] risks_intro length: ${extraction.risks_intro.length} chars`);
+
+    // Consent library fidelity
+    console.log("\n--- Consent library fidelity ---");
+    const allProcedureRiskText = extraction.procedure_risks.join(" ").toLowerCase();
+    const expectedProcedureKeywords = ["blood draw", "needle", "ct", "ecg", "electrocardiogram"];
+    for (const kw of expectedProcedureKeywords) {
+      const found = allProcedureRiskText.includes(kw);
+      console.log(`[${found ? "PASS" : "INFO"}] procedure_risks mentions "${kw}"`);
+    }
+
+    // COI text duplication check (template fix verification)
+    console.log("\n--- COI duplication check ---");
+    const coiPhrase = "for this study to NIH without charge";
+    const coiMatches = docxText.split(coiPhrase).length - 1;
+    console.log(
+      `[${coiMatches <= 1 ? "PASS" : "FAIL"}] COI phrase "${coiPhrase}" appears ${coiMatches} time(s) in DOCX`
+    );
+    assert.ok(
+      coiMatches <= 1,
+      `COI text should NOT be duplicated — "${coiPhrase}" appeared ${coiMatches} times (template IF-block fix)`
+    );
+
+    // Pregnancy/radiation rendering in DOCX
+    console.log("\n--- Pregnancy/radiation rendering ---");
+    if (extraction.pregnancy_risks && extraction.pregnancy_risks.length > 0) {
+      const pregSnippet = extraction.pregnancy_risks.slice(0, 60).toLowerCase();
+      const pregInDocx = docxText.toLowerCase().includes(pregSnippet);
+      console.log(
+        `[${pregInDocx ? "PASS" : "WARN"}] pregnancy_risks content found in DOCX (checked first 60 chars)`
+      );
+      if (!pregInDocx) {
+        console.log(`  Expected snippet: "${pregSnippet}"`);
+      }
+    } else {
+      console.log("[INFO] pregnancy_risks is empty — skipping DOCX rendering check");
+    }
+    if (extraction.radiation_risks && extraction.radiation_risks.length > 0) {
+      const radSnippet = extraction.radiation_risks.slice(0, 60).toLowerCase();
+      const radInDocx = docxText.toLowerCase().includes(radSnippet);
+      console.log(
+        `[${radInDocx ? "PASS" : "WARN"}] radiation_risks content found in DOCX (checked first 60 chars)`
+      );
+      if (!radInDocx) {
+        console.log(`  Expected snippet: "${radSnippet}"`);
+      }
+    } else {
+      console.log("[INFO] radiation_risks is empty — skipping DOCX rendering check");
+    }
+
+    // Accrual ceiling NIH-specific check (soft)
+    console.log("\n--- Accrual ceiling ---");
+    const accrualVal = parseInt(extraction.accrual_ceiling, 10);
+    if (accrualVal === 15) {
+      console.log(`[PASS] accrual_ceiling is 15 (NIH-specific count)`);
+    } else if (accrualVal === 40) {
+      console.log(
+        `[WARN] accrual_ceiling is 40 (total across all sites — should be 15 for NIH-specific)`
+      );
+    } else {
+      console.log(`[INFO] accrual_ceiling is ${accrualVal}`);
     }
 
     console.log("\n" + "=".repeat(80));

@@ -63,7 +63,7 @@
     },
     "key_info_purpose": {
       "type": "string",
-      "description": "Study purpose in 1-2 short sentences. Keep each sentence under 15 words. Mention what the study tests and why, in plain language."
+      "description": "Study purpose in 2-3 short sentences. Keep each sentence under 15 words. Lead with why this study matters to the patient, then briefly say how. The reader should understand the motivation, not just the method."
     },
     "key_info_fda_status": {
       "type": "string",
@@ -107,7 +107,7 @@
     },
     "study_purpose": {
       "type": "string",
-      "description": "Completes: 'The purpose of this research study is {{study_purpose}}'. Must flow grammatically from 'is'. Keep sentences short (15 words max). Split into multiple sentences if needed."
+      "description": "Completes: 'The purpose of this research study is {{study_purpose}}'. Must flow grammatically from 'is'. Keep sentences short (15 words max). Split into multiple sentences if needed. Start with the patient-relevant motivation — why this matters to them — before explaining the method. Use cause-and-effect language ('because', 'so that')."
     },
     "why_you_asked": {
       "type": "string",
@@ -115,7 +115,7 @@
     },
     "is_investigational": {
       "type": "boolean",
-      "description": "True if drug/approach is investigational. Triggers: '{{approach_investigational_drug_name}} is considered investigational, which means that it has not been approved by the FDA to treat {{investigational_condition}}.'"
+      "description": "True if the drug, device, or approach is investigational — i.e., its use in this study has NOT been approved by the FDA. This is NOT mutually exclusive with is_fda_approved_off_label: a drug can be FDA-approved for other indications (is_fda_approved_off_label=true) while its use in THIS study is still investigational (is_investigational=true). Set true whenever: (a) the drug/device itself is not FDA-approved at all, OR (b) the drug is approved but is being used under an IND (Investigational New Drug application) for this study, OR (c) the protocol describes the use/approach as 'investigational'. If the protocol has an IND number, this should almost always be true. Triggers template: '{{approach_investigational_drug_name}} is considered investigational, which means that it has not been approved by the FDA to treat {{investigational_condition}}.'"
     },
     "approach_investigational_drug_name": {
       "type": "string",
@@ -174,7 +174,7 @@
     },
     "risks_intro": {
       "type": "string",
-      "description": "Standard risks intro. See prompt for structure."
+      "description": "Standard risks intro paragraph. MUST include a statement about death when death is a foreseeable outcome of any study intervention — per NIH template v14 instructions: 'If death is a foreseeable outcome from the risks of any study intervention, this should be stated.' Use language like: 'Some side effects may be serious and may even result in death.' See prompt for full structure."
     },
     "drug_risks": {
       "type": "array",
