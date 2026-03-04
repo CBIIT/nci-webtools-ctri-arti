@@ -1,23 +1,23 @@
-import { Thread, Message, Resource, Vector } from "../database.js";
+import { Conversation, Message, Resource, Vector } from "../database.js";
 
 export class ConversationService {
-  // ===== THREAD METHODS =====
+  // ===== CONVERSATION METHODS =====
 
-  async createThread(userId, data) {
-    return Thread.create({
+  async createConversation(userId, data) {
+    return Conversation.create({
       userId,
       agentId: data.agentId || null,
-      name: data.name || "",
+      title: data.title || "",
     });
   }
 
-  async getThread(userId, threadId) {
-    return Thread.findOne({ where: { id: threadId, userId } });
+  async getConversation(userId, conversationId) {
+    return Conversation.findOne({ where: { id: conversationId, userId } });
   }
 
-  async getThreads(userId, options = {}) {
+  async getConversations(userId, options = {}) {
     const { limit = 20, offset = 0 } = options;
-    return Thread.findAndCountAll({
+    return Conversation.findAndCountAll({
       where: { userId },
       order: [["createdAt", "DESC"]],
       limit,
@@ -25,114 +25,115 @@ export class ConversationService {
     });
   }
 
-  async updateThread(userId, threadId, updates) {
-    const [count] = await Thread.update(updates, { where: { id: threadId, userId } });
+  async updateConversation(userId, conversationId, updates) {
+    const [count] = await Conversation.update(updates, { where: { id: conversationId, userId } });
     if (count === 0) return null;
-    return this.getThread(userId, threadId);
+    return this.getConversation(userId, conversationId);
   }
 
-  async deleteThread(userId, threadId) {
-    await Message.destroy({ where: { threadId, userId } });
-    await Resource.destroy({ where: { threadId, userId } });
-    await Vector.destroy({ where: { threadId, userId } });
-    return Thread.destroy({ where: { id: threadId, userId } });
+  async deleteConversation(userId, conversationId) {
+    const messageIds = (
+      await Message.findAll({ where: { conversationId }, attributes: ["id"] })
+    ).map((m) => m.id);
+    if (messageIds.length > 0) {
+      const resourceIds = (
+        await Resource.findAll({ where: { messageId: messageIds }, attributes: ["id"] })
+      ).map((r) => r.id);
+      if (resourceIds.length > 0) {
+        await Vector.destroy({ where: { resourceId: resourceIds } });
+      }
+      await Resource.destroy({ where: { messageId: messageIds } });
+    }
+    await Message.destroy({ where: { conversationId } });
+    return Conversation.destroy({ where: { id: conversationId, userId } });
   }
 
   // ===== MESSAGE METHODS =====
 
-  async addMessage(userId, threadId, data) {
+  async addMessage(userId, conversationId, data) {
     return Message.create({
-      userId,
-      threadId,
-      agentId: data.agentId || null,
+      conversationId,
       role: data.role,
       content: data.content,
     });
   }
 
-  async getMessages(userId, threadId) {
+  async getMessages(userId, conversationId) {
     return Message.findAll({
-      where: { threadId, userId },
+      where: { conversationId },
       order: [["createdAt", "ASC"]],
     });
   }
 
   async getMessage(userId, messageId) {
-    return Message.findOne({ where: { id: messageId, userId } });
+    return Message.findByPk(messageId);
   }
 
   async updateMessage(userId, messageId, updates) {
-    const [count] = await Message.update(updates, { where: { id: messageId, userId } });
+    const [count] = await Message.update(updates, { where: { id: messageId } });
     if (count === 0) return null;
     return this.getMessage(userId, messageId);
   }
 
   async deleteMessage(userId, messageId) {
-    return Message.destroy({ where: { id: messageId, userId } });
+    return Message.destroy({ where: { id: messageId } });
   }
 
   // ===== RESOURCE METHODS =====
 
   async addResource(userId, data) {
     return Resource.create({
-      userId,
-      agentId: data.agentId || null,
-      threadId: data.threadId || null,
       messageId: data.messageId || null,
       name: data.name,
-      type: data.type,
-      content: data.content,
-      s3Uri: data.s3Uri || null,
+      s3Url: data.s3Url || null,
       metadata: data.metadata || {},
     });
   }
 
   async getResource(userId, resourceId) {
-    return Resource.findOne({ where: { id: resourceId, userId } });
+    return Resource.findByPk(resourceId);
   }
 
-  async getResourcesByThread(userId, threadId) {
+  async getResourcesByConversation(userId, conversationId) {
+    const messageIds = (
+      await Message.findAll({ where: { conversationId }, attributes: ["id"] })
+    ).map((m) => m.id);
+    if (messageIds.length === 0) return [];
     return Resource.findAll({
-      where: { threadId, userId },
+      where: { messageId: messageIds },
       order: [["createdAt", "ASC"]],
     });
   }
 
   async deleteResource(userId, resourceId) {
-    await Vector.destroy({ where: { resourceId, userId } });
-    return Resource.destroy({ where: { id: resourceId, userId } });
+    await Vector.destroy({ where: { resourceId } });
+    return Resource.destroy({ where: { id: resourceId } });
   }
 
   // ===== VECTOR METHODS =====
 
-  async addVectors(userId, threadId, vectors) {
+  async addVectors(userId, conversationId, vectors) {
     const records = vectors.map((vector, index) => ({
-      userId,
-      threadId,
       resourceId: vector.resourceId || null,
       order: vector.order ?? index,
-      text: vector.text,
       embedding: vector.embedding || null,
     }));
     return Vector.bulkCreate(records);
   }
 
-  async getVectorsByThread(userId, threadId) {
+  async getVectorsByConversation(userId, conversationId) {
+    const messageIds = (
+      await Message.findAll({ where: { conversationId }, attributes: ["id"] })
+    ).map((m) => m.id);
+    if (messageIds.length === 0) return [];
+    const resourceIds = (
+      await Resource.findAll({ where: { messageId: messageIds }, attributes: ["id"] })
+    ).map((r) => r.id);
+    if (resourceIds.length === 0) return [];
     return Vector.findAll({
-      where: { threadId, userId },
+      where: { resourceId: resourceIds },
       order: [["order", "ASC"]],
     });
-  }
-
-  async getVectorsByResource(userId, resourceId) {
-    return Vector.findAll({
-      where: { resourceId, userId },
-      order: [["order", "ASC"]],
-    });
-  }
-
-  async deleteVectorsByThread(userId, threadId) {
-    return Vector.destroy({ where: { threadId, userId } });
   }
 }
 

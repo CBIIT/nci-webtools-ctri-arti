@@ -1,4 +1,4 @@
-id,name,type,authenticationType,endpoint,transportType,customConfig
-1,Web Search,mcp,api_key,https://api.search.com/v1,http,"{""maxResults"":10}"
-2,Code Executor,custom,none,https://api.executor.com/run,http,"{""timeout"":30000}"
-3,File Reader,mcp,oauth,https://api.files.com/read,http,"{""maxSize"":""10MB""}"
+id,name,description,type,authenticationType,endpoint,transportType,customConfig
+1,Web Search,Search the web,mcp,api_key,https://api.search.com/v1,http,null
+2,Code Executor,Execute code,custom,none,https://api.executor.com/run,http,null
+3,File Reader,Read files,mcp,oauth,https://api.files.com/read,http,"{""knowledgeBaseId"":1,""toolDefinition"":{""inputSchema"":{}}}"

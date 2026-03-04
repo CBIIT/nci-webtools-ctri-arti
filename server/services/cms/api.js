@@ -18,50 +18,50 @@ api.use((req, res, next) => {
   next();
 });
 
-// ===== THREAD ROUTES =====
+// ===== CONVERSATION ROUTES =====
 
-api.post("/threads", routeHandler(async (req, res) => {
-  const thread = await service.createThread(req.userId, req.body);
-  res.status(201).json(thread);
+api.post("/conversations", routeHandler(async (req, res) => {
+  const conversation = await service.createConversation(req.userId, req.body);
+  res.status(201).json(conversation);
 }));
 
-api.get("/threads", routeHandler(async (req, res) => {
+api.get("/conversations", routeHandler(async (req, res) => {
   const { limit, offset } = req.query;
   const parsedLimit = parseInt(limit) || 20;
   const parsedOffset = parseInt(offset) || 0;
-  const result = await service.getThreads(req.userId, { limit: parsedLimit, offset: parsedOffset });
+  const result = await service.getConversations(req.userId, { limit: parsedLimit, offset: parsedOffset });
   res.json({
     data: result.rows,
     meta: { total: result.count, limit: parsedLimit, offset: parsedOffset },
   });
 }));
 
-api.get("/threads/:id", routeHandler(async (req, res) => {
-  const thread = await service.getThread(req.userId, req.params.id);
-  if (!thread) return res.status(404).json({ error: "Thread not found" });
-  res.json(thread);
+api.get("/conversations/:id", routeHandler(async (req, res) => {
+  const conversation = await service.getConversation(req.userId, req.params.id);
+  if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+  res.json(conversation);
 }));
 
-api.put("/threads/:id", routeHandler(async (req, res) => {
-  const thread = await service.updateThread(req.userId, req.params.id, req.body);
-  if (!thread) return res.status(404).json({ error: "Thread not found" });
-  res.json(thread);
+api.put("/conversations/:id", routeHandler(async (req, res) => {
+  const conversation = await service.updateConversation(req.userId, req.params.id, req.body);
+  if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+  res.json(conversation);
 }));
 
-api.delete("/threads/:id", routeHandler(async (req, res) => {
-  await service.deleteThread(req.userId, req.params.id);
+api.delete("/conversations/:id", routeHandler(async (req, res) => {
+  await service.deleteConversation(req.userId, req.params.id);
   res.json({ success: true });
 }));
 
 // ===== MESSAGE ROUTES =====
 
-api.post("/threads/:threadId/messages", routeHandler(async (req, res) => {
-  const message = await service.addMessage(req.userId, req.params.threadId, req.body);
+api.post("/conversations/:conversationId/messages", routeHandler(async (req, res) => {
+  const message = await service.addMessage(req.userId, req.params.conversationId, req.body);
   res.status(201).json(message);
 }));
 
-api.get("/threads/:threadId/messages", routeHandler(async (req, res) => {
-  const messages = await service.getMessages(req.userId, req.params.threadId);
+api.get("/conversations/:conversationId/messages", routeHandler(async (req, res) => {
+  const messages = await service.getMessages(req.userId, req.params.conversationId);
   res.json(messages);
 }));
 
@@ -89,8 +89,8 @@ api.get("/resources/:id", routeHandler(async (req, res) => {
   res.json(resource);
 }));
 
-api.get("/threads/:threadId/resources", routeHandler(async (req, res) => {
-  const resources = await service.getResourcesByThread(req.userId, req.params.threadId);
+api.get("/conversations/:conversationId/resources", routeHandler(async (req, res) => {
+  const resources = await service.getResourcesByConversation(req.userId, req.params.conversationId);
   res.json(resources);
 }));
 
@@ -101,13 +101,13 @@ api.delete("/resources/:id", routeHandler(async (req, res) => {
 
 // ===== VECTOR ROUTES =====
 
-api.post("/threads/:threadId/vectors", routeHandler(async (req, res) => {
-  const vectors = await service.addVectors(req.userId, req.params.threadId, req.body.vectors);
+api.post("/conversations/:conversationId/vectors", routeHandler(async (req, res) => {
+  const vectors = await service.addVectors(req.userId, req.params.conversationId, req.body.vectors);
   res.status(201).json(vectors);
 }));
 
-api.get("/threads/:threadId/vectors", routeHandler(async (req, res) => {
-  const vectors = await service.getVectorsByThread(req.userId, req.params.threadId);
+api.get("/conversations/:conversationId/vectors", routeHandler(async (req, res) => {
+  const vectors = await service.getVectorsByConversation(req.userId, req.params.conversationId);
   res.json(vectors);
 }));
 

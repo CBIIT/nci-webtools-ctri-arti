@@ -70,12 +70,12 @@ async function seedDatabase() {
       "defaultParameters",
     ],
   });
-  // Seed prompts before agents (agents reference prompts via promptId)
-  await models.Prompt.bulkCreate(prompts, {
-    updateOnDuplicate: ["name", "version", "content"],
-  });
+  // Seed prompts before agents (prompts reference agents via agentId)
   await models.Agent.bulkCreate(agents, {
-    updateOnDuplicate: ["name", "promptId"],
+    updateOnDuplicate: ["name"],
+  });
+  await models.Prompt.bulkCreate(prompts, {
+    updateOnDuplicate: ["agentId", "name", "version", "content"],
   });
 
   // ============================================================
@@ -167,7 +167,6 @@ if (DB_SKIP_SYNC !== "true") {
 }
 
 export const {
-  KnowledgeBase,
   Resource,
   Vector,
   Prompt,
@@ -181,13 +180,11 @@ export const {
   UserTool,
   AgentTool,
   Tool,
+  KnowledgeBase,
   Usage,
   Role,
   Policy,
   RolePolicy,
   Session,
-  Thread,
-  MCP,
-  UserMCP,
 } = models;
 export default db;

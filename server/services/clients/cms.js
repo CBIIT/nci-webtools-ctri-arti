@@ -38,57 +38,53 @@ async function httpRequest(method, path, body, userId) {
 function buildDirectClient() {
   const s = new ConversationService();
   return {
-    createThread: (userId, data) => s.createThread(userId, data),
-    getThreads: (userId, options) => s.getThreads(userId, options),
-    getThread: (userId, threadId) => s.getThread(userId, threadId),
-    updateThread: (userId, threadId, updates) => s.updateThread(userId, threadId, updates),
-    deleteThread: (userId, threadId) => s.deleteThread(userId, threadId),
+    createConversation: (userId, data) => s.createConversation(userId, data),
+    getConversations: (userId, options) => s.getConversations(userId, options),
+    getConversation: (userId, conversationId) => s.getConversation(userId, conversationId),
+    updateConversation: (userId, conversationId, updates) => s.updateConversation(userId, conversationId, updates),
+    deleteConversation: (userId, conversationId) => s.deleteConversation(userId, conversationId),
 
-    addMessage: (userId, threadId, data) => s.addMessage(userId, threadId, data),
-    getMessages: (userId, threadId) => s.getMessages(userId, threadId),
+    addMessage: (userId, conversationId, data) => s.addMessage(userId, conversationId, data),
+    getMessages: (userId, conversationId) => s.getMessages(userId, conversationId),
     getMessage: (userId, messageId) => s.getMessage(userId, messageId),
     updateMessage: (userId, messageId, updates) => s.updateMessage(userId, messageId, updates),
     deleteMessage: (userId, messageId) => s.deleteMessage(userId, messageId),
 
     addResource: (userId, data) => s.addResource(userId, data),
     getResource: (userId, resourceId) => s.getResource(userId, resourceId),
-    getResourcesByThread: (userId, threadId) => s.getResourcesByThread(userId, threadId),
+    getResourcesByConversation: (userId, conversationId) => s.getResourcesByConversation(userId, conversationId),
     deleteResource: (userId, resourceId) => s.deleteResource(userId, resourceId),
 
-    addVectors: (userId, threadId, vectors) => s.addVectors(userId, threadId, vectors),
-    getVectorsByThread: (userId, threadId) => s.getVectorsByThread(userId, threadId),
-    getVectorsByResource: (userId, resourceId) => s.getVectorsByResource(userId, resourceId),
-    deleteVectorsByThread: (userId, threadId) => s.deleteVectorsByThread(userId, threadId),
+    addVectors: (userId, conversationId, vectors) => s.addVectors(userId, conversationId, vectors),
+    getVectorsByConversation: (userId, conversationId) => s.getVectorsByConversation(userId, conversationId),
   };
 }
 
 function buildHttpClient() {
   const s = new ConversationService(); // fallback for routes not yet exposed via HTTP
   return {
-    createThread: (userId, data) => httpRequest("POST", "/api/threads", data, userId),
-    getThreads: (userId, options = {}) => {
+    createConversation: (userId, data) => httpRequest("POST", "/api/conversations", data, userId),
+    getConversations: (userId, options = {}) => {
       const { limit = 20, offset = 0 } = options;
-      return httpRequest("GET", `/api/threads?limit=${limit}&offset=${offset}`, null, userId);
+      return httpRequest("GET", `/api/conversations?limit=${limit}&offset=${offset}`, null, userId);
     },
-    getThread: (userId, threadId) => httpRequest("GET", `/api/threads/${threadId}`, null, userId),
-    updateThread: (userId, threadId, updates) => httpRequest("PUT", `/api/threads/${threadId}`, updates, userId),
-    deleteThread: (userId, threadId) => httpRequest("DELETE", `/api/threads/${threadId}`, null, userId),
+    getConversation: (userId, conversationId) => httpRequest("GET", `/api/conversations/${conversationId}`, null, userId),
+    updateConversation: (userId, conversationId, updates) => httpRequest("PUT", `/api/conversations/${conversationId}`, updates, userId),
+    deleteConversation: (userId, conversationId) => httpRequest("DELETE", `/api/conversations/${conversationId}`, null, userId),
 
-    addMessage: (userId, threadId, data) => httpRequest("POST", `/api/threads/${threadId}/messages`, data, userId),
-    getMessages: (userId, threadId) => httpRequest("GET", `/api/threads/${threadId}/messages`, null, userId),
+    addMessage: (userId, conversationId, data) => httpRequest("POST", `/api/conversations/${conversationId}/messages`, data, userId),
+    getMessages: (userId, conversationId) => httpRequest("GET", `/api/conversations/${conversationId}/messages`, null, userId),
     getMessage: (userId, messageId) => s.getMessage(userId, messageId),
     updateMessage: (userId, messageId, updates) => httpRequest("PUT", `/api/messages/${messageId}`, updates, userId),
     deleteMessage: (userId, messageId) => httpRequest("DELETE", `/api/messages/${messageId}`, null, userId),
 
     addResource: (userId, data) => httpRequest("POST", "/api/resources", data, userId),
     getResource: (userId, resourceId) => httpRequest("GET", `/api/resources/${resourceId}`, null, userId),
-    getResourcesByThread: (userId, threadId) => httpRequest("GET", `/api/threads/${threadId}/resources`, null, userId),
+    getResourcesByConversation: (userId, conversationId) => httpRequest("GET", `/api/conversations/${conversationId}/resources`, null, userId),
     deleteResource: (userId, resourceId) => httpRequest("DELETE", `/api/resources/${resourceId}`, null, userId),
 
-    addVectors: (userId, threadId, vectors) => httpRequest("POST", `/api/threads/${threadId}/vectors`, { vectors }, userId),
-    getVectorsByThread: (userId, threadId) => httpRequest("GET", `/api/threads/${threadId}/vectors`, null, userId),
-    getVectorsByResource: (userId, resourceId) => s.getVectorsByResource(userId, resourceId),
-    deleteVectorsByThread: (userId, threadId) => s.deleteVectorsByThread(userId, threadId),
+    addVectors: (userId, conversationId, vectors) => httpRequest("POST", `/api/conversations/${conversationId}/vectors`, { vectors }, userId),
+    getVectorsByConversation: (userId, conversationId) => httpRequest("GET", `/api/conversations/${conversationId}/vectors`, null, userId),
   };
 }
 
@@ -96,11 +92,11 @@ export const cmsClient = CMS_URL ? buildHttpClient() : buildDirectClient();
 
 // Named exports for convenience
 export const {
-  createThread,
-  getThreads,
-  getThread,
-  updateThread,
-  deleteThread,
+  createConversation,
+  getConversations,
+  getConversation,
+  updateConversation,
+  deleteConversation,
   addMessage,
   getMessages,
   getMessage,
@@ -108,10 +104,8 @@ export const {
   deleteMessage,
   addResource,
   getResource,
-  getResourcesByThread,
+  getResourcesByConversation,
   deleteResource,
   addVectors,
-  getVectorsByThread,
-  getVectorsByResource,
-  deleteVectorsByThread,
+  getVectorsByConversation,
 } = cmsClient;

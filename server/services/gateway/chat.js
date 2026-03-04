@@ -274,8 +274,7 @@ async function trackUsage(
  * Load the system prompt for an agent, replacing {{time}} placeholder
  */
 async function loadSystemPrompt(agentRecord) {
-  if (!agentRecord.promptId) return null;
-  const promptRecord = await Prompt.findByPk(agentRecord.promptId);
+  const promptRecord = await Prompt.findOne({ where: { agentId: agentRecord.id } });
   if (!promptRecord?.content) return null;
   return promptRecord.content.replace(
     /\{\{time\}\}/g,

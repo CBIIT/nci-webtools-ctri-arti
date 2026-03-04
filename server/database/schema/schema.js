@@ -2,56 +2,30 @@ import { DataTypes } from "sequelize";
 
 // Model definitions as plain objects
 export const modelDefinitions = {
-  KnowledgeBase: {
-    attributes: {
-      name: DataTypes.STRING,
-      embeddingModelID: DataTypes.INTEGER,
-      rerankingModelID: DataTypes.INTEGER,
-      configuration: DataTypes.JSONB,
-      description: DataTypes.STRING,
-    },
-    options: {
-      indexes: [{ fields: ["embeddingModelID"] }, { fields: ["rerankingModelID"] }],
-    },
-  },
-
   Resource: {
     attributes: {
-      knowledgeBaseId: DataTypes.INTEGER,
       name: DataTypes.STRING,
       description: DataTypes.STRING,
       metadata: DataTypes.JSONB,
       s3Url: DataTypes.STRING,
-      conversationId: DataTypes.INTEGER,
       mimeType: DataTypes.STRING,
-      content: DataTypes.TEXT,
       messageId: DataTypes.INTEGER,
+      knowledgeBaseId: DataTypes.INTEGER,
     },
     options: {
-      indexes: [
-        { fields: ["knowledgeBaseId"] },
-        { fields: ["conversationId"] },
-        { fields: ["messageId"] },
-      ],
+      indexes: [{ fields: ["messageId"] }, { fields: ["knowledgeBaseId"] }],
     },
   },
 
   Vector: {
     attributes: {
-      knowledgeBaseId: DataTypes.INTEGER,
       resourceId: DataTypes.INTEGER,
       order: DataTypes.INTEGER,
       embedding: DataTypes.JSONB,
       content: DataTypes.TEXT,
-      conversationId: DataTypes.INTEGER,
     },
     options: {
-      indexes: [
-        { fields: ["knowledgeBaseId"] },
-        { fields: ["resourceId"] },
-        { fields: ["conversationId"] },
-        { fields: ["resourceId", "order"] },
-      ],
+      indexes: [{ fields: ["resourceId"] }, { fields: ["resourceId", "order"] }],
     },
   },
 
@@ -78,12 +52,10 @@ export const modelDefinitions = {
       role: DataTypes.ENUM("system", "user", "assistant", "tool"),
       content: DataTypes.JSONB,
       tokens: DataTypes.INTEGER,
+      isHelpful: DataTypes.BOOLEAN,
     },
     options: {
-      indexes: [
-        { fields: ["conversationId"] },
-        { fields: ["conversationId", "serialNumber"] },
-      ],
+      indexes: [{ fields: ["conversationId"] }, { fields: ["conversationId", "serialNumber"] }],
     },
   },
 
@@ -107,12 +79,11 @@ export const modelDefinitions = {
       description: DataTypes.STRING,
       creatorId: DataTypes.INTEGER,
       modelId: DataTypes.INTEGER,
-      promptId: DataTypes.INTEGER,
       // Optional inference parameter overrides (JSON: { temperature, topP, topK })
       modelParameters: DataTypes.JSONB,
     },
     options: {
-      indexes: [{ fields: ["creatorId"] }, { fields: ["modelId"] }, { fields: ["promptId"] }],
+      indexes: [{ fields: ["creatorId"] }, { fields: ["modelId"] }],
     },
   },
 
@@ -211,13 +182,27 @@ export const modelDefinitions = {
   Tool: {
     attributes: {
       name: DataTypes.STRING,
+      description: DataTypes.STRING,
       type: DataTypes.ENUM("mcp", "custom"),
       authenticationType: DataTypes.STRING,
       endpoint: DataTypes.STRING,
       transportType: DataTypes.STRING,
-      customConfig: DataTypes.JSONB,
+      customConfig: DataTypes.JSONB, // { knowledgeBaseId, toolDefinition, ... }
     },
     options: {},
+  },
+
+  KnowledgeBase: {
+    attributes: {
+      name: DataTypes.STRING,
+      description: DataTypes.STRING,
+      embeddingModelId: DataTypes.INTEGER,
+      rerankingModelId: DataTypes.INTEGER,
+      configuration: DataTypes.JSONB, // { chunkingStrategy, chunkSize, overlapSize, retrieveTopN, rerankTopN, prompt }
+    },
+    options: {
+      indexes: [{ fields: ["embeddingModelId"] }, { fields: ["rerankingModelId"] }],
+    },
   },
 
   Usage: {
@@ -292,42 +277,6 @@ export const modelDefinitions = {
     },
     options: {},
   },
-
-  Thread: {
-    attributes: {
-      agentId: DataTypes.INTEGER,
-      name: DataTypes.STRING,
-      summary: DataTypes.TEXT,
-    },
-    options: {
-      indexes: [{ fields: ["agentId"] }, { fields: ["userId", "createdAt"] }],
-    },
-  },
-
-  MCP: {
-    attributes: {
-      agentId: DataTypes.INTEGER,
-      name: DataTypes.STRING,
-    },
-    options: {
-      indexes: [{ fields: ["agentId"] }],
-    },
-  },
-
-  UserMCP: {
-    attributes: {
-      userId: DataTypes.INTEGER,
-      MCPId: DataTypes.INTEGER,
-      credential: DataTypes.BLOB,
-    },
-    options: {
-      indexes: [
-        { fields: ["userId"] },
-        { fields: ["MCPId"] },
-        { fields: ["userId", "MCPId"], unique: true },
-      ],
-    },
-  },
 };
 
 // Association definitions
@@ -347,7 +296,6 @@ export const associations = [
 
   // Agent associations
   { source: "Agent", target: "AgentTool", type: "hasMany", options: { foreignKey: "agentId" } },
-  { source: "Agent", target: "Prompt", type: "belongsTo", options: { foreignKey: "promptId" } },
   { source: "Agent", target: "Model", type: "belongsTo", options: { foreignKey: "modelId" } },
   { source: "Agent", target: "Conversation", type: "hasMany", options: { foreignKey: "agentId" } },
   { source: "Agent", target: "Usage", type: "hasMany", options: { foreignKey: "agentId" } },
@@ -357,7 +305,8 @@ export const associations = [
   { source: "Tool", target: "UserTool", type: "hasMany", options: { foreignKey: "toolId" } },
 
   // Prompt associations
-  { source: "Prompt", target: "Agent", type: "hasMany", options: { foreignKey: "promptId" } },
+  { source: "Agent", target: "Prompt", type: "hasMany", options: { foreignKey: "agentId" } },
+  { source: "Prompt", target: "Agent", type: "belongsTo", options: { foreignKey: "agentId" } },
 
   // Model associations
   { source: "Model", target: "Agent", type: "hasMany", options: { foreignKey: "modelId" } },
@@ -391,12 +340,6 @@ export const associations = [
     type: "hasMany",
     options: { foreignKey: "conversationId" },
   },
-  {
-    source: "Conversation",
-    target: "Vector",
-    type: "hasMany",
-    options: { foreignKey: "conversationId" },
-  },
 
   // Message associations
   {
@@ -417,9 +360,15 @@ export const associations = [
   },
   {
     source: "KnowledgeBase",
-    target: "Vector",
-    type: "hasMany",
-    options: { foreignKey: "knowledgeBaseId" },
+    target: "Model",
+    type: "belongsTo",
+    options: { foreignKey: "embeddingModelId", as: "embeddingModel" },
+  },
+  {
+    source: "KnowledgeBase",
+    target: "Model",
+    type: "belongsTo",
+    options: { foreignKey: "rerankingModelId", as: "rerankingModel" },
   },
 
   // Resource associations
@@ -446,27 +395,10 @@ export const associations = [
   // Vector associations
   {
     source: "Vector",
-    target: "KnowledgeBase",
-    type: "belongsTo",
-    options: { foreignKey: "knowledgeBaseId" },
-  },
-  {
-    source: "Vector",
     target: "Resource",
     type: "belongsTo",
     options: { foreignKey: "resourceId" },
   },
-  {
-    source: "Vector",
-    target: "Conversation",
-    type: "belongsTo",
-    options: { foreignKey: "conversationId" },
-  },
-
-  // Thread associations
-  { source: "Thread", target: "User", type: "belongsTo", options: { foreignKey: "userId" } },
-  { source: "Thread", target: "Agent", type: "belongsTo", options: { foreignKey: "agentId" } },
-  { source: "Agent", target: "Thread", type: "hasMany", options: { foreignKey: "agentId" } },
 
   // Usage associations
   { source: "Usage", target: "User", type: "belongsTo", options: { foreignKey: "userId" } },
@@ -474,7 +406,7 @@ export const associations = [
   { source: "Usage", target: "Message", type: "belongsTo", options: { foreignKey: "messageId" } },
   { source: "Usage", target: "Model", type: "belongsTo", options: { foreignKey: "modelId" } },
 
-  // UserAgent associations (use dev's aliased versions)
+  // UserAgent associations
   {
     source: "User",
     target: "UserAgent",
@@ -506,31 +438,6 @@ export const associations = [
     type: "belongsTo",
     options: { foreignKey: "policyId" },
   },
-
-  // MCP associations
-  {
-    source: "Agent",
-    target: "MCP",
-    type: "hasMany",
-    options: { foreignKey: "agentId", as: "mcps" },
-  },
-  { source: "MCP", target: "Agent", type: "belongsTo", options: { foreignKey: "agentId" } },
-
-  // UserMCP associations
-  {
-    source: "User",
-    target: "UserMCP",
-    type: "hasMany",
-    options: { foreignKey: "userId", as: "userMCPs" },
-  },
-  { source: "UserMCP", target: "User", type: "belongsTo", options: { foreignKey: "userId" } },
-  {
-    source: "MCP",
-    target: "UserMCP",
-    type: "hasMany",
-    options: { foreignKey: "MCPId", as: "userCredentials" },
-  },
-  { source: "UserMCP", target: "MCP", type: "belongsTo", options: { foreignKey: "MCPId" } },
 ];
 
 // Helper function to create models from definitions

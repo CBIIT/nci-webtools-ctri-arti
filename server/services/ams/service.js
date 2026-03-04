@@ -16,8 +16,7 @@ import {
 import {
   Agent, Prompt, Model, Provider, AgentTool,
   Conversation, Message, Resource, Vector,
-  Tool, User, Role, UserAgent, UserTool, Usage,
-  Thread,
+  Tool, KnowledgeBase, User, Role, UserAgent, UserTool, Usage,
 } from "../database.js";
 import logger from "../logger.js";
 
@@ -46,7 +45,7 @@ class AgentManagementService {
       agentID: json.id,
       name: json.name,
       description: json.description,
-      systemPrompt: json.Prompt?.content || null,
+      systemPrompt: json.Prompts?.[0]?.content || null,
       modelName: json.Model?.name || null,
       modelParameters: json.modelParameters,
       toolIDs: (json.AgentTools || []).map((at) => at.toolId),
@@ -75,16 +74,15 @@ class AgentManagementService {
     if (!systemPrompt) throw serviceError(400, "systemPrompt is required");
     if (!modelID) throw serviceError(400, "modelID is required");
 
-    const prompt = await Prompt.create({ content: systemPrompt, name });
-
     const agent = await Agent.create({
       creatorId: userId,
       name,
       description,
-      promptId: prompt.id,
       modelId: modelID,
       modelParameters: modelParameters ?? null,
     });
+
+    await Prompt.create({ agentId: agent.id, content: systemPrompt, name });
 
     if (toolIDs && toolIDs.length > 0) {
       await AgentTool.bulkCreate(toolIDs.map((toolId) => ({ agentId: agent.id, toolId })));
@@ -121,11 +119,11 @@ class AgentManagementService {
     const { name, description, systemPrompt, modelID, modelParameters, toolIDs } = data;
 
     if (systemPrompt !== undefined) {
-      if (existing.promptId) {
-        await Prompt.update({ content: systemPrompt }, { where: { id: existing.promptId } });
+      const existingPrompt = await Prompt.findOne({ where: { agentId } });
+      if (existingPrompt) {
+        await Prompt.update({ content: systemPrompt }, { where: { agentId } });
       } else {
-        const prompt = await Prompt.create({ content: systemPrompt, name: existing.name });
-        await Agent.update({ promptId: prompt.id }, { where: { id: agentId, creatorId: userId } });
+        await Prompt.create({ agentId, content: systemPrompt, name: existing.name });
       }
     }
 
@@ -165,9 +163,6 @@ class AgentManagementService {
     for (const conv of conversations) {
       await this.#deleteConversationCascade(conv.id);
     }
-
-    // Delete Threads (CMS model) that reference this agent
-    await Thread.destroy({ where: { agentId, userId } });
 
     await Agent.destroy({ where: { id: agentId, creatorId: userId } });
     return { success: true };
@@ -219,39 +214,39 @@ class AgentManagementService {
       toolID: json.id,
       name: json.name,
       type: json.type,
-      customConfig: json.customConfig,
+      description: json.description,
+      endpoint: json.endpoint,
       createdAt: json.createdAt,
       updatedAt: json.updatedAt,
     };
   }
 
-  async #formatKnowledgebase(tool) {
-    const json = tool.toJSON();
-    const config = json.customConfig || {};
+  async #formatKnowledgebase(kb) {
+    const json = kb.toJSON();
 
     let embeddingModelName = null;
     let rerankingModelName = null;
-    if (config.embeddingModelId) {
-      const m = await Model.findByPk(config.embeddingModelId, { attributes: ["name"] });
+    if (json.embeddingModelId) {
+      const m = await Model.findByPk(json.embeddingModelId, { attributes: ["name"] });
       embeddingModelName = m?.name || null;
     }
-    if (config.rerankingModelID) {
-      const m = await Model.findByPk(config.rerankingModelID, { attributes: ["name"] });
+    if (json.rerankingModelId) {
+      const m = await Model.findByPk(json.rerankingModelId, { attributes: ["name"] });
       rerankingModelName = m?.name || null;
     }
 
     const resources = await Resource.findAll({
-      where: { toolId: json.id },
+      where: { knowledgeBaseId: json.id },
       order: [["createdAt", "ASC"]],
     });
 
     return {
-      toolID: json.id,
+      knowledgeBaseID: json.id,
       name: json.name,
-      description: config.description || null,
+      description: json.description || null,
       embeddingModelName,
       rerankingModelName,
-      configuration: config,
+      configuration: json.configuration || {},
       files: resources.map((r) => ({
         fileName: r.name,
         metadata: r.metadata,
@@ -281,98 +276,88 @@ class AgentManagementService {
       throw serviceError(400, "files array is required");
     }
 
-    const customConfig = {
-      McpType: "knowledgebase",
+    const kb = await KnowledgeBase.create({
+      name,
+      description,
       embeddingModelId: embeddingModelID,
-      rerankingModelID,
-      description: description || null,
-      ...(configuration || {}),
-    };
-
-    const tool = await Tool.create({ name, type: "mcp", customConfig });
+      rerankingModelId: rerankingModelID,
+      configuration: configuration || {},
+    });
 
     await Resource.bulkCreate(
       files.map((f) => ({
-        toolId: tool.id,
+        knowledgeBaseId: kb.id,
         name: f.fileName,
         metadata: f.metadata || {},
       }))
     );
 
-    return this.#formatKnowledgebase(tool);
+    return this.#formatKnowledgebase(kb);
   }
 
   async getKnowledgebases(userId) {
-    const tools = await Tool.findAll({ order: [["id", "ASC"]] });
-    const kbs = tools.filter((t) => t.customConfig?.McpType === "knowledgebase");
-    return Promise.all(kbs.map((t) => this.#formatKnowledgebase(t)));
+    const kbs = await KnowledgeBase.findAll({ order: [["id", "ASC"]] });
+    return Promise.all(kbs.map((kb) => this.#formatKnowledgebase(kb)));
   }
 
   async getKnowledgebase(userId, id) {
-    const tool = await Tool.findByPk(id);
-    if (!tool || tool.customConfig?.McpType !== "knowledgebase") {
-      throw serviceError(404, "Knowledgebase not found");
-    }
-    return this.#formatKnowledgebase(tool);
+    const kb = await KnowledgeBase.findByPk(id);
+    if (!kb) throw serviceError(404, "Knowledgebase not found");
+    return this.#formatKnowledgebase(kb);
   }
 
   async updateKnowledgebase(userId, id, data) {
-    const tool = await Tool.findByPk(id);
-    if (!tool || tool.customConfig?.McpType !== "knowledgebase") {
-      throw serviceError(404, "Knowledgebase not found");
-    }
+    const kb = await KnowledgeBase.findByPk(id);
+    if (!kb) throw serviceError(404, "Knowledgebase not found");
 
     const { name, description, embeddingModelID, rerankingModelID, configuration, files } = data;
 
-    const updatedConfig = { ...(tool.customConfig || {}) };
-    if (embeddingModelID !== undefined) updatedConfig.embeddingModelId = embeddingModelID;
-    if (rerankingModelID !== undefined) updatedConfig.rerankingModelID = rerankingModelID;
-    if (description !== undefined) updatedConfig.description = description;
-    if (configuration) Object.assign(updatedConfig, configuration);
-
-    const updates = { customConfig: updatedConfig };
+    const updates = {};
     if (name !== undefined) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (embeddingModelID !== undefined) updates.embeddingModelId = embeddingModelID;
+    if (rerankingModelID !== undefined) updates.rerankingModelId = rerankingModelID;
+    if (configuration !== undefined) {
+      updates.configuration = { ...(kb.configuration || {}), ...configuration };
+    }
 
-    await Tool.update(updates, { where: { id } });
+    if (Object.keys(updates).length > 0) {
+      await KnowledgeBase.update(updates, { where: { id } });
+    }
 
     if (files && files.length > 0) {
       await Resource.bulkCreate(
         files.map((f) => ({
-          toolId: parseInt(id),
+          knowledgeBaseId: parseInt(id),
           name: f.fileName,
           metadata: f.metadata || {},
         }))
       );
     }
 
-    const updated = await Tool.findByPk(id);
+    const updated = await KnowledgeBase.findByPk(id);
     return this.#formatKnowledgebase(updated);
   }
 
   async deleteKnowledgebase(userId, id) {
-    const tool = await Tool.findByPk(id);
-    if (!tool || tool.customConfig?.McpType !== "knowledgebase") {
-      throw serviceError(404, "Knowledgebase not found");
-    }
+    const kb = await KnowledgeBase.findByPk(id);
+    if (!kb) throw serviceError(404, "Knowledgebase not found");
 
     const resourceIds = (
-      await Resource.findAll({ where: { toolId: id }, attributes: ["id"] })
+      await Resource.findAll({ where: { knowledgeBaseId: id }, attributes: ["id"] })
     ).map((r) => r.id);
     if (resourceIds.length > 0) {
       await Vector.destroy({ where: { resourceId: resourceIds } });
     }
-    await Resource.destroy({ where: { toolId: id } });
-    await AgentTool.destroy({ where: { toolId: id } });
-    await Tool.destroy({ where: { id } });
+    await Resource.destroy({ where: { knowledgeBaseId: id } });
+    await KnowledgeBase.destroy({ where: { id } });
 
     return { success: true };
   }
 
   async deleteKnowledgebaseFile(userId, id, files) {
-    const tool = await Tool.findByPk(id);
-    if (!tool || tool.customConfig?.McpType !== "knowledgebase") {
-      throw serviceError(404, "Knowledgebase not found");
-    }
+    const kb = await KnowledgeBase.findByPk(id);
+    if (!kb) throw serviceError(404, "Knowledgebase not found");
 
     if (!files || !Array.isArray(files) || files.length === 0) {
       throw serviceError(400, "files array is required");
@@ -380,7 +365,7 @@ class AgentManagementService {
 
     for (const file of files) {
       const resource = await Resource.findOne({
-        where: { toolId: id, name: file.fileName },
+        where: { knowledgeBaseId: id, name: file.fileName },
       });
       if (resource) {
         await Vector.destroy({ where: { resourceId: resource.id } });
