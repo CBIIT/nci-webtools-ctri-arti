@@ -70,12 +70,12 @@ async function seedDatabase() {
       "defaultParameters",
     ],
   });
-  // Seed prompts before agents (prompts reference agents via agentId)
-  await models.Agent.bulkCreate(agents, {
-    updateOnDuplicate: ["name"],
-  });
+  // Seed prompts before agents (agents reference prompts via promptId)
   await models.Prompt.bulkCreate(prompts, {
     updateOnDuplicate: ["agentId", "name", "version", "content"],
+  });
+  await models.Agent.bulkCreate(agents, {
+    updateOnDuplicate: ["name", "promptId"],
   });
 
   // ============================================================

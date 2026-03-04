@@ -1,4 +1,4 @@
-id,creatorId,name
-1,null,Standard Chat
-2,null,FedPulse
-3,null,EAGLE
+id,creatorId,name,promptId
+1,null,Standard Chat,1
+2,null,FedPulse,2
+3,null,EAGLE,3

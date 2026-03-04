@@ -8,7 +8,7 @@
  * Uses a factory pattern — the mode is resolved once at module load time.
  */
 
-import { agentManagementService } from "../ams/service.js";
+import { agentManagementService } from "../ams/index.js";
 
 const AMS_URL = process.env.AMS_URL;
 

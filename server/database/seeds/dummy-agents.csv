@@ -1,4 +1,4 @@
-id,name,description,modelId,creatorId,modelParameters
-100,General Assistant,A general-purpose AI assistant,2,1,null
-101,Code Helper,An AI assistant specialized in coding tasks,3,1,"{""temperature"":0.2,""topP"":0.9,""topK"":50}"
-102,Research Bot,An AI assistant for research and analysis,1,2,null
+id,name,description,modelId,creatorId,promptId,modelParameters
+100,General Assistant,A general-purpose AI assistant,2,1,100,null
+101,Code Helper,An AI assistant specialized in coding tasks,3,1,101,"{""temperature"":0.2,""topP"":0.9,""topK"":50}"
+102,Research Bot,An AI assistant for research and analysis,1,2,102,null

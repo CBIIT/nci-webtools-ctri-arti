@@ -1,44 +1,190 @@
-import { Router } from "express";
-import { agentManagementService as service } from "./service.js";
-import { routeHandler } from "../utils.js";
+import { Op } from "sequelize";
+import {
+  Agent, Conversation, Message, Resource, Vector,
+} from "../database.js";
+import { serviceError } from "./utils.js";
 
-const router = Router();
+const { GATEWAY_URL = "http://localhost:3001" } = process.env;
 
-router.post("/", routeHandler(async (req, res) => {
-  res.status(201).json(await service.createConversation(req.userId, req.body));
-}));
+function formatConversation(conv, messages = []) {
+  const json = conv.toJSON ? conv.toJSON() : conv;
+  return {
+    conversationID: json.id,
+    agentID: json.agentId,
+    userID: json.userId,
+    title: json.title ?? null,
+    messages: messages.map((m) => {
+      const mj = m.toJSON ? m.toJSON() : m;
+      return {
+        id: mj.id,
+        role: mj.role,
+        content: mj.content,
+        serialNumber: mj.serialNumber,
+        tokens: mj.tokens,
+        createdAt: mj.createdAt,
+      };
+    }),
+    createdAt: json.createdAt,
+    updatedAt: json.updatedAt,
+  };
+}
 
-router.get("/", routeHandler(async (req, res) => {
-  res.json(await service.getConversations(req.userId));
-}));
-
-router.get("/:id", routeHandler(async (req, res) => {
-  res.json(await service.getConversation(req.userId, req.params.id));
-}));
-
-router.put("/:id", routeHandler(async (req, res) => {
-  const result = await service.chat(req.userId, req.params.id, req.body);
-  if (req.body.stream) {
-    res.setHeader("Content-Type", "application/x-ndjson");
-    res.setHeader("Transfer-Encoding", "chunked");
-    const reader = result.body.getReader();
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        res.write(value);
-      }
-    } finally {
-      reader.releaseLock();
+export async function deleteConversationCascade(conversationId) {
+  const messageIds = (
+    await Message.findAll({ where: { conversationId }, attributes: ["id"] })
+  ).map((m) => m.id);
+  if (messageIds.length > 0) {
+    const resourceIds = (
+      await Resource.findAll({ where: { messageId: messageIds }, attributes: ["id"] })
+    ).map((r) => r.id);
+    if (resourceIds.length > 0) {
+      await Vector.destroy({ where: { resourceId: resourceIds } });
     }
-    res.end();
-  } else {
-    res.json(result);
+    await Resource.destroy({ where: { messageId: messageIds } });
   }
-}));
+  await Message.destroy({ where: { conversationId } });
+  await Conversation.destroy({ where: { id: conversationId } });
+}
 
-router.delete("/:id", routeHandler(async (req, res) => {
-  res.json(await service.deleteConversation(req.userId, req.params.id));
-}));
+export async function createConversation(userId, data) {
+  const { agentID, messages } = data;
 
-export default router;
+  if (!agentID) throw serviceError(400, "agentID is required");
+  if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    throw serviceError(400, "messages array is required");
+  }
+
+  const conversation = await Conversation.create({
+    userId,
+    agentId: agentID,
+  });
+
+  if (messages.length > 0) {
+    await Message.bulkCreate(
+      messages.map((m, i) => ({
+        conversationId: conversation.id,
+        serialNumber: i + 1,
+        role: m.role,
+        content: m.content,
+      }))
+    );
+  }
+
+  const storedMessages = await Message.findAll({
+    where: { conversationId: conversation.id },
+    order: [["serialNumber", "ASC"]],
+  });
+
+  return formatConversation(conversation, storedMessages);
+}
+
+export async function getConversations(userId) {
+  const where = { userId };
+  where[Op.or] = [{ deleted: false }, { deleted: null }];
+
+  const conversations = await Conversation.findAll({
+    where,
+    order: [["createdAt", "DESC"]],
+  });
+
+  return conversations.map((c) => formatConversation(c));
+}
+
+export async function getConversation(userId, id) {
+  const conversation = await Conversation.findOne({
+    where: { id, userId },
+  });
+  if (!conversation) throw serviceError(404, "Conversation not found");
+
+  const messages = await Message.findAll({
+    where: { conversationId: conversation.id },
+    order: [["serialNumber", "ASC"]],
+  });
+
+  return formatConversation(conversation, messages);
+}
+
+export async function chat(userId, id, data) {
+  const conversation = await Conversation.findOne({
+    where: { id, userId },
+  });
+  if (!conversation) throw serviceError(404, "Conversation not found");
+
+  const { messages } = data;
+  if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    throw serviceError(400, "messages array is required");
+  }
+
+  const agent = await Agent.findByPk(conversation.agentId);
+  if (!agent) throw serviceError(404, "Agent not found");
+
+  const lastMessage = await Message.findOne({
+    where: { conversationId: conversation.id },
+    order: [["serialNumber", "DESC"]],
+    attributes: ["serialNumber"],
+  });
+  let nextSN = (lastMessage?.serialNumber || 0) + 1;
+
+  for (const m of messages) {
+    await Message.create({
+      conversationId: conversation.id,
+      serialNumber: nextSN++,
+      role: m.role,
+      content: m.content,
+    });
+  }
+
+  const allMessages = await Message.findAll({
+    where: { conversationId: conversation.id },
+    order: [["serialNumber", "ASC"]],
+  });
+
+  const gatewayPayload = {
+    action: "chat",
+    user_id: parseInt(userId),
+    agent_id: conversation.agentId,
+    model_id: agent.modelId,
+    messages: allMessages.map((m) => ({ role: m.role, content: m.content })),
+  };
+
+  const gatewayResponse = await fetch(`${GATEWAY_URL}/api/v1/modelInvoke`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(gatewayPayload),
+  });
+
+  if (!gatewayResponse.ok) {
+    const errorBody = await gatewayResponse.json().catch(() => ({}));
+    throw serviceError(gatewayResponse.status, errorBody.error || "Gateway request failed");
+  }
+
+  const result = await gatewayResponse.json();
+
+  const assistantContent = result.output?.message?.content || null;
+  if (assistantContent) {
+    await Message.create({
+      conversationId: conversation.id,
+      serialNumber: nextSN,
+      role: "assistant",
+      content: assistantContent,
+      tokens: result.usage?.outputTokens || null,
+    });
+  }
+
+  const updatedMessages = await Message.findAll({
+    where: { conversationId: conversation.id },
+    order: [["serialNumber", "ASC"]],
+  });
+
+  return formatConversation(conversation, updatedMessages);
+}
+
+export async function deleteConversation(userId, id) {
+  const conversation = await Conversation.findOne({
+    where: { id, userId },
+  });
+  if (!conversation) throw serviceError(404, "Conversation not found");
+
+  await deleteConversationCascade(conversation.id);
+  return { success: true };
+}

@@ -79,11 +79,12 @@ export const modelDefinitions = {
       description: DataTypes.STRING,
       creatorId: DataTypes.INTEGER,
       modelId: DataTypes.INTEGER,
+      promptId: DataTypes.INTEGER,
       // Optional inference parameter overrides (JSON: { temperature, topP, topK })
       modelParameters: DataTypes.JSONB,
     },
     options: {
-      indexes: [{ fields: ["creatorId"] }, { fields: ["modelId"] }],
+      indexes: [{ fields: ["creatorId"] }, { fields: ["modelId"] }, { fields: ["promptId"] }],
     },
   },
 
@@ -305,8 +306,8 @@ export const associations = [
   { source: "Tool", target: "UserTool", type: "hasMany", options: { foreignKey: "toolId" } },
 
   // Prompt associations
-  { source: "Agent", target: "Prompt", type: "hasMany", options: { foreignKey: "agentId" } },
-  { source: "Prompt", target: "Agent", type: "belongsTo", options: { foreignKey: "agentId" } },
+  { source: "Prompt", target: "Agent", type: "hasMany", options: { foreignKey: "promptId" } },
+  { source: "Agent", target: "Prompt", type: "belongsTo", options: { foreignKey: "promptId" } },
 
   // Model associations
   { source: "Model", target: "Agent", type: "hasMany", options: { foreignKey: "modelId" } },
