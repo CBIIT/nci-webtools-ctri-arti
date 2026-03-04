@@ -39,9 +39,9 @@ export async function trackModelUsage(
       .values({
         userID,
         modelID: model.id,
-        type: type || null,
-        agentID: agentID || null,
-        messageID: messageID || null,
+        type: type ?? null,
+        agentID: agentID ?? null,
+        messageID: messageID ?? null,
         inputTokens,
         outputTokens,
         cacheReadTokens,
