@@ -1,10 +1,6 @@
 import { createAgent, getAgents, getAgent, updateAgent, deleteAgent } from "./agents.js";
 import { getModels, getModel } from "./models.js";
 import {
-  getTools, createKnowledgeBase, getKnowledgeBases, getKnowledgeBase,
-  updateKnowledgeBase, deleteKnowledgeBase, deleteKnowledgeBaseFile,
-} from "./tools.js";
-import {
   createConversation, getConversations, getConversation, chat, deleteConversation,
 } from "./conversations.js";
 import { uploadFile, getFiles, deleteFile } from "./files.js";
@@ -19,13 +15,6 @@ export const agentManagementService = {
   deleteAgent,
   getModels,
   getModel,
-  getTools,
-  createKnowledgeBase,
-  getKnowledgeBases,
-  getKnowledgeBase,
-  updateKnowledgeBase,
-  deleteKnowledgeBase,
-  deleteKnowledgeBaseFile,
   createConversation,
   getConversations,
   getConversation,

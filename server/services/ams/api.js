@@ -36,17 +36,6 @@ api.delete("/v1/agents/:id", handle((req) => service.deleteAgent(req.userId, req
 api.get("/v1/models", handle((req) => service.getModels(req.userId)));
 api.get("/v1/models/:id", handle((req) => service.getModel(req.userId, req.params.id, req.query)));
 
-// ===== Tool routes =====
-api.get("/v1/tools", handle((req) => service.getTools(req.userId)));
-
-// ===== KnowledgeBase routes =====
-api.post("/v1/tools/knowledgebase", handle((req) => service.createKnowledgeBase(req.userId, req.body), 201));
-api.get("/v1/tools/knowledgebase", handle((req) => service.getKnowledgeBases(req.userId)));
-api.get("/v1/tools/knowledgebase/:id", handle((req) => service.getKnowledgeBase(req.userId, req.params.id)));
-api.put("/v1/tools/knowledgebase/:id", handle((req) => service.updateKnowledgeBase(req.userId, req.params.id, req.body)));
-api.delete("/v1/tools/knowledgebase/:id", handle((req) => service.deleteKnowledgeBase(req.userId, req.params.id)));
-api.delete("/v1/tools/knowledgebase/:id/file", handle((req) => service.deleteKnowledgeBaseFile(req.userId, req.params.id, req.body.files)));
-
 // ===== Conversation routes =====
 api.post("/v1/conversations", handle((req) => service.createConversation(req.userId, req.body), 201));
 api.get("/v1/conversations", handle((req) => service.getConversations(req.userId)));

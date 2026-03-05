@@ -57,9 +57,6 @@ function buildDirectClient() {
     getModels: (userId, query) => s.getModels(userId, query),
     getModel: (userId, modelId) => s.getModel(userId, modelId),
 
-    // Tools
-    getTools: (userId) => s.getTools(userId),
-
     // Conversations
     createConversation: (userId, data) => s.createConversation(userId, data),
     getConversations: (userId) => s.getConversations(userId),
@@ -97,9 +94,6 @@ function buildHttpClient() {
     getModels: (userId, query) => httpRequest("GET", `/api/v1/models${toQueryString(query)}`, null, userId),
     getModel: (userId, modelId) => httpRequest("GET", `/api/v1/models/${modelId}`, null, userId),
 
-    // Tools
-    getTools: (userId) => httpRequest("GET", "/api/v1/tools", null, userId),
-
     // Conversations
     createConversation: (userId, data) => httpRequest("POST", "/api/v1/conversations", data, userId),
     getConversations: (userId) => httpRequest("GET", "/api/v1/conversations", null, userId),
@@ -135,7 +129,6 @@ export const {
   deleteAgent,
   getModels,
   getModel,
-  getTools,
   createConversation,
   getConversations,
   getConversation,
