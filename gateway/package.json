@@ -15,8 +15,8 @@
     "start": "node --env-file .env index.js"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.982.0",
-    "@google/genai": "^1.39.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1003.0",
+    "@google/genai": "^1.44.0",
     "database": "*",
     "express": "^5.2.1",
     "shared": "*"
