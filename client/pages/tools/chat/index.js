@@ -11,7 +11,6 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-
 import { AlertContainer } from "../../../components/alert.js";
 import AttachmentsPreview from "../../../components/attachments-preview.js";
 import ClassToggle from "../../../components/class-toggle.js";
@@ -380,9 +379,19 @@ export default function Page() {
             </div>
 
             <${Show} when=${() => toggles().conversations}>
-              <small class="mb-2 fw-normal text-muted fs-6">
-                Recent ${isFedPulse ? "FedPulse" : "Standard"} Chats</small
-              >
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <small class="fw-normal text-muted fs-6">
+                  Recent ${isFedPulse ? "FedPulse" : "Standard"} Chats</small
+                >
+                <a
+                  href="/tools/export-conversations"
+                  target="_self"
+                  class="text-muted text-decoration-none small"
+                  style="font-size: 0.7rem; opacity: 0.7;"
+                  title="Export conversations"
+                  >Export</a
+                >
+              </div>
 
               <ul class="list-unstyled">
                 <${For} each=${conversations}>
