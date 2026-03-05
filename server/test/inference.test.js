@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { after, before, test } from "node:test";
 
 import db from "../services/database.js";
-import { runModel } from "../services/gateway/inference.js";
+import { runModel } from "../services/gateway/modelInvoke.js";
 import BedrockProvider from "../services/gateway/providers/bedrock.js";
 
 const HAIKU_MODEL = "us.anthropic.claude-3-5-haiku-20241022-v1:0";
