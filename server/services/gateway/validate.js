@@ -9,16 +9,26 @@ import { ErrorType, sendError } from "./errors.js";
  * @param {Object} options
  * @param {Object} options.body - Request body
  * @param {string[]} options.requiredFields - Field names to check for presence
+ * @param {string[]} [options.validActions] - When provided, validate body.action against this list
  * @param {Array} [options.modelInclude] - Sequelize include option for Model.findByPk
  * @returns {Promise<{userRecord, agentRecord, modelRecord}|null>}
  */
-export async function validateRequest(res, { body, requiredFields, modelInclude }) {
+export async function validateRequest(res, { body, requiredFields, validActions, modelInclude }) {
   const missingFields = requiredFields.filter((f) => !body[f]);
   if (missingFields.length > 0) {
     sendError(res, {
       errorType: ErrorType.MISSING_REQUIRED_FIELD,
       message: `Missing required fields: ${missingFields.join(", ")}`,
       details: { missing_fields: missingFields },
+    });
+    return null;
+  }
+
+  if (validActions && !validActions.includes(body.action)) {
+    sendError(res, {
+      errorType: ErrorType.INVALID_ACTION,
+      message: `Invalid action: "${body.action}". Must be one of: ${validActions.join(", ")}`,
+      details: { action: body.action, valid_actions: validActions },
     });
     return null;
   }
@@ -68,6 +78,14 @@ export async function validateRequest(res, { body, requiredFields, modelInclude 
       errorType: ErrorType.INVALID_MODEL,
       message: `Invalid model_id: "${body.model_id}". Model ID not found in database.`,
       details: { model_id: body.model_id },
+    });
+    return null;
+  }
+
+  if (!Array.isArray(body.messages) || body.messages.length === 0) {
+    sendError(res, {
+      errorType: ErrorType.INVALID_MESSAGES_FORMAT,
+      message: "messages must be a non-empty array",
     });
     return null;
   }

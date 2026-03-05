@@ -50,12 +50,12 @@ docker compose up --build -w
 
 ```
 server/
-├── server.js              # Main server entry point
+├── server.js              # Main monolith entry point
+├── gateway.js             # Gateway microservice entry point (port 3001)
 ├── package.json           # Dependencies and scripts
 ├── services/
 │   ├── api.js            # Main API router
 │   ├── database.js       # Database models and setup
-│   ├── inference.js      # AI model provider abstraction
 │   ├── middleware.js     # Authentication, logging, proxy
 │   ├── translate.js      # AWS Translate integration
 │   ├── email.js          # Email services
@@ -63,14 +63,32 @@ server/
 │   ├── logger.js         # Winston logging
 │   ├── scheduler.js      # Cron jobs
 │   ├── parsers.js        # Document parsing
+│   ├── gateway/          # LLM Gateway (unified model invocation)
+│   │   ├── api.js        # Gateway router (/api/v1, /api/models)
+│   │   ├── modelInvoke.js # Unified /v1/modelInvoke endpoint (chat + embeddings)
+│   │   ├── inference.js  # Model provider abstraction with caching
+│   │   ├── validate.js   # Request validation and record loading
+│   │   ├── errors.js     # Standardized error codes and responses
+│   │   ├── guardrails/   # Input safety guardrails (Bedrock, LLM)
+│   │   └── providers/    # AI provider implementations (Bedrock, Gemini, Mock)
+│   ├── ams/              # Agent Management Service
+│   │   ├── api.js        # AMS router (agents, conversations)
+│   │   ├── service.js    # Agent CRUD operations
+│   │   └── conversations.js # Conversation management
+│   ├── cms/              # Content Management Service
+│   │   ├── api.js        # CMS router
+│   │   └── conversation.js # Conversation logic
+│   ├── clients/          # Internal service clients
+│   │   ├── gateway.js    # Gateway client (direct function calls)
+│   │   ├── ams.js        # AMS client
+│   │   └── cms.js        # CMS client
 │   ├── routes/
 │   │   ├── admin.js      # Admin user management
 │   │   ├── auth.js       # Authentication endpoints
-│   │   ├── model.js      # AI model endpoints
+│   │   ├── model.js      # Legacy AI model endpoint (/api/model)
+│   │   ├── conversations.js # Conversation routes
 │   │   └── tools.js      # Search, translate, feedback
-│   └── providers/
-│       ├── bedrock.js    # AWS Bedrock integration
-│       └── gemini.js     # Google Gemini integration
+│   └── ...
 └── .env.example          # Environment variables template
 ```
 
@@ -192,11 +210,13 @@ server/
 
 ## Key Services
 
-### Inference Service (`inference.js`)
+### Gateway Service (`gateway/modelInvoke.js`)
 
-- `runModel()` - Main model execution with message processing
+- Unified `POST /v1/modelInvoke` endpoint with `action` field (`chat` or `embedding`)
+- `runModel()` - Direct model execution with message preprocessing and caching
 - `getModelProvider()` - Provider factory pattern
-- Supports streaming, tool use, caching, thought budgets
+- Full usage tracking, budget management, guardrails, and streaming support
+- Cost calculation for both chat (input/output/cache tokens) and embeddings
 
 ### Translation Service (`translate.js`)
 
@@ -287,10 +307,10 @@ The server uses Sequelize's `sync({ alter: true })` mode which:
 
 ### Adding New AI Providers
 
-1. Create provider class in `services/providers/`
-2. Implement `converse()` and `converseStream()` methods
+1. Create provider class in `services/gateway/providers/`
+2. Implement `converse()`, `converseStream()`, and `embed()` methods
 3. Add provider to database
-4. Register in `inference.js`
+4. Register in `gateway/modelInvoke.js` (`providerMap`)
 
 ## Deployment
 

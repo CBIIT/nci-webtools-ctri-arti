@@ -60,9 +60,10 @@ Real-world testing approach with no mocking:
 
 | What | Where | Purpose |
 |------|-------|---------|
-| **AI Integration** | `services/inference.js` | Multi-provider AI with streaming |
+| **LLM Gateway** | `services/gateway/` | Unified model invocation (chat + embeddings) |
 | **API Routes** | `services/routes/` | model, tools, auth, admin endpoints |
 | **Database** | `services/database.js` | PostgreSQL with Sequelize ORM |
+| **Agent Mgmt** | `services/ams/` | Agent and conversation management |
 | **Research Tools** | `services/routes/tools.js` | Search, translation, web proxy |
 
 **Key Features:**

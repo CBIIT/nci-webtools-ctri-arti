@@ -2,13 +2,13 @@
  * Gateway Client
  *
  * Provides inference via direct function calls (monolith mode).
- * The /v1/chat and /v1/embeddings endpoints now handle most inference.
+ * The /v1/modelInvoke endpoint handles most inference (chat + embeddings).
  * This client is still used by routes/model.js for legacy POST /api/model calls
  * (e.g. browse tool summarization).
  */
 
 import { Model, Provider, Usage, User } from "../database.js";
-import { runModel as directRunModel } from "../gateway/chat.js";
+import { runModel as directRunModel } from "../gateway/modelInvoke.js";
 import { getGuardrail } from "../gateway/guardrails/index.js";
 import logger from "../logger.js";
 

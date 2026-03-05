@@ -16,6 +16,7 @@ export const ErrorType = {
   MISSING_REQUIRED_FIELD: "MISSING_REQUIRED_FIELD",
   INVALID_INPUT_FORMAT: "INVALID_INPUT_FORMAT",
   INVALID_MESSAGES_FORMAT: "INVALID_MESSAGES_FORMAT",
+  INVALID_ACTION: "INVALID_ACTION",
 
   // Authentication/Authorization Errors (2xxx)
   INVALID_USER: "INVALID_USER",
@@ -51,6 +52,7 @@ export const ErrorCode = {
   [ErrorType.MISSING_REQUIRED_FIELD]: 1001,
   [ErrorType.INVALID_INPUT_FORMAT]: 1002,
   [ErrorType.INVALID_MESSAGES_FORMAT]: 1003,
+  [ErrorType.INVALID_ACTION]: 1004,
 
   // Authentication/Authorization Errors (2xxx)
   [ErrorType.INVALID_USER]: 2001,
@@ -85,6 +87,7 @@ export const ErrorHttpStatus = {
   [ErrorType.MISSING_REQUIRED_FIELD]: 400,
   [ErrorType.INVALID_INPUT_FORMAT]: 400,
   [ErrorType.INVALID_MESSAGES_FORMAT]: 400,
+  [ErrorType.INVALID_ACTION]: 400,
   [ErrorType.INVALID_USER]: 400,
   [ErrorType.INVALID_AGENT]: 403,
   [ErrorType.INVALID_MODEL]: 400,
@@ -151,4 +154,3 @@ export function getProviderErrorType(statusCode) {
   if (statusCode >= 500) return ErrorType.PROVIDER_ERROR;
   return ErrorType.INTERNAL_ERROR;
 }
-

@@ -1,14 +1,12 @@
 import { json, Router } from "express";
 import { logErrors, logRequests } from "../middleware.js";
 import { Model } from "../database.js";
-import chatRoutes from "./chat.js";
-import embeddingsRoutes from "./embeddings.js";
+import modelRoutes from "./modelInvoke.js";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
 api.use(logRequests());
-api.use("/v1", chatRoutes);
-api.use("/v1", embeddingsRoutes);
+api.use("/v1", modelRoutes);
 
 /**
  * GET /api/models - List available models

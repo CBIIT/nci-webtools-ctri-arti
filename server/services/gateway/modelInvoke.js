@@ -197,9 +197,9 @@ function addCachePointsToMessages(messages, hasCache, modelName) {
   return result;
 }
 
-// --- Cost and usage tracking ---
+// --- Cost and usage tracking (chat) ---
 
-function calculateCost(
+function calculateChatCost(
   modelRecord,
   inputTokens,
   outputTokens,
@@ -213,7 +213,7 @@ function calculateCost(
   return inputCost + outputCost + cacheReadCost + cacheWriteCost;
 }
 
-async function trackUsage(
+async function trackChatUsage(
   userRecord,
   agentId,
   modelRecord,
@@ -223,7 +223,7 @@ async function trackUsage(
   cacheWriteTokens,
   guardrailCost = 0
 ) {
-  const modelCost = calculateCost(
+  const modelCost = calculateChatCost(
     modelRecord,
     inputTokens,
     outputTokens,
@@ -268,10 +268,56 @@ async function trackUsage(
   return cost;
 }
 
+// --- Cost and usage tracking (embeddings) ---
+
+function calculateEmbeddingCost(modelRecord, inputTokens) {
+  return (inputTokens / 1000) * (modelRecord.cost1kInput || 0);
+}
+
+async function trackEmbeddingUsage(userRecord, modelRecord, inputTokens, ip, guardrailCost = 0) {
+  const cost = calculateEmbeddingCost(modelRecord, inputTokens) + guardrailCost;
+
+  // User row — full cost (model + guardrail)
+  await Usage.create({
+    type: "user",
+    userId: userRecord.id,
+    modelId: modelRecord.id,
+    inputTokens,
+    outputTokens: 0,
+    cacheReadTokens: 0,
+    cacheWriteTokens: 0,
+    cost,
+    ip,
+  });
+
+  // Guardrail breakdown row (not additive — for visibility only)
+  if (guardrailCost > 0) {
+    await Usage.create({
+      type: "guardrail",
+      userId: userRecord.id,
+      modelId: modelRecord.id,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      cost: guardrailCost,
+      ip,
+    });
+  }
+
+  if (userRecord.budget !== null && userRecord.remaining !== null) {
+    const newRemaining = Math.max(0, userRecord.remaining - cost);
+    await userRecord.update({ remaining: newRemaining });
+  }
+
+  return cost;
+}
+
 // --- Chat route helpers ---
 
 /**
- * Load the system prompt for an agent, replacing {{time}} placeholder
+ * Load the system prompt for an agent, replacing {{time}} placeholder.
+ * Uses ARTI schema: Agent.belongsTo(Prompt, { foreignKey: "promptId" })
  */
 async function loadSystemPrompt(agentRecord) {
   if (!agentRecord.promptId) return null;
@@ -287,7 +333,7 @@ async function loadSystemPrompt(agentRecord) {
  * Build the provider input for a chat request.
  * Merges parameters with priority: user > agent > model defaults.
  */
-function buildChatInput(modelRecord, messages, systemPrompt, defaultParameters, agentRecord, stream = false) {
+function buildChatInput(modelRecord, messages, systemPrompt, defaultParameters, agentRecord, stream = false, tool) {
   const userParams = defaultParameters || {};
   const agentParams = agentRecord.modelParameters || {};
   const modelDefaults = modelRecord.defaultParameters || {};
@@ -339,164 +385,40 @@ function buildChatInput(modelRecord, messages, systemPrompt, defaultParameters, 
     ...(systemPrompt && { system: [{ text: systemPrompt }] }),
     inferenceConfig,
     additionalModelRequestFields,
-    ...(userParams.tool && { toolConfig: { tools: JSON.parse(userParams.tool) } }),
+    ...(tool && { toolConfig: { tools: tool } }),
     ...(guardrail?.supportsInline && { guardrailConfig: guardrail.getInlineConfig({ stream }) }),
   };
 }
 
-// --- Route ---
+// --- Unified route ---
 
 const router = Router();
 
-router.post("/chat", async (req, res) => {
+router.post("/modelInvoke", async (req, res) => {
   try {
-    // Validate required fields and load records
+    const { action } = req.body;
+
+    // Validate common fields and action
+    const requiredFields = ["model_id", "user_id", "agent_id", "action", "messages"];
+    const modelInclude = [Provider];
+
     const records = await validateRequest(res, {
       body: req.body,
-      requiredFields: ["model_id", "messages", "user_id", "agent_id"],
-      modelInclude: [Provider],
+      requiredFields,
+      validActions: ["chat", "embedding"],
+      modelInclude,
     });
     if (!records) return;
     const { userRecord, agentRecord, modelRecord } = records;
 
-    const { messages, defaultParameters, user_id, agent_id, model_id, stream = false } = req.body;
-
-    // Validate messages format (endpoint-specific)
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return sendError(res, {
-        errorType: ErrorType.INVALID_MESSAGES_FORMAT,
-        message: "messages must be a non-empty array",
-      });
-    }
-
-    // Load system prompt and build provider input
-    const systemPrompt = await loadSystemPrompt(agentRecord);
-    const input = buildChatInput(modelRecord, messages, systemPrompt, defaultParameters, agentRecord, stream);
-
-    const hasCache = !!(modelRecord.cost1kCacheRead || modelRecord.cost1kCacheWrite);
-    logger.info(
-      `Chat request from user: ${user_id}, agent: ${agent_id}, model_id: ${model_id}, caching: ${hasCache}`
-    );
-
-    // Standalone guardrail pre-check for non-inline guardrails (e.g. LLM screening)
-    let standaloneGuardrailCost = 0;
-    if (guardrail && !guardrail.supportsInline) {
-      const lastUserMessage = messages.filter((m) => m.role === "user").pop();
-      const textToCheck = lastUserMessage?.content
-        ?.map((c) => c.text)
-        .filter(Boolean)
-        .join(" ");
-      if (textToCheck) {
-        const result = await guardrail.check(textToCheck);
-        standaloneGuardrailCost = result.cost;
-        if (result.blocked) {
-          return sendError(res, {
-            errorType: ErrorType.GUARDRAIL_BLOCKED,
-            message: "Input blocked by guardrail policy",
-            details: result.details,
-          });
-        }
-      }
-    }
-
-    const provider = new providerMap[modelRecord.Provider.name]();
-
-    if (stream) {
-      // Streaming response as NDJSON with cancellation support
-      const response = await provider.converseStream(input);
-
-      let aborted = false;
-      let metadataReceived = false;
-
-      req.on("close", () => {
-        if (!res.writableEnded) {
-          aborted = true;
-          response.stream?.destroy?.();
-        }
-      });
-
-      try {
-        for await (const event of response.stream) {
-          if (aborted) break;
-
-          res.write(JSON.stringify(event) + "\n");
-
-          // Track usage from the metadata event at the end of the stream
-          if (event.metadata?.usage) {
-            metadataReceived = true;
-            const usage = event.metadata.usage;
-            const inputTokens = usage.inputTokens || 0;
-            const outputTokens = usage.outputTokens || 0;
-            const cacheReadTokens = usage.cacheReadInputTokens || 0;
-            const cacheWriteTokens = usage.cacheWriteInputTokens || 0;
-            const inlineCost = guardrail?.supportsInline
-              ? guardrail.calculateCostFromResponse(event.metadata)
-              : 0;
-            const guardrailCost = inlineCost + standaloneGuardrailCost;
-
-            if (inputTokens > 0 || outputTokens > 0) {
-              const cost = await trackUsage(
-                userRecord,
-                agent_id,
-                modelRecord,
-                inputTokens,
-                outputTokens,
-                cacheReadTokens,
-                cacheWriteTokens,
-                guardrailCost
-              );
-              logger.info(
-                `Usage tracked: user=${user_id}, agent=${agent_id}, model_id=${model_id}, input=${inputTokens}, output=${outputTokens}, cacheRead=${cacheReadTokens}, cacheWrite=${cacheWriteTokens}, guardrailCost=${guardrailCost.toFixed(6)}, cost=${cost.toFixed(6)}`
-              );
-            }
-          }
-        }
-      } catch (err) {
-        if (!aborted) throw err;
-      }
-
-      if (aborted) {
-        logger.info(
-          `Chat stream aborted: user=${user_id}, agent=${agent_id}, model_id=${model_id}, metadataReceived=${metadataReceived}`
-        );
-        return;
-      }
-
-      res.end();
+    if (action === "chat") {
+      await handleChat(req, res, userRecord, agentRecord, modelRecord);
     } else {
-      // Non-streaming single JSON response
-      const response = await provider.converse(input);
-      const { output, usage, stopReason, metrics, trace } = response;
-
-      const inputTokens = usage?.inputTokens || 0;
-      const outputTokens = usage?.outputTokens || 0;
-      const cacheReadTokens = usage?.cacheReadInputTokens || 0;
-      const cacheWriteTokens = usage?.cacheWriteInputTokens || 0;
-      const inlineCost = guardrail?.supportsInline
-        ? guardrail.calculateCostFromResponse({ usage, trace })
-        : 0;
-      const guardrailCost = inlineCost + standaloneGuardrailCost;
-
-      if (inputTokens > 0 || outputTokens > 0) {
-        const cost = await trackUsage(
-          userRecord,
-          agent_id,
-          modelRecord,
-          inputTokens,
-          outputTokens,
-          cacheReadTokens,
-          cacheWriteTokens,
-          guardrailCost
-        );
-        logger.info(
-          `Usage tracked: user=${user_id}, agent=${agent_id}, model_id=${model_id}, input=${inputTokens}, output=${outputTokens}, cacheRead=${cacheReadTokens}, cacheWrite=${cacheWriteTokens}, guardrailCost=${guardrailCost.toFixed(6)}, cost=${cost.toFixed(6)}`
-        );
-      }
-
-      res.json({ output, stopReason, usage: { inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens }, metrics });
+      await handleEmbedding(req, res, userRecord, modelRecord);
     }
   } catch (error) {
-    logger.error(`Chat completion error: ${error.message}`);
+    const action = req.body.action || "model";
+    logger.error(`${action} error: ${error.message}`);
 
     const statusCode = error.$metadata?.httpStatusCode || 500;
     const errorType = getProviderErrorType(statusCode);
@@ -515,5 +437,235 @@ router.post("/chat", async (req, res) => {
     }
   }
 });
+
+// --- Chat handler ---
+
+async function handleChat(req, res, userRecord, agentRecord, modelRecord) {
+  const { messages, defaultParameters, user_id, agent_id, model_id, stream = false, tool } = req.body;
+
+  // Load system prompt and build provider input
+  const systemPrompt = await loadSystemPrompt(agentRecord);
+  const input = buildChatInput(modelRecord, messages, systemPrompt, defaultParameters, agentRecord, stream, tool);
+
+  const hasCache = !!(modelRecord.cost1kCacheRead || modelRecord.cost1kCacheWrite);
+  logger.info(
+    `Chat request from user: ${user_id}, agent: ${agent_id}, model_id: ${model_id}, caching: ${hasCache}`
+  );
+
+  // Standalone guardrail pre-check for non-inline guardrails (e.g. LLM screening)
+  let standaloneGuardrailCost = 0;
+  if (guardrail && !guardrail.supportsInline) {
+    const lastUserMessage = messages.filter((m) => m.role === "user").pop();
+    const textToCheck = lastUserMessage?.content
+      ?.map((c) => c.text)
+      .filter(Boolean)
+      .join(" ");
+    if (textToCheck) {
+      const result = await guardrail.check(textToCheck);
+      standaloneGuardrailCost = result.cost;
+      if (result.blocked) {
+        return sendError(res, {
+          errorType: ErrorType.GUARDRAIL_BLOCKED,
+          message: "Input blocked by guardrail policy",
+          details: result.details,
+        });
+      }
+    }
+  }
+
+  const provider = new providerMap[modelRecord.Provider.name]();
+
+  if (stream) {
+    // Streaming response as NDJSON with cancellation support
+    const response = await provider.converseStream(input);
+
+    let aborted = false;
+    let metadataReceived = false;
+
+    req.on("close", () => {
+      if (!res.writableEnded) {
+        aborted = true;
+        response.stream?.destroy?.();
+      }
+    });
+
+    // Track reasoning block indices so we can filter them from the stream
+    const reasoningBlocks = new Set();
+
+    try {
+      for await (const event of response.stream) {
+        if (aborted) break;
+
+        // Skip reasoning/thinking content blocks
+        if (event.contentBlockStart?.start?.reasoningContent !== undefined) {
+          reasoningBlocks.add(event.contentBlockStart.contentBlockIndex);
+          continue;
+        }
+        const blockIdx =
+          event.contentBlockDelta?.contentBlockIndex ??
+          event.contentBlockStop?.contentBlockIndex;
+        if (blockIdx !== undefined && reasoningBlocks.has(blockIdx)) {
+          continue;
+        }
+
+        res.write(JSON.stringify(event) + "\n");
+
+        // Track usage from the metadata event at the end of the stream
+        if (event.metadata?.usage) {
+          metadataReceived = true;
+          const usage = event.metadata.usage;
+          const inputTokens = usage.inputTokens || 0;
+          const outputTokens = usage.outputTokens || 0;
+          const cacheReadTokens = usage.cacheReadInputTokens || 0;
+          const cacheWriteTokens = usage.cacheWriteInputTokens || 0;
+          const inlineCost = guardrail?.supportsInline
+            ? guardrail.calculateCostFromResponse(event.metadata)
+            : 0;
+          const guardrailCost = inlineCost + standaloneGuardrailCost;
+
+          if (inputTokens > 0 || outputTokens > 0) {
+            const cost = await trackChatUsage(
+              userRecord,
+              agent_id,
+              modelRecord,
+              inputTokens,
+              outputTokens,
+              cacheReadTokens,
+              cacheWriteTokens,
+              guardrailCost
+            );
+            logger.info(
+              `Usage tracked: user=${user_id}, agent=${agent_id}, model_id=${model_id}, input=${inputTokens}, output=${outputTokens}, cacheRead=${cacheReadTokens}, cacheWrite=${cacheWriteTokens}, guardrailCost=${guardrailCost.toFixed(6)}, cost=${cost.toFixed(6)}`
+            );
+          }
+        }
+      }
+    } catch (err) {
+      if (!aborted) throw err;
+    }
+
+    if (aborted) {
+      logger.info(
+        `Chat stream aborted: user=${user_id}, agent=${agent_id}, model_id=${model_id}, metadataReceived=${metadataReceived}`
+      );
+      return;
+    }
+
+    res.end();
+  } else {
+    // Non-streaming single JSON response
+    const response = await provider.converse(input);
+    const { output, usage, stopReason, metrics, trace } = response;
+
+    // Strip reasoning/thinking content blocks from the response
+    if (output?.message?.content) {
+      output.message.content = output.message.content.filter((c) => !c.reasoningContent);
+    }
+
+    const inputTokens = usage?.inputTokens || 0;
+    const outputTokens = usage?.outputTokens || 0;
+    const cacheReadTokens = usage?.cacheReadInputTokens || 0;
+    const cacheWriteTokens = usage?.cacheWriteInputTokens || 0;
+    const inlineCost = guardrail?.supportsInline
+      ? guardrail.calculateCostFromResponse({ usage, trace })
+      : 0;
+    const guardrailCost = inlineCost + standaloneGuardrailCost;
+
+    if (inputTokens > 0 || outputTokens > 0) {
+      const cost = await trackChatUsage(
+        userRecord,
+        agent_id,
+        modelRecord,
+        inputTokens,
+        outputTokens,
+        cacheReadTokens,
+        cacheWriteTokens,
+        guardrailCost
+      );
+      logger.info(
+        `Usage tracked: user=${user_id}, agent=${agent_id}, model_id=${model_id}, input=${inputTokens}, output=${outputTokens}, cacheRead=${cacheReadTokens}, cacheWrite=${cacheWriteTokens}, guardrailCost=${guardrailCost.toFixed(6)}, cost=${cost.toFixed(6)}`
+      );
+    }
+
+    res.json({ output, stopReason, usage: { inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens }, metrics });
+  }
+}
+
+// --- Embedding handler ---
+
+async function handleEmbedding(req, res, userRecord, modelRecord) {
+  const { messages, user_id, agent_id, model_id } = req.body;
+
+  // Extract text from messages (string array for embedding, object array for chat format)
+  const textInputs = typeof messages[0] === "string"
+    ? messages
+    : messages
+        .filter((m) => m.role === "user")
+        .flatMap((m) => m.content)
+        .filter((c) => c.text)
+        .map((c) => c.text);
+
+  if (textInputs.length === 0) {
+    return sendError(res, {
+      errorType: ErrorType.INVALID_INPUT_FORMAT,
+      message: "messages must contain at least one text content block",
+    });
+  }
+
+  const input = textInputs.length === 1 ? textInputs[0] : textInputs;
+
+  logger.info(`Embedding request from user: ${user_id}, agent: ${agent_id}, model_id: ${model_id}`);
+
+  // Apply guardrail to input text if configured
+  let guardrailCost = 0;
+  if (guardrail) {
+    const textToCheck = textInputs.join(" ");
+    const result = await guardrail.check(textToCheck);
+    guardrailCost = result.cost;
+
+    if (result.blocked) {
+      logger.warn(`Guardrail intervened on embedding input`);
+      return sendError(res, {
+        errorType: ErrorType.GUARDRAIL_BLOCKED,
+        message: "Input blocked by guardrail policy",
+        details: result.details,
+      });
+    }
+  }
+
+  // Use model internalName from database
+  const provider = new providerMap[modelRecord.Provider.name]();
+  const result = await provider.embed(modelRecord.internalName, input);
+
+  // Track usage and update remaining balance
+  const ip = req.ip || req.socket?.remoteAddress || null;
+  const inputTokens = result.inputTokenCount || 0;
+  const cost = await trackEmbeddingUsage(userRecord, modelRecord, inputTokens, ip, guardrailCost);
+  logger.info(`Usage tracked: user=${user_id}, model_id=${model_id}, input=${inputTokens}, guardrailCost=${guardrailCost.toFixed(6)}, cost=${cost.toFixed(6)}`);
+
+  const embeddings = Array.isArray(result.embedding[0])
+    ? result.embedding.map((emb, i) => ({
+        object: "embedding",
+        index: i,
+        embedding: emb,
+      }))
+    : [
+        {
+          object: "embedding",
+          index: 0,
+          embedding: result.embedding,
+        },
+      ];
+
+  res.json({
+    object: "list",
+    model_id,
+    data: embeddings,
+    usage: {
+      prompt_tokens: result.inputTokenCount || 0,
+      total_tokens: result.inputTokenCount || 0,
+    },
+  });
+}
 
 export default router;
