@@ -19,7 +19,7 @@ api.use(logRequests());
  * Handles both chat and embedding model types.
  */
 api.post("/v1/model/invoke", async (req, res, next) => {
-  const { userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig } =
+  const { userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig, type } =
     req.body;
 
   try {
@@ -64,7 +64,7 @@ api.post("/v1/model/invoke", async (req, res, next) => {
     // For non-streaming responses
     if (!results?.stream) {
       if (userID) {
-        await trackModelUsage(userID, model, ip, results.usage);
+        await trackModelUsage(userID, model, ip, results.usage, { type });
       }
       return res.json(results);
     }
@@ -73,7 +73,7 @@ api.post("/v1/model/invoke", async (req, res, next) => {
     for await (const message of results.stream) {
       try {
         if (message.metadata && userID) {
-          await trackModelUsage(userID, model, ip, message.metadata.usage);
+          await trackModelUsage(userID, model, ip, message.metadata.usage, { type });
         }
         res.write(JSON.stringify(message) + "\n");
       } catch (err) {

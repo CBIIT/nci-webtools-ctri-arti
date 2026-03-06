@@ -42,6 +42,7 @@ function buildDirectClient() {
       stream,
       ip,
       outputConfig,
+      type,
     }) {
       const limited = await checkRateLimit(userID);
       if (limited) return limited;
@@ -58,7 +59,7 @@ function buildDirectClient() {
 
       // For non-streaming responses, track usage inline
       if (!result?.stream && userID) {
-        await trackModelUsage(userID, model, ip, result.usage);
+        await trackModelUsage(userID, model, ip, result.usage, { type });
       }
 
       // For streaming, wrap to track usage on metadata
@@ -67,7 +68,7 @@ function buildDirectClient() {
           stream: (async function* () {
             for await (const message of result.stream) {
               if (message.metadata && userID) {
-                await trackModelUsage(userID, model, ip, message.metadata.usage);
+                await trackModelUsage(userID, model, ip, message.metadata.usage, { type });
               }
               yield message;
             }
@@ -109,6 +110,7 @@ function buildHttpClient() {
       stream,
       ip,
       outputConfig,
+      type,
     }) {
       const response = await fetch(`${GATEWAY_URL}/api/v1/model/invoke`, {
         method: "POST",
@@ -123,6 +125,7 @@ function buildHttpClient() {
           stream,
           ip,
           outputConfig,
+          type,
         }),
       });
 
