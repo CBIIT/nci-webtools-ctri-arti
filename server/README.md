@@ -76,7 +76,7 @@ All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for ful
 | GET    | `/admin/roles`                 | admin           | List all roles                         |
 | GET    | `/admin/users/:id/usage`       | admin           | Get user's usage history               |
 | GET    | `/admin/usage`                 | admin           | Get all usage records                  |
-| POST   | `/admin/usage/reset`           | admin           | Reset all weekly budgets               |
+| POST   | `/admin/usage/reset`           | admin           | Reset all usage budgets                |
 | POST   | `/admin/users/:id/reset-limit` | admin           | Reset single user's budget             |
 | GET    | `/admin/analytics`             | admin           | Aggregated usage analytics             |
 
@@ -133,35 +133,35 @@ Three methods:
 
 ## Configuration
 
-| Variable                  | Required | Default        | Description                                       |
-| ------------------------- | -------- | -------------- | ------------------------------------------------- |
-| `PORT`                    | No       | 8080           | Server port                                       |
-| `SESSION_SECRET`          | Yes      | —              | Cookie signing secret                             |
-| `AWS_ACCESS_KEY_ID`       | Yes      | —              | AWS credentials                                   |
-| `AWS_SECRET_ACCESS_KEY`   | Yes      | —              | AWS credentials                                   |
-| `DB_STORAGE`              | No       | —              | PGlite data directory (uses embedded PG when set) |
-| `CLIENT_FOLDER`           | No       | ../client      | Path to static client files                       |
-| `HTTPS_KEY`, `HTTPS_CERT` | No       | auto-generated | TLS key/cert                                      |
-| `SESSION_MAX_AGE`         | No       | 1800000        | Session TTL in ms (30 min)                        |
-| `SESSION_TTL_POLL_MS`     | No       | 10000          | Client polling interval for session TTL           |
-| `OAUTH_PROVIDER_ENABLED`  | No       | —              | Enable local OIDC provider for dev                |
-| `OAUTH_DISCOVERY_URL`     | No       | —              | OIDC discovery URL                                |
-| `OAUTH_CLIENT_ID`         | No       | —              | OIDC client ID                                    |
-| `OAUTH_CLIENT_SECRET`     | No       | —              | OIDC client secret                                |
-| `OAUTH_CALLBACK_URL`      | No       | —              | OIDC redirect URI                                 |
-| `GATEWAY_URL`             | No       | —              | Gateway service URL (enables HTTP mode)           |
-| `CMS_URL`                 | No       | —              | CMS service URL (enables HTTP mode)               |
-| `GEMINI_API_KEY`          | No       | —              | Google Gemini API key                             |
-| `BRAVE_SEARCH_API_KEY`    | No       | —              | Brave Search API key                              |
-| `DATA_GOV_API_KEY`        | No       | —              | GovInfo API key                                   |
-| `CONGRESS_GOV_API_KEY`    | No       | —              | Congress.gov API key                              |
-| `S3_BUCKETS`              | No       | —              | Comma-separated allowed S3 buckets                |
-| `TEST_API_KEY`            | No       | —              | Creates test admin user with this API key         |
-| `EMAIL_DEV`               | No       | —              | Developer error report email                      |
-| `EMAIL_ADMIN`             | No       | —              | Admin notification email                          |
-| `EMAIL_USER_REPORTS`      | No       | —              | User feedback email                               |
-| `USAGE_RESET_SCHEDULE`    | No       | `0 0 * * 0`    | Cron expression for weekly limit reset            |
-| `VERSION`                 | No       | —              | Reported by `/api/status`                         |
+| Variable                  | Required | Default        | Description                                              |
+| ------------------------- | -------- | -------------- | -------------------------------------------------------- |
+| `PORT`                    | No       | 8080           | Server port                                              |
+| `SESSION_SECRET`          | Yes      | —              | Cookie signing secret                                    |
+| `AWS_ACCESS_KEY_ID`       | Yes      | —              | AWS credentials                                          |
+| `AWS_SECRET_ACCESS_KEY`   | Yes      | —              | AWS credentials                                          |
+| `DB_STORAGE`              | No       | —              | PGlite data directory (uses embedded PG when set)        |
+| `CLIENT_FOLDER`           | No       | ../client      | Path to static client files                              |
+| `HTTPS_KEY`, `HTTPS_CERT` | No       | auto-generated | TLS key/cert                                             |
+| `SESSION_MAX_AGE`         | No       | 1800000        | Session TTL in ms (30 min)                               |
+| `SESSION_TTL_POLL_MS`     | No       | 10000          | Client polling interval for session TTL                  |
+| `OAUTH_PROVIDER_ENABLED`  | No       | —              | Enable local OIDC provider for dev                       |
+| `OAUTH_DISCOVERY_URL`     | No       | —              | OIDC discovery URL                                       |
+| `OAUTH_CLIENT_ID`         | No       | —              | OIDC client ID                                           |
+| `OAUTH_CLIENT_SECRET`     | No       | —              | OIDC client secret                                       |
+| `OAUTH_CALLBACK_URL`      | No       | —              | OIDC redirect URI                                        |
+| `GATEWAY_URL`             | No       | —              | Gateway service URL (enables HTTP mode)                  |
+| `CMS_URL`                 | No       | —              | CMS service URL (enables HTTP mode)                      |
+| `GEMINI_API_KEY`          | No       | —              | Google Gemini API key                                    |
+| `BRAVE_SEARCH_API_KEY`    | No       | —              | Brave Search API key                                     |
+| `DATA_GOV_API_KEY`        | No       | —              | GovInfo API key                                          |
+| `CONGRESS_GOV_API_KEY`    | No       | —              | Congress.gov API key                                     |
+| `S3_BUCKETS`              | No       | —              | Comma-separated allowed S3 buckets                       |
+| `TEST_API_KEY`            | No       | —              | Creates test admin user with this API key                |
+| `EMAIL_DEV`               | No       | —              | Developer error report email                             |
+| `EMAIL_ADMIN`             | No       | —              | Admin notification email                                 |
+| `EMAIL_USER_REPORTS`      | No       | —              | User feedback email                                      |
+| `USAGE_RESET_SCHEDULE`    | No       | `0 0 * * *`    | Cron expression for usage limit reset (daily by default) |
+| `VERSION`                 | No       | —              | Reported by `/api/status`                                |
 
 ## Testing
 

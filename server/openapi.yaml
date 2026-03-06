@@ -109,6 +109,18 @@ paths:
                   sessionTtlPollMs:
                     type: integer
                     default: 10000
+                  budgetResetSchedule:
+                    type: string
+                    description: Cron expression for budget reset schedule
+                    example: "0 0 * * *"
+                  budgetLabel:
+                    type: string
+                    description: Human-readable period label (e.g., "Daily", "Weekly")
+                    example: "Daily"
+                  budgetResetDescription:
+                    type: string
+                    description: Human-readable reset description for error messages
+                    example: "tomorrow at 12:00 AM"
 
   # ===== MODEL INFERENCE =====
   /api/model:
@@ -1166,7 +1178,7 @@ paths:
   /api/admin/usage/reset:
     post:
       operationId: resetAllLimits
-      summary: Reset all users' weekly limits
+      summary: Reset all users' usage limits
       tags: [Admin]
       security:
         - sessionCookie: []

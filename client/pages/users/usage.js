@@ -19,6 +19,8 @@ import {
 } from "../../utils/global-error-handler.js";
 import { capitalize } from "../../utils/utils.js";
 
+const fetchConfig = () => fetch("/api/config").then((r) => r.json());
+
 // Shared date range utilities
 export const VALID_DATE_RANGES = [
   "This Week",
@@ -103,6 +105,7 @@ export function validateDateRange(dateRange, defaultRange = "Last 30 Days") {
 }
 
 function UsersList() {
+  const [config] = createResource(fetchConfig);
   const [selectedDateRange, setSelectedDateRange] = createSignal("This Week");
   const [customDates, setCustomDates] = createSignal({
     startDate: getDefaultStartDate(),
@@ -232,7 +235,7 @@ function UsersList() {
         roleID: user.roleID,
         inputTokens: Math.round(userStats.totalInputTokens || 0),
         outputTokens: Math.round(userStats.totalOutputTokens || 0),
-        weeklyCostLimit: limitDisplay,
+        costLimit: limitDisplay,
         estimatedCost: parseFloat(Number(userStats.totalCost || 0).toFixed(2)),
         totalRequests: userStats.totalRequests || 0,
       };
@@ -492,8 +495,8 @@ function UsersList() {
               cellClassName: "small",
             },
             {
-              key: "weeklyCostLimit",
-              title: "Weekly Cost Limit ($)",
+              key: "costLimit",
+              title: `${config()?.budgetLabel || ""} Cost Limit ($)`,
               cellClassName: "small",
             },
             {

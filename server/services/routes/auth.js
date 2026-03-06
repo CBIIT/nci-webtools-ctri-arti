@@ -2,8 +2,10 @@ import db, { Role, User } from "database";
 
 import { eq, count as countFn } from "drizzle-orm";
 import { json, Router } from "express";
+import { describeCron } from "shared/cron.js";
 
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
+import { USAGE_RESET_SCHEDULE } from "../scheduler.js";
 
 const { OAUTH_PROVIDER_ENABLED, SESSION_TTL_POLL_MS } = process.env;
 
@@ -20,7 +22,7 @@ api.get("/login", loginMiddleware, async (req, res) => {
   if (!email) return res.redirect("/?error=missing_email");
   const [{ value: userCount }] = await db.select({ value: countFn() }).from(User);
   const isFirstUser = userCount === 0;
-  const newUser = isFirstUser ? { roleID: 1 } : { roleID: 3, budget: 5 };
+  const newUser = isFirstUser ? { roleID: 1 } : { roleID: 3, budget: 1 };
   const [existing] = await db.select().from(User).where(eq(User.email, email)).limit(1);
   session.user =
     existing ||
@@ -66,8 +68,15 @@ api.get("/session-ttl", async (req, res) => {
 
 api.get("/config", async (req, res) => {
   const defaultSessionTtlPollMs = 10 * 1000;
+  const { label: budgetLabel, resetDescription: budgetResetDescription } =
+    describeCron(USAGE_RESET_SCHEDULE);
 
-  res.json({ sessionTtlPollMs: parseInt(SESSION_TTL_POLL_MS, 10) || defaultSessionTtlPollMs });
+  res.json({
+    sessionTtlPollMs: parseInt(SESSION_TTL_POLL_MS, 10) || defaultSessionTtlPollMs,
+    budgetResetSchedule: USAGE_RESET_SCHEDULE,
+    budgetLabel,
+    budgetResetDescription,
+  });
 });
 
 export default api;

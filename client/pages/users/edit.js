@@ -2,14 +2,16 @@ import { useNavigate, useParams } from "@solidjs/router";
 import { createResource, createSignal, ErrorBoundary, Show } from "solid-js";
 import html from "solid-js/html";
 
-
 import { AlertContainer } from "../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 import { capitalize } from "../../utils/utils.js";
 
+const fetchConfig = () => fetch("/api/config").then((r) => r.json());
+
 function UserEdit() {
   const params = useParams();
   const navigate = useNavigate();
+  const [config] = createResource(fetchConfig);
   const [user, setUser] = createSignal({
     email: "",
     firstName: "",
@@ -28,7 +30,7 @@ function UserEdit() {
   const DEFAULT_ROLE_LIMITS = {
     1: { budget: null, noLimit: true }, // Admin
     2: { budget: 10, noLimit: false }, // Super Admin
-    3: { budget: 5, noLimit: false }, // User
+    3: { budget: 1, noLimit: false }, // User
   };
 
   // Fetch roles data using resource
@@ -307,11 +309,11 @@ function UserEdit() {
               </div>
             </div>
             <div class="row align-items-center mb-2">
-              <!-- Weekly Cost Limit -->
+              <!-- Cost Limit -->
               <label
                 for="budget"
                 class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-start col-form-label form-label-user fw-semibold"
-                >Weekly Cost Limit ($)</label
+                >${() => config()?.budgetLabel || ""} Cost Limit ($)</label
               >
               <div class="col-sm-3 col-xl-2">
                 <div class="form-check form-switch my-2">
@@ -337,7 +339,7 @@ function UserEdit() {
                     id="budget"
                     value=${() => user().budget || 0}
                     onInput=${(e) => handleInputChange("budget", parseInt(e.target.value) || 0)}
-                    aria-label="Weekly cost limit"
+                    aria-label="Cost limit"
                   />
                   <${Show} when=${() => params.id}>
                     <button

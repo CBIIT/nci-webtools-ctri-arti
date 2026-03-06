@@ -2,10 +2,13 @@ import db, { Model, User } from "database";
 
 import { eq } from "drizzle-orm";
 import { json, Router } from "express";
+import { describeCron } from "shared/cron.js";
 import { logErrors, logRequests } from "shared/middleware.js";
 
 import { runModel } from "./inference.js";
 import { trackModelUsage } from "./usage.js";
+
+const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
@@ -39,9 +42,9 @@ api.post("/v1/model/invoke", async (req, res, next) => {
     if (userID) {
       const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
       if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
+        const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
         return res.status(429).json({
-          error:
-            "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.",
+          error: `You have reached your allocated usage limit. Your access to the chat tool is temporarily disabled and will reset ${resetDescription}. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.`,
           code: "GATEWAY_RATE_LIMITED",
         });
       }
