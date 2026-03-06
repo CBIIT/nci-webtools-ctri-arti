@@ -26,7 +26,7 @@ function buildConversationsCsv(conversations, idMap, userID) {
     "title",
     "deleted",
     "deletedAt",
-    "summaryMessageID",
+    "latestSummarySN",
     "createdAt",
     "updatedAt",
   ];
@@ -50,7 +50,15 @@ function buildConversationsCsv(conversations, idMap, userID) {
 }
 
 function buildMessagesCsv(allMessages, convIdMap) {
-  const header = ["id", "conversationID", "parentID", "role", "content", "createdAt", "updatedAt"];
+  const header = [
+    "id",
+    "conversationID",
+    "serialNumber",
+    "role",
+    "content",
+    "createdAt",
+    "updatedAt",
+  ];
   const rows = [csvRow(header)];
   let messageId = 1;
   for (const msg of allMessages) {

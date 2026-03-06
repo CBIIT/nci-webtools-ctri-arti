@@ -24,7 +24,7 @@ export class ConversationService {
     const [agent] = await db
       .insert(Agent)
       .values({
-        userID: userId,
+        creatorID: userId,
         name: data.name,
         description: data.description || null,
         promptID: data.promptID || null,
@@ -36,7 +36,7 @@ export class ConversationService {
 
   async getAgent(userId, agentId) {
     const agent = await db.query.Agent.findFirst({
-      where: and(eq(Agent.id, agentId), or(eq(Agent.userID, userId), isNull(Agent.userID))),
+      where: and(eq(Agent.id, agentId), or(eq(Agent.creatorID, userId), isNull(Agent.creatorID))),
       with: {
         Prompt: { columns: { id: true, name: true, content: true } },
         AgentTools: { with: { Tool: { columns: { name: true } } } },
@@ -53,7 +53,7 @@ export class ConversationService {
 
   async getAgents(userId) {
     const agents = await db.query.Agent.findMany({
-      where: or(eq(Agent.userID, userId), isNull(Agent.userID)),
+      where: or(eq(Agent.creatorID, userId), isNull(Agent.creatorID)),
       with: {
         Prompt: { columns: { id: true, name: true, content: true } },
         AgentTools: { with: { Tool: { columns: { name: true } } } },
@@ -74,7 +74,7 @@ export class ConversationService {
     const result = await db
       .update(Agent)
       .set(stripAutoFields(agentFields))
-      .where(and(eq(Agent.id, agentId), eq(Agent.userID, userId)))
+      .where(and(eq(Agent.id, agentId), eq(Agent.creatorID, userId)))
       .returning();
     if (result.length === 0) return null;
 
@@ -99,7 +99,7 @@ export class ConversationService {
     }
     const result = await db
       .delete(Agent)
-      .where(and(eq(Agent.id, agentId), eq(Agent.userID, userId)));
+      .where(and(eq(Agent.id, agentId), eq(Agent.creatorID, userId)));
     return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 
@@ -200,13 +200,13 @@ export class ConversationService {
 
   // ===== COMPRESS METHOD =====
 
-  async compressConversation(userId, conversationId, { summary, summaryMessageID }) {
+  async compressConversation(userId, conversationId, { summary, latestSummarySN }) {
     const conversation = await this.getConversation(userId, conversationId);
     if (!conversation) return null;
 
     await db
       .update(Conversation)
-      .set({ summaryMessageID })
+      .set({ latestSummarySN })
       .where(and(eq(Conversation.id, conversationId), eq(Conversation.userID, userId)));
 
     return this.getConversation(userId, conversationId);
@@ -219,9 +219,11 @@ export class ConversationService {
       .insert(Message)
       .values({
         conversationID: conversationId,
-        parentID: data.parentID || null,
+        serialNumber: data.serialNumber ?? null,
         role: data.role,
         content: data.content,
+        tokens: data.tokens ?? null,
+        isHelpful: data.isHelpful ?? null,
       })
       .returning();
     return msg;
@@ -291,7 +293,6 @@ export class ConversationService {
   }
 
   async deleteTool(toolId) {
-    await db.delete(Vector).where(eq(Vector.toolID, toolId));
     await db.delete(AgentTool).where(eq(AgentTool.toolID, toolId));
     await db.delete(UserTool).where(eq(UserTool.toolID, toolId));
     const result = await db.delete(Tool).where(eq(Tool.id, toolId));
@@ -335,12 +336,11 @@ export class ConversationService {
     const [resource] = await db
       .insert(Resource)
       .values({
-        agentID: data.agentID || null,
         messageID: data.messageID || null,
         name: data.name,
-        type: data.type,
-        content: data.content,
-        s3Uri: data.s3Uri || null,
+        description: data.description || null,
+        s3Url: data.s3Url || null,
+        mimeType: data.mimeType || null,
         metadata: data.metadata || {},
       })
       .returning();
@@ -352,14 +352,6 @@ export class ConversationService {
     return resource || null;
   }
 
-  async getResourcesByAgent(userId, agentId) {
-    return db
-      .select()
-      .from(Resource)
-      .where(eq(Resource.agentID, agentId))
-      .orderBy(asc(Resource.createdAt));
-  }
-
   async deleteResource(userId, resourceId) {
     await db.delete(Vector).where(eq(Vector.resourceID, resourceId));
     const result = await db.delete(Resource).where(eq(Resource.id, resourceId));
@@ -368,24 +360,14 @@ export class ConversationService {
 
   // ===== VECTOR METHODS =====
 
-  async addVectors(userId, conversationId, vectors) {
+  async addVectors(userId, vectors) {
     const records = vectors.map((vector, index) => ({
-      conversationID: conversationId,
       resourceID: vector.resourceID || null,
-      toolID: vector.toolID || null,
       order: vector.order ?? index,
       content: vector.content,
       embedding: vector.embedding || null,
     }));
     return db.insert(Vector).values(records).returning();
-  }
-
-  async getVectorsByConversation(userId, conversationId) {
-    return db
-      .select()
-      .from(Vector)
-      .where(eq(Vector.conversationID, conversationId))
-      .orderBy(asc(Vector.order));
   }
 
   async getVectorsByResource(userId, resourceId) {
@@ -396,10 +378,9 @@ export class ConversationService {
       .orderBy(asc(Vector.order));
   }
 
-  async searchVectors({ toolID, conversationID, embedding, topN = 10 }) {
+  async searchVectors({ resourceID, embedding, topN = 10 }) {
     const conditions = [];
-    if (toolID) conditions.push(eq(Vector.toolID, toolID));
-    if (conversationID) conditions.push(eq(Vector.conversationID, conversationID));
+    if (resourceID) conditions.push(eq(Vector.resourceID, resourceID));
     conditions.push(isNotNull(Vector.embedding));
 
     const where = and(...conditions);
@@ -426,8 +407,8 @@ export class ConversationService {
     return scored.slice(0, topN);
   }
 
-  async deleteVectorsByConversation(userId, conversationId) {
-    const result = await db.delete(Vector).where(eq(Vector.conversationID, conversationId));
+  async deleteVectorsByResource(userId, resourceId) {
+    const result = await db.delete(Vector).where(eq(Vector.resourceID, resourceId));
     return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 }

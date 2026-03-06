@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { relations } from "drizzle-orm";
 import {
   pgTable,
+  pgEnum,
   serial,
   text,
   varchar,
@@ -16,9 +17,18 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 
-import { loadCsv } from "./csv-loader.js";
+import { loadCsv } from "../csv-loader.js";
 
-const dataDir = resolve(dirname(fileURLToPath(import.meta.url)), "data");
+const dataDir = resolve(dirname(fileURLToPath(import.meta.url)), "../seeds");
+
+// ===== Enum Definitions =====
+
+export const modelTypeEnum = pgEnum("model_type", ["chat", "embedding", "reranking"]);
+export const messageRoleEnum = pgEnum("message_role", ["system", "user", "assistant", "tool"]);
+export const userStatusEnum = pgEnum("user_status", ["active", "inactive", "disabled"]);
+export const userAgentRoleEnum = pgEnum("user_agent_role", ["admin", "super user", "user"]);
+export const toolTypeEnum = pgEnum("tool_type", ["mcp", "custom"]);
+export const usageTypeEnum = pgEnum("usage_type", ["user", "agent", "guardrail"]);
 
 // ===== Table Definitions =====
 
@@ -29,7 +39,7 @@ export const User = pgTable(
     email: text("email"),
     firstName: text("firstName"),
     lastName: text("lastName"),
-    status: text("status"),
+    status: userStatusEnum("status"),
     roleID: integer("roleID"),
     apiKey: text("apiKey"),
     budget: doublePrecision("budget"),
@@ -95,7 +105,7 @@ export const Model = pgTable(
     providerID: integer("providerID"),
     name: text("name"),
     internalName: text("internalName"),
-    type: text("type"),
+    type: modelTypeEnum("type"),
     description: text("description"),
     maxContext: integer("maxContext"),
     maxOutput: integer("maxOutput"),
@@ -105,6 +115,7 @@ export const Model = pgTable(
     cost1kCacheRead: doublePrecision("cost1kCacheRead"),
     cost1kCacheWrite: doublePrecision("cost1kCacheWrite"),
     defaultParameters: json("defaultParameters"),
+    summarizeThreshold: integer("summarizeThreshold"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -122,7 +133,7 @@ export const Usage = pgTable(
     id: serial("id").primaryKey(),
     userID: integer("userID"),
     modelID: integer("modelID"),
-    type: text("type"),
+    type: usageTypeEnum("type").default("user"),
     agentID: integer("agentID"),
     messageID: integer("messageID"),
     inputTokens: doublePrecision("inputTokens"),
@@ -138,8 +149,13 @@ export const Usage = pgTable(
   (t) => [
     index("Usage_userID_idx").on(t.userID),
     index("Usage_modelID_idx").on(t.modelID),
+    index("Usage_agentID_idx").on(t.agentID),
+    index("Usage_messageID_idx").on(t.messageID),
+    index("Usage_type_idx").on(t.type),
     index("Usage_createdAt_idx").on(t.createdAt),
     index("Usage_userID_createdAt_idx").on(t.userID, t.createdAt),
+    index("Usage_agentID_createdAt_idx").on(t.agentID, t.createdAt),
+    index("Usage_type_createdAt_idx").on(t.type, t.createdAt),
   ]
 );
 
@@ -150,6 +166,7 @@ export const Prompt = pgTable(
     name: text("name"),
     version: integer("version"),
     content: text("content"),
+    agentID: integer("agentID"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -157,6 +174,7 @@ export const Prompt = pgTable(
   },
   (t) => [
     index("Prompt_name_idx").on(t.name),
+    index("Prompt_agentID_idx").on(t.agentID),
     uniqueIndex("Prompt_name_version_idx").on(t.name, t.version),
   ]
 );
@@ -165,7 +183,7 @@ export const Agent = pgTable(
   "Agent",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
+    creatorID: integer("creatorID"),
     modelID: integer("modelID"),
     name: text("name"),
     description: text("description"),
@@ -177,7 +195,7 @@ export const Agent = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
-    index("Agent_userID_idx").on(t.userID),
+    index("Agent_creatorID_idx").on(t.creatorID),
     index("Agent_modelID_idx").on(t.modelID),
     index("Agent_promptID_idx").on(t.promptID),
   ]
@@ -187,7 +205,7 @@ export const Tool = pgTable("Tool", {
   id: serial("id").primaryKey(),
   name: text("name"),
   description: text("description"),
-  type: text("type"),
+  type: toolTypeEnum("type"),
   authenticationType: text("authenticationType"),
   endpoint: text("endpoint"),
   transportType: text("transportType"),
@@ -205,7 +223,7 @@ export const Conversation = pgTable(
     title: text("title"),
     deleted: boolean("deleted").default(false),
     deletedAt: timestamp("deletedAt", { withTimezone: true }),
-    summaryMessageID: integer("summaryMessageID"),
+    latestSummarySN: integer("latestSummarySN"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -223,9 +241,11 @@ export const Message = pgTable(
   {
     id: serial("id").primaryKey(),
     conversationID: integer("conversationID"),
-    parentID: integer("parentID"),
-    role: text("role"),
+    serialNumber: integer("serialNumber"),
+    role: messageRoleEnum("role"),
     content: json("content"),
+    tokens: integer("tokens"),
+    isHelpful: boolean("isHelpful"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -233,7 +253,7 @@ export const Message = pgTable(
   },
   (t) => [
     index("Message_conversationID_idx").on(t.conversationID),
-    index("Message_conversationID_createdAt_idx").on(t.conversationID, t.createdAt),
+    index("Message_conversationID_serialNumber_idx").on(t.conversationID, t.serialNumber),
   ]
 );
 
@@ -241,31 +261,25 @@ export const Resource = pgTable(
   "Resource",
   {
     id: serial("id").primaryKey(),
-    agentID: integer("agentID"),
     messageID: integer("messageID"),
     name: text("name"),
-    type: text("type"),
-    content: text("content"),
-    s3Uri: text("s3Uri"),
+    description: text("description"),
+    s3Url: text("s3Url"),
+    mimeType: text("mimeType"),
     metadata: json("metadata"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (t) => [
-    index("Resource_agentID_idx").on(t.agentID),
-    index("Resource_messageID_idx").on(t.messageID),
-  ]
+  (t) => [index("Resource_messageID_idx").on(t.messageID)]
 );
 
 export const Vector = pgTable(
   "Vector",
   {
     id: serial("id").primaryKey(),
-    conversationID: integer("conversationID"),
     resourceID: integer("resourceID"),
-    toolID: integer("toolID"),
     order: integer("order"),
     content: text("content"),
     embedding: json("embedding"),
@@ -274,11 +288,7 @@ export const Vector = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (t) => [
-    index("Vector_conversationID_idx").on(t.conversationID),
-    index("Vector_toolID_idx").on(t.toolID),
-    index("Vector_resourceID_order_idx").on(t.resourceID, t.order),
-  ]
+  (t) => [index("Vector_resourceID_order_idx").on(t.resourceID, t.order)]
 );
 
 export const UserAgent = pgTable(
@@ -287,7 +297,7 @@ export const UserAgent = pgTable(
     id: serial("id").primaryKey(),
     userID: integer("userID"),
     agentID: integer("agentID"),
-    role: text("role"),
+    role: userAgentRoleEnum("role"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -376,22 +386,30 @@ export const usageRelations = relations(Usage, ({ one }) => ({
   Message: one(Message, { fields: [Usage.messageID], references: [Message.id] }),
 }));
 
-export const promptRelations = relations(Prompt, ({ many }) => ({
-  Agents: many(Agent),
+export const promptRelations = relations(Prompt, ({ one, many }) => ({
+  Agent: one(Agent, {
+    fields: [Prompt.agentID],
+    references: [Agent.id],
+    relationName: "ownedPrompts",
+  }),
+  Agents: many(Agent, { relationName: "activePrompt" }),
 }));
 
 export const agentRelations = relations(Agent, ({ one, many }) => ({
-  User: one(User, { fields: [Agent.userID], references: [User.id] }),
+  Creator: one(User, { fields: [Agent.creatorID], references: [User.id] }),
   Model: one(Model, { fields: [Agent.modelID], references: [Model.id] }),
-  Prompt: one(Prompt, { fields: [Agent.promptID], references: [Prompt.id] }),
+  Prompt: one(Prompt, {
+    fields: [Agent.promptID],
+    references: [Prompt.id],
+    relationName: "activePrompt",
+  }),
   Conversations: many(Conversation),
-  Resources: many(Resource),
+  Prompts: many(Prompt, { relationName: "ownedPrompts" }),
   UserAgents: many(UserAgent),
   AgentTools: many(AgentTool),
 }));
 
 export const toolRelations = relations(Tool, ({ many }) => ({
-  Vectors: many(Vector),
   UserTools: many(UserTool),
   AgentTools: many(AgentTool),
 }));
@@ -400,7 +418,6 @@ export const conversationRelations = relations(Conversation, ({ one, many }) => 
   User: one(User, { fields: [Conversation.userID], references: [User.id] }),
   Agent: one(Agent, { fields: [Conversation.agentID], references: [Agent.id] }),
   Messages: many(Message),
-  Vectors: many(Vector),
 }));
 
 export const messageRelations = relations(Message, ({ one, many }) => ({
@@ -413,18 +430,12 @@ export const messageRelations = relations(Message, ({ one, many }) => ({
 }));
 
 export const resourceRelations = relations(Resource, ({ one, many }) => ({
-  Agent: one(Agent, { fields: [Resource.agentID], references: [Agent.id] }),
   Message: one(Message, { fields: [Resource.messageID], references: [Message.id] }),
   Vectors: many(Vector),
 }));
 
 export const vectorRelations = relations(Vector, ({ one }) => ({
-  Conversation: one(Conversation, {
-    fields: [Vector.conversationID],
-    references: [Conversation.id],
-  }),
   Resource: one(Resource, { fields: [Vector.resourceID], references: [Resource.id] }),
-  Tool: one(Tool, { fields: [Vector.toolID], references: [Tool.id] }),
 }));
 
 export const userAgentRelations = relations(UserAgent, ({ one }) => ({
@@ -462,6 +473,7 @@ export const tables = {
   UserAgent,
   UserTool,
   AgentTool,
+  Session,
 };
 
 // ===== Seed database =====
@@ -524,7 +536,7 @@ export async function seedDatabase(db) {
   ]);
   await upsert(T.Prompt, prompts, T.Prompt.id, ["name", "version", "content"]);
   await upsert(T.Agent, agents, T.Agent.id, ["name", "promptID"]);
-  await upsert(T.Tool, tools, T.Tool.id, ["name", "description", "type"]);
+  await upsert(T.Tool, tools, T.Tool.id, ["name", "description"]);
   await upsert(T.AgentTool, agentTools, T.AgentTool.id, ["agentID", "toolID"]);
 
   // Reset serial sequences to max(id) so auto-increment works after explicit-ID inserts

@@ -36,6 +36,13 @@
       "when": 1772780400000,
       "tag": "0004_fix_timestamp_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772888400000,
+      "tag": "0005_llm_gw_schema",
+      "breakpoints": true
     }
   ]
 }

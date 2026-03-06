@@ -149,13 +149,13 @@ test("ConversationService", async (t) => {
       messageId = msg.id;
     });
 
-    await mt.test("addMessage with parentID", async () => {
+    await mt.test("addMessage with serialNumber", async () => {
       const msg = await svc.addMessage(testUser.id, conversationId, {
         role: "assistant",
         content: [{ text: "Hi there" }],
-        parentID: messageId,
+        serialNumber: 2,
       });
-      assert.strictEqual(msg.parentID, messageId);
+      assert.strictEqual(msg.serialNumber, 2);
     });
 
     await mt.test("getMessage", async () => {
@@ -207,8 +207,8 @@ test("ConversationService", async (t) => {
       await svc.addResource(testUser.id, {
         messageID: msg1.id,
         name: "doc.txt",
-        type: "text/plain",
-        content: "doc content",
+        mimeType: "text/plain",
+        description: "doc content",
       });
     });
 
@@ -236,33 +236,26 @@ test("ConversationService", async (t) => {
       conversationId = conversation.id;
     });
 
-    await ct.test("updates summaryMessageID", async () => {
+    await ct.test("updates latestSummarySN", async () => {
       const result = await svc.compressConversation(testUser.id, conversationId, {
         summary: "summarized",
-        summaryMessageID: 5,
+        latestSummarySN: 5,
       });
       assert.ok(result);
-      assert.strictEqual(result.summaryMessageID, 5);
+      assert.strictEqual(result.latestSummarySN, 5);
     });
   });
 
   // ===== RESOURCE CRUD =====
 
   await t.test("Resource CRUD", async (rt) => {
-    let agentId;
     let resourceId;
-
-    await rt.test("setup agent", async () => {
-      const agent = await svc.createAgent(testUser.id, { name: "Resource Test Agent" });
-      agentId = agent.id;
-    });
 
     await rt.test("addResource", async () => {
       const resource = await svc.addResource(testUser.id, {
-        agentID: agentId,
         name: "document.txt",
-        type: "text/plain",
-        content: "file content",
+        description: "A test document",
+        mimeType: "text/plain",
         metadata: { pages: 1 },
       });
       assert.ok(resource.id);
@@ -273,18 +266,11 @@ test("ConversationService", async (t) => {
     await rt.test("getResource", async () => {
       const resource = await svc.getResource(testUser.id, resourceId);
       assert.ok(resource);
-      assert.strictEqual(resource.content, "file content");
-    });
-
-    await rt.test("getResourcesByAgent", async () => {
-      const resources = await svc.getResourcesByAgent(testUser.id, agentId);
-      assert.ok(resources.length >= 1);
+      assert.strictEqual(resource.description, "A test document");
     });
 
     await rt.test("deleteResource cascades vectors", async () => {
-      // Create a conversation for vectors (vectors still use conversationID)
-      const conv = await svc.createConversation(testUser.id, { title: "Resource Vector Test" });
-      await svc.addVectors(testUser.id, conv.id, [
+      await svc.addVectors(testUser.id, [
         { resourceID: resourceId, content: "chunk 1", embedding: [0.1] },
         { resourceID: resourceId, content: "chunk 2", embedding: [0.2] },
       ]);
@@ -382,34 +368,24 @@ test("ConversationService", async (t) => {
   // ===== VECTOR OPERATIONS =====
 
   await t.test("Vector operations", async (vt) => {
-    let conversationId;
     let resourceId;
 
-    await vt.test("setup conversation and resource", async () => {
-      const conversation = await svc.createConversation(testUser.id, {
-        title: "Vector Test Conversation",
-      });
-      conversationId = conversation.id;
+    await vt.test("setup resource", async () => {
       const resource = await svc.addResource(testUser.id, {
         name: "vec-doc.txt",
-        type: "text/plain",
-        content: "vector test content",
+        mimeType: "text/plain",
+        description: "vector test content",
       });
       resourceId = resource.id;
     });
 
     await vt.test("addVectors", async () => {
-      const vectors = await svc.addVectors(testUser.id, conversationId, [
+      const vectors = await svc.addVectors(testUser.id, [
         { resourceID: resourceId, content: "chunk A", embedding: [0.1, 0.2, 0.3] },
         { resourceID: resourceId, content: "chunk B", embedding: [0.4, 0.5, 0.6] },
         { content: "standalone", embedding: [0.7, 0.8, 0.9] },
       ]);
       assert.strictEqual(vectors.length, 3);
-    });
-
-    await vt.test("getVectorsByConversation", async () => {
-      const vectors = await svc.getVectorsByConversation(testUser.id, conversationId);
-      assert.ok(vectors.length >= 3);
     });
 
     await vt.test("getVectorsByResource", async () => {
@@ -420,7 +396,7 @@ test("ConversationService", async (t) => {
 
     await vt.test("searchVectors with cosine similarity", async () => {
       const results = await svc.searchVectors({
-        conversationID: conversationId,
+        resourceID: resourceId,
         embedding: [0.1, 0.2, 0.3],
         topN: 2,
       });
@@ -430,11 +406,11 @@ test("ConversationService", async (t) => {
       assert.ok(results[0].similarity >= results[results.length - 1].similarity);
     });
 
-    await vt.test("deleteVectorsByConversation", async () => {
-      const count = await svc.deleteVectorsByConversation(testUser.id, conversationId);
-      assert.ok(count >= 3);
+    await vt.test("deleteVectorsByResource", async () => {
+      const count = await svc.deleteVectorsByResource(testUser.id, resourceId);
+      assert.ok(count >= 2);
 
-      const vectors = await svc.getVectorsByConversation(testUser.id, conversationId);
+      const vectors = await svc.getVectorsByResource(testUser.id, resourceId);
       assert.strictEqual(vectors.length, 0);
     });
   });
