@@ -96,6 +96,115 @@ test("API Smoke Tests", async (t) => {
     assert.ok(json.usage, "response should have usage");
   });
 
+  // ── GET /admin/users with filters ─────────────────────────────────────
+  await t.test("GET /admin/users with search filter", async () => {
+    const { status, json } = await api(
+      "GET",
+      `/admin/users?search=${encodeURIComponent(testUser.email.substring(0, 5))}&limit=10&offset=0`
+    );
+    assert.strictEqual(status, 200);
+    assert.ok(json.data, "response should have data");
+    assert.ok(Array.isArray(json.data), "data should be an array");
+    assert.ok(json.meta, "response should have meta");
+    assert.ok(json.meta.total !== undefined, "meta should have total");
+  });
+
+  await t.test("GET /admin/users with status filter", async () => {
+    const { status, json } = await api("GET", "/admin/users?status=active&limit=10&offset=0");
+    assert.strictEqual(status, 200);
+    assert.ok(json.data, "response should have data");
+    assert.ok(json.data.length > 0, "should have at least one active user");
+  });
+
+  await t.test("GET /admin/users with pagination", async () => {
+    const { status, json } = await api("GET", "/admin/users?limit=1&offset=0");
+    assert.strictEqual(status, 200);
+    assert.ok(json.data, "response should have data");
+    assert.ok(json.data.length <= 1, "should respect limit=1");
+    assert.ok(json.meta.total >= 1, "total count should be at least 1");
+  });
+
+  // ── GET /admin/analytics ───────────────────────────────────────────────
+  await t.test("GET /admin/analytics groupBy=user", async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+    const { status, json } = await api(
+      "GET",
+      `/admin/analytics?groupBy=user&startDate=${weekAgo}&endDate=${today}`
+    );
+    assert.strictEqual(status, 200);
+    assert.ok(json.data, "analytics should have data");
+    assert.ok(Array.isArray(json.data), "analytics data should be an array");
+  });
+
+  await t.test("GET /admin/analytics groupBy=model", async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+    const { status, json } = await api(
+      "GET",
+      `/admin/analytics?groupBy=model&startDate=${weekAgo}&endDate=${today}`
+    );
+    assert.strictEqual(status, 200);
+    assert.ok(json.data, "analytics should have data");
+    assert.ok(Array.isArray(json.data), "analytics data should be an array");
+  });
+
+  await t.test("GET /admin/analytics groupBy=day", async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+    const { status, json } = await api(
+      "GET",
+      `/admin/analytics?groupBy=day&startDate=${weekAgo}&endDate=${today}`
+    );
+    assert.strictEqual(status, 200);
+    assert.ok(json.data, "analytics should have data");
+    assert.ok(Array.isArray(json.data), "analytics data should be an array");
+  });
+
+  // ── POST /admin/profile ────────────────────────────────────────────────
+  await t.test("POST /admin/profile updates user profile", async () => {
+    const { status, json } = await api("POST", "/admin/profile", {
+      firstName: "SmokeAPI",
+      lastName: "TestAPI",
+    });
+    assert.strictEqual(status, 200, `expected 200, got ${status}: ${JSON.stringify(json)}`);
+    assert.ok(json.id || json.email, "response should contain user data");
+  });
+
+  // ── GET /model/list ────────────────────────────────────────────────────
+  await t.test("GET /model/list returns models array", async () => {
+    const { status, json } = await api("GET", "/model/list");
+    assert.strictEqual(status, 200);
+    assert.ok(Array.isArray(json), "model list should be an array");
+    assert.ok(json.length > 0, "should have at least one model");
+  });
+
+  // ── POST /model streaming ─────────────────────────────────────────────
+  await t.test("POST /model with mock-model stream=true returns streaming response", async () => {
+    const res = await fetch("/api/v1/model", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({
+        model: "mock-model",
+        messages: [{ role: "user", content: [{ text: "stream test" }] }],
+        stream: true,
+      }),
+    });
+    assert.ok(res.ok, `streaming request failed: ${res.status}`);
+    // Streaming responses have text/event-stream or similar content type
+    const text = await res.text();
+    assert.ok(text.length > 0, "streaming response should have content");
+  });
+
+  // ── Error handling ─────────────────────────────────────────────────────
+  await t.test("GET /admin/users/99999 returns 404 for non-existent user", async () => {
+    const res = await fetch("/api/v1/admin/users/99999", {
+      method: "GET",
+      headers: headers(),
+    });
+    assert.ok(res.status === 404 || res.status === 400, `expected 404 or 400, got ${res.status}`);
+  });
+
   // ── Page smoke tests — verify real data renders ────────────────────────
   await t.test("/_/users shows test user in table", async () => {
     const { container, errors, dispose } = mountApp("/_/users");
