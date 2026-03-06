@@ -22,7 +22,7 @@ const {
 let db;
 
 // Always use the same PG schema
-const schema = await import("./schema.js");
+const schema = await import("./schema/schema.js");
 
 const usePg = !!PGHOST;
 
