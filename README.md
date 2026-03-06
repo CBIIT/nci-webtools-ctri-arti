@@ -64,6 +64,25 @@ npm start -w cms       # Port 3002
 GATEWAY_URL=http://localhost:3001 CMS_URL=http://localhost:3002 npm start -w server
 ```
 
+## Database
+
+The project uses [PGlite](https://pglite.dev/) — an embedded PostgreSQL that runs in-process with zero configuration. Data is stored locally in `./data`.
+
+```bash
+# Start a PGlite server on port 5433 (required for db:sql)
+npm run db
+
+# Connect with psql (requires psql on PATH)
+npm run db:sql
+
+# Run a quick query
+npm run db:sql -- -c "SELECT * FROM \"User\""
+```
+
+> **Note:** `psql` must be installed separately. Download the [PostgreSQL binaries](https://www.enterprisedb.com/download-postgresql-binaries) zip, extract it, and add the `bin` folder to your PATH.
+
+For production PostgreSQL, set `PGHOST`, `PGUSER`, `PGPASSWORD` (see Environment Variables below).
+
 ## Environment Variables
 
 Core variables needed across services. See individual service READMEs for complete lists.
