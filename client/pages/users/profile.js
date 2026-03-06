@@ -3,6 +3,7 @@ import html from "solid-js/html";
 
 import { AlertContainer } from "../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
+import RequestLimitIncrease from "./request-limit-increase.js";
 
 function UserProfile() {
   const [saving, setSaving] = createSignal(false);
@@ -236,6 +237,12 @@ function UserProfile() {
                     }
                   }}
                 </div>
+              </div>
+            </div>
+            <div class="row align-items-center mb-4">
+              <div>session: ${() => JSON.stringify(session(), null, 2)}</div>
+              <div class="offset-sm-2 offset-md-3 offset-xl-4 col-12 align-self-center">
+                <${RequestLimitIncrease} session=${() => session()} />
               </div>
             </div>
 

@@ -92,6 +92,9 @@
 .font-poppins {
   font-family: "Poppins" !important;
 }
+.font-nunito {
+  font-family: "Nunito" !important;
+}
 
 .font-smooth {
   -webkit-font-smoothing: antialiased !important;
