@@ -11,7 +11,10 @@ import { jsonToXml } from "./xml.js";
  * @param {any} tools - The tools object with tool names as keys and functions as values.
  * @returns {Promise<any>} - The tool output
  */
-export async function runTool(toolUse, tools = { search, browse, code, editor, think, data, docxTemplate }) {
+export async function runTool(
+  toolUse,
+  tools = { search, browse, code, editor, think, data, docxTemplate }
+) {
   let { toolUseId, name, input } = toolUse;
   try {
     const results = await tools?.[name]?.(input);
@@ -128,7 +131,7 @@ The document is as follows:
   const response = await fetch("/api/v1/model", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ model, messages, system }),
+    body: JSON.stringify({ model, messages, system, type: "data-tool" }),
   });
   const results = await response.json();
   return results?.output?.message?.content?.[0]?.text || truncate(document);
@@ -237,11 +240,7 @@ export async function docxTemplate({ docxUrl, replacements }) {
  * @param {string} params.filename - Filename for the downloaded file
  * @returns {Promise<void>}
  */
-export async function downloadDocxTemplate({
-  docxUrl,
-  replacements,
-  filename,
-}) {
+export async function downloadDocxTemplate({ docxUrl, replacements, filename }) {
   // 1. Fetch the document
   let templateBuffer;
 

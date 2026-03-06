@@ -264,6 +264,7 @@ export function useChat() {
           system: titleSystemPrompt,
           thoughtBudget: 0,
           stream: false,
+          type: "chat-title",
         }),
       });
 
@@ -499,6 +500,7 @@ export function useChat() {
             messages,
             thoughtBudget: reasoningMode ? 8000 : 0,
             stream: true,
+            type: "chat",
           }),
         });
 

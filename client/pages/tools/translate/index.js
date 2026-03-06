@@ -111,7 +111,7 @@ async function runModel(params) {
   const res = await fetch("/api/v1/model", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
+    body: JSON.stringify({ ...params, type: "translate" }),
   });
   if (!res.ok) {
     const error = new Error("Something went wrong while processing the translation model.");
