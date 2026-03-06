@@ -200,7 +200,9 @@ api.get(
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
 
-    const where = and(eq(Usage.userID, userId), between(Usage.createdAt, startDate, endDate));
+    const conditions = [eq(Usage.userID, userId), between(Usage.createdAt, startDate, endDate)];
+    if (req.query.type) conditions.push(eq(Usage.type, req.query.type));
+    const where = and(...conditions);
 
     const [{ value: total }] = await db.select({ value: count() }).from(Usage).where(where);
 
@@ -215,6 +217,7 @@ api.get(
     res.json({
       data: rows.map((usage) => ({
         id: usage.id,
+        type: usage.type,
         userID: usage.userID,
         modelID: usage.modelID,
         modelName: usage.Model?.name,
@@ -260,6 +263,7 @@ api.get(
 
     const conditions = [between(Usage.createdAt, startDate, endDate)];
     if (userId) conditions.push(eq(Usage.userID, +userId));
+    if (req.query.type) conditions.push(eq(Usage.type, req.query.type));
     const where = and(...conditions);
 
     const [{ value: total }] = await db.select({ value: count() }).from(Usage).where(where);
@@ -288,6 +292,7 @@ api.get(
     res.json({
       data: rows.map((usage) => ({
         id: usage.id,
+        type: usage.type,
         userID: usage.userID,
         modelID: usage.modelID,
         modelName: usage.Model?.name,
