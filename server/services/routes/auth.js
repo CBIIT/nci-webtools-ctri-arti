@@ -1,4 +1,4 @@
-import db, { Role, User } from "database";
+import db, { Agent, Role, User } from "database";
 
 import { eq, count as countFn } from "drizzle-orm";
 import { json, Router } from "express";
@@ -71,11 +71,20 @@ api.get("/config", async (req, res) => {
   const { label: budgetLabel, resetDescription: budgetResetDescription } =
     describeCron(USAGE_RESET_SCHEDULE);
 
+  const agents = await db
+    .selectDistinct({ name: Agent.name })
+    .from(Agent)
+    .then((rows) => rows.map((r) => r.name).filter(Boolean));
+
+  const staticTypes = ["chat", "chat-title", "data-tool", "consent-crafter", "translate"];
+  const usageTypes = [...new Set([...staticTypes, ...agents])];
+
   res.json({
     sessionTtlPollMs: parseInt(SESSION_TTL_POLL_MS, 10) || defaultSessionTtlPollMs,
     budgetResetSchedule: USAGE_RESET_SCHEDULE,
     budgetLabel,
     budgetResetDescription,
+    usageTypes,
   });
 });
 
