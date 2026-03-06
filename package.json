@@ -20,10 +20,9 @@
     "test": "npm test -w server",
     "lint": "eslint . --cache --cache-location ./node_modules/.cache/eslint/",
     "lint:fix": "eslint . --fix --cache --cache-location ./node_modules/.cache/eslint/",
+    "db": "npx @electric-sql/pglite-socket --db=./data --port=5433 --host 0.0.0.0",
+    "db:sql": "psql \"postgresql://postgres:postgres@127.0.0.1:5433/postgres?sslmode=disable&gssencmode=disable\"",
     "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio",
-    "db:dev": "npx @electric-sql/pglite-socket",
-    "db:dev:persistent": "npx @electric-sql/pglite-socket --db=./data/pglite --port=5433",
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
     "prepare": "husky || true"
