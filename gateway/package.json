@@ -5,7 +5,12 @@
   "exports": {
     ".": "./index.js",
     "./api.js": "./api.js",
-    "./inference.js": "./inference.js",
+    "./chat.js": "./chat.js",
+    "./embedding.js": "./embedding.js",
+    "./errors.js": "./errors.js",
+    "./guardrails.js": "./guardrails.js",
+    "./prompt-cache.js": "./prompt-cache.js",
+    "./preprocess.js": "./preprocess.js",
     "./usage.js": "./usage.js",
     "./providers/bedrock.js": "./providers/bedrock.js",
     "./providers/gemini.js": "./providers/gemini.js",

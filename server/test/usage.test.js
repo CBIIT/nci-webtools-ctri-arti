@@ -34,7 +34,7 @@ test("trackModelUsage", async (t) => {
       cacheWriteInputTokens: 0,
     };
 
-    const record = await trackModelUsage(testUser.id, "mock-model", "127.0.0.1", usageData);
+    const record = await trackModelUsage(testUser.id, testModel, usageData);
     assert.ok(record, "Should create a usage record");
     assert.strictEqual(record.userID, testUser.id);
     assert.strictEqual(record.modelID, testModel.id);
@@ -62,26 +62,24 @@ test("trackModelUsage", async (t) => {
       cacheWriteInputTokens: 0,
     };
 
-    await trackModelUsage(testUser.id, "mock-model", "127.0.0.1", usageData);
+    await trackModelUsage(testUser.id, testModel, usageData);
 
     const [userAfter] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
     assert.ok(userAfter.remaining <= balanceBefore, "Balance should decrease or stay same");
   });
 
   await t.test("handles missing userId gracefully", async () => {
-    const result = await trackModelUsage(null, "mock-model", "127.0.0.1", { inputTokens: 10 });
+    const result = await trackModelUsage(null, testModel, { inputTokens: 10 });
     assert.strictEqual(result, undefined);
   });
 
   await t.test("handles missing model gracefully", async () => {
-    const result = await trackModelUsage(testUser.id, "nonexistent-model", "127.0.0.1", {
-      inputTokens: 10,
-    });
+    const result = await trackModelUsage(testUser.id, null, { inputTokens: 10 });
     assert.strictEqual(result, undefined);
   });
 
   await t.test("handles missing usageData gracefully", async () => {
-    const result = await trackModelUsage(testUser.id, "mock-model", "127.0.0.1", null);
+    const result = await trackModelUsage(testUser.id, testModel, null);
     assert.strictEqual(result, undefined);
   });
 });

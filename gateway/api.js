@@ -1,12 +1,18 @@
 import db, { Model, User } from "database";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { json, Router } from "express";
 import { describeCron } from "shared/cron.js";
 import { logErrors, logRequests } from "shared/middleware.js";
 
-import { runModel } from "./inference.js";
+import { runModel } from "./chat.js";
+import { runEmbedding } from "./embedding.js";
+import { normalizeProviderError, sendError } from "./errors.js";
+import { applyGuardrail, guardrailsEnabled } from "./guardrails.js";
+import BedrockProvider from "./providers/bedrock.js";
 import { trackModelUsage } from "./usage.js";
+
+const guardrailProvider = guardrailsEnabled ? new BedrockProvider() : null;
 
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 
@@ -15,42 +21,114 @@ api.use(json({ limit: 1024 ** 3 })); // 1GB
 api.use(logRequests());
 
 /**
- * POST /api/v1/model/invoke - Unified inference endpoint
- * Handles both chat and embedding model types.
+ * POST /v1/modelInvoke - Unified inference endpoint.
+ * Routes to chat or embedding handler based on the `action` field.
+ *
+ * Required: action, modelID, userID
+ * Optional: agentID, messages, stream, defaultParameters, tools, system
  */
-api.post("/v1/model/invoke", async (req, res, next) => {
-  const { userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig, type } =
-    req.body;
+api.post("/v1/modelInvoke", async (req, res, next) => {
+  const {
+    action,
+    modelID,
+    userID,
+    agentID,
+    messages,
+    system,
+    tools,
+    stream,
+    defaultParameters = {},
+    type,
+  } = req.body;
 
   try {
-    // Resolve model from DB to check type
-    const [modelRecord] = model
-      ? await db.select().from(Model).where(eq(Model.internalName, model)).limit(1)
-      : [null];
-    if (!modelRecord) {
-      return res.status(404).json({ error: "Model not found", code: "GATEWAY_MODEL_NOT_FOUND" });
+    // Validate required fields
+    const missingFields = [];
+    if (!action) missingFields.push("action");
+    if (!modelID) missingFields.push("modelID");
+    if (!userID) missingFields.push("userID");
+    if (missingFields.length > 0) {
+      return sendError(
+        res,
+        "MISSING_REQUIRED_FIELD",
+        `Missing required fields: ${missingFields.join(", ")}`,
+        { missingFields }
+      );
     }
 
-    // Embedding models are stubbed for now
-    if (modelRecord.type === "embedding") {
-      return res
-        .status(501)
-        .json({ error: "Embedding not yet implemented", code: "GATEWAY_NOT_IMPLEMENTED" });
+    if (action !== "chat" && action !== "embedding") {
+      return sendError(res, "INVALID_ACTION", "Invalid action. Must be 'chat' or 'embedding'");
+    }
+
+    // Resolve model by primary key
+    const [model] = await db.select().from(Model).where(eq(Model.id, modelID)).limit(1);
+    if (!model) {
+      return sendError(res, "INVALID_MODEL", `Model not found: ${modelID}`);
     }
 
     // Rate limit check
-    if (userID) {
-      const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
-      if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
-        const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
-        return res.status(429).json({
-          error: `You have reached your allocated usage limit. Your access to the chat tool is temporarily disabled and will reset ${resetDescription}. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.`,
-          code: "GATEWAY_RATE_LIMITED",
-        });
+    const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
+    if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
+      const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
+      return sendError(
+        res,
+        "QUOTA_EXCEEDED",
+        `You have reached your allocated usage limit. Your access to the chat tool is temporarily disabled and will reset ${resetDescription}. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.`
+      );
+    }
+
+    // Embedding
+    if (action === "embedding") {
+      // messages can be an array of strings or chat-format array
+      const texts = Array.isArray(messages)
+        ? messages.map((m) => (typeof m === "string" ? m : m.content || ""))
+        : [];
+
+      if (texts.length === 0) {
+        return sendError(
+          res,
+          "INVALID_MESSAGES_FORMAT",
+          "Embedding requires a non-empty messages array of strings"
+        );
+      }
+
+      const result = await runEmbedding({ model, texts });
+      if (!result) {
+        return sendError(res, "PROVIDER_ERROR", "Embedding returned no result");
+      }
+
+      await trackModelUsage(
+        userID,
+        model,
+        { inputTokens: result.usage.promptTokens, outputTokens: 0 },
+        { type, agentID }
+      );
+      return res.json(result);
+    }
+
+    // Chat inference
+    const { thoughtBudget = 0, outputConfig } = defaultParameters;
+
+    // Input guardrail check
+    if (guardrailProvider) {
+      const inputCheck = await applyGuardrail(guardrailProvider, "INPUT", messages);
+      if (inputCheck.cost > 0) {
+        await trackModelUsage(
+          userID,
+          model,
+          { inputTokens: 0, outputTokens: 0 },
+          { type: "guardrail", agentID, guardrailCost: inputCheck.cost }
+        );
+      }
+      if (inputCheck.blocked) {
+        return sendError(
+          res,
+          "GUARDRAIL_BLOCKED",
+          inputCheck.output || "Input blocked by guardrail"
+        );
       }
     }
 
-    // Run inference
     const results = await runModel({
       model,
       messages,
@@ -61,19 +139,38 @@ api.post("/v1/model/invoke", async (req, res, next) => {
       outputConfig,
     });
 
-    // For non-streaming responses
+    // Non-streaming response
     if (!results?.stream) {
-      if (userID) {
-        await trackModelUsage(userID, model, ip, results.usage, { type });
+      // Output guardrail check
+      if (guardrailProvider) {
+        const outputText = results?.output?.message?.content;
+        const outputCheck = await applyGuardrail(guardrailProvider, "OUTPUT", outputText);
+        if (outputCheck.cost > 0) {
+          await trackModelUsage(
+            userID,
+            model,
+            { inputTokens: 0, outputTokens: 0 },
+            { type: "guardrail", agentID, guardrailCost: outputCheck.cost }
+          );
+        }
+        if (outputCheck.blocked) {
+          return sendError(
+            res,
+            "GUARDRAIL_BLOCKED",
+            outputCheck.output || "Output blocked by guardrail"
+          );
+        }
       }
+
+      await trackModelUsage(userID, model, results.usage, { type, agentID });
       return res.json(results);
     }
 
     // Streaming response
     for await (const message of results.stream) {
       try {
-        if (message.metadata && userID) {
-          await trackModelUsage(userID, model, ip, message.metadata.usage, { type });
+        if (message.metadata) {
+          await trackModelUsage(userID, model, message.metadata.usage, { type, agentID });
         }
         res.write(JSON.stringify(message) + "\n");
       } catch (err) {
@@ -82,21 +179,23 @@ api.post("/v1/model/invoke", async (req, res, next) => {
     }
     res.end();
   } catch (error) {
-    console.error("Error in gateway invoke:", error);
-    next(error);
+    console.error("Error in gateway modelInvoke:", error);
+    const { errorType, message } = normalizeProviderError(error);
+    return sendError(res, errorType, message);
   }
 });
 
 /**
- * GET /api/v1/models - List available models with optional type filter
+ * GET /v1/models - List available models with optional type filter.
+ * Includes model `id` so callers can use it for modelInvoke.
  */
 api.get("/v1/models", async (req, res) => {
   const where = [eq(Model.providerID, 1)];
   if (req.query.type) where.push(eq(Model.type, req.query.type));
 
-  const { and } = await import("drizzle-orm");
   const results = await db
     .select({
+      id: Model.id,
       name: Model.name,
       internalName: Model.internalName,
       type: Model.type,

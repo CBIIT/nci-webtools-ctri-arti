@@ -521,6 +521,7 @@ export async function seedDatabase(db) {
     "maxContext",
     "maxOutput",
     "maxReasoning",
+    "defaultParameters",
   ]);
   await upsert(T.Prompt, prompts, T.Prompt.id, ["name", "version", "content"]);
   await upsert(T.Agent, agents, T.Agent.id, ["name", "promptID"]);
