@@ -24,9 +24,9 @@ function buildSearchConditions(search) {
 function getGroupColumn(groupBy) {
   switch (groupBy) {
     case "hour":
-      return sql`to_char(${Usage.createdAt}, 'YYYY-MM-DD HH24:00:00')`;
+      return sql`to_char(date_trunc('hour', ${Usage.createdAt}), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
     case "day":
-      return sql`${Usage.createdAt}::date`;
+      return sql`to_char(date_trunc('day', ${Usage.createdAt}), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
     case "week":
       return sql`to_char(${Usage.createdAt}, 'IYYY-IW')`;
     case "month":
@@ -36,7 +36,7 @@ function getGroupColumn(groupBy) {
     case "model":
       return Usage.modelID;
     default:
-      return sql`${Usage.createdAt}::date`;
+      return sql`to_char(date_trunc('day', ${Usage.createdAt}), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
   }
 }
 
