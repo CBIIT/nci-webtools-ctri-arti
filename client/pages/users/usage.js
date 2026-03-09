@@ -231,7 +231,7 @@ function UsersList() {
         id: userStats.userID,
         name: fullName,
         email: user.email,
-        role: user.Role?.name || "No Role",
+        role: userStats.Role?.name || "No Role",
         roleID: user.roleID,
         inputTokens: Math.round(userStats.totalInputTokens || 0),
         outputTokens: Math.round(userStats.totalOutputTokens || 0),

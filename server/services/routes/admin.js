@@ -389,7 +389,7 @@ api.get(
         .select({ value: countDistinct(Usage.userID) })
         .from(Usage)
         .innerJoin(User, eq(Usage.userID, User.id))
-        .innerJoin(Role, eq(User.roleID, Role.id))
+        .leftJoin(Role, eq(User.roleID, Role.id))
         .where(where);
 
       const aggregateSortMapping = {
@@ -430,7 +430,7 @@ api.get(
         })
         .from(Usage)
         .innerJoin(User, eq(Usage.userID, User.id))
-        .innerJoin(Role, eq(User.roleID, Role.id))
+        .leftJoin(Role, eq(User.roleID, Role.id))
         .where(where)
         .groupBy(
           Usage.userID,
