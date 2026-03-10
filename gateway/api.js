@@ -3,6 +3,7 @@ import db, { Model, User } from "database";
 import { and, eq } from "drizzle-orm";
 import { json, Router } from "express";
 import { describeCron } from "shared/cron.js";
+import logger from "shared/logger.js";
 import { logErrors, logRequests } from "shared/middleware.js";
 
 import { runModel } from "./chat.js";
@@ -14,11 +15,42 @@ import { trackModelUsage } from "./usage.js";
 
 const guardrailProvider = guardrailsEnabled ? new BedrockProvider() : null;
 
+function logUsage(action, model, usage, latencyMs, { guardrailCost, ...extra } = {}) {
+  const inputTokens = usage?.inputTokens || 0;
+  const outputTokens = usage?.outputTokens || 0;
+  const cacheRead = usage?.cacheReadInputTokens || 0;
+  const cacheWrite = usage?.cacheWriteInputTokens || 0;
+  const cost =
+    (inputTokens / 1000) * (model.cost1kInput || 0) +
+    (outputTokens / 1000) * (model.cost1kOutput || 0) +
+    (cacheRead / 1000) * (model.cost1kCacheRead || 0) +
+    (cacheWrite / 1000) * (model.cost1kCacheWrite || 0);
+
+  const logEntry = {
+    action,
+    model: model.name,
+    ...extra,
+    usage: { inputTokens, outputTokens, cacheRead },
+    cost: `$${cost.toFixed(2)}`,
+  };
+  if (guardrailCost > 0) {
+    logEntry.guardrailCost = `$${guardrailCost.toFixed(2)}`;
+  }
+  logEntry.latencyMs = latencyMs;
+
+  logger.info(logEntry);
+}
+
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
-api.use(logRequests());
+api.use(
+  logRequests((req) => {
+    const { action, modelID, userID, stream } = req.body || {};
+    return [`${req.method} ${req.path}`, { action, modelID, userID, stream }];
+  })
+);
 
 /**
  * POST /v1/modelInvoke - Unified inference endpoint.
@@ -103,15 +135,23 @@ api.post("/v1/modelInvoke", async (req, res, next) => {
         { inputTokens: result.usage.promptTokens, outputTokens: 0 },
         { type, agentID }
       );
+      logUsage(
+        "embedding",
+        model,
+        { inputTokens: result.usage.promptTokens },
+        Date.now() - req.startTime
+      );
       return res.json(result);
     }
 
     // Chat inference
     const { thoughtBudget = 0, outputConfig } = defaultParameters;
+    let guardrailCost = 0;
 
     // Input guardrail check
     if (guardrailProvider) {
       const inputCheck = await applyGuardrail(guardrailProvider, "INPUT", messages);
+      guardrailCost += inputCheck.cost;
       if (inputCheck.cost > 0) {
         await trackModelUsage(
           userID,
@@ -145,6 +185,7 @@ api.post("/v1/modelInvoke", async (req, res, next) => {
       if (guardrailProvider) {
         const outputText = results?.output?.message?.content;
         const outputCheck = await applyGuardrail(guardrailProvider, "OUTPUT", outputText);
+        guardrailCost += outputCheck.cost;
         if (outputCheck.cost > 0) {
           await trackModelUsage(
             userID,
@@ -163,20 +204,27 @@ api.post("/v1/modelInvoke", async (req, res, next) => {
       }
 
       await trackModelUsage(userID, model, results.usage, { type, agentID });
+      logUsage("chat", model, results.usage, Date.now() - req.startTime, { guardrailCost });
       return res.json(results);
     }
 
     // Streaming response
+    let streamUsage = null;
     for await (const message of results.stream) {
       try {
         if (message.metadata) {
-          await trackModelUsage(userID, model, message.metadata.usage, { type, agentID });
+          streamUsage = message.metadata.usage;
+          await trackModelUsage(userID, model, streamUsage, { type, agentID });
         }
         res.write(JSON.stringify(message) + "\n");
       } catch (err) {
         console.error("Error processing stream message:", err);
       }
     }
+    logUsage("chat", model, streamUsage, Date.now() - req.startTime, {
+      stream: true,
+      guardrailCost,
+    });
     res.end();
   } catch (error) {
     console.error("Error in gateway modelInvoke:", error);

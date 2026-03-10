@@ -17,7 +17,7 @@
     "./providers/mock.js": "./providers/mock.js"
   },
   "scripts": {
-    "start": "node --env-file .env index.js"
+    "start": "node --env-file ../server/.env index.js"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1003.0",
