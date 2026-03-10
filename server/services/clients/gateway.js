@@ -49,8 +49,11 @@ function buildDirectClient() {
       const limited = await checkRateLimit(userID);
       if (limited) return limited;
 
-      // Resolve model record by ID
-      const [model] = await db.select().from(Model).where(eq(Model.id, modelID)).limit(1);
+      // Resolve model record by ID (include Provider for downstream use)
+      const model = await db.query.Model.findFirst({
+        where: eq(Model.id, modelID),
+        with: { Provider: true },
+      });
       if (!model) return gatewayError("INVALID_MODEL", `Model not found: ${modelID}`);
 
       const result = await directRunModel({
@@ -89,7 +92,10 @@ function buildDirectClient() {
       const limited = await checkRateLimit(userID);
       if (limited) return limited;
 
-      const [model] = await db.select().from(Model).where(eq(Model.id, modelID)).limit(1);
+      const model = await db.query.Model.findFirst({
+        where: eq(Model.id, modelID),
+        with: { Provider: true },
+      });
       if (!model) return gatewayError("INVALID_MODEL", `Model not found: ${modelID}`);
 
       const result = await directRunEmbedding({ model, texts });
