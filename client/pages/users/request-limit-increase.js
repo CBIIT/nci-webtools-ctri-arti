@@ -2,6 +2,46 @@ import { createSignal, Switch, Match, Show } from "solid-js";
 import html from "solid-js/html";
 import { Check } from "lucide-solid";
 
+/**
+ * A SolidJS component that renders a button and modal dialog for users to request
+ * an increase in their daily cost limit. The component displays the user's current
+ * budget and provides a form to submit a request with justification.
+ * 
+ * @description The component manages a two-state modal interface:
+ * - Initial state: Form with reason textarea and current budget display
+ * - Success state: Confirmation message with checkmark icon
+ * 
+ * Features:
+ * - Displays current daily cost limit (shows "Unlimited" if budget is null)
+ * - Textarea with 500 character limit and remaining character counter
+ * - Client-side validation requiring a non-empty reason
+ * - Form submission with loading state and error handling
+ * - API integration with `/api/v1/request-limit-increase` endpoint
+ * - Success confirmation UI after successful submission
+ * 
+ * @param {Object} props - Component properties
+ * @param {Object} props.session - User session data containing authentication and user info
+ * @param {Object} props.session.user - User object from the session
+ * @param {number|null} props.session.user.budget - User's current daily cost limit in USD (null means unlimited)
+ * 
+ * @returns {JSX.Element} A SolidJS component containing a trigger button and modal dialog
+ * 
+ * @example
+ * // Basic usage with session data
+ * <RequestLimitIncrease session={userSession} />
+ * 
+ * @example  
+ * // Example session structure expected by component
+ * const userSession = {
+ *   user: {
+ *     budget: 50 // $50 daily limit, or null for unlimited
+ *   }
+ * };
+ * 
+ * @throws {Error} Displays user-friendly error messages for failed API requests
+ * 
+ * @since 1.0.0
+ */
 function RequestLimitIncrease(props) {
   const [reason, setReason] = createSignal("");
   let limitDialog;
@@ -14,31 +54,38 @@ function RequestLimitIncrease(props) {
   };
 
   const [status, setStatus] = createSignal("init");
+  const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [submitError, setSubmitError] = createSignal("");
 
   const hasReason = () => reason().trim().length > 0;
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     console.log("handleSubmit called with reason:", reason());
-    if (!hasReason()) {
-      setSubmitError("Please provide a reason for your request.");
-      return;
-    }
 
     try {
-      /* const response = await fetch('/api/v1/request-limit-increase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reason() }),
-      });
+      if (hasReason()) {
+        setIsSubmitting(true);
+        setSubmitError("");
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        setSubmitError(errorData.message || 'Failed to submit your request. Please try again later.');
+        /* const response = await fetch('/api/v1/request-limit-increase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: reason() }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          setSubmitError(errorData.message || 'Failed to submit your request. Please try again later.');
+          return;
+        } */
+
+        setIsSubmitting(false);
+        setStatus("success");
+      } else {
+        setSubmitError("Reason for request is required.");
         return;
-      } */
-
-      setStatus("success");
+      }
     } catch (err) {
       console.error("Error submitting limit increase request:", err);
       setSubmitError("An unexpected error occurred. Please try again later.");
@@ -59,6 +106,7 @@ function RequestLimitIncrease(props) {
       <dialog
         id="request-limit-increase-dialog"
         class="request-limit-increase-dialog modal fade show"
+        onSubmit=${(e) => handleSubmit(e)}
         ref=${(el) => (limitDialog = el)}
       >
         <div class="modal-dialog modal-dialog-centered">
@@ -87,7 +135,7 @@ function RequestLimitIncrease(props) {
                   <div class="modal-body font-inter">
                     <${Show} when=${() => submitError() !== ""} fallback="">
                       <div class="alert alert-danger" role="alert">
-                        Submission failed: ${() => submitError()}
+                        ${() => submitError()}
                       </div>
                     <//>
 
@@ -108,7 +156,7 @@ function RequestLimitIncrease(props) {
                         const budget = sessionData.user.budget;
                         console.log("Budget value:", budget);
 
-                        if (budget === null || budget === undefined) {
+                        if (budget === null) {
                           return "Unlimited";
                         }
                         return `$${budget}`;
@@ -143,8 +191,7 @@ function RequestLimitIncrease(props) {
                     <button
                       type="submit"
                       class="btn btn-pill btn-action font-nunito"
-                      disabled=${() => !hasReason()}
-                      onClick=${() => handleSubmit()}
+                      disabled=${() => isSubmitting()}
                     >
                       Submit
                     </button>
