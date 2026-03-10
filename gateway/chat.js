@@ -1,9 +1,5 @@
-import db, { Model } from "database";
-
-import { eq } from "drizzle-orm";
-
 import { processMessages } from "./preprocess.js";
-import { addCachePointsToMessages, estimateContentTokens } from "./prompt-cache.js";
+import { addCachePointsToMessages } from "./prompt-cache.js";
 import bedrock from "./providers/bedrock.js";
 import gemini from "./providers/gemini.js";
 import mock from "./providers/mock.js";
@@ -12,32 +8,20 @@ const providers = { bedrock, gemini, mock };
 
 /**
  * Resolve the provider instance for a given model record.
- * @param {Object} model - Full model record (must have id)
- * @returns {{ model: Object, provider: Object }}
+ * @param {Object} model - Model record with Provider relation included
+ * @returns {Object} Provider instance
  */
-export async function getModelProvider(model) {
-  const result = await db.query.Model.findFirst({
-    where: eq(Model.id, model.id),
-    with: { Provider: true },
-  });
-  const provider = new providers[result?.Provider?.name]();
-  return { model: result, provider };
+export function getModelProvider(model) {
+  return new providers[model.Provider?.name]();
 }
 
 /**
  * Assemble the full inference input object from a model record.
  * @param {Object} model - Full model record from DB
  */
-async function buildInferenceParams(
-  model,
-  messages,
-  systemPrompt,
-  tools,
-  thoughtBudget,
-  outputConfig
-) {
-  const { model: modelWithProvider, provider } = await getModelProvider(model);
-  const { maxOutput, maxReasoning, cost1kInput, cost1kCacheRead } = modelWithProvider;
+function buildInferenceParams(model, messages, systemPrompt, tools, thoughtBudget, outputConfig) {
+  const provider = getModelProvider(model);
+  const { maxOutput, maxReasoning, cost1kCacheRead } = model;
   const hasCache = !!cost1kCacheRead;
   const maxTokens = Math.min(maxOutput, thoughtBudget + 2000);
 
@@ -54,12 +38,12 @@ async function buildInferenceParams(
   if (thoughtBudget > 0 && maxReasoning > 0) {
     additionalModelRequestFields.thinking = { type: "enabled", budget_tokens: +thoughtBudget };
   }
-  if (modelWithProvider.internalName?.includes("sonnet-4")) {
+  if (model.internalName?.includes("sonnet-4")) {
     additionalModelRequestFields.anthropic_beta = ["context-1m-2025-08-07"];
   }
 
   const input = {
-    modelId: modelWithProvider.internalName,
+    modelId: model.internalName,
     messages,
     system,
     toolConfig,
@@ -68,7 +52,7 @@ async function buildInferenceParams(
     ...(outputConfig && { outputConfig }),
   };
 
-  return { input, provider, hasCache, cost1kInput, cost1kCacheRead };
+  return { input, provider };
 }
 
 /**
@@ -99,7 +83,7 @@ export async function runModel({
 
   messages = processMessages(messages, thoughtBudget);
 
-  const { input, provider, hasCache, cost1kInput, cost1kCacheRead } = await buildInferenceParams(
+  const { input, provider } = buildInferenceParams(
     model,
     messages,
     systemPrompt,
@@ -108,46 +92,5 @@ export async function runModel({
     outputConfig
   );
 
-  const response = stream ? provider.converseStream(input) : provider.converse(input);
-  const result = await response;
-
-  // Debug logging for cache behavior
-  if (hasCache && !stream && result.usage) {
-    const totalEstimatedTokens = input.messages.reduce(
-      (sum, m) => sum + m.content.reduce((s, c) => s + estimateContentTokens(c), 0),
-      0
-    );
-    const messagesWithCache = input.messages.filter((m) =>
-      m.content.some((c) => c.cachePoint)
-    ).length;
-    const cacheRead = result.usage.cacheReadInputTokens || 0;
-    const cacheWrite = result.usage.cacheWriteInputTokens || 0;
-
-    const totalInputTokens = result.usage.inputTokens + cacheRead;
-    const regularCost = (totalInputTokens * cost1kInput) / 1000;
-    const actualCost =
-      (result.usage.inputTokens * cost1kInput + cacheRead * cost1kCacheRead) / 1000;
-    const savings = regularCost - actualCost;
-
-    console.log("[Cache Debug]", {
-      model: model.internalName,
-      estimatedTotalTokens: totalEstimatedTokens,
-      actualInputTokens: result.usage.inputTokens,
-      messagesWithCachePoints: messagesWithCache,
-      cache: {
-        read: cacheRead,
-        write: cacheWrite,
-        hitRate:
-          totalInputTokens > 0 ? `${((cacheRead / totalInputTokens) * 100).toFixed(1)}%` : "0%",
-      },
-      cost: {
-        withoutCache: `$${regularCost.toFixed(6)}`,
-        withCache: `$${actualCost.toFixed(6)}`,
-        savings: `$${savings.toFixed(6)}`,
-        percentSaved: regularCost > 0 ? `${((savings / regularCost) * 100).toFixed(1)}%` : "0%",
-      },
-    });
-  }
-
-  return result;
+  return stream ? provider.converseStream(input) : provider.converse(input);
 }

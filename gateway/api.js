@@ -15,6 +15,25 @@ import { trackModelUsage } from "./usage.js";
 
 const guardrailProvider = guardrailsEnabled ? new BedrockProvider() : null;
 
+/**
+ * Run a guardrail check. Returns { blocked, cost } or { blocked: false, cost: 0 } if disabled.
+ * Tracks guardrail cost as a separate usage record when cost > 0.
+ */
+async function checkGuardrail(source, content, userID, model, agentID) {
+  if (!guardrailProvider) return { blocked: false, cost: 0 };
+
+  const result = await applyGuardrail(guardrailProvider, source, content);
+  if (result.cost > 0) {
+    await trackModelUsage(
+      userID,
+      model,
+      { inputTokens: 0, outputTokens: 0 },
+      { type: "guardrail", agentID, guardrailCost: result.cost }
+    );
+  }
+  return { blocked: result.blocked, output: result.output, cost: result.cost };
+}
+
 function logUsage(action, model, usage, latencyMs, { guardrailCost, ...extra } = {}) {
   const inputTokens = usage?.inputTokens || 0;
   const outputTokens = usage?.outputTokens || 0;
@@ -51,6 +70,95 @@ api.use(
     return [`${req.method} ${req.path}`, { action, modelID, userID, stream }];
   })
 );
+
+/** Handle embedding action. */
+async function handleEmbedding(res, { model, userID, agentID, type, messages, startTime }) {
+  const texts = Array.isArray(messages)
+    ? messages.map((m) => (typeof m === "string" ? m : m.content || ""))
+    : [];
+
+  if (texts.length === 0) {
+    return sendError(
+      res,
+      "INVALID_MESSAGES_FORMAT",
+      "Embedding requires a non-empty messages array of strings"
+    );
+  }
+
+  const result = await runEmbedding({ model, texts });
+  if (!result) {
+    return sendError(res, "PROVIDER_ERROR", "Embedding returned no result");
+  }
+
+  await trackModelUsage(
+    userID,
+    model,
+    { inputTokens: result.usage.promptTokens, outputTokens: 0 },
+    { type, agentID }
+  );
+  logUsage("embedding", model, { inputTokens: result.usage.promptTokens }, Date.now() - startTime);
+  return res.json(result);
+}
+
+/** Handle chat action (streaming and non-streaming). */
+async function handleChat(
+  res,
+  { model, userID, agentID, type, messages, system, tools, stream, defaultParameters, startTime }
+) {
+  const { thoughtBudget = 0, outputConfig } = defaultParameters;
+  let guardrailCost = 0;
+
+  // Input guardrail check
+  const inputCheck = await checkGuardrail("INPUT", messages, userID, model, agentID);
+  guardrailCost += inputCheck.cost;
+  if (inputCheck.blocked) {
+    return sendError(res, "GUARDRAIL_BLOCKED", inputCheck.output || "Input blocked by guardrail");
+  }
+
+  const results = await runModel({
+    model,
+    messages,
+    system,
+    tools,
+    thoughtBudget,
+    stream,
+    outputConfig,
+  });
+
+  // Non-streaming response
+  if (!results?.stream) {
+    const outputText = results?.output?.message?.content;
+    const outputCheck = await checkGuardrail("OUTPUT", outputText, userID, model, agentID);
+    guardrailCost += outputCheck.cost;
+    if (outputCheck.blocked) {
+      return sendError(
+        res,
+        "GUARDRAIL_BLOCKED",
+        outputCheck.output || "Output blocked by guardrail"
+      );
+    }
+
+    await trackModelUsage(userID, model, results.usage, { type, agentID });
+    logUsage("chat", model, results.usage, Date.now() - startTime, { guardrailCost });
+    return res.json(results);
+  }
+
+  // Streaming response
+  let streamUsage = null;
+  for await (const message of results.stream) {
+    try {
+      if (message.metadata) {
+        streamUsage = message.metadata.usage;
+        await trackModelUsage(userID, model, streamUsage, { type, agentID });
+      }
+      res.write(JSON.stringify(message) + "\n");
+    } catch (err) {
+      console.error("Error processing stream message:", err);
+    }
+  }
+  logUsage("chat", model, streamUsage, Date.now() - startTime, { stream: true, guardrailCost });
+  res.end();
+}
 
 /**
  * POST /v1/modelInvoke - Unified inference endpoint.
@@ -92,8 +200,11 @@ api.post("/v1/modelInvoke", async (req, res, next) => {
       return sendError(res, "INVALID_ACTION", "Invalid action. Must be 'chat' or 'embedding'");
     }
 
-    // Resolve model by primary key
-    const [model] = await db.select().from(Model).where(eq(Model.id, modelID)).limit(1);
+    // Resolve model by primary key (include Provider for downstream use)
+    const model = await db.query.Model.findFirst({
+      where: eq(Model.id, modelID),
+      with: { Provider: true },
+    });
     if (!model) {
       return sendError(res, "INVALID_MODEL", `Model not found: ${modelID}`);
     }
@@ -109,123 +220,21 @@ api.post("/v1/modelInvoke", async (req, res, next) => {
       );
     }
 
-    // Embedding
-    if (action === "embedding") {
-      // messages can be an array of strings or chat-format array
-      const texts = Array.isArray(messages)
-        ? messages.map((m) => (typeof m === "string" ? m : m.content || ""))
-        : [];
-
-      if (texts.length === 0) {
-        return sendError(
-          res,
-          "INVALID_MESSAGES_FORMAT",
-          "Embedding requires a non-empty messages array of strings"
-        );
-      }
-
-      const result = await runEmbedding({ model, texts });
-      if (!result) {
-        return sendError(res, "PROVIDER_ERROR", "Embedding returned no result");
-      }
-
-      await trackModelUsage(
-        userID,
-        model,
-        { inputTokens: result.usage.promptTokens, outputTokens: 0 },
-        { type, agentID }
-      );
-      logUsage(
-        "embedding",
-        model,
-        { inputTokens: result.usage.promptTokens },
-        Date.now() - req.startTime
-      );
-      return res.json(result);
-    }
-
-    // Chat inference
-    const { thoughtBudget = 0, outputConfig } = defaultParameters;
-    let guardrailCost = 0;
-
-    // Input guardrail check
-    if (guardrailProvider) {
-      const inputCheck = await applyGuardrail(guardrailProvider, "INPUT", messages);
-      guardrailCost += inputCheck.cost;
-      if (inputCheck.cost > 0) {
-        await trackModelUsage(
-          userID,
-          model,
-          { inputTokens: 0, outputTokens: 0 },
-          { type: "guardrail", agentID, guardrailCost: inputCheck.cost }
-        );
-      }
-      if (inputCheck.blocked) {
-        return sendError(
-          res,
-          "GUARDRAIL_BLOCKED",
-          inputCheck.output || "Input blocked by guardrail"
-        );
-      }
-    }
-
-    const results = await runModel({
+    const ctx = {
       model,
+      userID,
+      agentID,
+      type,
       messages,
       system,
       tools,
-      thoughtBudget,
       stream,
-      outputConfig,
-    });
+      defaultParameters,
+      startTime: req.startTime,
+    };
 
-    // Non-streaming response
-    if (!results?.stream) {
-      // Output guardrail check
-      if (guardrailProvider) {
-        const outputText = results?.output?.message?.content;
-        const outputCheck = await applyGuardrail(guardrailProvider, "OUTPUT", outputText);
-        guardrailCost += outputCheck.cost;
-        if (outputCheck.cost > 0) {
-          await trackModelUsage(
-            userID,
-            model,
-            { inputTokens: 0, outputTokens: 0 },
-            { type: "guardrail", agentID, guardrailCost: outputCheck.cost }
-          );
-        }
-        if (outputCheck.blocked) {
-          return sendError(
-            res,
-            "GUARDRAIL_BLOCKED",
-            outputCheck.output || "Output blocked by guardrail"
-          );
-        }
-      }
-
-      await trackModelUsage(userID, model, results.usage, { type, agentID });
-      logUsage("chat", model, results.usage, Date.now() - req.startTime, { guardrailCost });
-      return res.json(results);
-    }
-
-    // Streaming response
-    let streamUsage = null;
-    for await (const message of results.stream) {
-      try {
-        if (message.metadata) {
-          streamUsage = message.metadata.usage;
-          await trackModelUsage(userID, model, streamUsage, { type, agentID });
-        }
-        res.write(JSON.stringify(message) + "\n");
-      } catch (err) {
-        console.error("Error processing stream message:", err);
-      }
-    }
-    logUsage("chat", model, streamUsage, Date.now() - req.startTime, {
-      stream: true,
-      guardrailCost,
-    });
-    res.end();
+    if (action === "embedding") return handleEmbedding(res, ctx);
+    return handleChat(res, ctx);
   } catch (error) {
     console.error("Error in gateway modelInvoke:", error);
     const { errorType, message } = normalizeProviderError(error);
