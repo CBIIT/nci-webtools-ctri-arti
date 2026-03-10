@@ -10,7 +10,7 @@
 
 import db, { Model, User } from "database";
 
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { runModel as directRunModel } from "gateway/chat.js";
 import { runEmbedding as directRunEmbedding } from "gateway/embedding.js";
 import { gatewayError } from "gateway/errors.js";
@@ -109,24 +109,6 @@ function buildDirectClient() {
       }
       return result;
     },
-
-    async listModels({ type } = {}) {
-      const where = [eq(Model.providerID, 1)];
-      if (type) where.push(eq(Model.type, type));
-
-      return db
-        .select({
-          id: Model.id,
-          name: Model.name,
-          internalName: Model.internalName,
-          type: Model.type,
-          maxContext: Model.maxContext,
-          maxOutput: Model.maxOutput,
-          maxReasoning: Model.maxReasoning,
-        })
-        .from(Model)
-        .where(and(...where));
-    },
   };
 }
 
@@ -223,17 +205,9 @@ function buildHttpClient() {
       });
       return response.json();
     },
-
-    async listModels({ type } = {}) {
-      const url = type
-        ? `${GATEWAY_URL}/api/v1/models?type=${type}`
-        : `${GATEWAY_URL}/api/v1/models`;
-      const response = await fetch(url);
-      return response.json();
-    },
   };
 }
 
 const client = GATEWAY_URL ? buildHttpClient() : buildDirectClient();
 
-export const { invoke, embed, listModels } = client;
+export const { invoke, embed } = client;

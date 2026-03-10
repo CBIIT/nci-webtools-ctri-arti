@@ -1,6 +1,6 @@
 import db, { Model, User } from "database";
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { json, Router } from "express";
 import { describeCron } from "shared/cron.js";
 import logger from "shared/logger.js";
@@ -240,29 +240,6 @@ api.post("/v1/modelInvoke", async (req, res, next) => {
     const { errorType, message } = normalizeProviderError(error);
     return sendError(res, errorType, message);
   }
-});
-
-/**
- * GET /v1/models - List available models with optional type filter.
- * Includes model `id` so callers can use it for modelInvoke.
- */
-api.get("/v1/models", async (req, res) => {
-  const where = [eq(Model.providerID, 1)];
-  if (req.query.type) where.push(eq(Model.type, req.query.type));
-
-  const results = await db
-    .select({
-      id: Model.id,
-      name: Model.name,
-      internalName: Model.internalName,
-      type: Model.type,
-      maxContext: Model.maxContext,
-      maxOutput: Model.maxOutput,
-      maxReasoning: Model.maxReasoning,
-    })
-    .from(Model)
-    .where(and(...where));
-  res.json(results);
 });
 
 api.use(logErrors());

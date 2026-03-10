@@ -3,7 +3,8 @@ import db, { Model } from "database";
 import { eq } from "drizzle-orm";
 import { json, Router } from "express";
 
-import { invoke, embed, listModels } from "../clients/gateway.js";
+import { amsClient } from "../clients/ams.js";
+import { invoke, embed } from "../clients/gateway.js";
 import { requireRole } from "../middleware.js";
 import { createHttpError } from "../utils.js";
 
@@ -94,8 +95,29 @@ api.post("/model/embed", requireRole(), async (req, res, next) => {
 
 api.get("/model/list", requireRole(), async (req, res, next) => {
   try {
-    const results = await listModels({ type: req.query.type });
-    res.json(results);
+    const userId = req.session?.user?.id;
+    if (amsClient) {
+      const results = await amsClient.getModels(userId, { type: req.query.type });
+      return res.json(results);
+    }
+    // Monolith mode: query DB directly
+    const models = await db.query.Model.findMany({
+      with: { Provider: { columns: { name: true } } },
+    });
+    const filtered = req.query.type ? models.filter((m) => m.type === req.query.type) : models;
+    res.json(
+      filtered.map((m) => ({
+        modelID: m.id,
+        name: m.name,
+        type: m.type,
+        description: m.description,
+        providerName: m.Provider?.name || null,
+        internalName: m.internalName,
+        defaultParameters: m.defaultParameters,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
+      }))
+    );
   } catch (error) {
     console.error("Error listing models:", error);
     next(createHttpError(500, error, "An error occurred while fetching models"));
