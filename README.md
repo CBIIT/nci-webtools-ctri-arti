@@ -50,6 +50,7 @@ All services run in one process. No `GATEWAY_URL`/`CMS_URL` set — factory clie
 ```bash
 cd server
 cp .env.example .env   # Configure with PGlite for easy setup
+cp test.env.example test.env # Configure test environment
 npm install
 npm run start:dev
 ```
@@ -110,6 +111,8 @@ cd server && npm run test:integration  # Full integration tests (Playwright + AP
 ```
 
 Tests use real services (AWS Bedrock, PostgreSQL/PGlite). No mocking.
+
+When running tests, make sure your local server is running.
 
 ## Deployment
 
