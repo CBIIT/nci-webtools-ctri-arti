@@ -216,6 +216,16 @@ class EcsServiceStack(Stack):
             enable_ecs_managed_tags=True,
             enable_execute_command=True,
             min_healthy_percent=100,
+            service_connect_configuration=ecs.ServiceConnectProps(
+                namespace=http_namespace.namespace_name,
+                services=[
+                    ecs.ServiceConnectService(
+                        port_mapping_name=port_mapping["name"],
+                        dns_name=prefix,
+                        port=port_mapping["containerPort"],
+                    )
+                ],
+            ),
         )
 
         listener = elbv2.ApplicationListener.from_lookup(
