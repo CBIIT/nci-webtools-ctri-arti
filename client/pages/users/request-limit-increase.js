@@ -16,7 +16,7 @@ import { Check } from "lucide-solid";
  * - Textarea with 500 character limit and remaining character counter
  * - Client-side validation requiring a non-empty reason
  * - Form submission with loading state and error handling
- * - API integration with `/api/v1/request-limit-increase` endpoint
+ * - API integration with `/api/v1/usage` endpoint
  * - Success confirmation UI after successful submission
  * 
  * @param {Object} props - Component properties
@@ -64,28 +64,24 @@ function RequestLimitIncrease(props) {
     console.log("handleSubmit called with reason:", reason());
 
     try {
-      if (hasReason()) {
-        setIsSubmitting(true);
-        setSubmitError("");
+      setIsSubmitting(true);
+      setSubmitError("");
 
-        /* const response = await fetch('/api/v1/request-limit-increase', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reason: reason() }),
-        });
+      /* const response = await fetch('/api/v1/usage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ justification: reason() }),
+      });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          setSubmitError(errorData.message || 'Failed to submit your request. Please try again later.');
-          return;
-        } */
-
-        setIsSubmitting(false);
-        setStatus("success");
-      } else {
-        setSubmitError("Reason for request is required.");
+      if (!response.ok) {
+        const errorData = await response.json();
+        setSubmitError(errorData.message || 'Failed to submit your request. Please try again later.');
         return;
-      }
+      } */
+
+      setIsSubmitting(false)
+      setStatus("success")
+      closeDialog()
     } catch (err) {
       console.error("Error submitting limit increase request:", err);
       setSubmitError("An unexpected error occurred. Please try again later.");
@@ -103,6 +99,22 @@ function RequestLimitIncrease(props) {
         Request Limit Increase
       </button>
 
+      <!-- Success Banner -->
+      <${Show} when=${() => status() === "success"}>
+        <div
+          class="alert alert-success alert-dismissible fade show position-absolute top-0 start-50 translate-middle-x mt-3"
+          role="alert"
+        >
+          <div>Your limit increase request has been submitted for review.</div>
+          <button
+            type="button"
+            class="btn-close"
+            onClick=${() => setStatus("init")}
+            aria-label="Close"
+          ></button>
+        </div>
+      <//>
+
       <dialog
         id="request-limit-increase-dialog"
         class="request-limit-increase-dialog modal fade show"
@@ -114,11 +126,6 @@ function RequestLimitIncrease(props) {
             <form>
               <${Switch}>
                 <${Match} when=${() => status() === "success"}>
-                  <div class="modal-header">
-                    <div class="modal-title font-inter" id="exampleModalLiveLabel">
-                      Request Limit Increase
-                    </div>
-                  </div>
                   <div class="modal-body font-inter">
                     <div class="success-container text-center">
                       <div class="icon-container"><${Check} size="36" color="#00C950" /></div>
@@ -172,6 +179,7 @@ function RequestLimitIncrease(props) {
                       name="reason-for-request-ta"
                       rows="5"
                       class="form-control"
+                      classList=${() => submitError().length > 0}
                       maxlength="500"
                       value=${reason()}
                       onInput=${(e) => setReason(e.target.value)}
@@ -191,7 +199,7 @@ function RequestLimitIncrease(props) {
                     <button
                       type="submit"
                       class="btn btn-pill btn-action font-nunito"
-                      disabled=${() => isSubmitting()}
+                      disabled=${() => isSubmitting() || !hasReason()}
                     >
                       Submit
                     </button>
