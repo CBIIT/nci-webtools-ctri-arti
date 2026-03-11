@@ -9,7 +9,7 @@ import { Check } from "lucide-solid"
  * 
  * @description The component manages a two-state modal interface:
  * - Initial state: Form with reason textarea and current budget display
- * - Success state: Confirmation message with checkmark icon
+ * - Success state: Confirmation message after successful submission
  * 
  * Features:
  * - Displays current daily cost limit (shows "Unlimited" if budget is null)
@@ -46,6 +46,7 @@ function RequestLimitIncrease(props) {
   const [reason, setReason] = createSignal("");
   let limitDialog;
   const showDialog = () => {
+    setStatus("init")
     limitDialog.showModal();
   }
   const closeDialog = () => {
@@ -55,7 +56,6 @@ function RequestLimitIncrease(props) {
   }
   const resetDialog = () => {
     setReason("")
-    setStatus("init")
     setSubmitError("")
   }
 
@@ -131,16 +131,6 @@ function RequestLimitIncrease(props) {
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
             <form>
-              <${Switch}>
-                <${Match} when=${() => status() === "success"}>
-                  <div class="modal-body font-inter">
-                    <div class="success-container text-center">
-                      <div class="icon-container"><${Check} size="36" color="#00C950" /></div>
-                      <div>Your limit increase request has been submitted review.</div>
-                    </div>
-                  </div>
-                <//>
-                <${Match} when=${() => status() === "init"}>
                   <div class="modal-header">
                     <div class="modal-title font-inter" id="exampleModalLiveLabel">
                       Request Limit Increase
@@ -211,8 +201,6 @@ function RequestLimitIncrease(props) {
                       Submit
                     </button>
                   </div>
-                <//>
-              <//>
             </form>
           </div>
         </div>
