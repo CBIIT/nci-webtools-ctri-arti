@@ -15,6 +15,7 @@ const initialState = () => ({
   isLoggedIn: false,
   status: Status.LOADING,
   user: null,
+  expires: null,
 });
 
 /**
@@ -95,6 +96,23 @@ export const AuthProvider = (props) => {
     setState((prev) => ({ ...prev, user: { ...state.user, ...data } }));
   };
 
+  const refreshSession = async () => {
+    try {
+      const apiKey = new URLSearchParams(location.search).get("apiKey");
+      const headers = apiKey ? { "x-api-key": apiKey } : undefined;
+      const response = await fetch("/api/v1/session", { method: "POST", headers });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.user) setState((prev) => ({ ...prev, user: data.user, expires: data.expires }));
+    } catch (e) {
+      console.error("Error refreshing session", e);
+    }
+  };
+
+  const updateExpires = (expires) => {
+    setState((prev) => ({ ...prev, expires }));
+  };
+
   createEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
@@ -120,6 +138,7 @@ export const AuthProvider = (props) => {
         isLoggedIn: true,
         status: Status.LOADED,
         user: data.user,
+        expires: data.expires,
       });
     })();
 
@@ -139,9 +158,15 @@ export const AuthProvider = (props) => {
     status: () => state.status,
     isLoggedIn: () => state.isLoggedIn,
     user: () => state.user,
+    expires: () => state.expires,
     logout: () => logout(),
     setData: (data) => setData(data),
+    refreshSession: () => refreshSession(),
+    updateExpires: (expires) => updateExpires(expires),
   }));
+
+  // Expose auth context for integration tests
+  window.__authContext = value;
 
   return html`<${Context.Provider} value=${value()}>${props.children}<//>`;
 };

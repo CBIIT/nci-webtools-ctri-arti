@@ -55,7 +55,7 @@ paths:
     get:
       operationId: getSession
       summary: Get current session info
-      description: Returns user info and session expiry. Touches session (rolling expiry).
+      description: Returns user info and session expiry. Does NOT touch the session.
       tags: [Auth]
       security: []
       responses:
@@ -71,26 +71,25 @@ paths:
                   expires:
                     type: string
                     format: date-time
-
-  /api/session-ttl:
-    get:
-      operationId: getSessionTtl
-      summary: Get session time-to-live
+    post:
+      operationId: refreshSession
+      summary: Refresh session expiry
+      description: Touches the session to reset the cookie expiration, then returns updated session info.
       tags: [Auth]
       security: []
       responses:
         "200":
-          description: Session TTL in seconds
+          description: Session info with refreshed expiry
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  ttl:
-                    type: integer
-                    nullable: true
-                  error:
+                  user:
+                    $ref: "#/components/schemas/User"
+                  expires:
                     type: string
+                    format: date-time
 
   /api/config:
     get:
@@ -106,9 +105,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  sessionTtlPollMs:
-                    type: integer
-                    default: 10000
                   budgetResetSchedule:
                     type: string
                     description: Cron expression for budget reset schedule

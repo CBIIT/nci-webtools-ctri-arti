@@ -28,6 +28,13 @@ function assertISODate(value, label) {
   assert.ok(!isNaN(Date.parse(value)), `${label} should be a valid ISO date`);
 }
 
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 let testUser;
 
 test("API Smoke Tests", async (t) => {
@@ -39,6 +46,15 @@ test("API Smoke Tests", async (t) => {
     assert.ok(json.user.id, "user should have id");
     assert.ok(json.user.email, "user should have email");
     testUser = json.user;
+  });
+
+  // ── POST /session ──────────────────────────────────────────────────────────
+  await t.test("POST /session refreshes session", async () => {
+    const { status, json } = await api("POST", "/session");
+    assert.strictEqual(status, 200);
+    assert.ok(json.user, "should return user");
+    assert.ok(json.expires, "should return expires");
+    assertISODate(json.expires, "expires");
   });
 
   // ── POST /admin/users (update with timestamps + Role) ────────────────────
@@ -194,6 +210,58 @@ test("API Smoke Tests", async (t) => {
     // Streaming responses have text/event-stream or similar content type
     const text = await res.text();
     assert.ok(text.length > 0, "streaming response should have content");
+  });
+
+  await t.test("POST /model stream=true is recorded in GET /admin/usage", async () => {
+    const today = formatLocalDate(new Date());
+    const monthAgo = formatLocalDate(new Date(Date.now() - 30 * 86400000));
+    const usageType = `e2e-usage-repro-${Date.now()}`;
+
+    const before = await api(
+      "GET",
+      `/admin/usage?userId=${testUser.id}&type=${encodeURIComponent(usageType)}&startDate=${monthAgo}&endDate=${today}&limit=20`
+    );
+    assert.strictEqual(before.status, 200);
+    const beforeCount = before.json?.meta?.total ?? before.json?.data?.length ?? 0;
+
+    const res = await fetch("/api/v1/model", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({
+        model: "mock-model",
+        messages: [{ role: "user", content: [{ text: "usage repro stream test" }] }],
+        stream: true,
+        type: usageType,
+      }),
+    });
+    assert.ok(res.ok, `streaming request failed: ${res.status}`);
+    const streamText = await res.text();
+    assert.ok(streamText.length > 0, "streaming response should have content");
+
+    let after;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      after = await api(
+        "GET",
+        `/admin/usage?userId=${testUser.id}&type=${encodeURIComponent(usageType)}&startDate=${monthAgo}&endDate=${today}&limit=20`
+      );
+      assert.strictEqual(after.status, 200);
+      const afterCount = after.json?.meta?.total ?? after.json?.data?.length ?? 0;
+      if (afterCount > beforeCount) break;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
+    const afterCount = after.json?.meta?.total ?? after.json?.data?.length ?? 0;
+    assert.ok(
+      afterCount > beforeCount,
+      `expected usage count to increase for type ${usageType}; before=${beforeCount}, after=${afterCount}`
+    );
+
+    const entry = (after.json?.data || []).find((row) => row.type === usageType);
+    assert.ok(entry, "expected recorded usage entry");
+    assert.strictEqual(entry.userID, testUser.id, "usage entry should belong to the test user");
+    assert.strictEqual(entry.modelName, "Mock Model", "usage entry should resolve model name");
+    assert.ok(entry.inputTokens > 0, "usage entry should include input tokens");
+    assertISODate(entry.createdAt, "usage createdAt");
   });
 
   // ── Error handling ─────────────────────────────────────────────────────
@@ -415,6 +483,79 @@ test("API Smoke Tests", async (t) => {
         `Errors after custom date switch: ${errors.map((e) => e.message)}`
       );
     } finally {
+      dispose();
+      document.body.removeChild(container);
+    }
+  });
+
+  // ── Inactivity dialog E2E ──────────────────────────────────────────────
+  await t.test("Inactivity dialog: warning appears and Extend Session works", async () => {
+    const { container, errors, dispose } = mountApp("/");
+    const originalFetch = window.fetch;
+    try {
+      // Wait for page + auth to load
+      await waitForElement(container, "h1", (el) => el.textContent.includes("Research Optimizer"));
+      await new Promise((r) => setTimeout(r, 500));
+
+      const authCtx = window.__authContext?.();
+      assert.ok(authCtx, "Auth context should be exposed on window.__authContext");
+      assert.ok(authCtx.updateExpires, "Auth context should have updateExpires");
+      assert.ok(authCtx.expires(), "Auth context should have an expires value");
+
+      // Set expires to 10 seconds from now — under the warning threshold
+      authCtx.updateExpires(new Date(Date.now() + 10 * 1000).toISOString());
+
+      // Wait for the warning modal to appear
+      const warningModal = await waitForElement(container, ".inactivity-warning-modal", 10000);
+      assert.ok(warningModal, "Warning modal should appear when session is about to expire");
+
+      // Verify countdown text is shown
+      const warningText = container.querySelector(".inactivity-warning-text");
+      assert.ok(warningText, "Warning text should be present");
+      assert.ok(
+        warningText.textContent.includes("about to expire"),
+        "Warning should mention expiration"
+      );
+
+      // Intercept POST /session to return a far-future expiry
+      const farFutureExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      window.fetch = function (url, opts) {
+        if (typeof url === "string" && url.includes("/api/v1/session") && opts?.method === "POST") {
+          return Promise.resolve(
+            new Response(JSON.stringify({ user: authCtx.user(), expires: farFutureExpiry }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            })
+          );
+        }
+        return originalFetch.apply(this, arguments);
+      };
+
+      // Click "EXTEND SESSION"
+      const extendBtn = container.querySelector(".extend-button");
+      assert.ok(extendBtn, "Extend Session button should be present");
+      extendBtn.click();
+
+      // Wait for warning modal to disappear
+      await new Promise((resolve, reject) => {
+        const start = Date.now();
+        (function check() {
+          const modal = container.querySelector(".inactivity-warning-modal");
+          if (!modal) return resolve();
+          if (Date.now() - start > 5000)
+            return reject(new Error("Warning modal did not close after Extend Session"));
+          requestAnimationFrame(check);
+        })();
+      });
+
+      assert.ok(
+        !container.querySelector(".inactivity-warning-modal"),
+        "Warning modal should be gone after extending session"
+      );
+
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    } finally {
+      window.fetch = originalFetch;
       dispose();
       document.body.removeChild(container);
     }

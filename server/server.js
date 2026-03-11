@@ -8,6 +8,7 @@ import logger from "shared/logger.js";
 import { nocache } from "shared/middleware.js";
 
 import api from "./services/api.js";
+import { touchSession } from "./services/middleware.js";
 import { startScheduler } from "./services/scheduler.js";
 import { createCertificate } from "./services/utils.js";
 
@@ -42,13 +43,14 @@ export async function createApp(env = process.env) {
   app.use(
     session({
       cookie: { maxAge: sessionMaxAge },
-      rolling: true,
+      rolling: false,
       resave: false,
       saveUninitialized: false,
       secret: SESSION_SECRET,
       store,
     })
   );
+  app.use(touchSession({ except: (req) => req.method === "GET" && req.path.endsWith("/session") }));
   app.use("/api/v1", api);
   app.use("/api", api); // backward compat (deprecated)
   app.use(express.static(CLIENT_FOLDER));

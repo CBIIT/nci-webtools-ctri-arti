@@ -150,6 +150,25 @@ export function oauthMiddleware() {
 }
 
 /**
+ * Returns middleware that touches the session on every request unless
+ * the except callback returns true. Use with rolling: false.
+ *
+ * @param {{ except?: (req) => boolean }} [options]
+ * @returns {Function} Express middleware
+ */
+export function touchSession({ except } = {}) {
+  return (req, res, next) => {
+    if (except?.(req)) {
+      // Neutralize express-session's unconditional end-of-request touch
+      if (req.session) req.session.touch = () => {};
+      return next();
+    }
+    req.session?.touch();
+    next();
+  };
+}
+
+/**
  * Auth middleware that resolves X-API-Key / session and optionally enforces a role.
  *
  * - Global usage  `api.use(requireRole())` — resolves API key into session

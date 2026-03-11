@@ -7,7 +7,7 @@ import { describeCron } from "shared/cron.js";
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
 import { USAGE_RESET_SCHEDULE } from "../scheduler.js";
 
-const { OAUTH_PROVIDER_ENABLED, SESSION_TTL_POLL_MS } = process.env;
+const { OAUTH_PROVIDER_ENABLED } = process.env;
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
@@ -40,34 +40,19 @@ api.get("/logout", (req, res) => {
   req.session.destroy(() => res.redirect(destination));
 });
 
-api.get("/session", async (req, res) => {
+api.all("/session", async (req, res) => {
   const { session } = req;
-  session.touch();
-  session.expires = session.cookie.expires;
-  if (session?.user?.id) {
-    session.user = await db.query.User.findFirst({
-      where: eq(User.id, session.user.id),
-      with: { Role: true },
-    });
+  if (req.method === "POST") {
+    session.touch();
+    session.expires = session.cookie.expires;
   }
-  res.json({ user: session.user, expires: session.expires });
-});
-
-api.get("/session-ttl", async (req, res) => {
-  const { session } = req;
-
-  if (!session || !session.cookie || !session.cookie.expires) {
-    return res.json({ ttl: null, error: "No session is found." });
-  }
-
-  const expiresDate = new Date(session.cookie.expires);
-  const ttl = Math.round((expiresDate.valueOf() - Date.now()) / 1000);
-
-  res.json({ ttl: ttl > 0 ? ttl : 0 });
+  const user = session.user?.id
+    ? await db.query.User.findFirst({ where: eq(User.id, session.user.id), with: { Role: true } })
+    : session.user;
+  res.json({ user, expires: session.cookie.expires });
 });
 
 api.get("/config", async (req, res) => {
-  const defaultSessionTtlPollMs = 10 * 1000;
   const { label: budgetLabel, resetDescription: budgetResetDescription } =
     describeCron(USAGE_RESET_SCHEDULE);
 
@@ -80,7 +65,6 @@ api.get("/config", async (req, res) => {
   const usageTypes = [...new Set([...staticTypes, ...agents])];
 
   res.json({
-    sessionTtlPollMs: parseInt(SESSION_TTL_POLL_MS, 10) || defaultSessionTtlPollMs,
     budgetResetSchedule: USAGE_RESET_SCHEDULE,
     budgetLabel,
     budgetResetDescription,

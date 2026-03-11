@@ -28,9 +28,10 @@
   <body>
     <h1>Simple Session Test</h1>
 
-    <a href="/api/login?destination=/test.html">Login</a>
-    <a href="/api/logout?destination=/test.html">Logout</a>
+    <a href="/api/v1/login?destination=/session.html">Login</a>
+    <a href="/api/v1/logout?destination=/session.html">Logout</a>
     <button onclick="getSession()">Refresh Info</button>
+    <button onclick="extendSession()">Extend Session (POST)</button>
 
     <div id="expires-display">Expires in: Calculating...</div>
     <pre id="session-display">Loading session data...</pre>
@@ -82,7 +83,7 @@
 
         try {
           // Basic cache-busting query parameter
-          const response = await fetch(`/api/session?t=${Date.now()}`);
+          const response = await fetch(`/api/v1/session?t=${Date.now()}`);
 
           if (!response.ok) {
             throw new Error(`HTTP error ${response.status}`);
@@ -107,6 +108,26 @@
           expiresDisplay.textContent = `Expires in: Error (${error.message})`;
           sessionDisplay.textContent = `Error fetching session: ${error.message}`;
           currentSessionData = null; // Clear data on error
+        }
+      }
+
+      async function extendSession() {
+        try {
+          const response = await fetch(`/api/v1/session?t=${Date.now()}`, { method: "POST" });
+          if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+          currentSessionData = await response.json();
+          sessionDisplay.textContent = JSON.stringify(currentSessionData, null, 2);
+          if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+          updateTimer();
+          if (
+            currentSessionData?.expires &&
+            new Date(currentSessionData.expires).getTime() > Date.now()
+          ) {
+            sessionTimerInterval = setInterval(updateTimer, 100);
+          }
+        } catch (error) {
+          console.error("Failed to extend session:", error);
+          expiresDisplay.textContent = `Extends: Error (${error.message})`;
         }
       }
 

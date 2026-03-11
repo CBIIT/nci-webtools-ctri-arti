@@ -1,103 +1,55 @@
 import { X } from "lucide-solid";
-import { createEffect, createResource, createSignal, onCleanup, Show } from "solid-js";
+import { createEffect, createSignal, onCleanup, Show } from "solid-js";
 import html from "solid-js/html";
-
 
 import { useAuthContext } from "../contexts/auth-context.js";
 import { secondsToMinuteString } from "../utils/utils.js";
 
-/**
- * The time (in seconds) at which the timeout warning banner should be displayed.
- */
-const timeoutThresholdSeconds = 300;
+const WARN_AT = 300;
 
-/**
- * An inactivity dialog that handles session the TTL ping and timeout.
- */
 export default function InactivityDialog() {
-  const [env] = createResource(() => fetch("/api/v1/config").then((res) => res.json()));
-  const { isLoggedIn, logout } = useAuthContext() || {};
+  const { isLoggedIn, logout, expires, refreshSession } = useAuthContext() || {};
 
+  const [timeLeft, setTimeLeft] = createSignal(WARN_AT);
   const [warning, setWarning] = createSignal(false);
   const [timedOut, setTimedOut] = createSignal(
-    sessionStorage.getItem("sessionTimedOut") === "true" || false
+    sessionStorage.getItem("sessionTimedOut") === "true"
   );
-  const [timeLeft, setTimeLeft] = createSignal(timeoutThresholdSeconds);
-
-  const extendSession = async () => {
-    try {
-      const res = await fetch("/api/v1/session");
-      const data = await res.json();
-
-      if (data?.user) {
-        setWarning(false);
-      }
-    } catch (e) {
-      console.error("Error in extending session", e);
-    }
-  };
-
-  const handleExtendSession = () => {
-    extendSession();
-  };
-
-  const handleSignOut = (withBanner = false) => {
-    logout();
-
-    if (withBanner) {
-      // enqueueSnackbar("You have been logged out.", { variant: "default" });
-    }
-  };
-
-  const loadData = async () => {
-    try {
-      const res = await fetch("/api/v1/session-ttl");
-      const data = await res.json();
-      const { ttl } = data;
-
-      if (ttl <= 0) {
-        sessionStorage.setItem("sessionTimedOut", "true");
-        handleSignOut();
-      } else if (ttl > 0 && ttl <= timeoutThresholdSeconds) {
-        // Session expiring soon
-        setTimeLeft(ttl);
-        setWarning(true);
-      }
-    } catch (e) {
-      console.error("Error in fetching session ttl", e);
-      // On error, assume session might be expired
-      sessionStorage.setItem("sessionTimedOut", "true");
-      setTimedOut(true);
-      setWarning(false);
-    }
-  };
 
   createEffect(() => {
-    let intervalId;
-    if (isLoggedIn()) {
-      const pollInterval = env()?.sessionTtlPollMs || 10 * 1000;
-      intervalId = setInterval(loadData, pollInterval);
-    } else if (sessionStorage.getItem("sessionTimedOut") === "true") {
+    if (!isLoggedIn()) return;
+
+    const id = setInterval(() => {
+      const exp = expires();
+      if (!exp) return;
+      const secs = Math.max(0, Math.round((new Date(exp) - Date.now()) / 1000));
+      setTimeLeft(secs);
+      if (secs <= 0) {
+        sessionStorage.setItem("sessionTimedOut", "true");
+        logout();
+      } else if (secs <= WARN_AT && !warning()) {
+        setWarning(true);
+      }
+    }, 1000);
+
+    onCleanup(() => clearInterval(id));
+  });
+
+  createEffect(() => {
+    if (!isLoggedIn() && sessionStorage.getItem("sessionTimedOut") === "true") {
       setTimedOut(true);
       sessionStorage.removeItem("sessionTimedOut");
     }
-
-    onCleanup(() => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    });
   });
 
-  const handleKeyDown = (e, callback) => {
-    if (e.key === "Enter") {
-      callback();
-    }
+  const extend = async () => {
+    await refreshSession();
+    setWarning(false);
   };
 
   return html`
     <span>
-      <${Show} when=${() => warning()}>
+      <${Show} when=${warning}>
         <div
           class="modal fade show inactivity-warning-modal"
           tabindex="-1"
@@ -121,14 +73,14 @@ export default function InactivityDialog() {
                   <button
                     type="button"
                     class="btn btn-secondary button-group extend-button"
-                    onClick=${handleExtendSession}
+                    onClick=${extend}
                   >
                     EXTEND SESSION
                   </button>
                   <button
                     type="button"
                     class="btn btn-primary button-group logout-button"
-                    onClick=${() => handleSignOut(true)}
+                    onClick=${logout}
                   >
                     LOGOUT
                   </button>
@@ -150,7 +102,7 @@ export default function InactivityDialog() {
                 <div
                   class="close-icon"
                   onClick=${() => setTimedOut(false)}
-                  onKeyDown=${(e) => handleKeyDown(e, () => setTimedOut(false))}
+                  onKeyDown=${(e) => e.key === "Enter" && setTimedOut(false)}
                   tabindex="0"
                   role="button"
                 >
