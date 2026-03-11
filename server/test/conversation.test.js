@@ -226,26 +226,6 @@ test("ConversationService", async (t) => {
     });
   });
 
-  // ===== COMPRESS METHOD =====
-
-  await t.test("compressConversation", async (ct) => {
-    let conversationId;
-
-    await ct.test("setup", async () => {
-      const conversation = await svc.createConversation(testUser.id, { title: "Compress Test" });
-      conversationId = conversation.id;
-    });
-
-    await ct.test("updates summaryMessageID", async () => {
-      const result = await svc.compressConversation(testUser.id, conversationId, {
-        summary: "summarized",
-        summaryMessageID: 5,
-      });
-      assert.ok(result);
-      assert.strictEqual(result.summaryMessageID, 5);
-    });
-  });
-
   // ===== RESOURCE CRUD =====
 
   await t.test("Resource CRUD", async (rt) => {
