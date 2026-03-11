@@ -10,6 +10,10 @@
 
 import { ConversationService } from "cms/conversation.js";
 
+import { invoke } from "./gateway.js";
+
+ConversationService.setInvoker(invoke);
+
 const CMS_URL = process.env.CMS_URL;
 
 /**
@@ -47,11 +51,11 @@ function buildDirectClient() {
     createConversation: (userId, data) => s.createConversation(userId, data),
     getConversations: (userId, options) => s.getConversations(userId, options),
     getConversation: (userId, conversationId) => s.getConversation(userId, conversationId),
-    updateConversation: (userId, conversationId, updates) => s.updateConversation(userId, conversationId, updates),
+    updateConversation: (userId, conversationId, updates) =>
+      s.updateConversation(userId, conversationId, updates),
     deleteConversation: (userId, conversationId) => s.deleteConversation(userId, conversationId),
 
-    getContext: (userId, conversationId) => s.getContext(userId, conversationId),
-    compressConversation: (userId, conversationId, data) => s.compressConversation(userId, conversationId, data),
+    getContext: (userId, conversationId, options) => s.getContext(userId, conversationId, options),
 
     addMessage: (userId, conversationId, data) => s.addMessage(userId, conversationId, data),
     getMessages: (userId, conversationId) => s.getMessages(userId, conversationId),
@@ -77,10 +81,12 @@ function buildDirectClient() {
     deleteResource: (userId, resourceId) => s.deleteResource(userId, resourceId),
 
     addVectors: (userId, conversationId, vectors) => s.addVectors(userId, conversationId, vectors),
-    getVectorsByConversation: (userId, conversationId) => s.getVectorsByConversation(userId, conversationId),
+    getVectorsByConversation: (userId, conversationId) =>
+      s.getVectorsByConversation(userId, conversationId),
     getVectorsByResource: (userId, resourceId) => s.getVectorsByResource(userId, resourceId),
     searchVectors: (params) => s.searchVectors(params),
-    deleteVectorsByConversation: (userId, conversationId) => s.deleteVectorsByConversation(userId, conversationId),
+    deleteVectorsByConversation: (userId, conversationId) =>
+      s.deleteVectorsByConversation(userId, conversationId),
   };
 }
 
@@ -90,26 +96,48 @@ function buildHttpClient() {
     createAgent: (userId, data) => httpRequest("POST", "/api/v1/agents", data, userId),
     getAgents: (userId) => httpRequest("GET", "/api/v1/agents", null, userId),
     getAgent: (userId, agentId) => httpRequest("GET", `/api/v1/agents/${agentId}`, null, userId),
-    updateAgent: (userId, agentId, updates) => httpRequest("PUT", `/api/v1/agents/${agentId}`, updates, userId),
-    deleteAgent: (userId, agentId) => httpRequest("DELETE", `/api/v1/agents/${agentId}`, null, userId),
+    updateAgent: (userId, agentId, updates) =>
+      httpRequest("PUT", `/api/v1/agents/${agentId}`, updates, userId),
+    deleteAgent: (userId, agentId) =>
+      httpRequest("DELETE", `/api/v1/agents/${agentId}`, null, userId),
 
-    createConversation: (userId, data) => httpRequest("POST", "/api/v1/conversations", data, userId),
+    createConversation: (userId, data) =>
+      httpRequest("POST", "/api/v1/conversations", data, userId),
     getConversations: (userId, options = {}) => {
       const { limit = 20, offset = 0 } = options;
-      return httpRequest("GET", `/api/v1/conversations?limit=${limit}&offset=${offset}`, null, userId);
+      return httpRequest(
+        "GET",
+        `/api/v1/conversations?limit=${limit}&offset=${offset}`,
+        null,
+        userId
+      );
     },
-    getConversation: (userId, conversationId) => httpRequest("GET", `/api/v1/conversations/${conversationId}`, null, userId),
-    updateConversation: (userId, conversationId, updates) => httpRequest("PUT", `/api/v1/conversations/${conversationId}`, updates, userId),
-    deleteConversation: (userId, conversationId) => httpRequest("DELETE", `/api/v1/conversations/${conversationId}`, null, userId),
+    getConversation: (userId, conversationId) =>
+      httpRequest("GET", `/api/v1/conversations/${conversationId}`, null, userId),
+    updateConversation: (userId, conversationId, updates) =>
+      httpRequest("PUT", `/api/v1/conversations/${conversationId}`, updates, userId),
+    deleteConversation: (userId, conversationId) =>
+      httpRequest("DELETE", `/api/v1/conversations/${conversationId}`, null, userId),
 
-    getContext: (userId, conversationId) => httpRequest("GET", `/api/v1/conversations/${conversationId}/context`, null, userId),
-    compressConversation: (userId, conversationId, data) => httpRequest("POST", `/api/v1/conversations/${conversationId}/compress`, data, userId),
+    getContext: (userId, conversationId, options = {}) => {
+      const query = options.compressed ? "?compressed=true" : "";
+      return httpRequest(
+        "GET",
+        `/api/v1/conversations/${conversationId}/context${query}`,
+        null,
+        userId
+      );
+    },
 
-    addMessage: (userId, conversationId, data) => httpRequest("POST", `/api/v1/conversations/${conversationId}/messages`, data, userId),
-    getMessages: (userId, conversationId) => httpRequest("GET", `/api/v1/conversations/${conversationId}/messages`, null, userId),
+    addMessage: (userId, conversationId, data) =>
+      httpRequest("POST", `/api/v1/conversations/${conversationId}/messages`, data, userId),
+    getMessages: (userId, conversationId) =>
+      httpRequest("GET", `/api/v1/conversations/${conversationId}/messages`, null, userId),
     getMessage: (userId, messageId) => s.getMessage(userId, messageId),
-    updateMessage: (userId, messageId, updates) => httpRequest("PUT", `/api/v1/messages/${messageId}`, updates, userId),
-    deleteMessage: (userId, messageId) => httpRequest("DELETE", `/api/v1/messages/${messageId}`, null, userId),
+    updateMessage: (userId, messageId, updates) =>
+      httpRequest("PUT", `/api/v1/messages/${messageId}`, updates, userId),
+    deleteMessage: (userId, messageId) =>
+      httpRequest("DELETE", `/api/v1/messages/${messageId}`, null, userId),
 
     createTool: (data) => httpRequest("POST", "/api/v1/tools", data, null),
     getTool: (toolId) => httpRequest("GET", `/api/v1/tools/${toolId}`, null, null),
@@ -120,19 +148,27 @@ function buildHttpClient() {
     createPrompt: (data) => httpRequest("POST", "/api/v1/prompts", data, null),
     getPrompt: (promptId) => httpRequest("GET", `/api/v1/prompts/${promptId}`, null, null),
     getPrompts: () => httpRequest("GET", "/api/v1/prompts", null, null),
-    updatePrompt: (promptId, updates) => httpRequest("PUT", `/api/v1/prompts/${promptId}`, updates, null),
+    updatePrompt: (promptId, updates) =>
+      httpRequest("PUT", `/api/v1/prompts/${promptId}`, updates, null),
     deletePrompt: (promptId) => httpRequest("DELETE", `/api/v1/prompts/${promptId}`, null, null),
 
     addResource: (userId, data) => httpRequest("POST", "/api/v1/resources", data, userId),
-    getResource: (userId, resourceId) => httpRequest("GET", `/api/v1/resources/${resourceId}`, null, userId),
-    getResourcesByAgent: (userId, agentId) => httpRequest("GET", `/api/v1/agents/${agentId}/resources`, null, userId),
-    deleteResource: (userId, resourceId) => httpRequest("DELETE", `/api/v1/resources/${resourceId}`, null, userId),
+    getResource: (userId, resourceId) =>
+      httpRequest("GET", `/api/v1/resources/${resourceId}`, null, userId),
+    getResourcesByAgent: (userId, agentId) =>
+      httpRequest("GET", `/api/v1/agents/${agentId}/resources`, null, userId),
+    deleteResource: (userId, resourceId) =>
+      httpRequest("DELETE", `/api/v1/resources/${resourceId}`, null, userId),
 
-    addVectors: (userId, conversationId, vectors) => httpRequest("POST", "/api/v1/vectors", { conversationID: conversationId, vectors }, userId),
-    getVectorsByConversation: (userId, conversationId) => httpRequest("GET", `/api/v1/conversations/${conversationId}/vectors`, null, userId),
+    addVectors: (userId, conversationId, vectors) =>
+      httpRequest("POST", "/api/v1/vectors", { conversationID: conversationId, vectors }, userId),
+    getVectorsByConversation: (userId, conversationId) =>
+      httpRequest("GET", `/api/v1/conversations/${conversationId}/vectors`, null, userId),
     getVectorsByResource: (userId, resourceId) => s.getVectorsByResource(userId, resourceId),
-    searchVectors: (params) => httpRequest("GET", `/api/v1/vectors/search?${new URLSearchParams(params)}`, null, null),
-    deleteVectorsByConversation: (userId, conversationId) => s.deleteVectorsByConversation(userId, conversationId),
+    searchVectors: (params) =>
+      httpRequest("GET", `/api/v1/vectors/search?${new URLSearchParams(params)}`, null, null),
+    deleteVectorsByConversation: (userId, conversationId) =>
+      s.deleteVectorsByConversation(userId, conversationId),
   };
 }
 
@@ -151,7 +187,6 @@ export const {
   updateConversation,
   deleteConversation,
   getContext,
-  compressConversation,
   addMessage,
   getMessages,
   getMessage,

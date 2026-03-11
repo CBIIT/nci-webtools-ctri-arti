@@ -303,6 +303,16 @@ export const TOOLS = [
 ].filter((t) => t.toolSpec);
 
 // =================================================================================
+// CONVERSATION SUMMARIZATION HELPERS
+// =================================================================================
+
+function getInferenceMessages(messages, summaryMessageID) {
+  if (!summaryMessageID) return messages;
+  const summaryIdx = messages.findIndex((m) => m.id === summaryMessageID);
+  return summaryIdx >= 0 ? messages.slice(summaryIdx) : messages;
+}
+
+// =================================================================================
 // CORE LOGIC & STATE - useAgent Hook
 // =================================================================================
 
@@ -318,6 +328,7 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     thread: {
       id: null,
       name: null,
+      summaryMessageID: null,
     },
     modelId: null,
     reasoningMode: false,
@@ -382,8 +393,11 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     if (!history?.length) return;
     const thread = await db.getThread(params.threadId);
     const name = thread?.name || "Untitled";
-    const messages = history.map(({ role, content }) => ({ role, content }));
-    setAgent({ messages, thread: { id: params.threadId, name } });
+    const messages = history.map(({ id, role, content }) => ({ id, role, content }));
+    setAgent({
+      messages,
+      thread: { id: params.threadId, name, summaryMessageID: thread?.summaryMessageID || null },
+    });
   });
 
   // Load threads on mount
@@ -430,7 +444,11 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
 
     setAgent({
       id: record.id,
-      thread: { id: params.threadId, name: agent.thread.name },
+      thread: {
+        id: params.threadId,
+        name: agent.thread.name,
+        summaryMessageID: agent.thread.summaryMessageID,
+      },
       modelId,
       reasoningMode,
       name: record.name,
@@ -445,6 +463,18 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
       messageRecord.agentId = params.agentId;
       await db.addMessage(params.threadId, messageRecord);
     }
+
+    // Refresh thread to pick up any CMS-triggered summarization
+    const updatedThread = await db.getThread(params.threadId);
+    if (updatedThread?.summaryMessageID !== agent.thread.summaryMessageID) {
+      setAgent("thread", "summaryMessageID", updatedThread.summaryMessageID);
+      const history = await db.getMessages(params.threadId);
+      setAgent(
+        "messages",
+        history.map(({ id, role, content }) => ({ id, role, content }))
+      );
+    }
+
     setAgent("loading", false);
   }
 
@@ -584,8 +614,11 @@ async function sendToModel(config) {
   const tools = config.tools.map(({ toolSpec }) => ({ toolSpec })).filter(Boolean);
   const thoughtBudget = config.reasoningMode ? 32000 : 0;
 
+  // Filter to inference messages (compressed if summary exists)
+  const inferenceMessages = getInferenceMessages(config.messages, config.thread?.summaryMessageID);
+
   // Convert messages to API format - encode bytes as base64
-  const messages = config.messages.map((msg) => ({
+  const messages = inferenceMessages.map((msg) => ({
     role: msg.role,
     content: msg.content.map((c) => {
       if (c.image?.source?.bytes instanceof Uint8Array) {
