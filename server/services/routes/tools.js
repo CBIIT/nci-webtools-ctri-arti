@@ -2,7 +2,7 @@ import db, { rawSql } from "database";
 
 import { json, Router } from "express";
 
-import { sendFeedback, sendLogReport } from "../email.js";
+import { sendFeedback, sendLogReport, sendJustificationEmail } from "../email.js";
 import { requireRole } from "../middleware.js";
 import { parseDocument } from "../parsers.js";
 import { proxyMiddleware } from "../proxy.js";
@@ -121,6 +121,23 @@ api.get("/data", requireRole(), async (req, res) => {
     // For other files, pipe raw content
     return data.Body.pipe(res);
   }
+});
+
+api.post("/usage", requireRole(), async (req, res) => {
+  const { justification } = req.body;
+  const user = req.session?.user;
+  const userName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "N/A";
+  const userEmail = user?.email;
+  const currentLimit = user?.budget;
+  const emailData = {
+    justification,
+    userName,
+    userEmail,
+    currentLimit,
+  };
+
+  const results = await sendJustificationEmail(emailData);
+  return res.json(results);
 });
 
 export default api;

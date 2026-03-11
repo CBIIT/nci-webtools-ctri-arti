@@ -52,6 +52,27 @@ export async function sendFeedback({ feedback, context }, env = process.env) {
   });
 }
 
+export async function sendJustificationEmail(
+  { justification, userName, userEmail, currentLimit },
+  env = process.env
+) {
+  const { EMAIL_ADMIN, EMAIL_SENDER, TIER } = env;
+  const tierPrefix = TIER && TIER.toUpperCase() !== "PROD" ? `[${TIER.toUpperCase()}] ` : "";
+  const text =
+    "Hello Admin Team,\n\n" +
+    "A new request has been submitted to increase a user’s daily cost limit. Please review the details below:\n\n" +
+    `User Name: [${userName}]\nUser Email: [${userEmail}]\nCurrent Daily Limit: $[${currentLimit}]\n` +
+    `Reason for Request:\n\n${justification}\n\nPlease review this request and take the appropriate action.\n\n` +
+    "Thank you,\nResearch Optimizer System";
+
+  return await sendEmail({
+    from: (EMAIL_SENDER || EMAIL_ADMIN)?.split(",")?.[0]?.trim(),
+    to: EMAIL_ADMIN,
+    subject: `${tierPrefix}User Request Limit Increase`,
+    text,
+  });
+}
+
 function formatMetadataForTemplate(metadata) {
   if (!Array.isArray(metadata)) {
     return null;
