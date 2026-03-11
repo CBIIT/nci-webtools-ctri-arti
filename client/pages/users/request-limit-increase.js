@@ -1,6 +1,6 @@
-import { createSignal, Switch, Match, Show } from "solid-js";
-import html from "solid-js/html";
-import { Check } from "lucide-solid";
+import { createSignal, Switch, Match, Show } from "solid-js"
+import html from "solid-js/html"
+import { Check } from "lucide-solid"
 
 /**
  * A SolidJS component that renders a button and modal dialog for users to request
@@ -47,27 +47,33 @@ function RequestLimitIncrease(props) {
   let limitDialog;
   const showDialog = () => {
     limitDialog.showModal();
-  };
+  }
   const closeDialog = () => {
     console.log("closeDialog clicked");
-    limitDialog.close();
-  };
+    resetDialog()
+    limitDialog.close()
+  }
+  const resetDialog = () => {
+    setReason("")
+    setStatus("init")
+    setSubmitError("")
+  }
 
   const [status, setStatus] = createSignal("init");
-  const [isSubmitting, setIsSubmitting] = createSignal(false);
-  const [submitError, setSubmitError] = createSignal("");
+  const [isSubmitting, setIsSubmitting] = createSignal(false)
+  const [submitError, setSubmitError] = createSignal("")
 
   const hasReason = () => reason().trim().length > 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("handleSubmit called with reason:", reason());
+    console.log("handleSubmit called with reason:", reason())
 
     try {
       setIsSubmitting(true);
       setSubmitError("");
 
-      /* const response = await fetch('/api/v1/usage', {
+      const response = await fetch('/api/v1/usage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ justification: reason() }),
@@ -75,16 +81,17 @@ function RequestLimitIncrease(props) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        setSubmitError(errorData.message || 'Failed to submit your request. Please try again later.');
+        setSubmitError(errorData.error || 'Failed to submit your request. Please try again later.')
+        setIsSubmitting(false)
         return;
-      } */
+      }
 
       setIsSubmitting(false)
       setStatus("success")
       closeDialog()
     } catch (err) {
-      console.error("Error submitting limit increase request:", err);
-      setSubmitError("An unexpected error occurred. Please try again later.");
+      console.error("Error submitting limit increase request:", err)
+      setSubmitError("An unexpected error occurred. Please try again later.")
     }
   };
 
@@ -181,7 +188,7 @@ function RequestLimitIncrease(props) {
                       class="form-control"
                       classList=${() => submitError().length > 0}
                       maxlength="500"
-                      value=${reason()}
+                      value=${() => reason()}
                       onInput=${(e) => setReason(e.target.value)}
                     />
                     <div class="remaining-characters text-end">
