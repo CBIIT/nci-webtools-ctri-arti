@@ -24,9 +24,9 @@ function buildSearchConditions(search) {
 function getGroupColumn(groupBy) {
   switch (groupBy) {
     case "hour":
-      return sql`to_char(${Usage.createdAt}, 'YYYY-MM-DD HH24:00:00')`;
+      return sql`to_char(date_trunc('hour', ${Usage.createdAt}), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
     case "day":
-      return sql`${Usage.createdAt}::date`;
+      return sql`to_char(date_trunc('day', ${Usage.createdAt}), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
     case "week":
       return sql`to_char(${Usage.createdAt}, 'IYYY-IW')`;
     case "month":
@@ -36,7 +36,7 @@ function getGroupColumn(groupBy) {
     case "model":
       return Usage.modelID;
     default:
-      return sql`${Usage.createdAt}::date`;
+      return sql`to_char(date_trunc('day', ${Usage.createdAt}), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
   }
 }
 
@@ -200,7 +200,9 @@ api.get(
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
 
-    const where = and(eq(Usage.userID, userId), between(Usage.createdAt, startDate, endDate));
+    const conditions = [eq(Usage.userID, userId), between(Usage.createdAt, startDate, endDate)];
+    if (req.query.type) conditions.push(eq(Usage.type, req.query.type));
+    const where = and(...conditions);
 
     const [{ value: total }] = await db.select({ value: count() }).from(Usage).where(where);
 
@@ -215,6 +217,7 @@ api.get(
     res.json({
       data: rows.map((usage) => ({
         id: usage.id,
+        type: usage.type,
         userID: usage.userID,
         modelID: usage.modelID,
         modelName: usage.Model?.name,
@@ -260,6 +263,7 @@ api.get(
 
     const conditions = [between(Usage.createdAt, startDate, endDate)];
     if (userId) conditions.push(eq(Usage.userID, +userId));
+    if (req.query.type) conditions.push(eq(Usage.type, req.query.type));
     const where = and(...conditions);
 
     const [{ value: total }] = await db.select({ value: count() }).from(Usage).where(where);
@@ -288,6 +292,7 @@ api.get(
     res.json({
       data: rows.map((usage) => ({
         id: usage.id,
+        type: usage.type,
         userID: usage.userID,
         modelID: usage.modelID,
         modelName: usage.Model?.name,
@@ -384,7 +389,7 @@ api.get(
         .select({ value: countDistinct(Usage.userID) })
         .from(Usage)
         .innerJoin(User, eq(Usage.userID, User.id))
-        .innerJoin(Role, eq(User.roleID, Role.id))
+        .leftJoin(Role, eq(User.roleID, Role.id))
         .where(where);
 
       const aggregateSortMapping = {
@@ -425,7 +430,7 @@ api.get(
         })
         .from(Usage)
         .innerJoin(User, eq(Usage.userID, User.id))
-        .innerJoin(Role, eq(User.roleID, Role.id))
+        .leftJoin(Role, eq(User.roleID, Role.id))
         .where(where)
         .groupBy(
           Usage.userID,

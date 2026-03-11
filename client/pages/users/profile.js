@@ -5,7 +5,10 @@ import { AlertContainer } from "../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 import RequestLimitIncrease from "./request-limit-increase.js";
 
+const fetchConfig = () => fetch("/api/config").then((r) => r.json());
+
 function UserProfile() {
+  const [config] = createResource(fetchConfig);
   const [saving, setSaving] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
 
@@ -221,10 +224,10 @@ function UserProfile() {
             </div>
 
             <div class="row align-items-center mb-2">
-              <!-- Weekly Cost Limit -->
+              <!-- Cost Limit -->
               <label
                 class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Weekly Cost Limit ($)</label
+                >${() => config()?.budgetLabel || ""} Cost Limit ($)</label
               >
               <div class="col-sm-3 col-xl-2">
                 <div>

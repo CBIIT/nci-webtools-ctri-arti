@@ -10,7 +10,7 @@
   "dependencies": {
     "shared": "*",
     "@electric-sql/pglite": "^0.3.15",
-    "drizzle-orm": "^0.44.0",
-    "postgres": "^3.4.7"
+    "drizzle-orm": "^0.45.1",
+    "postgres": "^3.4.8"
   }
 }

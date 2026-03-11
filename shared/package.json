@@ -5,7 +5,8 @@
   "exports": {
     "./logger.js": "./logger.js",
     "./middleware.js": "./middleware.js",
-    "./utils.js": "./utils.js"
+    "./utils.js": "./utils.js",
+    "./cron.js": "./cron.js"
   },
   "dependencies": {
     "lodash": "^4.17.23",

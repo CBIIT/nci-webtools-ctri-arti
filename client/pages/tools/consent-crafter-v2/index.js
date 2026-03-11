@@ -544,7 +544,7 @@ export default function Page() {
     const response = await fetch("/api/v1/model", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
+      body: JSON.stringify({ ...params, type: "consent-crafter" }),
     });
 
     if (!response.ok) {

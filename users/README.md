@@ -16,9 +16,9 @@ npm start -w users
 
 ## Current API
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check — returns `{ status: "ok" }` |
+| Method | Path      | Description                               |
+| ------ | --------- | ----------------------------------------- |
+| GET    | `/health` | Health check — returns `{ status: "ok" }` |
 
 ## Planned Responsibilities
 
@@ -28,11 +28,11 @@ npm start -w users
 - Role-based access control
 - Admin user management (list, create, update, delete users)
 - Usage analytics (per-user, per-model, time-series)
-- Rate limit management (weekly resets, manual resets)
+- Rate limit management (configurable resets via `USAGE_RESET_SCHEDULE`, daily by default)
 - Email notifications (feedback, error reports)
 
 ## Configuration
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | 3004 | Service port |
+| Variable | Required | Default | Description  |
+| -------- | -------- | ------- | ------------ |
+| `PORT`   | No       | 3004    | Service port |

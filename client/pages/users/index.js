@@ -12,7 +12,6 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-
 import { AlertContainer } from "../../components/alert.js";
 import { DataTable } from "../../components/table.js";
 import {
@@ -29,8 +28,11 @@ import {
 } from "../../utils/global-error-handler.js";
 import { capitalize } from "../../utils/utils.js";
 
+const fetchConfig = () => fetch("/api/config").then((r) => r.json());
+
 function UsersList() {
   const location = useLocation();
+  const [config] = createResource(fetchConfig);
 
   onMount(() => {
     registerErrorDataCollector("users", collectAdditionalErrorData);
@@ -334,7 +336,7 @@ function UsersList() {
             },
             {
               key: "limit",
-              title: "Weekly Cost Limit",
+              title: `${config()?.budgetLabel || ""} Cost Limit`,
               cellClassName: "text-capitalize small",
             },
             {

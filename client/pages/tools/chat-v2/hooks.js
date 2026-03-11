@@ -94,7 +94,11 @@ class IndexedDBAdapter {
   }
 
   async createThread(data) {
-    const id = await this.db.add("threads", { ...data, createdAt: Date.now(), updatedAt: Date.now() });
+    const id = await this.db.add("threads", {
+      ...data,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
     return { ...data, id, createdAt: Date.now(), updatedAt: Date.now() };
   }
 
@@ -330,7 +334,9 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     if (!db) return;
     try {
       const threadsList = await db.getThreads(params.agentId);
-      const sorted = threadsList.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).slice(0, 20);
+      const sorted = threadsList
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+        .slice(0, 20);
       setThreads(sorted);
     } catch (error) {
       console.error("Failed to load threads:", error);
@@ -415,7 +421,9 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
 
     const record = await db.getAgent(+params.agentId);
     if (!record) return setAgent("loading", false);
-    const agentTools = record.tools?.length ? tools.filter((t) => record.tools.includes(t.toolSpec.name)) : tools;
+    const agentTools = record.tools?.length
+      ? tools.filter((t) => record.tools.includes(t.toolSpec.name))
+      : tools;
 
     const content = await getMessageContent(text, files);
     const userMessage = { role: "user", content };
@@ -465,6 +473,7 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
           system: "Generate a concise title for this conversation.",
           thoughtBudget: 0,
           stream: false,
+          type: "chat-title",
         }),
       });
 
@@ -540,7 +549,14 @@ async function* streamResponse(response) {
 async function sendToModel(config) {
   // Get memory/workspace content from localStorage
   const getFileContents = (file) => localStorage.getItem("file:" + file) || "";
-  const memoryFiles = ["_profile.txt", "_memory.txt", "_insights.txt", "_workspace.txt", "_knowledge.txt", "_patterns.txt"];
+  const memoryFiles = [
+    "_profile.txt",
+    "_memory.txt",
+    "_insights.txt",
+    "_workspace.txt",
+    "_knowledge.txt",
+    "_patterns.txt",
+  ];
   const memoryContent = memoryFiles
     .map((file) => ({ file, contents: getFileContents(file) }))
     .filter((f) => f.contents)
@@ -557,7 +573,9 @@ async function sendToModel(config) {
   // Use server-provided prompt or fallback to config.js default
   let system;
   if (config.systemPrompt) {
-    system = config.systemPrompt.replace(/\{\{time\}\}/g, time).replace(/\{\{memory\}\}/g, memoryContent);
+    system = config.systemPrompt
+      .replace(/\{\{time\}\}/g, time)
+      .replace(/\{\{memory\}\}/g, memoryContent);
   } else {
     // Fallback to V1's systemPrompt from config.js
     system = defaultSystemPrompt({ time, main: memoryContent });
@@ -600,6 +618,7 @@ async function sendToModel(config) {
       tools,
       thoughtBudget,
       stream: true,
+      type: config.name,
     }),
   });
 
@@ -720,7 +739,8 @@ async function getMessageContent(text, files) {
 async function getContentBlock(file) {
   const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
   const imageTypes = ["png", "jpg", "jpeg", "gif", "webp"];
-  const isText = file.type.startsWith("text/") || file.type.includes("json") || file.type.includes("xml");
+  const isText =
+    file.type.startsWith("text/") || file.type.includes("json") || file.type.includes("xml");
   const fileExtension = file.name.split(".").pop().toLowerCase();
 
   let format = fileExtension;
@@ -728,7 +748,11 @@ async function getContentBlock(file) {
   if (fileExtension === "htm") format = "html";
   if (fileExtension === "jpeg") format = "jpg";
 
-  const type = imageTypes.includes(format) ? "image" : documentTypes.includes(format) ? "document" : null;
+  const type = imageTypes.includes(format)
+    ? "image"
+    : documentTypes.includes(format)
+      ? "document"
+      : null;
   const arrayBuffer = await file.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
   const name = file.name
@@ -828,7 +852,11 @@ async function parseDocument(bytes, mimetype, url) {
 }
 
 // Query document with model for topic extraction
-async function queryDocumentWithModel(document, topic, model = "us.meta.llama4-maverick-17b-instruct-v1:0") {
+async function queryDocumentWithModel(
+  document,
+  topic,
+  model = "us.meta.llama4-maverick-17b-instruct-v1:0"
+) {
   if (!topic) return document;
 
   const maxLength = 500000;
@@ -846,7 +874,7 @@ If the document doesn't contain information relevant to the question, state this
   const response = await fetch("/api/v1/model", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ model, messages, system }),
+    body: JSON.stringify({ model, messages, system, type: "data-tool" }),
   });
   const results = await response.json();
   return results?.output?.message?.content?.[0]?.text || document;
@@ -949,7 +977,9 @@ function editor({ command, path, view_range, old_str, new_str, file_text, insert
         const fileContent = file_text !== undefined ? normalizeNewlines(file_text) : "";
         const overwritten = localStorage.getItem(fileKey) !== null;
         localStorage.setItem(fileKey, fileContent);
-        return overwritten ? `Overwrote existing file: ${path}` : `Successfully created file: ${path}`;
+        return overwritten
+          ? `Overwrote existing file: ${path}`
+          : `Successfully created file: ${path}`;
       }
 
       case "str_replace": {
@@ -973,7 +1003,8 @@ function editor({ command, path, view_range, old_str, new_str, file_text, insert
         }
 
         if (count === 0) return "The specified text was not found in the file.";
-        if (count > 1) return `Found ${count} occurrences of the text. The replacement must match exactly one location.`;
+        if (count > 1)
+          return `Found ${count} occurrences of the text. The replacement must match exactly one location.`;
 
         localStorage.setItem(historyKey, content);
         const newContent = normalizedContent.replace(normalizedOldStr, normalizeNewlines(new_str));

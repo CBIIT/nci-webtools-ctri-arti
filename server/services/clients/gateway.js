@@ -13,11 +13,13 @@ import db, { Model, User } from "database";
 import { eq, and } from "drizzle-orm";
 import { runModel as directRunModel } from "gateway/inference.js";
 import { trackModelUsage } from "gateway/usage.js";
+import { describeCron } from "shared/cron.js";
 
 const GATEWAY_URL = process.env.GATEWAY_URL;
+const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 
-const RATE_LIMIT_MESSAGE =
-  "You have reached your allocated weekly usage limit. Your access to the chat tool is temporarily disabled and will reset on Monday at 12:00 AM. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.";
+const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
+const RATE_LIMIT_MESSAGE = `You have reached your allocated usage limit. Your access to the chat tool is temporarily disabled and will reset ${resetDescription}. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.`;
 
 async function checkRateLimit(userID) {
   if (!userID) return null;
@@ -40,6 +42,7 @@ function buildDirectClient() {
       stream,
       ip,
       outputConfig,
+      type,
     }) {
       const limited = await checkRateLimit(userID);
       if (limited) return limited;
@@ -56,7 +59,7 @@ function buildDirectClient() {
 
       // For non-streaming responses, track usage inline
       if (!result?.stream && userID) {
-        await trackModelUsage(userID, model, ip, result.usage);
+        await trackModelUsage(userID, model, ip, result.usage, { type });
       }
 
       // For streaming, wrap to track usage on metadata
@@ -65,7 +68,7 @@ function buildDirectClient() {
           stream: (async function* () {
             for await (const message of result.stream) {
               if (message.metadata && userID) {
-                await trackModelUsage(userID, model, ip, message.metadata.usage);
+                await trackModelUsage(userID, model, ip, message.metadata.usage, { type });
               }
               yield message;
             }
@@ -107,6 +110,7 @@ function buildHttpClient() {
       stream,
       ip,
       outputConfig,
+      type,
     }) {
       const response = await fetch(`${GATEWAY_URL}/api/v1/model/invoke`, {
         method: "POST",
@@ -121,6 +125,7 @@ function buildHttpClient() {
           stream,
           ip,
           outputConfig,
+          type,
         }),
       });
 

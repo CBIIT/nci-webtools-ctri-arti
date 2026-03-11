@@ -2,7 +2,6 @@ import { useParams, useSearchParams } from "@solidjs/router";
 import { createMemo, createResource, createSignal, ErrorBoundary, Show } from "solid-js";
 import html from "solid-js/html";
 
-
 import { AlertContainer } from "../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 
@@ -408,7 +407,7 @@ function UserUsage() {
                                 dailyAnalytics().data.map(
                                   (day) => html`
                                     <tr>
-                                      <td>${day.period}</td>
+                                      <td>${new Date(day.period).toLocaleString()}</td>
                                       <td class="text-end">${formatNumber(day.totalRequests)}</td>
                                       <td class="text-end">${formatCurrency(day.totalCost)}</td>
                                     </tr>
