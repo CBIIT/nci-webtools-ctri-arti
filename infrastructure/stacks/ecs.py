@@ -7,6 +7,7 @@ from aws_cdk import (
     aws_logs as logs,
     aws_elasticloadbalancingv2 as elbv2,
     aws_secretsmanager as secretsmanager,
+    aws_servicediscovery as servicediscovery,
     aws_ssm as ssm,
 )
 from constructs import Construct
@@ -47,6 +48,13 @@ class EcsServiceStack(Stack):
             execute_command_configuration=ecs.ExecuteCommandConfiguration(
                 logging=ecs.ExecuteCommandLogging.NONE,
             ),
+        )
+
+        http_namespace = servicediscovery.HttpNamespace(
+            self,
+            "ecs-http-namespace",
+            name=f"{prefix}-http",
+            description=prefix,
         )
 
         execution_role = iam.Role(
