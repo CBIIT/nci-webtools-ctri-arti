@@ -1,4 +1,4 @@
-# agents
+# ams
 
 Chat orchestration service (stub).
 
@@ -11,14 +11,14 @@ The agents service will be the orchestration layer for AI chat. When a user send
 ## Quick Start
 
 ```bash
-npm start -w agents
+npm start -w ams
 ```
 
 ## Current API
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check — returns `{ status: "ok" }` |
+| Method | Path      | Description                               |
+| ------ | --------- | ----------------------------------------- |
+| GET    | `/health` | Health check — returns `{ status: "ok" }` |
 
 ## Planned Responsibilities
 
@@ -36,6 +36,6 @@ npm start -w agents
 
 ## Configuration
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | 3003 | Service port |
+| Variable | Required | Default | Description  |
+| -------- | -------- | ------- | ------------ |
+| `PORT`   | No       | 3003    | Service port |

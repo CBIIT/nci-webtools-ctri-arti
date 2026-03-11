@@ -12,7 +12,7 @@ COPY shared/package.json /app/shared/
 COPY database/package.json /app/database/
 COPY gateway/package.json /app/gateway/
 COPY cms/package.json /app/cms/
-COPY agents/package.json /app/agents/
+COPY ams/package.json /app/ams/
 COPY users/package.json /app/users/
 COPY server/package.json /app/server/
 
@@ -24,12 +24,12 @@ COPY shared /app/shared
 COPY database /app/database
 COPY gateway /app/gateway
 COPY cms /app/cms
-COPY agents /app/agents
+COPY ams /app/ams
 COPY users /app/users
 COPY server /app/server
 COPY client /app/client
 
-RUN touch /app/server/.env /app/gateway/.env /app/cms/.env /app/agents/.env /app/users/.env
+RUN touch /app/server/.env /app/gateway/.env /app/cms/.env /app/ams/.env /app/users/.env
 
 ENV PORT=80
 ENV NODE_ENV=production

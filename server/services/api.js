@@ -1,6 +1,7 @@
 import { json, Router } from "express";
 import { logRequests } from "shared/middleware.js";
 
+import { amsRouter } from "./clients/ams.js";
 import { logErrors, requireRole } from "./middleware.js";
 import adminRoutes from "./routes/admin.js";
 import authRoutes from "./routes/auth.js";
@@ -18,6 +19,12 @@ api.use(authRoutes);
 api.use(conversationRoutes);
 api.use(modelRoutes);
 api.use(toolRoutes);
+
+// AMS: mount directly in monolith mode, or proxy via HTTP in microservice mode
+if (amsRouter) {
+  api.use("/ams", amsRouter);
+}
+
 api.use(logErrors());
 
 export default api;

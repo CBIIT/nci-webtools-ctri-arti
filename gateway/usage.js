@@ -1,27 +1,27 @@
-import db, { Model, Usage, User } from "database";
+import db, { Usage, User } from "database";
 
 import { eq } from "drizzle-orm";
 
 /**
  * Track model usage and update user's remaining balance.
- * Shared between monolith mode (gateway client) and microservice mode (gateway api).
+ *
+ * @param {number} userID - User ID
+ * @param {Object} model - Full model record from DB (must have id, cost1k* fields)
+ * @param {Object} usageData - Token counts from provider response
+ * @param {Object} [options]
+ * @param {string} [options.type] - Usage type (e.g. "user", "agent", "guardrail")
+ * @param {number} [options.agentID] - Agent ID
+ * @param {number} [options.messageID] - Message ID
+ * @param {number} [options.guardrailCost] - Pre-calculated guardrail cost (overrides token-based cost)
  */
 export async function trackModelUsage(
   userID,
-  modelValue,
-  ip,
+  model,
   usageData,
-  { type, agentID, messageID } = {}
+  { type, agentID, messageID, guardrailCost } = {}
 ) {
   try {
-    if (!userID || !usageData || !modelValue) return;
-
-    const [model] = await db
-      .select()
-      .from(Model)
-      .where(eq(Model.internalName, modelValue))
-      .limit(1);
-    if (!model) return;
+    if (!userID || !usageData || !model) return;
 
     const inputTokens = Math.max(0, parseInt(usageData.inputTokens) || 0);
     const outputTokens = Math.max(0, parseInt(usageData.outputTokens) || 0);
@@ -32,7 +32,10 @@ export async function trackModelUsage(
     const outputCost = (outputTokens / 1000) * (model.cost1kOutput || 0);
     const cacheReadCost = (cacheReadTokens / 1000) * (model.cost1kCacheRead || 0);
     const cacheWriteCost = (cacheWriteTokens / 1000) * (model.cost1kCacheWrite || 0);
-    const totalCost = inputCost + outputCost + cacheReadCost + cacheWriteCost;
+    const totalCost =
+      guardrailCost != null
+        ? guardrailCost
+        : inputCost + outputCost + cacheReadCost + cacheWriteCost;
 
     const [usageRecord] = await db
       .insert(Usage)
@@ -55,9 +58,7 @@ export async function trackModelUsage(
       if (user && user.remaining !== null && user.budget !== null) {
         await db
           .update(User)
-          .set({
-            remaining: Math.max(0, (user.remaining || 0) - totalCost),
-          })
+          .set({ remaining: Math.max(0, (user.remaining || 0) - totalCost) })
           .where(eq(User.id, userID));
       }
     }

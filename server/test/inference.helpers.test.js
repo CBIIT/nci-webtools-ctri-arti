@@ -5,7 +5,7 @@ import {
   estimateContentTokens,
   calculateCacheBoundaries,
   addCachePointsToMessages,
-} from "gateway/inference.js";
+} from "gateway/prompt-cache.js";
 
 test("estimateContentTokens", async (t) => {
   await t.test("estimates text content", () => {
@@ -110,9 +110,7 @@ test("addCachePointsToMessages", async (t) => {
     ];
     const result = addCachePointsToMessages(messages, true);
     // At least one message should have a cache point added
-    const hasCachePoint = result.some((m) =>
-      m.content.some((c) => c.cachePoint),
-    );
+    const hasCachePoint = result.some((m) => m.content.some((c) => c.cachePoint));
     assert.ok(hasCachePoint, "Should have at least one cache point");
   });
 
@@ -126,19 +124,15 @@ test("addCachePointsToMessages", async (t) => {
     const result = addCachePointsToMessages(messages, true);
     const cachePointCount = result.reduce(
       (count, m) => count + m.content.filter((c) => c.cachePoint).length,
-      0,
+      0
     );
     assert.ok(cachePointCount <= 2, `Expected at most 2 cache points, got ${cachePointCount}`);
   });
 
   await t.test("does not add cache points when content is below boundary", () => {
-    const messages = [
-      { role: "user", content: [{ text: "short" }] },
-    ];
+    const messages = [{ role: "user", content: [{ text: "short" }] }];
     const result = addCachePointsToMessages(messages, true);
-    const hasCachePoint = result.some((m) =>
-      m.content.some((c) => c.cachePoint),
-    );
+    const hasCachePoint = result.some((m) => m.content.some((c) => c.cachePoint));
     assert.ok(!hasCachePoint, "Should not add cache points for small content");
   });
 });
