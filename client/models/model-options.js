@@ -30,4 +30,12 @@ export const MODEL_OPTIONS = Object.freeze({
       v2_5_FLASH: "gemini-2.5-flash-preview-04-17",
     },
   },
+  NIH: {
+    SONNET: {
+      v4_6: "gemini-2.5-pro-preview-06-05",
+    },
+    GEMINI: {
+      v2_5_PRO: "gemini-2.5-pro-preview-06-05",
+    },
+  },
 });

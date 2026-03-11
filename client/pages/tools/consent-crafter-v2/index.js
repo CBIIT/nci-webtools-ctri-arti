@@ -671,6 +671,8 @@ export default function Page() {
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.MAVERICK.v4_0_17b}>
                             Maverick
                           </option>
+                          <option value=${MODEL_OPTIONS.NIH.SONNET.v4_6}>Sonnet 4.6 (IDP)</option>
+                          <option value=${MODEL_OPTIONS.NIH.GEMINI.v2_5_PRO}>Gemini (IDP)</option>
                         </select>
 
                         <div class="d-flex justify-content-between">
