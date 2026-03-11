@@ -12,6 +12,7 @@ The main application server. Serves the client SPA, handles OAuth/OIDC authentic
 cd server
 npm install
 cp .env.example .env   # Configure environment
+cp test.env.example test.env # Configure test environment
 npm run start:dev      # Watch mode with auto-restart
 npm test               # Run unit + integration tests
 npm run test:integration  # Full integration tests with browser
@@ -51,6 +52,7 @@ All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for ful
 | POST   | `/feedback`            | `requireRole()` | Send user feedback email         |
 | POST   | `/log`                 | None            | Send error/log report email      |
 | GET    | `/data`                | `requireRole()` | S3 file access with auto-parsing |
+| POST   | `/usage`               | `requireRole()` | Let user request usage change    |
 
 ### Conversations
 
@@ -171,3 +173,5 @@ npm run test:integration # Integration tests (Playwright browser + API)
 ```
 
 Tests use real services (AWS Bedrock, PostgreSQL/PGlite). No mocking.
+
+When running tests, make sure your local server is running.
