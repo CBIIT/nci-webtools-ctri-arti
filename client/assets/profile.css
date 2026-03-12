@@ -27,9 +27,6 @@
   max-width: 600px;
   border-radius: 20px;
 }
-#request-limit-increase-dialog .modal-content {
-  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.25);
-}
 #request-limit-increase-dialog .modal-header {
   color: #252C32;
   font-size: 28px;
@@ -40,6 +37,10 @@
   padding: 0;
   margin-bottom: 24px;
 }
+#request-limit-increase-dialog .modal-content {
+  padding: 40px;
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.25);
+}
 #request-limit-increase-dialog .modal-body {
   padding: 0;
 }
@@ -47,9 +48,6 @@
   border-top: none;
   padding: 0;
   margin-top: 24px;
-}
-#request-limit-increase-dialog .modal-content {
-  padding: 40px;
 }
 #request-limit-increase-dialog .form-label {
   font-size: 14px;
