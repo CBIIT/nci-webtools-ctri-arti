@@ -1,6 +1,7 @@
 #request-limit-increase-container .btn.btn-pill{
   border-radius: 19px;
   padding: 6px 24px;
+  font-weight: 800;
 }
 .btn-pill:focus-within {
   box-shadow: 0 0 0 0.25rem rgba(49,132,253, .5);
@@ -24,6 +25,10 @@
 }
 #request-limit-increase-dialog .modal-dialog {
   max-width: 600px;
+  border-radius: 20px;
+}
+#request-limit-increase-dialog .modal-content {
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.25);
 }
 #request-limit-increase-dialog .modal-header {
   color: #252C32;
@@ -32,9 +37,16 @@
   font-weight: 500;
   line-height: 42px;
   border-bottom: none;
+  padding: 0;
+  margin-bottom: 24px;
+}
+#request-limit-increase-dialog .modal-body {
+  padding: 0;
 }
 #request-limit-increase-dialog .modal-footer {
   border-top: none;
+  padding: 0;
+  margin-top: 24px;
 }
 #request-limit-increase-dialog .modal-content {
   padding: 40px;
@@ -44,6 +56,10 @@
   color: #6B7280;
   font-weight: 400;
   line-height: 21px;
+  margin-bottom: 8px;
+}
+#request-limit-increase-dialog .form-label.no-mb {
+  margin-bottom: 0;
 }
 .form-label.mt-25 {
   margin-top: 25px;
@@ -60,7 +76,6 @@
 }
 #request-limit-increase-dialog .remaining-characters {
   font-size: 13px;
-  color: #FB2C36;
   font-weight: 400;
   line-height: 19.5px;
   margin-top: 16px;
@@ -91,10 +106,22 @@
   border: 5px solid #00C950;
 }
 #request-limit-increase-button {
-  border: 0.5px solid #2C8DFA;
-  border-radius: 19px;
-  background-color: transparent;
   color: #3C3C3C;
+  font-family: Nunito;
   font-size: 16px;
+  font-style: normal;
   font-weight: 800;
+  line-height: 16px; /* 100% */
+  letter-spacing: 0.32px;
+
+  display: flex;
+  height: 35px;
+  padding: 0 12px;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+
+  border-radius: 80px;
+  border: 1.25px solid #2C8DFA;
+  background: #FFF;
 }

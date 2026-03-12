@@ -99,7 +99,6 @@ function RequestLimitIncrease(props) {
     <div id="request-limit-increase-container">
       <button
         id="request-limit-increase-button"
-        class="btn btn-primary"
         type="button"
         onClick=${() => showDialog()}
       >
@@ -114,6 +113,7 @@ function RequestLimitIncrease(props) {
         >
           <div>Your limit increase request has been submitted for review.</div>
           <button
+            id="close-success-request-limit-increase-banner-button"
             type="button"
             class="btn-close"
             onClick=${() => setStatus("init")}
@@ -143,7 +143,7 @@ function RequestLimitIncrease(props) {
                       </div>
                     <//>
 
-                    <label class="form-label font-inter">Current Cost Limit Per Day</label>
+                    <label class="form-label font-inter no-mb">Current Cost Limit Per Day</label>
                     <p class="form-static-value">
                       ${() => {
                         console.log("Budget function called, props.session:", props.session);
@@ -187,6 +187,7 @@ function RequestLimitIncrease(props) {
                   </div>
                   <div class="modal-footer d-flex gap-2 justify-content-center">
                     <button
+                      id="cancel-limit-increase-button"
                       type="button"
                       class="btn btn-pill btn-cancel font-nunito"
                       onClick=${() => closeDialog()}
@@ -194,6 +195,7 @@ function RequestLimitIncrease(props) {
                       Cancel
                     </button>
                     <button
+                      id="submit-limit-increase-button"
                       type="submit"
                       class="btn btn-pill btn-action font-nunito"
                       disabled=${() => isSubmitting() || !hasReason()}
