@@ -532,7 +532,7 @@ export async function seedDatabase(db) {
     "maxReasoning",
   ]);
   await upsert(T.Prompt, prompts, T.Prompt.id, ["name", "version", "content"]);
-  await upsert(T.Agent, agents, T.Agent.id, ["name", "promptID"]);
+  await upsert(T.Agent, agents, T.Agent.id, ["name", "modelID", "promptID"]);
   await upsert(T.Tool, tools, T.Tool.id, ["name", "description", "type"]);
   await upsert(T.AgentTool, agentTools, T.AgentTool.id, ["agentID", "toolID"]);
 

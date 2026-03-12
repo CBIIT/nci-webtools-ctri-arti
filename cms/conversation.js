@@ -50,12 +50,11 @@ export class ConversationService {
       });
       if (agent?.Model) return agent.Model;
     }
-    // Fallback to cheapest chat model
-    const models = await db.select().from(Model).where(eq(Model.type, "chat"));
-    if (!models.length) return null;
-    return models.reduce((cheapest, m) =>
-      (m.cost1kInput || Infinity) < (cheapest.cost1kInput || Infinity) ? m : cheapest
-    );
+    // Default to Sonnet for summarization
+    const sonnet = await db.query.Model.findFirst({
+      where: eq(Model.internalName, "us.anthropic.claude-sonnet-4-6"),
+    });
+    return sonnet || null;
   }
 
   async #maybeSummarize(userId, conversationId) {
@@ -141,14 +140,20 @@ export class ConversationService {
         });
 
         const summaryText = result?.output?.message?.content?.[0]?.text;
-        if (summaryText) {
-          await db
-            .update(Message)
-            .set({ content: [{ text: `[Conversation Summary]\n\n${summaryText}` }] })
-            .where(eq(Message.id, placeholder.id));
-        } else {
-          throw new Error("No summary text returned");
+        if (!summaryText || summaryText.length < 50) {
+          throw new Error(`Summary too short or empty (length=${summaryText?.length || 0})`);
         }
+        const lower = summaryText.toLowerCase();
+        if (
+          lower.includes("test response from mock") ||
+          lower.includes("test streaming response")
+        ) {
+          throw new Error(`Summary contains mock provider text: "${summaryText.slice(0, 80)}"`);
+        }
+        await db
+          .update(Message)
+          .set({ content: [{ text: `[Conversation Summary]\n\n${summaryText}` }] })
+          .where(eq(Message.id, placeholder.id));
       } catch (error) {
         console.error("Summarization failed, removing placeholder:", error);
         await db.delete(Message).where(eq(Message.id, placeholder.id));
@@ -335,13 +340,17 @@ export class ConversationService {
 
     let messages;
     if (compressed && conversation.summaryMessageID) {
-      // Only use summary if its content is not null (placeholder not yet filled)
       const summaryMsg = await db
         .select()
         .from(Message)
         .where(eq(Message.id, conversation.summaryMessageID))
         .limit(1);
-      if (summaryMsg[0]?.content) {
+      const summaryText = summaryMsg[0]?.content?.[0]?.text || "";
+      const isValid =
+        summaryMsg[0]?.content &&
+        summaryText.length >= 50 &&
+        !summaryText.toLowerCase().includes("test response from mock");
+      if (isValid) {
         messages = await db
           .select()
           .from(Message)

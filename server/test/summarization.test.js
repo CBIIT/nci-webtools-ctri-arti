@@ -6,14 +6,15 @@ import { ConversationService } from "cms/conversation.js";
 import { eq } from "drizzle-orm";
 
 const HAIKU_ID = 3; // Haiku model from seed data
-const ORIGINAL_MAX_CONTEXT = 200000;
+const SONNET_ID = 2; // Sonnet model from seed data
+const ORIGINAL_HAIKU_MAX_CONTEXT = 200000;
+const ORIGINAL_SONNET_MAX_CONTEXT = 1000000;
 const TINY_MAX_CONTEXT = 50; // ~40 token threshold (50 * 0.8), ~320 chars of text
 
 let testUser;
-let originalInvoker;
 
-async function setHaikuMaxContext(value) {
-  await db.update(Model).set({ maxContext: value }).where(eq(Model.id, HAIKU_ID));
+async function setMaxContext(modelId, value) {
+  await db.update(Model).set({ maxContext: value }).where(eq(Model.id, modelId));
 }
 
 test("Automatic Conversation Summarization", async (t) => {
@@ -25,11 +26,14 @@ test("Automatic Conversation Summarization", async (t) => {
     [testUser] = await db.select().from(User).where(eq(User.email, "test@test.com")).limit(1);
     assert.ok(testUser, "Test user should exist from seed");
 
-    // Shrink Haiku's context window to force summarization
-    await setHaikuMaxContext(TINY_MAX_CONTEXT);
+    // Shrink context windows to force summarization
+    await setMaxContext(HAIKU_ID, TINY_MAX_CONTEXT);
+    await setMaxContext(SONNET_ID, TINY_MAX_CONTEXT);
 
-    const [model] = await db.select().from(Model).where(eq(Model.id, HAIKU_ID)).limit(1);
-    assert.strictEqual(model.maxContext, TINY_MAX_CONTEXT);
+    const [haiku] = await db.select().from(Model).where(eq(Model.id, HAIKU_ID)).limit(1);
+    assert.strictEqual(haiku.maxContext, TINY_MAX_CONTEXT);
+    const [sonnet] = await db.select().from(Model).where(eq(Model.id, SONNET_ID)).limit(1);
+    assert.strictEqual(sonnet.maxContext, TINY_MAX_CONTEXT);
   });
 
   // ===== 1. SUMMARIZATION TRIGGERS WHEN TOKENS EXCEED 80% =====
@@ -42,7 +46,11 @@ test("Automatic Conversation Summarization", async (t) => {
       return {
         output: {
           message: {
-            content: [{ text: "This is the mock summary of the conversation." }],
+            content: [
+              {
+                text: "This is the mock summary of the conversation including all key decisions and context needed to continue.",
+              },
+            ],
           },
         },
         usage: { inputTokens: 100, outputTokens: 50 },
@@ -129,7 +137,11 @@ test("Automatic Conversation Summarization", async (t) => {
       return {
         output: {
           message: {
-            content: [{ text: `Re-summary #${invokeCount}` }],
+            content: [
+              {
+                text: `Re-summary #${invokeCount}: comprehensive conversation summary with all key decisions and requirements preserved.`,
+              },
+            ],
           },
         },
         usage: { inputTokens: 50, outputTokens: 25 },
@@ -174,7 +186,7 @@ test("Automatic Conversation Summarization", async (t) => {
     const secondSummary = await svc.getMessage(testUser.id, secondSummaryID);
     assert.ok(firstSummary, "First summary message preserved");
     assert.ok(secondSummary, "Second summary message preserved");
-    assert.ok(secondSummary.content[0].text.includes("Re-summary #2"));
+    assert.ok(secondSummary.content[0].text.includes("Re-summary #2:"));
   });
 
   // ===== 3. FAILURE ROLLBACK =====
@@ -233,24 +245,32 @@ test("Automatic Conversation Summarization", async (t) => {
     assert.strictEqual(conv.summaryMessageID, null, "No summarization without invoker");
   });
 
-  // ===== 5. FALLBACK TO CHEAPEST MODEL =====
+  // ===== 5. DEFAULTS TO SONNET WHEN AGENT HAS NO MODEL =====
 
-  await t.test("falls back to cheapest chat model when agent has no modelID", async () => {
+  await t.test("defaults to Sonnet when agent has no modelID", async () => {
     let invokedModel = null;
 
     ConversationService.setInvoker(async (params) => {
       invokedModel = params.model;
       return {
-        output: { message: { content: [{ text: "Fallback summary" }] } },
+        output: {
+          message: {
+            content: [
+              {
+                text: "Sonnet default summary with enough content to pass the minimum length validation for summaries.",
+              },
+            ],
+          },
+        },
         usage: { inputTokens: 50, outputTokens: 25 },
       };
     });
 
-    // Agent without modelID
+    // Agent without modelID — should default to Sonnet for summarization
     const agent = await svc.createAgent(testUser.id, { name: "No Model Agent" });
     const conversation = await svc.createConversation(testUser.id, {
       agentID: agent.id,
-      title: "Fallback Model Test",
+      title: "Default Model Test",
     });
 
     await svc.addMessage(testUser.id, conversation.id, {
@@ -258,15 +278,10 @@ test("Automatic Conversation Summarization", async (t) => {
       content: [{ text: "F".repeat(400) }],
     });
 
-    // Should have used whichever chat model is cheapest
-    // Haiku has maxContext=50 now, so if it picks Haiku it would trigger.
-    // But models with higher maxContext won't trigger. Let's just verify it was called or not.
-    // The cheapest model by cost1kInput is Mock Model (0.0000001) but it has maxContext=1000000
-    // so 400 chars / 8 = 50 tokens < 1000000 * 0.8 — won't trigger.
-    // The key test is that it doesn't crash.
+    // Sonnet's context is also shrunk to TINY_MAX_CONTEXT, so summarization triggers
+    assert.strictEqual(invokedModel, "us.anthropic.claude-sonnet-4-6", "Should default to Sonnet");
     const conv = await svc.getConversation(testUser.id, conversation.id);
-    // With cheapest model having huge context, summarization shouldn't trigger
-    assert.strictEqual(conv.summaryMessageID, null, "Cheapest model has huge context, no trigger");
+    assert.ok(conv.summaryMessageID, "Summary should exist using Sonnet default");
   });
 
   // ===== 6. GETCONTEXT IGNORES NULL-CONTENT PLACEHOLDER =====
@@ -318,11 +333,18 @@ test("Automatic Conversation Summarization", async (t) => {
 
   // ===== TEARDOWN =====
 
-  await t.test("teardown: restore Haiku maxContext", async () => {
-    await setHaikuMaxContext(ORIGINAL_MAX_CONTEXT);
+  await t.test("teardown: restore maxContext values", async () => {
+    await setMaxContext(HAIKU_ID, ORIGINAL_HAIKU_MAX_CONTEXT);
+    await setMaxContext(SONNET_ID, ORIGINAL_SONNET_MAX_CONTEXT);
     ConversationService.setInvoker(null);
 
-    const [model] = await db.select().from(Model).where(eq(Model.id, HAIKU_ID)).limit(1);
-    assert.strictEqual(model.maxContext, ORIGINAL_MAX_CONTEXT, "Haiku maxContext restored");
+    const [haiku] = await db.select().from(Model).where(eq(Model.id, HAIKU_ID)).limit(1);
+    assert.strictEqual(haiku.maxContext, ORIGINAL_HAIKU_MAX_CONTEXT, "Haiku maxContext restored");
+    const [sonnet] = await db.select().from(Model).where(eq(Model.id, SONNET_ID)).limit(1);
+    assert.strictEqual(
+      sonnet.maxContext,
+      ORIGINAL_SONNET_MAX_CONTEXT,
+      "Sonnet maxContext restored"
+    );
   });
 });
