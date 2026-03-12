@@ -319,13 +319,12 @@ export class ConversationService {
   }
 
   async deleteConversation(userId, conversationId) {
-    // Soft delete
+    await db.delete(Vector).where(eq(Vector.conversationID, conversationId));
+    await db.delete(Message).where(eq(Message.conversationID, conversationId));
     const result = await db
-      .update(Conversation)
-      .set({ deleted: true, deletedAt: new Date() })
-      .where(and(eq(Conversation.id, conversationId), eq(Conversation.userID, userId)))
-      .returning();
-    return result.length;
+      .delete(Conversation)
+      .where(and(eq(Conversation.id, conversationId), eq(Conversation.userID, userId)));
+    return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 
   // ===== CONTEXT METHOD =====
