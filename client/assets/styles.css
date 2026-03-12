@@ -92,6 +92,12 @@
 .font-poppins {
   font-family: "Poppins" !important;
 }
+.font-nunito {
+  font-family: "Nunito" !important;
+}
+.font-outfit {
+  font-family: "Outfit" !important;
+}
 
 .font-smooth {
   -webkit-font-smoothing: antialiased !important;
@@ -1304,4 +1310,39 @@ dialog .close-btn {
 
 .card-lg {
   min-height: 600px;
+}
+
+.btn-save-primary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 9.5px 31px;
+  gap: 10px;
+  background: #1075fd;
+  border: 0.5px solid #373737;
+  border-radius: 60px;
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 16px;
+  text-align: center;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+}
+
+.btn-save-primary:hover,
+.btn-save-primary:focus,
+.btn-save-primary:active {
+  background: #0d5ed4;
+  border: 0.5px solid #373737;
+  color: #ffffff;
+}
+
+.btn-save-primary:disabled {
+  background: #1075fd;
+  border: 0.5px solid #373737;
+  color: #ffffff;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
