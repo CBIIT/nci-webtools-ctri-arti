@@ -64,12 +64,12 @@ export function InlineSelect(props) {
     <div class="custom-dropdown" ref=${(el) => (containerRef = el)}>
       <button
         type="button"
-        class="custom-dropdown-trigger"
+        class=${() => `custom-dropdown-trigger${isOpen() ? " visually-hidden" : ""}`}
         id=${props.id}
         aria-labelledby=${props.ariaLabelledBy}
+        aria-expanded=${() => isOpen()}
         disabled=${props.disabled}
         onClick=${handleTriggerClick}
-        style=${() => (isOpen() ? "display: none" : "")}
       >
         ${getSelectedLabel}
       </button>
