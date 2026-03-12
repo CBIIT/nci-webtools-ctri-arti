@@ -241,7 +241,9 @@ export const Resource = pgTable(
   "Resource",
   {
     id: serial("id").primaryKey(),
+    userID: integer("userID"),
     agentID: integer("agentID"),
+    conversationID: integer("conversationID"),
     messageID: integer("messageID"),
     name: text("name"),
     type: text("type"),
@@ -254,7 +256,9 @@ export const Resource = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
+    index("Resource_userID_idx").on(t.userID),
     index("Resource_agentID_idx").on(t.agentID),
+    index("Resource_conversationID_idx").on(t.conversationID),
     index("Resource_messageID_idx").on(t.messageID),
   ]
 );
@@ -413,7 +417,12 @@ export const messageRelations = relations(Message, ({ one, many }) => ({
 }));
 
 export const resourceRelations = relations(Resource, ({ one, many }) => ({
+  User: one(User, { fields: [Resource.userID], references: [User.id] }),
   Agent: one(Agent, { fields: [Resource.agentID], references: [Agent.id] }),
+  Conversation: one(Conversation, {
+    fields: [Resource.conversationID],
+    references: [Conversation.id],
+  }),
   Message: one(Message, { fields: [Resource.messageID], references: [Message.id] }),
   Vectors: many(Vector),
 }));

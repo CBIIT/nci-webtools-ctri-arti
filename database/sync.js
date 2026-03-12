@@ -137,7 +137,9 @@ export async function pushSchema(exec) {
     )`,
     `CREATE TABLE IF NOT EXISTS "Resource" (
       "id" serial PRIMARY KEY,
+      "userID" integer,
       "agentID" integer,
+      "conversationID" integer,
       "messageID" integer,
       "name" text,
       "type" text,
@@ -202,7 +204,9 @@ export async function pushSchema(exec) {
     `CREATE INDEX IF NOT EXISTS "Conversation_deleted_idx" ON "Conversation" ("deleted")`,
     `CREATE INDEX IF NOT EXISTS "Message_conversationID_idx" ON "Message" ("conversationID")`,
     `CREATE INDEX IF NOT EXISTS "Message_conversationID_createdAt_idx" ON "Message" ("conversationID", "createdAt")`,
+    `CREATE INDEX IF NOT EXISTS "Resource_userID_idx" ON "Resource" ("userID")`,
     `CREATE INDEX IF NOT EXISTS "Resource_agentID_idx" ON "Resource" ("agentID")`,
+    `CREATE INDEX IF NOT EXISTS "Resource_conversationID_idx" ON "Resource" ("conversationID")`,
     `CREATE INDEX IF NOT EXISTS "Resource_messageID_idx" ON "Resource" ("messageID")`,
     `CREATE INDEX IF NOT EXISTS "Vector_conversationID_idx" ON "Vector" ("conversationID")`,
     `CREATE INDEX IF NOT EXISTS "Vector_toolID_idx" ON "Vector" ("toolID")`,
@@ -218,6 +222,21 @@ export async function pushSchema(exec) {
       CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
     )`,
     `CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")`,
+    // Migration: add conversationID and userID columns to Resource if missing
+    `DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'Resource' AND column_name = 'conversationID'
+      ) THEN
+        ALTER TABLE "Resource" ADD COLUMN "conversationID" integer;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'Resource' AND column_name = 'userID'
+      ) THEN
+        ALTER TABLE "Resource" ADD COLUMN "userID" integer;
+      END IF;
+    END $$`,
   ];
 
   for (const stmt of statements) {
