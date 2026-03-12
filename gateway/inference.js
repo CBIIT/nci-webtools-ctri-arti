@@ -250,8 +250,12 @@ export async function runModel({
   const response = stream ? provider.converseStream(input) : provider.converse(input);
   const result = await response;
 
+  if (stream) {
+    return { stream: result.stream };
+  }
+
   // Debug logging for cache behavior
-  if (hasCache && !stream && result.usage) {
+  if (hasCache && result.usage) {
     const totalEstimatedTokens = input.messages.reduce(
       (sum, m) => sum + m.content.reduce((s, c) => s + estimateContentTokens(c), 0),
       0

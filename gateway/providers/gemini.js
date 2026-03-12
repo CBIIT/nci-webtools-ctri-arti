@@ -395,28 +395,27 @@ export default class GeminiProvider {
   /**
    * Implements the streaming converseStream method for Gemini,
    * translating Bedrock-style input and yielding Bedrock-style stream output.
+   * Returns { stream, $metadata } matching Bedrock's ConverseStreamCommand response shape.
    * @param {object} bedrockInput - The Bedrock ConverseRequest-like payload.
-   * @returns {AsyncGenerator<object>} AsyncGenerator yielding Bedrock-formatted ConverseStreamOutput events.
+   * @returns {{ stream: AsyncIterable, $metadata: object }} Bedrock-style response
    */
   async converseStream(bedrockInput) {
     const geminiRequestPayload = this.toGeminiRequest(bedrockInput);
     const geminiModel = this.geminiAI.getGenerativeModel({ model: bedrockInput.modelId });
     const startTime = Date.now();
 
-    // Note: We don't `await` here because `generateContentStream` itself returns the promise for the stream object
-    // and `toBedrockConverseStreamOutput` is designed to take this promise.
     try {
       const geminiStreamResultPromise = geminiModel.generateContentStream(geminiRequestPayload);
-      // toBedrockConverseStreamOutput handles awaiting the promise and then iterating the stream
-      return this.toBedrockConverseStreamOutput(
-        geminiStreamResultPromise,
-        bedrockInput.modelId,
-        startTime
-      );
+      return {
+        stream: this.toBedrockConverseStreamOutput(
+          geminiStreamResultPromise,
+          bedrockInput.modelId,
+          startTime
+        ),
+        $metadata: {},
+      };
     } catch (error) {
       console.error("AwsBedrockGeminiProvider 'converseStream' setup error:", error);
-      // This catch is for errors in *initiating* the stream with Gemini.
-      // Errors during streaming are handled inside toBedrockConverseStreamOutput.
       async function* errorStream() {
         yield {
           type: "error",
@@ -429,7 +428,7 @@ export default class GeminiProvider {
           metadata: { usage: {}, metrics: { latencyMs: Date.now() - startTime } },
         };
       }
-      return errorStream();
+      return { stream: errorStream(), $metadata: {} };
     }
   }
 }

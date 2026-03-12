@@ -69,44 +69,85 @@ export default class MockProvider {
   }
 
   /**
-   * Mock streaming converse method
+   * Mock streaming converse method.
+   * Returns { stream, $metadata } matching Bedrock's ConverseStreamCommand response shape.
+   * When tools are provided and no tool results exist yet in messages,
+   * returns a tool_use response for the first tool. Otherwise returns end_turn.
    * @param {object} input - Bedrock-style input
-   * @returns {AsyncGenerator<object>} Bedrock-style stream events
+   * @returns {{ stream: AsyncIterable, $metadata: object }} Bedrock-style response
    */
-  async converseStream(_input) {
+  async converseStream(input) {
     if (this.mockError) {
       throw this.mockError;
     }
 
     if (this.mockStream) {
-      return this.createMockStream(this.mockStream);
+      return { stream: this.createMockStream(this.mockStream), $metadata: {} };
     }
 
-    // Default mock stream
-    return this.createMockStream([
-      { type: "messageStart", messageStart: { role: "assistant" } },
-      {
-        type: "contentBlockStart",
-        contentBlockStart: { contentBlockIndex: 0, start: { text: {} } },
-      },
-      {
-        type: "contentBlockDelta",
-        contentBlockDelta: { contentBlockIndex: 0, delta: { text: "Test " } },
-      },
-      {
-        type: "contentBlockDelta",
-        contentBlockDelta: { contentBlockIndex: 0, delta: { text: "streaming response" } },
-      },
-      { type: "contentBlockStop", contentBlockStop: { contentBlockIndex: 0 } },
-      { type: "messageStop", messageStop: { stopReason: "end_turn" } },
-      {
-        type: "metadata",
-        metadata: {
-          usage: { inputTokens: 50, outputTokens: 25, totalTokens: 75 },
-          metrics: { latencyMs: 100 },
+    // If tools are provided and no tool results exist yet, return a tool_use response
+    const hasTools = input.toolConfig?.tools?.length > 0;
+    const hasToolResults = input.messages?.some((m) => m.content?.some((c) => c.toolResult));
+
+    if (hasTools && !hasToolResults) {
+      const toolName = input.toolConfig.tools[0].toolSpec?.name || "search";
+      const toolInput = toolName === "search" ? '{"query":"mock test"}' : "{}";
+      return {
+        stream: this.createMockStream([
+          { type: "messageStart", messageStart: { role: "assistant" } },
+          {
+            type: "contentBlockStart",
+            contentBlockStart: {
+              contentBlockIndex: 0,
+              start: { toolUse: { toolUseId: "mock_tool_1", name: toolName } },
+            },
+          },
+          {
+            type: "contentBlockDelta",
+            contentBlockDelta: { contentBlockIndex: 0, delta: { toolUse: { input: toolInput } } },
+          },
+          { type: "contentBlockStop", contentBlockStop: { contentBlockIndex: 0 } },
+          { type: "messageStop", messageStop: { stopReason: "tool_use" } },
+          {
+            type: "metadata",
+            metadata: {
+              usage: { inputTokens: 50, outputTokens: 25, totalTokens: 75 },
+              metrics: { latencyMs: 50 },
+            },
+          },
+        ]),
+        $metadata: {},
+      };
+    }
+
+    // Default: end_turn text response
+    return {
+      stream: this.createMockStream([
+        { type: "messageStart", messageStart: { role: "assistant" } },
+        {
+          type: "contentBlockStart",
+          contentBlockStart: { contentBlockIndex: 0, start: { text: {} } },
         },
-      },
-    ]);
+        {
+          type: "contentBlockDelta",
+          contentBlockDelta: { contentBlockIndex: 0, delta: { text: "Test " } },
+        },
+        {
+          type: "contentBlockDelta",
+          contentBlockDelta: { contentBlockIndex: 0, delta: { text: "streaming response" } },
+        },
+        { type: "contentBlockStop", contentBlockStop: { contentBlockIndex: 0 } },
+        { type: "messageStop", messageStop: { stopReason: "end_turn" } },
+        {
+          type: "metadata",
+          metadata: {
+            usage: { inputTokens: 50, outputTokens: 25, totalTokens: 75 },
+            metrics: { latencyMs: 100 },
+          },
+        },
+      ]),
+      $metadata: {},
+    };
   }
 
   async *createMockStream(events) {
