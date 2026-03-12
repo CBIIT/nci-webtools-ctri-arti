@@ -77,7 +77,10 @@ function buildDirectClient() {
 
     addResource: (userId, data) => s.addResource(userId, data),
     getResource: (userId, resourceId) => s.getResource(userId, resourceId),
+    updateResource: (userId, resourceId, updates) => s.updateResource(userId, resourceId, updates),
     getResourcesByAgent: (userId, agentId) => s.getResourcesByAgent(userId, agentId),
+    getResourcesByConversation: (userId, conversationId) =>
+      s.getResourcesByConversation(userId, conversationId),
     deleteResource: (userId, resourceId) => s.deleteResource(userId, resourceId),
 
     addVectors: (userId, conversationId, vectors) => s.addVectors(userId, conversationId, vectors),
@@ -155,8 +158,12 @@ function buildHttpClient() {
     addResource: (userId, data) => httpRequest("POST", "/api/v1/resources", data, userId),
     getResource: (userId, resourceId) =>
       httpRequest("GET", `/api/v1/resources/${resourceId}`, null, userId),
+    updateResource: (userId, resourceId, updates) =>
+      httpRequest("PUT", `/api/v1/resources/${resourceId}`, updates, userId),
     getResourcesByAgent: (userId, agentId) =>
       httpRequest("GET", `/api/v1/agents/${agentId}/resources`, null, userId),
+    getResourcesByConversation: (userId, conversationId) =>
+      httpRequest("GET", `/api/v1/conversations/${conversationId}/resources`, null, userId),
     deleteResource: (userId, resourceId) =>
       httpRequest("DELETE", `/api/v1/resources/${resourceId}`, null, userId),
 
@@ -204,7 +211,9 @@ export const {
   deletePrompt,
   addResource,
   getResource,
+  updateResource,
   getResourcesByAgent,
+  getResourcesByConversation,
   deleteResource,
   addVectors,
   getVectorsByConversation,

@@ -214,12 +214,33 @@ api.get(
   })
 );
 
+api.put(
+  "/resources/:id",
+  requireRole(),
+  routeHandler(async (req, res) => {
+    const userId = req.session.user.id;
+    const resource = await cmsClient.updateResource(userId, req.params.id, req.body);
+    if (!resource) return res.status(404).json({ error: "Resource not found" });
+    res.json(resource);
+  })
+);
+
 api.get(
   "/agents/:agentId/resources",
   requireRole(),
   routeHandler(async (req, res) => {
     const userId = req.session.user.id;
     const resources = await cmsClient.getResourcesByAgent(userId, req.params.agentId);
+    res.json(resources);
+  })
+);
+
+api.get(
+  "/conversations/:conversationId/resources",
+  requireRole(),
+  routeHandler(async (req, res) => {
+    const userId = req.session.user.id;
+    const resources = await cmsClient.getResourcesByConversation(userId, req.params.conversationId);
     res.json(resources);
   })
 );
