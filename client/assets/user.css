@@ -94,6 +94,7 @@
   border: 1.5px solid #b0babf;
   border-radius: 8px;
   overflow: hidden;
+  width: 219px;
 }
 
 .profile-budget-input-group:has(.profile-budget-input:disabled) {
@@ -103,7 +104,7 @@
 }
 
 .profile-budget-adornment {
-  width: 40px;
+  width: 45px;
   padding: 8px 14px;
   background: #acddfe;
   border: none;
@@ -114,6 +115,7 @@
   font-family: "Inter", sans-serif;
   font-size: 17px;
   line-height: 22px;
+  min-width: 0;
   letter-spacing: 0.02em;
   color: #002643;
   border: none;
