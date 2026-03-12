@@ -57,111 +57,66 @@ export class ConversationService {
     return sonnet || null;
   }
 
-  async #maybeSummarize(userId, conversationId) {
-    if (!_invoke || _summarizing.has(conversationId)) return;
-    _summarizing.add(conversationId);
+  async checkSummarizationNeeded(userId, conversationId) {
+    if (_summarizing.has(conversationId)) return null;
 
-    try {
-      const conversation = await this.getConversation(userId, conversationId);
-      if (!conversation) return;
+    const conversation = await this.getConversation(userId, conversationId);
+    if (!conversation) return null;
 
-      const model = await this.#getSummarizationModel(conversation);
-      if (!model?.internalName || !model?.maxContext) return;
+    const model = await this.#getSummarizationModel(conversation);
+    if (!model?.internalName || !model?.maxContext) return null;
 
-      // Load inference messages
-      let messages;
-      if (conversation.summaryMessageID) {
-        const summaryMsg = await this.getMessage(userId, conversation.summaryMessageID);
-        if (summaryMsg?.content) {
-          messages = await db
-            .select()
-            .from(Message)
-            .where(
-              and(
-                eq(Message.conversationID, conversationId),
-                gte(Message.id, conversation.summaryMessageID)
-              )
-            )
-            .orderBy(asc(Message.createdAt));
-        }
-      }
-      if (!messages) {
+    let messages;
+    if (conversation.summaryMessageID) {
+      const summaryMsg = await this.getMessage(userId, conversation.summaryMessageID);
+      if (summaryMsg?.content) {
         messages = await db
           .select()
           .from(Message)
-          .where(eq(Message.conversationID, conversationId))
+          .where(
+            and(
+              eq(Message.conversationID, conversationId),
+              gte(Message.id, conversation.summaryMessageID)
+            )
+          )
           .orderBy(asc(Message.createdAt));
       }
+    }
+    if (!messages) {
+      messages = await db
+        .select()
+        .from(Message)
+        .where(eq(Message.conversationID, conversationId))
+        .orderBy(asc(Message.createdAt));
+    }
 
-      const estimated = estimateMessageTokens(messages);
-      if (estimated < model.maxContext * 0.8) return;
+    const estimated = estimateMessageTokens(messages);
+    if (estimated < model.maxContext * 0.8) return null;
 
-      // Insert placeholder message
-      const [placeholder] = await db
+    return {
+      model: model.internalName,
+      messages: messages.filter((m) => m.content).map(({ role, content }) => ({ role, content })),
+    };
+  }
+
+  async persistSummary(userId, conversationId, summaryText) {
+    _summarizing.add(conversationId);
+    try {
+      const [summaryMsg] = await db
         .insert(Message)
         .values({
           conversationID: conversationId,
           role: "user",
-          content: null,
+          content: [{ text: "[Conversation Summary]\n\n" + summaryText }],
         })
         .returning();
 
-      // Set summaryMessageID to placeholder
       await db
         .update(Conversation)
-        .set({ summaryMessageID: placeholder.id })
+        .set({ summaryMessageID: summaryMsg.id })
         .where(and(eq(Conversation.id, conversationId), eq(Conversation.userID, userId)));
 
-      try {
-        const summarizeInstruction = {
-          role: "user",
-          content: [
-            {
-              text:
-                "Summarize the entire conversation so far. Include all key decisions, " +
-                "requirements, code, facts, and context needed to continue without the " +
-                "original messages. Be thorough but concise. Format as structured notes.",
-            },
-          ],
-        };
-
-        const inferenceMessages = messages
-          .filter((m) => m.content)
-          .map(({ role, content }) => ({ role, content }));
-
-        const result = await _invoke({
-          userID: userId,
-          model: model.internalName,
-          messages: [...inferenceMessages, summarizeInstruction],
-          system: "You are summarizing a conversation for context compression.",
-          thoughtBudget: 0,
-          stream: false,
-          type: "chat-summary",
-        });
-
-        const summaryText = result?.output?.message?.content?.[0]?.text;
-        if (!summaryText || summaryText.length < 50) {
-          throw new Error(`Summary too short or empty (length=${summaryText?.length || 0})`);
-        }
-        const lower = summaryText.toLowerCase();
-        if (
-          lower.includes("test response from mock") ||
-          lower.includes("test streaming response")
-        ) {
-          throw new Error(`Summary contains mock provider text: "${summaryText.slice(0, 80)}"`);
-        }
-        await db
-          .update(Message)
-          .set({ content: [{ text: `[Conversation Summary]\n\n${summaryText}` }] })
-          .where(eq(Message.id, placeholder.id));
-      } catch (error) {
-        console.error("Summarization failed, removing placeholder:", error);
-        await db.delete(Message).where(eq(Message.id, placeholder.id));
-        await db
-          .update(Conversation)
-          .set({ summaryMessageID: conversation.summaryMessageID || null })
-          .where(and(eq(Conversation.id, conversationId), eq(Conversation.userID, userId)));
-      }
+      return summaryMsg;
     } finally {
       _summarizing.delete(conversationId);
     }
@@ -324,10 +279,9 @@ export class ConversationService {
   }
 
   async deleteConversation(userId, conversationId) {
-    await db.delete(Vector).where(eq(Vector.conversationID, conversationId));
-    await db.delete(Message).where(eq(Message.conversationID, conversationId));
     const result = await db
-      .delete(Conversation)
+      .update(Conversation)
+      .set({ deleted: true, deletedAt: new Date() })
       .where(and(eq(Conversation.id, conversationId), eq(Conversation.userID, userId)));
     return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
@@ -346,10 +300,7 @@ export class ConversationService {
         .where(eq(Message.id, conversation.summaryMessageID))
         .limit(1);
       const summaryText = summaryMsg[0]?.content?.[0]?.text || "";
-      const isValid =
-        summaryMsg[0]?.content &&
-        summaryText.length >= 50 &&
-        !summaryText.toLowerCase().includes("test response from mock");
+      const isValid = summaryMsg[0]?.content && summaryText.length >= 50;
       if (isValid) {
         messages = await db
           .select()
@@ -396,7 +347,43 @@ export class ConversationService {
         content: data.content,
       })
       .returning();
-    await this.#maybeSummarize(userId, conversationId);
+
+    // Trigger automatic summarization when an invoker is configured (test hook).
+    // In production, summarization is handled by agents/loop.js via gateway.invoke.
+    if (_invoke) {
+      const check = await this.checkSummarizationNeeded(userId, conversationId);
+      if (check) {
+        try {
+          const result = await _invoke({
+            type: "chat-summary",
+            model: check.model,
+            stream: false,
+            thoughtBudget: 0,
+            messages: [
+              ...check.messages,
+              {
+                role: "user",
+                content: [
+                  {
+                    text:
+                      "Summarize the entire conversation so far. Include all key decisions, " +
+                      "requirements, code, facts, and context needed to continue without the " +
+                      "original messages. Be thorough but concise. Format as structured notes.",
+                  },
+                ],
+              },
+            ],
+          });
+          const summaryText = result.output.message.content[0].text;
+          if (summaryText.length >= 50) {
+            await this.persistSummary(userId, conversationId, summaryText);
+          }
+        } catch {
+          // Summarization failed — continue without compression
+        }
+      }
+    }
+
     return msg;
   }
 

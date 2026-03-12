@@ -148,6 +148,28 @@ v1.get(
   })
 );
 
+// -- Summarization --
+
+v1.get(
+  "/conversations/:conversationId/summarization-check",
+  routeHandler(async (req, res) => {
+    const result = await service.checkSummarizationNeeded(req.userId, req.params.conversationId);
+    res.json(result);
+  })
+);
+
+v1.post(
+  "/conversations/:conversationId/summary",
+  routeHandler(async (req, res) => {
+    const msg = await service.persistSummary(
+      req.userId,
+      req.params.conversationId,
+      req.body.summaryText
+    );
+    res.status(201).json(msg);
+  })
+);
+
 // -- Messages --
 
 v1.post(

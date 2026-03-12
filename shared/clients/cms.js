@@ -56,6 +56,8 @@ function buildDirectClient() {
     deleteConversation: (userId, conversationId) => s.deleteConversation(userId, conversationId),
 
     getContext: (userId, conversationId, options) => s.getContext(userId, conversationId, options),
+    checkSummarizationNeeded: (userId, cid) => s.checkSummarizationNeeded(userId, cid),
+    persistSummary: (userId, cid, text) => s.persistSummary(userId, cid, text),
 
     addMessage: (userId, conversationId, data) => s.addMessage(userId, conversationId, data),
     getMessages: (userId, conversationId) => s.getMessages(userId, conversationId),
@@ -131,6 +133,10 @@ function buildHttpClient() {
         userId
       );
     },
+    checkSummarizationNeeded: (userId, cid) =>
+      httpRequest("GET", `/api/v1/conversations/${cid}/summarization-check`, null, userId),
+    persistSummary: (userId, cid, text) =>
+      httpRequest("POST", `/api/v1/conversations/${cid}/summary`, { summaryText: text }, userId),
 
     addMessage: (userId, conversationId, data) =>
       httpRequest("POST", `/api/v1/conversations/${conversationId}/messages`, data, userId),
@@ -194,6 +200,8 @@ export const {
   updateConversation,
   deleteConversation,
   getContext,
+  checkSummarizationNeeded,
+  persistSummary,
   addMessage,
   getMessages,
   getMessage,
