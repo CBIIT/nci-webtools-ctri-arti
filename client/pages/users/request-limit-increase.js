@@ -36,54 +36,55 @@ import { Check } from "lucide-solid"
  *   user: {
  *     budget: 50 // $50 daily limit, or null for unlimited
  *   }
- * };
+ * }
  * 
  * @throws {Error} Displays user-friendly error messages for failed API requests
  * 
  * @since 1.0.0
  */
 function RequestLimitIncrease(props) {
-  const [reason, setReason] = createSignal("");
-  let limitDialog;
+  const [reason, setReason] = createSignal("")
+  let limitDialog
   const showDialog = () => {
     setStatus("init")
-    limitDialog.showModal();
+    limitDialog.showModal()
   }
   const closeDialog = () => {
-    console.log("closeDialog clicked");
+    console.log("closeDialog clicked")
     resetDialog()
     limitDialog.close()
   }
   const resetDialog = () => {
     setReason("")
     setSubmitError("")
+    setIsSubmitting(false)
   }
 
-  const [status, setStatus] = createSignal("init");
+  const [status, setStatus] = createSignal("init")
   const [isSubmitting, setIsSubmitting] = createSignal(false)
   const [submitError, setSubmitError] = createSignal("")
 
-  const hasReason = () => reason().trim().length > 0;
+  const hasReason = () => reason().trim().length > 0
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     console.log("handleSubmit called with reason:", reason())
 
     try {
-      setIsSubmitting(true);
-      setSubmitError("");
+      setIsSubmitting(true)
+      setSubmitError("")
 
       const response = await fetch('/api/v1/usage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ justification: reason() }),
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json()
         setSubmitError(errorData.error || 'Failed to submit your request. Please try again later.')
         setIsSubmitting(false)
-        return;
+        return
       }
 
       setIsSubmitting(false)
@@ -92,8 +93,10 @@ function RequestLimitIncrease(props) {
     } catch (err) {
       console.error("Error submitting limit increase request:", err)
       setSubmitError("An unexpected error occurred. Please try again later.")
+    } finally {
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return html`
     <div id="request-limit-increase-container">
@@ -126,6 +129,7 @@ function RequestLimitIncrease(props) {
         id="request-limit-increase-dialog"
         class="request-limit-increase-dialog modal fade show"
         onSubmit=${(e) => handleSubmit(e)}
+        onClose=${() => resetDialog()}
         ref=${(el) => (limitDialog = el)}
       >
         <div class="modal-dialog modal-dialog-centered">
@@ -146,24 +150,22 @@ function RequestLimitIncrease(props) {
                     <label class="form-label font-inter no-mb">Current Cost Limit Per Day</label>
                     <p class="form-static-value">
                       ${() => {
-                        console.log("Budget function called, props.session:", props.session);
-                        const sessionData = props.session;
+                        const sessionData = props.session
 
                         if (!sessionData) {
-                          return "No session data";
+                          return "No session data"
                         }
 
                         if (!sessionData.user) {
-                          return "No user in session";
+                          return "No user in session"
                         }
 
-                        const budget = sessionData.user.budget;
-                        console.log("Budget value:", budget);
+                        const budget = sessionData.user.budget
 
                         if (budget === null) {
-                          return "Unlimited";
+                          return "Unlimited"
                         }
-                        return `$${budget}`;
+                        return `$${budget}`
                       }}
                     </p>
 
@@ -190,6 +192,7 @@ function RequestLimitIncrease(props) {
                       id="cancel-limit-increase-button"
                       type="button"
                       class="btn btn-pill btn-cancel font-nunito"
+                      disabled=${() => isSubmitting()}
                       onClick=${() => closeDialog()}
                     >
                       Cancel
@@ -208,7 +211,7 @@ function RequestLimitIncrease(props) {
         </div>
       </dialog>
     </div>
-  `;
+  `
 }
 
-export default RequestLimitIncrease;
+export default RequestLimitIncrease
