@@ -3,6 +3,7 @@ import html from "solid-js/html";
 
 import { AlertContainer } from "../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
+import RequestLimitIncrease from "./request-limit-increase.js";
 
 const fetchConfig = () => fetch("/api/config").then((r) => r.json());
 
@@ -239,6 +240,11 @@ function UserProfile() {
                     }
                   }}
                 </div>
+              </div>
+            </div>
+            <div class="row align-items-center mb-4">
+              <div class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-4 col-xl-4 align-self-center">
+                <${RequestLimitIncrease} session=${() => session()} />
               </div>
             </div>
 
