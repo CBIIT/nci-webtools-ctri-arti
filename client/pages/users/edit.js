@@ -91,6 +91,8 @@ function UserEdit() {
       // Handle no limit case - send null for budget when noLimit is true
       if (userData.noLimit) {
         userData.budget = null;
+      } else if (!userData.budget) {
+        userData.budget = 0;
       }
       delete userData.noLimit; // Remove the UI-only property
 
@@ -158,7 +160,6 @@ function UserEdit() {
       <div class="bg-profile font-smooth">
         <div
           class="d-flex align-items-center profile-banner"
-          role="img"
           aria-label="Profile Management Banner"
         >
           <div class="container">
