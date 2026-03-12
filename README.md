@@ -192,7 +192,6 @@ research-optimizer/
 | [agents/README.md](agents/README.md)                 | Chat orchestration (stub)                |
 | [users/README.md](users/README.md)                   | Identity management (stub)               |
 | [infrastructure/README.md](infrastructure/README.md) | AWS CDK deployment                       |
-| [CLAUDE.md](CLAUDE.md)                               | AI assistant guidance for this codebase  |
 
 ## Code Health
 
