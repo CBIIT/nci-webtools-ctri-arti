@@ -1,3 +1,5 @@
+import { parseDocument } from "shared/parsers.js";
+
 import { getToolSpecs } from "./tool-specs.js";
 import { getToolFn } from "./tools.js";
 
@@ -39,7 +41,10 @@ export async function* runAgentLoop({
   const context = await cms.getContext(userId, conversationId, { compressed: true });
   const existingMessages = context?.messages || [];
 
-  // 3. Persist user message
+  // 3. Process uploaded files → resources, then build clean message for model
+  await processUploads(userMessage, { userId, agentId, conversationId, cms });
+
+  // Persist the cleaned message (no base64 blobs, no resourceOnly flags)
   await cms.addMessage(userId, conversationId, userMessage);
 
   // Build full message list for inference
@@ -53,23 +58,19 @@ export async function* runAgentLoop({
     day: "numeric",
   });
 
-  // Load memory files from resources
+  // Load agent-scoped resources (no conversationID) — user's persistent memory
   const resources = await cms.getResourcesByAgent(userId, agentId);
-  const memoryFiles = [
-    "_profile.txt",
-    "_memory.txt",
-    "_insights.txt",
-    "_workspace.txt",
-    "_knowledge.txt",
-    "_patterns.txt",
-  ];
-  const memoryContent = memoryFiles
-    .map((file) => {
-      const resource = resources.find((r) => r.name === file);
-      return resource ? { file, contents: resource.content } : null;
-    })
-    .filter((f) => f?.contents)
-    .map((f) => `<file name="${f.file}">${f.contents}</file>`)
+  const agentResources = resources.filter((r) => !r.conversationID);
+
+  // Inject memory file contents + skill filenames into system prompt
+  const memoryFiles = agentResources.filter((r) => r.name.startsWith("memories/") && r.content);
+  const skillFiles = agentResources.filter((r) => r.name.startsWith("skills/"));
+
+  const memoryContent = [
+    ...memoryFiles.map((r) => `<file name="${r.name}">${r.content}</file>`),
+    skillFiles.length ? `<skills>\n${skillFiles.map((r) => r.name).join("\n")}\n</skills>` : "",
+  ]
+    .filter(Boolean)
     .join("\n");
 
   let system;
@@ -262,27 +263,141 @@ function accumulateContent(content, chunk) {
   }
 }
 
+// =================================================================================
+// FILE UPLOAD PROCESSING
+// =================================================================================
+
+const FORMAT_TO_MIME = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  doc: "application/msword",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+};
+const TEXT_FORMATS = new Set(["txt", "md", "csv", "html", "json", "xml"]);
+
+/**
+ * Extracts text content from file bytes for resource storage.
+ * Text formats are decoded as UTF-8, known binary formats are parsed,
+ * everything else is stored as base64.
+ */
+async function extractContent(rawBytes, format) {
+  if (TEXT_FORMATS.has(format)) {
+    return { content: new TextDecoder().decode(rawBytes), encoding: "utf-8" };
+  }
+  const mime = FORMAT_TO_MIME[format];
+  if (mime) {
+    try {
+      return { content: await parseDocument(rawBytes, mime), encoding: "utf-8" };
+    } catch (e) {
+      console.warn(`Failed to parse ${format}:`, e.message);
+    }
+  }
+  return { content: rawBytes.toString("base64"), encoding: "base64" };
+}
+
+/**
+ * Processes user-uploaded file blocks:
+ * 1. Decodes base64 bytes and stores each file as a resource (with text extraction)
+ * 2. Strips resource-only blocks from the message (model is informed via <uploaded_files>)
+ * 3. Converts remaining inline file bytes from base64 to Buffer for Bedrock
+ *
+ * Mutates userMessage.content in place.
+ */
+async function processUploads(userMessage, { userId, agentId, conversationId, cms }) {
+  const blocks = userMessage.content || [];
+
+  // Store all files as resources
+  for (const block of blocks) {
+    const file = block.document || block.image;
+    if (!file?.source?.bytes) continue;
+
+    const rawBytes =
+      typeof file.source.bytes === "string"
+        ? Buffer.from(file.source.bytes, "base64")
+        : Buffer.from(file.source.bytes);
+
+    const { content, encoding } = await extractContent(rawBytes, file.format);
+
+    await cms.addResource(userId, {
+      agentID: agentId,
+      conversationID: conversationId,
+      name: file.originalName || file.name,
+      type: block.document ? "document" : "image",
+      content,
+      metadata: { format: file.format, encoding },
+    });
+
+    // Prepare inline blocks for Bedrock (raw Buffer, no extra flags)
+    if (!file.resourceOnly) {
+      file.source.bytes = rawBytes;
+    }
+  }
+
+  // Remove resource-only blocks — the model already knows about these
+  // via the <uploaded_files> tag the client injected into the text block.
+  // Also clean transport-only fields (resourceOnly, originalName) that
+  // Bedrock doesn't understand.
+  userMessage.content = blocks.filter((block) => {
+    const file = block.document || block.image;
+    if (!file?.source?.bytes) return true; // text blocks, etc.
+    if (file.resourceOnly) return false;
+    delete file.resourceOnly;
+    delete file.originalName;
+    return true;
+  });
+}
+
 function getDefaultSystemPrompt(time, memoryContent) {
   const currentYear = new Date().getFullYear();
-  return `The assistant is Ada, created by Anthropic for the National Cancer Institute. Ada is not a chatbot or customer service agent, but rather a sophisticated colleague for professionals in the field.
+  return `You are Ada, a sophisticated colleague for professionals at the National Cancer Institute. Not a chatbot — a peer.
 
 The current date is ${time}.
 
-# Tools & Research
+# Tools
 
-Ada has tools and uses them intelligently.
+Search: Craft diverse queries. Never repeat similar searches — each explores a different angle. Include ${currentYear} for current events.
+Browse: Follow up on search results. Fetch up to 20 URLs simultaneously for full content.
+Data: Access S3 bucket files for analysis.
+Editor: Full virtual filesystem — create, view, edit, delete, rename files. Organize work, build deliverables, maintain persistent context.
+Think: Dedicated reasoning space. Include the COMPLETE information that needs analysis.
 
-Search: Ada crafts diverse queries to gather comprehensive information. Never repeats similar searches - each query explores a different angle. Always includes ${currentYear} for current events.
-Browse: After finding promising search results, Ada examines full content by browsing up to 20 URLs simultaneously.
-Data: Access S3 bucket files for data analysis.
-Editor: Manages workspace files to maintain context across conversations.
-Think: When facing complex analysis, Ada uses this tool with the COMPLETE information that needs processing.
+When citing search/browse results, use inline markdown citations: [(Author, Year)](url).
 
-When using search or browse tools, Ada includes markdown inline citations [(Author, Year)](url) immediately after statements using that information.
+# File System
+
+The editor tool is a full virtual filesystem. Use it freely — organize research, draft documents, build deliverables, store data.
+
+Two directories persist across conversations:
+- \`memories/\` — User context, preferences, project state, key decisions. Updated automatically as you learn about the user.
+- \`skills/\` — Reusable expertise and workflows. Read the full skill before applying it.
+
+Everything else is conversation-scoped and disappears when the conversation ends.
+
+## Memories
+
+Memory file contents are automatically loaded into your context (below). You don't need to read them at the start of a conversation — they're already here.
+
+Your job is to **maintain** memories as you work:
+- Save user preferences, project context, important decisions, and ongoing work to \`memories/\` files
+- Keep memories organized — use descriptive filenames, consolidate related info, delete stale entries
+- Assume interruption: save progress you don't want to lose
+
+## Skills
+
+Skill filenames are listed in your context below. When a skill is relevant, read its full instructions with \`editor view skills/{name}.md\` before applying it.
+
+Create skills to capture reusable workflows:
+\`\`\`
+---
+name: skill-name
+description: When to use this skill
+---
+[Detailed instructions]
+\`\`\`
 
 # Context
 
-Ada's memory contains:
 <memory>
 ${memoryContent}
 </memory>`;

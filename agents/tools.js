@@ -174,172 +174,198 @@ function getMimeTypeFromKey(key) {
 }
 
 /**
- * Editor tool — uses CMS Resource table for per-agent file storage
+ * Editor tool — virtual filesystem backed by CMS Resource table.
+ *
+ * Scoping:
+ * - Merges conversation-scoped + agent-scoped resources; conversation takes precedence by path
+ * - Path convention determines scope of NEW resources:
+ *     memories/, skills/ → agent-scoped (persist across conversations, user+agent scoped)
+ *     everything else    → conversation-scoped
+ * - Existing resources are updated in-place (preserving their original scope)
+ * - Resources without userID are read-only (system/seed resources)
+ * - Returns structured objects { status, path, content, entries, error }
  */
 export async function editor(
-  { command, path, view_range, old_str, new_str, file_text, insert_line },
+  { command, path, view_range, old_str, new_str, file_text, insert_line, new_path },
   context
 ) {
-  if (!path) return "Error: File path is required";
-  if (!command) return "Error: Command is required";
+  if (!path) return { status: "error", error: "File path is required" };
+  if (!command) return { status: "error", error: "Command is required" };
 
-  const { userId, agentId, cms } = context;
+  const { userId, agentId, conversationId, cms } = context;
+  const normPath = path.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
+  const isDir = path.endsWith("/");
 
-  const normalizeNewlines = (text) => {
-    if (typeof text !== "string") return "";
-    return text.replace(/\r\n/g, "\n");
-  };
+  // Agent-scoped paths persist across conversations (writable memory)
+  function isAgentScoped(p) {
+    return p.startsWith("memories/") || p.startsWith("skills/");
+  }
 
-  // Helper to load resource content by path
-  async function getResourceByPath(filePath) {
-    const resources = await cms.getResourcesByAgent(userId, agentId);
-    return resources.find((r) => r.name === filePath);
+  // Merge conversation + agent resources; conversation wins by path
+  async function getResources() {
+    const [convResources, agentResources] = await Promise.all([
+      conversationId ? cms.getResourcesByConversation(userId, conversationId) : [],
+      cms.getResourcesByAgent(userId, agentId),
+    ]);
+    const agentOnly = agentResources.filter((r) => !r.conversationID);
+    const byName = new Map();
+    for (const r of agentOnly) byName.set(r.name, r);
+    for (const r of convResources) byName.set(r.name, r);
+    return Array.from(byName.values());
+  }
+
+  async function getResource(p) {
+    const all = await getResources();
+    return all.find((r) => r.name === p);
+  }
+
+  function assertWritable(resource) {
+    if (!resource.userID)
+      return { status: "error", error: `${resource.name} is read-only (system resource)` };
+    return null;
+  }
+
+  async function saveResource(p, content) {
+    const existing = await getResource(p);
+    if (existing) {
+      const err = assertWritable(existing);
+      if (err) return err;
+      await cms.updateResource(userId, existing.id, { content });
+      return null;
+    }
+    const resource = { agentID: agentId, name: p, content, type: "file" };
+    if (!isAgentScoped(p)) resource.conversationID = conversationId;
+    await cms.addResource(userId, resource);
+    return null;
   }
 
   try {
     switch (command) {
       case "view": {
-        const resource = await getResourceByPath(path);
-        if (!resource) return `File not found: ${path}`;
-        const content = normalizeNewlines(resource.content || "");
-        const lines = content.split("\n");
-        const [start, end] = view_range || [1, lines.length];
-        const startLine = Math.max(1, start);
-        const endLine = end === -1 ? lines.length : Math.min(end, lines.length);
-        return lines
-          .slice(startLine - 1, endLine)
-          .map((line, idx) => `${startLine + idx}: ${line}`)
-          .join("\n");
+        const resources = await getResources();
+        const file = resources.find((r) => r.name === normPath);
+        if (file && !isDir) {
+          const content = file.content || "";
+          if (view_range) {
+            const lines = content.split("\n");
+            const [start, end] = view_range;
+            const startLine = Math.max(1, start);
+            const endLine = end === -1 ? lines.length : Math.min(end, lines.length);
+            return {
+              status: "viewed",
+              path,
+              content: lines
+                .slice(startLine - 1, endLine)
+                .map((line, idx) => `${startLine + idx}: ${line}`)
+                .join("\n"),
+              resourceId: file.id,
+            };
+          }
+          return { status: "viewed", path, content, resourceId: file.id };
+        }
+
+        // List as directory
+        const prefix = normPath ? normPath + "/" : "";
+        const entries = new Set();
+        for (const r of resources) {
+          if (r.name.startsWith(prefix)) {
+            const rest = r.name.slice(prefix.length);
+            const first = rest.split("/")[0];
+            if (first) entries.add(rest.includes("/") ? first + "/" : first);
+          }
+        }
+        if (entries.size > 0)
+          return { status: "directory", path: prefix || "/", entries: Array.from(entries).sort() };
+        return { status: "error", error: `Not found: ${path}` };
       }
 
       case "create": {
-        const fileContent = file_text !== undefined ? normalizeNewlines(file_text) : "";
-        const existing = await getResourceByPath(path);
-        if (existing) {
-          // Overwrite: delete old, create new
-          await cms.deleteResource(userId, existing.id);
-        }
-        await cms.addResource(userId, {
-          agentID: agentId,
-          name: path,
-          content: fileContent,
-          type: "file",
-        });
-        return existing ? `Overwrote existing file: ${path}` : `Successfully created file: ${path}`;
+        if (!file_text && file_text !== "")
+          return { status: "error", error: "file_text is required for create" };
+        const existing = await getResource(normPath);
+        if (existing)
+          return {
+            status: "error",
+            error: `File already exists: ${path}. Use str_replace to edit.`,
+          };
+        const resource = { agentID: agentId, name: normPath, content: file_text, type: "file" };
+        if (!isAgentScoped(normPath)) resource.conversationID = conversationId;
+        const created = await cms.addResource(userId, resource);
+        return { status: "created", path, content: file_text, resourceId: created.id };
       }
 
       case "str_replace": {
-        if (old_str === undefined) return "Error: old_str parameter is required for str_replace";
-        if (new_str === undefined) return "Error: new_str parameter is required for str_replace";
+        if (!old_str) return { status: "error", error: "old_str is required for str_replace" };
+        if (new_str === undefined)
+          return { status: "error", error: "new_str is required for str_replace" };
+        const resource = await getResource(normPath);
+        if (!resource) return { status: "error", error: `File not found: ${path}` };
+        const err = assertWritable(resource);
+        if (err) return err;
 
-        const resource = await getResourceByPath(path);
-        if (!resource) return `File not found: ${path}`;
-
-        const content = normalizeNewlines(resource.content || "");
-        const normalizedOldStr = normalizeNewlines(old_str);
-
-        let count = 0;
-        let position = 0;
-        while (true) {
-          position = content.indexOf(normalizedOldStr, position);
-          if (position === -1) break;
-          count++;
-          if (normalizedOldStr === "") break;
-          position += normalizedOldStr.length;
-        }
-
-        if (count === 0) return "The specified text was not found in the file.";
+        const escaped = old_str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const count = (resource.content.match(new RegExp(escaped, "g")) || []).length;
+        if (count === 0) return { status: "error", error: "old_str not found in file" };
         if (count > 1)
-          return `Found ${count} occurrences of the text. The replacement must match exactly one location.`;
+          return { status: "error", error: `old_str appears ${count} times. Be more specific.` };
 
-        // Store undo history as a separate resource
-        await cms.addResource(userId, {
-          agentID: agentId,
-          name: `_history:${path}`,
-          content: resource.content,
-          type: "history",
-        });
-
-        const newContent = content.replace(normalizedOldStr, normalizeNewlines(new_str));
-        await cms.deleteResource(userId, resource.id);
-        await cms.addResource(userId, {
-          agentID: agentId,
-          name: path,
-          content: newContent,
-          type: "file",
-        });
-        return "Successfully replaced text at exactly one location.";
+        const newContent = resource.content.replace(old_str, new_str);
+        await cms.updateResource(userId, resource.id, { content: newContent });
+        return { status: "replaced", path, content: newContent, resourceId: resource.id };
       }
 
       case "insert": {
-        if (new_str === undefined) return "Error: new_str parameter is required for insert";
-        if (insert_line === undefined) return "Error: insert_line parameter is required for insert";
+        if (insert_line === undefined)
+          return { status: "error", error: "insert_line is required for insert" };
+        if (!new_str && new_str !== "")
+          return { status: "error", error: "new_str is required for insert" };
+        const resource = await getResource(normPath);
+        if (!resource) return { status: "error", error: `File not found: ${path}` };
+        const err = assertWritable(resource);
+        if (err) return err;
 
-        const resource = await getResourceByPath(path);
-        if (!resource) return `File not found: ${path}`;
-
-        // Store undo history
-        await cms.addResource(userId, {
-          agentID: agentId,
-          name: `_history:${path}`,
-          content: resource.content,
-          type: "history",
-        });
-
-        const content = normalizeNewlines(resource.content || "");
-        const lines = content.split("\n");
-        const insertLineIndex = Math.min(Math.max(0, insert_line), lines.length);
-        const linesToInsert = normalizeNewlines(new_str).split("\n");
-        lines.splice(insertLineIndex, 0, ...linesToInsert);
-
-        await cms.deleteResource(userId, resource.id);
-        await cms.addResource(userId, {
-          agentID: agentId,
-          name: path,
-          content: lines.join("\n"),
-          type: "file",
-        });
-        return `Successfully inserted text after line ${insertLineIndex}.`;
+        const lines = resource.content.split("\n");
+        const idx = Math.max(0, Math.min(lines.length, insert_line));
+        lines.splice(idx, 0, new_str);
+        const newContent = lines.join("\n");
+        await cms.updateResource(userId, resource.id, { content: newContent });
+        return { status: "inserted", path, content: newContent, resourceId: resource.id };
       }
 
-      case "undo_edit": {
-        const historyResource = await getResourceByPath(`_history:${path}`);
-        if (!historyResource) return `No previous edit found for file: ${path}`;
+      case "delete": {
+        const resource = await getResource(normPath);
+        if (!resource) return { status: "error", error: `Not found: ${path}` };
+        const err = assertWritable(resource);
+        if (err) return err;
+        await cms.deleteResource(userId, resource.id);
+        return { status: "deleted", path };
+      }
 
-        const resource = await getResourceByPath(path);
-        if (resource) {
-          await cms.deleteResource(userId, resource.id);
-        }
-        await cms.addResource(userId, {
-          agentID: agentId,
-          name: path,
-          content: historyResource.content,
-          type: "file",
-        });
-        await cms.deleteResource(userId, historyResource.id);
-        return `Successfully reverted last edit for file: ${path}`;
+      case "rename": {
+        if (!new_path) return { status: "error", error: "new_path is required for rename" };
+        const resource = await getResource(normPath);
+        if (!resource) return { status: "error", error: `Not found: ${path}` };
+        const err = assertWritable(resource);
+        if (err) return err;
+        const newNormPath = new_path.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
+        const existing = await getResource(newNormPath);
+        if (existing) return { status: "error", error: `Destination already exists: ${new_path}` };
+        await cms.updateResource(userId, resource.id, { name: newNormPath });
+        return { status: "renamed", old_path: path, new_path, resourceId: resource.id };
       }
 
       default:
-        return `Error: Unknown command: ${command}`;
+        return { status: "error", error: `Unknown command: ${command}` };
     }
   } catch (error) {
-    return `Error processing command ${command}: ${error.message}`;
+    return { status: "error", error: `${command}: ${error.message}` };
   }
 }
 
 /**
- * Think tool — wraps editor, appends to _thoughts.txt
+ * Think tool — dedicated reasoning space, no file storage needed
  */
-export async function think({ thought }, context) {
-  await editor(
-    {
-      command: "create",
-      path: "_thoughts.txt",
-      file_text: thought,
-    },
-    context
-  );
+export async function think({ thought }) {
   return "Thinking complete.";
 }
 

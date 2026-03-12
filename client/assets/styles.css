@@ -961,6 +961,93 @@ dialog .close-btn {
   max-width: 100%;
   height: auto;
 }
+
+/* Editor: no scroll limit, no fade */
+.editor-accordion .search-accordion__scroll {
+  max-height: none;
+}
+.editor-accordion .mask-fade-bottom {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+/* Readable prose for .txt */
+.editor-accordion .content-prose {
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--bs-body-color);
+  padding: 1rem 1.25rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Rendered markdown for .md */
+.editor-accordion .content-markdown {
+  padding: 1rem 1.25rem;
+  line-height: 1.6;
+}
+.editor-accordion .content-markdown h1,
+.editor-accordion .content-markdown h2,
+.editor-accordion .content-markdown h3 {
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+}
+.editor-accordion .content-markdown p {
+  margin-bottom: 0.75em;
+}
+.editor-accordion .content-markdown ul,
+.editor-accordion .content-markdown ol {
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.editor-accordion .content-markdown a {
+  color: var(--bs-primary);
+}
+.editor-accordion .content-markdown img {
+  max-width: 100%;
+  height: auto;
+}
+.editor-accordion .content-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1em;
+}
+.editor-accordion .content-markdown th,
+.editor-accordion .content-markdown td {
+  border: 1px solid var(--bs-border-color);
+  padding: 0.4em 0.75em;
+}
+
+/* Diff styles */
+.editor-diff-line {
+  padding: 1px 0.75rem;
+  display: block;
+  min-height: 1.4em;
+}
+.editor-diff-removed {
+  background-color: #fdd;
+  text-decoration: line-through;
+  color: #944;
+}
+.editor-diff-added {
+  background-color: #dfd;
+  color: #294;
+}
+.editor-diff-line-number {
+  display: inline-block;
+  width: 3em;
+  text-align: right;
+  margin-right: 0.75rem;
+  color: var(--bs-secondary-color);
+  user-select: none;
+  font-size: 0.8em;
+  opacity: 0.6;
+}
+
 .chat-titlebar {
   position: sticky;
   top: 0;

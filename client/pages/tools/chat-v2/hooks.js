@@ -379,18 +379,43 @@ function processContentBlock(s, message) {
 // FILE & MESSAGE HANDLING
 // =================================================================================
 
+const MAX_INLINE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_MODEL_FILES = 5;
+
 async function getMessageContent(text, files) {
-  const content = [];
-  if (files.length > 0) {
-    for (const file of files) {
-      const fileContent = await getContentBlock(file);
-      if (fileContent) {
-        content.push(fileContent);
-      }
+  const fileBlocks = [];
+  const resourceOnlyBlocks = [];
+
+  for (const file of files) {
+    const block = await getContentBlock(file);
+    if (!block) continue;
+
+    if (file.size > MAX_INLINE_SIZE) {
+      resourceOnlyBlocks.push(block);
+    } else {
+      fileBlocks.push(block);
     }
   }
-  content.push({ text });
-  return content;
+
+  // All files go to the server for resource storage; split into inline vs resource-only
+  const inlineBlocks = fileBlocks.slice(0, MAX_MODEL_FILES);
+  const overflowBlocks = [...fileBlocks.slice(MAX_MODEL_FILES), ...resourceOnlyBlocks];
+
+  // Tag overflow/resource-only blocks so server knows not to send them to the model
+  for (const block of overflowBlocks) {
+    (block.document || block.image).resourceOnly = true;
+  }
+
+  // Inform the model about files it won't see inline
+  const overflowNames = overflowBlocks.map((b) => {
+    const f = b.document || b.image;
+    return f.originalName || f.name;
+  });
+  if (overflowNames.length > 0) {
+    text += `\n\n<uploaded_files>${overflowNames.join(", ")}</uploaded_files>`;
+  }
+
+  return [...inlineBlocks, ...overflowBlocks, { text }];
 }
 
 async function getContentBlock(file) {
@@ -412,14 +437,20 @@ async function getContentBlock(file) {
       : null;
   const arrayBuffer = await file.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
-  const name = file.name
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  }
+  const base64 = btoa(binary);
+  const originalName = file.name;
+  const name = originalName
     .replace(/[^A-Z0-9 _\-()[\]]/gi, "_")
     .replace(/\s+/g, " ")
     .trim();
 
   if (type) {
     return {
-      [type]: { format, name, source: { bytes } },
+      [type]: { format, name, source: { bytes: base64 }, originalName },
     };
   }
 }
