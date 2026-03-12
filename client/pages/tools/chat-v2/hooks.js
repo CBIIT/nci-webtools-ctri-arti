@@ -132,14 +132,6 @@ export function useAgent({ agentId, conversationId }) {
       });
 
       await streamChat(agent, setAgent, params.agentId, params.conversationId);
-
-      // Refresh conversation to pick up any CMS-triggered summarization
-      const updatedConv = await api(`/conversations/${params.conversationId}`);
-      const updatedMessages = await api(`/conversations/${params.conversationId}/messages`);
-      setAgent(
-        "messages",
-        updatedMessages.map(({ id, role, content }) => ({ id, role, content }))
-      );
     } finally {
       setAgent("loading", false);
     }
@@ -291,7 +283,7 @@ async function streamChat(store, setStore, agentId, conversationId) {
 
     if (event.messageStop) {
       setStore(produce((s) => processContentBlock(s, event)));
-      if (event.messageStop.stopReason === "tool_use") assistantStarted = false;
+      assistantStarted = false;
     }
   }
 
