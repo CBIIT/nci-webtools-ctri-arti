@@ -688,11 +688,11 @@ function ChatApp() {
                           id="model"
                           required
                         >
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus 4.6</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus</option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6} selected>
-                            Sonnet 4.5
+                            Sonnet
                           </option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku</option>
                         </select>
                       <//>
 
