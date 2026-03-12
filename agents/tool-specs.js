@@ -70,21 +70,34 @@ const specs = {
   editor: {
     toolSpec: {
       name: "editor",
-      description:
-        "Use this tool to view and edit your memory files with precise editing capabilities. Do not use this tool for any other purpose. Use the memory editor tool to view your memories (stored as text files), make targeted text replacements, create new files, insert content at specific locations, and undo previous edits.\n\n**IMPORTANT FOR MULTI-LINE TEXT:**\n- When working with multi-line text in parameters like `old_str`, `new_str`, or `file_text`, use literal line breaks in your JSON values.\n- For `str_replace` command, the text to replace must exist exactly once in the file, including all line breaks.\n- The old_str parameter cannot be empty for str_replace operations.\n",
+      description: `Virtual filesystem. Create, view, edit, delete, rename files. Use freely for organizing work, drafting documents, storing data, and maintaining persistent context.
+
+Examples:
+- List all files: { "command": "view", "path": "/" }
+- List directory: { "command": "view", "path": "memories/" }
+- View file: { "command": "view", "path": "notes.txt" }
+- View lines 1-10: { "command": "view", "path": "notes.txt", "view_range": [1, 10] }
+- Create file: { "command": "create", "path": "plan.md", "file_text": "# Plan\\n..." }
+- Edit file: { "command": "str_replace", "path": "plan.md", "old_str": "draft", "new_str": "final" }
+- Insert at line: { "command": "insert", "path": "plan.md", "insert_line": 3, "new_str": "new line" }
+- Delete file: { "command": "delete", "path": "old-notes.txt" }
+- Rename file: { "command": "rename", "path": "old.txt", "new_path": "new.txt" }
+
+memories/ and skills/ persist across conversations. All other files are conversation-scoped.`,
       inputSchema: {
         json: {
           type: "object",
           properties: {
             command: {
               type: "string",
-              enum: ["view", "str_replace", "create", "insert", "undo_edit"],
+              enum: ["view", "create", "str_replace", "insert", "delete", "rename"],
               description:
-                "The operation to perform on the file. Required for all commands. View the file, replace a string, create a new file, insert text at a specific line, or undo the last edit.",
+                "The operation to perform. view: show file content or list directory. create: make a new file (errors if exists). str_replace: replace text (must match exactly once). insert: add text at line number. delete: remove a file. rename: move a file to a new path.",
             },
             path: {
               type: "string",
-              description: "Path to the file to view or modify. Required for all commands.",
+              description:
+                "File or directory path. Use trailing / for directory listing. Leading/trailing slashes are normalized.",
             },
             view_range: {
               type: "array",
@@ -92,27 +105,30 @@ const specs = {
               minItems: 2,
               maxItems: 2,
               description:
-                "Optional array of two integers specifying the start and end line numbers to view (1-indexed, -1 for end of file). Only used with 'view' command.",
+                "Optional [start, end] line range for view (1-indexed, -1 for end of file).",
             },
             old_str: {
               type: "string",
               description:
-                "The text to replace (must match exactly one location). ONLY use this to replace existing text. To insert a new line, simply use new_str. For multi-line text, use literal line breaks in your JSON values. Required for 'str_replace' command and cannot be empty. To replace empty content, use insert_line instead.",
+                "Text to find and replace (must match exactly once). Required for str_replace.",
             },
             new_str: {
               type: "string",
               description:
-                "The new text to insert in place of the old text (for 'str_replace') or text to insert at insert_line (for 'insert'). For multi-line text, use literal line breaks in your JSON values. Required for 'str_replace' and 'insert' commands.",
+                "Replacement text for str_replace, or text to insert for insert command.",
             },
             file_text: {
               type: "string",
-              description:
-                "The content to write to a new file. For multi-line text, use literal line breaks in your JSON values. Required for 'create' command.",
+              description: "Content for a new file. Required for create.",
             },
             insert_line: {
               type: "integer",
               description:
-                "The line number after which to insert text (0 for beginning of file). Required for 'insert' command.",
+                "Line number after which to insert text (0 = beginning). Required for insert.",
+            },
+            new_path: {
+              type: "string",
+              description: "Destination path for rename. Required for rename.",
             },
           },
           required: ["command", "path"],
