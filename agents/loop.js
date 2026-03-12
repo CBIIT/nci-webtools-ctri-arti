@@ -37,20 +37,84 @@ export async function* runAgentLoop({
   const toolSpecs = getToolSpecs(toolNames);
   const tools = toolSpecs.map(({ toolSpec }) => ({ toolSpec }));
 
-  // 2. Load conversation context (compressed messages)
-  const context = await cms.getContext(userId, conversationId, { compressed: true });
-  const existingMessages = context?.messages || [];
-
-  // 3. Process uploaded files → resources, then build clean message for model
+  // 2. Process uploaded files → resources, then build clean message for model
   await processUploads(userMessage, { userId, agentId, conversationId, cms });
 
   // Persist the cleaned message (no base64 blobs, no resourceOnly flags)
   await cms.addMessage(userId, conversationId, userMessage);
 
-  // Build full message list for inference
-  const messages = [...existingMessages, userMessage];
+  // 3. Check if summarization is needed
+  const sumCheck = await cms.checkSummarizationNeeded(userId, conversationId);
 
-  // 4. Build system prompt
+  if (sumCheck) {
+    try {
+      const userText =
+        userMessage.content
+          ?.filter((c) => c.text)
+          .map((c) => c.text)
+          .join("\n") || "";
+
+      const summaryResult = await gateway.invoke({
+        userID: userId,
+        model: sumCheck.model,
+        messages: [
+          ...sumCheck.messages,
+          {
+            role: "user",
+            content: [
+              {
+                text:
+                  "Summarize the entire conversation so far. Include all key decisions, " +
+                  "requirements, code, facts, and context needed to continue without the " +
+                  "original messages. Be thorough but concise. Format as structured notes.\n\n" +
+                  "If there are uploaded files or resources referenced in the conversation, " +
+                  "include a section listing them and note that the editor tool can be used " +
+                  "to read their contents if needed.\n\n" +
+                  "End the summary with the user's latest message quoted verbatim, and an " +
+                  "instruction for the assistant to continue answering it:\n\n" +
+                  "## Latest User Message\n> " +
+                  userText +
+                  "\n\n" +
+                  "Continue addressing this message in your next response.",
+              },
+            ],
+          },
+        ],
+        system: "You are summarizing a conversation for context compression.",
+        thoughtBudget: 0,
+        stream: true,
+        type: "chat-summary",
+      });
+
+      let summaryText = "";
+      for await (const chunk of summaryResult.stream) {
+        yield chunk;
+        if (chunk.contentBlockDelta?.delta?.text) {
+          summaryText += chunk.contentBlockDelta.delta.text;
+        }
+      }
+
+      if (summaryText.length >= 50) {
+        await cms.persistSummary(userId, conversationId, summaryText);
+      }
+    } catch (error) {
+      console.error("Summarization failed, continuing without compression:", error);
+    }
+  }
+
+  // 4. Load conversation context (compressed = starts from summary if it exists)
+  const context = await cms.getContext(userId, conversationId, { compressed: true });
+  const existingMessages = context?.messages || [];
+  const messages = existingMessages.map(({ role, content }) => ({ role, content }));
+
+  // Bedrock requires the conversation to end with a user message.
+  // After summarization, compressed context starts from the summary (assistant)
+  // and the original user message (lower ID) is excluded. Re-append it.
+  if (messages.length && messages.at(-1).role !== "user") {
+    messages.push({ role: "user", content: userMessage.content });
+  }
+
+  // 5. Build system prompt
   const time = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -85,7 +149,7 @@ export async function* runAgentLoop({
   // Tool execution context
   const toolContext = { userId, agentId, conversationId, gateway, cms };
 
-  // 5. Agent loop
+  // 6. Agent loop
   let done = false;
   while (!done) {
     // Invoke model (streaming)
