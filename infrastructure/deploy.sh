@@ -36,6 +36,10 @@ export GATEWAY_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:gateway-latest
 export CMS_IMAGE=$ECR_REGISTRY/$PREFIX:cms-$GITHUB_SHA
 export CMS_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:cms-latest
 
+# Agents service image (chat orchestration and tool execution)
+export AGENTS_IMAGE=$ECR_REGISTRY/$PREFIX:agents-$GITHUB_SHA
+export AGENTS_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:agents-latest
+
 # Legacy names for compatibility
 export SERVER_IMAGE=$MAIN_IMAGE
 export SERVER_IMAGE_LATEST=$MAIN_IMAGE_LATEST
@@ -62,10 +66,16 @@ docker build -t $CMS_IMAGE -t $CMS_IMAGE_LATEST \
   --build-arg BASE_IMAGE=$MAIN_IMAGE \
   -f cms/Dockerfile .
 
+docker build -t $AGENTS_IMAGE -t $AGENTS_IMAGE_LATEST \
+  --build-arg BASE_IMAGE=$MAIN_IMAGE \
+  -f agents/Dockerfile .
+
 docker push $GATEWAY_IMAGE
 docker push $GATEWAY_IMAGE_LATEST
 docker push $CMS_IMAGE
 docker push $CMS_IMAGE_LATEST
+docker push $AGENTS_IMAGE
+docker push $AGENTS_IMAGE_LATEST
 
 cd infrastructure
 cdk deploy $PREFIX-ecs-service --require-approval never

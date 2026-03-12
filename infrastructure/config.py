@@ -123,6 +123,14 @@ def load_config() -> tuple[Config, str, str]:
         "PGPASSWORD": [prefix, "password"],
     }
 
+    # Internal service URLs (same task = same network namespace = localhost)
+    shared_environment = {
+        "GATEWAY_URL": "http://localhost:3001",
+        "CMS_URL": "http://localhost:3002",
+        "AGENTS_URL": "http://localhost:3003",
+    }
+
+
     config: Config = {
         "env": {
             "account": account,
@@ -166,12 +174,10 @@ def load_config() -> tuple[Config, str, str]:
                             }
                         ],
                         "environment": {
+                            **shared_environment,
                             "PORT": "80",
                             "VERSION": get_env("GITHUB_SHA", "latest"),
                             "TIER": tier,
-                            # Internal service URLs (same task = same network namespace = localhost)
-                            "GATEWAY_URL": "http://localhost:3001",
-                            "CMS_URL": "http://localhost:3002",
                         },
                         "secrets": {
                             "SESSION_SECRET": get_env("SESSION_SECRET"),
@@ -204,6 +210,7 @@ def load_config() -> tuple[Config, str, str]:
                             }
                         ],
                         "environment": {
+                            **shared_environment,
                             "PORT": "3001",
                             "DB_SKIP_SYNC": "true",
                         },
@@ -223,11 +230,34 @@ def load_config() -> tuple[Config, str, str]:
                             }
                         ],
                         "environment": {
+                            **shared_environment,
                             "PORT": "3002",
                             "DB_SKIP_SYNC": "true",
                         },
                         "secrets": {
                             **shared_secrets,
+                        },
+                    },
+                    # Agents service - chat orchestration and tool execution
+                    {
+                        "image": get_env("AGENTS_IMAGE") or "httpd",
+                        "name": "agents",
+                        "portMappings": [
+                            {
+                                "name": "agents",
+                                "containerPort": 3003,
+                            }
+                        ],
+                        "environment": {
+                            **shared_environment,
+                            "PORT": "3003",
+                            "DB_SKIP_SYNC": "true",
+                        },
+                        "secrets": {
+                            **shared_secrets,
+                            "BRAVE_SEARCH_API_KEY": get_env("BRAVE_SEARCH_API_KEY"),
+                            "DATA_GOV_API_KEY": get_env("DATA_GOV_API_KEY"),
+                            "S3_BUCKETS": get_env("S3_BUCKETS", "rh-eagle"),
                         },
                     },
                 ],
