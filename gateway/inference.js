@@ -124,6 +124,7 @@ function processMessages(messages, thoughtBudget) {
       }
       return !!c;
     });
+    message.content = contents;
     for (const content of contents) {
       if (!content) continue;
       // prevent empty text content
@@ -132,8 +133,12 @@ function processMessages(messages, thoughtBudget) {
       }
       // transform base64 encoded bytes to Uint8Array
       const source = content.document?.source || content.image?.source;
-      if (source?.bytes && typeof source.bytes === "string") {
-        source.bytes = Uint8Array.from(Buffer.from(source.bytes, "base64"));
+      if (source?.bytes) {
+        if (typeof source.bytes === "string") {
+          source.bytes = Uint8Array.from(Buffer.from(source.bytes, "base64"));
+        } else if (source.bytes?.type === "Buffer" && Array.isArray(source.bytes.data)) {
+          source.bytes = new Uint8Array(source.bytes.data);
+        }
       }
       // ensure tool call inputs are in the correct format
       if (content.toolUse) {
