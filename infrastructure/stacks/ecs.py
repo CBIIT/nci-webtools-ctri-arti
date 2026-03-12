@@ -218,7 +218,7 @@ class EcsServiceStack(Stack):
             enable_execute_command=True,
             min_healthy_percent=100,
             service_connect_configuration=ecs.ServiceConnectProps(
-                namespace=http_namespace.namespace_name,
+                namespace=http_namespace.namespace_arn,
                 services=[
                     ecs.ServiceConnectService(
                         port_mapping_name=port_mapping["name"],
