@@ -499,7 +499,9 @@ export class ConversationService {
     const [resource] = await db
       .insert(Resource)
       .values({
+        userID: userId || null,
         agentID: data.agentID || null,
+        conversationID: data.conversationID || null,
         messageID: data.messageID || null,
         name: data.name,
         type: data.type,
@@ -516,11 +518,30 @@ export class ConversationService {
     return resource || null;
   }
 
+  async updateResource(userId, resourceId, updates) {
+    const result = await db
+      .update(Resource)
+      .set(stripAutoFields(updates))
+      .where(eq(Resource.id, resourceId))
+      .returning();
+    return result[0] || null;
+  }
+
   async getResourcesByAgent(userId, agentId) {
     return db
       .select()
       .from(Resource)
-      .where(eq(Resource.agentID, agentId))
+      .where(
+        and(eq(Resource.agentID, agentId), or(eq(Resource.userID, userId), isNull(Resource.userID)))
+      )
+      .orderBy(asc(Resource.createdAt));
+  }
+
+  async getResourcesByConversation(userId, conversationId) {
+    return db
+      .select()
+      .from(Resource)
+      .where(eq(Resource.conversationID, conversationId))
       .orderBy(asc(Resource.createdAt));
   }
 

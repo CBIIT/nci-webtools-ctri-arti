@@ -298,10 +298,30 @@ v1.get(
   })
 );
 
+v1.put(
+  "/resources/:id",
+  routeHandler(async (req, res) => {
+    const resource = await service.updateResource(req.userId, req.params.id, req.body);
+    if (!resource) return res.status(404).json({ error: "Resource not found" });
+    res.json(resource);
+  })
+);
+
 v1.get(
   "/agents/:agentId/resources",
   routeHandler(async (req, res) => {
     const resources = await service.getResourcesByAgent(req.userId, req.params.agentId);
+    res.json(resources);
+  })
+);
+
+v1.get(
+  "/conversations/:conversationId/resources",
+  routeHandler(async (req, res) => {
+    const resources = await service.getResourcesByConversation(
+      req.userId,
+      req.params.conversationId
+    );
     res.json(resources);
   })
 );
