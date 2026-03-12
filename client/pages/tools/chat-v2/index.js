@@ -13,10 +13,8 @@ import {
   onCleanup,
   onMount,
   Show,
-  Suspense,
 } from "solid-js";
 import html from "solid-js/html";
-
 
 import { AlertContainer } from "../../../components/alert.js";
 import AttachmentsPreview from "../../../components/attachments-preview.js";
@@ -29,7 +27,7 @@ import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 
 import DeleteConversation from "./delete-conversation.js";
-import { useAgent, getDB } from "./hooks.js";
+import { useAgent } from "./hooks.js";
 import Message from "./message.js";
 
 const MAX_TITLE_LENGTH = 30;
@@ -39,25 +37,14 @@ const MAX_TITLE_LENGTH = 30;
 // =================================================================================
 
 export default function Page() {
-  // Support ?db=indexeddb to force local storage, default to server with fallback
-  const searchParams = new URLSearchParams(window.location.search);
-  const dbType = searchParams.get("db") || "server";
-  const [db] = createResource(() => getDB(dbType));
-
-  return html`
-    <${Suspense} fallback=${html`<div class="container my-5"><p>Loading...</p></div>`}>
-      <${Show} when=${db}>
-        <${ChatApp} db=${db} />
-      <//>
-    <//>
-  `;
+  return html`<${ChatApp} />`;
 }
 
 // =================================================================================
 // INTERNAL CHAT APPLICATION
 // =================================================================================
 
-function ChatApp(props) {
+function ChatApp() {
   const { user } = useAuthContext();
 
   const searchParams = new URLSearchParams(window.location.search);
@@ -68,12 +55,12 @@ function ChatApp(props) {
     params,
     setParams,
     sendMessage,
-    threads,
-    loadThreads,
-    updateThread,
-    deleteThread,
-    generateThreadTitle,
-  } = useAgent(urlParams, props.db);
+    conversations,
+    loadConversations,
+    updateConversation,
+    deleteConversation,
+    generateTitle,
+  } = useAgent(urlParams);
 
   // Fetch available agents for the dropdown
   const fetchAgents = async () => {
@@ -83,11 +70,11 @@ function ChatApp(props) {
   };
   const [agents] = createResource(fetchAgents);
 
-  // UI State (from V1)
+  // UI State
   const [toggles, setToggles] = createSignal({ conversations: true });
   const [isAtBottom, setIsAtBottom] = createSignal(true);
   const [chatHeight, setChatHeight] = createSignal(0);
-  const [deleteThreadId, setDeleteThreadId] = createSignal(null);
+  const [deleteConversationId, setDeleteConversationId] = createSignal(null);
   const [isStreaming, setIsStreaming] = createSignal(false);
   const [openMenu, setOpenMenu] = createSignal(null);
   const [editingState, setEditingState] = createSignal({ id: null, context: null, title: "" });
@@ -101,30 +88,30 @@ function ChatApp(props) {
   let formRef;
 
   // Computed values
-  const hasThreadId = createMemo(() => params.threadId || agent.thread?.id);
+  const hasConversationId = createMemo(() => params.conversationId || agent.conversation?.id);
 
   // URL sync effect
   createEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     if (params.agentId) searchParams.set("agentId", params.agentId);
-    if (params.threadId) {
-      searchParams.set("threadId", params.threadId);
+    if (params.conversationId) {
+      searchParams.set("conversationId", params.conversationId);
     } else {
-      searchParams.delete("threadId");
+      searchParams.delete("conversationId");
     }
     const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
     window.history.replaceState({}, "", newUrl);
   });
 
   // Editing helpers
-  const isEditing = (context, threadId) => {
+  const isEditing = (context, conversationId) => {
     const state = editingState();
-    return state.context === context && state.id === threadId;
+    return state.context === context && state.id === conversationId;
   };
 
-  const isMenuOpen = (threadId) => {
+  const isMenuOpen = (conversationId) => {
     const menu = openMenu();
-    return menu?.type === "thread" && menu?.id === threadId;
+    return menu?.type === "conversation" && menu?.id === conversationId;
   };
 
   const updateEditingTitle = (value) =>
@@ -224,24 +211,24 @@ function ChatApp(props) {
 
       // Generate title after first exchange
       if (isFirstMessage) {
-        await generateThreadTitle(MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5);
+        await generateTitle(MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5);
       }
     } finally {
       setIsStreaming(false);
     }
   }
 
-  function handleDeleteThreadClick(e, threadId) {
+  function handleDeleteConversationClick(e, conversationId) {
     e.preventDefault();
-    setDeleteThreadId(threadId);
+    setDeleteConversationId(conversationId);
   }
 
-  async function handleDeleteThread() {
-    const threadId = deleteThreadId();
-    if (!threadId) return;
+  async function handleDeleteConversation() {
+    const id = deleteConversationId();
+    if (!id) return;
 
-    await deleteThread(threadId);
-    setDeleteThreadId(null);
+    await deleteConversation(id);
+    setDeleteConversationId(null);
   }
 
   function clearChat() {
@@ -251,59 +238,61 @@ function ChatApp(props) {
     attachmentsReset?.();
   }
 
-  function startEditingTitle(threadId, currentTitle, context) {
-    if (!threadId) return;
+  function startEditingTitle(conversationId, currentTitle, context) {
+    if (!conversationId) return;
     const rawTitle = currentTitle?.trim()?.length > 0 ? currentTitle : "Untitled";
     const title = rawTitle.slice(0, MAX_TITLE_LENGTH);
-    setEditingState({ id: threadId, context, title });
+    setEditingState({ id: conversationId, context, title });
     setOpenMenu(null);
   }
 
-  async function handleTitleKeyDown(event, threadId) {
+  async function handleTitleKeyDown(event, conversationId) {
     if (event.key !== "Enter" && event.key !== "Escape") return;
     event.preventDefault();
     if (event.key === "Enter") {
-      onTitleSubmit(threadId);
+      onTitleSubmit(conversationId);
       return;
     }
     stopEditingTitle();
   }
 
-  async function onTitleSubmit(threadId) {
+  async function onTitleSubmit(conversationId) {
     const { title } = editingState() || {};
     const newTitle = title?.trim() || "";
 
-    if (!newTitle || !threadId) {
+    if (!newTitle || !conversationId) {
       stopEditingTitle();
       return;
     }
 
     try {
-      await updateThread(threadId, { name: newTitle });
+      await updateConversation(conversationId, { name: newTitle });
     } finally {
       stopEditingTitle();
     }
   }
 
-  function handleThreadMenuToggle(event, threadId) {
+  function handleConversationMenuToggle(event, conversationId) {
     event.preventDefault();
     event.stopPropagation();
     setOpenMenu((prev) =>
-      prev?.type === "thread" && prev?.id === threadId ? null : { type: "thread", id: threadId }
+      prev?.type === "conversation" && prev?.id === conversationId
+        ? null
+        : { type: "conversation", id: conversationId }
     );
   }
 
-  function handleThreadMenuEdit(event, thread) {
+  function handleConversationMenuEdit(event, conversation) {
     event.preventDefault();
     event.stopPropagation();
-    startEditingTitle(thread.id, thread.name, "sidebar");
+    startEditingTitle(conversation.id, conversation.name, "sidebar");
   }
 
-  function handleThreadMenuDelete(event, threadId) {
+  function handleConversationMenuDelete(event, conversationId) {
     event.preventDefault();
     event.stopPropagation();
     setOpenMenu(null);
-    handleDeleteThreadClick(event, threadId);
+    handleDeleteConversationClick(event, conversationId);
   }
 
   function attachAndFocusTitleInput(el) {
@@ -332,7 +321,9 @@ function ChatApp(props) {
         >
           <div class="d-flex flex-column p-3 position-sticky top-0 left-0 z-5 min-vh-100">
             <!-- Toggle Button -->
-            <div class="d-flex justify-content-end align-items-center gap-2 text-dark mb-3 fw-semibold">
+            <div
+              class="d-flex justify-content-end align-items-center gap-2 text-dark mb-3 fw-semibold"
+            >
               <${Tooltip}
                 title=${() => (toggles().conversations ? "Close Sidebar" : "Open Sidebar")}
                 placement="right"
@@ -346,14 +337,25 @@ function ChatApp(props) {
                 >
                   ${() =>
                     toggles().conversations
-                      ? html`<img src="assets/images/icon-panel-left-close.svg" alt="Close Sidebar" width="20" />`
-                      : html`<img src="assets/images/icon-panel-left-open.svg" alt="Open Sidebar" width="20" />`}
+                      ? html`<img
+                          src="assets/images/icon-panel-left-close.svg"
+                          alt="Close Sidebar"
+                          width="20"
+                        />`
+                      : html`<img
+                          src="assets/images/icon-panel-left-open.svg"
+                          alt="Open Sidebar"
+                          width="20"
+                        />`}
                 </button>
               <//>
             </div>
 
             <!-- New Chat Button -->
-            <div class="d-flex align-items-center gap-2 link-primary text-decoration-none mb-3 fw-semibold" title="New Chat">
+            <div
+              class="d-flex align-items-center gap-2 link-primary text-decoration-none mb-3 fw-semibold"
+              title="New Chat"
+            >
               <a
                 href=${() => `/tools/chat-v2?agentId=${params.agentId || 1}`}
                 target="_self"
@@ -363,7 +365,12 @@ function ChatApp(props) {
               </a>
               <${Show} when=${() => toggles().conversations}>
                 <${ClassToggle} class="dropdown d-flex-center" activeClass="show" event="hover">
-                  <a toggle href=${() => `/tools/chat-v2?agentId=${params.agentId || 1}`} target="_self" class="btn btn-sm p-0 dropdown-toggle">
+                  <a
+                    toggle
+                    href=${() => `/tools/chat-v2?agentId=${params.agentId || 1}`}
+                    target="_self"
+                    class="btn btn-sm p-0 dropdown-toggle"
+                  >
                     New Chat
                   </a>
                   <ul class="dropdown-menu top-100 start-0">
@@ -375,7 +382,8 @@ function ChatApp(props) {
                             class="dropdown-item text-decoration-none small fw-normal"
                             href=${() => `/tools/chat-v2?agentId=${agentItem.id}`}
                             target="_self"
-                          >${() => agentItem.name}</a>
+                            >${() => agentItem.name}</a
+                          >
                         </li>
                       `}
                     <//>
@@ -384,14 +392,14 @@ function ChatApp(props) {
               <//>
             </div>
 
-            <!-- Thread List -->
+            <!-- Conversation List -->
             <${Show} when=${() => toggles().conversations}>
               <small class="mb-2 fw-normal text-muted fs-6">Recent Chats</small>
 
               <ul class="list-unstyled">
-                <${For} each=${threads}>
-                  ${(thread) => {
-                    const href = `/tools/chat-v2?agentId=${params.agentId || 1}&threadId=${thread.id}`;
+                <${For} each=${conversations}>
+                  ${(conversation) => {
+                    const href = `/tools/chat-v2?agentId=${params.agentId || 1}&conversationId=${conversation.id}`;
                     return html`<li class="convo-item small w-100 mb-2">
                       <a
                         href=${href}
@@ -400,19 +408,20 @@ function ChatApp(props) {
                       >
                         <div
                           class="convo-title text-primary fw-normal text-truncate flex-grow-1 min-w-0"
-                          classList=${() => ({ active: thread.id === params.threadId })}
+                          classList=${() => ({ active: conversation.id === params.conversationId })}
                         >
                           <${Show}
-                            when=${() => isEditing("sidebar", thread.id)}
-                            fallback=${() => thread.name || "Untitled"}
+                            when=${() => isEditing("sidebar", conversation.id)}
+                            fallback=${() => conversation.name || "Untitled"}
                           >
                             <input
                               type="text"
                               class="form-control form-control-sm bg-transparent border-0 shadow-none px-0 py-0 text-primary fw-normal"
                               value=${() => editingState().title}
                               maxlength=${MAX_TITLE_LENGTH}
-                              onInput=${(event) => updateEditingTitle(event.currentTarget.value || "")}
-                              onKeyDown=${(event) => handleTitleKeyDown(event, thread.id)}
+                              onInput=${(event) =>
+                                updateEditingTitle(event.currentTarget.value || "")}
+                              onKeyDown=${(event) => handleTitleKeyDown(event, conversation.id)}
                               onBlur=${() => stopEditingTitle()}
                               onClick=${(event) => {
                                 event.preventDefault();
@@ -423,20 +432,21 @@ function ChatApp(props) {
                           <//>
                         </div>
 
-                        <${Show} when=${() => !isEditing("sidebar", thread.id)}>
+                        <${Show} when=${() => !isEditing("sidebar", conversation.id)}>
                           <div class="dropdown ms-2 position-relative">
                             <button
                               type="button"
                               class="action-btn btn btn-sm link-dark text-primary p-1 border-0 rounded-pill"
                               aria-label="Chat options"
                               title="Chat options"
-                              onClick=${(event) => handleThreadMenuToggle(event, thread.id)}
+                              onClick=${(event) =>
+                                handleConversationMenuToggle(event, conversation.id)}
                             >
                               <${EllipsisVertical} size="18" color="currentColor" />
                             </button>
                             <ul
                               class="dropdown-menu mt-1 show"
-                              hidden=${() => !isMenuOpen(thread.id)}
+                              hidden=${() => !isMenuOpen(conversation.id)}
                               onClick=${(event) => {
                                 event.preventDefault();
                                 event.stopPropagation();
@@ -446,7 +456,8 @@ function ChatApp(props) {
                                 <button
                                   type="button"
                                   class="dropdown-item small d-flex align-items-center"
-                                  onClick=${(event) => handleThreadMenuEdit(event, thread)}
+                                  onClick=${(event) =>
+                                    handleConversationMenuEdit(event, conversation)}
                                 >
                                   <${Pencil} size="18" color="black" class="me-2" />
                                   Edit title
@@ -456,7 +467,8 @@ function ChatApp(props) {
                                 <button
                                   type="button"
                                   class="dropdown-item small text-danger d-flex align-items-center"
-                                  onClick=${(event) => handleThreadMenuDelete(event, thread.id)}
+                                  onClick=${(event) =>
+                                    handleConversationMenuDelete(event, conversation.id)}
                                 >
                                   <${Trash2} size="18" color="currentColor" class="me-2" />
                                   Delete
@@ -473,11 +485,11 @@ function ChatApp(props) {
             <//>
 
             <!-- Delete Confirmation Modal -->
-            <${Show} when=${() => deleteThreadId()}>
+            <${Show} when=${() => deleteConversationId()}>
               <${DeleteConversation}
-                conversationId=${() => deleteThreadId()}
-                onClose=${() => setDeleteThreadId(null)}
-                onDelete=${handleDeleteThread}
+                conversationId=${() => deleteConversationId()}
+                onClose=${() => setDeleteConversationId(null)}
+                onDelete=${handleDeleteConversation}
               />
             <//>
           </div>
@@ -496,18 +508,18 @@ function ChatApp(props) {
               </span>
 
               <${Tooltip}
-                title=${() => agent.thread?.name || "Untitled"}
+                title=${() => agent.conversation?.name || "Untitled"}
                 placement="bottom"
                 arrow=${true}
                 class="text-white bg-primary"
               >
                 <div class="chat-title fw-semibold text-truncate">
-                  ${() => agent.thread?.name || "Untitled"}
+                  ${() => agent.conversation?.name || "Untitled"}
                 </div>
               <//>
             </div>
 
-            <${Show} when=${() => params.threadId}>
+            <${Show} when=${() => params.conversationId}>
               <div class="d-flex align-items-center gap-2 flex-shrink-0">
                 <${Tooltip}
                   title="Delete chat"
@@ -518,7 +530,7 @@ function ChatApp(props) {
                   <button
                     type="button"
                     class="btn-unstyled header-icon-btn header-icon-btn--danger"
-                    onClick=${(e) => handleDeleteThreadClick(e, params.threadId)}
+                    onClick=${(e) => handleDeleteConversationClick(e, params.conversationId)}
                     title="Delete chat"
                   >
                     <${Trash2} size="20" color="currentColor" />
@@ -567,9 +579,12 @@ function ChatApp(props) {
             </div>
 
             <!-- Input Area -->
-            <div class=${() => `${hasThreadId() ? "bottom-0 position-sticky" : "bottom-50 position-relative"}`}>
+            <div
+              class=${() =>
+                `${hasConversationId() ? "bottom-0 position-sticky" : "bottom-50 position-relative"}`}
+            >
               <!-- Welcome Message -->
-              <div class="text-center my-3 font-serif" hidden=${() => hasThreadId()}>
+              <div class="text-center my-3 font-serif" hidden=${() => hasConversationId()}>
                 <h1 class="font-poppins fw-medium fs-2 lh-md text-deep-violet mb-2">
                   Welcome, ${() => user?.()?.firstName || ""}
                 </h1>
@@ -585,8 +600,14 @@ function ChatApp(props) {
                 label="Scroll to bottom"
               />
 
-              <div ref=${(el) => { chatRef = el; }}>
-                <div class="bg-white position-relative border-gray border-1 border-solid shadow-md rounded">
+              <div
+                ref=${(el) => {
+                  chatRef = el;
+                }}
+              >
+                <div
+                  class="bg-white position-relative border-gray border-1 border-solid shadow-md rounded"
+                >
                   <!-- Attachments Preview -->
                   <${AttachmentsPreview}
                     inputRef=${() => inputFilesEl}
@@ -638,7 +659,9 @@ function ChatApp(props) {
                         arrow=${true}
                         class="text-white bg-primary"
                       >
-                        <div class="form-check form-switch form-switch-lg d-flex align-items-center gap-2 my-0 mx-2">
+                        <div
+                          class="form-check form-switch form-switch-lg d-flex align-items-center gap-2 my-0 mx-2"
+                        >
                           <input
                             class="form-check-input form-check-input-lg mt-0 cursor-pointer"
                             type="checkbox"
@@ -666,7 +689,9 @@ function ChatApp(props) {
                           required
                         >
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus 4.6</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6} selected>Sonnet 4.5</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6} selected>
+                            Sonnet 4.5
+                          </option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
                         </select>
                       <//>
@@ -694,7 +719,10 @@ function ChatApp(props) {
 
                 <!-- Privacy Notice -->
                 <div class="text-center bg-chat text-muted small py-1">
-                  <span class="me-1" title="Your conversations are stored only on your personal device.">
+                  <span
+                    class="me-1"
+                    title="Your conversations are stored only on your personal device."
+                  >
                     To maintain your privacy, we never retain your data on our systems.
                   </span>
                   Please double-check statements, as Research Optimizer can make mistakes.

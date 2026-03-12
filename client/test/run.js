@@ -9,11 +9,13 @@ const tests = [
   // "./pages/tools/consent-crafter-v2/index.test.js",
   // "./pages/tools/consent-crafter-v2/e2e.test.js", // disabled: too slow (real inference)
   "./api/smoke.test.js",
+  "./api/agents-chat.test.js",
   "./pages/home.test.js",
   "./pages/admin.test.js",
   "./pages/users/profile.test.js",
   "./pages/users/usage.test.js",
   "./pages/tools/translate.test.js",
+  "./pages/tools/chat-v2/e2e.test.js",
 ];
 for (const test of tests) {
   try {
