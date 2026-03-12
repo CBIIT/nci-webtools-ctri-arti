@@ -3,6 +3,7 @@ import { logRequests } from "shared/middleware.js";
 
 import { logErrors, requireRole } from "./middleware.js";
 import adminRoutes from "./routes/admin.js";
+import agentsChatRoutes from "./routes/agents-chat.js";
 import authRoutes from "./routes/auth.js";
 import conversationRoutes from "./routes/conversations.js";
 import modelRoutes from "./routes/model.js";
@@ -14,6 +15,7 @@ api.use(json({ limit: 1024 ** 3 })); // 1GB
 api.use(logRequests());
 api.use(requireRole());
 api.use(adminRoutes);
+api.use(agentsChatRoutes);
 api.use(authRoutes);
 api.use(conversationRoutes);
 api.use(modelRoutes);

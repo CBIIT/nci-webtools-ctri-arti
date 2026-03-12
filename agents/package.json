@@ -3,11 +3,15 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node --env-file .env index.js"
+    "start": "node --env-file .env index.js",
+    "test": "node --test --test-reporter=spec test/*.test.js"
   },
   "dependencies": {
+    "cms": "*",
     "database": "*",
     "express": "^5.2.1",
+    "gateway": "*",
+    "mammoth": "^1.11.0",
     "shared": "*"
   }
 }

@@ -176,6 +176,14 @@ export class ConversationService {
         modelParameters: data.modelParameters || null,
       })
       .returning();
+
+    // Sync AgentTool junction table when tools array is provided
+    if (Array.isArray(data.tools) && data.tools.length > 0) {
+      const toolRecords = await db.select().from(Tool).where(inArray(Tool.name, data.tools));
+      const agentTools = toolRecords.map((t) => ({ agentID: agent.id, toolID: t.id }));
+      if (agentTools.length) await db.insert(AgentTool).values(agentTools);
+    }
+
     return agent;
   }
 
