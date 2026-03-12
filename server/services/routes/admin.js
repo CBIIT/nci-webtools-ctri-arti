@@ -11,6 +11,14 @@ const api = Router();
 
 // ===== Shared helpers =====
 
+function serializeUtcTimestamp(value) {
+  if (!value) return value;
+  if (value instanceof Date) return value.toISOString();
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString();
+}
+
 function buildSearchConditions(search) {
   if (!search) return undefined;
   const searchTerm = `%${search.toLowerCase()}%`;
@@ -24,9 +32,9 @@ function buildSearchConditions(search) {
 function getGroupColumn(groupBy) {
   switch (groupBy) {
     case "hour":
-      return sql`to_char(date_trunc('hour', ${Usage.createdAt}), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
+      return sql`to_char(date_trunc('hour', timezone('UTC', ${Usage.createdAt})), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
     case "day":
-      return sql`to_char(date_trunc('day', ${Usage.createdAt}), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
+      return sql`to_char(date_trunc('day', timezone('UTC', ${Usage.createdAt})), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
     case "week":
       return sql`to_char(${Usage.createdAt}, 'IYYY-IW')`;
     case "month":
@@ -36,7 +44,7 @@ function getGroupColumn(groupBy) {
     case "model":
       return Usage.modelID;
     default:
-      return sql`to_char(date_trunc('day', ${Usage.createdAt}), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
+      return sql`to_char(date_trunc('day', timezone('UTC', ${Usage.createdAt})), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
   }
 }
 
@@ -224,7 +232,7 @@ api.get(
         inputTokens: usage.inputTokens,
         outputTokens: usage.outputTokens,
         cost: usage.cost,
-        createdAt: usage.createdAt,
+        createdAt: serializeUtcTimestamp(usage.createdAt),
       })),
       meta: {
         total,
@@ -299,7 +307,7 @@ api.get(
         inputTokens: usage.inputTokens,
         outputTokens: usage.outputTokens,
         cost: usage.cost,
-        createdAt: usage.createdAt,
+        createdAt: serializeUtcTimestamp(usage.createdAt),
         user: {
           id: usage.User.id,
           email: usage.User.email,

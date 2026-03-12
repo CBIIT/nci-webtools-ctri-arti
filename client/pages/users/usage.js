@@ -19,6 +19,10 @@ import {
 } from "../../utils/global-error-handler.js";
 import { capitalize } from "../../utils/utils.js";
 
+import { formatDate, formatDateInputForDisplay } from "./date-utils.js";
+
+export { formatDate, formatDateInputForDisplay } from "./date-utils.js";
+
 const fetchConfig = () => fetch("/api/config").then((r) => r.json());
 
 // Shared date range utilities
@@ -30,11 +34,6 @@ export const VALID_DATE_RANGES = [
   "Last 360 Days",
   "Custom",
 ];
-
-// Format date as YYYY-MM-DD
-export function formatDate(date) {
-  return date.toISOString().split("T")[0];
-}
 
 // Get default start date (30 days ago)
 export function getDefaultStartDate() {
@@ -532,8 +531,8 @@ function UsersList() {
         <${Show} when=${() => !serverAnalyticsResource.loading && formattedUsers()?.length > 0}>
           <div class="mt-3 text-muted small">
             <p>
-              Showing data from ${() => new Date(currentDateRange().startDate).toLocaleDateString()}
-              to ${() => new Date(currentDateRange().endDate).toLocaleDateString()}
+              Showing data from ${() => formatDateInputForDisplay(currentDateRange().startDate)} to
+              ${() => formatDateInputForDisplay(currentDateRange().endDate)}
             </p>
             <p>Total results: ${() => serverAnalyticsResource()?.meta?.total || 0}</p>
           </div>

@@ -5,6 +5,7 @@ import html from "solid-js/html";
 import { AlertContainer } from "../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 
+import { formatUtcTimestampToLocal } from "./date-utils.js";
 import { calculateDateRange, formatDate, getDefaultStartDate, validateDateRange } from "./usage.js";
 
 function UserUsage() {
@@ -12,17 +13,13 @@ function UserUsage() {
   const userId = params.id;
   const [searchParams] = useSearchParams();
 
-  console.log(JSON.stringify(searchParams));
-
   // Initialize from URL params or default
   const initialDateRange = searchParams.dateRange || "Last 30 Days";
   const initialStartDate = searchParams.startDate || getDefaultStartDate();
   const initialEndDate = searchParams.endDate || formatDate(new Date());
-  console.log("Initial Date Range:", initialDateRange);
 
   // Validate the initial date range exists in options
   const validDateRange = validateDateRange(initialDateRange, "Last 30 Days");
-  console.log("Valid Date Range:", validDateRange);
 
   const [selectedDateRange, setSelectedDateRange] = createSignal(validDateRange);
   const [customDates, setCustomDates] = createSignal({
@@ -407,7 +404,7 @@ function UserUsage() {
                                 dailyAnalytics().data.map(
                                   (day) => html`
                                     <tr>
-                                      <td>${new Date(day.period).toLocaleString()}</td>
+                                      <td>${formatUtcTimestampToLocal(day.period)}</td>
                                       <td class="text-end">${formatNumber(day.totalRequests)}</td>
                                       <td class="text-end">${formatCurrency(day.totalCost)}</td>
                                     </tr>
@@ -449,7 +446,7 @@ function UserUsage() {
                               rawUsageData().data.map(
                                 (entry) => html`
                                   <tr>
-                                    <td>${new Date(entry.createdAt).toLocaleString()}</td>
+                                    <td>${formatUtcTimestampToLocal(entry.createdAt)}</td>
                                     <td>${entry.modelName || "Unknown"}</td>
                                     <td class="text-end">
                                       ${formatNumber(entry.inputTokens || 0)}
