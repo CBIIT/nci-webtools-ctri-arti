@@ -1346,3 +1346,76 @@ dialog .close-btn {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Inline Select Component */
+.custom-dropdown {
+  width: 100%;
+}
+
+.custom-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 2px;
+  background: #ffffff;
+  border: none;
+  border-bottom: 1.5px solid #b0babf;
+  border-radius: 0;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: 0.02em;
+  color: #002643;
+  text-align: left;
+  position: relative;
+}
+
+.custom-dropdown-trigger:hover,
+.custom-dropdown-trigger:focus {
+  background: #ffffff;
+  border-color: transparent;
+  border-bottom: 1.5px solid #1075fd;
+  box-shadow: none;
+  outline: none;
+}
+
+.custom-dropdown-trigger::after {
+  border: none;
+  content: url("images/icon-chevron-down.svg");
+  position: absolute;
+  right: 18px;
+  vertical-align: middle;
+}
+
+.custom-dropdown-menu {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin: 0;
+  list-style: none;
+  border: 1px solid #a5a5a5;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+}
+
+.custom-dropdown-menu .custom-dropdown-option {
+  padding: 5px;
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  color: #62666d;
+  border-radius: 8px;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.custom-dropdown-menu .custom-dropdown-option:hover,
+.custom-dropdown-menu .custom-dropdown-option:focus {
+  background: #acddfe;
+  color: #62666d;
+}
