@@ -15,6 +15,7 @@ services:
       # Internal service URLs (docker network)
       - GATEWAY_URL=http://gateway:3001
       - CMS_URL=http://cms:3002
+      - AGENTS_URL=http://agents:3003
       - CLIENT_FOLDER=/app/client
     env_file:
       - ./server/.env
@@ -48,6 +49,8 @@ services:
       gateway:
         condition: service_started
       cms:
+        condition: service_started
+      agents:
         condition: service_started
 
   # Gateway service - AI inference
@@ -125,6 +128,50 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  # Agents service - chat orchestration and tool execution
+  agents:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["npm", "start", "-w", "agents"]
+    environment:
+      - PORT=3003
+      - DB_SKIP_SYNC=true
+      - PGHOST=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=postgres
+      - GATEWAY_URL=http://gateway:3001
+      - CMS_URL=http://cms:3002
+    env_file:
+      - ./server/.env
+    develop:
+      watch:
+      - action: sync+restart
+        path: ./shared
+        target: /app/shared
+        ignore:
+          - ./shared/node_modules
+      - action: sync+restart
+        path: ./database
+        target: /app/database
+        ignore:
+          - ./database/node_modules
+      - action: sync+restart
+        path: ./agents
+        target: /app/agents
+        ignore:
+          - ./agents/node_modules
+      - action: rebuild
+        path: package.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gateway:
+        condition: service_started
+      cms:
+        condition: service_started
 
   postgres:
     image: pgvector/pgvector:pg16
