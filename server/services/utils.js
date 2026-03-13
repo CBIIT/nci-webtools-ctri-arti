@@ -101,28 +101,8 @@ export function createCertificate(opts = {}) {
   return { key: privateKeyPem, cert: certPem };
 }
 
-function parseDateOnly(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return null;
-
-  const [, year, month, day] = match;
-  return new Date(Number(year), Number(month) - 1, Number(day));
-}
-
-export function getDateRange(startDateParam, endDateParam) {
-  const now = new Date();
-
-  const start = startDateParam
-    ? parseDateOnly(startDateParam) || new Date(startDateParam)
-    : new Date(now);
-  if (!startDateParam) start.setDate(start.getDate() - 30);
-  start.setHours(0, 0, 0, 0);
-
-  const end = endDateParam ? parseDateOnly(endDateParam) || new Date(endDateParam) : new Date(now);
-  end.setHours(23, 59, 59, 999);
-
-  return { startDate: start, endDate: end };
-}
+// Re-export from shared
+export { getDateRange } from "shared/utils.js";
 
 /**
  * Wraps an async Express route handler with automatic error forwarding.
