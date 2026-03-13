@@ -6,6 +6,7 @@ import { assertValidEmbedding } from "shared/embeddings.js";
 import bedrock from "./providers/bedrock.js";
 import gemini from "./providers/gemini.js";
 import mock from "./providers/mock.js";
+import { validateInlineMessages } from "./upload-limits.js";
 
 export async function getModelProvider(value) {
   const providers = { bedrock, gemini, mock };
@@ -277,6 +278,7 @@ export async function runModel({
   }
 
   messages = processMessages(messages, thoughtBudget);
+  await validateInlineMessages(messages);
 
   const { input, provider, hasCache, cost1kInput, cost1kCacheRead } = await buildInferenceParams(
     model,

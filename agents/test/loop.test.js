@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { MAX_INLINE_FILE_COUNT } from "gateway/upload-limits.js";
+import { PDFDocument } from "pdf-lib";
+
 import { runAgentLoop } from "../loop.js";
 
 describe("runAgentLoop", () => {
@@ -32,9 +35,14 @@ describe("runAgentLoop", () => {
         messages.push(msg);
         return msg;
       },
+      addResource: async (_userId, resource) => {
+        resources.push(resource);
+        return resource;
+      },
       summarize: async function* () {},
       getResourcesByAgent: async () => resources,
       _messages: messages,
+      _resources: resources,
     };
   }
 
@@ -275,6 +283,96 @@ describe("runAgentLoop", () => {
     assert.equal(resources.length, 1);
     assert.equal(resources[0].name, "book.md");
     assert.equal(cms._messages[0].content[0].document.originalName, "book.md");
+  });
+
+  it("stores overflow uploads as resources and keeps only the first five inline", async () => {
+    const streamEvents = [{ messageStop: { stopReason: "end_turn" } }];
+    const gateway = createMockGateway(streamEvents);
+    const cms = createMockCms();
+    const content = [];
+
+    for (let i = 1; i <= MAX_INLINE_FILE_COUNT + 1; i++) {
+      content.push({
+        document: {
+          name: `doc-${i}`,
+          originalName: `doc-${i}.txt`,
+          format: "txt",
+          source: { bytes: Buffer.from(`file ${i}`, "utf-8").toString("base64") },
+        },
+      });
+    }
+    content.push({ text: "Please read these." });
+
+    const loop = runAgentLoop({
+      userId: 1,
+      agentId: 1,
+      conversationId: 1,
+      userMessage: { role: "user", content },
+      model: "test-model",
+      gateway,
+      cms,
+    });
+
+    for await (const _event of loop) {
+      // consume
+    }
+
+    assert.equal(cms._resources.length, MAX_INLINE_FILE_COUNT + 1);
+    assert.equal(
+      cms._messages[0].content.filter((block) => block.document).length,
+      MAX_INLINE_FILE_COUNT
+    );
+    assert.match(
+      cms._messages[0].content.at(-1).text,
+      /These uploaded files were saved as conversation resources and are not attached inline: doc-6\.txt\./
+    );
+    assert.match(cms._messages[0].content.at(-1).text, /read them with the editor tool first/i);
+  });
+
+  it("stores oversized PDFs as resources instead of sending them inline", async () => {
+    const pdf = await PDFDocument.create();
+    for (let i = 0; i < 101; i++) {
+      pdf.addPage([200, 200]);
+    }
+
+    const streamEvents = [{ messageStop: { stopReason: "end_turn" } }];
+    const gateway = createMockGateway(streamEvents);
+    const cms = createMockCms();
+
+    const loop = runAgentLoop({
+      userId: 1,
+      agentId: 1,
+      conversationId: 1,
+      userMessage: {
+        role: "user",
+        content: [
+          {
+            document: {
+              name: "protocol",
+              originalName: "protocol.pdf",
+              format: "pdf",
+              source: { bytes: Buffer.from(await pdf.save()).toString("base64") },
+            },
+          },
+          { text: "Summarize this." },
+        ],
+      },
+      model: "test-model",
+      gateway,
+      cms,
+    });
+
+    for await (const _event of loop) {
+      // consume
+    }
+
+    assert.equal(cms._resources.length, 1);
+    assert.equal(cms._messages[0].content.filter((block) => block.document).length, 0);
+    assert.match(
+      cms._messages[0].content.at(-1).text,
+      /These uploaded files were saved as conversation resources and are not attached inline: protocol\.pdf\./
+    );
+    assert.match(cms._messages[0].content.at(-1).text, /prefer editor over recall/i);
   });
 
   it("adds summary continuation guidance when compressed context starts from a conversation summary", async () => {

@@ -1,3 +1,4 @@
+import { MAX_INLINE_FILE_COUNT, getInlineFileError } from "gateway/upload-limits.js";
 import { parseDocument } from "shared/parsers.js";
 
 import { getToolSpecs } from "./tool-specs.js";
@@ -342,6 +343,8 @@ async function extractContent(rawBytes, format) {
  */
 async function processUploads(userMessage, { userId, agentId, conversationId, cms }) {
   const blocks = userMessage.content || [];
+  const serverResourceOnlyNames = [];
+  let inlineFileCount = 0;
 
   // Store all files as resources
   for (const block of blocks) {
@@ -364,11 +367,27 @@ async function processUploads(userMessage, { userId, agentId, conversationId, cm
       metadata: { format: file.format, encoding },
     });
 
-    // Prepare inline blocks for Bedrock (raw Buffer, no extra flags)
-    if (!file.resourceOnly) {
+    let resourceOnly = !!file.resourceOnly;
+    if (!resourceOnly) {
+      if (inlineFileCount >= MAX_INLINE_FILE_COUNT) {
+        resourceOnly = true;
+      } else {
+        const error = await getInlineFileError(file, rawBytes);
+        resourceOnly = !!error;
+      }
+    }
+
+    if (resourceOnly) {
+      file.resourceOnly = true;
+      serverResourceOnlyNames.push(file.originalName || file.name);
+    } else {
+      inlineFileCount += 1;
       file.source.bytes = rawBytes;
+      delete file.resourceOnly;
     }
   }
+
+  appendUploadedFilesTag(blocks, serverResourceOnlyNames);
 
   // Remove resource-only blocks — the model already knows about these
   // via the <uploaded_files> tag the client injected into the text block.
@@ -381,6 +400,30 @@ async function processUploads(userMessage, { userId, agentId, conversationId, cm
     delete file.resourceOnly;
     return true;
   });
+}
+
+function appendUploadedFilesTag(blocks, names) {
+  if (!names.length) return;
+  const tag = buildUploadedFilesNotice(names);
+  const textBlock = [...blocks].reverse().find((block) => typeof block?.text === "string");
+  if (textBlock) {
+    textBlock.text += `\n\n${tag}`;
+  } else {
+    blocks.push({ text: tag });
+  }
+}
+
+function buildUploadedFilesNotice(names) {
+  const files = names.join(", ");
+  const examplePath = names[0];
+  return [
+    "<uploaded_files>",
+    `These uploaded files were saved as conversation resources and are not attached inline: ${files}.`,
+    `If the user asks about them, read them with the editor tool first using their filename, for example {"command":"view","path":"${examplePath}"}.`,
+    "Do not say you have not read the file yet when it was just uploaded. Read it from resources with editor before answering.",
+    "For the current turn's uploaded files, prefer editor over recall.",
+    "</uploaded_files>",
+  ].join("\n");
 }
 
 function getDefaultSystemPrompt(time, memoryContent, createdAt) {

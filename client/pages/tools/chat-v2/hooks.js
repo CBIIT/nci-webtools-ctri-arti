@@ -1,7 +1,7 @@
 import { createEffect } from "solid-js";
 import { createStore, produce } from "solid-js/store";
 
-import { parseJSON } from "../../../utils/parsers.js";
+import { getPdfPageCount, parseJSON } from "../../../utils/parsers.js";
 
 // =================================================================================
 // API HELPER
@@ -423,7 +423,7 @@ function processContentBlock(s, message, messageIndex = s.messages.length - 1) {
 // FILE & MESSAGE HANDLING
 // =================================================================================
 
-const MAX_INLINE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_INLINE_SIZE = Math.floor(4.5 * 1024 * 1024);
 const MAX_MODEL_FILES = 5;
 
 async function getMessageContent(text, files) {
@@ -456,10 +456,23 @@ async function getMessageContent(text, files) {
     return f.originalName || f.name;
   });
   if (overflowNames.length > 0) {
-    text += `\n\n<uploaded_files>${overflowNames.join(", ")}</uploaded_files>`;
+    text += `\n\n${buildUploadedFilesNotice(overflowNames)}`;
   }
 
   return [...inlineBlocks, ...overflowBlocks, { text }];
+}
+
+function buildUploadedFilesNotice(names) {
+  const files = names.join(", ");
+  const examplePath = names[0];
+  return [
+    "<uploaded_files>",
+    `These uploaded files were saved as conversation resources and are not attached inline: ${files}.`,
+    `If the user asks about them, read them with the editor tool first using their filename, for example {"command":"view","path":"${examplePath}"}.`,
+    "Do not say you have not read the file yet when it was just uploaded. Read it from resources with editor before answering.",
+    "For the current turn's uploaded files, prefer editor over recall.",
+    "</uploaded_files>",
+  ].join("\n");
 }
 
 export async function getContentBlock(file) {
@@ -479,8 +492,8 @@ export async function getContentBlock(file) {
     : documentTypes.includes(format)
       ? "document"
       : null;
-  const arrayBuffer = await file.arrayBuffer();
-  const bytes = new Uint8Array(arrayBuffer);
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const pageCount = format === "pdf" ? await getPdfPageCount(bytes.slice()) : undefined;
   let binary = "";
   for (let i = 0; i < bytes.length; i += 8192) {
     binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
@@ -503,7 +516,7 @@ export async function getContentBlock(file) {
 
   if (type) {
     return {
-      [type]: { format, name, source: { bytes: base64 }, originalName },
+      [type]: { format, name, source: { bytes: base64 }, originalName, pageCount },
     };
   }
 }

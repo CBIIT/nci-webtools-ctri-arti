@@ -57,6 +57,11 @@ async function parsePdf(data) {
   return content || "No text found in PDF";
 }
 
+export async function getPdfPageCount(data) {
+  const pdf = await pdfjsLib.getDocument({ data }).promise;
+  return pdf.numPages;
+}
+
 export function parseStreamingJson(incompleteJson) {
   // Handle empty input
   if (!incompleteJson || incompleteJson.trim() === "") {
@@ -261,7 +266,6 @@ export function safeParseJson(unsafeJson, fallback = {}) {
     return fallback;
   }
 }
-
 
 /**
  * Parse streaming or incomplete JSON strings into JavaScript objects.

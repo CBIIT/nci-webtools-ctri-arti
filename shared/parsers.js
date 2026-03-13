@@ -1,6 +1,13 @@
 import { convertToHtml as loadDocx } from "mammoth";
 import { getDocument as loadPdf } from "pdfjs-dist/legacy/build/pdf.mjs";
 
+function toPdfData(buffer) {
+  if (Buffer.isBuffer(buffer)) return new Uint8Array(buffer);
+  if (buffer instanceof Uint8Array) return buffer;
+  if (buffer instanceof ArrayBuffer) return new Uint8Array(buffer);
+  return new Uint8Array(buffer.buffer, buffer.byteOffset || 0, buffer.byteLength || 0);
+}
+
 /**
  * Retrieves and parses a document from a URL
  * @param {string} url
@@ -49,7 +56,7 @@ export async function parseDocx(buffer) {
  * @returns {Promise<string>} extracted text
  */
 export async function parsePdf(buffer) {
-  const pdf = await loadPdf(buffer).promise;
+  const pdf = await loadPdf({ data: toPdfData(buffer) }).promise;
   const pagesText = [];
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
     const page = await pdf.getPage(pageNumber);
@@ -59,4 +66,14 @@ export async function parsePdf(buffer) {
   }
   const content = pagesText.join("\n\n")?.trim();
   return content || "No text found in PDF";
+}
+
+/**
+ * Returns the page count for a PDF buffer.
+ * @param {ArrayBuffer} buffer
+ * @returns {Promise<number>}
+ */
+export async function getPdfPageCount(buffer) {
+  const pdf = await loadPdf({ data: toPdfData(buffer) }).promise;
+  return pdf.numPages;
 }
