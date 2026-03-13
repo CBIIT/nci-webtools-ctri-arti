@@ -6,12 +6,9 @@ venv
 /postgres
 /tmp
 database.sqlite
-/data
-/test-data
 .DS_Store
 .vscode
 __pycache__
 cdk.out
 /scripts
 /docs
-*claude*

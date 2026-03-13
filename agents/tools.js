@@ -92,7 +92,7 @@ async function queryDocumentWithModel(
   document,
   topic,
   context,
-  model = "us.meta.llama4-maverick-17b-instruct-v1:0"
+  model = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
 ) {
   if (!topic) return document;
 
@@ -105,7 +105,7 @@ async function queryDocumentWithModel(
 Your task is to answer the question using only the information in the document and provide a fully-verifiable, academic report in markdown format.
 If the document doesn't contain information relevant to the question, state this explicitly.`;
 
-  const prompt = `Answer this question about the document: "${topic}"`;
+  const prompt = `<document>\n${document}\n</document>\n\nAnswer this question about the document: "${topic}"`;
   const messages = [{ role: "user", content: [{ text: prompt }] }];
 
   const result = await context.gateway.invoke({
