@@ -15,6 +15,7 @@ import { invoke } from "./gateway.js";
 ConversationService.setInvoker(invoke);
 
 const CMS_URL = process.env.CMS_URL;
+const { Readable } = await import("node:stream");
 
 /**
  * Make an HTTP request to the CMS service
@@ -39,6 +40,44 @@ async function httpRequest(method, path, body, userId) {
   return response.json();
 }
 
+/**
+ * Make a streaming NDJSON request — returns an async generator of parsed events.
+ */
+async function* streamRequest(method, path, body, userId) {
+  const response = await fetch(`${CMS_URL}${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Id": String(userId),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(error.error || "CMS stream request failed");
+  }
+
+  let buffer = "";
+  for await (const chunk of Readable.fromWeb(response.body)) {
+    buffer += chunk.toString();
+    const lines = buffer.split("\n");
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (line.trim()) {
+        const event = JSON.parse(line);
+        if (event.error) throw new Error(event.error);
+        yield event;
+      }
+    }
+  }
+  if (buffer.trim()) {
+    const event = JSON.parse(buffer);
+    if (event.error) throw new Error(event.error);
+    yield event;
+  }
+}
+
 function buildDirectClient() {
   const s = new ConversationService();
   return {
@@ -56,8 +95,7 @@ function buildDirectClient() {
     deleteConversation: (userId, conversationId) => s.deleteConversation(userId, conversationId),
 
     getContext: (userId, conversationId, options) => s.getContext(userId, conversationId, options),
-    checkSummarizationNeeded: (userId, cid) => s.checkSummarizationNeeded(userId, cid),
-    persistSummary: (userId, cid, text) => s.persistSummary(userId, cid, text),
+    summarize: (userId, cid, params) => s.summarize(userId, cid, params),
 
     addMessage: (userId, conversationId, data) => s.addMessage(userId, conversationId, data),
     getMessages: (userId, conversationId) => s.getMessages(userId, conversationId),
@@ -90,8 +128,13 @@ function buildDirectClient() {
       s.getVectorsByConversation(userId, conversationId),
     getVectorsByResource: (userId, resourceId) => s.getVectorsByResource(userId, resourceId),
     searchVectors: (params) => s.searchVectors(params),
+    deleteVectorsByResource: (userId, resourceId) => s.deleteVectorsByResource(userId, resourceId),
     deleteVectorsByConversation: (userId, conversationId) =>
       s.deleteVectorsByConversation(userId, conversationId),
+
+    searchMessages: (userId, params) => s.searchMessages(userId, params),
+    searchResourceVectors: (userId, params) => s.searchResourceVectors(userId, params),
+    searchChunks: (userId, params) => s.searchChunks(userId, params),
   };
 }
 
@@ -133,10 +176,8 @@ function buildHttpClient() {
         userId
       );
     },
-    checkSummarizationNeeded: (userId, cid) =>
-      httpRequest("GET", `/api/v1/conversations/${cid}/summarization-check`, null, userId),
-    persistSummary: (userId, cid, text) =>
-      httpRequest("POST", `/api/v1/conversations/${cid}/summary`, { summaryText: text }, userId),
+    summarize: (userId, cid, params) =>
+      streamRequest("POST", `/api/v1/conversations/${cid}/summarize`, params, userId),
 
     addMessage: (userId, conversationId, data) =>
       httpRequest("POST", `/api/v1/conversations/${conversationId}/messages`, data, userId),
@@ -178,10 +219,23 @@ function buildHttpClient() {
     getVectorsByConversation: (userId, conversationId) =>
       httpRequest("GET", `/api/v1/conversations/${conversationId}/vectors`, null, userId),
     getVectorsByResource: (userId, resourceId) => s.getVectorsByResource(userId, resourceId),
-    searchVectors: (params) =>
-      httpRequest("GET", `/api/v1/vectors/search?${new URLSearchParams(params)}`, null, null),
+    searchVectors: (params) => {
+      const query = new URLSearchParams();
+      for (const [key, value] of Object.entries(params || {})) {
+        if (value === undefined || value === null) continue;
+        query.set(key, key === "embedding" ? JSON.stringify(value) : String(value));
+      }
+      return httpRequest("GET", `/api/v1/vectors/search?${query}`, null, null);
+    },
+    deleteVectorsByResource: (userId, resourceId) => s.deleteVectorsByResource(userId, resourceId),
     deleteVectorsByConversation: (userId, conversationId) =>
       s.deleteVectorsByConversation(userId, conversationId),
+
+    searchMessages: (userId, params) =>
+      httpRequest("POST", "/api/v1/search/messages", params, userId),
+    searchResourceVectors: (userId, params) =>
+      httpRequest("POST", "/api/v1/search/vectors", params, userId),
+    searchChunks: (userId, params) => httpRequest("POST", "/api/v1/search/chunks", params, userId),
   };
 }
 
@@ -200,8 +254,7 @@ export const {
   updateConversation,
   deleteConversation,
   getContext,
-  checkSummarizationNeeded,
-  persistSummary,
+  summarize,
   addMessage,
   getMessages,
   getMessage,
@@ -227,5 +280,9 @@ export const {
   getVectorsByConversation,
   getVectorsByResource,
   searchVectors,
+  deleteVectorsByResource,
   deleteVectorsByConversation,
+  searchMessages,
+  searchResourceVectors,
+  searchChunks,
 } = cmsClient;

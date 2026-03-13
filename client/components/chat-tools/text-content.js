@@ -3,7 +3,6 @@ import { marked } from "marked";
 import { Show } from "solid-js";
 import html from "solid-js/html";
 
-
 import { downloadCsv } from "../../utils/files.js";
 import Tooltip from "../tooltip.js";
 
@@ -28,6 +27,8 @@ import Tooltip from "../tooltip.js";
 export default function TextContent(props) {
   return html`
     <div
+      data-chat-message="true"
+      data-role=${() => props.role || ""}
       class="position-relative hover-visible-parent min-w-0"
       classList=${{ "text-end": props.role === "user" }}
     >

@@ -33,6 +33,7 @@ export function useAgent({ agentId, conversationId }) {
     modelId: null,
     reasoningMode: false,
     loading: false,
+    summarizing: false,
     messages: [],
   });
 
@@ -84,15 +85,24 @@ export function useAgent({ agentId, conversationId }) {
 
   // Load history when conversationId changes
   createEffect(async () => {
-    if (!params.conversationId) return;
+    const requestedConversationId = params.conversationId;
+    if (!requestedConversationId) return;
     const [messages, conv] = await Promise.all([
-      api(`/conversations/${params.conversationId}/messages`),
-      api(`/conversations/${params.conversationId}`),
+      api(`/conversations/${requestedConversationId}/messages`),
+      api(`/conversations/${requestedConversationId}`),
     ]);
+    if (params.conversationId !== requestedConversationId) return;
     if (!messages?.length) return;
+    if (agent.loading && agent.conversation.id === requestedConversationId) return;
+    if (
+      agent.conversation.id === requestedConversationId &&
+      agent.messages.length > messages.length
+    ) {
+      return;
+    }
     setAgent({
       messages: messages.map(({ id, role, content }) => ({ id, role, content })),
-      conversation: { id: params.conversationId, name: conv.title ?? conv.name ?? "Untitled" },
+      conversation: { id: requestedConversationId, name: conv.title ?? conv.name ?? "Untitled" },
     });
   });
 
@@ -105,15 +115,17 @@ export function useAgent({ agentId, conversationId }) {
     setAgent("loading", true);
 
     try {
-      if (!params.conversationId) {
+      let currentConversationId = params.conversationId;
+      const shouldGenerateTitle = !currentConversationId && agent.conversation.name === null;
+      if (!currentConversationId) {
         setAgent("conversation", "name", "Untitled");
         const conv = await api("/conversations", {
           method: "POST",
           body: JSON.stringify({ title: "Untitled", agentID: agentId }),
         });
-        const id = conv.id;
-        setParams("conversationId", id);
-        setAgent("conversation", "id", id);
+        currentConversationId = conv.id;
+        setParams("conversationId", currentConversationId);
+        setAgent("conversation", "id", currentConversationId);
         await loadConversations();
       }
 
@@ -124,41 +136,40 @@ export function useAgent({ agentId, conversationId }) {
 
       setAgent({
         id: record.id,
-        conversation: { id: params.conversationId, name: agent.conversation.name },
+        conversation: { id: currentConversationId, name: agent.conversation.name },
         modelId,
         reasoningMode,
         name: record.name,
         messages: agent.messages.concat([userMessage]),
       });
 
-      await streamChat(agent, setAgent, params.agentId, params.conversationId);
+      if (shouldGenerateTitle) {
+        void generateTitle(text, currentConversationId);
+      }
+
+      await streamChat(agent, setAgent, params.agentId, currentConversationId);
     } finally {
       setAgent("loading", false);
     }
   }
 
-  async function generateTitle(modelId) {
-    if (!params.conversationId || agent.conversation.name !== "Untitled") return;
+  async function generateTitle(
+    messageText,
+    conversationId,
+    modelId = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+  ) {
+    if (!conversationId || agent.conversation.name !== "Untitled" || !messageText?.trim()) return;
 
     try {
-      const titleInstruction = {
-        role: "user",
-        content: [
-          {
-            text:
-              "Based on the conversation, respond with ONLY a short title (max 30 characters). " +
-              "Use only letters, numbers, and spaces. No quotes or punctuation. Just the title text.",
-          },
-        ],
-      };
-
       const response = await fetch("/api/v1/model", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          model: modelId || "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-          messages: [...agent.messages, titleInstruction],
-          system: "Generate a concise title for this conversation.",
+          model: modelId,
+          messages: [{ role: "user", content: [{ text: messageText }] }],
+          system:
+            "Generate a concise chat title from the user's message only. " +
+            "Respond with only a short title, maximum 30 characters, using only letters, numbers, and spaces.",
           thoughtBudget: 0,
           stream: false,
           type: "chat-title",
@@ -175,7 +186,7 @@ export function useAgent({ agentId, conversationId }) {
         .slice(0, 30);
 
       if (title) {
-        await updateConversation(params.conversationId, { name: title });
+        await updateConversation(conversationId, { name: title });
       }
     } catch (error) {
       console.error("Failed to generate title:", error);
@@ -248,11 +259,55 @@ async function streamChat(store, setStore, agentId, conversationId) {
     throw new Error(error.error || `Agent API error: ${response.status}`);
   }
 
-  let assistantStarted = false;
+  let assistantMessageIndex = null;
+  let summaryMessageIndex = null;
+  let isSummarizing = false;
   const pendingClientTools = [];
+
+  function appendMessage(role) {
+    const index = store.messages.length;
+    setStore("messages", index, { role, content: [] });
+    return index;
+  }
+
+  function isContentStreamEvent(event) {
+    return (
+      event.messageStart ||
+      event.contentBlockStart ||
+      event.contentBlockDelta ||
+      event.contentBlockStop
+    );
+  }
 
   for await (const event of streamResponse(response)) {
     if (event.agentError) throw new Error(event.agentError.message);
+
+    if (event.summarizing !== undefined) {
+      isSummarizing = event.summarizing;
+      setStore("summarizing", isSummarizing);
+      if (isSummarizing) {
+        summaryMessageIndex = null;
+        assistantMessageIndex = null;
+      } else {
+        summaryMessageIndex = null;
+        assistantMessageIndex = null;
+      }
+      continue;
+    }
+
+    // During summarization, render content blocks as a user message
+    if (isSummarizing) {
+      if (isContentStreamEvent(event)) {
+        summaryMessageIndex ??= appendMessage("user");
+        setStore(produce((s) => processContentBlock(s, event, summaryMessageIndex)));
+        continue;
+      }
+      if (event.messageStop) {
+        summaryMessageIndex = null;
+        assistantMessageIndex = null;
+        continue;
+      }
+    }
 
     if (event.clientToolRequest) {
       pendingClientTools.push(event.clientToolRequest);
@@ -261,29 +316,20 @@ async function streamChat(store, setStore, agentId, conversationId) {
 
     if (event.toolResult) {
       if (!store.messages.at(-1)?.content?.some?.((c) => c.toolResult)) {
-        setStore("messages", store.messages.length, { role: "user", content: [] });
+        appendMessage("user");
       }
       setStore(produce((s) => s.messages.at(-1).content.push(event)));
-      assistantStarted = false;
+      assistantMessageIndex = null;
       continue;
     }
 
-    if (
-      event.contentBlockStart ||
-      event.contentBlockDelta ||
-      event.contentBlockStop ||
-      event.messageStart
-    ) {
-      if (!assistantStarted && (event.contentBlockStart || event.messageStart)) {
-        setStore("messages", store.messages.length, { role: "assistant", content: [] });
-        assistantStarted = true;
-      }
-      setStore(produce((s) => processContentBlock(s, event)));
+    if (isContentStreamEvent(event)) {
+      assistantMessageIndex ??= appendMessage("assistant");
+      setStore(produce((s) => processContentBlock(s, event, assistantMessageIndex)));
     }
 
     if (event.messageStop) {
-      setStore(produce((s) => processContentBlock(s, event)));
-      assistantStarted = false;
+      assistantMessageIndex = null;
     }
   }
 
@@ -320,10 +366,11 @@ async function streamChat(store, setStore, agentId, conversationId) {
 // CONTENT BLOCK PROCESSING
 // =================================================================================
 
-function processContentBlock(s, message) {
+function processContentBlock(s, message, messageIndex = s.messages.length - 1) {
   const { contentBlockStart, contentBlockDelta, contentBlockStop } = message;
   const toolUse = contentBlockStart?.start?.toolUse;
-  const messageContent = s.messages.at(-1).content;
+  const messageContent = s.messages[messageIndex]?.content;
+  if (!messageContent) return;
 
   if (toolUse) {
     const { contentBlockIndex } = contentBlockStart;
@@ -352,16 +399,17 @@ function processContentBlock(s, message) {
       block.text ||= "";
       block.text += text;
     } else if (toolUse) {
+      block.toolUse ||= { input: "" };
       block.toolUse.input ||= "";
       block.toolUse.input += toolUse.input;
     }
   } else if (contentBlockStop) {
     const { contentBlockIndex } = contentBlockStop;
     const block = messageContent[contentBlockIndex];
-    if (block.toolUse) {
+    if (block?.toolUse) {
       block.toolUse.input = parseJSON(block.toolUse.input);
     }
-    if (block.text?.length === 0) {
+    if (block?.text?.length === 0) {
       block.text += " ";
     }
   }

@@ -29,7 +29,7 @@ export async function* runAgentLoop({
   gateway,
   cms,
 }) {
-  // 1. Load agent config
+  // 1. Load agent config + conversation
   const agent = await cms.getAgent(userId, agentId);
   if (!agent) throw new Error(`Agent not found: ${agentId}`);
 
@@ -37,85 +37,18 @@ export async function* runAgentLoop({
   const toolSpecs = getToolSpecs(toolNames);
   const tools = toolSpecs.map(({ toolSpec }) => ({ toolSpec }));
 
+  const conversation = await cms.getConversation(userId, conversationId);
+
   // 2. Process uploaded files → resources, then build clean message for model
   await processUploads(userMessage, { userId, agentId, conversationId, cms });
 
   // Persist the cleaned message (no base64 blobs, no resourceOnly flags)
   await cms.addMessage(userId, conversationId, userMessage);
 
-  // 3. Check if summarization is needed
-  const sumCheck = await cms.checkSummarizationNeeded(userId, conversationId);
-
-  if (sumCheck) {
-    try {
-      const userText =
-        userMessage.content
-          ?.filter((c) => c.text)
-          .map((c) => c.text)
-          .join("\n") || "";
-
-      const summaryResult = await gateway.invoke({
-        userID: userId,
-        model: sumCheck.model,
-        messages: [
-          ...sumCheck.messages,
-          {
-            role: "user",
-            content: [
-              {
-                text:
-                  "Summarize the entire conversation so far. Include all key decisions, " +
-                  "requirements, code, facts, and context needed to continue without the " +
-                  "original messages. Be thorough but concise. Format as structured notes.\n\n" +
-                  "If there are uploaded files or resources referenced in the conversation, " +
-                  "include a section listing them and note that the editor tool can be used " +
-                  "to read their contents if needed.\n\n" +
-                  "End the summary with the user's latest message quoted verbatim, and an " +
-                  "instruction for the assistant to continue answering it:\n\n" +
-                  "## Latest User Message\n> " +
-                  userText +
-                  "\n\n" +
-                  "Continue addressing this message in your next response.",
-              },
-            ],
-          },
-        ],
-        system: "You are summarizing a conversation for context compression.",
-        thoughtBudget: 0,
-        stream: true,
-        type: "chat-summary",
-      });
-
-      let summaryText = "";
-      for await (const chunk of summaryResult.stream) {
-        yield chunk;
-        if (chunk.contentBlockDelta?.delta?.text) {
-          summaryText += chunk.contentBlockDelta.delta.text;
-        }
-      }
-
-      if (summaryText.length >= 50) {
-        await cms.persistSummary(userId, conversationId, summaryText);
-      }
-    } catch (error) {
-      console.error("Summarization failed, continuing without compression:", error);
-    }
-  }
-
-  // 4. Load conversation context (compressed = starts from summary if it exists)
-  const context = await cms.getContext(userId, conversationId, { compressed: true });
-  const existingMessages = context?.messages || [];
-  const messages = existingMessages.map(({ role, content }) => ({ role, content }));
-
-  // Bedrock requires the conversation to end with a user message.
-  // After summarization, compressed context starts from the summary (assistant)
-  // and the original user message (lower ID) is excluded. Re-append it.
-  if (messages.length && messages.at(-1).role !== "user") {
-    messages.push({ role: "user", content: userMessage.content });
-  }
-
-  // 5. Build system prompt
-  const time = new Date().toLocaleDateString("en-US", {
+  // 3. Build system prompt (before summarization so it can reuse the same params)
+  // Use conversation.createdAt for stable cache prefix — the date never changes
+  // across turns, so the Bedrock prompt cache stays valid for the conversation's lifetime.
+  const time = new Date(conversation?.createdAt || Date.now()).toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -143,7 +76,45 @@ export async function* runAgentLoop({
       .replace(/\{\{time\}\}/g, time)
       .replace(/\{\{memory\}\}/g, memoryContent);
   } else {
-    system = getDefaultSystemPrompt(time, memoryContent);
+    system = getDefaultSystemPrompt(time, memoryContent, conversation?.createdAt);
+  }
+
+  // 4. Summarize if needed — stream summary chunks to client
+  const userText =
+    userMessage.content
+      ?.filter((c) => c.text)
+      .map((c) => c.text)
+      .join("\n") || "";
+
+  const summaryStream = cms.summarize(userId, conversationId, {
+    model,
+    system,
+    tools,
+    thoughtBudget,
+    userText,
+  });
+  const summaryIterator = summaryStream?.[Symbol.asyncIterator]?.();
+  const firstSummaryEvent = summaryIterator ? await summaryIterator.next() : { done: true };
+
+  if (!firstSummaryEvent.done) {
+    yield { summarizing: true };
+    yield firstSummaryEvent.value;
+    for await (const chunk of { [Symbol.asyncIterator]: () => summaryIterator }) {
+      yield chunk;
+    }
+    yield { summarizing: false };
+  }
+
+  // 5. Load conversation context (compressed = starts from summary if it exists)
+  const context = await cms.getContext(userId, conversationId, { compressed: true });
+  const existingMessages = context?.messages || [];
+  const messages = existingMessages.map(({ role, content }) => ({ role, content }));
+
+  // Bedrock requires the conversation to end with a user message.
+  // After summarization, compressed context starts from the summary (assistant)
+  // and the original user message (lower ID) is excluded. Re-append it.
+  if (messages.length && messages.at(-1).role !== "user") {
+    messages.push({ role: "user", content: userMessage.content });
   }
 
   // Tool execution context
@@ -383,7 +354,7 @@ async function processUploads(userMessage, { userId, agentId, conversationId, cm
 
     const { content, encoding } = await extractContent(rawBytes, file.format);
 
-    await cms.addResource(userId, {
+    const resource = await cms.addResource(userId, {
       agentID: agentId,
       conversationID: conversationId,
       name: file.originalName || file.name,
@@ -412,8 +383,8 @@ async function processUploads(userMessage, { userId, agentId, conversationId, cm
   });
 }
 
-function getDefaultSystemPrompt(time, memoryContent) {
-  const currentYear = new Date().getFullYear();
+function getDefaultSystemPrompt(time, memoryContent, createdAt) {
+  const currentYear = new Date(createdAt || Date.now()).getFullYear();
   return `You are Ada, a sophisticated colleague for professionals at the National Cancer Institute. Not a chatbot — a peer.
 
 The current date is ${time}.
@@ -425,6 +396,7 @@ Browse: Follow up on search results. Fetch up to 20 URLs simultaneously for full
 Data: Access S3 bucket files for analysis.
 Editor: Full virtual filesystem — create, view, edit, delete, rename files. Organize work, build deliverables, maintain persistent context.
 Think: Dedicated reasoning space. Include the COMPLETE information that needs analysis.
+Recall: Search past conversations, uploaded file content, and semantic embeddings. Use when the user references something from a previous conversation or uploaded document. Supports date filtering and keyword/semantic search.
 
 When citing search/browse results, use inline markdown citations: [(Author, Year)](url).
 

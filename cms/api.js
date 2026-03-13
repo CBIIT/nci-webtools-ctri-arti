@@ -150,25 +150,20 @@ v1.get(
 
 // -- Summarization --
 
-v1.get(
-  "/conversations/:conversationId/summarization-check",
-  routeHandler(async (req, res) => {
-    const result = await service.checkSummarizationNeeded(req.userId, req.params.conversationId);
-    res.json(result);
-  })
-);
+v1.post("/conversations/:conversationId/summarize", async (req, res) => {
+  res.setHeader("Content-Type", "application/x-ndjson");
+  res.setHeader("Transfer-Encoding", "chunked");
+  res.setHeader("Cache-Control", "no-cache");
 
-v1.post(
-  "/conversations/:conversationId/summary",
-  routeHandler(async (req, res) => {
-    const msg = await service.persistSummary(
-      req.userId,
-      req.params.conversationId,
-      req.body.summaryText
-    );
-    res.status(201).json(msg);
-  })
-);
+  try {
+    for await (const event of service.summarize(req.userId, req.params.conversationId, req.body)) {
+      res.write(JSON.stringify(event) + "\n");
+    }
+  } catch (error) {
+    res.write(JSON.stringify({ error: error.message }) + "\n");
+  }
+  res.end();
+});
 
 // -- Messages --
 
@@ -386,6 +381,32 @@ v1.get(
   routeHandler(async (req, res) => {
     const vectors = await service.getVectorsByConversation(req.userId, req.params.conversationId);
     res.json(vectors);
+  })
+);
+
+// -- Search (for recall tool) --
+
+v1.post(
+  "/search/messages",
+  routeHandler(async (req, res) => {
+    const results = await service.searchMessages(req.userId, req.body);
+    res.json(results);
+  })
+);
+
+v1.post(
+  "/search/vectors",
+  routeHandler(async (req, res) => {
+    const results = await service.searchResourceVectors(req.userId, req.body);
+    res.json(results);
+  })
+);
+
+v1.post(
+  "/search/chunks",
+  routeHandler(async (req, res) => {
+    const results = await service.searchChunks(req.userId, req.body);
+    res.json(results);
   })
 );
 

@@ -13,8 +13,12 @@ import DataTool from "../../../components/chat-tools/data-tool.js";
 import DocxTemplateTool from "../../../components/chat-tools/docx-template-tool.js";
 import EditorTool from "../../../components/chat-tools/editor-tool.js";
 import ReasoningTool from "../../../components/chat-tools/reasoning-tool.js";
+import RecallTool from "../../../components/chat-tools/recall-tool.js";
 import SearchTool from "../../../components/chat-tools/search-tool.js";
+import SummaryTool from "../../../components/chat-tools/summary-tool.js";
 import TextContent from "../../../components/chat-tools/text-content.js";
+
+const CONVERSATION_SUMMARY_TOKEN = "[Conversation Summary]";
 
 const TOOL_COMPONENTS = {
   search: SearchTool,
@@ -24,6 +28,7 @@ const TOOL_COMPONENTS = {
   editor: EditorTool,
   think: ReasoningTool,
   docxTemplate: DocxTemplateTool,
+  recall: RecallTool,
 };
 
 /**
@@ -52,6 +57,10 @@ function getSearchResults(toolResult) {
   const results = toolResult?.content?.[0]?.json?.result || toolResult?.content?.[0]?.json?.results;
   if (!results?.web && !results?.news) return [];
   return [...(results.web || []), ...(results.news || [])];
+}
+
+function isSummaryText(text = "") {
+  return typeof text === "string" && text.startsWith(CONVERSATION_SUMMARY_TOKEN);
 }
 
 export default function Message(p) {
@@ -165,7 +174,19 @@ export default function Message(p) {
       <${For} each=${p.message?.content}>
         ${(c, i) => {
           if (c.text !== undefined) {
-            const isLast = () => !p.isStreaming?.() && p?.index === p?.messages?.length - 1;
+            if (isSummaryText(c.text)) {
+              const key = `summary:${p.index}-${i()}`;
+              return SummaryTool({
+                role: p?.message?.role,
+                message: c,
+                messages: p?.messages,
+                isOpen: () => !!visible()[key],
+                bodyId: `summary-acc-body-${safeId(`${p.index}-${i()}`)}`,
+                onToggle: () => toggleVisible(key),
+              });
+            }
+
+            const isLast = () => !p.isStreaming && p?.index === p?.messages?.length - 1;
 
             return TextContent({
               role: p?.message?.role,

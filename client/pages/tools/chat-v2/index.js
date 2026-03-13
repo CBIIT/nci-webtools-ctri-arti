@@ -559,7 +559,7 @@ function ChatApp() {
                     message=${message}
                     index=${index}
                     messages=${() => agent.messages}
-                    isStreaming=${() => isStreaming}
+                    isStreaming=${isStreaming}
                     class="small markdown shadow-sm rounded mb-3 p-2 position-relative"
                   />
                 `}
@@ -568,6 +568,11 @@ function ChatApp() {
                 <${Loader}
                   style="display: block; height: 1.1rem; width: 100%; margin: 1rem 0; opacity: 0.5"
                 />
+                <${Show} when=${() => agent.summarizing}>
+                  <div class="text-muted small text-center" style="margin-top: -0.5rem">
+                    Summarizing…
+                  </div>
+                <//>
               <//>
 
               <div
