@@ -1,3 +1,8 @@
+import {
+  getEmbeddingsFromResult,
+  NOVA_EMBEDDING_MODEL,
+  NOVA_RETRIEVAL_PURPOSE,
+} from "shared/embeddings.js";
 import { parseDocument } from "shared/parsers.js";
 import { listFiles, getFile } from "shared/s3.js";
 import { search as searchWeb } from "shared/search.js";
@@ -417,6 +422,105 @@ export async function docxTemplate({ docxUrl, replacements }, context) {
 }
 
 /**
+ * Recall tool — search past conversations and uploaded resources.
+ * Always searches everywhere: messages, semantic embeddings, and chunk content.
+ */
+export async function recall({ query, dateFrom, dateTo }, context) {
+  const { userId, agentId, cms, gateway } = context;
+  const limit = 10;
+  const results = {};
+
+  const buildConversationUrl = (resultAgentId, conversationId) =>
+    resultAgentId && conversationId
+      ? `/tools/chat-v2?agentId=${resultAgentId}&conversationId=${conversationId}`
+      : null;
+
+  const buildResourceDownloadInfo = (resource) => {
+    const metadata = resource?.metadata || {};
+    const format = (
+      metadata.format ||
+      resource?.resourceName?.split(".").pop() ||
+      ""
+    ).toLowerCase();
+    const exactFormats = new Set(["txt", "md", "csv", "json", "html", "htm", "xml"]);
+    const downloadExact = metadata.encoding === "base64" || exactFormats.has(format);
+
+    return {
+      downloadUrl: resource?.resourceId
+        ? `/api/v1/resources/${resource.resourceId}/download`
+        : null,
+      resourceUrl: resource?.resourceId ? `/api/v1/resources/${resource.resourceId}` : null,
+      downloadExact,
+      downloadLabel: downloadExact ? "Download resource" : "Download stored text",
+    };
+  };
+
+  await Promise.all([
+    cms.searchMessages(userId, { query, agentId, dateFrom, dateTo, limit }).then((r) => {
+      results.messages = r;
+    }),
+    (async () => {
+      try {
+        const embedResult = await gateway.embed({
+          userID: userId,
+          model: NOVA_EMBEDDING_MODEL,
+          content: [query],
+          purpose: NOVA_RETRIEVAL_PURPOSE,
+          type: "embedding",
+        });
+        const [queryEmbedding] = getEmbeddingsFromResult(embedResult, { expectedCount: 1 });
+        if (queryEmbedding) {
+          results.semantic = await cms.searchResourceVectors(userId, {
+            embedding: queryEmbedding,
+            topN: limit,
+            dateFrom,
+            dateTo,
+          });
+        }
+      } catch (err) {
+        results.semantic = { error: err.message };
+      }
+    })(),
+    cms.searchChunks(userId, { query, dateFrom, dateTo, limit }).then((r) => {
+      results.chunks = r;
+    }),
+  ]);
+
+  return {
+    query,
+    generatedAt: new Date().toISOString(),
+    messages:
+      results.messages?.map((message) => ({
+        ...message,
+        conversationUrl: buildConversationUrl(message.agentId, message.conversationId),
+        matchingText: message.matchingText?.slice(0, 500) || "",
+      })) || [],
+    semantic:
+      results.semantic?.length && !results.semantic.error
+        ? results.semantic.map((resource) => ({
+            ...resource,
+            ...buildResourceDownloadInfo(resource),
+            conversationUrl: buildConversationUrl(resource.agentId, resource.conversationId),
+            excerpt: resource.content?.slice(0, 500) || "",
+          }))
+        : [],
+    chunks:
+      results.chunks?.map((resource) => ({
+        ...resource,
+        ...buildResourceDownloadInfo(resource),
+        conversationUrl: buildConversationUrl(resource.agentId, resource.conversationId),
+        excerpt: resource.content?.slice(0, 500) || "",
+      })) || [],
+    errors: results.semantic?.error ? { semantic: results.semantic.error } : {},
+    summary: {
+      messageCount: results.messages?.length || 0,
+      semanticCount: Array.isArray(results.semantic) ? results.semantic.length : 0,
+      chunkCount: results.chunks?.length || 0,
+    },
+  };
+}
+
+/**
  * Tool registry — maps tool names to their implementations
  */
 export const toolImplementations = {
@@ -426,6 +530,7 @@ export const toolImplementations = {
   editor,
   think,
   docxTemplate,
+  recall,
 };
 
 export function getToolFn(name) {

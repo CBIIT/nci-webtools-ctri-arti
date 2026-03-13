@@ -210,6 +210,33 @@ memories/ and skills/ persist across conversations. All other files are conversa
       },
     },
   },
+  recall: {
+    toolSpec: {
+      name: "recall",
+      description:
+        "Search past conversations and uploaded resources. Searches everywhere automatically — conversation messages, file content, and semantic embeddings. Use when the user references something discussed previously or from an uploaded document.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            query: {
+              type: "string",
+              description: "The search query. Be specific to get better results.",
+            },
+            dateFrom: {
+              type: "string",
+              description: "Optional ISO date string to filter results from (inclusive).",
+            },
+            dateTo: {
+              type: "string",
+              description: "Optional ISO date string to filter results until (inclusive).",
+            },
+          },
+          required: ["query"],
+        },
+      },
+    },
+  },
 };
 
 export function getToolSpecs(toolNames) {
