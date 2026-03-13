@@ -1,7 +1,7 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -14,7 +14,9 @@ import {
   json,
   uniqueIndex,
   index,
+  vector,
 } from "drizzle-orm/pg-core";
+import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
 
 import { loadCsv } from "./csv-loader.js";
 
@@ -104,6 +106,7 @@ export const Model = pgTable(
     cost1kOutput: doublePrecision("cost1kOutput"),
     cost1kCacheRead: doublePrecision("cost1kCacheRead"),
     cost1kCacheWrite: doublePrecision("cost1kCacheWrite"),
+    pricing: json("pricing"),
     defaultParameters: json("defaultParameters"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -125,10 +128,9 @@ export const Usage = pgTable(
     type: text("type"),
     agentID: integer("agentID"),
     messageID: integer("messageID"),
-    inputTokens: doublePrecision("inputTokens"),
-    outputTokens: doublePrecision("outputTokens"),
-    cacheReadTokens: doublePrecision("cacheReadTokens"),
-    cacheWriteTokens: doublePrecision("cacheWriteTokens"),
+    quantity: doublePrecision("quantity"),
+    unit: text("unit"),
+    unitCost: doublePrecision("unitCost"),
     cost: doublePrecision("cost"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -140,6 +142,7 @@ export const Usage = pgTable(
     index("Usage_modelID_idx").on(t.modelID),
     index("Usage_createdAt_idx").on(t.createdAt),
     index("Usage_userID_createdAt_idx").on(t.userID, t.createdAt),
+    index("Usage_unit_idx").on(t.unit),
   ]
 );
 
@@ -272,7 +275,7 @@ export const Vector = pgTable(
     toolID: integer("toolID"),
     order: integer("order"),
     content: text("content"),
-    embedding: json("embedding"),
+    embedding: vector("embedding", { dimensions: NOVA_EMBEDDING_DIMENSIONS }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -282,6 +285,11 @@ export const Vector = pgTable(
     index("Vector_conversationID_idx").on(t.conversationID),
     index("Vector_toolID_idx").on(t.toolID),
     index("Vector_resourceID_order_idx").on(t.resourceID, t.order),
+    index("Vector_content_trgm_idx").using("gin", t.content.op("gin_trgm_ops")),
+    index("Vector_content_tsv_idx").using(
+      "gin",
+      sql`to_tsvector('english', coalesce(${t.content}, ''))`
+    ),
   ]
 );
 
@@ -527,6 +535,7 @@ export async function seedDatabase(db) {
     "cost1kOutput",
     "cost1kCacheRead",
     "cost1kCacheWrite",
+    "pricing",
     "maxContext",
     "maxOutput",
     "maxReasoning",

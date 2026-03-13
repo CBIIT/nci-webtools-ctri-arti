@@ -229,8 +229,9 @@ api.get(
         userID: usage.userID,
         modelID: usage.modelID,
         modelName: usage.Model?.name,
-        inputTokens: usage.inputTokens,
-        outputTokens: usage.outputTokens,
+        quantity: usage.quantity,
+        unit: usage.unit,
+        unitCost: usage.unitCost,
         cost: usage.cost,
         createdAt: serializeUtcTimestamp(usage.createdAt),
       })),
@@ -304,8 +305,9 @@ api.get(
         userID: usage.userID,
         modelID: usage.modelID,
         modelName: usage.Model?.name,
-        inputTokens: usage.inputTokens,
-        outputTokens: usage.outputTokens,
+        quantity: usage.quantity,
+        unit: usage.unit,
+        unitCost: usage.unitCost,
         cost: usage.cost,
         createdAt: serializeUtcTimestamp(usage.createdAt),
         user: {
@@ -400,14 +402,17 @@ api.get(
         .leftJoin(Role, eq(User.roleID, Role.id))
         .where(where);
 
+      const inputTokenSum = sql`SUM(CASE WHEN ${Usage.unit} = 'input_tokens' THEN ${Usage.quantity} ELSE 0 END)`;
+      const outputTokenSum = sql`SUM(CASE WHEN ${Usage.unit} = 'output_tokens' THEN ${Usage.quantity} ELSE 0 END)`;
+
       const aggregateSortMapping = {
         totalCost: sum(Usage.cost),
-        totalRequests: count(),
-        totalInputTokens: sum(Usage.inputTokens),
-        totalOutputTokens: sum(Usage.outputTokens),
+        totalRequests: countDistinct(Usage.messageID),
+        totalInputTokens: inputTokenSum,
+        totalOutputTokens: outputTokenSum,
         estimatedCost: sum(Usage.cost),
-        inputTokens: sum(Usage.inputTokens),
-        outputTokens: sum(Usage.outputTokens),
+        inputTokens: inputTokenSum,
+        outputTokens: outputTokenSum,
         name: User.firstName,
         email: User.email,
         role: Role.name,
@@ -419,8 +424,8 @@ api.get(
         .select({
           userID: Usage.userID,
           totalCost: sum(Usage.cost),
-          totalInputTokens: sum(Usage.inputTokens),
-          totalOutputTokens: sum(Usage.outputTokens),
+          totalInputTokens: inputTokenSum,
+          totalOutputTokens: outputTokenSum,
           totalRequests: count(),
           User: {
             id: User.id,
@@ -474,12 +479,15 @@ api.get(
     if (groupBy === "model") {
       const where = and(...baseConditions);
 
+      const modelInputSum = sql`SUM(CASE WHEN ${Usage.unit} = 'input_tokens' THEN ${Usage.quantity} ELSE 0 END)`;
+      const modelOutputSum = sql`SUM(CASE WHEN ${Usage.unit} = 'output_tokens' THEN ${Usage.quantity} ELSE 0 END)`;
+
       const data = await db
         .select({
           modelID: Usage.modelID,
           totalCost: sum(Usage.cost),
-          totalInputTokens: sum(Usage.inputTokens),
-          totalOutputTokens: sum(Usage.outputTokens),
+          totalInputTokens: modelInputSum,
+          totalOutputTokens: modelOutputSum,
           totalRequests: count(),
           Model: { name: Model.name },
         })
@@ -495,12 +503,15 @@ api.get(
     // Time-based grouping (hour, day, week, month)
     const where = and(...baseConditions);
 
+    const timeInputSum = sql`SUM(CASE WHEN ${Usage.unit} = 'input_tokens' THEN ${Usage.quantity} ELSE 0 END)`;
+    const timeOutputSum = sql`SUM(CASE WHEN ${Usage.unit} = 'output_tokens' THEN ${Usage.quantity} ELSE 0 END)`;
+
     const data = await db
       .select({
         period: groupCol,
         totalCost: sum(Usage.cost),
-        totalInputTokens: sum(Usage.inputTokens),
-        totalOutputTokens: sum(Usage.outputTokens),
+        totalInputTokens: timeInputSum,
+        totalOutputTokens: timeOutputSum,
         totalRequests: count(),
         uniqueUsers: countDistinct(Usage.userID),
       })

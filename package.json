@@ -23,6 +23,7 @@
     "db": "npx @electric-sql/pglite-socket --db=./data --port=5433 --host 0.0.0.0",
     "db:sql": "psql \"postgresql://postgres:postgres@127.0.0.1:5433/postgres?sslmode=disable&gssencmode=disable\"",
     "db:generate": "drizzle-kit generate",
+    "db:audit-vectors": "node database/scripts/audit-vector-schema.js",
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
     "prepare": "husky || true"

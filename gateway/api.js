@@ -5,8 +5,8 @@ import { json, Router } from "express";
 import { describeCron } from "shared/cron.js";
 import { logErrors, logRequests } from "shared/middleware.js";
 
-import { runModel } from "./inference.js";
-import { trackModelUsage } from "./usage.js";
+import { runModel, runEmbedding } from "./inference.js";
+import { trackModelUsage, trackUsage } from "./usage.js";
 
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 
@@ -31,11 +31,25 @@ api.post("/v1/model/invoke", async (req, res, next) => {
       return res.status(404).json({ error: "Model not found", code: "GATEWAY_MODEL_NOT_FOUND" });
     }
 
-    // Embedding models are stubbed for now
+    // Embedding models use InvokeModel (not Converse)
     if (modelRecord.type === "embedding") {
-      return res
-        .status(501)
-        .json({ error: "Embedding not yet implemented", code: "GATEWAY_NOT_IMPLEMENTED" });
+      const { content, purpose } = req.body;
+      const result = await runEmbedding({ model, content, purpose });
+
+      if (userID && result.usage) {
+        const usageItems = [];
+        if (result.usage.inputTextTokenCount)
+          usageItems.push({ quantity: result.usage.inputTextTokenCount, unit: "input_tokens" });
+        if (result.usage.imageCount)
+          usageItems.push({ quantity: result.usage.imageCount, unit: "images" });
+        if (result.usage.videoSeconds)
+          usageItems.push({ quantity: result.usage.videoSeconds, unit: "video_seconds" });
+        if (result.usage.audioSeconds)
+          usageItems.push({ quantity: result.usage.audioSeconds, unit: "audio_seconds" });
+        await trackUsage(userID, model, usageItems, { type: type || "embedding" });
+      }
+
+      return res.json(result);
     }
 
     // Rate limit check
@@ -112,4 +126,4 @@ api.get("/v1/models", async (req, res) => {
 api.use(logErrors());
 
 export default api;
-export { trackModelUsage };
+export { trackModelUsage, trackUsage };

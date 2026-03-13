@@ -1,20 +1,24 @@
 import db, { Model, Usage, User } from "database";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 /**
- * Track model usage and update user's remaining balance.
- * Shared between monolith mode (gateway client) and microservice mode (gateway api).
+ * Generalized usage tracking. Inserts one Usage row per consumption dimension
+ * and deducts the total cost from the user's remaining balance.
+ *
+ * @param {number} userID
+ * @param {string} modelValue - Model internalName (e.g. "us.anthropic.claude-sonnet-4-6") or service key (e.g. "aws-translate")
+ * @param {Array<{quantity: number, unit: string}>} usageItems
+ * @param {{ type?: string, agentID?: number, messageID?: number }} options
  */
-export async function trackModelUsage(
+export async function trackUsage(
   userID,
   modelValue,
-  ip,
-  usageData,
+  usageItems,
   { type, agentID, messageID } = {}
 ) {
   try {
-    if (!userID || !usageData || !modelValue) return;
+    if (!userID || !usageItems?.length || !modelValue) return;
 
     const [model] = await db
       .select()
@@ -23,47 +27,69 @@ export async function trackModelUsage(
       .limit(1);
     if (!model) return;
 
-    const inputTokens = Math.max(0, parseInt(usageData.inputTokens) || 0);
-    const outputTokens = Math.max(0, parseInt(usageData.outputTokens) || 0);
-    const cacheReadTokens = Math.max(0, parseInt(usageData.cacheReadInputTokens) || 0);
-    const cacheWriteTokens = Math.max(0, parseInt(usageData.cacheWriteInputTokens) || 0);
+    const pricing = model.pricing || {};
+    let totalCost = 0;
+    const rows = [];
 
-    const inputCost = (inputTokens / 1000) * (model.cost1kInput || 0);
-    const outputCost = (outputTokens / 1000) * (model.cost1kOutput || 0);
-    const cacheReadCost = (cacheReadTokens / 1000) * (model.cost1kCacheRead || 0);
-    const cacheWriteCost = (cacheWriteTokens / 1000) * (model.cost1kCacheWrite || 0);
-    const totalCost = inputCost + outputCost + cacheReadCost + cacheWriteCost;
-
-    const [usageRecord] = await db
-      .insert(Usage)
-      .values({
+    for (const { quantity, unit } of usageItems) {
+      if (!quantity || quantity <= 0) continue;
+      const unitCost = pricing[unit] || 0;
+      const cost = quantity * unitCost;
+      totalCost += cost;
+      rows.push({
         userID,
         modelID: model.id,
         type: type ?? null,
         agentID: agentID ?? null,
         messageID: messageID ?? null,
-        inputTokens,
-        outputTokens,
-        cacheReadTokens,
-        cacheWriteTokens,
-        cost: totalCost,
-      })
-      .returning();
-
-    if (totalCost > 0) {
-      const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
-      if (user && user.remaining !== null && user.budget !== null) {
-        await db
-          .update(User)
-          .set({
-            remaining: Math.max(0, (user.remaining || 0) - totalCost),
-          })
-          .where(eq(User.id, userID));
-      }
+        quantity,
+        unit,
+        unitCost,
+        cost,
+      });
     }
 
-    return usageRecord;
+    if (!rows.length) return;
+
+    const inserted = await db.insert(Usage).values(rows).returning();
+
+    if (totalCost > 0) {
+      await db
+        .update(User)
+        .set({
+          remaining: sql`GREATEST(0, COALESCE(${User.remaining}, 0) - ${totalCost})`,
+        })
+        .where(eq(User.id, userID));
+    }
+
+    return inserted;
   } catch (error) {
-    console.error("Error tracking model usage:", error);
+    console.error("Error tracking usage:", error);
   }
+}
+
+/**
+ * Backward-compatible wrapper that converts the old token-based format
+ * into generalized usageItems and delegates to trackUsage.
+ */
+export async function trackModelUsage(
+  userID,
+  modelValue,
+  ip,
+  usageData,
+  { type, agentID, messageID } = {}
+) {
+  if (!usageData) return;
+
+  const usageItems = [];
+  if (usageData.inputTokens)
+    usageItems.push({ quantity: usageData.inputTokens, unit: "input_tokens" });
+  if (usageData.outputTokens)
+    usageItems.push({ quantity: usageData.outputTokens, unit: "output_tokens" });
+  if (usageData.cacheReadInputTokens)
+    usageItems.push({ quantity: usageData.cacheReadInputTokens, unit: "cache_read_tokens" });
+  if (usageData.cacheWriteInputTokens)
+    usageItems.push({ quantity: usageData.cacheWriteInputTokens, unit: "cache_write_tokens" });
+
+  return trackUsage(userID, modelValue, usageItems, { type, agentID, messageID });
 }

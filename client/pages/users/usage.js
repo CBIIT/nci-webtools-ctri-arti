@@ -232,8 +232,9 @@ function UsersList() {
         email: user.email,
         role: userStats.Role?.name || "No Role",
         roleID: user.roleID,
-        inputTokens: Math.round(userStats.totalInputTokens || 0),
-        outputTokens: Math.round(userStats.totalOutputTokens || 0),
+        totalTokens: Math.round(
+          (userStats.totalInputTokens || 0) + (userStats.totalOutputTokens || 0)
+        ),
         costLimit: limitDisplay,
         estimatedCost: parseFloat(Number(userStats.totalCost || 0).toFixed(2)),
         totalRequests: userStats.totalRequests || 0,
@@ -484,13 +485,8 @@ function UsersList() {
               render: (user) => user.role || "No Role",
             },
             {
-              key: "inputTokens",
-              title: "Input Tokens",
-              cellClassName: "small",
-            },
-            {
-              key: "outputTokens",
-              title: "Output Tokens",
+              key: "totalTokens",
+              title: "Total Tokens",
               cellClassName: "small",
             },
             {

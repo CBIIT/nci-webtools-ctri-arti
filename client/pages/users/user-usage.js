@@ -436,8 +436,8 @@ function UserUsage() {
                             <tr>
                               <th>Date</th>
                               <th>Model</th>
-                              <th class="text-end">Input Tokens</th>
-                              <th class="text-end">Output Tokens</th>
+                              <th class="text-end">Quantity</th>
+                              <th>Unit</th>
                               <th class="text-end">Cost</th>
                             </tr>
                           </thead>
@@ -448,12 +448,8 @@ function UserUsage() {
                                   <tr>
                                     <td>${formatUtcTimestampToLocal(entry.createdAt)}</td>
                                     <td>${entry.modelName || "Unknown"}</td>
-                                    <td class="text-end">
-                                      ${formatNumber(entry.inputTokens || 0)}
-                                    </td>
-                                    <td class="text-end">
-                                      ${formatNumber(entry.outputTokens || 0)}
-                                    </td>
+                                    <td class="text-end">${formatNumber(entry.quantity || 0)}</td>
+                                    <td>${(entry.unit || "").replace(/_/g, " ")}</td>
                                     <td class="text-end">${formatCurrency(entry.cost || 0)}</td>
                                   </tr>
                                 `
