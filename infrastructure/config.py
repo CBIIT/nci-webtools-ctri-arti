@@ -128,6 +128,7 @@ def load_config() -> tuple[Config, str, str]:
         "GATEWAY_URL": "http://localhost:3001",
         "CMS_URL": "http://localhost:3002",
         "AGENTS_URL": "http://localhost:3003",
+        "USERS_URL": "http://localhost:3004",
     }
 
 
@@ -258,6 +259,25 @@ def load_config() -> tuple[Config, str, str]:
                             "BRAVE_SEARCH_API_KEY": get_env("BRAVE_SEARCH_API_KEY"),
                             "DATA_GOV_API_KEY": get_env("DATA_GOV_API_KEY"),
                             "S3_BUCKETS": get_env("S3_BUCKETS", "rh-eagle"),
+                        },
+                    },
+                    # Users service - user management, roles, usage tracking
+                    {
+                        "image": get_env("USERS_IMAGE") or "httpd",
+                        "name": "users",
+                        "portMappings": [
+                            {
+                                "name": "users",
+                                "containerPort": 3004,
+                            }
+                        ],
+                        "environment": {
+                            **shared_environment,
+                            "PORT": "3004",
+                            "DB_SKIP_SYNC": "true",
+                        },
+                        "secrets": {
+                            **shared_secrets,
                         },
                     },
                 ],

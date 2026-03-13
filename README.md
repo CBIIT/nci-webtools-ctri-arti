@@ -17,7 +17,7 @@ Client (SolidJS) ──► Server (:443) ──┬──► Gateway (:3001) ─�
 | [gateway](gateway/)               | Service        | 3001     | AI inference — multi-provider abstraction, usage tracking                      |
 | [cms](cms/)                       | Service        | 3002     | Conversation management — agents, conversations, messages, tools, prompts CRUD |
 | [agents](agents/)                 | Service (stub) | 3003     | Chat orchestration (planned)                                                   |
-| [users](users/)                   | Service (stub) | 3004     | Identity and access management (planned)                                       |
+| [users](users/)                   | Service        | 3004     | User management, roles, usage tracking, budget management                      |
 | [database](database/)             | Library        | —        | Drizzle ORM schema, relations, seed data                                       |
 | [shared](shared/)                 | Library        | —        | Logger, middleware, utilities                                                  |
 | [infrastructure](infrastructure/) | CDK            | —        | AWS deployment (ECR, ECS Fargate, RDS Aurora)                                  |
@@ -159,7 +159,7 @@ research-optimizer/
 │   └── openapi.yaml          # Service API spec
 │
 ├── agents/                   # Chat orchestration (stub)
-├── users/                    # Identity management (stub)
+├── users/                    # User management, roles, usage tracking
 │
 ├── database/                 # Shared database package
 │   ├── schema.js             # Table definitions, relations, seed data
@@ -190,7 +190,7 @@ research-optimizer/
 | [database/README.md](database/README.md)             | Data models, ownership matrix, seed data |
 | [shared/README.md](shared/README.md)                 | Shared library reference                 |
 | [agents/README.md](agents/README.md)                 | Chat orchestration (stub)                |
-| [users/README.md](users/README.md)                   | Identity management (stub)               |
+| [users/README.md](users/README.md)                   | User management and usage tracking       |
 | [infrastructure/README.md](infrastructure/README.md) | AWS CDK deployment                       |
 
 ## Code Health
