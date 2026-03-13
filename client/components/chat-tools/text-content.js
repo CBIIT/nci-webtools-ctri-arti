@@ -33,7 +33,7 @@ export default function TextContent(props) {
       classList=${{ "text-end": props.role === "user" }}
     >
       <div
-        class="p-2 markdown min-w-0"
+        class="p-2 text-start markdown min-w-0"
         classList=${{
           "user-message d-inline-block p-3 rounded my-2": props.role === "user",
         }}
