@@ -153,6 +153,10 @@ test("Automatic Conversation Summarization", async (t) => {
     assert.ok(lastMsg.content[0].text.includes(CONVERSATION_SUMMARY_TOKEN));
     assert.ok(lastMsg.content[0].text.includes("Summarize the entire conversation"));
     assert.ok(lastMsg.content[0].text.includes("Latest User Message"));
+    assert.ok(
+      lastMsg.content[0].text.includes("Continue addressing this message in your next response.")
+    );
+    assert.strictEqual(lastMsg.role, "user");
 
     // Verify conversation now has summaryMessageID
     const conv = await svc.getConversation(testUser.id, conversation.id);
