@@ -6,6 +6,8 @@
  * - Microservice mode: HTTP calls to agents service
  */
 
+import { parseNdjsonStream } from "./ndjson.js";
+
 const AGENTS_URL = process.env.AGENTS_URL;
 
 function buildDirectClient() {
@@ -17,9 +19,9 @@ function buildDirectClient() {
     if (!runAgentLoop) {
       const loopModule = await import("agents/loop.js");
       runAgentLoop = loopModule.runAgentLoop;
-      const gw = await import("shared/clients/gateway.js");
+      const gw = await import("./gateway.js");
       gatewayClient = { invoke: gw.invoke, embed: gw.embed };
-      const cms = await import("shared/clients/cms.js");
+      const cms = await import("./cms.js");
       cmsClient = cms.cmsClient;
     }
   }
@@ -61,36 +63,10 @@ function buildHttpClient() {
         throw new Error(error.error || `Agents error: ${response.status}`);
       }
 
-      // Parse NDJSON stream
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (line.trim()) {
-            try {
-              yield JSON.parse(line);
-            } catch (e) {
-              console.error("Error parsing agent stream line:", e);
-            }
-          }
-        }
-      }
-
-      if (buffer.trim()) {
-        try {
-          yield JSON.parse(buffer);
-        } catch (e) {
-          console.error("Error parsing final agent stream buffer:", e);
-        }
+      for await (const event of parseNdjsonStream(response.body, {
+        onParseError: (error) => console.error("Error parsing agent stream line:", error),
+      })) {
+        yield event;
       }
     },
   };

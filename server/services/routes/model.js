@@ -1,6 +1,6 @@
 import { json, Router } from "express";
 
-import { invoke, listModels } from "../clients/gateway.js";
+import { invoke, listModels } from "shared/clients/gateway.js";
 import { requireRole } from "../middleware.js";
 import { createHttpError } from "../utils.js";
 

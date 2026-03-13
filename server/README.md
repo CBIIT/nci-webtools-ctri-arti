@@ -109,12 +109,12 @@ All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for ful
 
 Both service clients use a factory pattern resolved at module load time:
 
-**`services/clients/gateway.js`** — Exports `invoke()` and `listModels()`.
+**`shared/clients/gateway.js`** — Exports `invoke()` and `listModels()`.
 
 - Direct mode: calls `runModel()` from `gateway/inference.js`, handles rate limiting and usage tracking locally.
 - HTTP mode: POSTs to `GATEWAY_URL/api/v1/model/invoke`, parses newline-delimited JSON streaming.
 
-**`services/clients/cms.js`** — Exports 30+ conversation methods (`createAgent`, `createConversation`, `addMessage`, `createTool`, `createPrompt`, etc.).
+**`shared/clients/cms.js`** — Exports 30+ conversation methods (`createAgent`, `createConversation`, `addMessage`, `createTool`, `createPrompt`, etc.).
 
 - Direct mode: instantiates `ConversationService` from `cms/conversation.js`.
 - HTTP mode: makes HTTP requests with `X-User-Id` header to `CMS_URL/api/v1/...`.

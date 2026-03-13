@@ -1,6 +1,6 @@
 import { json, Router } from "express";
 
-import { cmsClient } from "../clients/cms.js";
+import { cmsClient } from "shared/clients/cms.js";
 import { requireRole } from "../middleware.js";
 import { routeHandler } from "../utils.js";
 
@@ -145,16 +145,7 @@ api.get(
       limit: parsedLimit,
       offset: parsedOffset,
     });
-
-    // Normalize response format — both modes return { data, meta }
-    if (result.data !== undefined) {
-      res.json(result);
-    } else {
-      res.json({
-        data: result.rows,
-        meta: { total: result.count, limit: parsedLimit, offset: parsedOffset },
-      });
-    }
+    res.json(result);
   })
 );
 

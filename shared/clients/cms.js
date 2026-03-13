@@ -8,14 +8,113 @@
  * Uses a factory pattern — the mode is resolved once at module load time.
  */
 
-import { ConversationService } from "cms/conversation.js";
-
-import { invoke } from "./gateway.js";
-
-ConversationService.setInvoker(invoke);
+import { parseNdjsonStream } from "./ndjson.js";
 
 const CMS_URL = process.env.CMS_URL;
-const { Readable } = await import("node:stream");
+let directClientPromise;
+
+function createHeaders(userId) {
+  return {
+    "Content-Type": "application/json",
+    "X-User-Id": String(userId),
+  };
+}
+
+function normalizeConversationPage(result, { limit = 20, offset = 0 } = {}) {
+  if (result?.data !== undefined) return result;
+
+  return {
+    data: result?.rows || [],
+    meta: {
+      total: result?.count || 0,
+      limit,
+      offset,
+    },
+  };
+}
+
+async function getDirectClient() {
+  if (!directClientPromise) {
+    directClientPromise = (async () => {
+      const [{ ConversationService }, { invoke }] = await Promise.all([
+        import("cms/conversation.js"),
+        import("./gateway.js"),
+      ]);
+
+      ConversationService.setInvoker(invoke);
+      const service = new ConversationService();
+
+      return {
+        createAgent: (userId, data) => service.createAgent(userId, data),
+        getAgents: (userId) => service.getAgents(userId),
+        getAgent: (userId, agentId) => service.getAgent(userId, agentId),
+        updateAgent: (userId, agentId, updates) => service.updateAgent(userId, agentId, updates),
+        deleteAgent: (userId, agentId) => service.deleteAgent(userId, agentId),
+
+        createConversation: (userId, data) => service.createConversation(userId, data),
+        getConversations: async (userId, options = {}) => {
+          const { limit = 20, offset = 0 } = options;
+          const result = await service.getConversations(userId, { limit, offset });
+          return normalizeConversationPage(result, { limit, offset });
+        },
+        getConversation: (userId, conversationId) => service.getConversation(userId, conversationId),
+        updateConversation: (userId, conversationId, updates) =>
+          service.updateConversation(userId, conversationId, updates),
+        deleteConversation: (userId, conversationId) =>
+          service.deleteConversation(userId, conversationId),
+
+        getContext: (userId, conversationId, options) =>
+          service.getContext(userId, conversationId, options),
+        summarize: (userId, cid, params) => service.summarize(userId, cid, params),
+
+        addMessage: (userId, conversationId, data) =>
+          service.addMessage(userId, conversationId, data),
+        getMessages: (userId, conversationId) => service.getMessages(userId, conversationId),
+        getMessage: (userId, messageId) => service.getMessage(userId, messageId),
+        updateMessage: (userId, messageId, updates) => service.updateMessage(userId, messageId, updates),
+        deleteMessage: (userId, messageId) => service.deleteMessage(userId, messageId),
+
+        createTool: (data) => service.createTool(data),
+        getTool: (toolId) => service.getTool(toolId),
+        getTools: (userId) => service.getTools(userId),
+        updateTool: (toolId, updates) => service.updateTool(toolId, updates),
+        deleteTool: (toolId) => service.deleteTool(toolId),
+
+        createPrompt: (data) => service.createPrompt(data),
+        getPrompt: (promptId) => service.getPrompt(promptId),
+        getPrompts: (options) => service.getPrompts(options),
+        updatePrompt: (promptId, updates) => service.updatePrompt(promptId, updates),
+        deletePrompt: (promptId) => service.deletePrompt(promptId),
+
+        addResource: (userId, data) => service.addResource(userId, data),
+        getResource: (userId, resourceId) => service.getResource(userId, resourceId),
+        updateResource: (userId, resourceId, updates) =>
+          service.updateResource(userId, resourceId, updates),
+        getResourcesByAgent: (userId, agentId) => service.getResourcesByAgent(userId, agentId),
+        getResourcesByConversation: (userId, conversationId) =>
+          service.getResourcesByConversation(userId, conversationId),
+        deleteResource: (userId, resourceId) => service.deleteResource(userId, resourceId),
+
+        addVectors: (userId, conversationId, vectors) =>
+          service.addVectors(userId, conversationId, vectors),
+        getVectorsByConversation: (userId, conversationId) =>
+          service.getVectorsByConversation(userId, conversationId),
+        getVectorsByResource: (userId, resourceId) => service.getVectorsByResource(userId, resourceId),
+        searchVectors: (params) => service.searchVectors(params),
+        deleteVectorsByResource: (userId, resourceId) =>
+          service.deleteVectorsByResource(userId, resourceId),
+        deleteVectorsByConversation: (userId, conversationId) =>
+          service.deleteVectorsByConversation(userId, conversationId),
+
+        searchMessages: (userId, params) => service.searchMessages(userId, params),
+        searchResourceVectors: (userId, params) => service.searchResourceVectors(userId, params),
+        searchChunks: (userId, params) => service.searchChunks(userId, params),
+      };
+    })();
+  }
+
+  return directClientPromise;
+}
 
 /**
  * Make an HTTP request to the CMS service
@@ -23,10 +122,7 @@ const { Readable } = await import("node:stream");
 async function httpRequest(method, path, body, userId) {
   const response = await fetch(`${CMS_URL}${path}`, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Id": String(userId),
-    },
+    headers: createHeaders(userId),
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -46,10 +142,7 @@ async function httpRequest(method, path, body, userId) {
 async function* streamRequest(method, path, body, userId) {
   const response = await fetch(`${CMS_URL}${path}`, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Id": String(userId),
-    },
+    headers: createHeaders(userId),
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -58,85 +151,84 @@ async function* streamRequest(method, path, body, userId) {
     throw new Error(error.error || "CMS stream request failed");
   }
 
-  let buffer = "";
-  for await (const chunk of Readable.fromWeb(response.body)) {
-    buffer += chunk.toString();
-    const lines = buffer.split("\n");
-    buffer = lines.pop();
-    for (const line of lines) {
-      if (line.trim()) {
-        const event = JSON.parse(line);
-        if (event.error) throw new Error(event.error);
-        yield event;
-      }
-    }
-  }
-  if (buffer.trim()) {
-    const event = JSON.parse(buffer);
+  for await (const event of parseNdjsonStream(response.body)) {
     if (event.error) throw new Error(event.error);
     yield event;
   }
 }
 
-function buildDirectClient() {
-  const s = new ConversationService();
-  return {
-    createAgent: (userId, data) => s.createAgent(userId, data),
-    getAgents: (userId) => s.getAgents(userId),
-    getAgent: (userId, agentId) => s.getAgent(userId, agentId),
-    updateAgent: (userId, agentId, updates) => s.updateAgent(userId, agentId, updates),
-    deleteAgent: (userId, agentId) => s.deleteAgent(userId, agentId),
+const directClient = {
+  createAgent: async (userId, data) => (await getDirectClient()).createAgent(userId, data),
+  getAgents: async (userId) => (await getDirectClient()).getAgents(userId),
+  getAgent: async (userId, agentId) => (await getDirectClient()).getAgent(userId, agentId),
+  updateAgent: async (userId, agentId, updates) =>
+    (await getDirectClient()).updateAgent(userId, agentId, updates),
+  deleteAgent: async (userId, agentId) => (await getDirectClient()).deleteAgent(userId, agentId),
 
-    createConversation: (userId, data) => s.createConversation(userId, data),
-    getConversations: (userId, options) => s.getConversations(userId, options),
-    getConversation: (userId, conversationId) => s.getConversation(userId, conversationId),
-    updateConversation: (userId, conversationId, updates) =>
-      s.updateConversation(userId, conversationId, updates),
-    deleteConversation: (userId, conversationId) => s.deleteConversation(userId, conversationId),
+  createConversation: async (userId, data) => (await getDirectClient()).createConversation(userId, data),
+  getConversations: async (userId, options) => (await getDirectClient()).getConversations(userId, options),
+  getConversation: async (userId, conversationId) =>
+    (await getDirectClient()).getConversation(userId, conversationId),
+  updateConversation: async (userId, conversationId, updates) =>
+    (await getDirectClient()).updateConversation(userId, conversationId, updates),
+  deleteConversation: async (userId, conversationId) =>
+    (await getDirectClient()).deleteConversation(userId, conversationId),
 
-    getContext: (userId, conversationId, options) => s.getContext(userId, conversationId, options),
-    summarize: (userId, cid, params) => s.summarize(userId, cid, params),
+  getContext: async (userId, conversationId, options) =>
+    (await getDirectClient()).getContext(userId, conversationId, options),
+  summarize: async function* (userId, cid, params) {
+    yield* (await getDirectClient()).summarize(userId, cid, params);
+  },
 
-    addMessage: (userId, conversationId, data) => s.addMessage(userId, conversationId, data),
-    getMessages: (userId, conversationId) => s.getMessages(userId, conversationId),
-    getMessage: (userId, messageId) => s.getMessage(userId, messageId),
-    updateMessage: (userId, messageId, updates) => s.updateMessage(userId, messageId, updates),
-    deleteMessage: (userId, messageId) => s.deleteMessage(userId, messageId),
+  addMessage: async (userId, conversationId, data) =>
+    (await getDirectClient()).addMessage(userId, conversationId, data),
+  getMessages: async (userId, conversationId) =>
+    (await getDirectClient()).getMessages(userId, conversationId),
+  getMessage: async (userId, messageId) => (await getDirectClient()).getMessage(userId, messageId),
+  updateMessage: async (userId, messageId, updates) =>
+    (await getDirectClient()).updateMessage(userId, messageId, updates),
+  deleteMessage: async (userId, messageId) => (await getDirectClient()).deleteMessage(userId, messageId),
 
-    createTool: (data) => s.createTool(data),
-    getTool: (toolId) => s.getTool(toolId),
-    getTools: (userId) => s.getTools(userId),
-    updateTool: (toolId, updates) => s.updateTool(toolId, updates),
-    deleteTool: (toolId) => s.deleteTool(toolId),
+  createTool: async (data) => (await getDirectClient()).createTool(data),
+  getTool: async (toolId) => (await getDirectClient()).getTool(toolId),
+  getTools: async (userId) => (await getDirectClient()).getTools(userId),
+  updateTool: async (toolId, updates) => (await getDirectClient()).updateTool(toolId, updates),
+  deleteTool: async (toolId) => (await getDirectClient()).deleteTool(toolId),
 
-    createPrompt: (data) => s.createPrompt(data),
-    getPrompt: (promptId) => s.getPrompt(promptId),
-    getPrompts: (options) => s.getPrompts(options),
-    updatePrompt: (promptId, updates) => s.updatePrompt(promptId, updates),
-    deletePrompt: (promptId) => s.deletePrompt(promptId),
+  createPrompt: async (data) => (await getDirectClient()).createPrompt(data),
+  getPrompt: async (promptId) => (await getDirectClient()).getPrompt(promptId),
+  getPrompts: async (options) => (await getDirectClient()).getPrompts(options),
+  updatePrompt: async (promptId, updates) => (await getDirectClient()).updatePrompt(promptId, updates),
+  deletePrompt: async (promptId) => (await getDirectClient()).deletePrompt(promptId),
 
-    addResource: (userId, data) => s.addResource(userId, data),
-    getResource: (userId, resourceId) => s.getResource(userId, resourceId),
-    updateResource: (userId, resourceId, updates) => s.updateResource(userId, resourceId, updates),
-    getResourcesByAgent: (userId, agentId) => s.getResourcesByAgent(userId, agentId),
-    getResourcesByConversation: (userId, conversationId) =>
-      s.getResourcesByConversation(userId, conversationId),
-    deleteResource: (userId, resourceId) => s.deleteResource(userId, resourceId),
+  addResource: async (userId, data) => (await getDirectClient()).addResource(userId, data),
+  getResource: async (userId, resourceId) => (await getDirectClient()).getResource(userId, resourceId),
+  updateResource: async (userId, resourceId, updates) =>
+    (await getDirectClient()).updateResource(userId, resourceId, updates),
+  getResourcesByAgent: async (userId, agentId) =>
+    (await getDirectClient()).getResourcesByAgent(userId, agentId),
+  getResourcesByConversation: async (userId, conversationId) =>
+    (await getDirectClient()).getResourcesByConversation(userId, conversationId),
+  deleteResource: async (userId, resourceId) =>
+    (await getDirectClient()).deleteResource(userId, resourceId),
 
-    addVectors: (userId, conversationId, vectors) => s.addVectors(userId, conversationId, vectors),
-    getVectorsByConversation: (userId, conversationId) =>
-      s.getVectorsByConversation(userId, conversationId),
-    getVectorsByResource: (userId, resourceId) => s.getVectorsByResource(userId, resourceId),
-    searchVectors: (params) => s.searchVectors(params),
-    deleteVectorsByResource: (userId, resourceId) => s.deleteVectorsByResource(userId, resourceId),
-    deleteVectorsByConversation: (userId, conversationId) =>
-      s.deleteVectorsByConversation(userId, conversationId),
+  addVectors: async (userId, conversationId, vectors) =>
+    (await getDirectClient()).addVectors(userId, conversationId, vectors),
+  getVectorsByConversation: async (userId, conversationId) =>
+    (await getDirectClient()).getVectorsByConversation(userId, conversationId),
+  getVectorsByResource: async (userId, resourceId) =>
+    (await getDirectClient()).getVectorsByResource(userId, resourceId),
+  searchVectors: async (params) => (await getDirectClient()).searchVectors(params),
+  deleteVectorsByResource: async (userId, resourceId) =>
+    (await getDirectClient()).deleteVectorsByResource(userId, resourceId),
+  deleteVectorsByConversation: async (userId, conversationId) =>
+    (await getDirectClient()).deleteVectorsByConversation(userId, conversationId),
 
-    searchMessages: (userId, params) => s.searchMessages(userId, params),
-    searchResourceVectors: (userId, params) => s.searchResourceVectors(userId, params),
-    searchChunks: (userId, params) => s.searchChunks(userId, params),
-  };
-}
+  searchMessages: async (userId, params) => (await getDirectClient()).searchMessages(userId, params),
+  searchResourceVectors: async (userId, params) =>
+    (await getDirectClient()).searchResourceVectors(userId, params),
+  searchChunks: async (userId, params) => (await getDirectClient()).searchChunks(userId, params),
+};
 
 function buildHttpClient() {
   return {
@@ -157,7 +249,7 @@ function buildHttpClient() {
         `/api/v1/conversations?limit=${limit}&offset=${offset}`,
         null,
         userId
-      );
+      ).then((result) => normalizeConversationPage(result, { limit, offset }));
     },
     getConversation: (userId, conversationId) =>
       httpRequest("GET", `/api/v1/conversations/${conversationId}`, null, userId),
@@ -241,7 +333,9 @@ function buildHttpClient() {
   };
 }
 
-export const cmsClient = CMS_URL ? buildHttpClient() : buildDirectClient();
+const httpClient = buildHttpClient();
+
+export const cmsClient = CMS_URL ? httpClient : directClient;
 
 // Named exports for backward compatibility
 export const {

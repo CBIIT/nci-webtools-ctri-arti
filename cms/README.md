@@ -157,7 +157,7 @@ All operations enforce user ownership via `WHERE userID = :userId`. Exceptions:
 
 ## Client Integration
 
-The server connects to CMS via `server/services/clients/cms.js`, a factory-pattern client:
+The server connects to CMS via `shared/clients/cms.js`, a factory-pattern client:
 
 - **Direct mode** (no `CMS_URL`): Instantiates `ConversationService` and calls methods directly.
 - **HTTP mode** (`CMS_URL` set): Makes HTTP requests with `X-User-Id` header.

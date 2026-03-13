@@ -8,28 +8,55 @@
  * Uses a factory pattern — the mode is resolved once at module load time.
  */
 
-import db, { Model, User } from "database";
-
-import { eq, and } from "drizzle-orm";
-import {
-  runModel as directRunModel,
-  runEmbedding as directRunEmbedding,
-} from "gateway/inference.js";
-import { trackModelUsage, trackUsage } from "gateway/usage.js";
-
-import { describeCron } from "shared/cron.js";
+import { parseNdjsonStream } from "./ndjson.js";
 
 const GATEWAY_URL = process.env.GATEWAY_URL;
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
+let directRuntimePromise;
 
-const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
-const RATE_LIMIT_MESSAGE = `You have reached your allocated usage limit. Your access to the chat tool is temporarily disabled and will reset ${resetDescription}. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.`;
+async function getDirectRuntime() {
+  if (!directRuntimePromise) {
+    directRuntimePromise = (async () => {
+      const [databaseModule, drizzleModule, inferenceModule, usageModule, cronModule] =
+        await Promise.all([
+          import("database"),
+          import("drizzle-orm"),
+          import("gateway/inference.js"),
+          import("gateway/usage.js"),
+          import("shared/cron.js"),
+        ]);
+
+      const db = databaseModule.default;
+      const { Model, User } = databaseModule;
+      const { eq, and } = drizzleModule;
+      const { runModel: directRunModel, runEmbedding: directRunEmbedding } = inferenceModule;
+      const { trackModelUsage, trackUsage } = usageModule;
+      const { resetDescription } = cronModule.describeCron(USAGE_RESET_SCHEDULE);
+
+      return {
+        db,
+        Model,
+        User,
+        eq,
+        and,
+        directRunModel,
+        directRunEmbedding,
+        trackModelUsage,
+        trackUsage,
+        rateLimitMessage: `You have reached your allocated usage limit. Your access to the chat tool is temporarily disabled and will reset ${resetDescription}. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.`,
+      };
+    })();
+  }
+
+  return directRuntimePromise;
+}
 
 async function checkRateLimit(userID) {
   if (!userID) return null;
+  const { db, User, eq, rateLimitMessage } = await getDirectRuntime();
   const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
   if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
-    return { error: RATE_LIMIT_MESSAGE, status: 429 };
+    return { error: rateLimitMessage, status: 429 };
   }
   return null;
 }
@@ -51,6 +78,7 @@ function buildDirectClient() {
       const limited = await checkRateLimit(userID);
       if (limited) return limited;
 
+      const { directRunModel, trackModelUsage } = await getDirectRuntime();
       const result = await directRunModel({
         model,
         messages,
@@ -87,6 +115,7 @@ function buildDirectClient() {
       const limited = await checkRateLimit(userID);
       if (limited) return limited;
 
+      const { directRunEmbedding, trackUsage } = await getDirectRuntime();
       const result = await directRunEmbedding({ model, content, purpose });
 
       if (userID && result.usage) {
@@ -102,6 +131,7 @@ function buildDirectClient() {
     },
 
     async listModels({ type } = {}) {
+      const { db, Model, eq, and } = await getDirectRuntime();
       const where = [eq(Model.providerID, 1)];
       if (type) where.push(eq(Model.type, type));
 
@@ -162,38 +192,9 @@ function buildHttpClient() {
 
       if (stream) {
         return {
-          stream: (async function* () {
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = "";
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split("\n");
-              buffer = lines.pop() || "";
-
-              for (const line of lines) {
-                if (line.trim()) {
-                  try {
-                    yield JSON.parse(line);
-                  } catch (e) {
-                    console.error("Error parsing stream line:", e);
-                  }
-                }
-              }
-            }
-
-            if (buffer.trim()) {
-              try {
-                yield JSON.parse(buffer);
-              } catch (e) {
-                console.error("Error parsing final stream buffer:", e);
-              }
-            }
-          })(),
+          stream: parseNdjsonStream(response.body, {
+            onParseError: (error) => console.error("Error parsing stream line:", error),
+          }),
         };
       }
 
@@ -224,6 +225,10 @@ function buildHttpClient() {
         ? `${GATEWAY_URL}/api/v1/models?type=${type}`
         : `${GATEWAY_URL}/api/v1/models`;
       const response = await fetch(url);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(error.error || `Gateway error: ${response.status}`);
+      }
       return response.json();
     },
   };

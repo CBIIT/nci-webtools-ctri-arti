@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { agentsClient } from "../clients/agents.js";
+import { agentsClient } from "shared/clients/agents.js";
 import { requireRole } from "../middleware.js";
 
 const api = Router();

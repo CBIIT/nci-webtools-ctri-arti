@@ -134,7 +134,7 @@ Cache points are added to:
 
 ## Client Integration
 
-The server connects to gateway via `server/services/clients/gateway.js`, a factory-pattern client:
+The server connects to gateway via `shared/clients/gateway.js`, a factory-pattern client:
 
 - **Direct mode** (no `GATEWAY_URL`): Calls `runModel()` directly, handles rate limiting and usage tracking in-process.
 - **HTTP mode** (`GATEWAY_URL` set): POSTs to `GATEWAY_URL/api/v1/model/invoke`, parses streaming responses from newline-delimited JSON.
