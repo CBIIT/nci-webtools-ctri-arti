@@ -31,6 +31,18 @@ api.post("/v1/model/invoke", async (req, res, next) => {
       return res.status(404).json({ error: "Model not found", code: "GATEWAY_MODEL_NOT_FOUND" });
     }
 
+    // Rate limit check (applies to both chat and embedding requests)
+    if (userID) {
+      const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
+      if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
+        const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
+        return res.status(429).json({
+          error: `You have reached your allocated usage limit. Your access to the chat tool is temporarily disabled and will reset ${resetDescription}. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.`,
+          code: "GATEWAY_RATE_LIMITED",
+        });
+      }
+    }
+
     // Embedding models use InvokeModel (not Converse)
     if (modelRecord.type === "embedding") {
       const { content, purpose } = req.body;
@@ -50,18 +62,6 @@ api.post("/v1/model/invoke", async (req, res, next) => {
       }
 
       return res.json(result);
-    }
-
-    // Rate limit check
-    if (userID) {
-      const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
-      if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
-        const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
-        return res.status(429).json({
-          error: `You have reached your allocated usage limit. Your access to the chat tool is temporarily disabled and will reset ${resetDescription}. If you need assistance or believe this is an error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.`,
-          code: "GATEWAY_RATE_LIMITED",
-        });
-      }
     }
 
     // Run inference

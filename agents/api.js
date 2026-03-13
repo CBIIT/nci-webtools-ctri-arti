@@ -1,6 +1,6 @@
 import { json, Router } from "express";
 import { cmsClient } from "shared/clients/cms.js";
-import { invoke } from "shared/clients/gateway.js";
+import { invoke, embed } from "shared/clients/gateway.js";
 
 import { runAgentLoop } from "./loop.js";
 
@@ -43,7 +43,7 @@ api.post("/api/agents/:agentId/conversations/:conversationId/chat", async (req, 
       userMessage,
       model,
       thoughtBudget: thoughtBudget || 0,
-      gateway: { invoke },
+      gateway: { invoke, embed },
       cms: cmsClient,
     });
 

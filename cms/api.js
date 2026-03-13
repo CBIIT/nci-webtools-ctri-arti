@@ -384,6 +384,45 @@ v1.get(
   })
 );
 
+// -- Single message --
+
+v1.get(
+  "/messages/:id",
+  routeHandler(async (req, res) => {
+    const message = await service.getMessage(req.userId, req.params.id);
+    if (!message) return res.status(404).json({ error: "Message not found" });
+    res.json(message);
+  })
+);
+
+// -- Resource vectors --
+
+v1.get(
+  "/resources/:resourceId/vectors",
+  routeHandler(async (req, res) => {
+    const vectors = await service.getVectorsByResource(req.userId, req.params.resourceId);
+    res.json(vectors);
+  })
+);
+
+v1.delete(
+  "/resources/:resourceId/vectors",
+  routeHandler(async (req, res) => {
+    const count = await service.deleteVectorsByResource(req.userId, req.params.resourceId);
+    res.json({ success: true, count });
+  })
+);
+
+// -- Conversation vectors (delete) --
+
+v1.delete(
+  "/conversations/:id/vectors",
+  routeHandler(async (req, res) => {
+    const count = await service.deleteVectorsByConversation(req.userId, req.params.id);
+    res.json({ success: true, count });
+  })
+);
+
 // -- Search (for recall tool) --
 
 v1.post(

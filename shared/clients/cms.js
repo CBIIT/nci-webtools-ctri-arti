@@ -139,7 +139,6 @@ function buildDirectClient() {
 }
 
 function buildHttpClient() {
-  const s = new ConversationService(); // fallback for routes not yet exposed via HTTP
   return {
     createAgent: (userId, data) => httpRequest("POST", "/api/v1/agents", data, userId),
     getAgents: (userId) => httpRequest("GET", "/api/v1/agents", null, userId),
@@ -183,7 +182,8 @@ function buildHttpClient() {
       httpRequest("POST", `/api/v1/conversations/${conversationId}/messages`, data, userId),
     getMessages: (userId, conversationId) =>
       httpRequest("GET", `/api/v1/conversations/${conversationId}/messages`, null, userId),
-    getMessage: (userId, messageId) => s.getMessage(userId, messageId),
+    getMessage: (userId, messageId) =>
+      httpRequest("GET", `/api/v1/messages/${messageId}`, null, userId),
     updateMessage: (userId, messageId, updates) =>
       httpRequest("PUT", `/api/v1/messages/${messageId}`, updates, userId),
     deleteMessage: (userId, messageId) =>
@@ -218,7 +218,8 @@ function buildHttpClient() {
       httpRequest("POST", "/api/v1/vectors", { conversationID: conversationId, vectors }, userId),
     getVectorsByConversation: (userId, conversationId) =>
       httpRequest("GET", `/api/v1/conversations/${conversationId}/vectors`, null, userId),
-    getVectorsByResource: (userId, resourceId) => s.getVectorsByResource(userId, resourceId),
+    getVectorsByResource: (userId, resourceId) =>
+      httpRequest("GET", `/api/v1/resources/${resourceId}/vectors`, null, userId),
     searchVectors: (params) => {
       const query = new URLSearchParams();
       for (const [key, value] of Object.entries(params || {})) {
@@ -227,9 +228,10 @@ function buildHttpClient() {
       }
       return httpRequest("GET", `/api/v1/vectors/search?${query}`, null, null);
     },
-    deleteVectorsByResource: (userId, resourceId) => s.deleteVectorsByResource(userId, resourceId),
+    deleteVectorsByResource: (userId, resourceId) =>
+      httpRequest("DELETE", `/api/v1/resources/${resourceId}/vectors`, null, userId),
     deleteVectorsByConversation: (userId, conversationId) =>
-      s.deleteVectorsByConversation(userId, conversationId),
+      httpRequest("DELETE", `/api/v1/conversations/${conversationId}/vectors`, null, userId),
 
     searchMessages: (userId, params) =>
       httpRequest("POST", "/api/v1/search/messages", params, userId),
