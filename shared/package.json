@@ -7,13 +7,17 @@
     "./middleware.js": "./middleware.js",
     "./utils.js": "./utils.js",
     "./cron.js": "./cron.js",
+    "./embeddings.js": "./embeddings.js",
     "./clients/gateway.js": "./clients/gateway.js",
     "./clients/cms.js": "./clients/cms.js",
     "./search.js": "./search.js",
     "./parsers.js": "./parsers.js",
-    "./s3.js": "./s3.js"
+    "./s3.js": "./s3.js",
+    "./embedder.js": "./embedder.js",
+    "./chunker.js": "./chunker.js"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.6.0",
     "@aws-sdk/client-s3": "^3.1003.0",
     "lodash": "^4.17.23",
     "mammoth": "^1.11.0",

@@ -1,3 +1,5 @@
+import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
+
 // Test provider for mocking AI responses in tests
 export default class MockProvider {
   constructor() {
@@ -91,7 +93,8 @@ export default class MockProvider {
 
     if (hasTools && !hasToolResults) {
       const toolName = input.toolConfig.tools[0].toolSpec?.name || "search";
-      const toolInput = toolName === "search" ? '{"query":"mock test"}' : "{}";
+      const toolInput =
+        toolName === "search" || toolName === "recall" ? '{"query":"mock test"}' : "{}";
       return {
         stream: this.createMockStream([
           { type: "messageStart", messageStart: { role: "assistant" } },
@@ -147,6 +150,26 @@ export default class MockProvider {
         },
       ]),
       $metadata: {},
+    };
+  }
+
+  async embed(
+    modelId,
+    content,
+    { purpose = "GENERIC_INDEX", dimension = NOVA_EMBEDDING_DIMENSIONS } = {}
+  ) {
+    const text = typeof content === "string" ? content : `[${content.image ? "image" : "media"}]`;
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      hash = (hash * 31 + text.charCodeAt(i)) % 2147483647;
+    }
+    const embedding = Array.from({ length: dimension }, (_, index) => {
+      const value = (hash + (index + 1) * 2654435761) % 1000;
+      return value / 1000;
+    });
+    return {
+      embedding,
+      inputTextTokenCount: typeof content === "string" ? Math.ceil(content.length / 4) : 0,
     };
   }
 

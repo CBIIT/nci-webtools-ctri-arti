@@ -18,7 +18,7 @@ function buildDirectClient() {
       const loopModule = await import("agents/loop.js");
       runAgentLoop = loopModule.runAgentLoop;
       const gw = await import("shared/clients/gateway.js");
-      gatewayClient = { invoke: gw.invoke };
+      gatewayClient = { invoke: gw.invoke, embed: gw.embed };
       const cms = await import("shared/clients/cms.js");
       cmsClient = cms.cmsClient;
     }

@@ -11,8 +11,11 @@
 import db, { Model, User } from "database";
 
 import { eq, and } from "drizzle-orm";
-import { runModel as directRunModel } from "gateway/inference.js";
-import { trackModelUsage } from "gateway/usage.js";
+import {
+  runModel as directRunModel,
+  runEmbedding as directRunEmbedding,
+} from "gateway/inference.js";
+import { trackModelUsage, trackUsage } from "gateway/usage.js";
 
 import { describeCron } from "shared/cron.js";
 
@@ -80,6 +83,24 @@ function buildDirectClient() {
       return result;
     },
 
+    async embed({ userID, model, content, purpose, ip, type }) {
+      const limited = await checkRateLimit(userID);
+      if (limited) return limited;
+
+      const result = await directRunEmbedding({ model, content, purpose });
+
+      if (userID && result.usage) {
+        const usageItems = [];
+        if (result.usage.inputTextTokenCount)
+          usageItems.push({ quantity: result.usage.inputTextTokenCount, unit: "input_tokens" });
+        if (result.usage.imageCount)
+          usageItems.push({ quantity: result.usage.imageCount, unit: "images" });
+        await trackUsage(userID, model, usageItems, { type: type || "embedding" });
+      }
+
+      return result;
+    },
+
     async listModels({ type } = {}) {
       const where = [eq(Model.providerID, 1)];
       if (type) where.push(eq(Model.type, type));
@@ -134,6 +155,11 @@ function buildHttpClient() {
         return { error: (await response.json()).error, status: 429 };
       }
 
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(error.error || `Gateway error: ${response.status}`);
+      }
+
       if (stream) {
         return {
           stream: (async function* () {
@@ -174,6 +200,25 @@ function buildHttpClient() {
       return response.json();
     },
 
+    async embed({ userID, model, content, purpose, ip, type }) {
+      const response = await fetch(`${GATEWAY_URL}/api/v1/model/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userID, model, content, purpose, ip, type: type || "embedding" }),
+      });
+
+      if (response.status === 429) {
+        return { error: (await response.json()).error, status: 429 };
+      }
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(error.error || `Gateway error: ${response.status}`);
+      }
+
+      return response.json();
+    },
+
     async listModels({ type } = {}) {
       const url = type
         ? `${GATEWAY_URL}/api/v1/models?type=${type}`
@@ -186,4 +231,4 @@ function buildHttpClient() {
 
 const client = GATEWAY_URL ? buildHttpClient() : buildDirectClient();
 
-export const { invoke, listModels } = client;
+export const { invoke, embed, listModels } = client;

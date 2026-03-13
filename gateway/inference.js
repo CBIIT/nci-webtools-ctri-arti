@@ -1,6 +1,7 @@
 import db, { Model } from "database";
 
 import { eq } from "drizzle-orm";
+import { assertValidEmbedding } from "shared/embeddings.js";
 
 import bedrock from "./providers/bedrock.js";
 import gemini from "./providers/gemini.js";
@@ -299,6 +300,52 @@ export async function runModel({
   }
 
   return result;
+}
+
+/**
+ * Run embedding inference on an array of content items.
+ *
+ * @param {Object} params
+ * @param {string} params.model - The embedding model internal name
+ * @param {Array} params.content - Array of content items (strings for text, objects for images/video/audio)
+ * @param {string} params.purpose - "GENERIC_INDEX" or "GENERIC_RETRIEVAL"
+ * @returns {Promise<{embeddings: number[][], usage: Object}>}
+ */
+export async function runEmbedding({ model, content, purpose = "GENERIC_INDEX" }) {
+  if (!model || !content?.length) return { embeddings: [], usage: {} };
+
+  const { model: modelRecord, provider } = await getModelProvider(model);
+  const modelId = modelRecord.internalName;
+
+  const embeddings = [];
+  let totalInputTokens = 0;
+  let imageCount = 0;
+
+  // Process items with concurrency limit
+  const CONCURRENCY = 5;
+  for (let i = 0; i < content.length; i += CONCURRENCY) {
+    const batch = content.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((item) => provider.embed(modelId, item, { purpose }))
+    );
+    for (const result of results) {
+      embeddings.push(
+        assertValidEmbedding(result?.embedding, {
+          message: `Model ${modelId} returned an invalid embedding`,
+        })
+      );
+      if (result.inputTextTokenCount) totalInputTokens += result.inputTextTokenCount;
+      if (typeof content[embeddings.length - 1] !== "string") imageCount++;
+    }
+  }
+
+  return {
+    embeddings,
+    usage: {
+      inputTextTokenCount: totalInputTokens || undefined,
+      imageCount: imageCount || undefined,
+    },
+  };
 }
 
 // Export helper functions for testing
