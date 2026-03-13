@@ -171,7 +171,7 @@ export default function Message(p) {
     </dialog>
 
     <${ErrorBoundary} fallback=${(error) => console.log(error)}>
-      <${For} each=${p.message?.content}>
+      <${For} each=${() => p.message?.content}>
         ${(c, i) => {
           if (c.text !== undefined) {
             if (isSummaryText(c.text)) {
@@ -213,16 +213,15 @@ export default function Message(p) {
           const isOpen = () => (name === "editor" ? visible()[key] !== false : !!visible()[key]);
           const bodyId = `${type}-acc-body-${safeId(base)}`;
 
-          // V2's succinct tool result finding
-          const toolResult = c.toolUse ? findToolResult(p.messages, c.toolUse.toolUseId) : null;
-
           return Component({
             role: p?.message?.role,
             message: c,
             messages: p?.messages,
             isOpen,
             bodyId,
-            results: getSearchResults(toolResult),
+            results: getSearchResults(
+              c.toolUse ? findToolResult(p.messages, c.toolUse.toolUseId) : null
+            ),
             onToggle: () => toggleVisible(key),
           });
         }}

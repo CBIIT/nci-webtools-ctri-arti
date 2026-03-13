@@ -1,6 +1,8 @@
 import { createEffect } from "solid-js";
 import { createStore, produce } from "solid-js/store";
 
+import { parseJSON } from "../../../utils/parsers.js";
+
 // =================================================================================
 // API HELPER
 // =================================================================================
@@ -399,15 +401,16 @@ function processContentBlock(s, message, messageIndex = s.messages.length - 1) {
       block.text ||= "";
       block.text += text;
     } else if (toolUse) {
-      block.toolUse ||= { input: "" };
-      block.toolUse.input ||= "";
-      block.toolUse.input += toolUse.input;
+      block.toolUse ||= { input: {}, _rawInput: "" };
+      block.toolUse._rawInput = (block.toolUse._rawInput || "") + toolUse.input;
+      block.toolUse.input = parseJSON(block.toolUse._rawInput) || {};
     }
   } else if (contentBlockStop) {
     const { contentBlockIndex } = contentBlockStop;
     const block = messageContent[contentBlockIndex];
     if (block?.toolUse) {
-      block.toolUse.input = parseJSON(block.toolUse.input);
+      block.toolUse.input = parseJSON(block.toolUse._rawInput) || block.toolUse.input;
+      delete block.toolUse._rawInput;
     }
     if (block?.text?.length === 0) {
       block.text += " ";
@@ -535,6 +538,16 @@ function code({ language = "javascript", source, timeout = 5000 }) {
 
     const bridge = `
       (()=>{
+        const _fetch = fetch;
+        window.fetch = async (url, opts = {}) => {
+          try {
+            const u = new URL(url, location.origin);
+            const isLocal = ["localhost","127.0.0.1","[::1]"].some(h => u.hostname === h || u.hostname.endsWith(".localhost"));
+            if (isLocal) return _fetch(url, opts);
+            const proxyUrl = location.origin + "/api/v1/browse/" + u.href;
+            return _fetch(proxyUrl, opts);
+          } catch (e) { console.log(e); return _fetch(url, opts); }
+        };
         const send=(t,m)=>parent.postMessage({type:t,msg:m},"*");
         ["log","warn","error","info","debug"].forEach(k=>{
           const o=console[k]; console[k]=(...a)=>{try{send("log",a.join(" "))}catch{}; o&&o.apply(console,a);};
@@ -564,12 +577,3 @@ function code({ language = "javascript", source, timeout = 5000 }) {
 // =================================================================================
 // UTILITIES
 // =================================================================================
-
-function parseJSON(input) {
-  if (typeof input !== "string") return input;
-  try {
-    return JSON.parse(input);
-  } catch {
-    return input;
-  }
-}
