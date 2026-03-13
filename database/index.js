@@ -1,4 +1,4 @@
-import { mkdirSync } from "fs";
+import { mkdirSync, readFileSync, readdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -7,6 +7,7 @@ import logger from "shared/logger.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const migrationsFolder = resolve(__dirname, "migrations");
+const initSql = readFileSync(resolve(__dirname, "init.sql"), "utf-8");
 
 const {
   DB_STORAGE,
@@ -18,6 +19,39 @@ const {
   PGPASSWORD,
   DB_SSL,
 } = process.env;
+
+async function runMigrations(execFn) {
+  // Create tracking table first (idempotent)
+  await execFn(`CREATE TABLE IF NOT EXISTS "Migration" (
+    "name" text PRIMARY KEY,
+    "appliedAt" timestamp DEFAULT now()
+  )`);
+
+  // Query already-applied migrations
+  const result = await execFn(`SELECT "name" FROM "Migration"`);
+  const applied = new Set(
+    (Array.isArray(result) ? result : (result?.rows ?? [])).map((r) => r.name)
+  );
+
+  const migrationFiles = readdirSync(migrationsFolder)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
+
+  for (const file of migrationFiles) {
+    if (applied.has(file)) continue;
+
+    const migrationSql = readFileSync(resolve(migrationsFolder, file), "utf-8");
+    const statements = migrationSql
+      .split("--> statement-breakpoint")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const stmt of statements) {
+      await execFn(stmt);
+    }
+    await execFn(`INSERT INTO "Migration" ("name") VALUES ('${file}')`);
+    logger.info(`migration applied: ${file}`);
+  }
+}
 
 let db;
 
@@ -31,14 +65,18 @@ if (!usePg) {
   const storage = DB_STORAGE || "memory://";
   const { PGlite } = await import("@electric-sql/pglite");
   const { drizzle } = await import("drizzle-orm/pglite");
-  const { migrate } = await import("drizzle-orm/pglite/migrator");
 
   if (!storage.startsWith("memory://")) mkdirSync(storage, { recursive: true });
-  const client = new PGlite(storage);
+  const { pg_trgm } = await import("@electric-sql/pglite/contrib/pg_trgm");
+  const { vector } = await import("@electric-sql/pglite/vector");
+  const client = new PGlite(storage, { extensions: { pg_trgm, vector } });
   db = drizzle({ client, schema });
 
   if (DB_SKIP_SYNC !== "true") {
-    await migrate(db, { migrationsFolder });
+    // Run init SQL (extensions, etc.) before migrations — PGlite can't do this via prepared statements
+    await client.exec(initSql);
+
+    await runMigrations((stmt) => client.exec(stmt));
 
     const { seedDatabase } = schema;
     await seedDatabase(db);
@@ -47,7 +85,6 @@ if (!usePg) {
   // PostgreSQL mode (production)
   const postgres = (await import("postgres")).default;
   const { drizzle } = await import("drizzle-orm/postgres-js");
-  const { migrate } = await import("drizzle-orm/postgres-js/migrator");
 
   const sql = postgres({
     host: PGHOST,
@@ -61,7 +98,10 @@ if (!usePg) {
   db = drizzle(sql, { schema });
 
   if (DB_SKIP_SYNC !== "true") {
-    await migrate(db, { migrationsFolder });
+    // Run init SQL (extensions, etc.) before migrations
+    await sql.unsafe(initSql);
+
+    await runMigrations((stmt) => sql.unsafe(stmt));
 
     const { seedDatabase } = schema;
     await seedDatabase(db);
