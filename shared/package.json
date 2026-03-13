@@ -11,6 +11,7 @@
     "./clients/gateway.js": "./clients/gateway.js",
     "./clients/cms.js": "./clients/cms.js",
     "./clients/agents.js": "./clients/agents.js",
+    "./clients/users.js": "./clients/users.js",
     "./search.js": "./search.js",
     "./parsers.js": "./parsers.js",
     "./s3.js": "./s3.js",

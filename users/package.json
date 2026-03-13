@@ -2,11 +2,16 @@
   "name": "users",
   "version": "1.0.0",
   "type": "module",
+  "exports": {
+    "./user.js": "./user.js",
+    "./middleware.js": "./middleware.js"
+  },
   "scripts": {
     "start": "node --env-file .env index.js"
   },
   "dependencies": {
     "database": "*",
+    "drizzle-orm": "^0.43.1",
     "express": "^5.2.1",
     "shared": "*"
   }
