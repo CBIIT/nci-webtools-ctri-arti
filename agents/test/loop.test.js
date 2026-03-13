@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it, mock } from "node:test";
+import { describe, it } from "node:test";
 
 import { runAgentLoop } from "../loop.js";
 
@@ -26,11 +26,13 @@ describe("runAgentLoop", () => {
         systemPrompt: null,
         ...agent,
       }),
+      getConversation: async () => ({ id: 1, createdAt: "2026-01-15T12:00:00Z" }),
       getContext: async () => ({ messages: [] }),
       addMessage: async (userId, conversationId, msg) => {
         messages.push(msg);
         return msg;
       },
+      summarize: async function* () {},
       getResourcesByAgent: async () => resources,
       _messages: messages,
     };
@@ -63,7 +65,7 @@ describe("runAgentLoop", () => {
       events.push(event);
     }
 
-    // Should have forwarded all stream events
+    // No summarization should be emitted when cms.summarize() yields nothing
     assert.equal(events.length, streamEvents.length);
 
     // Should have persisted user message + assistant message
@@ -192,20 +194,26 @@ describe("runAgentLoop", () => {
     assert.equal(cms._messages.length, 4);
   });
 
-  it("filters out code tool from server-side execution", async () => {
-    const gateway = createMockGateway([{ messageStop: { stopReason: "end_turn" } }]);
-    const cms = createMockCms({ tools: ["search", "code", "browse"] });
+  it("only emits summarizing events when summarize yields chunks", async () => {
+    const streamEvents = [
+      { messageStart: { role: "assistant" } },
+      { contentBlockStart: { contentBlockIndex: 0 } },
+      { contentBlockDelta: { contentBlockIndex: 0, delta: { text: "Done" } } },
+      { contentBlockStop: { contentBlockIndex: 0 } },
+      { messageStop: { stopReason: "end_turn" } },
+    ];
 
-    let invokedTools;
-    gateway.invoke = async (params) => {
-      invokedTools = params.tools;
-      return {
-        stream: (async function* () {
-          yield { messageStop: { stopReason: "end_turn" } };
-        })(),
-      };
+    const gateway = createMockGateway(streamEvents);
+    const cms = {
+      ...createMockCms(),
+      summarize: async function* () {
+        yield { contentBlockStart: { contentBlockIndex: 0 } };
+        yield { contentBlockDelta: { contentBlockIndex: 0, delta: { text: "Summary" } } };
+        yield { contentBlockStop: { contentBlockIndex: 0 } };
+      },
     };
 
+    const events = [];
     const loop = runAgentLoop({
       userId: 1,
       agentId: 1,
@@ -216,14 +224,12 @@ describe("runAgentLoop", () => {
       cms,
     });
 
-    for await (const _ of loop) {
-      // consume
+    for await (const event of loop) {
+      events.push(event);
     }
 
-    // "code" should be filtered out
-    const toolNames = invokedTools.map((t) => t.toolSpec.name);
-    assert.ok(!toolNames.includes("code"), "code tool should be excluded");
-    assert.ok(toolNames.includes("search"), "search should be included");
-    assert.ok(toolNames.includes("browse"), "browse should be included");
+    assert.equal(events[0].summarizing, true);
+    assert.ok(events.some((event) => event.contentBlockDelta?.delta?.text === "Summary"));
+    assert.ok(events.some((event) => event.summarizing === false));
   });
 });

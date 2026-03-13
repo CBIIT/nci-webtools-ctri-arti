@@ -6,7 +6,7 @@ import specs, { getToolSpecs } from "../tool-specs.js";
 describe("tool-specs", () => {
   it("exports all tool specs by default", () => {
     const allSpecs = getToolSpecs();
-    assert.ok(allSpecs.length >= 6, "should have at least 6 tools");
+    assert.ok(allSpecs.length >= 7, "should have at least 7 tools");
     const names = allSpecs.map((s) => s.toolSpec.name);
     assert.ok(names.includes("search"));
     assert.ok(names.includes("browse"));
@@ -14,6 +14,7 @@ describe("tool-specs", () => {
     assert.ok(names.includes("editor"));
     assert.ok(names.includes("think"));
     assert.ok(names.includes("docxTemplate"));
+    assert.ok(names.includes("recall"));
   });
 
   it("filters specs by tool names", () => {

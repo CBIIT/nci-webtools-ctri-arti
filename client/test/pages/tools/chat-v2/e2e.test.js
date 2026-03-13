@@ -59,9 +59,17 @@ test("Chat-V2 E2E: Send Message", async (t) => {
       const form = textarea.closest("form");
       assert.ok(form, "textarea should be inside a form");
 
-      // Use Haiku for faster/cheaper E2E tests
+      // Use the mock model so this test only exercises the browser UI path.
       const modelSelect = form.querySelector('select[name="model"]');
-      if (modelSelect) modelSelect.value = "us.anthropic.claude-haiku-4-5-20251001-v1:0";
+      if (modelSelect) {
+        if (!Array.from(modelSelect.options).some((option) => option.value === "mock-model")) {
+          const mockOption = document.createElement("option");
+          mockOption.value = "mock-model";
+          mockOption.textContent = "Mock Model";
+          modelSelect.appendChild(mockOption);
+        }
+        modelSelect.value = "mock-model";
+      }
       console.log("[chat-v2-e2e] model:", modelSelect?.value || "default");
 
       // Type a message
@@ -72,26 +80,31 @@ test("Chat-V2 E2E: Send Message", async (t) => {
       sendBtn.click();
       console.log("[chat-v2-e2e] clicked Send");
 
-      // Poll for assistant response
+      // Poll for an actual assistant chat bubble, not the privacy notice markdown
       let success = false;
       for (let i = 0; i < 30; i++) {
         await new Promise((r) => setTimeout(r, 2000));
-        const messages = container.querySelectorAll(".markdown");
-        console.log(`[chat-v2-e2e] poll ${i}: messages=${messages.length} errors=${errors.length}`);
+        const messages = container.querySelectorAll('[data-chat-message="true"]');
+        const assistantMessages = container.querySelectorAll(
+          '[data-chat-message="true"][data-role="assistant"]'
+        );
+        console.log(
+          `[chat-v2-e2e] poll ${i}: messages=${messages.length} assistant=${assistantMessages.length} errors=${errors.length}`
+        );
         if (errors.length > 0) {
           console.log(
             "[chat-v2-e2e] errors:",
             errors.map((e) => e.message || String(e))
           );
         }
-        if (messages.length >= 2) {
+        if (assistantMessages.length >= 1) {
           success = true;
           console.log("[chat-v2-e2e] assistant message appeared!");
           break;
         }
       }
 
-      const allMessages = container.querySelectorAll(".markdown");
+      const allMessages = container.querySelectorAll('[data-chat-message="true"]');
       console.log("[chat-v2-e2e] final messages:", allMessages.length);
       for (let i = 0; i < Math.min(allMessages.length, 5); i++) {
         console.log(
@@ -99,7 +112,7 @@ test("Chat-V2 E2E: Send Message", async (t) => {
         );
       }
 
-      assert.ok(success, `expected >= 2 messages, got ${allMessages.length}`);
+      assert.ok(success, "expected at least 1 assistant chat bubble");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message || e)}`);
     } finally {
       window.history.replaceState({}, "", `${window.location.pathname}?${originalSearch}`);

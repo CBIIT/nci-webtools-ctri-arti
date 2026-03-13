@@ -401,6 +401,86 @@ test("Agent Chat E2E Tests", async (t) => {
     await api("DELETE", `/conversations/${conv.id}`);
   });
 
+  // ── Test 8: Recall tool E2E ─────────────────────────────────────────
+  // Tests the full recall pipeline: seed a conversation with searchable text,
+  // then have a recall agent search for it in a separate conversation.
+
+  await t.test("recall tool: finds text from a previous conversation", async () => {
+    // 1. Create an agent with recall tool
+    const { status: agentStatus, json: recallAgent } = await api("POST", "/agents", {
+      name: "Recall E2E Agent",
+      tools: ["recall"],
+    });
+    assert.strictEqual(agentStatus, 201, `create recall agent: expected 201, got ${agentStatus}`);
+
+    // 2. Create conversation A with searchable text
+    // mock-model always sends {"query":"mock test"} for recall tool, so seed text matching that
+    const { json: convA } = await api("POST", "/conversations", {
+      title: "__recall_e2e_source__",
+      agentID: recallAgent.id,
+    });
+    assert.ok(convA.id);
+
+    const seedText = "This is a mock test message for recall verification";
+    await api("POST", `/conversations/${convA.id}/messages`, {
+      role: "user",
+      content: [{ text: seedText }],
+    });
+
+    // 3. Verify message is persisted
+    const { json: seededMessages } = await api("GET", `/conversations/${convA.id}/messages`);
+    assert.ok(seededMessages.length >= 1, "seeded message should be persisted");
+    assert.ok(
+      seededMessages[0].content.some((c) => c.text?.includes("mock test")),
+      "seeded message should contain searchable text"
+    );
+
+    // 4. Create conversation B to trigger recall
+    const { json: convB } = await api("POST", "/conversations", {
+      title: "__recall_e2e_search__",
+      agentID: recallAgent.id,
+    });
+    assert.ok(convB.id);
+
+    // 5. Send message asking to search (mock-model will call recall with {"query":"mock test"})
+    const { response, events } = await sendChatMessage(
+      recallAgent.id,
+      convB.id,
+      "Search my past conversations"
+    );
+
+    assert.ok(response.ok, `recall chat failed: ${response.status}`);
+    assert.ok(events.length > 0, "should receive NDJSON events");
+
+    // Should have tool_use turn then end_turn
+    const messageStops = events.filter((e) => e.messageStop);
+    assert.strictEqual(
+      messageStops.length,
+      2,
+      `expected 2 messageStop events (tool_use + end_turn), got ${messageStops.length}`
+    );
+    assert.strictEqual(messageStops[0].messageStop.stopReason, "tool_use");
+    assert.strictEqual(messageStops[1].messageStop.stopReason, "end_turn");
+
+    // Should have toolResult with recall results
+    const toolResults = events.filter((e) => e.toolResult);
+    assert.ok(toolResults.length >= 1, "should have at least one toolResult");
+    const resultContent = toolResults[0].toolResult.content;
+    assert.ok(resultContent, "toolResult should have content");
+
+    // Tool result is wrapped as { json: { results: <string> } }
+    const resultText = JSON.stringify(resultContent);
+    assert.ok(
+      resultText.includes("mock test") || resultText.includes("Conversation Messages"),
+      `toolResult should contain seeded text or recall sections, got: ${resultText.slice(0, 300)}`
+    );
+
+    // 6. Cleanup
+    await api("DELETE", `/conversations/${convA.id}`);
+    await api("DELETE", `/conversations/${convB.id}`);
+    await api("DELETE", `/agents/${recallAgent.id}`);
+  });
+
   // ── Cleanup ────────────────────────────────────────────────────────────
 
   await t.test("cleanup", async () => {

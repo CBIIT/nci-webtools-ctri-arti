@@ -4,11 +4,33 @@ import { test } from "node:test";
 
 import { ConversationService } from "cms/conversation.js";
 import { eq } from "drizzle-orm";
+import { embed as gatewayEmbed } from "shared/clients/gateway.js";
+import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
 
 const svc = new ConversationService();
 
+function embeddingOf(...values) {
+  return Array.from({ length: NOVA_EMBEDDING_DIMENSIONS }, (_, index) => values[index] ?? 0);
+}
+
+function mockEmbeddingFor(value) {
+  const text = typeof value === "string" ? value : JSON.stringify(value);
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = (hash * 31 + text.charCodeAt(i)) % 2147483647;
+  }
+  return embeddingOf(hash / 2147483647, ((hash * 17) % 1000) / 1000, ((hash * 97) % 1000) / 1000);
+}
+
 test("ConversationService", async (t) => {
   let testUser;
+
+  ConversationService.setEmbedder(async ({ content }) => ({
+    embeddings: content.map((item) => mockEmbeddingFor(item)),
+  }));
+  t.after(() => {
+    ConversationService.setEmbedder(gatewayEmbed);
+  });
 
   await t.test("setup: get test user", async () => {
     [testUser] = await db.select().from(User).where(eq(User.email, "test@test.com")).limit(1);
@@ -52,7 +74,7 @@ test("ConversationService", async (t) => {
         agentID: agentId,
         title: "Agent Conversation",
       });
-      const msg = await svc.addMessage(testUser.id, conversation.id, {
+      const _msg = await svc.addMessage(testUser.id, conversation.id, {
         role: "user",
         content: [{ text: "hello" }],
       });
@@ -261,12 +283,27 @@ test("ConversationService", async (t) => {
       assert.ok(resources.length >= 1);
     });
 
+    await rt.test("addResource indexes text into vectors", async () => {
+      const vectors = await svc.getVectorsByResource(testUser.id, resourceId);
+      assert.strictEqual(vectors.length, 1);
+      assert.strictEqual(vectors[0].content, "file content");
+      assert.strictEqual(vectors[0].embedding.length, NOVA_EMBEDDING_DIMENSIONS);
+    });
+
+    await rt.test("updateResource reindexes vectors when content changes", async () => {
+      await svc.updateResource(testUser.id, resourceId, { content: "updated file content" });
+      const vectors = await svc.getVectorsByResource(testUser.id, resourceId);
+      assert.strictEqual(vectors.length, 1);
+      assert.strictEqual(vectors[0].content, "updated file content");
+      assert.strictEqual(vectors[0].embedding.length, NOVA_EMBEDDING_DIMENSIONS);
+    });
+
     await rt.test("deleteResource cascades vectors", async () => {
       // Create a conversation for vectors (vectors still use conversationID)
       const conv = await svc.createConversation(testUser.id, { title: "Resource Vector Test" });
       await svc.addVectors(testUser.id, conv.id, [
-        { resourceID: resourceId, content: "chunk 1", embedding: [0.1] },
-        { resourceID: resourceId, content: "chunk 2", embedding: [0.2] },
+        { resourceID: resourceId, content: "chunk 1", embedding: embeddingOf(0.1) },
+        { resourceID: resourceId, content: "chunk 2", embedding: embeddingOf(0.2) },
       ]);
 
       await svc.deleteResource(testUser.id, resourceId);
@@ -359,6 +396,127 @@ test("ConversationService", async (t) => {
     });
   });
 
+  // ===== SEARCH METHODS =====
+
+  await t.test("Search methods", async (st) => {
+    let agentId;
+    let otherAgentId;
+    let conversationId;
+    let otherConversationId;
+    let resourceId;
+
+    await st.test("setup: create conversation, messages, resource, and vectors", async () => {
+      const agent = await svc.createAgent(testUser.id, { name: "Recall Search Agent" });
+      const otherAgent = await svc.createAgent(testUser.id, { name: "Other Search Agent" });
+      agentId = agent.id;
+      otherAgentId = otherAgent.id;
+
+      const conversation = await svc.createConversation(testUser.id, {
+        title: "Search Test Conversation",
+        agentID: agentId,
+      });
+      conversationId = conversation.id;
+
+      await svc.addMessage(testUser.id, conversationId, {
+        role: "user",
+        content: [{ text: "The capital of France is Paris" }],
+      });
+      await svc.addMessage(testUser.id, conversationId, {
+        role: "assistant",
+        content: [{ text: "That is correct. Paris is indeed the capital of France." }],
+      });
+
+      const otherConversation = await svc.createConversation(testUser.id, {
+        title: "Other Agent Search Conversation",
+        agentID: otherAgentId,
+      });
+      otherConversationId = otherConversation.id;
+      await svc.addMessage(testUser.id, otherConversationId, {
+        role: "user",
+        content: [{ text: "France also appears in this other agent conversation." }],
+      });
+
+      const resource = await svc.addResource(testUser.id, {
+        agentID: otherAgentId,
+        name: "geography.txt",
+        type: "text/plain",
+        content: "France is a country in Western Europe. Its capital is Paris.",
+      });
+      resourceId = resource.id;
+      await svc.deleteVectorsByResource(testUser.id, resourceId);
+
+      await svc.addVectors(testUser.id, conversationId, [
+        {
+          resourceID: resourceId,
+          content: "France is a country in Western Europe",
+          embedding: embeddingOf(0.9, 0.1, 0.1),
+        },
+        {
+          resourceID: resourceId,
+          content: "Its capital is Paris",
+          embedding: embeddingOf(0.8, 0.2, 0.1),
+        },
+        {
+          resourceID: resourceId,
+          content: "Quantum physics studies subatomic particles",
+          embedding: embeddingOf(0.1, 0.1, 0.9),
+        },
+      ]);
+    });
+
+    await st.test("searchMessages finds matching text", async () => {
+      const results = await svc.searchMessages(testUser.id, { query: "France", agentId });
+      assert.ok(results.length >= 1, `expected at least 1 result, got ${results.length}`);
+      const match = results.find((r) => r.matchingText.includes("France"));
+      assert.ok(match, "should find message mentioning France");
+      assert.ok(
+        results.every((r) => r.conversationId === conversationId),
+        "should only search messages from the current agent's conversations"
+      );
+    });
+
+    await st.test("searchMessages with future dateFrom returns no results", async () => {
+      const results = await svc.searchMessages(testUser.id, {
+        query: "France",
+        agentId,
+        dateFrom: "2099-01-01",
+      });
+      assert.strictEqual(results.length, 0, "future dateFrom should filter out all results");
+    });
+
+    await st.test("searchResourceVectors ranks by cosine similarity", async () => {
+      const queryEmbedding = embeddingOf(0.85, 0.15, 0.1); // close to "France" vector
+      const results = await svc.searchResourceVectors(testUser.id, {
+        embedding: queryEmbedding,
+        topN: 3,
+      });
+      assert.ok(results.length >= 2, `expected at least 2 results, got ${results.length}`);
+      assert.ok(
+        results[0].similarity > results[results.length - 1].similarity,
+        "results should be ranked by similarity"
+      );
+      assert.ok(
+        results[0].content.includes("France") || results[0].content.includes("Paris"),
+        "top result should be about France/Paris"
+      );
+    });
+
+    await st.test("searchChunks finds matching chunk content", async () => {
+      const results = await svc.searchChunks(testUser.id, { query: "capital" });
+      assert.ok(results.length >= 1, `expected at least 1 result, got ${results.length}`);
+      const match = results.find((r) => r.content.includes("capital"));
+      assert.ok(match, "should find chunk mentioning capital");
+    });
+
+    await st.test("searchChunks with future dateFrom returns no results", async () => {
+      const results = await svc.searchChunks(testUser.id, {
+        query: "capital",
+        dateFrom: "2099-01-01",
+      });
+      assert.strictEqual(results.length, 0, "future dateFrom should filter out all results");
+    });
+  });
+
   // ===== VECTOR OPERATIONS =====
 
   await t.test("Vector operations", async (vt) => {
@@ -376,13 +534,14 @@ test("ConversationService", async (t) => {
         content: "vector test content",
       });
       resourceId = resource.id;
+      await svc.deleteVectorsByResource(testUser.id, resourceId);
     });
 
     await vt.test("addVectors", async () => {
       const vectors = await svc.addVectors(testUser.id, conversationId, [
-        { resourceID: resourceId, content: "chunk A", embedding: [0.1, 0.2, 0.3] },
-        { resourceID: resourceId, content: "chunk B", embedding: [0.4, 0.5, 0.6] },
-        { content: "standalone", embedding: [0.7, 0.8, 0.9] },
+        { resourceID: resourceId, content: "chunk A", embedding: embeddingOf(0.1, 0.2, 0.3) },
+        { resourceID: resourceId, content: "chunk B", embedding: embeddingOf(0.4, 0.5, 0.6) },
+        { content: "standalone", embedding: embeddingOf(0.7, 0.8, 0.9) },
       ]);
       assert.strictEqual(vectors.length, 3);
     });
@@ -401,7 +560,7 @@ test("ConversationService", async (t) => {
     await vt.test("searchVectors with cosine similarity", async () => {
       const results = await svc.searchVectors({
         conversationID: conversationId,
-        embedding: [0.1, 0.2, 0.3],
+        embedding: embeddingOf(0.1, 0.2, 0.3),
         topN: 2,
       });
       assert.ok(results.length <= 2);
