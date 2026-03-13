@@ -34,6 +34,34 @@ function estimateContentTokens(content) {
   return tokens;
 }
 
+function sanitizeProviderFileName(name = "") {
+  const sanitized = Array.from(String(name), (char) => {
+    if (char === "_") return "-";
+    if (/[A-Z0-9]/i.test(char) || /\s/.test(char) || "-()[]".includes(char)) return char;
+    return " ";
+  })
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim();
+  return sanitized || "uploaded file";
+}
+
+function getProviderVisibleFileName(file = {}) {
+  const originalName = String(file.originalName || "")
+    .split(/[\\/]/)
+    .filter(Boolean)
+    .pop()
+    ?.trim();
+  const fallbackName = String(file.name || "")
+    .split(/[\\/]/)
+    .filter(Boolean)
+    .pop()
+    ?.trim();
+  const candidate = originalName || fallbackName || "";
+  const stem = candidate.replace(/\.[^.]+$/, "") || candidate;
+  return sanitizeProviderFileName(stem);
+}
+
 /**
  * Calculates optimal cache boundaries using sqrt(2) scaling factor
  * @param {number} maxTokens - Maximum token limit to consider
@@ -140,6 +168,12 @@ function processMessages(messages, thoughtBudget) {
         } else if (source.bytes?.type === "Buffer" && Array.isArray(source.bytes.data)) {
           source.bytes = new Uint8Array(source.bytes.data);
         }
+      }
+      if (content.document) {
+        content.document.name = getProviderVisibleFileName(content.document);
+      }
+      if (content.image) {
+        content.image.name = getProviderVisibleFileName(content.image);
       }
       // ensure tool call inputs are in the correct format
       if (content.toolUse) {
@@ -301,6 +335,8 @@ export async function runModel({
 
   return result;
 }
+
+export { sanitizeProviderFileName, getProviderVisibleFileName, processMessages };
 
 /**
  * Run embedding inference on an array of content items.

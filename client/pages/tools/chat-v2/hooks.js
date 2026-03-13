@@ -230,7 +230,7 @@ async function* streamResponse(response) {
       if (line.trim()) {
         try {
           yield JSON.parse(line);
-        } catch (e) {
+        } catch (_error) {
           console.warn("Failed to parse line:", line);
         }
       }
@@ -240,7 +240,7 @@ async function* streamResponse(response) {
   if (buffer.trim()) {
     try {
       yield JSON.parse(buffer);
-    } catch (e) {
+    } catch (_error) {
       console.warn("Failed to parse remaining buffer:", buffer);
     }
   }
@@ -462,7 +462,7 @@ async function getMessageContent(text, files) {
   return [...inlineBlocks, ...overflowBlocks, { text }];
 }
 
-async function getContentBlock(file) {
+export async function getContentBlock(file) {
   const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
   const imageTypes = ["png", "jpg", "jpeg", "gif", "webp"];
   const isText =
@@ -486,11 +486,20 @@ async function getContentBlock(file) {
     binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
   }
   const base64 = btoa(binary);
-  const originalName = file.name;
-  const name = originalName
-    .replace(/[^A-Z0-9 _\-()[\]]/gi, "_")
-    .replace(/\s+/g, " ")
-    .trim();
+  const sanitizeUploadName = (value) =>
+    Array.from(String(value), (char) => {
+      if (char === "_") return "-";
+      if (/[A-Z0-9]/i.test(char) || /\s/.test(char) || "-()[]".includes(char)) return char;
+      return " ";
+    })
+      .join("")
+      .replace(/\s+/g, " ")
+      .trim();
+  const originalName = (file.name || "").split(/[\\/]/).filter(Boolean).pop()?.trim() || "document";
+  const stem = originalName.replace(/\.[^.]+$/, "");
+  const name =
+    sanitizeUploadName(type === "document" ? stem : originalName) ||
+    (type === "document" ? "document" : "image");
 
   if (type) {
     return {

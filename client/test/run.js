@@ -16,6 +16,7 @@ const tests = [
   "./pages/users/usage.test.js",
   "./pages/tools/translate.test.js",
   "./pages/tools/chat-v2/streaming.test.js",
+  "./pages/tools/chat-v2/uploads.test.js",
   "./pages/tools/chat-v2/e2e.test.js",
 ];
 for (const test of tests) {

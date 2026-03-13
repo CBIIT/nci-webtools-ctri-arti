@@ -111,8 +111,9 @@ export async function* runAgentLoop({
   const messages = existingMessages.map(({ role, content }) => ({ role, content }));
 
   // Bedrock requires the conversation to end with a user message.
-  // After summarization, compressed context starts from the summary (assistant)
-  // and the original user message (lower ID) is excluded. Re-append it.
+  // When compressed context does not already end with a user turn,
+  // re-append the current user message. Conversation summaries are stored
+  // as user messages and already include the latest user turn.
   if (messages.length && messages.at(-1).role !== "user") {
     messages.push({ role: "user", content: userMessage.content });
   }
@@ -354,7 +355,7 @@ async function processUploads(userMessage, { userId, agentId, conversationId, cm
 
     const { content, encoding } = await extractContent(rawBytes, file.format);
 
-    const resource = await cms.addResource(userId, {
+    await cms.addResource(userId, {
       agentID: agentId,
       conversationID: conversationId,
       name: file.originalName || file.name,
@@ -371,14 +372,13 @@ async function processUploads(userMessage, { userId, agentId, conversationId, cm
 
   // Remove resource-only blocks — the model already knows about these
   // via the <uploaded_files> tag the client injected into the text block.
-  // Also clean transport-only fields (resourceOnly, originalName) that
-  // Bedrock doesn't understand.
+  // Keep originalName on inline blocks so later turns can still reconstruct
+  // the real uploaded filename instead of a transport-facing placeholder.
   userMessage.content = blocks.filter((block) => {
     const file = block.document || block.image;
     if (!file?.source?.bytes) return true; // text blocks, etc.
     if (file.resourceOnly) return false;
     delete file.resourceOnly;
-    delete file.originalName;
     return true;
   });
 }

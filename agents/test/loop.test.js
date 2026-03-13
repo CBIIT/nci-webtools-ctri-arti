@@ -232,4 +232,113 @@ describe("runAgentLoop", () => {
     assert.ok(events.some((event) => event.contentBlockDelta?.delta?.text === "Summary"));
     assert.ok(events.some((event) => event.summarizing === false));
   });
+
+  it("preserves originalName on persisted uploaded files", async () => {
+    const streamEvents = [{ messageStop: { stopReason: "end_turn" } }];
+    const gateway = createMockGateway(streamEvents);
+    const resources = [];
+    const cms = {
+      ...createMockCms(),
+      addResource: async (_userId, resource) => {
+        resources.push(resource);
+        return resource;
+      },
+    };
+
+    const loop = runAgentLoop({
+      userId: 1,
+      agentId: 1,
+      conversationId: 1,
+      userMessage: {
+        role: "user",
+        content: [
+          {
+            document: {
+              name: "document",
+              originalName: "book.md",
+              format: "md",
+              source: { bytes: Buffer.from("hello", "utf-8").toString("base64") },
+            },
+          },
+          { text: "Please read this." },
+        ],
+      },
+      model: "test-model",
+      gateway,
+      cms,
+    });
+
+    for await (const _event of loop) {
+      // consume
+    }
+
+    assert.equal(resources.length, 1);
+    assert.equal(resources[0].name, "book.md");
+    assert.equal(cms._messages[0].content[0].document.originalName, "book.md");
+  });
+
+  it("adds summary continuation guidance when compressed context starts from a conversation summary", async () => {
+    let invokedWith = null;
+    const gateway = {
+      invoke: async (params) => {
+        invokedWith = {
+          ...params,
+          messages: params.messages.map((message) => ({
+            ...message,
+            content: [...message.content],
+          })),
+        };
+        return {
+          stream: (async function* () {
+            yield { contentBlockStart: { contentBlockIndex: 0 } };
+            yield { contentBlockDelta: { contentBlockIndex: 0, delta: { text: "Done" } } };
+            yield { contentBlockStop: { contentBlockIndex: 0 } };
+            yield { messageStop: { stopReason: "end_turn" } };
+          })(),
+        };
+      },
+    };
+
+    const cms = {
+      ...createMockCms(),
+      getContext: async () => ({
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                text: "[Conversation Summary]\n\n## Latest User Message\n> well, did you read it?",
+              },
+            ],
+          },
+        ],
+      }),
+    };
+
+    const loop = runAgentLoop({
+      userId: 1,
+      agentId: 1,
+      conversationId: 1,
+      userMessage: { role: "user", content: [{ text: "well, did you read it?" }] },
+      model: "test-model",
+      gateway,
+      cms,
+    });
+
+    for await (const _ of loop) {
+      // consume
+    }
+
+    assert.ok(invokedWith, "Gateway should be invoked");
+    assert.equal(
+      invokedWith.messages.length,
+      1,
+      "Summary user message should stand in for the current turn"
+    );
+    assert.equal(invokedWith.messages[0].role, "user");
+    assert.ok(
+      invokedWith.messages[0].content[0].text.includes("[Conversation Summary]"),
+      "Conversation summary should be passed through as the opening user turn"
+    );
+  });
 });

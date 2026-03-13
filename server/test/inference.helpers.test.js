@@ -5,6 +5,9 @@ import {
   estimateContentTokens,
   calculateCacheBoundaries,
   addCachePointsToMessages,
+  sanitizeProviderFileName,
+  getProviderVisibleFileName,
+  processMessages,
 } from "gateway/inference.js";
 
 test("estimateContentTokens", async (t) => {
@@ -110,9 +113,7 @@ test("addCachePointsToMessages", async (t) => {
     ];
     const result = addCachePointsToMessages(messages, true);
     // At least one message should have a cache point added
-    const hasCachePoint = result.some((m) =>
-      m.content.some((c) => c.cachePoint),
-    );
+    const hasCachePoint = result.some((m) => m.content.some((c) => c.cachePoint));
     assert.ok(hasCachePoint, "Should have at least one cache point");
   });
 
@@ -126,19 +127,64 @@ test("addCachePointsToMessages", async (t) => {
     const result = addCachePointsToMessages(messages, true);
     const cachePointCount = result.reduce(
       (count, m) => count + m.content.filter((c) => c.cachePoint).length,
-      0,
+      0
     );
     assert.ok(cachePointCount <= 2, `Expected at most 2 cache points, got ${cachePointCount}`);
   });
 
   await t.test("does not add cache points when content is below boundary", () => {
-    const messages = [
-      { role: "user", content: [{ text: "short" }] },
-    ];
+    const messages = [{ role: "user", content: [{ text: "short" }] }];
     const result = addCachePointsToMessages(messages, true);
-    const hasCachePoint = result.some((m) =>
-      m.content.some((c) => c.cachePoint),
-    );
+    const hasCachePoint = result.some((m) => m.content.some((c) => c.cachePoint));
     assert.ok(!hasCachePoint, "Should not add cache points for small content");
   });
+});
+
+test("provider filename sanitization", async (t) => {
+  await t.test("sanitizes names only for provider payloads", () => {
+    assert.strictEqual(sanitizeProviderFileName("book/md.md"), "book md md");
+    assert.strictEqual(sanitizeProviderFileName(" report  final?.pdf "), "report final pdf");
+  });
+
+  await t.test("derives the provider-visible name from originalName", () => {
+    assert.strictEqual(
+      getProviderVisibleFileName({ name: "document", originalName: "book.md", format: "md" }),
+      "book"
+    );
+    assert.strictEqual(
+      getProviderVisibleFileName({
+        name: "upload 173",
+        originalName: "report_final.v2.pdf",
+        format: "pdf",
+      }),
+      "report-final v2"
+    );
+  });
+
+  await t.test(
+    "processMessages preserves originalName and shows the model the real filename",
+    () => {
+      const messages = [
+        {
+          role: "user",
+          content: [
+            {
+              document: {
+                name: "document",
+                originalName: "book.md",
+                format: "md",
+                source: { bytes: "YQ==" },
+              },
+            },
+          ],
+        },
+      ];
+
+      const [processed] = processMessages(messages, 0);
+      const file = processed.content[0].document;
+      assert.strictEqual(file.name, "book");
+      assert.strictEqual(file.originalName, "book.md");
+      assert.ok(file.source.bytes instanceof Uint8Array, "bytes should be converted for provider");
+    }
+  );
 });
