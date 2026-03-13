@@ -201,7 +201,7 @@ export class ConversationService {
               gte(Message.id, conversation.summaryMessageID)
             )
           )
-          .orderBy(asc(Message.createdAt));
+          .orderBy(asc(Message.id));
       }
     }
     if (!messages) {
@@ -209,7 +209,7 @@ export class ConversationService {
         .select()
         .from(Message)
         .where(eq(Message.conversationID, conversationId))
-        .orderBy(asc(Message.createdAt));
+        .orderBy(asc(Message.id));
     }
 
     const estimated = estimateMessageTokens(messages);
@@ -436,7 +436,7 @@ export class ConversationService {
               gte(Message.id, conversation.summaryMessageID)
             )
           )
-          .orderBy(asc(Message.createdAt));
+          .orderBy(asc(Message.id));
       }
     }
 
@@ -445,7 +445,7 @@ export class ConversationService {
         .select()
         .from(Message)
         .where(eq(Message.conversationID, conversationId))
-        .orderBy(asc(Message.createdAt));
+        .orderBy(asc(Message.id));
     }
 
     const messageIds = messages.map((m) => m.id);
@@ -528,7 +528,7 @@ export class ConversationService {
       .select()
       .from(Message)
       .where(eq(Message.conversationID, conversationId))
-      .orderBy(asc(Message.createdAt));
+      .orderBy(asc(Message.id));
   }
 
   async getMessage(userId, messageId) {

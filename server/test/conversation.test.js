@@ -1,4 +1,4 @@
-import db, { User, Conversation } from "database";
+import db, { User, Conversation, Message } from "database";
 import assert from "node:assert";
 import { test } from "node:test";
 
@@ -189,9 +189,67 @@ test("ConversationService", async (t) => {
     await mt.test("getMessages by conversation", async () => {
       const messages = await svc.getMessages(testUser.id, conversationId);
       assert.ok(messages.length >= 2);
-      // Ordered by createdAt ASC
+      // Ordered by insert sequence
       assert.strictEqual(messages[0].role, "user");
       assert.strictEqual(messages[1].role, "assistant");
+    });
+
+    await mt.test("getMessages preserves tool turn order even when timestamps disagree", async () => {
+      const conversation = await svc.createConversation(testUser.id, {
+        title: "Tool Ordering Test",
+      });
+
+      const [assistantToolUse] = await db
+        .insert(Message)
+        .values({
+          conversationID: conversation.id,
+          role: "assistant",
+          content: [
+            {
+              toolUse: {
+                toolUseId: "tool_1",
+                name: "search",
+                input: { query: "nci" },
+              },
+            },
+          ],
+          createdAt: new Date("2026-01-01T00:00:02.000Z"),
+        })
+        .returning();
+
+      const [toolResults] = await db
+        .insert(Message)
+        .values({
+          conversationID: conversation.id,
+          role: "user",
+          content: [
+            {
+              toolResult: {
+                toolUseId: "tool_1",
+                content: [{ json: { results: [{ title: "NCI" }] } }],
+              },
+            },
+          ],
+          createdAt: new Date("2026-01-01T00:00:01.000Z"),
+        })
+        .returning();
+
+      const [assistantFinal] = await db
+        .insert(Message)
+        .values({
+          conversationID: conversation.id,
+          role: "assistant",
+          content: [{ text: "Done" }],
+          createdAt: new Date("2026-01-01T00:00:03.000Z"),
+        })
+        .returning();
+
+      const messages = await svc.getMessages(testUser.id, conversation.id);
+      assert.deepStrictEqual(
+        messages.map((message) => message.id),
+        [assistantToolUse.id, toolResults.id, assistantFinal.id],
+        "messages should follow insert order so tool results stay paired with the preceding tool use"
+      );
     });
 
     await mt.test("updateMessage", async () => {
@@ -240,6 +298,52 @@ test("ConversationService", async (t) => {
       assert.ok(context.conversation);
       assert.strictEqual(context.messages.length, 2);
       assert.strictEqual(context.resources.length, 1);
+    });
+
+    await ct.test("getContext also preserves insert order for tool turns", async () => {
+      const conversation = await svc.createConversation(testUser.id, { title: "Context Ordering Test" });
+
+      const [assistantToolUse] = await db
+        .insert(Message)
+        .values({
+          conversationID: conversation.id,
+          role: "assistant",
+          content: [
+            {
+              toolUse: {
+                toolUseId: "tool_2",
+                name: "search",
+                input: { query: "context" },
+              },
+            },
+          ],
+          createdAt: new Date("2026-01-01T00:00:02.000Z"),
+        })
+        .returning();
+
+      const [toolResults] = await db
+        .insert(Message)
+        .values({
+          conversationID: conversation.id,
+          role: "user",
+          content: [
+            {
+              toolResult: {
+                toolUseId: "tool_2",
+                content: [{ json: { results: [{ title: "Context" }] } }],
+              },
+            },
+          ],
+          createdAt: new Date("2026-01-01T00:00:01.000Z"),
+        })
+        .returning();
+
+      const context = await svc.getContext(testUser.id, conversation.id);
+      assert.deepStrictEqual(
+        context.messages.map((message) => message.id),
+        [assistantToolUse.id, toolResults.id],
+        "context messages should keep tool results immediately after the matching tool use"
+      );
     });
 
     await ct.test("returns null for non-existent conversation", async () => {
