@@ -1,10 +1,11 @@
-import db, { Model, Usage, User } from "database";
+import db, { Model } from "database";
 
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import { recordUsage } from "shared/clients/users.js";
 
 /**
- * Generalized usage tracking. Inserts one Usage row per consumption dimension
- * and deducts the total cost from the user's remaining balance.
+ * Generalized usage tracking. Resolves model pricing, computes costs,
+ * then delegates row insertion + budget deduction to the users service.
  *
  * @param {number} userID
  * @param {string} modelValue - Model internalName (e.g. "us.anthropic.claude-sonnet-4-6") or service key (e.g. "aws-translate")
@@ -28,14 +29,12 @@ export async function trackUsage(
     if (!model) return;
 
     const pricing = model.pricing || {};
-    let totalCost = 0;
     const rows = [];
 
     for (const { quantity, unit } of usageItems) {
       if (!quantity || quantity <= 0) continue;
       const unitCost = pricing[unit] || 0;
       const cost = quantity * unitCost;
-      totalCost += cost;
       rows.push({
         userID,
         modelID: model.id,
@@ -51,18 +50,7 @@ export async function trackUsage(
 
     if (!rows.length) return;
 
-    const inserted = await db.insert(Usage).values(rows).returning();
-
-    if (totalCost > 0) {
-      await db
-        .update(User)
-        .set({
-          remaining: sql`GREATEST(0, COALESCE(${User.remaining}, 0) - ${totalCost})`,
-        })
-        .where(eq(User.id, userID));
-    }
-
-    return inserted;
+    return recordUsage(userID, rows);
   } catch (error) {
     console.error("Error tracking usage:", error);
   }
