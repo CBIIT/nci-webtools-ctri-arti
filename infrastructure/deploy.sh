@@ -1,10 +1,10 @@
 #!/bin/bash
-set -ex
+set -e
 
 # Run from project root
 cd "$(dirname "$0")/.."
 
-# Load .env if present
+# Load .env if present (tracing disabled to avoid leaking secrets)
 if [ -f infrastructure/.env ]; then
   set -a
   source infrastructure/.env
