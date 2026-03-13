@@ -263,6 +263,7 @@ async function streamChat(store, setStore, agentId, conversationId) {
 
   let assistantMessageIndex = null;
   let summaryMessageIndex = null;
+  let toolResultsMessageIndex = null;
   let isSummarizing = false;
   const pendingClientTools = [];
 
@@ -270,6 +271,11 @@ async function streamChat(store, setStore, agentId, conversationId) {
     const index = store.messages.length;
     setStore("messages", index, { role, content: [] });
     return index;
+  }
+
+  function ensureToolResultsMessage() {
+    toolResultsMessageIndex ??= appendMessage("user");
+    return toolResultsMessageIndex;
   }
 
   function isContentStreamEvent(event) {
@@ -317,10 +323,8 @@ async function streamChat(store, setStore, agentId, conversationId) {
     }
 
     if (event.toolResult) {
-      if (!store.messages.at(-1)?.content?.some?.((c) => c.toolResult)) {
-        appendMessage("user");
-      }
-      setStore(produce((s) => s.messages.at(-1).content.push(event)));
+      const messageIndex = ensureToolResultsMessage();
+      setStore(produce((s) => s.messages[messageIndex].content.push(event)));
       assistantMessageIndex = null;
       continue;
     }
@@ -354,11 +358,8 @@ async function streamChat(store, setStore, agentId, conversationId) {
       })
     );
 
-    if (store.messages.at(-1)?.role === "user") {
-      setStore(produce((s) => s.messages.at(-1).content.push(...content)));
-    } else {
-      setStore("messages", store.messages.length, { role: "user", content });
-    }
+    const messageIndex = ensureToolResultsMessage();
+    setStore(produce((s) => s.messages[messageIndex].content.push(...content)));
 
     return await streamChat(store, setStore, agentId, conversationId);
   }
@@ -539,14 +540,14 @@ function code({ language = "javascript", source, timeout = 5000 }) {
     const bridge = `
       (()=>{
         const _fetch = fetch;
+        const _origin = "${location.origin}";
         window.fetch = async (url, opts = {}) => {
           try {
-            const u = new URL(url, location.origin);
+            const u = new URL(url);
             const isLocal = ["localhost","127.0.0.1","[::1]"].some(h => u.hostname === h || u.hostname.endsWith(".localhost"));
             if (isLocal) return _fetch(url, opts);
-            const proxyUrl = location.origin + "/api/v1/browse/" + u.href;
-            return _fetch(proxyUrl, opts);
-          } catch (e) { console.log(e); return _fetch(url, opts); }
+            return _fetch(_origin + "/api/v1/browse/" + u.href, opts);
+          } catch (e) { return _fetch(url, opts); }
         };
         const send=(t,m)=>parent.postMessage({type:t,msg:m},"*");
         ["log","warn","error","info","debug"].forEach(k=>{

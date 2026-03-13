@@ -26,7 +26,7 @@ export default function BrowseTool(props) {
     ${ToolHeader({
       icon: html`<${Globe} size="16" class="text-muted-contrast" />`,
       title: () =>
-        (props.message?.toolUse?.input?.url || []).map((u) => new URL(u).hostname).join(", ") ||
+        (props.message?.toolUse?.input?.url || []).map((u) => { try { return new URL(u).hostname; } catch { return u; } }).join(", ") ||
         "Browsing...",
       right: () =>
         html`<small class="text-muted-contrast">

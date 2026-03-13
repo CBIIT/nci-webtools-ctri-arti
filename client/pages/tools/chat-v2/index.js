@@ -192,6 +192,8 @@ function ChatApp() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (agent.loading || isStreaming()) return;
+
     const form = event.target;
     const text = form.message.value;
     const files = Array.from(form.inputFiles?.files || []);
