@@ -144,9 +144,8 @@ api.post(
 
 // ===== Analytics =====
 
-api.get(
-  "/admin/analytics",
-  requireRole("admin"),
+api.get("/admin/analytics", 
+  requireRole("admin"), 
   routeHandler(async (req, res) => {
     const result = await getAnalytics({
       startDate: req.query.startDate,
