@@ -1,7 +1,8 @@
 import { json, Router } from "express";
 import { logRequests } from "shared/middleware.js";
+import { requireRole } from "users/middleware.js";
 
-import { logErrors, requireRole } from "./middleware.js";
+import { logErrors } from "./middleware.js";
 import adminRoutes from "./routes/admin.js";
 import agentsChatRoutes from "./routes/agents-chat.js";
 import authRoutes from "./routes/auth.js";

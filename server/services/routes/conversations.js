@@ -1,7 +1,7 @@
 import { json, Router } from "express";
-
 import { cmsClient } from "shared/clients/cms.js";
-import { requireRole } from "../middleware.js";
+import { requireRole } from "users/middleware.js";
+
 import { routeHandler } from "../utils.js";
 
 const api = Router();

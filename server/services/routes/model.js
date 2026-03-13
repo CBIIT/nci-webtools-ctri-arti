@@ -1,7 +1,7 @@
 import { json, Router } from "express";
-
 import { invoke, listModels } from "shared/clients/gateway.js";
-import { requireRole } from "../middleware.js";
+import { requireRole } from "users/middleware.js";
+
 import { createHttpError } from "../utils.js";
 
 const api = Router();

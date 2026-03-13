@@ -1,9 +1,9 @@
 import db, { rawSql } from "database";
 
 import { json, Router } from "express";
+import { requireRole } from "users/middleware.js";
 
 import { sendFeedback, sendLogReport, sendJustificationEmail } from "../email.js";
-import { requireRole } from "../middleware.js";
 import { parseDocument } from "../parsers.js";
 import { proxyMiddleware } from "../proxy.js";
 import { getFile, listFiles } from "../s3.js";
