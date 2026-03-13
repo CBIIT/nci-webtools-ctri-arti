@@ -5,6 +5,14 @@ import { requireRole } from "../middleware.js";
 
 const api = Router();
 
+function getUserId(req) {
+  const userId = req.session?.user?.id;
+  if (!userId) {
+    return null;
+  }
+  return userId;
+}
+
 /**
  * POST /agents/:agentId/conversations/:conversationId/chat
  *
@@ -12,7 +20,10 @@ const api = Router();
  * Streams NDJSON back to the client.
  */
 api.post("/agents/:agentId/conversations/:conversationId/chat", requireRole(), async (req, res) => {
-  const userId = req.session.user.id;
+  const userId = getUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
   const { agentId, conversationId } = req.params;
   const { message, model, thoughtBudget } = req.body;
 
