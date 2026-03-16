@@ -141,6 +141,22 @@ describe("tools", () => {
       assert.ok(result.entries.includes("sub/"));
     });
 
+    it("lists root and empty scoped directories instead of failing", async () => {
+      const cms = createMockCms();
+      const context = { userId: 1, agentId: 1, conversationId: 10, cms };
+
+      const root = await toolImplementations.editor({ command: "view", path: "/" }, context);
+      assert.equal(root.status, "directory");
+      assert.deepStrictEqual(root.entries, []);
+
+      const memories = await toolImplementations.editor(
+        { command: "view", path: "memories/" },
+        context
+      );
+      assert.equal(memories.status, "directory");
+      assert.deepStrictEqual(memories.entries, []);
+    });
+
     it("returns error for missing file on view", async () => {
       const cms = createMockCms();
       const context = { userId: 1, agentId: 1, conversationId: 10, cms };

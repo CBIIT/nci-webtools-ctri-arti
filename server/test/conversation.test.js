@@ -416,6 +416,27 @@ test("ConversationService", async (t) => {
       agentId = agent.id;
     });
 
+    await rt.test(
+      "storeConversationResource allows user resources under global agents",
+      async () => {
+        const [globalAgent] = await svc.getAgents(null);
+        assert.ok(globalAgent, "expected at least one global agent from seed data");
+
+        const resource = await svc.storeConversationResource(testUser.id, {
+          agentID: globalAgent.id,
+          name: "memories/profile.txt",
+          type: "text/plain",
+          content: "preferred editor behavior",
+        });
+
+        assert.ok(resource.id);
+        assert.strictEqual(resource.agentID, globalAgent.id);
+        assert.strictEqual(resource.userID, testUser.id);
+
+        await svc.deleteConversationResource(testUser.id, resource.id);
+      }
+    );
+
     await rt.test("storeConversationResource", async () => {
       const resource = await svc.storeConversationResource(testUser.id, {
         agentID: agentId,
