@@ -77,7 +77,7 @@ export function usageTableHeader(props) {
       </div>
 
       <!-- Type Filter -->
-      <div style="display: grid; gap: 1rem; grid-template-columns: repeat(5, minmax(0, 1fr));">
+      <div style="display: grid; gap: 1rem; grid-template-columns: repeat(4, minmax(0, 1fr));">
         <div>
           <label for="type-filter" class="form-label fw-semibold">Type</label>
           <select

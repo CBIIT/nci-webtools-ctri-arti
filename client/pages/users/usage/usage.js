@@ -317,13 +317,9 @@ function UsersList() {
         return null;
       }}
     >
-      <div
-        class="w-100 overflow-hidden"
-        style="background: linear-gradient(180deg, #000E26 0%, #7EA4EE 55%, #FFFFFF 100%);"
-      >
+      <div class="w-100 overflow-hidden page-header-bg">
         <div
-          class="w-100 d-flex align-items-center"
-          style="background: url('/assets/images/page-header.svg') center top / cover no-repeat; min-height: 240px;"
+          class="w-100 d-flex align-items-center page-header-banner"
           role="img"
           aria-label="Page header"
         >
@@ -331,11 +327,8 @@ function UsersList() {
             <h1 class="font-title fs-1 fw-bold mb-0 text-white">AI Usage Dashboard</h1>
           </div>
         </div>
-        <div class="container pb-4" style="margin-top: -36px; position: relative; z-index: 1;">
-          <div
-            class="card shadow rounded-4 overflow-hidden"
-            style="border: 3px solid #2b8ec9; background-color: #f8f9fa;"
-          >
+        <div class="container pb-4">
+          <div class="card shadow rounded-4 overflow-hidden page-header-content-card">
             <div class="card-body p-4">
               <!-- Error Alert -->
               <${Show} when=${() => serverAnalyticsResource.error || rolesResource.error}>
