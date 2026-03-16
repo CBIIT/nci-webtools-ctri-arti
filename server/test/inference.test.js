@@ -1,10 +1,30 @@
 import assert from "node:assert";
-import { after, before, test } from "node:test";
+import { test } from "node:test";
 
 import { runModel } from "gateway/inference.js";
 import BedrockProvider from "gateway/providers/bedrock.js";
 
 const HAIKU_MODEL = "us.anthropic.claude-3-5-haiku-20241022-v1:0";
+
+test("runModel returns stream wrapper for streaming responses", async () => {
+  const result = await runModel({
+    model: "mock-model",
+    messages: [{ role: "user", content: [{ text: "stream wrapper test" }] }],
+    stream: true,
+  });
+
+  assert.ok(result, "Expected a result object");
+  assert.ok(result.stream, "Expected a stream property");
+
+  const events = [];
+  for await (const event of result.stream) {
+    events.push(event);
+  }
+
+  assert.ok(events.length > 0, "Expected streaming events");
+  const metadataEvent = events.find((event) => event.metadata?.usage);
+  assert.ok(metadataEvent, "Expected a metadata event with usage");
+});
 
 test.skip("Cache System Tests", async (t) => {
   await t.test("Basic Cache Write and Read", async () => {

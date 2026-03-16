@@ -8,7 +8,8 @@
     "./conversation.js": "./conversation.js"
   },
   "scripts": {
-    "start": "node --env-file .env index.js"
+    "start": "node --env-file .env index.js",
+    "reindex:vectors": "node reindex-resource-vectors.js"
   },
   "dependencies": {
     "database": "*",

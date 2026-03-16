@@ -92,6 +92,12 @@
 .font-poppins {
   font-family: "Poppins" !important;
 }
+.font-nunito {
+  font-family: "Nunito" !important;
+}
+.font-outfit {
+  font-family: "Outfit" !important;
+}
 
 .font-smooth {
   -webkit-font-smoothing: antialiased !important;
@@ -961,6 +967,93 @@ dialog .close-btn {
   max-width: 100%;
   height: auto;
 }
+
+/* Editor: no scroll limit, no fade */
+.editor-accordion .search-accordion__scroll {
+  max-height: none;
+}
+.editor-accordion .mask-fade-bottom {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+/* Readable prose for .txt */
+.editor-accordion .content-prose {
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--bs-body-color);
+  padding: 1rem 1.25rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Rendered markdown for .md */
+.editor-accordion .content-markdown {
+  padding: 1rem 1.25rem;
+  line-height: 1.6;
+}
+.editor-accordion .content-markdown h1,
+.editor-accordion .content-markdown h2,
+.editor-accordion .content-markdown h3 {
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+}
+.editor-accordion .content-markdown p {
+  margin-bottom: 0.75em;
+}
+.editor-accordion .content-markdown ul,
+.editor-accordion .content-markdown ol {
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.editor-accordion .content-markdown a {
+  color: var(--bs-primary);
+}
+.editor-accordion .content-markdown img {
+  max-width: 100%;
+  height: auto;
+}
+.editor-accordion .content-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1em;
+}
+.editor-accordion .content-markdown th,
+.editor-accordion .content-markdown td {
+  border: 1px solid var(--bs-border-color);
+  padding: 0.4em 0.75em;
+}
+
+/* Diff styles */
+.editor-diff-line {
+  padding: 1px 0.75rem;
+  display: block;
+  min-height: 1.4em;
+}
+.editor-diff-removed {
+  background-color: #fdd;
+  text-decoration: line-through;
+  color: #944;
+}
+.editor-diff-added {
+  background-color: #dfd;
+  color: #294;
+}
+.editor-diff-line-number {
+  display: inline-block;
+  width: 3em;
+  text-align: right;
+  margin-right: 0.75rem;
+  color: var(--bs-secondary-color);
+  user-select: none;
+  font-size: 0.8em;
+  opacity: 0.6;
+}
+
 .chat-titlebar {
   position: sticky;
   top: 0;
@@ -1304,4 +1397,112 @@ dialog .close-btn {
 
 .card-lg {
   min-height: 600px;
+}
+
+.btn-save-primary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 9.5px 31px;
+  gap: 10px;
+  background: #1075fd;
+  border: 0.5px solid #373737;
+  border-radius: 60px;
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 16px;
+  text-align: center;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+}
+
+.btn-save-primary:hover,
+.btn-save-primary:focus,
+.btn-save-primary:active {
+  background: #0d5ed4;
+  border: 0.5px solid #373737;
+  color: #ffffff;
+}
+
+.btn-save-primary:disabled {
+  background: #1075fd;
+  border: 0.5px solid #373737;
+  color: #ffffff;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Inline Select Component */
+.custom-dropdown {
+  width: 100%;
+}
+
+.custom-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 2px;
+  background: #ffffff;
+  border: none;
+  border-bottom: 1.5px solid #b0babf;
+  border-radius: 0;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: 0.02em;
+  color: #002643;
+  text-align: left;
+  position: relative;
+}
+
+.custom-dropdown-trigger:hover,
+.custom-dropdown-trigger:focus {
+  background: #ffffff;
+  border-color: transparent;
+  border-bottom: 1.5px solid #1075fd;
+  box-shadow: none;
+  outline: none;
+}
+
+.custom-dropdown-trigger::after {
+  border: none;
+  content: url("images/icon-chevron-down.svg");
+  position: absolute;
+  right: 18px;
+  vertical-align: middle;
+}
+
+.custom-dropdown-menu {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin: 0;
+  list-style: none;
+  border: 1px solid #a5a5a5;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+}
+
+.custom-dropdown-menu .custom-dropdown-option {
+  padding: 5px;
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  color: #62666d;
+  border-radius: 8px;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.custom-dropdown-menu .custom-dropdown-option:hover,
+.custom-dropdown-menu .custom-dropdown-option:focus {
+  background: #acddfe;
+  color: #62666d;
 }

@@ -7,15 +7,18 @@ import { X } from "lucide-solid";
 import { createSignal, ErrorBoundary, For, onCleanup } from "solid-js";
 import html from "solid-js/html";
 
-
 import BrowseTool from "../../../components/chat-tools/browse-tool.js";
 import CodeTool from "../../../components/chat-tools/code-tool.js";
 import DataTool from "../../../components/chat-tools/data-tool.js";
 import DocxTemplateTool from "../../../components/chat-tools/docx-template-tool.js";
 import EditorTool from "../../../components/chat-tools/editor-tool.js";
 import ReasoningTool from "../../../components/chat-tools/reasoning-tool.js";
+import RecallTool from "../../../components/chat-tools/recall-tool.js";
 import SearchTool from "../../../components/chat-tools/search-tool.js";
+import SummaryTool from "../../../components/chat-tools/summary-tool.js";
 import TextContent from "../../../components/chat-tools/text-content.js";
+
+const CONVERSATION_SUMMARY_TOKEN = "[Conversation Summary]";
 
 const TOOL_COMPONENTS = {
   search: SearchTool,
@@ -25,6 +28,7 @@ const TOOL_COMPONENTS = {
   editor: EditorTool,
   think: ReasoningTool,
   docxTemplate: DocxTemplateTool,
+  recall: RecallTool,
 };
 
 /**
@@ -53,6 +57,10 @@ function getSearchResults(toolResult) {
   const results = toolResult?.content?.[0]?.json?.result || toolResult?.content?.[0]?.json?.results;
   if (!results?.web && !results?.news) return [];
   return [...(results.web || []), ...(results.news || [])];
+}
+
+function isSummaryText(text = "") {
+  return typeof text === "string" && text.startsWith(CONVERSATION_SUMMARY_TOKEN);
 }
 
 export default function Message(p) {
@@ -163,10 +171,22 @@ export default function Message(p) {
     </dialog>
 
     <${ErrorBoundary} fallback=${(error) => console.log(error)}>
-      <${For} each=${p.message?.content}>
+      <${For} each=${() => p.message?.content}>
         ${(c, i) => {
           if (c.text !== undefined) {
-            const isLast = () => !p.isStreaming?.() && p?.index === p?.messages?.length - 1;
+            if (isSummaryText(c.text)) {
+              const key = `summary:${p.index}-${i()}`;
+              return SummaryTool({
+                role: p?.message?.role,
+                message: c,
+                messages: p?.messages,
+                isOpen: () => !!visible()[key],
+                bodyId: `summary-acc-body-${safeId(`${p.index}-${i()}`)}`,
+                onToggle: () => toggleVisible(key),
+              });
+            }
+
+            const isLast = () => !p.isStreaming && p?.index === p?.messages?.length - 1;
 
             return TextContent({
               role: p?.message?.role,
@@ -190,11 +210,8 @@ export default function Message(p) {
           const base = c?.toolUse?.toolUseId || `${p.index}-${i()}`;
           const type = typeOfContent(c);
           const key = `${type}:${base}`;
-          const isOpen = () => !!visible()[key];
+          const isOpen = () => (name === "editor" ? visible()[key] !== false : !!visible()[key]);
           const bodyId = `${type}-acc-body-${safeId(base)}`;
-
-          // V2's succinct tool result finding
-          const toolResult = c.toolUse ? findToolResult(p.messages, c.toolUse.toolUseId) : null;
 
           return Component({
             role: p?.message?.role,
@@ -202,7 +219,9 @@ export default function Message(p) {
             messages: p?.messages,
             isOpen,
             bodyId,
-            results: getSearchResults(toolResult),
+            results: getSearchResults(
+              c.toolUse ? findToolResult(p.messages, c.toolUse.toolUseId) : null
+            ),
             onToggle: () => toggleVisible(key),
           });
         }}

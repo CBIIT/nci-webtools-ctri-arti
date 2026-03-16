@@ -3,7 +3,6 @@ import { marked } from "marked";
 import { Show } from "solid-js";
 import html from "solid-js/html";
 
-
 import { downloadCsv } from "../../utils/files.js";
 import Tooltip from "../tooltip.js";
 
@@ -28,11 +27,13 @@ import Tooltip from "../tooltip.js";
 export default function TextContent(props) {
   return html`
     <div
+      data-chat-message="true"
+      data-role=${() => props.role || ""}
       class="position-relative hover-visible-parent min-w-0"
       classList=${{ "text-end": props.role === "user" }}
     >
       <div
-        class="p-2 markdown min-w-0"
+        class="p-2 text-start markdown min-w-0"
         classList=${{
           "user-message d-inline-block p-3 rounded my-2": props.role === "user",
         }}

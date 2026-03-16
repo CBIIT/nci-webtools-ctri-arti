@@ -5,7 +5,12 @@ import {
   estimateContentTokens,
   calculateCacheBoundaries,
   addCachePointsToMessages,
+  sanitizeProviderFileName,
+  getProviderVisibleFileName,
+  processMessages,
 } from "gateway/inference.js";
+import { MAX_INLINE_FILE_BYTES, validateInlineMessageContent } from "gateway/upload-limits.js";
+import { PDFDocument } from "pdf-lib";
 
 test("estimateContentTokens", async (t) => {
   await t.test("estimates text content", () => {
@@ -134,5 +139,104 @@ test("addCachePointsToMessages", async (t) => {
     const result = addCachePointsToMessages(messages, true);
     const hasCachePoint = result.some((m) => m.content.some((c) => c.cachePoint));
     assert.ok(!hasCachePoint, "Should not add cache points for small content");
+  });
+});
+
+test("provider filename sanitization", async (t) => {
+  await t.test("sanitizes names only for provider payloads", () => {
+    assert.strictEqual(sanitizeProviderFileName("book/md.md"), "book md md");
+    assert.strictEqual(sanitizeProviderFileName(" report  final?.pdf "), "report final pdf");
+  });
+
+  await t.test("derives the provider-visible name from originalName", () => {
+    assert.strictEqual(
+      getProviderVisibleFileName({ name: "document", originalName: "book.md", format: "md" }),
+      "book"
+    );
+    assert.strictEqual(
+      getProviderVisibleFileName({
+        name: "upload 173",
+        originalName: "report_final.v2.pdf",
+        format: "pdf",
+      }),
+      "report-final v2"
+    );
+  });
+
+  await t.test(
+    "processMessages preserves originalName and shows the model the real filename",
+    () => {
+      const messages = [
+        {
+          role: "user",
+          content: [
+            {
+              document: {
+                name: "document",
+                originalName: "book.md",
+                format: "md",
+                source: { bytes: "YQ==" },
+              },
+            },
+          ],
+        },
+      ];
+
+      const [processed] = processMessages(messages, 0);
+      const file = processed.content[0].document;
+      assert.strictEqual(file.name, "book");
+      assert.strictEqual(file.originalName, "book.md");
+      assert.ok(file.source.bytes instanceof Uint8Array, "bytes should be converted for provider");
+    }
+  );
+});
+
+test("inline upload limits", async (t) => {
+  await t.test("rejects more than five inline files in one message", async () => {
+    const content = Array.from({ length: 6 }, (_, index) => ({
+      document: {
+        name: `doc-${index + 1}`,
+        originalName: `doc-${index + 1}.txt`,
+        format: "txt",
+        source: { bytes: Buffer.from("hello", "utf-8").toString("base64") },
+      },
+    }));
+
+    await assert.rejects(() => validateInlineMessageContent(content), /maximum of 5 inline files/i);
+  });
+
+  await t.test("rejects inline files larger than 4.5 MB", async () => {
+    const content = [
+      {
+        document: {
+          name: "large",
+          originalName: "large.txt",
+          format: "txt",
+          source: { bytes: Buffer.alloc(MAX_INLINE_FILE_BYTES + 1).toString("base64") },
+        },
+      },
+    ];
+
+    await assert.rejects(() => validateInlineMessageContent(content), /4\.5 MB limit/i);
+  });
+
+  await t.test("rejects inline PDFs with more than 100 pages", async () => {
+    const pdf = await PDFDocument.create();
+    for (let i = 0; i < 101; i++) {
+      pdf.addPage([200, 200]);
+    }
+
+    const content = [
+      {
+        document: {
+          name: "protocol",
+          originalName: "protocol.pdf",
+          format: "pdf",
+          source: { bytes: Buffer.from(await pdf.save()).toString("base64") },
+        },
+      },
+    ];
+
+    await assert.rejects(() => validateInlineMessageContent(content), /maximum of 100 PDF pages/i);
   });
 });

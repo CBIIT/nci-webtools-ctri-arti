@@ -36,6 +36,41 @@
       "when": 1772780400000,
       "tag": "0004_fix_timestamp_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1773293843966,
+      "tag": "0005_resource_conversation_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1773295085987,
+      "tag": "0006_resource_user_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1773345784556,
+      "tag": "0007_generalize_usage",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773432184556,
+      "tag": "0008_add_trgm_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1773361633501,
+      "tag": "0009_vector_embeddings",
+      "breakpoints": true
     }
   ]
 }

@@ -1,476 +1,177 @@
-// =================================================================================
-// HOOKS.JS - Chat V2 Logic (Database Adapters, Tools, State Management)
-// =================================================================================
-
-import { openDB } from "idb";
-import mammoth from "mammoth";
 import { createEffect } from "solid-js";
-import { createStore, produce, unwrap } from "solid-js/store";
-import { docxReplace, docxExtractTextBlocks } from "/utils/docx.js";
+import { createStore, produce } from "solid-js/store";
 
-import { tools as toolSpecs, systemPrompt as defaultSystemPrompt } from "../chat/config.js";
-
-// =================================================================================
-// DATABASE ADAPTER INTERFACE
-// =================================================================================
-
-/**
- * IndexedDB adapter - stores data locally in the browser
- */
-class IndexedDBAdapter {
-  constructor(db) {
-    this.db = db;
-  }
-
-  static async create() {
-    const db = await openDB("chat-v2-messages", 1, {
-      upgrade(db) {
-        const tables = {};
-        const tableNames = ["agents", "threads", "messages", "resources"];
-        for (const tableName of tableNames) {
-          if (!db.objectStoreNames.contains(tableName)) {
-            const store = db.createObjectStore(tableName, { keyPath: "id", autoIncrement: true });
-            store.createIndex("id", "id", { unique: true });
-            tables[tableName] = store;
-          }
-        }
-        tables.messages.createIndex("agentId", "agentId");
-        tables.messages.createIndex("threadId", "threadId");
-        tables.threads.createIndex("agentId", "agentId");
-        tables.resources.createIndex("agentId", "agentId");
-        tables.resources.createIndex("threadId", "threadId");
-        tables.resources.createIndex("messageId", "messageId");
-      },
-    });
-
-    const adapter = new IndexedDBAdapter(db);
-    await adapter.ensureDefaultAgent();
-    return adapter;
-  }
-
-  async ensureDefaultAgent() {
-    if (!(await this.db.count("agents"))) {
-      await this.db.add("agents", {
-        name: "Ada",
-        tools: ["search", "browse", "code", "editor", "think"],
-        systemPrompt: null, // Will use fallback from config.js
-        resources: [],
-      });
-    }
-  }
-
-  // Agents
-  async getAgent(id) {
-    return this.db.get("agents", id);
-  }
-
-  async getAgents() {
-    return this.db.getAll("agents");
-  }
-
-  async createAgent(data) {
-    const id = await this.db.add("agents", data);
-    return { ...data, id };
-  }
-
-  async updateAgent(id, data) {
-    const existing = await this.db.get("agents", id);
-    if (!existing) return null;
-    const updated = { ...existing, ...data, id };
-    await this.db.put("agents", updated);
-    return updated;
-  }
-
-  // Threads
-  async getThread(id) {
-    return this.db.get("threads", id);
-  }
-
-  async getThreads(agentId = null) {
-    if (agentId) {
-      return this.db.getAllFromIndex("threads", "agentId", agentId);
-    }
-    return this.db.getAll("threads");
-  }
-
-  async createThread(data) {
-    const id = await this.db.add("threads", {
-      ...data,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-    return { ...data, id, createdAt: Date.now(), updatedAt: Date.now() };
-  }
-
-  async updateThread(id, data) {
-    const existing = await this.db.get("threads", id);
-    if (!existing) return null;
-    const updated = { ...existing, ...data, id, updatedAt: Date.now() };
-    await this.db.put("threads", updated);
-    return updated;
-  }
-
-  async deleteThread(id) {
-    // Delete all messages in thread first
-    const messages = await this.db.getAllFromIndex("messages", "threadId", id);
-    for (const msg of messages) {
-      await this.db.delete("messages", msg.id);
-    }
-    await this.db.delete("threads", id);
-  }
-
-  // Messages
-  async getMessages(threadId) {
-    return this.db.getAllFromIndex("messages", "threadId", threadId);
-  }
-
-  async addMessage(threadId, data) {
-    const message = { ...data, threadId };
-    const id = await this.db.add("messages", message);
-    return { ...message, id };
-  }
-}
-
-/**
- * Server API adapter - stores data on the backend
- * Maps server field names (title, agentID) to client field names (name, agentId)
- */
-class ServerAdapter {
-  constructor(baseUrl = "/api/v1") {
-    this.baseUrl = baseUrl;
-  }
-
-  static async create(baseUrl) {
-    return new ServerAdapter(baseUrl);
-  }
-
-  async #fetch(path, options = {}) {
-    const res = await fetch(`${this.baseUrl}${path}`, {
-      headers: { "Content-Type": "application/json", ...options.headers },
-      ...options,
-    });
-    if (!res.ok) {
-      const error = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(error.error || `API error: ${res.status}`);
-    }
-    return res.json();
-  }
-
-  // Map server conversation fields to client-expected thread fields
-  #mapConversation(conv) {
-    if (!conv) return conv;
-    return { ...conv, name: conv.title ?? conv.name, agentId: conv.agentID ?? conv.agentId };
-  }
-
-  // Agents
-  async getAgent(id) {
-    return this.#fetch(`/agents/${id}`);
-  }
-
-  async getAgents() {
-    return this.#fetch("/agents");
-  }
-
-  async createAgent(data) {
-    return this.#fetch("/agents", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateAgent(id, data) {
-    return this.#fetch(`/agents/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Conversations (mapped as "threads" for UI compatibility)
-  async getThread(id) {
-    const conv = await this.#fetch(`/conversations/${id}`);
-    return this.#mapConversation(conv);
-  }
-
-  async getThreads(agentId = null) {
-    const result = await this.#fetch("/conversations");
-    const conversations = (result.data || result).map((c) => this.#mapConversation(c));
-    if (agentId) {
-      return conversations.filter((t) => t.agentId == agentId || t.agentID == agentId);
-    }
-    return conversations;
-  }
-
-  async createThread(data) {
-    const conv = await this.#fetch("/conversations", {
-      method: "POST",
-      body: JSON.stringify({ title: data.name, agentID: data.agentId }),
-    });
-    return this.#mapConversation(conv);
-  }
-
-  async updateThread(id, data) {
-    const body = {};
-    if (data.name !== undefined) body.title = data.name;
-    if (data.agentId !== undefined) body.agentID = data.agentId;
-    const conv = await this.#fetch(`/conversations/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(body),
-    });
-    return this.#mapConversation(conv);
-  }
-
-  async deleteThread(id) {
-    return this.#fetch(`/conversations/${id}`, { method: "DELETE" });
-  }
-
-  // Messages
-  async getMessages(threadId) {
-    return this.#fetch(`/conversations/${threadId}/messages`);
-  }
-
-  async addMessage(threadId, data) {
-    return this.#fetch(`/conversations/${threadId}/messages`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  }
-}
-
-/**
- * Factory function to create database adapter
- * @param {string} type - "server" (default) or "indexeddb"
- * @returns {Promise<IndexedDBAdapter|ServerAdapter>}
- */
-async function createDB(type = "server") {
-  if (type === "indexeddb") {
-    return IndexedDBAdapter.create();
-  }
-
-  // Try server first, fall back to indexeddb on error
-  try {
-    const adapter = await ServerAdapter.create();
-    // Verify server is accessible by fetching agents
-    await adapter.getAgents();
-    return adapter;
-  } catch (error) {
-    console.warn("Server adapter failed, falling back to IndexedDB:", error.message);
-    return IndexedDBAdapter.create();
-  }
-}
-
-// Singleton for router compatibility
-let dbPromise = null;
-export async function getDB(type = "server") {
-  if (!dbPromise) {
-    dbPromise = createDB(type);
-  }
-  return dbPromise;
-}
+import { getPdfPageCount, parseJSON } from "../../../utils/parsers.js";
 
 // =================================================================================
-// TOOL DEFINITIONS
+// API HELPER
 // =================================================================================
 
-export const TOOLS = [
-  {
-    fn: search,
-    toolSpec: toolSpecs.find((t) => t.toolSpec.name === "search")?.toolSpec,
-  },
-  {
-    fn: browse,
-    toolSpec: toolSpecs.find((t) => t.toolSpec.name === "browse")?.toolSpec,
-  },
-  {
-    fn: code,
-    toolSpec: toolSpecs.find((t) => t.toolSpec.name === "code")?.toolSpec,
-  },
-  {
-    fn: editor,
-    toolSpec: toolSpecs.find((t) => t.toolSpec.name === "editor")?.toolSpec,
-  },
-  {
-    fn: think,
-    toolSpec: toolSpecs.find((t) => t.toolSpec.name === "think")?.toolSpec,
-  },
-  {
-    fn: data,
-    toolSpec: toolSpecs.find((t) => t.toolSpec.name === "data")?.toolSpec,
-  },
-  {
-    fn: docxTemplate,
-    toolSpec: toolSpecs.find((t) => t.toolSpec.name === "docxTemplate")?.toolSpec,
-  },
-].filter((t) => t.toolSpec);
+async function api(path, options = {}) {
+  const res = await fetch(`/api/v1${path}`, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || `API error: ${res.status}`);
+  }
+  return options.raw ? res : res.json();
+}
 
 // =================================================================================
 // CORE LOGIC & STATE - useAgent Hook
 // =================================================================================
 
-export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
+export function useAgent({ agentId, conversationId }) {
   agentId = +agentId || 1;
-  threadId = +threadId || null;
+  conversationId = +conversationId || null;
 
-  const [params, setParams] = createStore({ agentId, threadId });
+  const [params, setParams] = createStore({ agentId, conversationId });
   const [agent, setAgent] = createStore({
     id: null,
     name: null,
-    systemPrompt: null,
-    thread: {
-      id: null,
-      name: null,
-    },
+    conversation: { id: null, name: null },
     modelId: null,
     reasoningMode: false,
     loading: false,
-    tools: [],
+    summarizing: false,
     messages: [],
   });
 
-  // Thread list for sidebar
-  const [threads, setThreads] = createStore([]);
+  const [conversations, setConversations] = createStore([]);
 
-  // Load threads list for sidebar
-  async function loadThreads() {
-    if (!db) return;
+  async function loadConversations() {
     try {
-      const threadsList = await db.getThreads(params.agentId);
-      const sorted = threadsList
+      const result = await api("/conversations");
+      const list = (result.data || result)
+        .map((c) => ({ ...c, name: c.title ?? c.name }))
         .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
         .slice(0, 20);
-      setThreads(sorted);
+      setConversations(list);
     } catch (error) {
-      console.error("Failed to load threads:", error);
+      console.error("Failed to load conversations:", error);
     }
   }
 
-  // Update thread (for title editing)
-  async function updateThread(threadId, updates) {
-    if (!db) return;
+  async function updateConversation(conversationId, updates) {
     try {
-      await db.updateThread(threadId, updates);
-      // Update local state if it's the current thread
-      if (threadId === params.threadId) {
-        setAgent("thread", "name", updates.name);
+      const body = {};
+      if (updates.name !== undefined) body.title = updates.name;
+      await api(`/conversations/${conversationId}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      });
+      if (conversationId === params.conversationId) {
+        setAgent("conversation", "name", updates.name);
       }
-      await loadThreads();
+      await loadConversations();
     } catch (error) {
-      console.error("Failed to update thread:", error);
+      console.error("Failed to update conversation:", error);
     }
   }
 
-  // Delete thread
-  async function deleteThread(threadId) {
-    if (!db) return;
+  async function deleteConversation(conversationId) {
     try {
-      await db.deleteThread(threadId);
-      // If deleted current thread, clear state
-      if (params.threadId === threadId) {
-        setParams("threadId", null);
+      await api(`/conversations/${conversationId}`, { method: "DELETE" });
+      if (params.conversationId === conversationId) {
+        setParams("conversationId", null);
         setAgent("messages", []);
-        setAgent("thread", { id: null, name: null });
+        setAgent("conversation", { id: null, name: null });
       }
-      await loadThreads();
+      await loadConversations();
     } catch (error) {
-      console.error("Failed to delete thread:", error);
+      console.error("Failed to delete conversation:", error);
     }
   }
 
-  // Load history from database adapter
+  // Load history when conversationId changes
   createEffect(async () => {
-    if (!params.threadId) return;
-    const history = await db.getMessages(params.threadId);
-    if (!history?.length) return;
-    const thread = await db.getThread(params.threadId);
-    const name = thread?.name || "Untitled";
-    const messages = history.map(({ role, content }) => ({ role, content }));
-    setAgent({ messages, thread: { id: params.threadId, name } });
+    const requestedConversationId = params.conversationId;
+    if (!requestedConversationId) return;
+    const [messages, conv] = await Promise.all([
+      api(`/conversations/${requestedConversationId}/messages`),
+      api(`/conversations/${requestedConversationId}`),
+    ]);
+    if (params.conversationId !== requestedConversationId) return;
+    if (!messages?.length) return;
+    if (agent.loading && agent.conversation.id === requestedConversationId) return;
+    if (
+      agent.conversation.id === requestedConversationId &&
+      agent.messages.length > messages.length
+    ) {
+      return;
+    }
+    setAgent({
+      messages: messages.map(({ id, role, content }) => ({ id, role, content })),
+      conversation: { id: requestedConversationId, name: conv.title ?? conv.name ?? "Untitled" },
+    });
   });
 
-  // Load threads on mount
+  // Load conversations on mount
   createEffect(async () => {
-    if (db) await loadThreads();
-  });
-
-  // Save changes when store updates (skip global agents)
-  createEffect(async () => {
-    if (!params.agentId || !agent.id) return;
-    // Check if this is a global agent (userId is null) - don't auto-save
-    const record = await db.getAgent(params.agentId);
-    if (record && record.userID === null) return;
-    await db.updateAgent(params.agentId, {
-      name: agent.name,
-      tools: agent.tools.map((t) => t.toolSpec.name),
-    });
-    if (!params.threadId || !agent.thread.id) return;
-    await db.updateThread(params.threadId, {
-      agentId: params.agentId,
-      name: agent.thread.name,
-    });
+    await loadConversations();
   });
 
   async function sendMessage(text, files = [], modelId, reasoningMode) {
     setAgent("loading", true);
 
-    if (!params.threadId) {
-      setAgent("thread", "name", "Untitled");
-      const thread = await db.createThread({ agentId, name: agent.thread.name });
-      setParams("threadId", thread.id);
-      setAgent("thread", "id", thread.id);
-      await loadThreads();
+    try {
+      let currentConversationId = params.conversationId;
+      const shouldGenerateTitle = !currentConversationId && agent.conversation.name === null;
+      if (!currentConversationId) {
+        setAgent("conversation", "name", "Untitled");
+        const conv = await api("/conversations", {
+          method: "POST",
+          body: JSON.stringify({ title: "Untitled", agentID: agentId }),
+        });
+        currentConversationId = conv.id;
+        setParams("conversationId", currentConversationId);
+        setAgent("conversation", "id", currentConversationId);
+        await loadConversations();
+      }
+
+      const content = await getMessageContent(text, files);
+      const userMessage = { role: "user", content };
+
+      const record = await api(`/agents/${params.agentId}`);
+
+      setAgent({
+        id: record.id,
+        conversation: { id: currentConversationId, name: agent.conversation.name },
+        modelId,
+        reasoningMode,
+        name: record.name,
+        messages: agent.messages.concat([userMessage]),
+      });
+
+      if (shouldGenerateTitle) {
+        void generateTitle(text, currentConversationId);
+      }
+
+      await streamChat(agent, setAgent, params.agentId, currentConversationId);
+    } finally {
+      setAgent("loading", false);
     }
-
-    const record = await db.getAgent(+params.agentId);
-    if (!record) return setAgent("loading", false);
-    const agentTools = record.tools?.length
-      ? tools.filter((t) => record.tools.includes(t.toolSpec.name))
-      : tools;
-
-    const content = await getMessageContent(text, files);
-    const userMessage = { role: "user", content };
-
-    setAgent({
-      id: record.id,
-      thread: { id: params.threadId, name: agent.thread.name },
-      modelId,
-      reasoningMode,
-      name: record.name,
-      systemPrompt: record.systemPrompt || null,
-      tools: agentTools,
-      messages: agent.messages.concat([userMessage]),
-    });
-
-    const messages = await runAgent(agent, setAgent);
-    for (const message of messages) {
-      const messageRecord = unwrap(message);
-      messageRecord.agentId = params.agentId;
-      await db.addMessage(params.threadId, messageRecord);
-    }
-    setAgent("loading", false);
   }
 
-  // Generate thread title after first message
-  async function generateThreadTitle(modelId) {
-    if (!params.threadId || agent.thread.name !== "Untitled") return;
+  async function generateTitle(
+    messageText,
+    conversationId,
+    modelId = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+  ) {
+    if (!conversationId || agent.conversation.name !== "Untitled" || !messageText?.trim()) return;
 
     try {
-      const titleInstruction = {
-        role: "user",
-        content: [
-          {
-            text:
-              "Based on the conversation, respond with ONLY a short title (max 30 characters). " +
-              "Use only letters, numbers, and spaces. No quotes or punctuation. Just the title text.",
-          },
-        ],
-      };
-
       const response = await fetch("/api/v1/model", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          model: modelId || "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-          messages: [...agent.messages, titleInstruction],
-          system: "Generate a concise title for this conversation.",
+          model: modelId,
+          messages: [{ role: "user", content: [{ text: messageText }] }],
+          system:
+            "Generate a concise chat title from the user's message only. " +
+            "Respond with only a short title, maximum 30 characters, using only letters, numbers, and spaces.",
           thoughtBudget: 0,
           stream: false,
           type: "chat-title",
@@ -487,7 +188,7 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
         .slice(0, 30);
 
       if (title) {
-        await updateThread(params.threadId, { name: title });
+        await updateConversation(conversationId, { name: title });
       }
     } catch (error) {
       console.error("Failed to generate title:", error);
@@ -500,16 +201,16 @@ export function useAgent({ agentId, threadId }, db, tools = TOOLS) {
     setAgent,
     setParams,
     sendMessage,
-    threads,
-    loadThreads,
-    updateThread,
-    deleteThread,
-    generateThreadTitle,
+    conversations,
+    loadConversations,
+    updateConversation,
+    deleteConversation,
+    generateTitle,
   };
 }
 
 // =================================================================================
-// API STREAMING & AGENT LOOP
+// STREAMING
 // =================================================================================
 
 async function* streamResponse(response) {
@@ -529,150 +230,150 @@ async function* streamResponse(response) {
       if (line.trim()) {
         try {
           yield JSON.parse(line);
-        } catch (e) {
+        } catch (_error) {
           console.warn("Failed to parse line:", line);
         }
       }
     }
   }
 
-  // Process any remaining buffer
   if (buffer.trim()) {
     try {
       yield JSON.parse(buffer);
-    } catch (e) {
+    } catch (_error) {
       console.warn("Failed to parse remaining buffer:", buffer);
     }
   }
 }
 
-async function sendToModel(config) {
-  // Get memory/workspace content from localStorage
-  const getFileContents = (file) => localStorage.getItem("file:" + file) || "";
-  const memoryFiles = [
-    "_profile.txt",
-    "_memory.txt",
-    "_insights.txt",
-    "_workspace.txt",
-    "_knowledge.txt",
-    "_patterns.txt",
-  ];
-  const memoryContent = memoryFiles
-    .map((file) => ({ file, contents: getFileContents(file) }))
-    .filter((f) => f.contents)
-    .map((f) => `<file name="${f.file}">${f.contents}</file>`)
-    .join("\n");
+async function streamChat(store, setStore, agentId, conversationId) {
+  const userMessage = store.messages.at(-1);
+  const thoughtBudget = store.reasoningMode ? 32000 : 0;
 
-  const time = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  // Use server-provided prompt or fallback to config.js default
-  let system;
-  if (config.systemPrompt) {
-    system = config.systemPrompt
-      .replace(/\{\{time\}\}/g, time)
-      .replace(/\{\{memory\}\}/g, memoryContent);
-  } else {
-    // Fallback to V1's systemPrompt from config.js
-    system = defaultSystemPrompt({ time, main: memoryContent });
-  }
-
-  const tools = config.tools.map(({ toolSpec }) => ({ toolSpec })).filter(Boolean);
-  const thoughtBudget = config.reasoningMode ? 32000 : 0;
-
-  // Convert messages to API format - encode bytes as base64
-  const messages = config.messages.map((msg) => ({
-    role: msg.role,
-    content: msg.content.map((c) => {
-      if (c.image?.source?.bytes instanceof Uint8Array) {
-        return {
-          image: {
-            ...c.image,
-            source: { bytes: arrayBufferToBase64(c.image.source.bytes) },
-          },
-        };
-      }
-      if (c.document?.source?.bytes instanceof Uint8Array) {
-        return {
-          document: {
-            ...c.document,
-            source: { bytes: arrayBufferToBase64(c.document.source.bytes) },
-          },
-        };
-      }
-      return c;
-    }),
-  }));
-
-  const response = await fetch("/api/v1/model", {
+  const response = await fetch(`/api/v1/agents/${agentId}/conversations/${conversationId}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: config.modelId,
-      messages,
-      system,
-      tools,
-      thoughtBudget,
-      stream: true,
-      type: config.name,
-    }),
+    body: JSON.stringify({ message: userMessage, model: store.modelId, thoughtBudget }),
   });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(error.error || `API error: ${response.status}`);
+    throw new Error(error.error || `Agent API error: ${response.status}`);
   }
 
-  return { stream: streamResponse(response) };
-}
+  let assistantMessageIndex = null;
+  let summaryMessageIndex = null;
+  let toolResultsMessageIndex = null;
+  let isSummarizing = false;
+  const pendingClientTools = [];
 
-function arrayBufferToBase64(buffer) {
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-async function runAgent(store, setStore) {
-  const startingIndex = store.messages.length - 1;
-  const tools = {};
-  for (const tool of store.tools) {
-    tools[tool.toolSpec.name] = tool.fn;
+  function appendMessage(role) {
+    const index = store.messages.length;
+    setStore("messages", index, { role, content: [] });
+    return index;
   }
 
-  let done = false;
-  while (!done) {
-    const output = await sendToModel(store);
-    const assistantMessage = { role: "assistant", content: [] };
-    setStore("messages", store.messages.length, assistantMessage);
+  function ensureToolResultsMessage() {
+    toolResultsMessageIndex ??= appendMessage("user");
+    return toolResultsMessageIndex;
+  }
 
-    for await (const message of output.stream) {
-      // console.log(message);
-      setStore(produce((s) => processContentBlock(s, message)));
+  function isContentStreamEvent(event) {
+    return (
+      event.messageStart ||
+      event.contentBlockStart ||
+      event.contentBlockDelta ||
+      event.contentBlockStop
+    );
+  }
 
-      const stopReason = message.messageStop?.stopReason;
-      if (stopReason === "end_turn") {
-        done = true;
-      } else if (stopReason === "tool_use") {
-        const toolUses = store.messages.at(-1).content;
-        const toolResultsMessage = await getToolResults(toolUses, tools, store, setStore);
-        setStore("messages", store.messages.length, toolResultsMessage);
+  for await (const event of streamResponse(response)) {
+    if (event.agentError) throw new Error(event.agentError.message);
+
+    if (event.summarizing !== undefined) {
+      isSummarizing = event.summarizing;
+      setStore("summarizing", isSummarizing);
+      if (isSummarizing) {
+        summaryMessageIndex = null;
+        assistantMessageIndex = null;
+      } else {
+        summaryMessageIndex = null;
+        assistantMessageIndex = null;
+      }
+      continue;
+    }
+
+    // During summarization, render content blocks as a user message
+    if (isSummarizing) {
+      if (isContentStreamEvent(event)) {
+        summaryMessageIndex ??= appendMessage("user");
+        setStore(produce((s) => processContentBlock(s, event, summaryMessageIndex)));
+        continue;
+      }
+      if (event.messageStop) {
+        summaryMessageIndex = null;
+        assistantMessageIndex = null;
+        continue;
       }
     }
+
+    if (event.clientToolRequest) {
+      pendingClientTools.push(event.clientToolRequest);
+      continue;
+    }
+
+    if (event.toolResult) {
+      const messageIndex = ensureToolResultsMessage();
+      setStore(produce((s) => s.messages[messageIndex].content.push(event)));
+      assistantMessageIndex = null;
+      continue;
+    }
+
+    if (isContentStreamEvent(event)) {
+      assistantMessageIndex ??= appendMessage("assistant");
+      setStore(produce((s) => processContentBlock(s, event, assistantMessageIndex)));
+    }
+
+    if (event.messageStop) {
+      assistantMessageIndex = null;
+    }
   }
-  return store.messages.slice(startingIndex);
+
+  // Execute client-only tools (e.g. code) that the server couldn't handle
+  if (pendingClientTools.length > 0) {
+    const content = await Promise.all(
+      pendingClientTools.map(async ({ toolUseId, name, input }) => {
+        try {
+          const toolFn = { code }[name];
+          const result = await toolFn?.(input, store, setStore);
+          return { toolResult: { toolUseId, content: [{ json: { results: result } }] } };
+        } catch (error) {
+          return {
+            toolResult: {
+              toolUseId,
+              content: [{ json: { error: error.stack || error.message || String(error) } }],
+            },
+          };
+        }
+      })
+    );
+
+    const messageIndex = ensureToolResultsMessage();
+    setStore(produce((s) => s.messages[messageIndex].content.push(...content)));
+
+    return await streamChat(store, setStore, agentId, conversationId);
+  }
 }
 
-function processContentBlock(s, message) {
+// =================================================================================
+// CONTENT BLOCK PROCESSING
+// =================================================================================
+
+function processContentBlock(s, message, messageIndex = s.messages.length - 1) {
   const { contentBlockStart, contentBlockDelta, contentBlockStop } = message;
   const toolUse = contentBlockStart?.start?.toolUse;
-  const messageContent = s.messages.at(-1).content;
+  const messageContent = s.messages[messageIndex]?.content;
+  if (!messageContent) return;
 
   if (toolUse) {
     const { contentBlockIndex } = contentBlockStart;
@@ -701,16 +402,18 @@ function processContentBlock(s, message) {
       block.text ||= "";
       block.text += text;
     } else if (toolUse) {
-      block.toolUse.input ||= "";
-      block.toolUse.input += toolUse.input;
+      block.toolUse ||= { input: {}, _rawInput: "" };
+      block.toolUse._rawInput = (block.toolUse._rawInput || "") + toolUse.input;
+      block.toolUse.input = parseJSON(block.toolUse._rawInput) || {};
     }
   } else if (contentBlockStop) {
     const { contentBlockIndex } = contentBlockStop;
     const block = messageContent[contentBlockIndex];
-    if (block.toolUse) {
-      block.toolUse.input = parseJSON(block.toolUse.input);
+    if (block?.toolUse) {
+      block.toolUse.input = parseJSON(block.toolUse._rawInput) || block.toolUse.input;
+      delete block.toolUse._rawInput;
     }
-    if (block.text?.length === 0) {
+    if (block?.text?.length === 0) {
       block.text += " ";
     }
   }
@@ -720,23 +423,59 @@ function processContentBlock(s, message) {
 // FILE & MESSAGE HANDLING
 // =================================================================================
 
+const MAX_INLINE_SIZE = Math.floor(4.5 * 1024 * 1024);
+const MAX_MODEL_FILES = 5;
+
 async function getMessageContent(text, files) {
-  const content = [];
-  // Add attachments first (before text)
-  if (files.length > 0) {
-    for (const file of files) {
-      const fileContent = await getContentBlock(file);
-      if (fileContent) {
-        content.push(fileContent);
-      }
+  const fileBlocks = [];
+  const resourceOnlyBlocks = [];
+
+  for (const file of files) {
+    const block = await getContentBlock(file);
+    if (!block) continue;
+
+    if (file.size > MAX_INLINE_SIZE) {
+      resourceOnlyBlocks.push(block);
+    } else {
+      fileBlocks.push(block);
     }
   }
-  // Text should be last
-  content.push({ text });
-  return content;
+
+  // All files go to the server for resource storage; split into inline vs resource-only
+  const inlineBlocks = fileBlocks.slice(0, MAX_MODEL_FILES);
+  const overflowBlocks = [...fileBlocks.slice(MAX_MODEL_FILES), ...resourceOnlyBlocks];
+
+  // Tag overflow/resource-only blocks so server knows not to send them to the model
+  for (const block of overflowBlocks) {
+    (block.document || block.image).resourceOnly = true;
+  }
+
+  // Inform the model about files it won't see inline
+  const overflowNames = overflowBlocks.map((b) => {
+    const f = b.document || b.image;
+    return f.originalName || f.name;
+  });
+  if (overflowNames.length > 0) {
+    text += `\n\n${buildUploadedFilesNotice(overflowNames)}`;
+  }
+
+  return [...inlineBlocks, ...overflowBlocks, { text }];
 }
 
-async function getContentBlock(file) {
+function buildUploadedFilesNotice(names) {
+  const files = names.join(", ");
+  const examplePath = names[0];
+  return [
+    "<uploaded_files>",
+    `These uploaded files were saved as conversation resources and are not attached inline: ${files}.`,
+    `If the user asks about them, read them with the editor tool first using their filename, for example {"command":"view","path":"${examplePath}"}.`,
+    "Do not say you have not read the file yet when it was just uploaded. Read it from resources with editor before answering.",
+    "For the current turn's uploaded files, prefer editor over recall.",
+    "</uploaded_files>",
+  ].join("\n");
+}
+
+export async function getContentBlock(file) {
   const documentTypes = ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"];
   const imageTypes = ["png", "jpg", "jpeg", "gif", "webp"];
   const isText =
@@ -753,134 +492,39 @@ async function getContentBlock(file) {
     : documentTypes.includes(format)
       ? "document"
       : null;
-  const arrayBuffer = await file.arrayBuffer();
-  const bytes = new Uint8Array(arrayBuffer);
-  const name = file.name
-    .replace(/[^A-Z0-9 _\-()[\]]/gi, "_")
-    .replace(/\s+/g, " ")
-    .trim();
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const pageCount = format === "pdf" ? await getPdfPageCount(bytes.slice()) : undefined;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  }
+  const base64 = btoa(binary);
+  const sanitizeUploadName = (value) =>
+    Array.from(String(value), (char) => {
+      if (char === "_") return "-";
+      if (/[A-Z0-9]/i.test(char) || /\s/.test(char) || "-()[]".includes(char)) return char;
+      return " ";
+    })
+      .join("")
+      .replace(/\s+/g, " ")
+      .trim();
+  const originalName = (file.name || "").split(/[\\/]/).filter(Boolean).pop()?.trim() || "document";
+  const stem = originalName.replace(/\.[^.]+$/, "");
+  const name =
+    sanitizeUploadName(type === "document" ? stem : originalName) ||
+    (type === "document" ? "document" : "image");
 
   if (type) {
     return {
-      [type]: { format, name, source: { bytes } },
+      [type]: { format, name, source: { bytes: base64 }, originalName, pageCount },
     };
   }
 }
 
 // =================================================================================
-// TOOL EXECUTION
+// CLIENT-SIDE TOOLS
 // =================================================================================
 
-async function getToolResults(toolUseContent, tools, store, setStore) {
-  const toolUses = toolUseContent.map((c) => c.toolUse).filter(Boolean);
-  const content = await Promise.all(toolUses.map((t) => getToolResult(t, tools, store, setStore)));
-  return { role: "user", content };
-}
-
-async function getToolResult(toolUse, tools, store, setStore) {
-  let { toolUseId, name, input } = toolUse;
-  try {
-    const result = await tools?.[name]?.(input, store, setStore);
-    const content = [{ json: { results: result } }];
-    return { toolResult: { toolUseId, content } };
-  } catch (error) {
-    console.error("Tool error:", error);
-    const result = error.stack || error.message || String(error);
-    const content = [{ json: { error: result } }];
-    return { toolResult: { toolUseId, content } };
-  }
-}
-
-// Search tool - calls /api/search
-async function search({ query }) {
-  const response = await fetch("/api/v1/search?" + new URLSearchParams({ q: query }));
-  if (!response.ok) {
-    throw new Error(`Search failed: ${response.status}`);
-  }
-  const data = await response.json();
-  const extract = (r) => ({
-    url: r.url,
-    title: r.title,
-    description: r.description,
-    extra_snippets: r.extra_snippets,
-    age: r.age,
-    page_age: r.page_age,
-    article: r.article,
-  });
-  return {
-    web: data.web?.web?.results?.map(extract),
-    news: data.news?.results?.map(extract),
-    gov: data.gov?.results,
-  };
-}
-
-// Browse tool - calls /api/browse
-async function browse({ url, topic }) {
-  const urls = Array.isArray(url) ? url : [url];
-  if (urls.length === 0) return "No URLs provided";
-
-  const results = await Promise.all(
-    urls.map(async (u) => {
-      const response = await fetch("/api/v1/browse/" + u);
-      if (!response.ok) {
-        return `Failed to read ${u}: ${response.status} ${response.statusText}`;
-      }
-      const bytes = await response.arrayBuffer();
-      const mimetype = response.headers.get("content-type") || "text/html";
-      const text = await parseDocument(bytes, mimetype, u);
-
-      const finalResults = !topic
-        ? text
-        : await queryDocumentWithModel(`<url>${u}</url>\n<text>${text}</text>`, topic);
-      return ["## " + u, finalResults].join("\n\n");
-    })
-  );
-  return results.join("\n\n---\n\n");
-}
-
-// Parse document from various formats
-async function parseDocument(bytes, mimetype, url) {
-  if (mimetype.includes("text/html") || mimetype.includes("text/plain")) {
-    const text = new TextDecoder("utf-8").decode(bytes);
-    if (mimetype.includes("text/html")) {
-      const doc = new DOMParser().parseFromString(text, "text/html");
-      return doc.body?.innerText || text;
-    }
-    return text;
-  }
-  return `[Document from ${url} - ${mimetype}]`;
-}
-
-// Query document with model for topic extraction
-async function queryDocumentWithModel(
-  document,
-  topic,
-  model = "us.meta.llama4-maverick-17b-instruct-v1:0"
-) {
-  if (!topic) return document;
-
-  const maxLength = 500000;
-  if (document.length > maxLength) {
-    document = document.slice(0, maxLength) + "\n ... (truncated)";
-  }
-
-  const system = `You are a research assistant. You will be given a document and a question.
-Your task is to answer the question using only the information in the document and provide a fully-verifiable, academic report in markdown format.
-If the document doesn't contain information relevant to the question, state this explicitly.`;
-
-  const prompt = `Answer this question about the document: "${topic}"`;
-  const messages = [{ role: "user", content: [{ text: prompt }] }];
-
-  const response = await fetch("/api/v1/model", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ model, messages, system, type: "data-tool" }),
-  });
-  const results = await response.json();
-  return results?.output?.message?.content?.[0]?.text || document;
-}
-
-// Code tool - sandboxed iframe execution
 function code({ language = "javascript", source, timeout = 5000 }) {
   return new Promise((resolve) => {
     const logs = [];
@@ -917,6 +561,16 @@ function code({ language = "javascript", source, timeout = 5000 }) {
 
     const bridge = `
       (()=>{
+        const _fetch = fetch;
+        const _origin = "${location.origin}";
+        window.fetch = async (url, opts = {}) => {
+          try {
+            const u = new URL(url);
+            const isLocal = ["localhost","127.0.0.1","[::1]"].some(h => u.hostname === h || u.hostname.endsWith(".localhost"));
+            if (isLocal) return _fetch(url, opts);
+            return _fetch(_origin + "/api/v1/browse/" + u.href, opts);
+          } catch (e) { return _fetch(url, opts); }
+        };
         const send=(t,m)=>parent.postMessage({type:t,msg:m},"*");
         ["log","warn","error","info","debug"].forEach(k=>{
           const o=console[k]; console[k]=(...a)=>{try{send("log",a.join(" "))}catch{}; o&&o.apply(console,a);};
@@ -943,342 +597,6 @@ function code({ language = "javascript", source, timeout = 5000 }) {
   });
 }
 
-// Editor tool - manages files in localStorage
-function editor({ command, path, view_range, old_str, new_str, file_text, insert_line }) {
-  if (!path) return "Error: File path is required";
-  if (!command) return "Error: Command is required";
-
-  const fileKey = `file:${path}`;
-  const historyKey = `history:${path}`;
-
-  const normalizeNewlines = (text) => {
-    if (typeof text !== "string") return "";
-    return text.replace(/\r\n/g, "\n");
-  };
-
-  try {
-    switch (command) {
-      case "view": {
-        const content = localStorage.getItem(fileKey);
-        if (content === null) {
-          return `File not found: ${path}`;
-        }
-        const lines = normalizeNewlines(content).split("\n");
-        const [start, end] = view_range || [1, lines.length];
-        const startLine = Math.max(1, start);
-        const endLine = end === -1 ? lines.length : Math.min(end, lines.length);
-        return lines
-          .slice(startLine - 1, endLine)
-          .map((line, idx) => `${startLine + idx}: ${line}`)
-          .join("\n");
-      }
-
-      case "create": {
-        const fileContent = file_text !== undefined ? normalizeNewlines(file_text) : "";
-        const overwritten = localStorage.getItem(fileKey) !== null;
-        localStorage.setItem(fileKey, fileContent);
-        return overwritten
-          ? `Overwrote existing file: ${path}`
-          : `Successfully created file: ${path}`;
-      }
-
-      case "str_replace": {
-        if (old_str === undefined) return "Error: old_str parameter is required for str_replace";
-        if (new_str === undefined) return "Error: new_str parameter is required for str_replace";
-
-        const content = localStorage.getItem(fileKey);
-        if (content === null) return `File not found: ${path}`;
-
-        const normalizedContent = normalizeNewlines(content);
-        const normalizedOldStr = normalizeNewlines(old_str);
-
-        let count = 0;
-        let position = 0;
-        while (true) {
-          position = normalizedContent.indexOf(normalizedOldStr, position);
-          if (position === -1) break;
-          count++;
-          if (normalizedOldStr === "") break;
-          position += normalizedOldStr.length;
-        }
-
-        if (count === 0) return "The specified text was not found in the file.";
-        if (count > 1)
-          return `Found ${count} occurrences of the text. The replacement must match exactly one location.`;
-
-        localStorage.setItem(historyKey, content);
-        const newContent = normalizedContent.replace(normalizedOldStr, normalizeNewlines(new_str));
-        localStorage.setItem(fileKey, newContent);
-        return "Successfully replaced text at exactly one location.";
-      }
-
-      case "insert": {
-        if (new_str === undefined) return "Error: new_str parameter is required for insert";
-        if (insert_line === undefined) return "Error: insert_line parameter is required for insert";
-
-        const content = localStorage.getItem(fileKey);
-        if (content === null) return `File not found: ${path}`;
-
-        localStorage.setItem(historyKey, content);
-        const lines = normalizeNewlines(content).split("\n");
-        const insertLineIndex = Math.min(Math.max(0, insert_line), lines.length);
-        const linesToInsert = normalizeNewlines(new_str).split("\n");
-        lines.splice(insertLineIndex, 0, ...linesToInsert);
-        localStorage.setItem(fileKey, lines.join("\n"));
-        return `Successfully inserted text after line ${insertLineIndex}.`;
-      }
-
-      case "undo_edit": {
-        const previousContent = localStorage.getItem(historyKey);
-        if (previousContent === null) return `No previous edit found for file: ${path}`;
-
-        localStorage.setItem(fileKey, previousContent);
-        localStorage.removeItem(historyKey);
-        return `Successfully reverted last edit for file: ${path}`;
-      }
-
-      default:
-        return `Error: Unknown command: ${command}`;
-    }
-  } catch (error) {
-    return `Error processing command ${command}: ${error.message}`;
-  }
-}
-
-// Think tool - logs thoughts to _thoughts.txt file
-function think({ thought }) {
-  editor({
-    command: "insert",
-    path: "_thoughts.txt",
-    insert_line: 0,
-    new_str: thought,
-  });
-  return "Thinking complete.";
-}
-
-// Data tool - access S3 bucket files
-async function data({ bucket, key }) {
-  const params = new URLSearchParams({ bucket });
-  if (key) params.set("key", key);
-
-  const response = await fetch("/api/v1/data?" + params);
-
-  if (!response.ok) {
-    throw new Error(`Failed to access data: ${response.status} ${response.statusText}`);
-  }
-
-  // If listing files (no key or directory)
-  if (!key || key.endsWith("/")) {
-    return await response.json();
-  }
-
-  // If fetching file content
-  const text = await response.text();
-
-  // Try to parse as JSON if applicable
-  if (key.endsWith(".json")) {
-    try {
-      return JSON.parse(text);
-    } catch {
-      return text;
-    }
-  }
-
-  return text;
-}
-
-// DocxTemplate tool - fill DOCX documents with batch find-and-replace
-async function docxTemplate({ docxUrl, replacements }) {
-  // 1. Fetch the document
-  let templateBuffer;
-
-  if (docxUrl.startsWith("s3://")) {
-    const s3Match = docxUrl.match(/^s3:\/\/([^/]+)\/(.+)$/);
-    if (!s3Match) throw new Error("Invalid S3 URL format. Expected: s3://bucket/key");
-    const [, bucket, key] = s3Match;
-    const response = await fetch(
-      `/api/v1/data?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&raw=true`
-    );
-    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
-    templateBuffer = await response.arrayBuffer();
-  } else {
-    const response = await fetch("/api/v1/browse/" + docxUrl);
-    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
-    templateBuffer = await response.arrayBuffer();
-  }
-
-  // 2. Discovery mode: return document blocks with metadata
-  if (!replacements) {
-    const { blocks } = await docxExtractTextBlocks(templateBuffer);
-    return { blocks, templateDownloadUrl: docxUrl };
-  }
-
-  // 3. Replace mode: apply replacements and return HTML preview
-  const modifiedBuffer = await docxReplace(templateBuffer, replacements);
-  const result = await mammoth.convertToHtml({ arrayBuffer: modifiedBuffer });
-
-  return {
-    html: result.value,
-    warnings: result.messages.filter((m) => m.type === "warning").map((m) => m.message),
-  };
-}
-
 // =================================================================================
 // UTILITIES
 // =================================================================================
-
-export function parseJSON(input) {
-  if (typeof input !== "string") {
-    return input;
-  }
-  const jsonString = input.trim();
-  if (jsonString === "") {
-    return null;
-  }
-  let index = 0;
-  const LITERALS = {
-    true: true,
-    false: false,
-    null: null,
-    NaN: NaN,
-    Infinity: Infinity,
-    "-Infinity": -Infinity,
-  };
-
-  function skipWhitespace() {
-    while (index < jsonString.length && " \n\r\t".includes(jsonString[index])) {
-      index++;
-    }
-  }
-
-  function parseValue() {
-    skipWhitespace();
-    if (index >= jsonString.length) {
-      throw new Error("Unexpected end of input");
-    }
-    const char = jsonString[index];
-    if (char === "{") return parseObject();
-    if (char === "[") return parseArray();
-    if (char === '"') return parseString();
-    const remainingText = jsonString.substring(index);
-    for (const [key, value] of Object.entries(LITERALS)) {
-      if (jsonString.startsWith(key, index)) {
-        const endPos = index + key.length;
-        if (endPos === jsonString.length || ",]} \n\r\t".includes(jsonString[endPos])) {
-          index = endPos;
-          return value;
-        }
-      }
-      if (key.startsWith(remainingText)) {
-        index = jsonString.length;
-        return value;
-      }
-    }
-    if (char === "-" || (char >= "0" && char <= "9")) {
-      return parseNumber();
-    }
-    throw new Error(`Unexpected token '${char}' at position ${index}`);
-  }
-
-  function parseArray() {
-    index++;
-    const arr = [];
-    while (index < jsonString.length && jsonString[index] !== "]") {
-      try {
-        arr.push(parseValue());
-        skipWhitespace();
-        if (jsonString[index] === ",") {
-          index++;
-        } else if (jsonString[index] !== "]") {
-          break;
-        }
-      } catch (e) {
-        return arr;
-      }
-    }
-    if (index < jsonString.length && jsonString[index] === "]") {
-      index++;
-    }
-    return arr;
-  }
-
-  function parseObject() {
-    index++;
-    const obj = {};
-    while (index < jsonString.length && jsonString[index] !== "}") {
-      try {
-        skipWhitespace();
-        if (jsonString[index] !== '"') break;
-        const key = parseString();
-        skipWhitespace();
-        if (index >= jsonString.length || jsonString[index] !== ":") break;
-        index++;
-        obj[key] = parseValue();
-        skipWhitespace();
-        if (jsonString[index] === ",") {
-          index++;
-        } else if (jsonString[index] !== "}") {
-          break;
-        }
-      } catch (e) {
-        return obj;
-      }
-    }
-    if (index < jsonString.length && jsonString[index] === "}") {
-      index++;
-    }
-    return obj;
-  }
-
-  function parseString() {
-    if (jsonString[index] !== '"') {
-      throw new Error("Expected '\"' to start a string");
-    }
-    const startIndex = index;
-    index++;
-    let escape = false;
-    while (index < jsonString.length) {
-      if (jsonString[index] === '"' && !escape) {
-        const fullString = jsonString.substring(startIndex, ++index);
-        return JSON.parse(fullString);
-      }
-      escape = jsonString[index] === "\\" ? !escape : false;
-      index++;
-    }
-    const partialStr = jsonString.substring(startIndex);
-    try {
-      return JSON.parse(partialStr + '"');
-    } catch (e) {
-      const lastBackslash = partialStr.lastIndexOf("\\");
-      if (lastBackslash > 0) {
-        return JSON.parse(partialStr.substring(0, lastBackslash) + '"');
-      }
-      return partialStr.substring(1);
-    }
-  }
-
-  function parseNumber() {
-    const startIndex = index;
-    const numberChars = "0123456789eE.+-";
-    while (index < jsonString.length && numberChars.includes(jsonString[index])) {
-      index++;
-    }
-    const numStr = jsonString.substring(startIndex, index);
-    if (!numStr) throw new Error("Empty number literal");
-    try {
-      return parseFloat(numStr);
-    } catch (e) {
-      if (numStr.length > 1) {
-        return parseFloat(numStr.slice(0, -1));
-      }
-      throw e;
-    }
-  }
-
-  const result = parseValue();
-  skipWhitespace();
-  if (index < jsonString.length) {
-    console.warn(`Extra data found at position ${index}: "${jsonString.substring(index)}"`);
-  }
-  return result;
-}

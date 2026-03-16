@@ -1,9 +1,9 @@
 import db, { rawSql } from "database";
 
 import { json, Router } from "express";
+import { requireRole } from "users/middleware.js";
 
-import { sendFeedback, sendLogReport } from "../email.js";
-import { requireRole } from "../middleware.js";
+import { sendFeedback, sendLogReport, sendJustificationEmail } from "../email.js";
 import { parseDocument } from "../parsers.js";
 import { proxyMiddleware } from "../proxy.js";
 import { getFile, listFiles } from "../s3.js";
@@ -35,7 +35,23 @@ api.post("/textract", requireRole(), async (req, res) => {
 });
 
 api.post("/translate", requireRole(), async (req, res) => {
-  res.json(await translate(req.body));
+  const result = await translate(req.body);
+
+  // Track translate usage
+  const userId = req.session?.user?.id;
+  const chars = req.body.text?.length || 0;
+  if (userId && chars > 0) {
+    try {
+      const { trackUsage } = await import("gateway/usage.js");
+      await trackUsage(userId, "aws-translate", [{ quantity: chars, unit: "characters" }], {
+        type: "translate",
+      });
+    } catch (err) {
+      console.error("Failed to track translate usage:", err.message);
+    }
+  }
+
+  res.json(result);
 });
 
 api.get("/translate/languages", requireRole(), async (req, res) => {
@@ -121,6 +137,23 @@ api.get("/data", requireRole(), async (req, res) => {
     // For other files, pipe raw content
     return data.Body.pipe(res);
   }
+});
+
+api.post("/usage", requireRole(), async (req, res) => {
+  const { justification } = req.body;
+  const user = req.session?.user;
+  const userName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "N/A";
+  const userEmail = user?.email;
+  const currentLimit = user?.budget;
+  const emailData = {
+    justification,
+    userName,
+    userEmail,
+    currentLimit,
+  };
+
+  const results = await sendJustificationEmail(emailData);
+  return res.json(results);
 });
 
 export default api;

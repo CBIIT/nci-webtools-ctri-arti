@@ -1,12 +1,10 @@
 // =================================================================================
-// DELETE-CONVERSATION.JS - Delete Thread Confirmation Modal
-// Copied from V1, adapted for V2's thread terminology
+// DELETE-CONVERSATION.JS - Delete Conversation Confirmation Modal
 // =================================================================================
 
 import { X } from "lucide-solid";
 import { createSignal, onCleanup, onMount } from "solid-js";
 import html from "solid-js/html";
-
 
 export default function DeleteConversation(props) {
   const [dialog, setDialog] = createSignal(null);

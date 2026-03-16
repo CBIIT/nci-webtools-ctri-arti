@@ -12,6 +12,7 @@ The main application server. Serves the client SPA, handles OAuth/OIDC authentic
 cd server
 npm install
 cp .env.example .env   # Configure environment
+cp test.env.example test.env # Configure test environment
 npm run start:dev      # Watch mode with auto-restart
 npm test               # Run unit + integration tests
 npm run test:integration  # Full integration tests with browser
@@ -23,13 +24,13 @@ All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for ful
 
 ### Auth
 
-| Method | Path           | Auth            | Description                                |
-| ------ | -------------- | --------------- | ------------------------------------------ |
-| GET    | `/login`       | OIDC middleware | Initiate OAuth login, redirect to provider |
-| GET    | `/logout`      | None            | Destroy session, redirect                  |
-| GET    | `/session`     | None            | Get current session info (user + expiry)   |
-| GET    | `/session-ttl` | None            | Get session TTL in seconds                 |
-| GET    | `/config`      | None            | Client configuration (sessionTtlPollMs)    |
+| Method | Path       | Auth            | Description                                |
+| ------ | ---------- | --------------- | ------------------------------------------ |
+| GET    | `/login`   | OIDC middleware | Initiate OAuth login, redirect to provider |
+| GET    | `/logout`  | None            | Destroy session, redirect                  |
+| GET    | `/session` | None            | Get current session info (user + expiry)   |
+| POST   | `/session` | None            | Refresh session expiry (touch + return)    |
+| GET    | `/config`  | None            | Client configuration (budget, usage types) |
 
 ### Model Inference
 
@@ -51,6 +52,7 @@ All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for ful
 | POST   | `/feedback`            | `requireRole()` | Send user feedback email         |
 | POST   | `/log`                 | None            | Send error/log report email      |
 | GET    | `/data`                | `requireRole()` | S3 file access with auto-parsing |
+| POST   | `/usage`               | `requireRole()` | Let user request usage change    |
 
 ### Conversations
 
@@ -107,12 +109,12 @@ All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for ful
 
 Both service clients use a factory pattern resolved at module load time:
 
-**`services/clients/gateway.js`** — Exports `invoke()` and `listModels()`.
+**`shared/clients/gateway.js`** — Exports `invoke()` and `listModels()`.
 
 - Direct mode: calls `runModel()` from `gateway/inference.js`, handles rate limiting and usage tracking locally.
 - HTTP mode: POSTs to `GATEWAY_URL/api/v1/model/invoke`, parses newline-delimited JSON streaming.
 
-**`services/clients/cms.js`** — Exports 30+ conversation methods (`createAgent`, `createConversation`, `addMessage`, `createTool`, `createPrompt`, etc.).
+**`shared/clients/cms.js`** — Exports 30+ conversation methods (`createAgent`, `createConversation`, `addMessage`, `createTool`, `createPrompt`, etc.).
 
 - Direct mode: instantiates `ConversationService` from `cms/conversation.js`.
 - HTTP mode: makes HTTP requests with `X-User-Id` header to `CMS_URL/api/v1/...`.
@@ -143,7 +145,6 @@ Three methods:
 | `CLIENT_FOLDER`           | No       | ../client      | Path to static client files                              |
 | `HTTPS_KEY`, `HTTPS_CERT` | No       | auto-generated | TLS key/cert                                             |
 | `SESSION_MAX_AGE`         | No       | 1800000        | Session TTL in ms (30 min)                               |
-| `SESSION_TTL_POLL_MS`     | No       | 10000          | Client polling interval for session TTL                  |
 | `OAUTH_PROVIDER_ENABLED`  | No       | —              | Enable local OIDC provider for dev                       |
 | `OAUTH_DISCOVERY_URL`     | No       | —              | OIDC discovery URL                                       |
 | `OAUTH_CLIENT_ID`         | No       | —              | OIDC client ID                                           |
@@ -171,3 +172,5 @@ npm run test:integration # Integration tests (Playwright browser + API)
 ```
 
 Tests use real services (AWS Bedrock, PostgreSQL/PGlite). No mocking.
+
+When running tests, make sure your local server is running.

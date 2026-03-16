@@ -1,7 +1,13 @@
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { retry, createHttpError, routeHandler, getDateRange, createCertificate } from "../services/utils.js";
+import {
+  retry,
+  createHttpError,
+  routeHandler,
+  getDateRange,
+  createCertificate,
+} from "../services/utils.js";
 
 test("retry", async (t) => {
   await t.test("succeeds on first try", async () => {
@@ -11,30 +17,48 @@ test("retry", async (t) => {
 
   await t.test("retries on failure then succeeds", async () => {
     let attempts = 0;
-    const result = await retry(() => {
-      attempts++;
-      if (attempts < 3) throw new Error("fail");
-      return Promise.resolve("ok");
-    }, 3, 0);
+    const result = await retry(
+      () => {
+        attempts++;
+        if (attempts < 3) throw new Error("fail");
+        return Promise.resolve("ok");
+      },
+      3,
+      0
+    );
     assert.strictEqual(result, "ok");
     assert.strictEqual(attempts, 3);
   });
 
   await t.test("throws after exhausting all attempts", async () => {
     await assert.rejects(
-      () => retry(() => { throw new Error("always fails"); }, 2, 0),
+      () =>
+        retry(
+          () => {
+            throw new Error("always fails");
+          },
+          2,
+          0
+        ),
       (err) => {
         assert.ok(err.message.includes("Failed after 2 attempts"));
         return true;
-      },
+      }
     );
   });
 
   await t.test("uses exponential backoff", async () => {
     let attempts = 0;
     const start = Date.now();
-    await assert.rejects(
-      () => retry(() => { attempts++; throw new Error("fail"); }, 2, 50),
+    await assert.rejects(() =>
+      retry(
+        () => {
+          attempts++;
+          throw new Error("fail");
+        },
+        2,
+        50
+      )
     );
     const elapsed = Date.now() - start;
     // With initialDelay=50 and 2 attempts, there's 1 delay of 50ms + jitter (0-100ms)
@@ -71,15 +95,21 @@ test("createHttpError", async (t) => {
 test("routeHandler", async (t) => {
   await t.test("calls handler and returns result", async () => {
     let called = false;
-    const handler = routeHandler(async (req, res) => { called = true; });
+    const handler = routeHandler(async (req, res) => {
+      called = true;
+    });
     await handler({}, {}, () => {});
     assert.ok(called);
   });
 
   await t.test("catches errors and forwards via next", async () => {
     let nextError = null;
-    const handler = routeHandler(async () => { throw new Error("boom"); });
-    await handler({}, {}, (err) => { nextError = err; });
+    const handler = routeHandler(async () => {
+      throw new Error("boom");
+    });
+    await handler({}, {}, (err) => {
+      nextError = err;
+    });
     assert.ok(nextError instanceof Error);
     assert.strictEqual(nextError.message, "boom");
   });
@@ -92,7 +122,6 @@ test("getDateRange", async (t) => {
     assert.ok(endDate instanceof Date);
     assert.ok(startDate < endDate);
 
-    const now = new Date();
     const diffDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
     assert.ok(diffDays >= 29 && diffDays <= 31, `Expected ~30 days, got ${diffDays}`);
   });
@@ -111,6 +140,23 @@ test("getDateRange", async (t) => {
     assert.strictEqual(startDate.getMinutes(), 0);
     assert.strictEqual(endDate.getHours(), 23);
     assert.strictEqual(endDate.getMinutes(), 59);
+  });
+
+  await t.test("date-only params preserve the intended local calendar day", () => {
+    const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09");
+    assert.strictEqual(startDate.getFullYear(), 2026);
+    assert.strictEqual(startDate.getMonth(), 2);
+    assert.strictEqual(startDate.getDate(), 9);
+    assert.strictEqual(endDate.getFullYear(), 2026);
+    assert.strictEqual(endDate.getMonth(), 2);
+    assert.strictEqual(endDate.getDate(), 9);
+  });
+
+  await t.test("same-day evening timestamps remain inside a date-only range", () => {
+    const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09");
+    const evening = new Date(2026, 2, 9, 20, 41, 57, 0);
+    assert.ok(evening >= startDate, "evening timestamp should be after startDate");
+    assert.ok(evening <= endDate, "evening timestamp should be before endDate");
   });
 });
 

@@ -1,4 +1,6 @@
 import { readFile } from "node:fs/promises";
+import net from "node:net";
+import { createInterface } from "node:readline";
 
 import Handlebars from "handlebars";
 import { createTransport } from "nodemailer";
@@ -52,6 +54,27 @@ export async function sendFeedback({ feedback, context }, env = process.env) {
   });
 }
 
+export async function sendJustificationEmail(
+  { justification, userName, userEmail, currentLimit },
+  env = process.env
+) {
+  const { EMAIL_ADMIN, EMAIL_SENDER, TIER } = env;
+  const tierPrefix = TIER && TIER.toUpperCase() !== "PROD" ? `[${TIER.toUpperCase()}] ` : "";
+  const text =
+    "Hello Admin Team,\n\n" +
+    "A new request has been submitted to increase a user’s daily cost limit. Please review the details below:\n\n" +
+    `User Name: [${userName}]\nUser Email: [${userEmail}]\nCurrent Daily Limit: $[${currentLimit}]\n` +
+    `Reason for Request:\n\n${justification}\n\nPlease review this request and take the appropriate action.\n\n` +
+    "Thank you,\nResearch Optimizer System";
+
+  return await sendEmail({
+    from: (EMAIL_SENDER || EMAIL_ADMIN)?.split(",")?.[0]?.trim(),
+    to: EMAIL_ADMIN,
+    subject: `${tierPrefix}User Request Limit Increase`,
+    text,
+  });
+}
+
 function formatMetadataForTemplate(metadata) {
   if (!Array.isArray(metadata)) {
     return null;
@@ -90,6 +113,63 @@ function buildPlainTextFallback({ reportSource, timestamp, userId, userName, met
   );
 
   return lines.join("\n");
+}
+
+/**
+ * Minimal POP3 client for retrieving and purging emails.
+ * @param {string} host - POP3 server hostname
+ * @param {number|string} port - POP3 server port
+ */
+export function pop3(host, port) {
+  async function session(user) {
+    const socket = net.createConnection(+port, host);
+    const rl = createInterface({ input: socket });
+    const lines = rl[Symbol.asyncIterator]();
+    const read = async () => (await lines.next()).value;
+    const cmd = async (c) => (socket.write(c + "\r\n"), read());
+    const readUntilDot = async () => {
+      const out = [];
+      for (let l; (l = await read()) !== "."; ) out.push(l);
+      return out;
+    };
+    const close = () => (rl.close(), socket.end());
+
+    await read(); // +OK greeting
+    await cmd(`USER ${user}`);
+    await cmd(`PASS password`);
+    return { cmd, readUntilDot, close };
+  }
+
+  return {
+    async getEmails(user) {
+      const pop = await session(user);
+      const resp = await pop.cmd("LIST");
+      if (!resp.startsWith("+OK")) return (pop.close(), []);
+      const listing = await pop.readUntilDot();
+      const emails = [];
+      for (const entry of listing) {
+        await pop.cmd(`RETR ${entry.split(" ")[0]}`);
+        const body = (await pop.readUntilDot()).join("\r\n");
+        const subject = body.match(/^subject:\s*(.+)/im)?.[1] || "";
+        emails.push({ subject, mimeMessage: body });
+      }
+      await pop.cmd("QUIT");
+      pop.close();
+      return emails;
+    },
+
+    async purge(user) {
+      const pop = await session(user);
+      const resp = await pop.cmd("LIST");
+      if (resp.startsWith("+OK")) {
+        for (const entry of await pop.readUntilDot()) {
+          await pop.cmd(`DELE ${entry.split(" ")[0]}`);
+        }
+      }
+      await pop.cmd("QUIT");
+      pop.close();
+    },
+  };
 }
 
 export async function sendLogReport(

@@ -2,7 +2,14 @@ import {
   BedrockRuntimeClient,
   ConverseCommand,
   ConverseStreamCommand,
+  InvokeModelCommand,
 } from "@aws-sdk/client-bedrock-runtime";
+import { assertValidEmbedding, NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
+
+function estimateTextTokens(text) {
+  if (!text) return 0;
+  return Math.max(1, Math.ceil(text.length / 4));
+}
 
 /* Example Usage: ConverseCommand
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime"; // ES Modules import
@@ -1191,5 +1198,69 @@ export default class BedrockProvider {
   async converseStream(input) {
     const command = new ConverseStreamCommand(input);
     return await this.client.send(command);
+  }
+
+  /**
+   * Invoke a model directly (not via Converse). Used for embedding models.
+   * @param {string} modelId - The model identifier
+   * @param {Object} body - The request body (model-specific JSON)
+   * @returns {Promise<Object>} Parsed JSON response from the model
+   */
+  async invokeModel(modelId, body) {
+    const command = new InvokeModelCommand({
+      modelId,
+      contentType: "application/json",
+      accept: "application/json",
+      body: new TextEncoder().encode(JSON.stringify(body)),
+    });
+    const response = await this.client.send(command);
+    return JSON.parse(new TextDecoder().decode(response.body));
+  }
+
+  /**
+   * Generate embeddings using Nova multimodal embedding model.
+   * @param {string} modelId - The embedding model ID
+   * @param {Object} content - Content to embed: { text } or { image } or { video } or { audio }
+   * @param {string} purpose - "GENERIC_INDEX" or "GENERIC_RETRIEVAL"
+   * @param {number} dimension - Embedding dimension (default 3072)
+   * @returns {Promise<{embedding: number[], inputTextTokenCount?: number}>}
+   */
+  async embed(
+    modelId,
+    content,
+    { purpose = "GENERIC_INDEX", dimension = NOVA_EMBEDDING_DIMENSIONS } = {}
+  ) {
+    const embeddingParams = { embeddingPurpose: purpose, embeddingDimension: dimension };
+
+    if (typeof content === "string") {
+      embeddingParams.text = { truncationMode: "END", value: content };
+    } else if (content.image) {
+      embeddingParams.image = { base64: content.image };
+    } else if (content.video) {
+      embeddingParams.video = content.video;
+    } else if (content.audio) {
+      embeddingParams.audio = content.audio;
+    }
+
+    const body = {
+      taskType: "SINGLE_EMBEDDING",
+      singleEmbeddingParams: embeddingParams,
+    };
+
+    const response = await this.invokeModel(modelId, body);
+    const embedding = response?.embeddings?.[0]?.embedding;
+    if (!embedding) {
+      throw new Error(`Bedrock model ${modelId} returned no embedding`);
+    }
+
+    const inputTextTokenCount =
+      typeof content === "string" ? estimateTextTokens(content) : undefined;
+
+    return {
+      embedding: assertValidEmbedding(embedding, {
+        message: `Bedrock model ${modelId} returned an invalid embedding`,
+      }),
+      inputTextTokenCount,
+    };
   }
 }
