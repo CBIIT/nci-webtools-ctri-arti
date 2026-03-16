@@ -318,13 +318,9 @@ function UsersList() {
         return null;
       }}
     >
-      <div
-        class="w-100 overflow-hidden font-inter font-smooth"
-        style="background: linear-gradient(180deg, #000E26 0%, #7EA4EE 55%, #FFFFFF 100%);"
-      >
+      <div class="w-100 overflow-hidden font-inter font-smooth page-header-bg">
         <div
-          class="w-100 d-flex align-items-center"
-          style="background: url('/assets/images/users/user_banner.png') center top / cover no-repeat; min-height: 200px;"
+          class="w-100 d-flex align-items-center page-header-banner"
           role="img"
           aria-label="Page header"
         >

@@ -1666,3 +1666,42 @@ dialog .close-btn {
   background: #acddfe;
   color: #62666d;
 }
+
+/* Page header with background image */
+.page-header-bg {
+  background: linear-gradient(180deg, #000E26 0%, #7EA4EE 55%, #FFFFFF 100%);
+}
+
+.page-header-banner {
+  background: url('/assets/images/page-header.svg') center top / cover no-repeat;
+  min-height: 240px;
+}
+
+.page-header-content-card {
+  margin-top: -36px;
+  position: relative;
+  z-index: 1;
+  border: 3px solid #2b8ec9;
+  background-color: #f8f9fa;
+}
+
+/* Usage statistic section cards */
+.usage-section-card {
+  border: 2px solid #4a5ba7;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.usage-section-card .card-header {
+  background: linear-gradient(135deg, #3b4a9e, #5a6abf);
+  color: #ffffff;
+  border-bottom: none;
+  padding: 0.65rem 1rem;
+}
+
+.usage-section-card .card-header .card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0;
+}
