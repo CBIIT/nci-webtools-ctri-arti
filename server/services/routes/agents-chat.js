@@ -2,7 +2,7 @@ import { Router } from "express";
 import { agentsClient } from "shared/clients/agents.js";
 import { requireRole } from "users/middleware.js";
 
-import { getUserId } from "../utils.js";
+import { getRequestContext } from "../utils.js";
 
 const api = Router();
 
@@ -13,9 +13,9 @@ const api = Router();
  * Streams NDJSON back to the client.
  */
 api.post("/agents/:agentId/conversations/:conversationId/chat", requireRole(), async (req, res) => {
-  const userId = getUserId(req);
+  const context = getRequestContext(req);
   const { agentId, conversationId } = req.params;
-  const { message, model, thoughtBudget } = req.body;
+  const { message, modelOverride, thoughtBudget } = req.body;
 
   if (!message?.content) {
     return res.status(400).json({ error: "Message content required" });
@@ -27,11 +27,11 @@ api.post("/agents/:agentId/conversations/:conversationId/chat", requireRole(), a
 
   try {
     const stream = agentsClient.chat({
-      userId,
+      context,
       agentId: Number(agentId),
       conversationId: Number(conversationId),
       message,
-      model,
+      modelOverride,
       thoughtBudget,
     });
 

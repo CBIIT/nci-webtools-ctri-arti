@@ -47,17 +47,17 @@ describe("tools", () => {
       return {
         getResourcesByAgent: async () => [...resources],
         getResourcesByConversation: async () => resources.filter((r) => r.conversationID),
-        addResource: async (userId, data) => {
+        storeConversationResource: async (userId, data) => {
           const resource = { id: resources.length + 1, userID: userId, ...data };
           resources.push(resource);
           return resource;
         },
-        updateResource: async (userId, resourceId, updates) => {
+        updateConversationResource: async (userId, resourceId, updates) => {
           const r = resources.find((r) => r.id === resourceId);
           if (r) Object.assign(r, updates);
           return r;
         },
-        deleteResource: async (userId, resourceId) => {
+        deleteConversationResource: async (userId, resourceId) => {
           const idx = resources.findIndex((r) => r.id === resourceId);
           if (idx >= 0) resources.splice(idx, 1);
         },

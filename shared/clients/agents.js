@@ -7,37 +7,40 @@
  */
 
 import { parseNdjsonStream } from "./ndjson.js";
+import { requestContextToInternalHeaders, requireUserRequestContext } from "../request-context.js";
 
 const AGENTS_URL = process.env.AGENTS_URL;
 
 function buildDirectClient() {
-  let runAgentLoop;
+  let agentsApp;
   let gatewayClient;
   let cmsClient;
 
   async function ensureImports() {
-    if (!runAgentLoop) {
-      const loopModule = await import("agents/loop.js");
-      runAgentLoop = loopModule.runAgentLoop;
+    if (!agentsApp) {
+      const appModule = await import("agents/app.js");
       const gw = await import("./gateway.js");
       gatewayClient = { invoke: gw.invoke, embed: gw.embed };
       const cms = await import("./cms.js");
       cmsClient = cms.cmsClient;
+      agentsApp = appModule.createAgentsApplication({
+        source: "direct",
+        gateway: gatewayClient,
+        cms: cmsClient,
+      });
     }
   }
 
   return {
-    async *chat({ userId, agentId, conversationId, message, model, thoughtBudget }) {
+    async *chat({ context, userId, agentId, conversationId, message, modelOverride, thoughtBudget }) {
       await ensureImports();
-      yield* runAgentLoop({
-        userId,
+      yield* agentsApp.chat({
+        context: context ?? userId,
         agentId,
         conversationId,
-        userMessage: { role: "user", content: message.content },
-        model,
-        thoughtBudget: thoughtBudget || 0,
-        gateway: gatewayClient,
-        cms: cmsClient,
+        message,
+        modelOverride,
+        thoughtBudget,
       });
     },
   };
@@ -45,16 +48,17 @@ function buildDirectClient() {
 
 function buildHttpClient() {
   return {
-    async *chat({ userId, agentId, conversationId, message, model, thoughtBudget }) {
+    async *chat({ context, userId, agentId, conversationId, message, modelOverride, thoughtBudget }) {
+      const requestContext = requireUserRequestContext(context ?? userId, { source: "internal-http" });
       const response = await fetch(
         `${AGENTS_URL}/api/agents/${agentId}/conversations/${conversationId}/chat`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-User-Id": String(userId),
+            ...requestContextToInternalHeaders(requestContext),
           },
-          body: JSON.stringify({ message, model, thoughtBudget }),
+          body: JSON.stringify({ message, modelOverride, thoughtBudget }),
         }
       );
 

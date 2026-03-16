@@ -37,9 +37,9 @@ test("Automatic Conversation Summarization", async (t) => {
     assert.strictEqual(sonnet.maxContext, TINY_MAX_CONTEXT);
   });
 
-  // ===== 1. addMessage is a pure insert (no summarization) =====
+  // ===== 1. appendConversationMessage is a pure insert (no summarization) =====
 
-  await t.test("addMessage does not trigger summarization", async () => {
+  await t.test("appendConversationMessage does not trigger summarization", async () => {
     let invoked = false;
     ConversationService.setInvoker(async () => {
       invoked = true;
@@ -59,14 +59,15 @@ test("Automatic Conversation Summarization", async (t) => {
     });
 
     // Add a large message — should NOT trigger summarization
-    await svc.addMessage(testUser.id, conversation.id, {
+    await svc.appendConversationMessage(testUser.id, {
+      conversationId: conversation.id,
       role: "user",
       content: [{ text: "A".repeat(400) }],
     });
 
-    assert.strictEqual(invoked, false, "Invoker should not be called by addMessage");
+    assert.strictEqual(invoked, false, "Invoker should not be called by appendConversationMessage");
     const conv = await svc.getConversation(testUser.id, conversation.id);
-    assert.strictEqual(conv.summaryMessageID, null, "No summary from addMessage");
+    assert.strictEqual(conv.summaryMessageID, null, "No summary from appendConversationMessage");
   });
 
   // ===== 2. summarize() triggers when tokens exceed 80% =====
@@ -99,12 +100,12 @@ test("Automatic Conversation Summarization", async (t) => {
     });
 
     // Add messages that stay under threshold
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "Hi" }],
     });
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "assistant",
+    await svc.appendAssistantMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "Hello!" }],
     });
 
@@ -119,8 +120,8 @@ test("Automatic Conversation Summarization", async (t) => {
     assert.strictEqual(invokedWith, null, "Invoker should not have been called");
 
     // Add a large message that pushes past 80%
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "A".repeat(400) }],
     });
 
@@ -217,8 +218,8 @@ test("Automatic Conversation Summarization", async (t) => {
     });
 
     // Add large message and summarize
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "B".repeat(400) }],
     });
     for await (const _ of svc.summarize(testUser.id, conversation.id, {
@@ -233,8 +234,8 @@ test("Automatic Conversation Summarization", async (t) => {
     assert.strictEqual(invokeCount, 1);
 
     // Add more messages after the summary to push past the threshold again
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "assistant",
+    await svc.appendAssistantMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "C".repeat(400) }],
     });
     for await (const _ of svc.summarize(testUser.id, conversation.id, { userText: "continue" })) {
@@ -267,8 +268,8 @@ test("Automatic Conversation Summarization", async (t) => {
       title: "Failure Test",
     });
 
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "D".repeat(400) }],
     });
 
@@ -300,8 +301,8 @@ test("Automatic Conversation Summarization", async (t) => {
       title: "No Invoker Test",
     });
 
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "E".repeat(400) }],
     });
 
@@ -340,8 +341,8 @@ test("Automatic Conversation Summarization", async (t) => {
       title: "Default Model Test",
     });
 
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "F".repeat(400) }],
     });
 
@@ -369,12 +370,12 @@ test("Automatic Conversation Summarization", async (t) => {
       title: "Placeholder Test",
     });
 
-    const msg1 = await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    const msg1 = await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "message one" }],
     });
-    const _msg2 = await svc.addMessage(testUser.id, conversation.id, {
-      role: "assistant",
+    const _msg2 = await svc.appendAssistantMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "message two" }],
     });
 

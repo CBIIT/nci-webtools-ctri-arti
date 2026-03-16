@@ -5,6 +5,7 @@
   "exports": {
     ".": "./index.js",
     "./api.js": "./api.js",
+    "./app.js": "./app.js",
     "./conversation.js": "./conversation.js"
   },
   "scripts": {

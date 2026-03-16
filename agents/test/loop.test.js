@@ -7,35 +7,48 @@ import { PDFDocument } from "pdf-lib";
 import { runAgentLoop } from "../loop.js";
 
 describe("runAgentLoop", () => {
-  function createMockGateway(streamEvents) {
+  function createMockGateway(streamEvents, onInvoke) {
     return {
-      invoke: async () => ({
-        stream: (async function* () {
-          for (const event of streamEvents) {
-            yield event;
-          }
-        })(),
-      }),
+      invoke: async (params) => {
+        onInvoke?.(params);
+        return {
+          stream: (async function* () {
+            for (const event of streamEvents) {
+              yield event;
+            }
+          })(),
+        };
+      },
     };
   }
 
   function createMockCms(agent = {}) {
     const messages = [];
     const resources = [];
+    const appendMessage = (role) => async (_userId, { content }) => {
+      const message = { role, content };
+      messages.push(message);
+      return message;
+    };
     return {
       getAgent: async () => ({
         name: "TestAgent",
         tools: ["search", "browse"],
         systemPrompt: null,
+        runtime: { model: "saved-agent-model", modelID: 101, modelParameters: null, tools: ["search", "browse"] },
         ...agent,
       }),
       getConversation: async () => ({ id: 1, createdAt: "2026-01-15T12:00:00Z" }),
       getContext: async () => ({ messages: [] }),
-      addMessage: async (userId, conversationId, msg) => {
-        messages.push(msg);
-        return msg;
+      appendConversationMessage: async (_userId, { role, content }) => {
+        const message = { role, content };
+        messages.push(message);
+        return message;
       },
-      addResource: async (_userId, resource) => {
+      appendUserMessage: appendMessage("user"),
+      appendAssistantMessage: appendMessage("assistant"),
+      appendToolResultsMessage: appendMessage("user"),
+      storeConversationResource: async (_userId, resource) => {
         resources.push(resource);
         return resource;
       },
@@ -130,6 +143,82 @@ describe("runAgentLoop", () => {
         // consume
       }
     }, /Agent not found/);
+  });
+
+  it("throws before persisting when conversation is missing", async () => {
+    const gateway = createMockGateway([]);
+    const cms = {
+      ...createMockCms(),
+      getConversation: async () => null,
+    };
+
+    const loop = runAgentLoop({
+      userId: 1,
+      agentId: 1,
+      conversationId: 999,
+      userMessage: { role: "user", content: [{ text: "Hi" }] },
+      model: "test-model",
+      gateway,
+      cms,
+    });
+
+    await assert.rejects(async () => {
+      for await (const _ of loop) {
+        // consume
+      }
+    }, /Conversation not found/);
+
+    assert.equal(cms._messages.length, 0);
+    assert.equal(cms._resources.length, 0);
+  });
+
+  it("uses the saved agent runtime model by default", async () => {
+    let invokedModel = null;
+    const gateway = createMockGateway([{ messageStop: { stopReason: "end_turn" } }], (params) => {
+      invokedModel = params.model;
+    });
+    const cms = createMockCms({
+      runtime: { model: "saved-runtime-model", modelID: 77, modelParameters: null, tools: ["search", "browse"] },
+    });
+
+    const loop = runAgentLoop({
+      userId: 1,
+      agentId: 1,
+      conversationId: 1,
+      userMessage: { role: "user", content: [{ text: "Hi" }] },
+      gateway,
+      cms,
+    });
+
+    for await (const _event of loop) {
+      // consume
+    }
+
+    assert.equal(invokedModel, "saved-runtime-model");
+  });
+
+  it("allows an explicit model override", async () => {
+    let invokedModel = null;
+    const gateway = createMockGateway([{ messageStop: { stopReason: "end_turn" } }], (params) => {
+      invokedModel = params.model;
+    });
+    const cms = createMockCms();
+
+    const loop = runAgentLoop({
+      userId: 1,
+      agentId: 1,
+      conversationId: 1,
+      userMessage: { role: "user", content: [{ text: "Hi" }] },
+      modelOverride: "admin-override-model",
+      gateway,
+      cms,
+    });
+
+    for await (const _event of loop) {
+      // consume
+    }
+
+    assert.equal(invokedModel, "admin-override-model");
   });
 
   it("handles tool_use stop reason with tool execution", async () => {
@@ -247,7 +336,7 @@ describe("runAgentLoop", () => {
     const resources = [];
     const cms = {
       ...createMockCms(),
-      addResource: async (_userId, resource) => {
+      storeConversationResource: async (_userId, resource) => {
         resources.push(resource);
         return resource;
       },

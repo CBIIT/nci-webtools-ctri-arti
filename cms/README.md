@@ -82,7 +82,10 @@ Core business logic class. All methods take `userId` as first parameter for owne
 
 | Method                                      | Parameters                     | Returns         | Notes                    |
 | ------------------------------------------- | ------------------------------ | --------------- | ------------------------ |
-| `addMessage(userId, conversationId, data)`  | `{ role, content, parentID? }` | Message         |                          |
+| `appendConversationMessage(userId, data)`   | `{ conversationId, role, content, parentID? }` | Message | Validates conversation ownership before write |
+| `appendUserMessage(userId, data)`           | `{ conversationId, content, parentID? }` | Message | Convenience command for user turns |
+| `appendAssistantMessage(userId, data)`      | `{ conversationId, content, parentID? }` | Message | Convenience command for assistant turns |
+| `appendToolResultsMessage(userId, data)`    | `{ conversationId, content, parentID? }` | Message | Persists tool results as a user turn |
 | `getMessages(userId, conversationId)`       | —                              | Message[]       | Ordered by createdAt ASC |
 | `getMessage(userId, messageId)`             | —                              | Message \| null |                          |
 | `updateMessage(userId, messageId, updates)` | —                              | Message \| null |                          |
@@ -112,16 +115,17 @@ Core business logic class. All methods take `userId` as first parameter for owne
 
 | Method                                 | Parameters                                                         | Returns          | Notes                       |
 | -------------------------------------- | ------------------------------------------------------------------ | ---------------- | --------------------------- |
-| `addResource(userId, data)`            | `{ name, type, content, agentID?, messageID?, s3Uri?, metadata? }` | Resource         |                             |
+| `storeConversationResource(userId, data)` | `{ name, type, content, agentID?, conversationID?, messageID?, s3Uri?, metadata? }` | Resource | Validates referenced conversation/message ownership before write |
 | `getResource(userId, resourceId)`      | —                                                                  | Resource \| null |                             |
+| `updateConversationResource(userId, resourceId, updates)` | —                                          | Resource \| null | Reindexes vectors when resource content changes |
 | `getResourcesByAgent(userId, agentId)` | —                                                                  | Resource[]       | Ordered by createdAt ASC    |
-| `deleteResource(userId, resourceId)`   | —                                                                  | number           | Cascading: destroys vectors |
+| `deleteConversationResource(userId, resourceId)` | —                                                           | number           | Cascading: destroys vectors |
 
 #### Vector Methods
 
 | Method                                                | Parameters                                                | Returns  | Notes                                            |
 | ----------------------------------------------------- | --------------------------------------------------------- | -------- | ------------------------------------------------ |
-| `addVectors(userId, conversationId, vectors)`         | `[{ content, embedding?, resourceID?, toolID?, order? }]` | Vector[] | Bulk create. Order defaults to array index.      |
+| `storeConversationVectors(userId, data)`              | `{ conversationId, vectors }`                              | Vector[] | Bulk create. Order defaults to array index. Validates conversation ownership first. |
 | `getVectorsByConversation(userId, conversationId)`    | —                                                         | Vector[] | Ordered by order ASC                             |
 | `getVectorsByResource(userId, resourceId)`            | —                                                         | Vector[] | Ordered by order ASC                             |
 | `searchVectors(params)`                               | `{ toolID?, conversationID?, embedding?, topN? }`         | Vector[] | Cosine similarity search when embedding provided |
@@ -163,9 +167,9 @@ The server connects to CMS via `shared/clients/cms.js`, a factory-pattern client
 - **HTTP mode** (`CMS_URL` set): Makes HTTP requests with `X-User-Id` header.
 
 ```js
-import { createConversation, addMessage, getMessages } from "./services/clients/cms.js";
+import { createConversation, appendUserMessage, getMessages } from "./services/clients/cms.js";
 
 const conversation = await createConversation(userId, { title: "New Chat", agentID: 1 });
-await addMessage(userId, conversation.id, { role: "user", content: [{ text: "Hello" }] });
+await appendUserMessage(userId, { conversationId: conversation.id, content: [{ text: "Hello" }] });
 const messages = await getMessages(userId, conversation.id);
 ```

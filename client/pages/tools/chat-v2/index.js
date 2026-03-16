@@ -198,8 +198,7 @@ function ChatApp() {
     const text = form.message.value;
     const files = Array.from(form.inputFiles?.files || []);
     const reasoningMode = form.reasoningMode.checked;
-    const defaultModel = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6;
-    const modelId = form.model?.value || defaultModel;
+    const modelId = user?.()?.Role?.name === "admin" ? form.model?.value || null : null;
 
     form.message.value = "";
     if (form.inputFiles) form.inputFiles.value = "";
@@ -685,22 +684,29 @@ function ChatApp() {
                       <//>
                     </div>
 
-                    <!-- Right: Model Selector (admin only) + Clear + Send -->
+                    <!-- Right: Admin override selector + Clear + Send -->
                     <div class="d-flex w-auto align-items-center gap-2">
                       <${Show} when=${() => user?.()?.Role?.name === "admin"}>
-                        <label for="model" class="visually-hidden">Model Selection</label>
-                        <select
-                          class="model-dropdown form-select form-select-lg fw-semibold fs-6 h-100 border-0 bg-primary-hover cursor-pointer"
-                          name="model"
-                          id="model"
-                          required
-                        >
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6} selected>
-                            Sonnet
-                          </option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku</option>
-                        </select>
+                        <div class="d-flex flex-column align-items-start gap-1">
+                          <label for="model" class="small text-secondary fw-semibold mb-0">
+                            Admin Model Override
+                          </label>
+                          <select
+                            class="model-dropdown form-select form-select-lg fw-semibold fs-6 h-100 border-0 bg-primary-hover cursor-pointer"
+                            name="model"
+                            id="model"
+                            value=${() => agent.modelId || MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6}
+                            title="Admin only. Leave this at the saved agent model unless you intentionally need an override."
+                            aria-label="Admin model override"
+                            required
+                          >
+                            <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus</option>
+                            <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6} selected>
+                              Sonnet
+                            </option>
+                            <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku</option>
+                          </select>
+                        </div>
                       <//>
 
                       <div class="d-flex flex-row gap-2">
