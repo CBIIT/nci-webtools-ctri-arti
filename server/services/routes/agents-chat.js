@@ -2,15 +2,9 @@ import { Router } from "express";
 import { agentsClient } from "shared/clients/agents.js";
 import { requireRole } from "users/middleware.js";
 
-const api = Router();
+import { getUserId } from "../utils.js";
 
-function getUserId(req) {
-  const userId = req.session?.user?.id;
-  if (!userId) {
-    return null;
-  }
-  return userId;
-}
+const api = Router();
 
 /**
  * POST /agents/:agentId/conversations/:conversationId/chat
@@ -20,9 +14,6 @@ function getUserId(req) {
  */
 api.post("/agents/:agentId/conversations/:conversationId/chat", requireRole(), async (req, res) => {
   const userId = getUserId(req);
-  if (!userId) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
   const { agentId, conversationId } = req.params;
   const { message, model, thoughtBudget } = req.body;
 

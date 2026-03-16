@@ -209,14 +209,7 @@ async function buildInferenceParams(
   outputConfig
 ) {
   const {
-    model: {
-      maxOutput,
-      maxReasoning,
-      cost1kInput,
-      _cost1kOutput,
-      cost1kCacheRead,
-      _cost1kCacheWrite,
-    },
+    model: { maxOutput, maxReasoning, cost1kCacheRead },
     provider,
   } = await getModelProvider(modelId);
   const hasCache = !!cost1kCacheRead;
@@ -249,7 +242,7 @@ async function buildInferenceParams(
     ...(outputConfig && { outputConfig }),
   };
 
-  return { input, provider, hasCache, cost1kInput, cost1kCacheRead };
+  return { input, provider };
 }
 
 /**
@@ -280,7 +273,7 @@ export async function runModel({
   messages = processMessages(messages, thoughtBudget);
   await validateInlineMessages(messages);
 
-  const { input, provider, hasCache, cost1kInput, cost1kCacheRead } = await buildInferenceParams(
+  const { input, provider } = await buildInferenceParams(
     model,
     messages,
     systemPrompt,
@@ -291,51 +284,7 @@ export async function runModel({
 
   const response = stream ? provider.converseStream(input) : provider.converse(input);
   const result = await response;
-
-  if (stream) {
-    return { stream: result.stream };
-  }
-
-  // Debug logging for cache behavior
-  if (hasCache && result.usage) {
-    const totalEstimatedTokens = input.messages.reduce(
-      (sum, m) => sum + m.content.reduce((s, c) => s + estimateContentTokens(c), 0),
-      0
-    );
-    const messagesWithCache = input.messages.filter((m) =>
-      m.content.some((c) => c.cachePoint)
-    ).length;
-    const cacheRead = result.usage.cacheReadInputTokens || 0;
-    const cacheWrite = result.usage.cacheWriteInputTokens || 0;
-
-    // Calculate cost savings using actual model costs
-    const totalInputTokens = result.usage.inputTokens + cacheRead;
-    const regularCost = (totalInputTokens * cost1kInput) / 1000;
-    const actualCost =
-      (result.usage.inputTokens * cost1kInput + cacheRead * cost1kCacheRead) / 1000;
-    const savings = regularCost - actualCost;
-
-    console.log("[Cache Debug]", {
-      model,
-      estimatedTotalTokens: totalEstimatedTokens,
-      actualInputTokens: result.usage.inputTokens,
-      messagesWithCachePoints: messagesWithCache,
-      cache: {
-        read: cacheRead,
-        write: cacheWrite,
-        hitRate:
-          totalInputTokens > 0 ? `${((cacheRead / totalInputTokens) * 100).toFixed(1)}%` : "0%",
-      },
-      cost: {
-        withoutCache: `$${regularCost.toFixed(6)}`,
-        withCache: `$${actualCost.toFixed(6)}`,
-        savings: `$${savings.toFixed(6)}`,
-        percentSaved: regularCost > 0 ? `${((savings / regularCost) * 100).toFixed(1)}%` : "0%",
-      },
-    });
-  }
-
-  return result;
+  return stream ? { stream: result.stream } : result;
 }
 
 export { sanitizeProviderFileName, getProviderVisibleFileName, processMessages };

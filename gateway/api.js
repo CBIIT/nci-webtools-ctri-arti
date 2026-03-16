@@ -1,8 +1,9 @@
 import db, { Model, User } from "database";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { json, Router } from "express";
 import { describeCron } from "shared/cron.js";
+import logger from "shared/logger.js";
 import { logErrors, logRequests } from "shared/middleware.js";
 
 import { runModel, runEmbedding } from "./inference.js";
@@ -15,12 +16,72 @@ api.use(json({ limit: 1024 ** 3 })); // 1GB
 api.use(logRequests());
 
 /**
+ * Handles embedding inference requests.
+ */
+async function handleEmbedding(res, { model, userID, type, content, purpose }) {
+  const result = await runEmbedding({ model, content, purpose });
+
+  if (userID && result.usage) {
+    const usageItems = [];
+    if (result.usage.inputTextTokenCount)
+      usageItems.push({ quantity: result.usage.inputTextTokenCount, unit: "input_tokens" });
+    if (result.usage.imageCount)
+      usageItems.push({ quantity: result.usage.imageCount, unit: "images" });
+    if (result.usage.videoSeconds)
+      usageItems.push({ quantity: result.usage.videoSeconds, unit: "video_seconds" });
+    if (result.usage.audioSeconds)
+      usageItems.push({ quantity: result.usage.audioSeconds, unit: "audio_seconds" });
+    await trackUsage(userID, model, usageItems, { type: type || "embedding" });
+  }
+
+  return res.json(result);
+}
+
+/**
+ * Handles chat inference requests (streaming and non-streaming).
+ */
+async function handleChat(
+  req,
+  res,
+  next,
+  { model, userID, type, messages, system, tools, thoughtBudget, stream, ip, outputConfig }
+) {
+  const results = await runModel({
+    model,
+    messages,
+    system,
+    tools,
+    thoughtBudget,
+    stream,
+    outputConfig,
+  });
+
+  if (!results?.stream) {
+    if (userID) {
+      await trackModelUsage(userID, model, ip, results.usage, { type });
+    }
+    return res.json(results);
+  }
+
+  for await (const message of results.stream) {
+    try {
+      if (message.metadata && userID) {
+        await trackModelUsage(userID, model, ip, message.metadata.usage, { type });
+      }
+      res.write(JSON.stringify(message) + "\n");
+    } catch (err) {
+      logger.error("Error processing stream message:", err);
+    }
+  }
+  res.end();
+}
+
+/**
  * POST /api/v1/model/invoke - Unified inference endpoint
  * Handles both chat and embedding model types.
  */
 api.post("/v1/model/invoke", async (req, res, next) => {
-  const { userID, model, messages, system, tools, thoughtBudget, stream, ip, outputConfig, type } =
-    req.body;
+  const { userID, model, type } = req.body;
 
   try {
     // Resolve model from DB to check type
@@ -43,60 +104,14 @@ api.post("/v1/model/invoke", async (req, res, next) => {
       }
     }
 
-    // Embedding models use InvokeModel (not Converse)
     if (modelRecord.type === "embedding") {
       const { content, purpose } = req.body;
-      const result = await runEmbedding({ model, content, purpose });
-
-      if (userID && result.usage) {
-        const usageItems = [];
-        if (result.usage.inputTextTokenCount)
-          usageItems.push({ quantity: result.usage.inputTextTokenCount, unit: "input_tokens" });
-        if (result.usage.imageCount)
-          usageItems.push({ quantity: result.usage.imageCount, unit: "images" });
-        if (result.usage.videoSeconds)
-          usageItems.push({ quantity: result.usage.videoSeconds, unit: "video_seconds" });
-        if (result.usage.audioSeconds)
-          usageItems.push({ quantity: result.usage.audioSeconds, unit: "audio_seconds" });
-        await trackUsage(userID, model, usageItems, { type: type || "embedding" });
-      }
-
-      return res.json(result);
+      return handleEmbedding(res, { model, userID, type, content, purpose });
     }
 
-    // Run inference
-    const results = await runModel({
-      model,
-      messages,
-      system,
-      tools,
-      thoughtBudget,
-      stream,
-      outputConfig,
-    });
-
-    // For non-streaming responses
-    if (!results?.stream) {
-      if (userID) {
-        await trackModelUsage(userID, model, ip, results.usage, { type });
-      }
-      return res.json(results);
-    }
-
-    // Streaming response
-    for await (const message of results.stream) {
-      try {
-        if (message.metadata && userID) {
-          await trackModelUsage(userID, model, ip, message.metadata.usage, { type });
-        }
-        res.write(JSON.stringify(message) + "\n");
-      } catch (err) {
-        console.error("Error processing stream message:", err);
-      }
-    }
-    res.end();
+    return handleChat(req, res, next, { ...req.body });
   } catch (error) {
-    console.error("Error in gateway invoke:", error);
+    logger.error("Error in gateway invoke:", error);
     next(error);
   }
 });
@@ -108,7 +123,6 @@ api.get("/v1/models", async (req, res) => {
   const where = [eq(Model.providerID, 1)];
   if (req.query.type) where.push(eq(Model.type, req.query.type));
 
-  const { and } = await import("drizzle-orm");
   const results = await db
     .select({
       name: Model.name,
