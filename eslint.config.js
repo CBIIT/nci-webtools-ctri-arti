@@ -3,7 +3,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import importPlugin from "eslint-plugin-import-x";
 import globals from "globals";
 
-const workspacePackages = ["shared", "database", "gateway", "cms", "ams", "users"];
+const workspacePackages = ["shared", "database", "gateway", "cms", "agents", "users"];
 
 const cdnModules = [
   "@duckdb/duckdb-wasm",
@@ -90,7 +90,7 @@ export default defineConfig([
       "cms/**/*.js",
       "shared/**/*.js",
       "database/**/*.js",
-      "ams/**/*.js",
+      "agents/**/*.js",
       "users/**/*.js",
     ],
     languageOptions: {

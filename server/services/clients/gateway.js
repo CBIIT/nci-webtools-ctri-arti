@@ -10,10 +10,8 @@
 
 import db, { Model, User } from "database";
 
-import { eq } from "drizzle-orm";
-import { runModel as directRunModel } from "gateway/chat.js";
-import { runEmbedding as directRunEmbedding } from "gateway/embedding.js";
-import { gatewayError } from "gateway/errors.js";
+import { eq, and } from "drizzle-orm";
+import { runModel as directRunModel } from "gateway/inference.js";
 import { trackModelUsage } from "gateway/usage.js";
 import { describeCron } from "shared/cron.js";
 
@@ -27,7 +25,7 @@ async function checkRateLimit(userID) {
   if (!userID) return null;
   const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
   if (user?.budget !== null && user?.remaining !== null && user?.remaining <= 0) {
-    return gatewayError("QUOTA_EXCEEDED", RATE_LIMIT_MESSAGE);
+    return { error: RATE_LIMIT_MESSAGE, status: 429 };
   }
   return null;
 }
@@ -35,26 +33,19 @@ async function checkRateLimit(userID) {
 function buildDirectClient() {
   return {
     async invoke({
-      modelID,
       userID,
-      agentID,
+      model,
       messages,
       system,
       tools,
       thoughtBudget,
       stream,
+      ip,
       outputConfig,
       type,
     }) {
       const limited = await checkRateLimit(userID);
       if (limited) return limited;
-
-      // Resolve model record by ID (include Provider for downstream use)
-      const model = await db.query.Model.findFirst({
-        where: eq(Model.id, modelID),
-        with: { Provider: true },
-      });
-      if (!model) return gatewayError("INVALID_MODEL", `Model not found: ${modelID}`);
 
       const result = await directRunModel({
         model,
@@ -66,18 +57,18 @@ function buildDirectClient() {
         outputConfig,
       });
 
-      // Non-streaming: track usage inline
+      // For non-streaming responses, track usage inline
       if (!result?.stream && userID) {
-        await trackModelUsage(userID, model, result.usage, { type, agentID });
+        await trackModelUsage(userID, model, ip, result.usage, { type });
       }
 
-      // Streaming: wrap to track usage on metadata
+      // For streaming, wrap to track usage on metadata
       if (result?.stream) {
         return {
           stream: (async function* () {
             for await (const message of result.stream) {
               if (message.metadata && userID) {
-                await trackModelUsage(userID, model, message.metadata.usage, { type, agentID });
+                await trackModelUsage(userID, model, ip, message.metadata.usage, { type });
               }
               yield message;
             }
@@ -88,26 +79,21 @@ function buildDirectClient() {
       return result;
     },
 
-    async embed({ modelID, userID, agentID, texts, type }) {
-      const limited = await checkRateLimit(userID);
-      if (limited) return limited;
+    async listModels({ type } = {}) {
+      const where = [eq(Model.providerID, 1)];
+      if (type) where.push(eq(Model.type, type));
 
-      const model = await db.query.Model.findFirst({
-        where: eq(Model.id, modelID),
-        with: { Provider: true },
-      });
-      if (!model) return gatewayError("INVALID_MODEL", `Model not found: ${modelID}`);
-
-      const result = await directRunEmbedding({ model, texts });
-      if (result && userID) {
-        await trackModelUsage(
-          userID,
-          model,
-          { inputTokens: result.usage.promptTokens, outputTokens: 0 },
-          { type, agentID }
-        );
-      }
-      return result;
+      return db
+        .select({
+          name: Model.name,
+          internalName: Model.internalName,
+          type: Model.type,
+          maxContext: Model.maxContext,
+          maxOutput: Model.maxOutput,
+          maxReasoning: Model.maxReasoning,
+        })
+        .from(Model)
+        .where(and(...where));
     },
   };
 }
@@ -115,39 +101,36 @@ function buildDirectClient() {
 function buildHttpClient() {
   return {
     async invoke({
-      modelID,
       userID,
-      agentID,
+      model,
       messages,
       system,
       tools,
       thoughtBudget,
       stream,
+      ip,
       outputConfig,
       type,
     }) {
-      const response = await fetch(`${GATEWAY_URL}/api/v1/modelInvoke`, {
+      const response = await fetch(`${GATEWAY_URL}/api/v1/model/invoke`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "chat",
-          modelID,
           userID,
-          agentID,
+          model,
           messages,
           system,
           tools,
+          thoughtBudget,
           stream,
+          ip,
+          outputConfig,
           type,
-          defaultParameters: {
-            thoughtBudget,
-            outputConfig,
-          },
         }),
       });
 
-      if (!response.ok && !stream) {
-        return response.json();
+      if (response.status === 429) {
+        return { error: (await response.json()).error, status: 429 };
       }
 
       if (stream) {
@@ -190,19 +173,11 @@ function buildHttpClient() {
       return response.json();
     },
 
-    async embed({ modelID, userID, agentID, texts, type }) {
-      const response = await fetch(`${GATEWAY_URL}/api/v1/modelInvoke`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "embedding",
-          modelID,
-          userID,
-          agentID,
-          messages: texts,
-          type,
-        }),
-      });
+    async listModels({ type } = {}) {
+      const url = type
+        ? `${GATEWAY_URL}/api/v1/models?type=${type}`
+        : `${GATEWAY_URL}/api/v1/models`;
+      const response = await fetch(url);
       return response.json();
     },
   };
@@ -210,4 +185,4 @@ function buildHttpClient() {
 
 const client = GATEWAY_URL ? buildHttpClient() : buildDirectClient();
 
-export const { invoke, embed } = client;
+export const { invoke, listModels } = client;

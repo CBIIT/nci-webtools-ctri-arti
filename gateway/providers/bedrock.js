@@ -2,7 +2,6 @@ import {
   BedrockRuntimeClient,
   ConverseCommand,
   ConverseStreamCommand,
-  InvokeModelCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 
 /* Example Usage: ConverseCommand
@@ -1192,22 +1191,5 @@ export default class BedrockProvider {
   async converseStream(input) {
     const command = new ConverseStreamCommand(input);
     return await this.client.send(command);
-  }
-
-  /**
-   * Sends an InvokeModel request (used for embeddings).
-   * @param {string} modelId - The model identifier
-   * @param {Object} body - The request body (model-specific)
-   * @returns {Promise<Object>} Parsed JSON response body
-   */
-  async invokeModel(modelId, body) {
-    const command = new InvokeModelCommand({
-      modelId,
-      contentType: "application/json",
-      accept: "application/json",
-      body: JSON.stringify(body),
-    });
-    const response = await this.client.send(command);
-    return JSON.parse(new TextDecoder().decode(response.body));
   }
 }

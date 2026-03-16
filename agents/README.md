@@ -1,4 +1,4 @@
-# ams
+# agents
 
 Chat orchestration service (stub).
 
@@ -11,7 +11,7 @@ The agents service will be the orchestration layer for AI chat. When a user send
 ## Quick Start
 
 ```bash
-npm start -w ams
+npm start -w agents
 ```
 
 ## Current API

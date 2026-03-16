@@ -1,18 +1,12 @@
 {
-  "name": "cms",
+  "name": "agents",
   "version": "1.0.0",
   "type": "module",
-  "exports": {
-    ".": "./index.js",
-    "./api.js": "./api.js",
-    "./conversation.js": "./conversation.js"
-  },
   "scripts": {
     "start": "node --env-file .env index.js"
   },
   "dependencies": {
     "database": "*",
-    "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
     "shared": "*"
   }

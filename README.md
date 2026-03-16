@@ -16,7 +16,7 @@ Client (SolidJS) ──► Server (:443) ──┬──► Gateway (:3001) ─�
 | [server](server/)                 | Service        | 443/8080 | Edge server — HTTPS, OAuth, static files, API routing                          |
 | [gateway](gateway/)               | Service        | 3001     | AI inference — multi-provider abstraction, usage tracking                      |
 | [cms](cms/)                       | Service        | 3002     | Conversation management — agents, conversations, messages, tools, prompts CRUD |
-| [ams](ams/)                       | Service (stub) | 3003     | Chat orchestration (planned)                                                   |
+| [agents](agents/)                 | Service (stub) | 3003     | Chat orchestration (planned)                                                   |
 | [users](users/)                   | Service (stub) | 3004     | Identity and access management (planned)                                       |
 | [database](database/)             | Library        | —        | Drizzle ORM schema, relations, seed data                                       |
 | [shared](shared/)                 | Library        | —        | Logger, middleware, utilities                                                  |
@@ -126,7 +126,7 @@ The deploy script builds 3 Docker images (main, gateway, cms), pushes to ECR, an
 
 ```
 research-optimizer/
-├── package.json              # Root workspace config (shared, database, gateway, cms, ams, users, server)
+├── package.json              # Root workspace config (shared, database, gateway, cms, agents, users, server)
 ├── docker-compose.yml        # Multi-service development
 ├── deploy.sh                 # CI/CD deployment script
 ├── Dockerfile                # Multi-service container image
@@ -155,7 +155,7 @@ research-optimizer/
 │   ├── api.js                # REST routes
 │   └── openapi.yaml          # Service API spec
 │
-├── ams/                      # Chat orchestration (stub)
+├── agents/                   # Chat orchestration (stub)
 ├── users/                    # Identity management (stub)
 │
 ├── database/                 # Shared database package
@@ -186,7 +186,7 @@ research-optimizer/
 | [cms/openapi.yaml](cms/openapi.yaml)                 | CMS API spec (OpenAPI 3.1)               |
 | [database/README.md](database/README.md)             | Data models, ownership matrix, seed data |
 | [shared/README.md](shared/README.md)                 | Shared library reference                 |
-| [ams/README.md](ams/README.md)                       | Chat orchestration (stub)                |
+| [agents/README.md](agents/README.md)                 | Chat orchestration (stub)                |
 | [users/README.md](users/README.md)                   | Identity management (stub)               |
 | [infrastructure/README.md](infrastructure/README.md) | AWS CDK deployment                       |
 | [CLAUDE.md](CLAUDE.md)                               | AI assistant guidance for this codebase  |
