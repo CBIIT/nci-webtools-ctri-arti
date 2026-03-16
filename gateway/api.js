@@ -1,6 +1,7 @@
 import { json, Router } from "express";
 import logger from "shared/logger.js";
 import { logErrors, logRequests } from "shared/middleware.js";
+import { resolveRequestId } from "shared/request-context.js";
 
 import { createGatewayApplication } from "./app.js";
 import { runModel, runEmbedding } from "./inference.js";
@@ -23,7 +24,10 @@ api.use(logRequests());
  */
 api.post("/v1/model/invoke", async (req, res, next) => {
   try {
-    const result = await app.invoke(req.body);
+    const result = await app.invoke({
+      ...req.body,
+      requestId: resolveRequestId(req.body?.requestId, req.headers["x-request-id"]),
+    });
     if (result?.status === 429) {
       return res.status(429).json({
         error: result.error,
@@ -61,6 +65,37 @@ api.post("/v1/model/invoke", async (req, res, next) => {
 api.get("/v1/models", async (req, res) => {
   const results = await app.listModels({ type: req.query.type });
   res.json(results);
+});
+
+api.get("/v1/guardrails", async (_req, res, next) => {
+  try {
+    const results = await app.listGuardrails();
+    res.json(results);
+  } catch (error) {
+    next(error);
+  }
+});
+
+api.post("/v1/guardrails/reconcile", async (req, res, next) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : undefined;
+    const results = await app.reconcileGuardrails({ ids });
+    res.json(results);
+  } catch (error) {
+    next(error);
+  }
+});
+
+api.delete("/v1/guardrails/:id", async (req, res, next) => {
+  try {
+    const result = await app.deleteGuardrail(Number(req.params.id));
+    res.json(result);
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    next(error);
+  }
 });
 
 api.use(logErrors());

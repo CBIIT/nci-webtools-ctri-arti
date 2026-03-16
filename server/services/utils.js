@@ -110,7 +110,7 @@ export function createCertificate(opts = {}) {
 export { getDateRange } from "shared/utils.js";
 
 export function getRequestContext(req, { allowAnonymous = false, source = "server" } = {}) {
-  const requestId = req.headers?.["x-request-id"] || "unknown";
+  const requestId = req.headers?.["x-request-id"];
   const baseContext = req.session?.user?.id
     ? createUserRequestContext(req.session.user.id, { source, requestId })
     : createAnonymousRequestContext({ source, requestId });

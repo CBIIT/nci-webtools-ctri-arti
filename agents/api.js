@@ -20,13 +20,15 @@ export function createAgentsRouter({ application = defaultApplication } = {}) {
   api.use(json({ limit: 1024 ** 3 }));
 
 function getAgentRequestContext(req) {
-  const headerContext = parseInternalUserIdHeader(req.headers["x-user-id"]);
+  const headerContext = parseInternalUserIdHeader(req.headers["x-user-id"], {
+    requestId: req.headers["x-request-id"],
+  });
   if (headerContext) return requireUserRequestContext(headerContext);
 
   return requireUserRequestContext(
     createRequestContext(req.session?.user?.id, {
       source: "server",
-      requestId: req.headers["x-request-id"] || "unknown",
+      requestId: req.headers["x-request-id"],
     })
   );
 }

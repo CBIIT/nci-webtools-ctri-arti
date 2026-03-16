@@ -9,6 +9,7 @@ import {
 } from "shared/gateway-usage.js";
 
 import { runModel, runEmbedding } from "./inference.js";
+import { deleteGuardrailById, listGuardrails, reconcileGuardrails } from "./guardrails.js";
 import { trackModelUsage, trackUsage } from "./usage.js";
 
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
@@ -71,9 +72,11 @@ export function createGatewayApplication({
       thoughtBudget,
       stream,
       ip,
+      requestId,
       outputConfig,
       content,
       purpose,
+      guardrailConfig,
     }) {
       const { limited, modelRecord } = await requirePreflight({ userID, model });
       if (limited) return limited;
@@ -82,7 +85,10 @@ export function createGatewayApplication({
         const result = await embeddingInvoker({ model, content, purpose });
         if (userID && result.usage) {
           const usageItems = normalizeEmbeddingUsageItems(result.usage);
-          await usageTracker(userID, model, usageItems, { type: type || "embedding" });
+          await usageTracker(userID, model, usageItems, {
+            type: type || "embedding",
+            requestId,
+          });
         }
         return result;
       }
@@ -95,11 +101,16 @@ export function createGatewayApplication({
         thoughtBudget,
         stream,
         outputConfig,
+        guardrailConfig,
       });
 
       if (!result?.stream) {
         if (userID) {
-          await modelUsageTracker(userID, model, ip, result.usage, { type });
+          await modelUsageTracker(userID, model, ip, result.usage, {
+            type,
+            requestId,
+            trace: result.trace,
+          });
         }
         return result;
       }
@@ -108,7 +119,11 @@ export function createGatewayApplication({
         stream: (async function* () {
           for await (const message of result.stream) {
             if (message.metadata && userID) {
-              await modelUsageTracker(userID, model, ip, message.metadata.usage, { type });
+              await modelUsageTracker(userID, model, ip, message.metadata.usage, {
+                type,
+                requestId,
+                trace: message.metadata.trace,
+              });
             }
             yield message;
           }
@@ -116,14 +131,17 @@ export function createGatewayApplication({
       };
     },
 
-    async embed({ userID, model, content, purpose, ip, type }) {
+    async embed({ userID, model, content, purpose, ip, type, requestId }) {
       const { limited } = await requirePreflight({ userID, model });
       if (limited) return limited;
 
       const result = await embeddingInvoker({ model, content, purpose });
       if (userID && result.usage) {
         const usageItems = normalizeEmbeddingUsageItems(result.usage);
-        await usageTracker(userID, model, usageItems, { type: type || "embedding" });
+        await usageTracker(userID, model, usageItems, {
+          type: type || "embedding",
+          requestId,
+        });
       }
       return result;
     },
@@ -143,6 +161,18 @@ export function createGatewayApplication({
         })
         .from(Model)
         .where(and(...where));
+    },
+
+    listGuardrails({ ids } = {}) {
+      return listGuardrails({ ids });
+    },
+
+    reconcileGuardrails({ ids } = {}) {
+      return reconcileGuardrails({ ids });
+    },
+
+    deleteGuardrail(id) {
+      return deleteGuardrailById(id);
     },
   };
 }

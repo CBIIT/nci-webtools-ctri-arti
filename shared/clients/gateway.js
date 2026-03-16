@@ -13,11 +13,24 @@ import { parseNdjsonStream } from "./ndjson.js";
 const GATEWAY_URL = process.env.GATEWAY_URL;
 let directAppPromise;
 
+function shouldBootstrapDirectGuardrails() {
+  if (process.env.DISABLE_GUARDRAIL_BOOTSTRAP === "1") return false;
+  return !process.execArgv.includes("--test");
+}
+
 async function getDirectApp() {
   if (!directAppPromise) {
     directAppPromise = (async () => {
       const { createGatewayApplication } = await import("gateway/app.js");
-      return createGatewayApplication();
+      const app = createGatewayApplication();
+      if (shouldBootstrapDirectGuardrails()) {
+        try {
+          await app.reconcileGuardrails();
+        } catch (error) {
+          console.error("Direct gateway guardrail bootstrap failed:", error);
+        }
+      }
+      return app;
     })();
   }
 
@@ -37,6 +50,18 @@ function buildDirectClient() {
     async listModels({ type } = {}) {
       return (await getDirectApp()).listModels({ type });
     },
+
+    async listGuardrails() {
+      return (await getDirectApp()).listGuardrails();
+    },
+
+    async reconcileGuardrails({ ids } = {}) {
+      return (await getDirectApp()).reconcileGuardrails({ ids });
+    },
+
+    async deleteGuardrail(id) {
+      return (await getDirectApp()).deleteGuardrail(id);
+    },
   };
 }
 
@@ -44,6 +69,7 @@ function buildHttpClient() {
   return {
     async invoke({
       userID,
+      requestId,
       model,
       messages,
       system,
@@ -53,12 +79,17 @@ function buildHttpClient() {
       ip,
       outputConfig,
       type,
+      guardrailConfig,
     }) {
       const response = await fetch(`${GATEWAY_URL}/api/v1/model/invoke`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(requestId ? { "X-Request-Id": requestId } : {}),
+        },
         body: JSON.stringify({
           userID,
+          requestId,
           model,
           messages,
           system,
@@ -68,6 +99,7 @@ function buildHttpClient() {
           ip,
           outputConfig,
           type,
+          guardrailConfig,
         }),
       });
 
@@ -94,11 +126,22 @@ function buildHttpClient() {
       return response.json();
     },
 
-    async embed({ userID, model, content, purpose, ip, type }) {
+    async embed({ userID, requestId, model, content, purpose, ip, type }) {
       const response = await fetch(`${GATEWAY_URL}/api/v1/model/invoke`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userID, model, content, purpose, ip, type: type || "embedding" }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(requestId ? { "X-Request-Id": requestId } : {}),
+        },
+        body: JSON.stringify({
+          userID,
+          requestId,
+          model,
+          content,
+          purpose,
+          ip,
+          type: type || "embedding",
+        }),
       });
 
       if (response.status === 429) {
@@ -130,9 +173,51 @@ function buildHttpClient() {
       }
       return response.json();
     },
+
+    async listGuardrails() {
+      const response = await fetch(`${GATEWAY_URL}/api/v1/guardrails`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: response.statusText }));
+        const err = new Error(error.error || `Gateway error: ${response.status}`);
+        err.status = response.status;
+        throw err;
+      }
+      return response.json();
+    },
+
+    async reconcileGuardrails({ ids } = {}) {
+      const response = await fetch(`${GATEWAY_URL}/api/v1/guardrails/reconcile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(ids?.length ? { ids } : {}),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: response.statusText }));
+        const err = new Error(error.error || `Gateway error: ${response.status}`);
+        err.status = response.status;
+        throw err;
+      }
+      return response.json();
+    },
+
+    async deleteGuardrail(id) {
+      const response = await fetch(`${GATEWAY_URL}/api/v1/guardrails/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: response.statusText }));
+        const err = new Error(error.error || `Gateway error: ${response.status}`);
+        err.status = response.status;
+        throw err;
+      }
+      return response.json();
+    },
   };
 }
 
 const client = GATEWAY_URL ? buildHttpClient() : buildDirectClient();
 
-export const { invoke, embed, listModels } = client;
+export const { invoke, embed, listModels, listGuardrails, reconcileGuardrails, deleteGuardrail } =
+  client;

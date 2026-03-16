@@ -6,6 +6,7 @@
     ".": "./index.js",
     "./app.js": "./app.js",
     "./api.js": "./api.js",
+    "./guardrails.js": "./guardrails.js",
     "./inference.js": "./inference.js",
     "./upload-limits.js": "./upload-limits.js",
     "./usage.js": "./usage.js",
@@ -17,6 +18,7 @@
     "start": "node --env-file .env index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock": "^3.1010.0",
     "@aws-sdk/client-bedrock-runtime": "^3.1003.0",
     "@google/genai": "^1.44.0",
     "database": "*",

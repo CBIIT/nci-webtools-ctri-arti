@@ -1,4 +1,4 @@
-import db, { User, Conversation, Message } from "database";
+import db, { Guardrail, User, Conversation, Message } from "database";
 import assert from "node:assert";
 import { test } from "node:test";
 
@@ -55,6 +55,7 @@ test("ConversationService", async (t) => {
       assert.strictEqual(agent.name, "Test Agent");
       assert.ok(agent.runtime);
       assert.strictEqual(typeof agent.runtime.model, "string");
+      assert.strictEqual(agent.runtime.guardrailConfig, null);
     });
 
     await at.test("getAgents lists user and global agents", async () => {
@@ -76,6 +77,22 @@ test("ConversationService", async (t) => {
       });
       assert.strictEqual(overridden.runtime.overrideModel, "override-model");
       assert.strictEqual(overridden.runtime.effectiveModel, "override-model");
+    });
+
+    await at.test("global FedPulse exposes its linked guardrail runtime", async () => {
+      const fedPulse = (await svc.getAgents(null)).find((agent) => agent.name === "FedPulse");
+      assert.ok(fedPulse, "FedPulse should exist in seeded global agents");
+      assert.equal(fedPulse.guardrailID, 1);
+      assert.equal(fedPulse.runtime.guardrailID, 1);
+      assert.equal(fedPulse.runtime.guardrailConfig, null);
+
+      const [guardrail] = await db
+        .select()
+        .from(Guardrail)
+        .where(eq(Guardrail.id, fedPulse.guardrailID))
+        .limit(1);
+      assert.ok(guardrail, "FedPulse guardrail should exist in seed data");
+      assert.equal(guardrail.name, "FedPulse Prompt Attack");
     });
 
     await at.test("getAgents with null userId only lists global agents", async () => {

@@ -15,7 +15,7 @@ test("schema exports", async (t) => {
     const expectedTables = [
       "User", "Role", "Policy", "RolePolicy",
       "Provider", "Model", "Usage",
-      "Prompt", "Agent", "Conversation", "Message",
+      "Prompt", "Guardrail", "Agent", "Conversation", "Message",
       "Tool", "Resource", "Vector",
       "UserAgent", "UserTool", "AgentTool",
     ];
@@ -32,7 +32,7 @@ test("schema exports", async (t) => {
 
   await t.test("exports tables object", () => {
     assert.ok(schema.tables, "Missing tables object");
-    assert.ok(Object.keys(schema.tables).length >= 17);
+    assert.ok(Object.keys(schema.tables).length >= 18);
   });
 });
 
@@ -78,6 +78,13 @@ test("seedDatabase", async (t) => {
     const { db, schema: s, close } = await createSeededTestDb();
     const prompts = await db.select().from(s.Prompt);
     assert.ok(prompts.length >= 1, `Expected at least 1 prompt, got ${prompts.length}`);
+    close();
+  });
+
+  await t.test("seeds guardrails", async () => {
+    const { db, schema: s, close } = await createSeededTestDb();
+    const guardrails = await db.select().from(s.Guardrail);
+    assert.ok(guardrails.length >= 1, `Expected at least 1 guardrail, got ${guardrails.length}`);
     close();
   });
 
@@ -176,6 +183,15 @@ test("pushSchema", async (t) => {
       assert.ok(usageColumnNames.includes("unitCost"));
       assert.ok(!usageColumnNames.includes("inputTokens"));
       assert.ok(!usageColumnNames.includes("outputTokens"));
+
+      const agentColumns = await client.query(`
+        select column_name
+        from information_schema.columns
+        where table_name = 'Agent'
+        order by ordinal_position
+      `);
+      const agentColumnNames = agentColumns.rows.map((row) => row.column_name);
+      assert.ok(agentColumnNames.includes("guardrailID"));
 
       const [embeddingColumn] = (
         await client.query(`

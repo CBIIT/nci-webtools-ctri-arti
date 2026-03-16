@@ -1,0 +1,2 @@
+id,name,description,blockedInputMessaging,blockedOutputsMessaging,policyConfig,awsGuardrailId,awsGuardrailArn,awsGuardrailVersion,specHash,lastSyncError
+1,FedPulse Prompt Attack,Detect and block prompt injection and jailbreak attempts in federal research workflows.,Your request was blocked for security reasons.,Response blocked for security reasons.,"{""contentPolicyConfig"":{""filtersConfig"":[{""type"":""PROMPT_ATTACK"",""inputStrength"":""HIGH"",""outputStrength"":""NONE"",""inputAction"":""BLOCK""}],""tierConfig"":{""tierName"":""CLASSIC""}}}",null,null,null,null,null

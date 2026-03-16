@@ -14,6 +14,7 @@ api.post("/model", requireRole(), async (req, res, next) => {
   try {
     const result = await invoke({
       userID: context.userId,
+      requestId: context.requestId,
       ip,
       ...req.body,
     });

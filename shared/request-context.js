@@ -1,6 +1,9 @@
+import { randomUUID } from "node:crypto";
+
 const VALID_ACTOR_TYPES = new Set(["user", "system", "anonymous"]);
 const VALID_SOURCES = new Set(["server", "internal-http", "direct"]);
 const LEGACY_ANONYMOUS_TOKENS = new Set(["", "anonymous", "null", "undefined"]);
+const INVALID_REQUEST_ID_TOKENS = new Set(["", "unknown", "null", "undefined"]);
 
 function createContextError(message, statusCode = 400) {
   const error = new Error(message);
@@ -20,9 +23,38 @@ function normalizePositiveInteger(value, fieldName = "userId") {
   throw createContextError(`${fieldName} must be a positive integer`);
 }
 
+export function normalizeRequestId(value) {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  if (rawValue === undefined || rawValue === null) {
+    return null;
+  }
+
+  const requestId = String(rawValue).trim();
+  if (!requestId) {
+    return null;
+  }
+
+  return INVALID_REQUEST_ID_TOKENS.has(requestId.toLowerCase()) ? null : requestId;
+}
+
+export function createRequestId() {
+  return randomUUID();
+}
+
+export function resolveRequestId(...values) {
+  for (const value of values) {
+    const requestId = normalizeRequestId(value);
+    if (requestId) {
+      return requestId;
+    }
+  }
+
+  return createRequestId();
+}
+
 function normalizeRequestMetadata(input = {}, defaults = {}) {
   const source = input.source ?? defaults.source ?? "direct";
-  const requestId = input.requestId ?? defaults.requestId ?? "unknown";
+  const requestId = resolveRequestId(input.requestId, defaults.requestId);
 
   if (!VALID_SOURCES.has(source)) {
     throw createContextError(`Invalid request context source: ${source}`);
@@ -122,5 +154,6 @@ export function requestContextToInternalHeaders(input, options = {}) {
   const context = createRequestContext(input, options);
   return {
     "X-User-Id": context.actorType === "anonymous" ? "anonymous" : String(context.userId),
+    "X-Request-Id": context.requestId,
   };
 }

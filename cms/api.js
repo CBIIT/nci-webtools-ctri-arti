@@ -8,12 +8,42 @@ import { routeHandler } from "shared/utils.js";
 import { createCmsApplication } from "./app.js";
 import { ConversationService } from "./conversation.js";
 
-async function invokeModel({ userID, model, messages, system, thoughtBudget, stream, type }) {
+async function invokeModel({
+  userID,
+  model,
+  messages,
+  system,
+  thoughtBudget,
+  stream,
+  type,
+  requestId,
+}) {
   const result = await runModel({ model, messages, system, thoughtBudget, stream });
-  if (!result?.stream && userID) {
-    await trackModelUsage(userID, model, null, result.usage, { type });
+  if (!result?.stream) {
+    if (userID) {
+      await trackModelUsage(userID, model, null, result.usage, {
+        type,
+        requestId,
+        trace: result.trace,
+      });
+    }
+    return result;
   }
-  return result;
+
+  return {
+    stream: (async function* () {
+      for await (const message of result.stream) {
+        if (message.metadata && userID) {
+          await trackModelUsage(userID, model, null, message.metadata.usage, {
+            type,
+            requestId,
+            trace: message.metadata.trace,
+          });
+        }
+        yield message;
+      }
+    })(),
+  };
 }
 
 ConversationService.setInvoker(invokeModel);
@@ -28,7 +58,7 @@ const app = createCmsApplication({
 function requestContextMiddleware(req, res, next) {
   try {
     const context = parseInternalUserIdHeader(req.headers["x-user-id"], {
-      requestId: req.headers["x-request-id"] || "unknown",
+      requestId: req.headers["x-request-id"],
     });
     if (!context) {
       return res.status(400).json({ error: "X-User-Id header required" });

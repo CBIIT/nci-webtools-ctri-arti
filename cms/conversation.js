@@ -29,6 +29,14 @@ const _summarizing = new Set();
 const CONVERSATION_SUMMARY_TOKEN = "[Conversation Summary]";
 const DEFAULT_CHAT_MODEL = "us.anthropic.claude-sonnet-4-6";
 
+function buildGuardrailRuntimeConfig(guardrail) {
+  if (!guardrail?.awsGuardrailId) return null;
+  return {
+    guardrailIdentifier: guardrail.awsGuardrailId,
+    guardrailVersion: guardrail.awsGuardrailVersion || "DRAFT",
+  };
+}
+
 function estimateMessageTokens(messages) {
   let tokens = 0;
   for (const msg of messages) {
@@ -266,6 +274,8 @@ export class ConversationService {
       modelID: agent?.modelID || null,
       modelParameters: agent?.modelParameters || null,
       systemPrompt: agent?.Prompt?.content || null,
+      guardrailID: agent?.guardrailID || null,
+      guardrailConfig: buildGuardrailRuntimeConfig(agent?.Guardrail),
       tools: (agent?.AgentTools || []).map((at) => at.Tool?.name).filter(Boolean),
     };
   }
@@ -363,6 +373,7 @@ export class ConversationService {
         description: data.description || null,
         modelID: data.modelID || null,
         promptID: data.promptID || null,
+        guardrailID: data.guardrailID || null,
         modelParameters: data.modelParameters || null,
       })
       .returning();
@@ -383,6 +394,14 @@ export class ConversationService {
       with: {
         Model: { columns: { id: true, internalName: true, name: true, defaultParameters: true } },
         Prompt: { columns: { id: true, name: true, content: true } },
+        Guardrail: {
+          columns: {
+            id: true,
+            name: true,
+            awsGuardrailId: true,
+            awsGuardrailVersion: true,
+          },
+        },
         AgentTools: { with: { Tool: { columns: { name: true } } } },
       },
     });
@@ -402,6 +421,14 @@ export class ConversationService {
       with: {
         Model: { columns: { id: true, internalName: true, name: true, defaultParameters: true } },
         Prompt: { columns: { id: true, name: true, content: true } },
+        Guardrail: {
+          columns: {
+            id: true,
+            name: true,
+            awsGuardrailId: true,
+            awsGuardrailVersion: true,
+          },
+        },
         AgentTools: { with: { Tool: { columns: { name: true } } } },
       },
       orderBy: desc(Agent.createdAt),
@@ -613,7 +640,11 @@ export class ConversationService {
     });
   }
 
-  async *summarize(userId, conversationId, { model, system, tools, thoughtBudget, userText } = {}) {
+  async *summarize(
+    userId,
+    conversationId,
+    { model, system, tools, thoughtBudget, userText, requestId } = {}
+  ) {
     if (!_invoke) return;
 
     const check = await this.checkSummarizationNeeded(userId, conversationId);
@@ -640,6 +671,7 @@ export class ConversationService {
       model: model || check.model,
       stream: true,
       thoughtBudget: thoughtBudget ?? 0,
+      requestId,
       system,
       tools,
       messages: [...check.messages, { role: "user", content: [{ text: summaryPrompt }] }],

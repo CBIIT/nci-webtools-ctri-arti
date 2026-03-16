@@ -45,6 +45,7 @@ api.post("/translate", requireRole(), async (req, res) => {
       const { trackUsage } = await import("gateway/usage.js");
       await trackUsage(context.userId, "aws-translate", [{ quantity: chars, unit: "characters" }], {
         type: "translate",
+        requestId: context.requestId,
       });
     } catch (err) {
       console.error("Failed to track translate usage:", err.message);

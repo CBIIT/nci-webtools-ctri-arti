@@ -125,6 +125,7 @@ export const Usage = pgTable(
     id: serial("id").primaryKey(),
     userID: integer("userID").references(() => User.id, { onDelete: "cascade" }),
     modelID: integer("modelID").references(() => Model.id, { onDelete: "set null" }),
+    requestId: text("requestId"),
     type: text("type"),
     agentID: integer("agentID").references(() => Agent.id, { onDelete: "set null" }),
     messageID: integer("messageID").references(() => Message.id, { onDelete: "set null" }),
@@ -140,6 +141,7 @@ export const Usage = pgTable(
   (t) => [
     index("Usage_userID_idx").on(t.userID),
     index("Usage_modelID_idx").on(t.modelID),
+    index("Usage_requestId_idx").on(t.requestId),
     index("Usage_createdAt_idx").on(t.createdAt),
     index("Usage_userID_createdAt_idx").on(t.userID, t.createdAt),
     index("Usage_unit_idx").on(t.unit),
@@ -164,6 +166,31 @@ export const Prompt = pgTable(
   ]
 );
 
+export const Guardrail = pgTable(
+  "Guardrail",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name"),
+    description: text("description"),
+    blockedInputMessaging: text("blockedInputMessaging"),
+    blockedOutputsMessaging: text("blockedOutputsMessaging"),
+    policyConfig: json("policyConfig"),
+    awsGuardrailId: text("awsGuardrailId"),
+    awsGuardrailArn: text("awsGuardrailArn"),
+    awsGuardrailVersion: text("awsGuardrailVersion"),
+    specHash: text("specHash"),
+    lastSyncError: text("lastSyncError"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    uniqueIndex("Guardrail_name_idx").on(t.name),
+    index("Guardrail_awsGuardrailId_idx").on(t.awsGuardrailId),
+  ]
+);
+
 export const Agent = pgTable(
   "Agent",
   {
@@ -173,6 +200,7 @@ export const Agent = pgTable(
     name: text("name"),
     description: text("description"),
     promptID: integer("promptID").references(() => Prompt.id, { onDelete: "set null" }),
+    guardrailID: integer("guardrailID").references(() => Guardrail.id, { onDelete: "set null" }),
     modelParameters: json("modelParameters"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -183,6 +211,7 @@ export const Agent = pgTable(
     index("Agent_userID_idx").on(t.userID),
     index("Agent_modelID_idx").on(t.modelID),
     index("Agent_promptID_idx").on(t.promptID),
+    index("Agent_guardrailID_idx").on(t.guardrailID),
   ]
 );
 
@@ -400,10 +429,15 @@ export const promptRelations = relations(Prompt, ({ many }) => ({
   Agents: many(Agent),
 }));
 
+export const guardrailRelations = relations(Guardrail, ({ many }) => ({
+  Agents: many(Agent),
+}));
+
 export const agentRelations = relations(Agent, ({ one, many }) => ({
   User: one(User, { fields: [Agent.userID], references: [User.id] }),
   Model: one(Model, { fields: [Agent.modelID], references: [Model.id] }),
   Prompt: one(Prompt, { fields: [Agent.promptID], references: [Prompt.id] }),
+  Guardrail: one(Guardrail, { fields: [Agent.guardrailID], references: [Guardrail.id] }),
   Conversations: many(Conversation),
   Resources: many(Resource),
   UserAgents: many(UserAgent),
@@ -478,6 +512,7 @@ export const tables = {
   Model,
   Usage,
   Prompt,
+  Guardrail,
   Agent,
   Tool,
   Conversation,
@@ -499,7 +534,19 @@ export const tables = {
 export async function seedDatabase(db) {
   const { sql, eq } = await import("drizzle-orm");
 
-  const T = { Role, Policy, RolePolicy, Provider, Model, Prompt, Agent, Tool, AgentTool, User };
+  const T = {
+    Role,
+    Policy,
+    RolePolicy,
+    Provider,
+    Model,
+    Prompt,
+    Guardrail,
+    Agent,
+    Tool,
+    AgentTool,
+    User,
+  };
 
   const roles = loadCsv(resolve(dataDir, "roles.csv"));
   const policies = loadCsv(resolve(dataDir, "policies.csv"));
@@ -507,6 +554,7 @@ export async function seedDatabase(db) {
   const providers = loadCsv(resolve(dataDir, "providers.csv"));
   const modelRows = loadCsv(resolve(dataDir, "models.csv"));
   const prompts = loadCsv(resolve(dataDir, "prompts.csv"));
+  const guardrails = loadCsv(resolve(dataDir, "guardrails.csv"));
   const agents = loadCsv(resolve(dataDir, "agents.csv"));
   const tools = loadCsv(resolve(dataDir, "tools.csv"));
   const agentTools = loadCsv(resolve(dataDir, "agent-tools.csv"));
@@ -549,7 +597,14 @@ export async function seedDatabase(db) {
     "maxReasoning",
   ]);
   await upsert(T.Prompt, prompts, T.Prompt.id, ["name", "version", "content"]);
-  await upsert(T.Agent, agents, T.Agent.id, ["name", "modelID", "promptID"]);
+  await upsert(T.Guardrail, guardrails, T.Guardrail.id, [
+    "name",
+    "description",
+    "blockedInputMessaging",
+    "blockedOutputsMessaging",
+    "policyConfig",
+  ]);
+  await upsert(T.Agent, agents, T.Agent.id, ["name", "modelID", "promptID", "guardrailID"]);
   await upsert(T.Tool, tools, T.Tool.id, ["name", "description", "type"]);
   await upsert(T.AgentTool, agentTools, T.AgentTool.id, ["agentID", "toolID"]);
 

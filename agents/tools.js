@@ -110,6 +110,7 @@ If the document doesn't contain information relevant to the question, state this
 
   const result = await context.gateway.invoke({
     userID: context.userId,
+    requestId: context.requestId,
     model,
     messages,
     system,
@@ -463,6 +464,7 @@ export async function recall({ query, dateFrom, dateTo }, context) {
       try {
         const embedResult = await gateway.embed({
           userID: userId,
+          requestId: context.requestId,
           model: NOVA_EMBEDDING_MODEL,
           content: [query],
           purpose: NOVA_RETRIEVAL_PURPOSE,

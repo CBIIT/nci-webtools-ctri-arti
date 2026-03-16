@@ -148,6 +148,7 @@ api.get(
       endDate: req.query.endDate,
       groupBy: req.query.groupBy,
       userId: req.query.userId,
+      type: req.query.type,
       search: req.query.search,
       limit: req.query.limit ? +req.query.limit : undefined,
       offset: req.query.offset ? +req.query.offset : undefined,

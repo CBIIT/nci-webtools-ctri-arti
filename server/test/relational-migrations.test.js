@@ -45,7 +45,10 @@ test("relational migrations repair dirty historical rows before enforcing foreig
 
   try {
     await client.exec(initSql);
-    await applyMigrations(client, (file) => file <= "0009_vector_embeddings.sql");
+    await applyMigrations(
+      client,
+      (file) => file <= "0009_vector_embeddings.sql" || file === "0013_guardrails.sql"
+    );
     await seedDatabase(db);
 
     const [validUser] = await db
@@ -122,18 +125,16 @@ test("relational migrations repair dirty historical rows before enforcing foreig
     await db.insert(schema.AgentTool).values({ agentID: 999999, toolID: 1 });
     await db.insert(schema.UserTool).values({ userID: validUser.id, toolID: 999999 });
     await db.insert(schema.UserAgent).values({ userID: validUser.id, agentID: 999999 });
-    await db.insert(schema.Usage).values({
-      userID: validUser.id,
-      modelID: 999999,
-      agentID: 999999,
-      messageID: 999999,
-      quantity: 1,
-      unit: "input_tokens",
-      unitCost: 0,
-      cost: 0,
-    });
+    await client.exec(`
+      insert into "Usage" ("userID", "modelID", "type", "agentID", "messageID", "quantity", "unit", "unitCost", "cost")
+      values (${validUser.id}, 999999, null, 999999, 999999, 1, 'input_tokens', 0, 0)
+    `);
 
-    await applyMigrations(client, (file) => file >= "0010_repair_relational_integrity.sql");
+    await applyMigrations(
+      client,
+      (file) =>
+        file >= "0010_repair_relational_integrity.sql" && file < "0013_guardrails.sql"
+    );
 
     const audit = await auditRelationalIntegrity(db);
     assert.equal(audit.missingForeignKeys.length, 0);

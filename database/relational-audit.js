@@ -24,6 +24,7 @@ export const REQUIRED_FOREIGN_KEYS = [
   { childTable: "Agent", childColumn: "userID", parentTable: "User", parentColumn: "id" },
   { childTable: "Agent", childColumn: "modelID", parentTable: "Model", parentColumn: "id" },
   { childTable: "Agent", childColumn: "promptID", parentTable: "Prompt", parentColumn: "id" },
+  { childTable: "Agent", childColumn: "guardrailID", parentTable: "Guardrail", parentColumn: "id" },
   { childTable: "Conversation", childColumn: "userID", parentTable: "User", parentColumn: "id" },
   { childTable: "Conversation", childColumn: "agentID", parentTable: "Agent", parentColumn: "id" },
   { childTable: "Conversation", childColumn: "summaryMessageID", parentTable: "Message", parentColumn: "id" },

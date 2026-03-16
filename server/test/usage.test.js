@@ -22,6 +22,7 @@ test("trackModelUsage", async (t) => {
 
   let testUser;
   let testModel;
+  let guardrailModel;
 
   await t.test("setup: find test fixtures", async () => {
     [testUser] = await db.select().from(User).where(eq(User.email, "test@test.com")).limit(1);
@@ -33,6 +34,13 @@ test("trackModelUsage", async (t) => {
       .where(eq(Model.internalName, "mock-model"))
       .limit(1);
     assert.ok(testModel, "Mock model should exist from seed");
+
+    [guardrailModel] = await db
+      .select()
+      .from(Model)
+      .where(eq(Model.internalName, "aws-guardrails"))
+      .limit(1);
+    assert.ok(guardrailModel, "AWS Guardrails model should exist from seed");
   });
 
   await t.test("creates usage records with correct cost", async () => {
@@ -89,6 +97,64 @@ test("trackModelUsage", async (t) => {
     assert.ok(userAfter.remaining <= balanceBefore, "Balance should decrease or stay same");
   });
 
+  await t.test("records guardrail costs without reducing user budget", async () => {
+    const [userBefore] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
+
+    const records = await trackModelUsage(
+      testUser.id,
+      "mock-model",
+      "127.0.0.1",
+      null,
+      {
+        requestId: `guardrail-${Date.now()}`,
+        trace: {
+          guardrail: {
+            inputAssessment: {
+              input: {
+                invocationMetrics: {
+                  usage: {
+                    contentPolicyUnits: 2,
+                    topicPolicyUnits: 1,
+                    wordPolicyUnits: 4,
+                    sensitiveInformationPolicyUnits: 3,
+                    contextualGroundingPolicyUnits: 5,
+                    contentPolicyImageUnits: 2,
+                    automatedReasoningPolicyUnits: 7,
+                    automatedReasoningPolicies: 2,
+                  },
+                },
+              },
+            },
+          },
+        },
+      }
+    );
+
+    assert.ok(Array.isArray(records), "Should return guardrail usage rows");
+    assert.ok(records.every((row) => row.type === "guardrail"), "Rows should be marked guardrail");
+    assert.ok(
+      records.every((row) => row.modelID === guardrailModel.id),
+      "Rows should be recorded against AWS Guardrails"
+    );
+    assert.ok(
+      records.some((row) => row.unit === "content_policy_units"),
+      "Should record content policy usage"
+    );
+    assert.ok(
+      records.some(
+        (row) => row.unit === "automated_reasoning_policy_units" && row.quantity === 14
+      ),
+      "Should multiply automated reasoning units by policy count"
+    );
+
+    const [userAfter] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
+    assert.strictEqual(
+      userAfter.remaining,
+      userBefore.remaining,
+      "Guardrail costs should not consume user budget"
+    );
+  });
+
   await t.test("handles missing userId gracefully", async () => {
     const result = await trackModelUsage(null, "mock-model", "127.0.0.1", { inputTokens: 10 });
     assert.strictEqual(result, undefined);
@@ -128,7 +194,11 @@ test("trackUsage", async (t) => {
       { quantity: 200, unit: "input_tokens" },
       { quantity: 100, unit: "output_tokens" },
     ];
-    const records = await trackUsage(testUser.id, "mock-model", usageItems, { type: "chat" });
+    const requestId = `usage-${Date.now()}`;
+    const records = await trackUsage(testUser.id, "mock-model", usageItems, {
+      type: "chat",
+      requestId,
+    });
     assert.ok(Array.isArray(records), "should return an array");
     assert.strictEqual(records.length, 2, "should create 2 usage rows");
 
@@ -138,6 +208,8 @@ test("trackUsage", async (t) => {
     assert.ok(outputRow);
     assert.strictEqual(inputRow.quantity, 200);
     assert.strictEqual(outputRow.quantity, 100);
+    assert.strictEqual(inputRow.requestId, requestId);
+    assert.strictEqual(outputRow.requestId, requestId);
   });
 
   await t.test("computes cost from model pricing JSON", async () => {
@@ -274,6 +346,78 @@ test("UserService billing lifecycle", async (t) => {
 
     const [after] = await db.select().from(User).where(eq(User.id, legacyUser.id)).limit(1);
     assert.strictEqual(after.remaining, 1.5);
+  });
+
+  await t.test("recordUsage excludes guardrail rows from budget deduction", async () => {
+    const user = await service.createUser({
+      email: `billing-guardrail-${Date.now()}-${Math.random()}@test.com`,
+      firstName: "Guardrail",
+      lastName: "User",
+      status: "active",
+      roleID: 3,
+      budget: 2,
+    });
+
+    await service.recordUsage(user.id, [
+      {
+        userID: user.id,
+        modelID: 22,
+        requestId: `guardrail-${Date.now()}`,
+        type: "guardrail",
+        quantity: 10,
+        unit: "content_policy_units",
+        unitCost: 0.1,
+        cost: 1,
+      },
+    ]);
+
+    const [after] = await db.select().from(User).where(eq(User.id, user.id)).limit(1);
+    assert.strictEqual(after.remaining, 2);
+  });
+
+  await t.test("getAnalytics supports grouping by type", async () => {
+    const analyticsUser = await service.createUser({
+      email: `analytics-type-${Date.now()}-${Math.random()}@test.com`,
+      firstName: "Analytics",
+      lastName: "Type",
+      status: "active",
+      roleID: 3,
+      budget: 5,
+    });
+
+    await service.recordUsage(analyticsUser.id, [
+      {
+        userID: analyticsUser.id,
+        modelID: 99,
+        requestId: "req-chat-1",
+        type: "chat",
+        quantity: 50,
+        unit: "input_tokens",
+        unitCost: 0.001,
+        cost: 0.05,
+      },
+      {
+        userID: analyticsUser.id,
+        modelID: 22,
+        requestId: "req-chat-1",
+        type: "guardrail",
+        quantity: 2,
+        unit: "content_policy_units",
+        unitCost: 0.00015,
+        cost: 0.0003,
+      },
+    ]);
+
+    const result = await service.getAnalytics({
+      groupBy: "type",
+      userId: analyticsUser.id,
+      startDate: "2000-01-01",
+      endDate: "2100-01-01",
+    });
+
+    assert.ok(Array.isArray(result.data));
+    assert.ok(result.data.some((row) => row.type === "chat"));
+    assert.ok(result.data.some((row) => row.type === "guardrail"));
   });
 });
 

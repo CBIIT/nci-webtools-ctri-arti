@@ -24,6 +24,7 @@ export function createAgentsApplication({
 
       yield* runLoop({
         userId: requestContext.userId,
+        requestId: requestContext.requestId,
         agentId,
         conversationId,
         userMessage: { role: "user", content: message.content },

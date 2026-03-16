@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  createRequestId,
   createAnonymousRequestContext,
   createRequestContext,
   createUserRequestContext,
+  normalizeRequestId,
   parseInternalUserIdHeader,
+  resolveRequestId,
   requestContextToInternalHeaders,
   requireUserRequestContext,
 } from "shared/request-context.js";
@@ -48,12 +51,11 @@ test("request context normalization", async (t) => {
   });
 
   await t.test("serializes anonymous context explicitly for internal HTTP", () => {
-    assert.deepStrictEqual(
-      requestContextToInternalHeaders(createAnonymousRequestContext({ source: "server" })),
-      {
-        "X-User-Id": "anonymous",
-      }
+    const headers = requestContextToInternalHeaders(
+      createAnonymousRequestContext({ source: "server" })
     );
+    assert.strictEqual(headers["X-User-Id"], "anonymous");
+    assert.match(headers["X-Request-Id"], /^[0-9a-f-]{36}$/i);
   });
 
   await t.test("rejects invalid internal user id headers", () => {
@@ -65,5 +67,20 @@ test("request context normalization", async (t) => {
       () => requireUserRequestContext(createAnonymousRequestContext({ source: "server" })),
       /Authentication required/
     );
+  });
+
+  await t.test("treats placeholder request ids as missing", () => {
+    assert.strictEqual(normalizeRequestId("unknown"), null);
+    assert.strictEqual(normalizeRequestId(" undefined "), null);
+    assert.strictEqual(normalizeRequestId("req-123"), "req-123");
+  });
+
+  await t.test("resolves the first valid request id or generates one", () => {
+    assert.strictEqual(resolveRequestId("unknown", "req-7"), "req-7");
+    assert.match(resolveRequestId("unknown", null), /^[0-9a-f-]{36}$/i);
+  });
+
+  await t.test("can generate standalone request ids", () => {
+    assert.match(createRequestId(), /^[0-9a-f-]{36}$/i);
   });
 });

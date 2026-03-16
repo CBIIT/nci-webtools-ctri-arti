@@ -139,6 +139,7 @@ export const {
   Provider,
   Model,
   Prompt,
+  Guardrail,
   Agent,
   Conversation,
   Message,

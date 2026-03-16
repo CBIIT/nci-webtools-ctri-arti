@@ -94,7 +94,11 @@ export function createCmsApplication({ service = new ConversationService(), sour
     },
 
     summarize(context, conversationId, params) {
-      return service.summarize(normalizeContext(context).userId, conversationId, params);
+      const requestContext = normalizeContext(context);
+      return service.summarize(requestContext.userId, conversationId, {
+        ...params,
+        requestId: params?.requestId || requestContext.requestId,
+      });
     },
 
     appendConversationMessage(context, data) {
