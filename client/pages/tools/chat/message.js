@@ -2,12 +2,12 @@ import { X } from "lucide-solid";
 import { createSignal, ErrorBoundary, For, onCleanup } from "solid-js";
 import html from "solid-js/html";
 
-
 import { AlertContainer } from "../../../components/alert.js";
 import BrowseTool from "../../../components/chat-tools/browse-tool.js";
 import CodeTool from "../../../components/chat-tools/code-tool.js";
 import EditorTool from "../../../components/chat-tools/editor-tool.js";
 import ReasoningTool from "../../../components/chat-tools/reasoning-tool.js";
+import RecallTool from "../../../components/chat-tools/recall-tool.js";
 import SearchTool from "../../../components/chat-tools/search-tool.js";
 import TextContent from "../../../components/chat-tools/text-content.js";
 import { alerts, clearAlert, handleError } from "../../../utils/alerts.js";
@@ -18,6 +18,7 @@ const TOOL_COMPONENTS = {
   code: CodeTool,
   editor: EditorTool,
   think: ReasoningTool,
+  recall: RecallTool,
 };
 
 export default function Message(p) {

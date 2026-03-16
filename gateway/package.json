@@ -6,6 +6,7 @@
     ".": "./index.js",
     "./api.js": "./api.js",
     "./inference.js": "./inference.js",
+    "./upload-limits.js": "./upload-limits.js",
     "./usage.js": "./usage.js",
     "./providers/bedrock.js": "./providers/bedrock.js",
     "./providers/gemini.js": "./providers/gemini.js",

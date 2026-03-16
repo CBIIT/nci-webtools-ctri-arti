@@ -1,10 +1,12 @@
 import db, { Model } from "database";
 
 import { eq } from "drizzle-orm";
+import { assertValidEmbedding } from "shared/embeddings.js";
 
 import bedrock from "./providers/bedrock.js";
 import gemini from "./providers/gemini.js";
 import mock from "./providers/mock.js";
+import { validateInlineMessages } from "./upload-limits.js";
 
 export async function getModelProvider(value) {
   const providers = { bedrock, gemini, mock };
@@ -31,6 +33,34 @@ function estimateContentTokens(content) {
   if (content.toolUse) tokens += Math.ceil(JSON.stringify(content.toolUse).length / 8);
   if (content.toolResult) tokens += Math.ceil(JSON.stringify(content.toolResult).length / 8);
   return tokens;
+}
+
+function sanitizeProviderFileName(name = "") {
+  const sanitized = Array.from(String(name), (char) => {
+    if (char === "_") return "-";
+    if (/[A-Z0-9]/i.test(char) || /\s/.test(char) || "-()[]".includes(char)) return char;
+    return " ";
+  })
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim();
+  return sanitized || "uploaded file";
+}
+
+function getProviderVisibleFileName(file = {}) {
+  const originalName = String(file.originalName || "")
+    .split(/[\\/]/)
+    .filter(Boolean)
+    .pop()
+    ?.trim();
+  const fallbackName = String(file.name || "")
+    .split(/[\\/]/)
+    .filter(Boolean)
+    .pop()
+    ?.trim();
+  const candidate = originalName || fallbackName || "";
+  const stem = candidate.replace(/\.[^.]+$/, "") || candidate;
+  return sanitizeProviderFileName(stem);
 }
 
 /**
@@ -124,6 +154,7 @@ function processMessages(messages, thoughtBudget) {
       }
       return !!c;
     });
+    message.content = contents;
     for (const content of contents) {
       if (!content) continue;
       // prevent empty text content
@@ -132,8 +163,18 @@ function processMessages(messages, thoughtBudget) {
       }
       // transform base64 encoded bytes to Uint8Array
       const source = content.document?.source || content.image?.source;
-      if (source?.bytes && typeof source.bytes === "string") {
-        source.bytes = Uint8Array.from(Buffer.from(source.bytes, "base64"));
+      if (source?.bytes) {
+        if (typeof source.bytes === "string") {
+          source.bytes = Uint8Array.from(Buffer.from(source.bytes, "base64"));
+        } else if (source.bytes?.type === "Buffer" && Array.isArray(source.bytes.data)) {
+          source.bytes = new Uint8Array(source.bytes.data);
+        }
+      }
+      if (content.document) {
+        content.document.name = getProviderVisibleFileName(content.document);
+      }
+      if (content.image) {
+        content.image.name = getProviderVisibleFileName(content.image);
       }
       // ensure tool call inputs are in the correct format
       if (content.toolUse) {
@@ -168,14 +209,7 @@ async function buildInferenceParams(
   outputConfig
 ) {
   const {
-    model: {
-      maxOutput,
-      maxReasoning,
-      cost1kInput,
-      _cost1kOutput,
-      cost1kCacheRead,
-      _cost1kCacheWrite,
-    },
+    model: { maxOutput, maxReasoning, cost1kCacheRead },
     provider,
   } = await getModelProvider(modelId);
   const hasCache = !!cost1kCacheRead;
@@ -208,7 +242,7 @@ async function buildInferenceParams(
     ...(outputConfig && { outputConfig }),
   };
 
-  return { input, provider, hasCache, cost1kInput, cost1kCacheRead };
+  return { input, provider };
 }
 
 /**
@@ -237,8 +271,9 @@ export async function runModel({
   }
 
   messages = processMessages(messages, thoughtBudget);
+  await validateInlineMessages(messages);
 
-  const { input, provider, hasCache, cost1kInput, cost1kCacheRead } = await buildInferenceParams(
+  const { input, provider } = await buildInferenceParams(
     model,
     messages,
     systemPrompt,
@@ -249,47 +284,55 @@ export async function runModel({
 
   const response = stream ? provider.converseStream(input) : provider.converse(input);
   const result = await response;
+  return stream ? { stream: result.stream } : result;
+}
 
-  // Debug logging for cache behavior
-  if (hasCache && !stream && result.usage) {
-    const totalEstimatedTokens = input.messages.reduce(
-      (sum, m) => sum + m.content.reduce((s, c) => s + estimateContentTokens(c), 0),
-      0
+export { sanitizeProviderFileName, getProviderVisibleFileName, processMessages };
+
+/**
+ * Run embedding inference on an array of content items.
+ *
+ * @param {Object} params
+ * @param {string} params.model - The embedding model internal name
+ * @param {Array} params.content - Array of content items (strings for text, objects for images/video/audio)
+ * @param {string} params.purpose - "GENERIC_INDEX" or "GENERIC_RETRIEVAL"
+ * @returns {Promise<{embeddings: number[][], usage: Object}>}
+ */
+export async function runEmbedding({ model, content, purpose = "GENERIC_INDEX" }) {
+  if (!model || !content?.length) return { embeddings: [], usage: {} };
+
+  const { model: modelRecord, provider } = await getModelProvider(model);
+  const modelId = modelRecord.internalName;
+
+  const embeddings = [];
+  let totalInputTokens = 0;
+  let imageCount = 0;
+
+  // Process items with concurrency limit
+  const CONCURRENCY = 5;
+  for (let i = 0; i < content.length; i += CONCURRENCY) {
+    const batch = content.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((item) => provider.embed(modelId, item, { purpose }))
     );
-    const messagesWithCache = input.messages.filter((m) =>
-      m.content.some((c) => c.cachePoint)
-    ).length;
-    const cacheRead = result.usage.cacheReadInputTokens || 0;
-    const cacheWrite = result.usage.cacheWriteInputTokens || 0;
-
-    // Calculate cost savings using actual model costs
-    const totalInputTokens = result.usage.inputTokens + cacheRead;
-    const regularCost = (totalInputTokens * cost1kInput) / 1000;
-    const actualCost =
-      (result.usage.inputTokens * cost1kInput + cacheRead * cost1kCacheRead) / 1000;
-    const savings = regularCost - actualCost;
-
-    console.log("[Cache Debug]", {
-      model,
-      estimatedTotalTokens: totalEstimatedTokens,
-      actualInputTokens: result.usage.inputTokens,
-      messagesWithCachePoints: messagesWithCache,
-      cache: {
-        read: cacheRead,
-        write: cacheWrite,
-        hitRate:
-          totalInputTokens > 0 ? `${((cacheRead / totalInputTokens) * 100).toFixed(1)}%` : "0%",
-      },
-      cost: {
-        withoutCache: `$${regularCost.toFixed(6)}`,
-        withCache: `$${actualCost.toFixed(6)}`,
-        savings: `$${savings.toFixed(6)}`,
-        percentSaved: regularCost > 0 ? `${((savings / regularCost) * 100).toFixed(1)}%` : "0%",
-      },
-    });
+    for (const result of results) {
+      embeddings.push(
+        assertValidEmbedding(result?.embedding, {
+          message: `Model ${modelId} returned an invalid embedding`,
+        })
+      );
+      if (result.inputTextTokenCount) totalInputTokens += result.inputTextTokenCount;
+      if (typeof content[embeddings.length - 1] !== "string") imageCount++;
+    }
   }
 
-  return result;
+  return {
+    embeddings,
+    usage: {
+      inputTextTokenCount: totalInputTokens || undefined,
+      imageCount: imageCount || undefined,
+    },
+  };
 }
 
 // Export helper functions for testing

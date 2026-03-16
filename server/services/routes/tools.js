@@ -1,9 +1,9 @@
 import db, { rawSql } from "database";
 
 import { json, Router } from "express";
+import { requireRole } from "users/middleware.js";
 
 import { sendFeedback, sendLogReport, sendJustificationEmail } from "../email.js";
-import { requireRole } from "../middleware.js";
 import { parseDocument } from "../parsers.js";
 import { proxyMiddleware } from "../proxy.js";
 import { getFile, listFiles } from "../s3.js";
@@ -35,7 +35,23 @@ api.post("/textract", requireRole(), async (req, res) => {
 });
 
 api.post("/translate", requireRole(), async (req, res) => {
-  res.json(await translate(req.body));
+  const result = await translate(req.body);
+
+  // Track translate usage
+  const userId = req.session?.user?.id;
+  const chars = req.body.text?.length || 0;
+  if (userId && chars > 0) {
+    try {
+      const { trackUsage } = await import("gateway/usage.js");
+      await trackUsage(userId, "aws-translate", [{ quantity: chars, unit: "characters" }], {
+        type: "translate",
+      });
+    } catch (err) {
+      console.error("Failed to track translate usage:", err.message);
+    }
+  }
+
+  res.json(result);
 });
 
 api.get("/translate/languages", requireRole(), async (req, res) => {

@@ -3,6 +3,7 @@ import { createResource, createSignal, ErrorBoundary, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { AlertContainer } from "../../components/alert.js";
+import { InlineSelect } from "../../components/inline-select.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 import { capitalize } from "../../utils/utils.js";
 
@@ -90,6 +91,8 @@ function UserEdit() {
       // Handle no limit case - send null for budget when noLimit is true
       if (userData.noLimit) {
         userData.budget = null;
+      } else if (!userData.budget) {
+        userData.budget = 0;
       }
       delete userData.noLimit; // Remove the UI-only property
 
@@ -154,231 +157,196 @@ function UserEdit() {
         return null;
       }}
     >
-      <img
-        src="assets/images/users/profile_banner.png"
-        alt="Profile Management Banner"
-        class="img-fluid object-fit-cover w-100"
-        style="height:153px;"
-      />
-      <div class="container pb-4">
-        <!-- Error Alert -->
-        <${Show} when=${() => roles.error || userData.error}>
-          <div class="alert alert-danger" role="alert">
-            ${() => roles.error || userData.error || "An error occurred while fetching data"}
-          </div>
-        <//>
-
-        <!-- Loading State -->
-        <${Show} when=${() => roles.loading || userData.loading}>
-          <div class="d-flex justify-content-center my-5">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-          </div>
-        <//>
-
-        <!-- User Form -->
-        <div class="row position-relative mb-5" style="margin-top:-80px">
-          <h1
-            class="offset-sm-2 offset-md-3 offset-xl-4 col-auto font-title text-white fw-bold display-5"
-          >
-            Edit User
-          </h1>
-        </div>
-        <div class="row mt-4 mb-5">
-          <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto fs-3">
-            ${() => user().email || ""}
-          </h1>
-          <div class="position-relative offset-sm-2 offset-md-3 offset-xl-4">
-            <img
-              class="position-absolute"
-              src="assets/images/users/profile_icon.svg"
-              alt="Profile Icon"
-              style="
-                  width: 150px;
-                  top: -115px;  /* Pulls icon up: -(icon_height / 2) to center on container's top edge */
-                  left: -75px; 
-                  transform: translateX(-50%); /* Center the icon at the 'left' point */
-                  filter: drop-shadow(10px 13px 9px rgba(0, 0, 0, 0.35));
-                  z-index: 10; /* Ensure it's above other content */
-                "
-            />
+      <div class="bg-profile font-smooth">
+        <div
+          class="d-flex align-items-center profile-banner"
+          aria-label="Profile Management Banner"
+        >
+          <div class="container">
+            <h1 class="profile-title fw-medium font-outfit text-white mb-0">Edit User</h1>
           </div>
         </div>
-        <${Show} when=${() => !roles.loading && !userData.loading}>
-          <form onSubmit=${handleSubmit} class="mb-5">
-            <div class="row align-items-center mb-2">
-              <!-- Account Type -->
-              <label
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Account Type</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <div>NIH</div>
-              </div>
+        <div class="container profile-container">
+          <!-- Error Alert -->
+          <${Show} when=${() => roles.error || userData.error}>
+            <div class="alert alert-danger" role="alert">
+              ${() => roles.error || userData.error || "An error occurred while fetching data"}
             </div>
-            <div class="row align-items-center mb-2">
-              <!-- Email -->
-              <label
-                for="email"
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Email</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <div>${() => user().email || ""}</div>
-              </div>
-            </div>
-            <div class="row align-items-center mb-2">
-              <!-- First Name -->
-              <label
-                for="firstName"
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >First Name</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <input
-                  type="text"
-                  class="form-control"
-                  id="firstName"
-                  value=${() => user().firstName || ""}
-                  onInput=${(e) => handleInputChange("firstName", e.target.value)}
-                  placeholder="Enter first name"
-                />
-              </div>
-            </div>
-            <div class="row align-items-center mb-2">
-              <!-- Last Name -->
-              <label
-                for="lastName"
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Last Name</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <input
-                  type="text"
-                  class="form-control"
-                  id="lastName"
-                  value=${() => user().lastName || ""}
-                  onInput=${(e) => handleInputChange("lastName", e.target.value)}
-                  placeholder="Enter last name"
-                />
-              </div>
-            </div>
-            <div class="row align-items-center mb-2">
-              <!-- Status -->
-              <label
-                for="status"
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Status<span class="text-danger">*</span></label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <select
-                  class="form-select"
-                  id="status"
-                  value=${() => user().status || "active"}
-                  onChange=${(e) => handleInputChange("status", e.target.value)}
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-            </div>
-            <div class="row align-items-center mb-2">
-              <!-- Role -->
-              <label
-                for="roleID"
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Role</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <select
-                  class="form-select"
-                  id="roleID"
-                  value=${() => user().roleID || ""}
-                  onChange=${(e) => handleRoleChange(parseInt(e.target.value))}
-                >
-                  ${() =>
-                    roles()?.map(
-                      (role) => html`
-                        <option value=${role.id} selected=${() => role.id === user().roleID}>
-                          ${capitalize(role.name)}
-                        </option>
-                      `
-                    )}
-                </select>
-              </div>
-            </div>
-            <div class="row align-items-center mb-2">
-              <!-- Cost Limit -->
-              <label
-                for="budget"
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-start col-form-label form-label-user fw-semibold"
-                >${() => config()?.budgetLabel || ""} Cost Limit ($)</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <div class="form-check form-switch my-2">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    id="noLimitCheckbox"
-                    checked=${() => user().noLimit}
-                    onChange=${(e) => handleNoLimitChange(e.target.checked)}
-                    aria-label="Unlimited checkbox"
-                  />
-                  <label class="form-check-label" for="noLimitCheckbox">Unlimited</label>
-                </div>
+          <//>
 
-                <div class="input-group mb-2">
-                  <span class="input-group-text">$</span>
-                  <input
-                    type="number"
-                    step="5"
-                    min="0"
-                    class="form-control"
-                    disabled=${() => user().noLimit}
-                    id="budget"
-                    value=${() => user().budget || 0}
-                    onInput=${(e) => handleInputChange("budget", parseInt(e.target.value) || 0)}
-                    aria-label="Cost limit"
+          <!-- Loading State -->
+          <${Show} when=${() => roles.loading || userData.loading}>
+            <div class="d-flex justify-content-center my-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          <//>
+          <${Show} when=${() => !roles.loading && !userData.loading}>
+            <div class="profile-card mx-auto">
+              <!-- Profile Icon and Email -->
+              <div class="text-center profile-header">
+                <div
+                  class="profile-card-icon-wrapper d-inline-flex align-items-center justify-content-center"
+                >
+                  <img
+                    class="profile-card-icon"
+                    src="assets/images/users/user_icon.svg"
+                    alt="Profile Icon"
                   />
-                  <${Show} when=${() => params.id}>
-                    <button
-                      type="button"
-                      disabled=${() => user().noLimit}
-                      class="btn btn-outline-primary"
-                      onClick=${() => {
-                        setUser((prev) => ({
-                          ...prev,
-                          budget: DEFAULT_ROLE_LIMITS[prev.roleID]?.budget,
-                          noLimit: DEFAULT_ROLE_LIMITS[prev.roleID]?.noLimit,
-                        }));
-                      }}
-                    >
-                      Reset
-                    </button>
-                  <//>
+                </div>
+                <div class="profile-card-email text-center fw-medium mt-3 text-break">
+                  ${() => user().email || ""}
                 </div>
               </div>
-            </div>
 
-            <div class="row">
-              <!-- Form Buttons -->
-              <div class="col-12 mt-4">
-                <div class="d-flex gap-2 justify-content-center">
-                  <a
-                    href="/_/users"
-                    class="btn btn-outline-secondary text-decoration-none btn-uniform"
+              <form onSubmit=${handleSubmit}>
+                <!-- Account Type -->
+                <div class="mb-3">
+                  <span class="profile-form-label">Account Type</span>
+                  <div class="profile-form-value fw-medium text-break">NIH</div>
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                  <span class="profile-form-label">Email</span>
+                  <div class="profile-form-value fw-medium text-break">
+                    ${() => user().email || ""}
+                  </div>
+                </div>
+
+                <!-- First Name -->
+                <div class="mb-3">
+                  <label for="firstName" class="profile-form-label">First Name</label>
+                  <input
+                    type="text"
+                    class="form-control profile-form-value fw-medium"
+                    id="firstName"
+                    value=${() => user().firstName || ""}
+                    onInput=${(e) => handleInputChange("firstName", e.target.value)}
+                    placeholder="Enter first name"
+                  />
+                </div>
+
+                <!-- Last Name -->
+                <div class="mb-3">
+                  <label for="lastName" class="profile-form-label">Last Name</label>
+                  <input
+                    type="text"
+                    class="form-control profile-form-value fw-medium"
+                    id="lastName"
+                    value=${() => user().lastName || ""}
+                    onInput=${(e) => handleInputChange("lastName", e.target.value)}
+                    placeholder="Enter last name"
+                  />
+                </div>
+
+                <!-- Status -->
+                <div class="mb-3">
+                  <span id="status-label" class="profile-form-label"
+                    >Status<span class="text-danger profile-required-asterisk">*</span></span
                   >
-                    Cancel
-                  </a>
-                  <button type="submit" class="btn btn-primary btn-uniform" disabled=${saving}>
+                  <${InlineSelect}
+                    id="status"
+                    ariaLabelledBy="status-label"
+                    options=${[
+                      { value: "active", label: "Active" },
+                      { value: "inactive", label: "Inactive" },
+                    ]}
+                    value=${() => user().status || "active"}
+                    onChange=${(value) => handleInputChange("status", value)}
+                  />
+                </div>
+
+                <!-- Role -->
+                <div class="mb-3">
+                  <span id="roleID-label" class="profile-form-label">Role</span>
+                  <${InlineSelect}
+                    id="roleID"
+                    ariaLabelledBy="roleID-label"
+                    options=${() =>
+                      (roles() || []).map((role) => ({
+                        value: role.id,
+                        label: capitalize(role.name),
+                      }))}
+                    value=${() => user().roleID}
+                    onChange=${(value) => handleRoleChange(parseInt(value))}
+                  />
+                </div>
+
+                <!-- Cost Limit -->
+                <div>
+                  <label for="budget" class="profile-form-label"
+                    >${() => config()?.budgetLabel || ""} Cost Limit</label
+                  >
+                  <div class="profile-budget-wrapper d-flex align-items-stretch">
+                    <div class="profile-budget-input-group d-flex align-items-center p-0">
+                      <span
+                        class="profile-budget-adornment d-flex justify-content-center align-items-center"
+                        >$</span
+                      >
+                      <input
+                        type="text"
+                        inputmode="numeric"
+                        class="profile-budget-input fw-medium"
+                        disabled=${() => user().noLimit}
+                        id="budget"
+                        value=${() => (user().noLimit ? 0 : (user().budget ?? ""))}
+                        onInput=${(e) => {
+                          const filtered = e.target.value.replace(/[^0-9]/g, "");
+                          e.target.value = filtered;
+                          handleInputChange("budget", filtered === "" ? "" : parseInt(filtered));
+                        }}
+                        onBlur=${(e) => {
+                          if (e.target.value === "") {
+                            handleInputChange("budget", 0);
+                          }
+                        }}
+                        aria-label="Cost limit"
+                      />
+                    </div>
+                    <${Show} when=${() => params.id}>
+                      <button
+                        type="button"
+                        disabled=${() => user().noLimit}
+                        class="profile-budget-reset-btn d-flex justify-content-center align-items-center cursor-pointer"
+                        onClick=${() => {
+                          setUser((prev) => ({
+                            ...prev,
+                            budget: DEFAULT_ROLE_LIMITS[prev.roleID]?.budget,
+                            noLimit: DEFAULT_ROLE_LIMITS[prev.roleID]?.noLimit,
+                          }));
+                        }}
+                      >
+                        <img src="assets/images/icon-reset.svg" alt="Reset" />
+                      </button>
+                    <//>
+                  </div>
+                  <div class="profile-checkbox-wrapper d-flex align-items-center mt-2">
+                    <input
+                      class="profile-checkbox"
+                      type="checkbox"
+                      id="noLimitCheckbox"
+                      checked=${() => user().noLimit}
+                      onChange=${(e) => handleNoLimitChange(e.target.checked)}
+                      aria-label="Unlimited checkbox"
+                    />
+                    <label class="profile-checkbox-label" for="noLimitCheckbox">Unlimited</label>
+                  </div>
+                </div>
+
+                <hr class="profile-divider my-4" />
+
+                <!-- Form Buttons -->
+                <div class="d-flex justify-content-center">
+                  <button type="submit" class="btn btn-save-primary" disabled=${saving}>
                     ${() => (saving() ? "Saving..." : "Save")}
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
-          </form>
-        <//>
+          <//>
+        </div>
       </div>
     <//>
   `;

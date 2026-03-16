@@ -598,11 +598,9 @@ export function getToolResult(toolUse, messages) {
   const messageWithTool = messages?.find((m) =>
     m.content?.some((c) => c?.toolResult?.toolUseId === toolUse?.toolUseId)
   );
-  const message = messageWithTool ?? messages?.[0];
-  const matchedContent = message?.content?.find(
+  const matchedContent = messageWithTool?.content?.find(
     (c) => c?.toolResult?.toolUseId === toolUse?.toolUseId
   );
-  const toolContent =
-    matchedContent?.toolResult?.content ?? message?.content?.[0]?.toolResult?.content;
+  const toolContent = matchedContent?.toolResult?.content;
   return toolContent?.[0]?.json?.results;
 }

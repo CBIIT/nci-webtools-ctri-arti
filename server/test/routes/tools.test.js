@@ -4,11 +4,10 @@ import { describe, it, before, after } from "node:test";
 import express from "express";
 import request from "supertest";
 
+import { pop3 } from "../../services/email.js";
 import api from "../../services/routes/tools.js";
 
-const { TEST_API_KEY, SMTP_HOST, GREENMAIL_API_PORT, EMAIL_ADMIN } = process.env;
-const greenmailApi = `http://${SMTP_HOST}:${GREENMAIL_API_PORT}`;
-const emailUser = encodeURIComponent(EMAIL_ADMIN);
+const { TEST_API_KEY, SMTP_HOST, POP3_PORT = "3110", EMAIL_ADMIN } = process.env;
 
 function buildApp() {
   const app = express();
@@ -20,24 +19,17 @@ function buildApp() {
   return app;
 }
 
-async function getEmails() {
-  const res = await fetch(`${greenmailApi}/api/user/${emailUser}/messages`);
-  return res.json();
-}
-
-async function purgeEmails() {
-  await fetch(`${greenmailApi}/api/mail/purge`, { method: "POST" });
-}
+const mail = pop3(SMTP_HOST, POP3_PORT);
 
 describe("POST /usage", () => {
   const app = buildApp();
 
   before(async () => {
-    await purgeEmails();
+    await mail.purge(EMAIL_ADMIN);
   });
 
   after(async () => {
-    await purgeEmails();
+    await mail.purge(EMAIL_ADMIN);
   });
 
   it("sends justification email with correct content", async () => {
@@ -48,7 +40,7 @@ describe("POST /usage", () => {
 
     assert.equal(res.status, 200);
 
-    const emails = await getEmails();
+    const emails = await mail.getEmails(EMAIL_ADMIN);
     assert.equal(emails.length, 1);
 
     const email = emails[0];

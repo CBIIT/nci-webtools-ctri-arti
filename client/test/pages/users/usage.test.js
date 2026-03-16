@@ -1,3 +1,9 @@
+import {
+  formatDate,
+  formatDateInputForDisplay,
+  formatUtcTimestampToLocal,
+  normalizeUtcTimestamp,
+} from "../../../pages/users/date-utils.js";
 import assert from "../../assert.js";
 import { mountApp, waitForElement } from "../../helpers.js";
 import test from "../../test.js";
@@ -20,6 +26,35 @@ async function api(method, path, body) {
 }
 
 let testUser;
+
+test("Usage date utilities", async (t) => {
+  await t.test("formatDate keeps local calendar date", () => {
+    const value = formatDate(new Date(2026, 2, 9, 23, 30, 0, 0));
+    assert.strictEqual(value, "2026-03-09");
+  });
+
+  await t.test("date-only display does not shift to previous local day", () => {
+    assert.strictEqual(formatDateInputForDisplay("2026-03-09", "en-US"), "3/9/2026");
+  });
+
+  await t.test("UTC timestamps render in local time", () => {
+    const rendered = formatUtcTimestampToLocal("2026-03-09T12:30:00Z", "en-US", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+    assert.strictEqual(rendered, "3/9/2026, 8:30 AM");
+  });
+
+  await t.test("timestamps missing timezone are treated as UTC", () => {
+    const parsed = normalizeUtcTimestamp("2026-03-09T12:30:00");
+    assert.strictEqual(parsed.toISOString(), "2026-03-09T12:30:00.000Z");
+  });
+});
 
 test("Usage Dashboard Tests", async (t) => {
   // Fetch session to get test user before subtests

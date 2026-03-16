@@ -6,3 +6,4 @@ id,name,description,type
 5,think,Extended thinking,builtin
 6,data,Data analysis,builtin
 7,docxTemplate,DOCX template generation,builtin
+8,recall,Search conversation history and resources,builtin

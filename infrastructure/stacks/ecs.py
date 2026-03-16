@@ -2,6 +2,7 @@ from typing import List, Optional, Union
 from aws_cdk import (
     Stack,
     aws_ec2 as ec2,
+    aws_ecr as ecr,
     aws_ecs as ecs,
     aws_iam as iam,
     aws_logs as logs,
@@ -174,7 +175,7 @@ class EcsServiceStack(Stack):
 
             container = fargate_task_definition.add_container(
                 f"container-{i}",
-                image=ecs.ContainerImage.from_registry(container_props["image"]),
+                image=self._container_image(i, container_props["image"]),
                 container_name=container_props["name"],
                 port_mappings=[
                     ecs.PortMapping(
@@ -217,7 +218,7 @@ class EcsServiceStack(Stack):
             enable_execute_command=True,
             min_healthy_percent=100,
             service_connect_configuration=ecs.ServiceConnectProps(
-                namespace=http_namespace.namespace_name,
+                namespace=http_namespace.namespace_arn,
                 services=[
                     ecs.ServiceConnectService(
                         port_mapping_name=port_mapping["name"],
@@ -285,3 +286,12 @@ class EcsServiceStack(Stack):
             "memory-scaling",
             target_utilization_percent=target_capacity_percent,
         )
+
+    def _container_image(self, idx, uri):
+        """Use from_ecr_repository for ECR URIs, from_registry otherwise."""
+        host, _, repo_tag = uri.partition("/")
+        if ".dkr.ecr." in host:
+            repo_name, _, tag = repo_tag.partition(":")
+            repo = ecr.Repository.from_repository_name(self, f"ecr-repo-{idx}", repo_name)
+            return ecs.ContainerImage.from_ecr_repository(repo, tag=tag or "latest")
+        return ecs.ContainerImage.from_registry(uri)
