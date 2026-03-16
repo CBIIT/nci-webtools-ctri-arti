@@ -2,18 +2,18 @@ import { json, Router } from "express";
 import { invoke, listModels } from "shared/clients/gateway.js";
 import { requireRole } from "users/middleware.js";
 
-import { createHttpError } from "../utils.js";
+import { createHttpError, getRequestContext } from "../utils.js";
 
 const api = Router();
 api.use(json({ limit: 1024 ** 3 })); // 1GB
 
 api.post("/model", requireRole(), async (req, res, next) => {
-  const user = req.session.user;
+  const context = getRequestContext(req);
   const ip = req.ip || req.socket.remoteAddress;
 
   try {
     const result = await invoke({
-      userID: user.id,
+      userID: context.userId,
       ip,
       ...req.body,
     });

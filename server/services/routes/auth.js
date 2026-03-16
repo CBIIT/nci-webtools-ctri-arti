@@ -1,5 +1,6 @@
 import { json, Router } from "express";
 import { getAgents } from "shared/clients/cms.js";
+import { createAnonymousRequestContext } from "shared/request-context.js";
 import { findOrCreateUser, getUser, getConfig as getUsersConfig } from "shared/clients/users.js";
 
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
@@ -37,9 +38,10 @@ api.all("/session", async (req, res) => {
 });
 
 api.get("/config", async (req, res) => {
+  const anonymousContext = createAnonymousRequestContext({ source: "server" });
   const [usersConfig, agentList] = await Promise.all([
     getUsersConfig(),
-    getAgents(null).then((rows) =>
+    getAgents(anonymousContext).then((rows) =>
       (Array.isArray(rows) ? rows : rows?.data || []).map((r) => r.name).filter(Boolean)
     ),
   ]);

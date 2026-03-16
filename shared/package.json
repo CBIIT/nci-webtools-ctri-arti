@@ -8,6 +8,8 @@
     "./utils.js": "./utils.js",
     "./cron.js": "./cron.js",
     "./embeddings.js": "./embeddings.js",
+    "./gateway-usage.js": "./gateway-usage.js",
+    "./request-context.js": "./request-context.js",
     "./clients/gateway.js": "./clients/gateway.js",
     "./clients/cms.js": "./clients/cms.js",
     "./clients/agents.js": "./clients/agents.js",
