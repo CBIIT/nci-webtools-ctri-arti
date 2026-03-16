@@ -279,7 +279,7 @@ export async function editor(
             if (first) entries.add(rest.includes("/") ? first + "/" : first);
           }
         }
-        if (entries.size > 0)
+        if (entries.size > 0 || isDir || normPath === "")
           return { status: "directory", path: prefix || "/", entries: Array.from(entries).sort() };
         return { status: "error", error: `Not found: ${path}` };
       }
