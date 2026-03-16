@@ -1,7 +1,12 @@
 import assert from "node:assert";
 import { test } from "node:test";
 
+import { PGlite } from "@electric-sql/pglite";
+import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
+import { vector } from "@electric-sql/pglite/vector";
+import { auditRelationalIntegrity } from "database/relational-audit.js";
 import * as schema from "database/schema.js";
+import { pushSchema } from "database/sync.js";
 
 import { createTestDb, createSeededTestDb } from "./setup.js";
 
@@ -109,5 +114,80 @@ test("seedDatabase", async (t) => {
     const agentTools = await db.select().from(s.AgentTool);
     assert.ok(agentTools.length >= 1, `Expected at least 1 agent-tool, got ${agentTools.length}`);
     close();
+  });
+});
+
+test("relational audit", async (t) => {
+  await t.test("reports a clean relational graph on the migrated schema", async () => {
+    const { db, close } = await createSeededTestDb();
+    const audit = await auditRelationalIntegrity(db);
+
+    assert.equal(
+      audit.missingForeignKeys.length,
+      0,
+      `expected all required foreign keys to exist, found: ${JSON.stringify(audit.missingForeignKeys)}`
+    );
+    assert.deepStrictEqual(
+      audit.orphanedRows.filter((entry) => entry.count > 0),
+      [],
+      "seeded fixtures should not contain orphaned rows"
+    );
+    assert.deepStrictEqual(
+      audit.nullableViolations.filter((entry) => entry.count > 0),
+      [],
+      "seeded fixtures should satisfy the required-column rules"
+    );
+
+    await close();
+  });
+
+  await t.test("rejects new orphaned rows after the foreign keys land", async () => {
+    const { db, schema: s, close } = await createTestDb();
+    await assert.rejects(
+      db.insert(s.Message).values({
+        conversationID: 999999,
+        role: "user",
+        content: [{ type: "text", text: "orphan" }],
+      }),
+      /Failed query/i
+    );
+
+    await close();
+  });
+});
+
+test("pushSchema", async (t) => {
+  await t.test("applies the same modern schema shape as the checked-in migrations", async () => {
+    const client = new PGlite("memory://", { extensions: { pg_trgm, vector } });
+
+    try {
+      await pushSchema((statement) => client.exec(statement));
+
+      const usageColumns = await client.query(`
+        select column_name
+        from information_schema.columns
+        where table_name = 'Usage'
+        order by ordinal_position
+      `);
+      const usageColumnNames = usageColumns.rows.map((row) => row.column_name);
+
+      assert.ok(usageColumnNames.includes("quantity"));
+      assert.ok(usageColumnNames.includes("unit"));
+      assert.ok(usageColumnNames.includes("unitCost"));
+      assert.ok(!usageColumnNames.includes("inputTokens"));
+      assert.ok(!usageColumnNames.includes("outputTokens"));
+
+      const [embeddingColumn] = (
+        await client.query(`
+          select udt_name
+          from information_schema.columns
+          where table_name = 'Vector' and column_name = 'embedding'
+        `)
+      ).rows;
+
+      assert.equal(embeddingColumn.udt_name, "vector");
+    } finally {
+      await client.close();
+    }
   });
 });

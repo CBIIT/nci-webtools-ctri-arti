@@ -32,7 +32,7 @@ export const User = pgTable(
     firstName: text("firstName"),
     lastName: text("lastName"),
     status: text("status"),
-    roleID: integer("roleID"),
+    roleID: integer("roleID").references(() => Role.id, { onDelete: "set null" }),
     apiKey: text("apiKey"),
     budget: doublePrecision("budget"),
     remaining: doublePrecision("remaining"),
@@ -71,8 +71,8 @@ export const RolePolicy = pgTable(
   "RolePolicy",
   {
     id: serial("id").primaryKey(),
-    roleID: integer("roleID"),
-    policyID: integer("policyID"),
+    roleID: integer("roleID").notNull().references(() => Role.id, { onDelete: "cascade" }),
+    policyID: integer("policyID").notNull().references(() => Policy.id, { onDelete: "cascade" }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -94,7 +94,7 @@ export const Model = pgTable(
   "Model",
   {
     id: serial("id").primaryKey(),
-    providerID: integer("providerID"),
+    providerID: integer("providerID").references(() => Provider.id, { onDelete: "set null" }),
     name: text("name"),
     internalName: text("internalName"),
     type: text("type"),
@@ -123,11 +123,11 @@ export const Usage = pgTable(
   "Usage",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    modelID: integer("modelID"),
+    userID: integer("userID").references(() => User.id, { onDelete: "cascade" }),
+    modelID: integer("modelID").references(() => Model.id, { onDelete: "set null" }),
     type: text("type"),
-    agentID: integer("agentID"),
-    messageID: integer("messageID"),
+    agentID: integer("agentID").references(() => Agent.id, { onDelete: "set null" }),
+    messageID: integer("messageID").references(() => Message.id, { onDelete: "set null" }),
     quantity: doublePrecision("quantity"),
     unit: text("unit"),
     unitCost: doublePrecision("unitCost"),
@@ -168,11 +168,11 @@ export const Agent = pgTable(
   "Agent",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    modelID: integer("modelID"),
+    userID: integer("userID").references(() => User.id, { onDelete: "cascade" }),
+    modelID: integer("modelID").references(() => Model.id, { onDelete: "set null" }),
     name: text("name"),
     description: text("description"),
-    promptID: integer("promptID"),
+    promptID: integer("promptID").references(() => Prompt.id, { onDelete: "set null" }),
     modelParameters: json("modelParameters"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -203,12 +203,14 @@ export const Conversation = pgTable(
   "Conversation",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    agentID: integer("agentID"),
+    userID: integer("userID").notNull().references(() => User.id, { onDelete: "cascade" }),
+    agentID: integer("agentID").references(() => Agent.id, { onDelete: "set null" }),
     title: text("title"),
     deleted: boolean("deleted").default(false),
     deletedAt: timestamp("deletedAt", { withTimezone: true }),
-    summaryMessageID: integer("summaryMessageID"),
+    summaryMessageID: integer("summaryMessageID").references(() => Message.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -225,8 +227,10 @@ export const Message = pgTable(
   "Message",
   {
     id: serial("id").primaryKey(),
-    conversationID: integer("conversationID"),
-    parentID: integer("parentID"),
+    conversationID: integer("conversationID")
+      .notNull()
+      .references(() => Conversation.id, { onDelete: "cascade" }),
+    parentID: integer("parentID").references(() => Message.id, { onDelete: "set null" }),
     role: text("role"),
     content: json("content"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
@@ -244,10 +248,12 @@ export const Resource = pgTable(
   "Resource",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    agentID: integer("agentID"),
-    conversationID: integer("conversationID"),
-    messageID: integer("messageID"),
+    userID: integer("userID").references(() => User.id, { onDelete: "cascade" }),
+    agentID: integer("agentID").references(() => Agent.id, { onDelete: "set null" }),
+    conversationID: integer("conversationID").references(() => Conversation.id, {
+      onDelete: "cascade",
+    }),
+    messageID: integer("messageID").references(() => Message.id, { onDelete: "set null" }),
     name: text("name"),
     type: text("type"),
     content: text("content"),
@@ -270,9 +276,11 @@ export const Vector = pgTable(
   "Vector",
   {
     id: serial("id").primaryKey(),
-    conversationID: integer("conversationID"),
-    resourceID: integer("resourceID"),
-    toolID: integer("toolID"),
+    conversationID: integer("conversationID").references(() => Conversation.id, {
+      onDelete: "cascade",
+    }),
+    resourceID: integer("resourceID").references(() => Resource.id, { onDelete: "cascade" }),
+    toolID: integer("toolID").references(() => Tool.id, { onDelete: "set null" }),
     order: integer("order"),
     content: text("content"),
     embedding: vector("embedding", { dimensions: NOVA_EMBEDDING_DIMENSIONS }),
@@ -297,8 +305,8 @@ export const UserAgent = pgTable(
   "UserAgent",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    agentID: integer("agentID"),
+    userID: integer("userID").notNull().references(() => User.id, { onDelete: "cascade" }),
+    agentID: integer("agentID").notNull().references(() => Agent.id, { onDelete: "cascade" }),
     role: text("role"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -312,8 +320,8 @@ export const UserTool = pgTable(
   "UserTool",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    toolID: integer("toolID"),
+    userID: integer("userID").notNull().references(() => User.id, { onDelete: "cascade" }),
+    toolID: integer("toolID").notNull().references(() => Tool.id, { onDelete: "cascade" }),
     credential: json("credential"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -327,8 +335,8 @@ export const AgentTool = pgTable(
   "AgentTool",
   {
     id: serial("id").primaryKey(),
-    toolID: integer("toolID"),
-    agentID: integer("agentID"),
+    toolID: integer("toolID").notNull().references(() => Tool.id, { onDelete: "cascade" }),
+    agentID: integer("agentID").notNull().references(() => Agent.id, { onDelete: "cascade" }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()

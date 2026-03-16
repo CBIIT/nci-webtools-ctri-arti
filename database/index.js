@@ -12,6 +12,7 @@ const initSql = readFileSync(resolve(__dirname, "init.sql"), "utf-8");
 const {
   DB_STORAGE,
   DB_SKIP_SYNC = "false",
+  DB_SKIP_AUDIT = "false",
   PGHOST,
   PGPORT,
   PGDATABASE,
@@ -53,6 +54,26 @@ async function runMigrations(execFn) {
   }
 }
 
+async function ensureRelationalIntegrity(db) {
+  if (DB_SKIP_AUDIT === "true") return;
+
+  const { auditRelationalIntegrity } = await import("./relational-audit.js");
+  const audit = await auditRelationalIntegrity(db);
+  const orphaned = audit.orphanedRows.filter((entry) => entry.count > 0);
+  const nullable = audit.nullableViolations.filter((entry) => entry.count > 0);
+
+  if (audit.missingForeignKeys.length || orphaned.length || nullable.length) {
+    throw new Error(
+      [
+        "Relational integrity audit failed after database sync.",
+        `missingForeignKeys=${JSON.stringify(audit.missingForeignKeys)}`,
+        `orphanedRows=${JSON.stringify(orphaned)}`,
+        `nullableViolations=${JSON.stringify(nullable)}`,
+      ].join(" ")
+    );
+  }
+}
+
 let db;
 
 // Always use the same PG schema
@@ -80,6 +101,7 @@ if (!usePg) {
 
     const { seedDatabase } = schema;
     await seedDatabase(db);
+    await ensureRelationalIntegrity(db);
   }
 } else {
   // PostgreSQL mode (production)
@@ -105,6 +127,7 @@ if (!usePg) {
 
     const { seedDatabase } = schema;
     await seedDatabase(db);
+    await ensureRelationalIntegrity(db);
   }
 }
 

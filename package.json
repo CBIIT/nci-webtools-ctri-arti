@@ -24,6 +24,7 @@
     "db:sql": "psql \"postgresql://postgres:postgres@127.0.0.1:5433/postgres?sslmode=disable&gssencmode=disable\"",
     "db:generate": "drizzle-kit generate",
     "db:audit-vectors": "node database/scripts/audit-vector-schema.js",
+    "db:audit-relations": "node database/scripts/audit-relational-integrity.js",
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
     "prepare": "husky || true"
