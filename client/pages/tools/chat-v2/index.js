@@ -688,9 +688,6 @@ function ChatApp() {
                     <div class="d-flex w-auto align-items-center gap-2">
                       <${Show} when=${() => user?.()?.Role?.name === "admin"}>
                         <div class="d-flex flex-column align-items-start gap-1">
-                          <label for="model" class="small text-secondary fw-semibold mb-0">
-                            Admin Model Override
-                          </label>
                           <select
                             class="model-dropdown form-select form-select-lg fw-semibold fs-6 h-100 border-0 bg-primary-hover cursor-pointer"
                             name="model"
