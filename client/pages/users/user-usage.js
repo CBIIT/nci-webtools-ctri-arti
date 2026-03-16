@@ -5,7 +5,7 @@ import html from "solid-js/html";
 import { AlertContainer } from "../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 
-import { formatUtcTimestampToLocal } from "./date-utils.js";
+import { formatDateInputForDisplay, formatUtcTimestampToLocal } from "./date-utils.js";
 import { calculateDateRange, formatDate, getDefaultStartDate, validateDateRange } from "./usage.js";
 
 function UserUsage() {
@@ -118,12 +118,34 @@ function UserUsage() {
     }
   );
 
+  const [typeAnalytics] = createResource(
+    () => currentDateRange(),
+    async ({ startDate, endDate }) => {
+      try {
+        const response = await fetch(
+          `/api/v1/admin/analytics?groupBy=type&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
+        );
+        if (!response.ok) {
+          await handleHttpError(response, "fetching type analytics");
+          return { data: [] };
+        }
+        return response.json();
+      } catch (err) {
+        const error = new Error("Something went wrong while retrieving type analytics.");
+        error.cause = err;
+        error.dateRange = `${startDate} to ${endDate}`;
+        handleError(error, "Type Analytics API Error");
+        return { data: [] };
+      }
+    }
+  );
+
   const [rawUsageData] = createResource(
     () => currentDateRange(),
     async ({ startDate, endDate }) => {
       try {
         const response = await fetch(
-          `/api/v1/admin/usage?startDate=${startDate}&endDate=${endDate}&userId=${userId}&limit=20`
+          `/api/v1/admin/usage?startDate=${startDate}&endDate=${endDate}&userId=${userId}&limit=100`
         );
         if (!response.ok) {
           await handleHttpError(response, "fetching usage history");
@@ -147,7 +169,7 @@ function UserUsage() {
       currency: "USD",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    }).format(value || 0);
   }
 
   // Format numbers with commas
@@ -155,16 +177,117 @@ function UserUsage() {
     return new Intl.NumberFormat("en-US").format(value);
   }
 
+  function formatTypeLabel(value) {
+    return String(value || "unknown")
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, (match) => match.toUpperCase());
+  }
+
+  function formatUnitLabel(value) {
+    return String(value || "")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (match) => match.toUpperCase());
+  }
+
+  function normalizeRequestId(value) {
+    const requestId = String(value || "").trim();
+    if (!requestId) return null;
+    return ["unknown", "null", "undefined"].includes(requestId.toLowerCase()) ? null : requestId;
+  }
+
   // Create computed values for display
   const userStats = createMemo(() => {
     const data = analyticsData()?.data?.[0];
     if (!data) return null;
+    const typeMap = new Map(
+      (typeAnalytics()?.data || []).map((entry) => [String(entry.type || "unknown"), entry])
+    );
+    const guardrail = typeMap.get("guardrail");
     return {
       totalRequests: data.totalRequests || 0,
-      totalInputTokens: data.totalInputTokens || 0,
-      totalOutputTokens: data.totalOutputTokens || 0,
+      usageCost: Number(data.usageCost || 0),
+      guardrailCost: Number(guardrail?.totalCost ?? data.guardrailCost ?? 0),
       totalCost: data.totalCost || 0,
     };
+  });
+
+  const groupedUsageData = createMemo(() => {
+    const grouped = new Map();
+
+    for (const entry of rawUsageData()?.data || []) {
+      const requestId = normalizeRequestId(entry.requestId);
+      const key = requestId ? `request:${requestId}` : `usage-${entry.id}`;
+      const current = grouped.get(key) || {
+        requestId,
+        createdAt: entry.createdAt,
+        modelName: null,
+        fallbackModelName: entry.modelName || "Unknown",
+        requestType: null,
+        usageCost: 0,
+        guardrailCost: 0,
+        totalCost: 0,
+        requestItems: new Map(),
+      };
+
+      if (new Date(entry.createdAt) > new Date(current.createdAt)) {
+        current.createdAt = entry.createdAt;
+      }
+
+      if (!current.fallbackModelName) {
+        current.fallbackModelName = entry.modelName || "Unknown";
+      }
+
+      const entryCost = Number(entry.cost || 0);
+      current.totalCost += entryCost;
+
+      const itemKey = `${entry.type || "usage"}:${entry.unit || ""}`;
+      const existingItem = current.requestItems.get(itemKey) || {
+        type: entry.type || "usage",
+        unit: entry.unit,
+        quantity: 0,
+        cost: 0,
+      };
+      existingItem.quantity += Number(entry.quantity || 0);
+      existingItem.cost += entryCost;
+      current.requestItems.set(itemKey, existingItem);
+
+      if (entry.type === "guardrail") {
+        current.guardrailCost += entryCost;
+        grouped.set(key, current);
+        continue;
+      }
+
+      current.usageCost += entryCost;
+      if (!current.requestType) {
+        current.requestType = entry.type || "unknown";
+      } else if (current.requestType !== (entry.type || "unknown")) {
+        current.requestType = "multiple";
+      }
+
+      const entryModelName = entry.modelName || "Unknown";
+      if (!current.modelName) {
+        current.modelName = entryModelName;
+      } else if (current.modelName !== entryModelName) {
+        current.modelName = "Multiple";
+      }
+
+      grouped.set(key, current);
+    }
+
+    return Array.from(grouped.values())
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map((group) => ({
+        ...group,
+        typeLabel: formatTypeLabel(group.requestType || "unknown"),
+        modelName: group.modelName || group.fallbackModelName || "Unknown",
+        usageTitle: Array.from(group.requestItems.values())
+          .sort((a, b) => Number(b.cost || 0) - Number(a.cost || 0))
+          .map(
+            (item) =>
+              `${formatTypeLabel(item.type)}: ${formatUnitLabel(item.unit)} · ${formatNumber(item.quantity)} (${formatCurrency(item.cost || 0)})`
+          )
+          .join("\n"),
+      }));
   });
 
   return html`
@@ -277,15 +400,35 @@ function UserUsage() {
         </div>
 
         <!-- Error Alert -->
-        <${Show} when=${() => analyticsData.error || userResource.error}>
+        <${Show}
+          when=${() =>
+            analyticsData.error ||
+            userResource.error ||
+            typeAnalytics.error ||
+            rawUsageData.error ||
+            modelAnalytics.error ||
+            dailyAnalytics.error}
+        >
           <div class="alert alert-danger" role="alert">
             ${() =>
-              analyticsData.error || userResource.error || "An error occurred while fetching data"}
+              analyticsData.error ||
+              userResource.error ||
+              typeAnalytics.error ||
+              rawUsageData.error ||
+              modelAnalytics.error ||
+              dailyAnalytics.error ||
+              "An error occurred while fetching data"}
           </div>
         <//>
 
         <!-- Loading State -->
-        <${Show} when=${() => analyticsData.loading || userResource.loading}>
+        <${Show}
+          when=${() =>
+            analyticsData.loading ||
+            userResource.loading ||
+            typeAnalytics.loading ||
+            rawUsageData.loading}
+        >
           <div class="d-flex justify-content-center my-5">
             <div class="spinner-border text-primary" role="status">
               <span class="visually-hidden">Loading...</span>
@@ -315,16 +458,16 @@ function UserUsage() {
                     <div class="col-md-3 mb-3">
                       <div class="card h-100">
                         <div class="card-body text-center">
-                          <h6 class="text-muted">Input Tokens</h6>
-                          <h3>${() => formatNumber(userStats().totalInputTokens)}</h3>
+                          <h6 class="text-muted">Usage Cost</h6>
+                          <h3>${() => formatCurrency(userStats().usageCost)}</h3>
                         </div>
                       </div>
                     </div>
                     <div class="col-md-3 mb-3">
                       <div class="card h-100">
                         <div class="card-body text-center">
-                          <h6 class="text-muted">Output Tokens</h6>
-                          <h3>${() => formatNumber(userStats().totalOutputTokens)}</h3>
+                          <h6 class="text-muted">Guardrail Cost</h6>
+                          <h3>${() => formatCurrency(userStats().guardrailCost)}</h3>
                         </div>
                       </div>
                     </div>
@@ -355,7 +498,6 @@ function UserUsage() {
                       <tr>
                         <th>Model</th>
                         <th class="text-end">Requests</th>
-                        <th class="text-end">Tokens</th>
                         <th class="text-end">Cost</th>
                       </tr>
                     </thead>
@@ -366,11 +508,6 @@ function UserUsage() {
                             <tr>
                               <td>${model.Model?.name || "Unknown"}</td>
                               <td class="text-end">${formatNumber(model.totalRequests)}</td>
-                              <td class="text-end">
-                                ${formatNumber(
-                                  (model.totalInputTokens || 0) + (model.totalOutputTokens || 0)
-                                )}
-                              </td>
                               <td class="text-end">${formatCurrency(model.totalCost)}</td>
                             </tr>
                           `
@@ -381,8 +518,52 @@ function UserUsage() {
               </div>
             </div>
 
-            <!-- Daily Usage -->
+            <!-- Usage by Type -->
             <div class="col-md-6 mb-3">
+              <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                  <h5 class="card-title mb-0">Usage by Type</h5>
+                </div>
+                <div class="card-body">
+                  ${() =>
+                    typeAnalytics()?.data && typeAnalytics().data.length > 0
+                      ? html`
+                          <table class="table table-sm">
+                            <thead>
+                              <tr>
+                                <th>Type</th>
+                                <th class="text-end">Requests</th>
+                                <th class="text-end">Cost</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              ${() =>
+                                typeAnalytics().data.map(
+                                  (entry) => html`
+                                    <tr>
+                                      <td>${formatTypeLabel(entry.type)}</td>
+                                      <td class="text-end">
+                                        ${formatNumber(entry.totalRequests || 0)}
+                                      </td>
+                                      <td class="text-end">
+                                        ${formatCurrency(entry.totalCost || 0)}
+                                      </td>
+                                    </tr>
+                                  `
+                                )}
+                            </tbody>
+                          </table>
+                        `
+                      : html`
+                          <p class="text-muted text-center my-4">No usage type data available</p>
+                        `}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mb-4">
+            <div class="col-12">
               <div class="card shadow-sm h-100">
                 <div class="card-header bg-light">
                   <h5 class="card-title mb-0">Daily Usage</h5>
@@ -395,8 +576,9 @@ function UserUsage() {
                             <thead>
                               <tr>
                                 <th>Date</th>
-                                <th class="text-end">Requests</th>
-                                <th class="text-end">Cost</th>
+                                <th class="text-end">Usage Cost</th>
+                                <th class="text-end">Guardrail Cost</th>
+                                <th class="text-end">Total Cost</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -404,8 +586,13 @@ function UserUsage() {
                                 dailyAnalytics().data.map(
                                   (day) => html`
                                     <tr>
-                                      <td>${formatUtcTimestampToLocal(day.period)}</td>
-                                      <td class="text-end">${formatNumber(day.totalRequests)}</td>
+                                      <td>${formatDateInputForDisplay(String(day.period || "").slice(0, 10))}</td>
+                                      <td class="text-end">
+                                        ${formatCurrency(day.usageCost || 0)}
+                                      </td>
+                                      <td class="text-end">
+                                        ${formatCurrency(day.guardrailCost || 0)}
+                                      </td>
                                       <td class="text-end">${formatCurrency(day.totalCost)}</td>
                                     </tr>
                                   `
@@ -428,29 +615,37 @@ function UserUsage() {
             </div>
             <div class="card-body">
               ${() =>
-                rawUsageData()?.data && rawUsageData().data.length > 0
+                groupedUsageData().length > 0
                   ? html`
                       <div class="table-responsive">
                         <table class="table table-sm table-hover">
                           <thead>
                             <tr>
                               <th>Date</th>
+                              <th>Type</th>
                               <th>Model</th>
-                              <th class="text-end">Quantity</th>
-                              <th>Unit</th>
-                              <th class="text-end">Cost</th>
+                              <th class="text-end">Usage Cost</th>
+                              <th class="text-end">Guardrail Cost</th>
+                              <th class="text-end">Total Cost</th>
                             </tr>
                           </thead>
                           <tbody>
                             ${() =>
-                              rawUsageData().data.map(
+                              groupedUsageData().map(
                                 (entry) => html`
                                   <tr>
                                     <td>${formatUtcTimestampToLocal(entry.createdAt)}</td>
+                                    <td>${entry.typeLabel}</td>
                                     <td>${entry.modelName || "Unknown"}</td>
-                                    <td class="text-end">${formatNumber(entry.quantity || 0)}</td>
-                                    <td>${(entry.unit || "").replace(/_/g, " ")}</td>
-                                    <td class="text-end">${formatCurrency(entry.cost || 0)}</td>
+                                    <td class="text-end">
+                                      <span title=${entry.usageTitle || "No usage items"}>
+                                        ${formatCurrency(entry.usageCost || 0)}
+                                      </span>
+                                    </td>
+                                    <td class="text-end">
+                                      ${formatCurrency(entry.guardrailCost || 0)}
+                                    </td>
+                                    <td class="text-end">${formatCurrency(entry.totalCost || 0)}</td>
                                   </tr>
                                 `
                               )}

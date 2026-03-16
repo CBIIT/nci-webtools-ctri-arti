@@ -22,6 +22,7 @@ import { getToolFn } from "./tools.js";
  */
 export async function* runAgentLoop({
   userId,
+  requestId,
   agentId,
   conversationId,
   userMessage,
@@ -30,6 +31,17 @@ export async function* runAgentLoop({
   gateway,
   cms,
 }) {
+  const terminalStopReasons = new Set([
+    "end_turn",
+    "guardrail_intervened",
+    "content_filtered",
+    "max_tokens",
+    "stop_sequence",
+    "malformed_model_output",
+    "malformed_tool_use",
+    "model_context_window_exceeded",
+  ]);
+
   // 1. Load agent config + conversation
   const agent = await cms.getAgent(userId, agentId);
   if (!agent) throw new Error(`Agent not found: ${agentId}`);
@@ -104,6 +116,7 @@ export async function* runAgentLoop({
     tools,
     thoughtBudget,
     userText,
+    requestId,
   });
   const summaryIterator = summaryStream?.[Symbol.asyncIterator]?.();
   const firstSummaryEvent = summaryIterator ? await summaryIterator.next() : { done: true };
@@ -131,7 +144,7 @@ export async function* runAgentLoop({
   }
 
   // Tool execution context
-  const toolContext = { userId, agentId, conversationId, gateway, cms };
+  const toolContext = { userId, requestId, agentId, conversationId, gateway, cms };
 
   // 6. Agent loop
   let done = false;
@@ -139,6 +152,7 @@ export async function* runAgentLoop({
     // Invoke model (streaming)
     const result = await gateway.invoke({
       userID: userId,
+      requestId,
       model: effectiveModel,
       messages,
       system,
@@ -146,6 +160,7 @@ export async function* runAgentLoop({
       thoughtBudget,
       stream: true,
       type: agent.name || "agent",
+      guardrailConfig: agent.runtime?.guardrailConfig || null,
     });
 
     if (result.status === 429) {
@@ -188,7 +203,7 @@ export async function* runAgentLoop({
     });
     messages.push(assistantMessage);
 
-    if (stopReason === "end_turn" || !stopReason) {
+    if (!stopReason || terminalStopReasons.has(stopReason)) {
       done = true;
     } else if (stopReason === "tool_use") {
       const toolUses = assistantContent.filter((b) => b.toolUse).map((b) => b.toolUse);
