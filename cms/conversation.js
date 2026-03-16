@@ -154,7 +154,7 @@ export class ConversationService {
 
     if (resourceData.agentID !== null) {
       const agent = await this.getAgent(userId, resourceData.agentID);
-      if (!agent || agent.userID === null) {
+      if (!agent) {
         throw createNotFoundError(`Agent not found: ${resourceData.agentID}`);
       }
     }
@@ -805,7 +805,10 @@ export class ConversationService {
     const existing = await this.#requireOwnedResource(userId, resourceId);
 
     const resourceUpdates = stripAutoFields(updates);
-    const nextResource = await this.#normalizeResourceWrite(userId, { ...existing, ...resourceUpdates });
+    const nextResource = await this.#normalizeResourceWrite(userId, {
+      ...existing,
+      ...resourceUpdates,
+    });
     const shouldReindex = this.#shouldReindexResource(existing, nextResource);
     const vectors = shouldReindex ? await this.#buildResourceVectors(userId, nextResource) : null;
 
