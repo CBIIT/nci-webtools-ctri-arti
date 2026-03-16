@@ -1,9 +1,20 @@
-import db, { User, Model } from "database";
+import db, {
+  User,
+  Model,
+  Agent,
+  Conversation,
+  Message,
+  Resource,
+  Usage,
+  UserTool,
+  UserAgent,
+} from "database";
 import assert from "node:assert";
 import { test } from "node:test";
 
 import { eq } from "drizzle-orm";
 import { trackModelUsage, trackUsage } from "gateway/usage.js";
+import { UserService } from "users/user.js";
 
 test("trackModelUsage", async (t) => {
   // The DB is auto-seeded via database.js (defaults to in-memory PGlite when PGHOST is not set)
@@ -174,4 +185,180 @@ test("trackUsage", async (t) => {
     const result = await trackUsage(testUser.id, "mock-model", null);
     assert.strictEqual(result, undefined);
   });
+});
+
+test("UserService billing lifecycle", async (t) => {
+  const service = new UserService();
+
+  await t.test("findOrCreateUser initializes limited users with remaining balance", async () => {
+    const email = `billing-find-or-create-${Date.now()}-${Math.random()}@test.com`;
+    const user = await service.findOrCreateUser({
+      email,
+      firstName: "Billing",
+      lastName: "User",
+    });
+
+    assert.strictEqual(user.roleID, 3);
+    assert.strictEqual(user.budget, 1);
+    assert.strictEqual(user.remaining, 1);
+  });
+
+  await t.test("createUser mirrors budget into remaining for limited users", async () => {
+    const user = await service.createUser({
+      email: `billing-create-${Date.now()}-${Math.random()}@test.com`,
+      firstName: "Limited",
+      lastName: "User",
+      status: "active",
+      roleID: 3,
+      budget: 7,
+    });
+
+    assert.strictEqual(user.budget, 7);
+    assert.strictEqual(user.remaining, 7);
+  });
+
+  await t.test("createUser keeps unlimited users explicitly unlimited", async () => {
+    const user = await service.createUser({
+      email: `billing-unlimited-${Date.now()}-${Math.random()}@test.com`,
+      firstName: "Unlimited",
+      lastName: "User",
+      status: "active",
+      roleID: 1,
+      budget: null,
+    });
+
+    assert.strictEqual(user.budget, null);
+    assert.strictEqual(user.remaining, null);
+  });
+
+  await t.test("updateUser resets remaining when budget changes", async () => {
+    const user = await service.createUser({
+      email: `billing-update-${Date.now()}-${Math.random()}@test.com`,
+      firstName: "Update",
+      lastName: "User",
+      status: "active",
+      roleID: 3,
+      budget: 3,
+    });
+
+    const updated = await service.updateUser(user.id, { budget: 9 });
+    assert.strictEqual(updated.budget, 9);
+    assert.strictEqual(updated.remaining, 9);
+  });
+
+  await t.test("recordUsage deducts from budget when legacy remaining is null", async () => {
+    const [legacyUser] = await db
+      .insert(User)
+      .values({
+        email: `billing-legacy-${Date.now()}-${Math.random()}@test.com`,
+        firstName: "Legacy",
+        lastName: "User",
+        status: "active",
+        roleID: 3,
+        budget: 2,
+        remaining: null,
+      })
+      .returning();
+
+    await service.recordUsage(legacyUser.id, [
+      {
+        userID: legacyUser.id,
+        modelID: 99,
+        type: "chat",
+        quantity: 1,
+        unit: "input_tokens",
+        unitCost: 0.5,
+        cost: 0.5,
+      },
+    ]);
+
+    const [after] = await db.select().from(User).where(eq(User.id, legacyUser.id)).limit(1);
+    assert.strictEqual(after.remaining, 1.5);
+  });
+});
+
+test("UserService deleteUser cascades owned chat and billing rows", async () => {
+  const service = new UserService();
+
+  const [user] = await db
+    .insert(User)
+    .values({
+      email: "delete-me@example.org",
+      roleID: 3,
+      budget: 5,
+      remaining: 5,
+      status: "active",
+    })
+    .returning();
+
+  const [agent] = await db
+    .insert(Agent)
+    .values({
+      userID: user.id,
+      modelID: 1,
+      promptID: 1,
+      name: "Delete Me Agent",
+    })
+    .returning();
+
+  const [conversation] = await db
+    .insert(Conversation)
+    .values({ userID: user.id, agentID: agent.id, title: "delete me" })
+    .returning();
+
+  const [message] = await db
+    .insert(Message)
+    .values({
+      conversationID: conversation.id,
+      role: "user",
+      content: [{ type: "text", text: "cleanup" }],
+    })
+    .returning();
+
+  await db.insert(Resource).values({
+    userID: user.id,
+    agentID: agent.id,
+    conversationID: conversation.id,
+    messageID: message.id,
+    name: "delete-me.txt",
+    type: "file",
+    content: "cleanup",
+  });
+  await db.insert(Usage).values({
+    userID: user.id,
+    modelID: 1,
+    agentID: agent.id,
+    messageID: message.id,
+    quantity: 1,
+    unit: "input_tokens",
+    unitCost: 0,
+    cost: 0,
+  });
+  await db.insert(UserTool).values({ userID: user.id, toolID: 1, credential: { token: "x" } });
+  await db.insert(UserAgent).values({ userID: user.id, agentID: agent.id, role: "owner" });
+
+  const result = await service.deleteUser(user.id);
+  assert.deepStrictEqual(result, { success: true });
+
+  const [userAfter] = await db.select().from(User).where(eq(User.id, user.id)).limit(1);
+  const [agentAfter] = await db.select().from(Agent).where(eq(Agent.id, agent.id)).limit(1);
+  const [conversationAfter] = await db
+    .select()
+    .from(Conversation)
+    .where(eq(Conversation.id, conversation.id))
+    .limit(1);
+  const [messageAfter] = await db.select().from(Message).where(eq(Message.id, message.id)).limit(1);
+  const usageRows = await db.select().from(Usage).where(eq(Usage.userID, user.id));
+  const resourceRows = await db.select().from(Resource).where(eq(Resource.userID, user.id));
+  const userToolRows = await db.select().from(UserTool).where(eq(UserTool.userID, user.id));
+  const userAgentRows = await db.select().from(UserAgent).where(eq(UserAgent.userID, user.id));
+
+  assert.equal(userAfter, undefined);
+  assert.equal(agentAfter, undefined);
+  assert.equal(conversationAfter, undefined);
+  assert.equal(messageAfter, undefined);
+  assert.equal(usageRows.length, 0);
+  assert.equal(resourceRows.length, 0);
+  assert.equal(userToolRows.length, 0);
+  assert.equal(userAgentRows.length, 0);
 });

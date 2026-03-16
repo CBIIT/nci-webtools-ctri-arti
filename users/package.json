@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "exports": {
+    "./app.js": "./app.js",
     "./user.js": "./user.js",
     "./middleware.js": "./middleware.js"
   },

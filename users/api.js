@@ -2,9 +2,10 @@ import { json, Router } from "express";
 import { logErrors, logRequests } from "shared/middleware.js";
 import { routeHandler } from "shared/utils.js";
 
+import { createUsersApplication } from "./app.js";
 import { UserService } from "./user.js";
 
-const service = new UserService();
+const app = createUsersApplication({ service: new UserService() });
 const api = Router();
 
 api.use(json({ limit: "10mb" }));
@@ -16,7 +17,7 @@ api.get(
   "/v1/users",
   routeHandler(async (req, res) => {
     const { search, limit, offset, sortBy, sortOrder, ...filters } = req.query;
-    const result = await service.getUsers({
+    const result = await app.getUsers({
       search,
       limit: limit ? +limit : undefined,
       offset: offset ? +offset : undefined,
@@ -31,9 +32,7 @@ api.get(
 api.get(
   "/v1/users/resolve",
   routeHandler(async (req, res) => {
-    const result = req.query.apiKey
-      ? await service.getUserByApiKey(req.query.apiKey)
-      : await service.getUser(req.query.id);
+    const result = await app.resolveUser(req.query);
     if (!result) return res.status(404).json({ error: "User not found" });
     res.json(result);
   })
@@ -42,7 +41,7 @@ api.get(
 api.get(
   "/v1/users/:id",
   routeHandler(async (req, res) => {
-    const user = await service.getUser(req.params.id);
+    const user = await app.getUser(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json(user);
   })
@@ -51,7 +50,7 @@ api.get(
 api.post(
   "/v1/users",
   routeHandler(async (req, res) => {
-    const user = await service.createUser(req.body);
+    const user = await app.createUser(req.body);
     res.json(user);
   })
 );
@@ -59,7 +58,7 @@ api.post(
 api.post(
   "/v1/users/find-or-create",
   routeHandler(async (req, res) => {
-    const user = await service.findOrCreateUser(req.body);
+    const user = await app.findOrCreateUser(req.body);
     res.json(user);
   })
 );
@@ -67,7 +66,7 @@ api.post(
 api.put(
   "/v1/users/:id",
   routeHandler(async (req, res) => {
-    const user = await service.updateUser(req.params.id, req.body);
+    const user = await app.updateUser(req.params.id, req.body);
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json(user);
   })
@@ -76,7 +75,7 @@ api.put(
 api.put(
   "/v1/users/:id/profile",
   routeHandler(async (req, res) => {
-    const user = await service.updateProfile(req.params.id, req.body);
+    const user = await app.updateProfile(req.params.id, req.body);
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json(user);
   })
@@ -85,7 +84,7 @@ api.put(
 api.delete(
   "/v1/users/:id",
   routeHandler(async (req, res) => {
-    const result = await service.deleteUser(req.params.id);
+    const result = await app.deleteUser(req.params.id);
     if (!result) return res.status(404).json({ error: "User not found" });
     res.json(result);
   })
@@ -96,7 +95,7 @@ api.delete(
 api.get(
   "/v1/roles",
   routeHandler(async (req, res) => {
-    const roles = await service.getRoles();
+    const roles = await app.getRoles();
     res.json(roles);
   })
 );
@@ -106,7 +105,7 @@ api.get(
 api.post(
   "/v1/usage",
   routeHandler(async (req, res) => {
-    const result = await service.recordUsage(req.body.userId, req.body.rows);
+    const result = await app.recordUsage(req.body.userId, req.body.rows);
     res.json(result);
   })
 );
@@ -114,7 +113,7 @@ api.post(
 api.get(
   "/v1/users/:id/usage",
   routeHandler(async (req, res) => {
-    const result = await service.getUserUsage(+req.params.id, {
+    const result = await app.getUserUsage(+req.params.id, {
       startDate: req.query.startDate,
       endDate: req.query.endDate,
       type: req.query.type,
@@ -129,7 +128,7 @@ api.get(
 api.get(
   "/v1/usage",
   routeHandler(async (req, res) => {
-    const result = await service.getUsage({
+    const result = await app.getUsage({
       startDate: req.query.startDate,
       endDate: req.query.endDate,
       userId: req.query.userId,
@@ -144,7 +143,7 @@ api.get(
 api.get(
   "/v1/analytics",
   routeHandler(async (req, res) => {
-    const result = await service.getAnalytics({
+    const result = await app.getAnalytics({
       startDate: req.query.startDate,
       endDate: req.query.endDate,
       groupBy: req.query.groupBy,
@@ -166,17 +165,17 @@ api.get(
 api.post(
   "/v1/budgets/reset",
   routeHandler(async (req, res) => {
-    const result = await service.resetAllBudgets();
-    res.json({ success: true, updatedUsers: result.length ?? result.rowCount ?? 0 });
+    const result = await app.resetAllBudgets();
+    res.json(result);
   })
 );
 
 api.post(
   "/v1/users/:id/budget/reset",
   routeHandler(async (req, res) => {
-    const user = await service.resetUserBudget(req.params.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ success: true, user });
+    const result = await app.resetUserBudget(req.params.id);
+    if (!result) return res.status(404).json({ error: "User not found" });
+    res.json(result);
   })
 );
 
@@ -185,7 +184,7 @@ api.post(
 api.get(
   "/v1/config",
   routeHandler(async (req, res) => {
-    res.json(service.getConfig());
+    res.json(app.getConfig());
   })
 );
 

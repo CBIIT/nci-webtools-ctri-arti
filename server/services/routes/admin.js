@@ -15,7 +15,7 @@ import {
 } from "shared/clients/users.js";
 import { requireRole } from "users/middleware.js";
 
-import { routeHandler } from "../utils.js";
+import { getAuthenticatedUser, routeHandler } from "../utils.js";
 
 const api = Router();
 
@@ -52,7 +52,7 @@ api.post(
   "/admin/profile",
   requireRole(),
   routeHandler(async (req, res) => {
-    const currentUser = req.session.user;
+    const currentUser = getAuthenticatedUser(req);
     const user = await updateProfile(currentUser.id, req.body);
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json(user);
@@ -128,7 +128,7 @@ api.post(
   requireRole("admin"),
   routeHandler(async (req, res) => {
     const result = await resetAllBudgets();
-    res.json({ success: true, updatedUsers: result.length ?? result.rowCount ?? 0 });
+    res.json(result);
   })
 );
 
@@ -136,9 +136,9 @@ api.post(
   "/admin/users/:id/reset-limit",
   requireRole("admin"),
   routeHandler(async (req, res) => {
-    const user = await resetUserBudget(req.params.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ success: true, user });
+    const result = await resetUserBudget(req.params.id);
+    if (!result) return res.status(404).json({ error: "User not found" });
+    res.json(result);
   })
 );
 

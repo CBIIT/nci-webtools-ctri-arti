@@ -10,6 +10,24 @@
 
 const USERS_URL = process.env.USERS_URL;
 let directClientPromise;
+const DIRECT_METHOD_NAMES = [
+  "getUser",
+  "resolveUser",
+  "findOrCreateUser",
+  "getUsers",
+  "createUser",
+  "updateUser",
+  "deleteUser",
+  "updateProfile",
+  "getRoles",
+  "recordUsage",
+  "getUserUsage",
+  "getUsage",
+  "getAnalytics",
+  "resetAllBudgets",
+  "resetUserBudget",
+  "getConfig",
+];
 
 async function httpRequest(method, path, body) {
   const response = await fetch(`${USERS_URL}${path}`, {
@@ -41,27 +59,12 @@ function buildQueryString(params) {
 async function getDirectClient() {
   if (!directClientPromise) {
     directClientPromise = (async () => {
-      const { UserService } = await import("users/user.js");
-      const service = new UserService();
-      return {
-        getUser: (id) => service.getUser(id),
-        getUserByEmail: (email) => service.getUserByEmail(email),
-        getUserByApiKey: (apiKey) => service.getUserByApiKey(apiKey),
-        findOrCreateUser: (data) => service.findOrCreateUser(data),
-        getUsers: (query) => service.getUsers(query),
-        createUser: (data) => service.createUser(data),
-        updateUser: (id, data) => service.updateUser(id, data),
-        deleteUser: (id) => service.deleteUser(id),
-        updateProfile: (id, data) => service.updateProfile(id, data),
-        getRoles: () => service.getRoles(),
-        recordUsage: (userId, rows) => service.recordUsage(userId, rows),
-        getUserUsage: (userId, query) => service.getUserUsage(userId, query),
-        getUsage: (query) => service.getUsage(query),
-        getAnalytics: (query) => service.getAnalytics(query),
-        resetAllBudgets: () => service.resetAllBudgets(),
-        resetUserBudget: (userId) => service.resetUserBudget(userId),
-        getConfig: () => service.getConfig(),
-      };
+      const [{ createUsersApplication }, { UserService }] = await Promise.all([
+        import("users/app.js"),
+        import("users/user.js"),
+      ]);
+
+      return createUsersApplication({ service: new UserService() });
     })();
   }
   return directClientPromise;
@@ -70,10 +73,7 @@ async function getDirectClient() {
 function buildHttpClient() {
   return {
     getUser: (id) => httpRequest("GET", `/api/v1/users/${id}`),
-    getUserByEmail: (email) =>
-      httpRequest("GET", `/api/v1/users/resolve${buildQueryString({ email })}`),
-    getUserByApiKey: (apiKey) =>
-      httpRequest("GET", `/api/v1/users/resolve${buildQueryString({ apiKey })}`),
+    resolveUser: (query) => httpRequest("GET", `/api/v1/users/resolve${buildQueryString(query)}`),
     findOrCreateUser: (data) => httpRequest("POST", "/api/v1/users/find-or-create", data),
     getUsers: (query) => httpRequest("GET", `/api/v1/users${buildQueryString(query)}`),
     createUser: (data) => httpRequest("POST", "/api/v1/users", data),
@@ -92,25 +92,20 @@ function buildHttpClient() {
   };
 }
 
-const directClient = {
-  getUser: async (id) => (await getDirectClient()).getUser(id),
-  getUserByEmail: async (email) => (await getDirectClient()).getUserByEmail(email),
-  getUserByApiKey: async (apiKey) => (await getDirectClient()).getUserByApiKey(apiKey),
-  findOrCreateUser: async (data) => (await getDirectClient()).findOrCreateUser(data),
-  getUsers: async (query) => (await getDirectClient()).getUsers(query),
-  createUser: async (data) => (await getDirectClient()).createUser(data),
-  updateUser: async (id, data) => (await getDirectClient()).updateUser(id, data),
-  deleteUser: async (id) => (await getDirectClient()).deleteUser(id),
-  updateProfile: async (id, data) => (await getDirectClient()).updateProfile(id, data),
-  getRoles: async () => (await getDirectClient()).getRoles(),
-  recordUsage: async (userId, rows) => (await getDirectClient()).recordUsage(userId, rows),
-  getUserUsage: async (userId, query) => (await getDirectClient()).getUserUsage(userId, query),
-  getUsage: async (query) => (await getDirectClient()).getUsage(query),
-  getAnalytics: async (query) => (await getDirectClient()).getAnalytics(query),
-  resetAllBudgets: async () => (await getDirectClient()).resetAllBudgets(),
-  resetUserBudget: async (userId) => (await getDirectClient()).resetUserBudget(userId),
-  getConfig: async () => (await getDirectClient()).getConfig(),
-};
+const directClient = Object.fromEntries(
+  DIRECT_METHOD_NAMES.map((methodName) => [
+    methodName,
+    async (...args) => (await getDirectClient())[methodName](...args),
+  ])
+);
+
+function getUserByEmail(email) {
+  return usersClient.resolveUser({ email });
+}
+
+function getUserByApiKey(apiKey) {
+  return usersClient.resolveUser({ apiKey });
+}
 
 const httpClient = buildHttpClient();
 
@@ -118,8 +113,7 @@ export const usersClient = USERS_URL ? httpClient : directClient;
 
 export const {
   getUser,
-  getUserByEmail,
-  getUserByApiKey,
+  resolveUser,
   findOrCreateUser,
   getUsers,
   createUser,
@@ -135,3 +129,5 @@ export const {
   resetUserBudget,
   getConfig,
 } = usersClient;
+
+export { getUserByEmail, getUserByApiKey };

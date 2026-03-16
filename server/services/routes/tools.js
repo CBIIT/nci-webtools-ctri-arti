@@ -9,7 +9,7 @@ import { proxyMiddleware } from "../proxy.js";
 import { getFile, listFiles } from "../s3.js";
 import { textract } from "../textract.js";
 import { getLanguages, translate } from "../translate.js";
-import { search } from "../utils.js";
+import { getAuthenticatedUser, getRequestContext, search } from "../utils.js";
 
 const { VERSION, S3_BUCKETS, EMAIL_DEV, EMAIL_ADMIN, EMAIL_USER_REPORTS } = process.env;
 const api = Router();
@@ -35,15 +35,15 @@ api.post("/textract", requireRole(), async (req, res) => {
 });
 
 api.post("/translate", requireRole(), async (req, res) => {
+  const context = getRequestContext(req);
   const result = await translate(req.body);
 
   // Track translate usage
-  const userId = req.session?.user?.id;
   const chars = req.body.text?.length || 0;
-  if (userId && chars > 0) {
+  if (context.userId && chars > 0) {
     try {
       const { trackUsage } = await import("gateway/usage.js");
-      await trackUsage(userId, "aws-translate", [{ quantity: chars, unit: "characters" }], {
+      await trackUsage(context.userId, "aws-translate", [{ quantity: chars, unit: "characters" }], {
         type: "translate",
       });
     } catch (err) {
@@ -59,19 +59,19 @@ api.get("/translate/languages", requireRole(), async (req, res) => {
 });
 
 api.post("/feedback", requireRole(), async (req, res) => {
+  const user = getAuthenticatedUser(req);
   const { feedback, context } = req.body;
-  const from = req.session?.user?.email;
-  const results = await sendFeedback({ from, feedback, context });
+  const results = await sendFeedback({ from: user.email, feedback, context });
   return res.json(results);
 });
 
-api.post("/log", async (req, res) => {
+api.post("/log", requireRole(), async (req, res) => {
+  const user = getAuthenticatedUser(req);
   const { metadata, reportSource } = req.body;
 
   const recipient =
     reportSource?.toUpperCase() === "USER" ? EMAIL_USER_REPORTS || EMAIL_ADMIN : EMAIL_DEV;
 
-  const user = req.session?.user;
   const userName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "N/A";
 
   const logData = {
@@ -140,8 +140,8 @@ api.get("/data", requireRole(), async (req, res) => {
 });
 
 api.post("/usage", requireRole(), async (req, res) => {
+  const user = getAuthenticatedUser(req);
   const { justification } = req.body;
-  const user = req.session?.user;
   const userName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "N/A";
   const userEmail = user?.email;
   const currentLimit = user?.budget;

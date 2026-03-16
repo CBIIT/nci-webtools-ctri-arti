@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./index.js",
+    "./app.js": "./app.js",
     "./api.js": "./api.js",
     "./inference.js": "./inference.js",
     "./upload-limits.js": "./upload-limits.js",

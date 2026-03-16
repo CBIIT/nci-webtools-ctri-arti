@@ -21,6 +21,10 @@ const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 
 // ===== Private helpers =====
 
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
 function serializeUtcTimestamp(value) {
   if (!value) return value;
   if (value instanceof Date) return value.toISOString();
@@ -57,6 +61,25 @@ function getGroupColumn(groupBy) {
   }
 }
 
+function normalizeBalanceFields(data, existing = null) {
+  const next = { ...data };
+  const budget = hasOwn(next, "budget") ? next.budget : existing?.budget;
+  const remainingProvided = hasOwn(next, "remaining");
+
+  if (budget === null || budget === undefined) {
+    if (!remainingProvided || next.remaining !== null) {
+      next.remaining = null;
+    }
+    return next;
+  }
+
+  if (!remainingProvided || next.remaining === null) {
+    next.remaining = budget;
+  }
+
+  return next;
+}
+
 export class UserService {
   // ===== Identity =====
 
@@ -87,7 +110,7 @@ export class UserService {
 
     const [{ value: userCount }] = await db.select({ value: count() }).from(User);
     const isFirstUser = userCount === 0;
-    const defaults = isFirstUser ? { roleID: 1 } : { roleID: 3, budget: 1 };
+    const defaults = isFirstUser ? { roleID: 1 } : { roleID: 3, budget: 1, remaining: 1 };
 
     const [user] = await db
       .insert(User)
@@ -163,7 +186,8 @@ export class UserService {
       userData.apiKey = `rsk_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
     }
 
-    const [user] = await db.insert(User).values(userData).returning();
+    const normalizedUserData = normalizeBalanceFields(userData);
+    const [user] = await db.insert(User).values(normalizedUserData).returning();
     return user;
   }
 
@@ -189,7 +213,12 @@ export class UserService {
     const [existing] = await db.select().from(User).where(eq(User.id, +id)).limit(1);
     if (!existing) return null;
 
-    const [user] = await db.update(User).set(userData).where(eq(User.id, +id)).returning();
+    const normalizedUserData = normalizeBalanceFields(userData, existing);
+    const [user] = await db
+      .update(User)
+      .set(normalizedUserData)
+      .where(eq(User.id, +id))
+      .returning();
     return user;
   }
 
@@ -233,9 +262,9 @@ export class UserService {
       await db
         .update(User)
         .set({
-          remaining: sql`GREATEST(0, COALESCE(${User.remaining}, 0) - ${totalCost})`,
+          remaining: sql`GREATEST(0, COALESCE(${User.remaining}, ${User.budget}, 0) - ${totalCost})`,
         })
-        .where(eq(User.id, userId));
+        .where(and(eq(User.id, userId), isNotNull(User.budget)));
     }
 
     return inserted;
