@@ -6,7 +6,7 @@ import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import { vector } from "@electric-sql/pglite/vector";
 import { auditRelationalIntegrity } from "database/relational-audit.js";
 import * as schema from "database/schema.js";
-import { pushSchema } from "database/sync.js";
+import { getResultRows, pushSchema } from "database/sync.js";
 
 import { createTestDb, createSeededTestDb } from "./setup.js";
 
@@ -205,5 +205,26 @@ test("pushSchema", async (t) => {
     } finally {
       await client.close();
     }
+  });
+});
+
+test("getResultRows", async (t) => {
+  await t.test("unwraps PGlite exec SELECT results into row objects", async () => {
+    const client = new PGlite("memory://", { extensions: { pg_trgm, vector } });
+
+    try {
+      await client.exec(`CREATE TABLE "Migration" ("name" text PRIMARY KEY)`);
+      await client.exec(`INSERT INTO "Migration" ("name") VALUES ('0000_init.sql')`);
+
+      const result = await client.exec(`SELECT "name" FROM "Migration"`);
+      assert.deepStrictEqual(getResultRows(result), [{ name: "0000_init.sql" }]);
+    } finally {
+      await client.close();
+    }
+  });
+
+  await t.test("passes through postgres-style row arrays unchanged", () => {
+    const rows = [{ name: "0000_init.sql" }];
+    assert.deepStrictEqual(getResultRows(rows), rows);
   });
 });
