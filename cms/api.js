@@ -20,11 +20,28 @@ const service = new ConversationService();
 
 // ===== SHARED MIDDLEWARE =====
 
+function parseUserIdHeader(headerValue) {
+  const value = Array.isArray(headerValue) ? headerValue[0] : headerValue;
+  if (value === undefined) return { ok: false };
+
+  const normalized = String(value).trim();
+  if (!normalized || normalized === "null" || normalized === "undefined") {
+    return { ok: true, value: null };
+  }
+
+  if (!/^\d+$/.test(normalized)) {
+    return { ok: false };
+  }
+
+  return { ok: true, value: Number(normalized) };
+}
+
 function userIdMiddleware(req, res, next) {
-  req.userId = req.headers["x-user-id"];
-  if (!req.userId) {
+  const parsed = parseUserIdHeader(req.headers["x-user-id"]);
+  if (!parsed.ok) {
     return res.status(400).json({ error: "X-User-Id header required" });
   }
+  req.userId = parsed.value;
   next();
 }
 

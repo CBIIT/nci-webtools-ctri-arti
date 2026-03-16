@@ -77,6 +77,12 @@ export class ConversationService {
       : or(eq(Resource.userID, userId), isNull(Resource.userID));
   }
 
+  #agentReadCondition(userId) {
+    return userId === null || userId === undefined
+      ? isNull(Agent.userID)
+      : or(eq(Agent.userID, userId), isNull(Agent.userID));
+  }
+
   #resourceWriteCondition(userId) {
     return eq(Resource.userID, userId);
   }
@@ -274,7 +280,7 @@ export class ConversationService {
 
   async getAgent(userId, agentId) {
     const agent = await db.query.Agent.findFirst({
-      where: and(eq(Agent.id, agentId), or(eq(Agent.userID, userId), isNull(Agent.userID))),
+      where: and(eq(Agent.id, agentId), this.#agentReadCondition(userId)),
       with: {
         Prompt: { columns: { id: true, name: true, content: true } },
         AgentTools: { with: { Tool: { columns: { name: true } } } },
@@ -291,7 +297,7 @@ export class ConversationService {
 
   async getAgents(userId) {
     const agents = await db.query.Agent.findMany({
-      where: or(eq(Agent.userID, userId), isNull(Agent.userID)),
+      where: this.#agentReadCondition(userId),
       with: {
         Prompt: { columns: { id: true, name: true, content: true } },
         AgentTools: { with: { Tool: { columns: { name: true } } } },
