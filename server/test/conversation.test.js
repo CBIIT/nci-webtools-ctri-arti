@@ -62,6 +62,13 @@ test("ConversationService", async (t) => {
       assert.ok(found);
     });
 
+    await at.test("getAgents with null userId only lists global agents", async () => {
+      const agents = await svc.getAgents(null);
+      assert.ok(agents.length >= 1);
+      assert.ok(agents.every((agent) => agent.userID === null));
+      assert.ok(!agents.some((agent) => agent.id === agentId));
+    });
+
     await at.test("updateAgent", async () => {
       const updated = await svc.updateAgent(testUser.id, agentId, { name: "Updated Agent" });
       assert.ok(updated);
