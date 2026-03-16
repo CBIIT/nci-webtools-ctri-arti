@@ -105,6 +105,21 @@ export function createCertificate(opts = {}) {
 export { getDateRange } from "shared/utils.js";
 
 /**
+ * Extracts the authenticated user ID from a request, or throws 401.
+ * @param {import("express").Request} req
+ * @returns {string} userId
+ */
+export function getUserId(req) {
+  const userId = req.session?.user?.id;
+  if (!userId) {
+    const error = new Error("Authentication required");
+    error.statusCode = 401;
+    throw error;
+  }
+  return userId;
+}
+
+/**
  * Wraps an async Express route handler with automatic error forwarding.
  * Eliminates repetitive try/catch/next boilerplate in route definitions.
  *

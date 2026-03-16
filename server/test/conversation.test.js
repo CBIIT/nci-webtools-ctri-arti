@@ -194,63 +194,66 @@ test("ConversationService", async (t) => {
       assert.strictEqual(messages[1].role, "assistant");
     });
 
-    await mt.test("getMessages preserves tool turn order even when timestamps disagree", async () => {
-      const conversation = await svc.createConversation(testUser.id, {
-        title: "Tool Ordering Test",
-      });
+    await mt.test(
+      "getMessages preserves tool turn order even when timestamps disagree",
+      async () => {
+        const conversation = await svc.createConversation(testUser.id, {
+          title: "Tool Ordering Test",
+        });
 
-      const [assistantToolUse] = await db
-        .insert(Message)
-        .values({
-          conversationID: conversation.id,
-          role: "assistant",
-          content: [
-            {
-              toolUse: {
-                toolUseId: "tool_1",
-                name: "search",
-                input: { query: "nci" },
+        const [assistantToolUse] = await db
+          .insert(Message)
+          .values({
+            conversationID: conversation.id,
+            role: "assistant",
+            content: [
+              {
+                toolUse: {
+                  toolUseId: "tool_1",
+                  name: "search",
+                  input: { query: "nci" },
+                },
               },
-            },
-          ],
-          createdAt: new Date("2026-01-01T00:00:02.000Z"),
-        })
-        .returning();
+            ],
+            createdAt: new Date("2026-01-01T00:00:02.000Z"),
+          })
+          .returning();
 
-      const [toolResults] = await db
-        .insert(Message)
-        .values({
-          conversationID: conversation.id,
-          role: "user",
-          content: [
-            {
-              toolResult: {
-                toolUseId: "tool_1",
-                content: [{ json: { results: [{ title: "NCI" }] } }],
+        const [toolResults] = await db
+          .insert(Message)
+          .values({
+            conversationID: conversation.id,
+            role: "user",
+            content: [
+              {
+                toolResult: {
+                  toolUseId: "tool_1",
+                  content: [{ json: { results: [{ title: "NCI" }] } }],
+                },
               },
-            },
-          ],
-          createdAt: new Date("2026-01-01T00:00:01.000Z"),
-        })
-        .returning();
+            ],
+            createdAt: new Date("2026-01-01T00:00:01.000Z"),
+          })
+          .returning();
 
-      const [assistantFinal] = await db
-        .insert(Message)
-        .values({
-          conversationID: conversation.id,
-          role: "assistant",
-          content: [{ text: "Done" }],
-          createdAt: new Date("2026-01-01T00:00:03.000Z"),
-        })
-        .returning();
+        const [assistantFinal] = await db
+          .insert(Message)
+          .values({
+            conversationID: conversation.id,
+            role: "assistant",
+            content: [{ text: "Done" }],
+            createdAt: new Date("2026-01-01T00:00:03.000Z"),
+          })
+          .returning();
 
-      const messages = await svc.getMessages(testUser.id, conversation.id);
-      assert.deepStrictEqual(
-        messages.map((message) => message.id),
-        [assistantToolUse.id, toolResults.id, assistantFinal.id],
-        "messages should follow insert order so tool results stay paired with the preceding tool use"
-      );
-    });
+        const messages = await svc.getMessages(testUser.id, conversation.id);
+        assert.deepStrictEqual(
+          messages.map((message) => message.id),
+          [assistantToolUse.id, toolResults.id, assistantFinal.id],
+          "messages should follow insert order so tool results stay paired with the preceding tool use"
+        );
+      }
+    );
 
     await mt.test("updateMessage", async () => {
       const updated = await svc.updateMessage(testUser.id, messageId, {
@@ -301,7 +304,9 @@ test("ConversationService", async (t) => {
     });
 
     await ct.test("getContext also preserves insert order for tool turns", async () => {
-      const conversation = await svc.createConversation(testUser.id, { title: "Context Ordering Test" });
+      const conversation = await svc.createConversation(testUser.id, {
+        title: "Context Ordering Test",
+      });
 
       const [assistantToolUse] = await db
         .insert(Message)

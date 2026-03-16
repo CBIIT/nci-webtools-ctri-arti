@@ -1,4 +1,3 @@
-
 import { Globe } from "lucide-solid";
 import { parse } from "marked";
 import html from "solid-js/html";
@@ -26,8 +25,15 @@ export default function BrowseTool(props) {
     ${ToolHeader({
       icon: html`<${Globe} size="16" class="text-muted-contrast" />`,
       title: () =>
-        (props.message?.toolUse?.input?.url || []).map((u) => { try { return new URL(u).hostname; } catch { return u; } }).join(", ") ||
-        "Browsing...",
+        (props.message?.toolUse?.input?.url || [])
+          .map((u) => {
+            try {
+              return new URL(u).hostname;
+            } catch {
+              return u;
+            }
+          })
+          .join(", ") || "Browsing...",
       right: () =>
         html`<small class="text-muted-contrast">
           ${props.message?.toolUse?.input?.url?.length || 0} sources

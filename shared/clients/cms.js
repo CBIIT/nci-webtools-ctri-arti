@@ -57,7 +57,8 @@ async function getDirectClient() {
           const result = await service.getConversations(userId, { limit, offset });
           return normalizeConversationPage(result, { limit, offset });
         },
-        getConversation: (userId, conversationId) => service.getConversation(userId, conversationId),
+        getConversation: (userId, conversationId) =>
+          service.getConversation(userId, conversationId),
         updateConversation: (userId, conversationId, updates) =>
           service.updateConversation(userId, conversationId, updates),
         deleteConversation: (userId, conversationId) =>
@@ -71,7 +72,8 @@ async function getDirectClient() {
           service.addMessage(userId, conversationId, data),
         getMessages: (userId, conversationId) => service.getMessages(userId, conversationId),
         getMessage: (userId, messageId) => service.getMessage(userId, messageId),
-        updateMessage: (userId, messageId, updates) => service.updateMessage(userId, messageId, updates),
+        updateMessage: (userId, messageId, updates) =>
+          service.updateMessage(userId, messageId, updates),
         deleteMessage: (userId, messageId) => service.deleteMessage(userId, messageId),
 
         createTool: (data) => service.createTool(data),
@@ -99,7 +101,8 @@ async function getDirectClient() {
           service.addVectors(userId, conversationId, vectors),
         getVectorsByConversation: (userId, conversationId) =>
           service.getVectorsByConversation(userId, conversationId),
-        getVectorsByResource: (userId, resourceId) => service.getVectorsByResource(userId, resourceId),
+        getVectorsByResource: (userId, resourceId) =>
+          service.getVectorsByResource(userId, resourceId),
         searchVectors: (params) => service.searchVectors(params),
         deleteVectorsByResource: (userId, resourceId) =>
           service.deleteVectorsByResource(userId, resourceId),
@@ -165,8 +168,10 @@ const directClient = {
     (await getDirectClient()).updateAgent(userId, agentId, updates),
   deleteAgent: async (userId, agentId) => (await getDirectClient()).deleteAgent(userId, agentId),
 
-  createConversation: async (userId, data) => (await getDirectClient()).createConversation(userId, data),
-  getConversations: async (userId, options) => (await getDirectClient()).getConversations(userId, options),
+  createConversation: async (userId, data) =>
+    (await getDirectClient()).createConversation(userId, data),
+  getConversations: async (userId, options) =>
+    (await getDirectClient()).getConversations(userId, options),
   getConversation: async (userId, conversationId) =>
     (await getDirectClient()).getConversation(userId, conversationId),
   updateConversation: async (userId, conversationId, updates) =>
@@ -187,7 +192,8 @@ const directClient = {
   getMessage: async (userId, messageId) => (await getDirectClient()).getMessage(userId, messageId),
   updateMessage: async (userId, messageId, updates) =>
     (await getDirectClient()).updateMessage(userId, messageId, updates),
-  deleteMessage: async (userId, messageId) => (await getDirectClient()).deleteMessage(userId, messageId),
+  deleteMessage: async (userId, messageId) =>
+    (await getDirectClient()).deleteMessage(userId, messageId),
 
   createTool: async (data) => (await getDirectClient()).createTool(data),
   getTool: async (toolId) => (await getDirectClient()).getTool(toolId),
@@ -198,11 +204,13 @@ const directClient = {
   createPrompt: async (data) => (await getDirectClient()).createPrompt(data),
   getPrompt: async (promptId) => (await getDirectClient()).getPrompt(promptId),
   getPrompts: async (options) => (await getDirectClient()).getPrompts(options),
-  updatePrompt: async (promptId, updates) => (await getDirectClient()).updatePrompt(promptId, updates),
+  updatePrompt: async (promptId, updates) =>
+    (await getDirectClient()).updatePrompt(promptId, updates),
   deletePrompt: async (promptId) => (await getDirectClient()).deletePrompt(promptId),
 
   addResource: async (userId, data) => (await getDirectClient()).addResource(userId, data),
-  getResource: async (userId, resourceId) => (await getDirectClient()).getResource(userId, resourceId),
+  getResource: async (userId, resourceId) =>
+    (await getDirectClient()).getResource(userId, resourceId),
   updateResource: async (userId, resourceId, updates) =>
     (await getDirectClient()).updateResource(userId, resourceId, updates),
   getResourcesByAgent: async (userId, agentId) =>
@@ -224,7 +232,8 @@ const directClient = {
   deleteVectorsByConversation: async (userId, conversationId) =>
     (await getDirectClient()).deleteVectorsByConversation(userId, conversationId),
 
-  searchMessages: async (userId, params) => (await getDirectClient()).searchMessages(userId, params),
+  searchMessages: async (userId, params) =>
+    (await getDirectClient()).searchMessages(userId, params),
   searchResourceVectors: async (userId, params) =>
     (await getDirectClient()).searchResourceVectors(userId, params),
   searchChunks: async (userId, params) => (await getDirectClient()).searchChunks(userId, params),
