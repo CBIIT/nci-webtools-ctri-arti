@@ -26,6 +26,16 @@ test("server auth posture keeps public routes explicit", async (t) => {
     assert.equal(logoutRes.status, 302);
   });
 
+  await t.test("session resolves an API-key-authenticated user for browser clients", async () => {
+    const sessionRes = await request(app)
+      .get("/api/v1/session")
+      .set("X-API-Key", process.env.TEST_API_KEY);
+
+    assert.equal(sessionRes.status, 200);
+    assert.ok(sessionRes.body.user, "session should return a user when authenticated by API key");
+    assert.equal(sessionRes.body.user.email, "test@test.com");
+  });
+
   await t.test("protected routes reject unauthenticated access", async () => {
     const [searchRes, conversationsRes, usageRes, logRes] = await Promise.all([
       request(app).get("/api/v1/search"),
