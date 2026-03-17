@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { cmsClient } from "shared/clients/cms.js";
-import { requireRole } from "users/middleware.js";
 
+import { requireRole } from "../../auth.js";
+import { createAgent, deleteAgent, getAgent, getAgents, updateAgent } from "../../cms.js";
 import { getRequestContext, routeHandler } from "../utils.js";
 
 const api = Router();
@@ -11,7 +11,7 @@ api.post(
   requireRole(),
   routeHandler(async (req, res) => {
     const context = getRequestContext(req);
-    const agent = await cmsClient.createAgent(context, req.body);
+    const agent = await createAgent(context, req.body);
     res.status(201).json(agent);
   })
 );
@@ -21,7 +21,7 @@ api.get(
   requireRole(),
   routeHandler(async (req, res) => {
     const context = getRequestContext(req);
-    const agents = await cmsClient.getAgents(context);
+    const agents = await getAgents(context);
     res.json(agents);
   })
 );
@@ -31,7 +31,7 @@ api.get(
   requireRole(),
   routeHandler(async (req, res) => {
     const context = getRequestContext(req);
-    const agent = await cmsClient.getAgent(context, req.params.id);
+    const agent = await getAgent(context, req.params.id);
     if (!agent) return res.status(404).json({ error: "Agent not found" });
     res.json(agent);
   })
@@ -42,7 +42,7 @@ api.put(
   requireRole(),
   routeHandler(async (req, res) => {
     const context = getRequestContext(req);
-    const agent = await cmsClient.updateAgent(context, req.params.id, req.body);
+    const agent = await updateAgent(context, req.params.id, req.body);
     res.json(agent);
   })
 );
@@ -52,7 +52,7 @@ api.delete(
   requireRole(),
   routeHandler(async (req, res) => {
     const context = getRequestContext(req);
-    await cmsClient.deleteAgent(context, req.params.id);
+    await deleteAgent(context, req.params.id);
     res.json({ success: true });
   })
 );

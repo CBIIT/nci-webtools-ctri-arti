@@ -1,25 +1,23 @@
 import { Router } from "express";
+
+import { requireRole } from "../../auth.js";
 import {
-  getUsers,
-  getUser,
   createUser,
-  updateUser,
   deleteUser,
-  updateProfile,
-  getRoles,
-  getUserUsage,
-  getUsage,
   getAnalytics,
+  getRoles,
+  getUsage,
+  getUser,
+  getUsers,
+  getUserUsage,
   resetAllBudgets,
   resetUserBudget,
-} from "shared/clients/users.js";
-import { requireRole } from "users/middleware.js";
-
+  updateProfile,
+  updateUser,
+} from "../../users.js";
 import { getAuthenticatedUser, routeHandler } from "../utils.js";
 
 const api = Router();
-
-// ===== User Management =====
 
 api.get(
   "/admin/users",
@@ -80,8 +78,6 @@ api.delete(
   })
 );
 
-// ===== Usage =====
-
 api.get(
   "/admin/users/:id/usage",
   requireRole("admin"),
@@ -101,7 +97,7 @@ api.get(
 api.get(
   "/admin/roles",
   requireRole("admin"),
-  routeHandler(async (req, res) => {
+  routeHandler(async (_req, res) => {
     const roles = await getRoles();
     res.json(roles);
   })
@@ -126,7 +122,7 @@ api.get(
 api.post(
   "/admin/usage/reset",
   requireRole("admin"),
-  routeHandler(async (req, res) => {
+  routeHandler(async (_req, res) => {
     const result = await resetAllBudgets();
     res.json(result);
   })
@@ -141,8 +137,6 @@ api.post(
     res.json(result);
   })
 );
-
-// ===== Analytics =====
 
 api.get(
   "/admin/analytics",

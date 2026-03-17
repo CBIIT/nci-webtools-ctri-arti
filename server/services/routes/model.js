@@ -1,7 +1,7 @@
 import { json, Router } from "express";
-import { invoke, listModels } from "shared/clients/gateway.js";
-import { requireRole } from "users/middleware.js";
 
+import { requireRole } from "../../auth.js";
+import { invoke, listModels } from "../../gateway.js";
 import { createHttpError, getRequestContext } from "../utils.js";
 
 const api = Router();
@@ -19,22 +19,19 @@ api.post("/model", requireRole(), async (req, res, next) => {
       ...req.body,
     });
 
-    // Handle rate limit error
     if (result.status === 429) {
       return res.status(429).json({ error: result.error });
     }
 
-    // For non-streaming responses
     if (!result?.stream) {
       return res.json(result);
     }
 
-    // For streaming responses
     for await (const message of result.stream) {
       try {
         res.write(JSON.stringify(message) + "\n");
-      } catch (err) {
-        console.error("Error processing stream message:", err);
+      } catch (error) {
+        console.error("Error processing stream message:", error);
       }
     }
 
@@ -45,7 +42,7 @@ api.post("/model", requireRole(), async (req, res, next) => {
   }
 });
 
-api.get("/model/list", requireRole(), async (req, res, next) => {
+api.get("/model/list", requireRole(), async (_req, res, next) => {
   try {
     const results = await listModels();
     res.json(results);

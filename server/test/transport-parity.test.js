@@ -1,26 +1,26 @@
-import http from "node:http";
-import assert from "node:assert/strict";
-import { fileURLToPath } from "node:url";
-import { resolve } from "node:path";
-import { test } from "node:test";
-import { pathToFileURL } from "node:url";
-
 import db, { Agent, Model, Resource, Usage, User } from "database";
+import assert from "node:assert/strict";
+import http from "node:http";
+import { test } from "node:test";
+
+import { createAgentsRouter } from "agents/api.js";
+import { createAgentsApplication } from "agents/app.js";
+import { createAgentsRemote } from "agents/remote.js";
 import { v1Router as cmsApi } from "cms/api.js";
 import { ConversationService } from "cms/conversation.js";
+import { createCmsRemote } from "cms/remote.js";
+import { createCmsService } from "cms/service.js";
 import { eq, and } from "drizzle-orm";
 import express from "express";
-import { createAgentsApplication } from "agents/app.js";
-import { createAgentsRouter } from "agents/api.js";
 import gatewayApi from "gateway/api.js";
+import { createGatewayRemote } from "gateway/remote.js";
+import { createGatewayService } from "gateway/service.js";
 import { normalizeEmbeddingUsageItems } from "shared/gateway-usage.js";
-import {
-  createAnonymousRequestContext,
-  createUserRequestContext,
-} from "shared/request-context.js";
-import usersApi from "../../users/api.js";
+import { createAnonymousRequestContext, createUserRequestContext } from "shared/request-context.js";
+import { createUsersRemote } from "users/remote.js";
+import { createUsersService } from "users/service.js";
 
-const ROOT = fileURLToPath(new URL("../..", import.meta.url));
+import usersApi from "../../users/api.js";
 
 function createHttpApp(router, basePath = "/") {
   const app = express();
@@ -35,27 +35,11 @@ async function startServer(router, basePath = "/") {
   return {
     server,
     url: `http://127.0.0.1:${port}`,
-    close: () => new Promise((resolvePromise, reject) => server.close((error) => (error ? reject(error) : resolvePromise()))),
+    close: () =>
+      new Promise((resolvePromise, reject) =>
+        server.close((error) => (error ? reject(error) : resolvePromise()))
+      ),
   };
-}
-
-async function importFresh(relativePath, env = {}) {
-  const previous = new Map();
-  for (const [key, value] of Object.entries(env)) {
-    previous.set(key, process.env[key]);
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
-  }
-
-  try {
-    const href = `${pathToFileURL(resolve(ROOT, relativePath)).href}?test=${Date.now()}-${Math.random()}`;
-    return await import(href);
-  } finally {
-    for (const [key, value] of previous.entries()) {
-      if (value === undefined) delete process.env[key];
-      else process.env[key] = value;
-    }
-  }
 }
 
 test("transport parity", async (t) => {
@@ -69,8 +53,8 @@ test("transport parity", async (t) => {
 
     try {
       const anonymousContext = createAnonymousRequestContext({ source: "direct" });
-      const directClient = await importFresh("shared/clients/cms.js", { CMS_URL: undefined });
-      const httpClient = await importFresh("shared/clients/cms.js", { CMS_URL: cmsServer.url });
+      const directClient = createCmsService({ source: "direct" });
+      const httpClient = createCmsRemote({ baseUrl: cmsServer.url });
 
       const [directAgents, httpAgents] = await Promise.all([
         directClient.getAgents(anonymousContext),
@@ -82,7 +66,10 @@ test("transport parity", async (t) => {
         httpAgents.map((agent) => ({ id: agent.id, name: agent.name, userID: agent.userID }))
       );
       assert.ok(directAgents.every((agent) => agent.userID === null));
-      assert.equal(directAgents.some((agent) => agent.id === privateAgent.id), false);
+      assert.equal(
+        directAgents.some((agent) => agent.id === privateAgent.id),
+        false
+      );
     } finally {
       await svc.deleteAgent(user.id, privateAgent.id);
       await cmsServer.close();
@@ -93,8 +80,8 @@ test("transport parity", async (t) => {
     const usersServer = await startServer(usersApi, "/api");
 
     try {
-      const directClient = await importFresh("shared/clients/users.js", { USERS_URL: undefined });
-      const httpClient = await importFresh("shared/clients/users.js", { USERS_URL: usersServer.url });
+      const directClient = createUsersService();
+      const httpClient = createUsersRemote({ baseUrl: usersServer.url });
 
       const [directUser, httpUser] = await Promise.all([
         directClient.getUserByEmail("test@test.com"),
@@ -139,8 +126,8 @@ test("transport parity", async (t) => {
       .returning();
 
     try {
-      const directClient = await importFresh("shared/clients/users.js", { USERS_URL: undefined });
-      const httpClient = await importFresh("shared/clients/users.js", { USERS_URL: usersServer.url });
+      const directClient = createUsersService();
+      const httpClient = createUsersRemote({ baseUrl: usersServer.url });
 
       const [directSingleReset, httpSingleReset] = await Promise.all([
         directClient.resetUserBudget(directUser.id),
@@ -222,7 +209,8 @@ test("transport parity", async (t) => {
       appendUserMessage: (userId, data) => svc.appendUserMessage(userId, data),
       getResourcesByAgent: (userId, agentId) => svc.getResourcesByAgent(userId, agentId),
       summarize: async function* () {},
-      getContext: (userId, conversationId, options) => svc.getContext(userId, conversationId, options),
+      getContext: (userId, conversationId, options) =>
+        svc.getContext(userId, conversationId, options),
       appendAssistantMessage: (userId, data) => svc.appendAssistantMessage(userId, data),
       storeConversationResource: (userId, data) => svc.storeConversationResource(userId, data),
       appendToolResultsMessage: (userId, data) => svc.appendToolResultsMessage(userId, data),
@@ -246,9 +234,7 @@ test("transport parity", async (t) => {
 
     try {
       const context = createUserRequestContext(user.id, { source: "direct" });
-      const httpClient = await importFresh("shared/clients/agents.js", {
-        AGENTS_URL: agentsServer.url,
-      });
+      const httpClient = createAgentsRemote({ baseUrl: agentsServer.url });
 
       async function collectEvents(stream) {
         const events = [];
@@ -269,7 +255,7 @@ test("transport parity", async (t) => {
           })
         ),
         collectEvents(
-          httpClient.agentsClient.chat({
+          httpClient.chat({
             context,
             agentId: agent.id,
             conversationId: httpConversation.id,
@@ -342,8 +328,8 @@ test("transport parity", async (t) => {
       .returning();
 
     try {
-      const directClient = await importFresh("shared/clients/gateway.js", { GATEWAY_URL: undefined });
-      const httpClient = await importFresh("shared/clients/gateway.js", { GATEWAY_URL: gatewayServer.url });
+      const directClient = createGatewayService();
+      const httpClient = createGatewayRemote({ baseUrl: gatewayServer.url });
 
       const input = {
         model: modelName,
@@ -401,28 +387,32 @@ test("transport parity", async (t) => {
     const gatewayServer = await startServer(gatewayApi, "/api");
 
     try {
-      const directClient = await importFresh("shared/clients/gateway.js", { GATEWAY_URL: undefined });
-      const httpClient = await importFresh("shared/clients/gateway.js", { GATEWAY_URL: gatewayServer.url });
+      const directClient = createGatewayService();
+      const httpClient = createGatewayRemote({ baseUrl: gatewayServer.url });
 
       const [directError, httpError] = await Promise.all([
-        directClient.invoke({
-          userID: null,
-          model: "missing-model-for-parity",
-          messages: [{ role: "user", content: [{ text: "hello" }] }],
-          stream: false,
-        }).then(
-          () => null,
-          (error) => error
-        ),
-        httpClient.invoke({
-          userID: null,
-          model: "missing-model-for-parity",
-          messages: [{ role: "user", content: [{ text: "hello" }] }],
-          stream: false,
-        }).then(
-          () => null,
-          (error) => error
-        ),
+        directClient
+          .invoke({
+            userID: null,
+            model: "missing-model-for-parity",
+            messages: [{ role: "user", content: [{ text: "hello" }] }],
+            stream: false,
+          })
+          .then(
+            () => null,
+            (error) => error
+          ),
+        httpClient
+          .invoke({
+            userID: null,
+            model: "missing-model-for-parity",
+            messages: [{ role: "user", content: [{ text: "hello" }] }],
+            stream: false,
+          })
+          .then(
+            () => null,
+            (error) => error
+          ),
       ]);
 
       assert.ok(directError, "direct mode should reject");
@@ -495,8 +485,8 @@ test("transport parity", async (t) => {
 
     try {
       const context = createUserRequestContext(user.id, { source: "direct" });
-      const directClient = await importFresh("shared/clients/cms.js", { CMS_URL: undefined });
-      const httpClient = await importFresh("shared/clients/cms.js", { CMS_URL: cmsServer.url });
+      const directClient = createCmsService({ source: "direct" });
+      const httpClient = createCmsRemote({ baseUrl: cmsServer.url });
 
       async function expectSameError(runDirect, runHttp, expectedMessage, expectedStatus = 404) {
         const [directError, httpError] = await Promise.all([
@@ -604,8 +594,8 @@ test("transport parity", async (t) => {
 
     try {
       const context = createUserRequestContext(user.id, { source: "direct" });
-      const directClient = await importFresh("shared/clients/cms.js", { CMS_URL: undefined });
-      const httpClient = await importFresh("shared/clients/cms.js", { CMS_URL: cmsServer.url });
+      const directClient = createCmsService({ source: "direct" });
+      const httpClient = createCmsRemote({ baseUrl: cmsServer.url });
 
       async function expectSameError(runDirect, runHttp, expectedMessage, expectedStatus) {
         const [directError, httpError] = await Promise.all([

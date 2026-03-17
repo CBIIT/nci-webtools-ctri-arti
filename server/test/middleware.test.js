@@ -4,8 +4,8 @@ import { after, test } from "node:test";
 
 import { eq } from "drizzle-orm";
 import { logRequests, nocache } from "shared/middleware.js";
-import { requireRole } from "users/middleware.js";
 
+import { requireRole } from "../auth.js";
 import { logErrors } from "../services/middleware.js";
 
 function createMockReq(overrides = {}) {

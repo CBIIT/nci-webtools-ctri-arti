@@ -13,7 +13,6 @@ import db, {
 
 import { eq, and, or, isNull, isNotNull, inArray, gte, lte, asc, desc, sql } from "drizzle-orm";
 import { chunkText } from "shared/chunker.js";
-import { embed as gatewayEmbed } from "shared/clients/gateway.js";
 import {
   assertValidEmbedding,
   getEmbeddingsFromResult,
@@ -23,11 +22,13 @@ import {
   RESOURCE_CHUNK_SIZE,
 } from "shared/embeddings.js";
 
-let _invoke = null;
-let _embed = gatewayEmbed;
 const _summarizing = new Set();
 const CONVERSATION_SUMMARY_TOKEN = "[Conversation Summary]";
 const DEFAULT_CHAT_MODEL = "us.anthropic.claude-sonnet-4-6";
+
+async function missingEmbedDependency() {
+  throw new Error("ConversationService embed dependency is required");
+}
 
 function buildGuardrailRuntimeConfig(guardrail) {
   if (!guardrail?.awsGuardrailId) return null;
@@ -68,12 +69,9 @@ function createNotFoundError(message) {
 }
 
 export class ConversationService {
-  static setInvoker(fn) {
-    _invoke = fn;
-  }
-
-  static setEmbedder(fn) {
-    _embed = fn;
+  constructor({ invoke = null, embed = missingEmbedDependency } = {}) {
+    this.invokeModel = invoke;
+    this.embedContent = embed;
   }
 
   #isTextResource(resource) {
@@ -181,7 +179,7 @@ export class ConversationService {
 
       if (!chunks.length) return [];
 
-      const result = await _embed({
+      const result = await this.embedContent({
         userID: userId,
         model: NOVA_EMBEDDING_MODEL,
         content: chunks,
@@ -199,7 +197,7 @@ export class ConversationService {
     }
 
     if (resource?.type === "image" && typeof resource.content === "string" && resource.content) {
-      const result = await _embed({
+      const result = await this.embedContent({
         userID: userId,
         model: NOVA_EMBEDDING_MODEL,
         content: [{ image: resource.content }],
@@ -645,7 +643,7 @@ export class ConversationService {
     conversationId,
     { model, system, tools, thoughtBudget, userText, requestId } = {}
   ) {
-    if (!_invoke) return;
+    if (!this.invokeModel) return;
 
     const check = await this.checkSummarizationNeeded(userId, conversationId);
     if (!check) return;
@@ -666,7 +664,7 @@ export class ConversationService {
       "\n\n" +
       "Continue addressing this message in your next response.";
 
-    const result = await _invoke({
+    const result = await this.invokeModel({
       type: "chat-summary",
       model: model || check.model,
       stream: true,
@@ -1114,5 +1112,3 @@ export class ConversationService {
       .limit(limit);
   }
 }
-
-export const conversationService = new ConversationService();

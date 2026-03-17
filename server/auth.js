@@ -1,27 +1,26 @@
-import { getUser, getUserByApiKey } from "shared/clients/users.js";
+import { resolveIdentity } from "./users.js";
 
 export function requireRole(requiredRole) {
   return async (req, res, next) => {
     try {
-      const apiKey = req.headers["x-api-key"];
-      const id = req.session?.user?.id;
       const roleRequirement = requiredRole ?? true;
+      const apiKey = req.headers["x-api-key"];
+      const sessionUserId = req.session?.user?.id;
 
-      if (!apiKey && !id) {
+      if (!apiKey && !sessionUserId) {
         return roleRequirement
           ? res.status(401).json({ error: "Authentication required" })
           : next();
       }
 
-      const result = apiKey ? await getUserByApiKey(apiKey) : await getUser(id);
-
-      if (!result) {
+      const user = await resolveIdentity({ sessionUserId, apiKey });
+      if (!user) {
         return roleRequirement
           ? res.status(401).json({ error: "Authentication required" })
           : next();
       }
 
-      const role = result.Role;
+      const role = user.Role;
       if (
         roleRequirement !== true &&
         roleRequirement &&
@@ -32,10 +31,10 @@ export function requireRole(requiredRole) {
       }
 
       req.session ||= {};
-      req.session.user = result;
+      req.session.user = user;
       next();
-    } catch (err) {
-      next(err);
+    } catch (error) {
+      next(error);
     }
   };
 }

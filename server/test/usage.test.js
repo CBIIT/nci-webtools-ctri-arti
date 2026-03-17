@@ -13,8 +13,14 @@ import assert from "node:assert";
 import { test } from "node:test";
 
 import { eq } from "drizzle-orm";
-import { trackModelUsage, trackUsage } from "gateway/usage.js";
+import { createGatewayUsage } from "gateway/usage.js";
+import { createUsersService } from "users/service.js";
 import { UserService } from "users/user.js";
+
+const users = createUsersService();
+const { trackModelUsage, trackUsage } = createGatewayUsage({
+  recordUsage: (...args) => users.recordUsage(...args),
+});
 
 test("trackModelUsage", async (t) => {
   // The DB is auto-seeded via database.js (defaults to in-memory PGlite when PGHOST is not set)
@@ -100,38 +106,35 @@ test("trackModelUsage", async (t) => {
   await t.test("records guardrail costs without reducing user budget", async () => {
     const [userBefore] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
 
-    const records = await trackModelUsage(
-      testUser.id,
-      "mock-model",
-      "127.0.0.1",
-      null,
-      {
-        requestId: `guardrail-${Date.now()}`,
-        trace: {
-          guardrail: {
-            inputAssessment: {
-              input: {
-                invocationMetrics: {
-                  usage: {
-                    contentPolicyUnits: 2,
-                    topicPolicyUnits: 1,
-                    wordPolicyUnits: 4,
-                    sensitiveInformationPolicyUnits: 3,
-                    contextualGroundingPolicyUnits: 5,
-                    contentPolicyImageUnits: 2,
-                    automatedReasoningPolicyUnits: 7,
-                    automatedReasoningPolicies: 2,
-                  },
+    const records = await trackModelUsage(testUser.id, "mock-model", "127.0.0.1", null, {
+      requestId: `guardrail-${Date.now()}`,
+      trace: {
+        guardrail: {
+          inputAssessment: {
+            input: {
+              invocationMetrics: {
+                usage: {
+                  contentPolicyUnits: 2,
+                  topicPolicyUnits: 1,
+                  wordPolicyUnits: 4,
+                  sensitiveInformationPolicyUnits: 3,
+                  contextualGroundingPolicyUnits: 5,
+                  contentPolicyImageUnits: 2,
+                  automatedReasoningPolicyUnits: 7,
+                  automatedReasoningPolicies: 2,
                 },
               },
             },
           },
         },
-      }
-    );
+      },
+    });
 
     assert.ok(Array.isArray(records), "Should return guardrail usage rows");
-    assert.ok(records.every((row) => row.type === "guardrail"), "Rows should be marked guardrail");
+    assert.ok(
+      records.every((row) => row.type === "guardrail"),
+      "Rows should be marked guardrail"
+    );
     assert.ok(
       records.every((row) => row.modelID === guardrailModel.id),
       "Rows should be recorded against AWS Guardrails"
@@ -141,9 +144,7 @@ test("trackModelUsage", async (t) => {
       "Should record content policy usage"
     );
     assert.ok(
-      records.some(
-        (row) => row.unit === "automated_reasoning_policy_units" && row.quantity === 14
-      ),
+      records.some((row) => row.unit === "automated_reasoning_policy_units" && row.quantity === 14),
       "Should multiply automated reasoning units by policy count"
     );
 

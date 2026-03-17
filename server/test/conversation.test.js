@@ -4,7 +4,6 @@ import { test } from "node:test";
 
 import { ConversationService } from "cms/conversation.js";
 import { eq } from "drizzle-orm";
-import { embed as gatewayEmbed } from "shared/clients/gateway.js";
 import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
 
 const svc = new ConversationService();
@@ -25,11 +24,12 @@ function mockEmbeddingFor(value) {
 test("ConversationService", async (t) => {
   let testUser;
 
-  ConversationService.setEmbedder(async ({ content }) => ({
+  const originalEmbedContent = svc.embedContent;
+  svc.embedContent = async ({ content }) => ({
     embeddings: content.map((item) => mockEmbeddingFor(item)),
-  }));
+  });
   t.after(() => {
-    ConversationService.setEmbedder(gatewayEmbed);
+    svc.embedContent = originalEmbedContent;
   });
 
   await t.test("setup: get test user", async () => {

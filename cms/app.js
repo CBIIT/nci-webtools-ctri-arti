@@ -1,7 +1,5 @@
 import { createRequestContext } from "shared/request-context.js";
 
-import { ConversationService } from "./conversation.js";
-
 function createAppError(statusCode, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -21,7 +19,11 @@ function normalizeConversationPage(result, { limit = 20, offset = 0 } = {}) {
   };
 }
 
-export function createCmsApplication({ service = new ConversationService(), source = "direct" } = {}) {
+export function createCmsApplication({ service, source = "direct" } = {}) {
+  if (!service) {
+    throw new Error("cms service is required");
+  }
+
   function normalizeContext(context) {
     return createRequestContext(context, { source });
   }

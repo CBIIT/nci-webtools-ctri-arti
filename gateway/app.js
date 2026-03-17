@@ -8,9 +8,8 @@ import {
   normalizeEmbeddingUsageItems,
 } from "shared/gateway-usage.js";
 
-import { runModel, runEmbedding } from "./inference.js";
 import { deleteGuardrailById, listGuardrails, reconcileGuardrails } from "./guardrails.js";
-import { trackModelUsage, trackUsage } from "./usage.js";
+import { runModel, runEmbedding } from "./inference.js";
 
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
@@ -44,9 +43,16 @@ async function getRateLimitResponse(userID) {
 export function createGatewayApplication({
   modelInvoker = runModel,
   embeddingInvoker = runEmbedding,
-  modelUsageTracker = trackModelUsage,
-  usageTracker = trackUsage,
+  modelUsageTracker,
+  usageTracker,
 } = {}) {
+  if (typeof modelUsageTracker !== "function") {
+    throw new Error("modelUsageTracker is required");
+  }
+  if (typeof usageTracker !== "function") {
+    throw new Error("usageTracker is required");
+  }
+
   async function requirePreflight({ userID, model }) {
     const modelRecord = await getModelRecord(model);
     if (!modelRecord) {
@@ -144,6 +150,14 @@ export function createGatewayApplication({
         });
       }
       return result;
+    },
+
+    async trackUsage(userID, model, usageItems, options) {
+      return usageTracker(userID, model, usageItems, options);
+    },
+
+    async trackModelUsage(userID, model, ip, usageData, options) {
+      return modelUsageTracker(userID, model, ip, usageData, options);
     },
 
     listModels({ type } = {}) {

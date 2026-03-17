@@ -2,6 +2,15 @@
   "name": "agents",
   "version": "1.0.0",
   "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./api.js": "./api.js",
+    "./http.js": "./http.js",
+    "./remote.js": "./remote.js",
+    "./service.js": "./service.js",
+    "./app.js": "./app.js",
+    "./loop.js": "./loop.js"
+  },
   "scripts": {
     "start": "node --env-file .env index.js",
     "test": "node --test --test-reporter=spec test/*.test.js"

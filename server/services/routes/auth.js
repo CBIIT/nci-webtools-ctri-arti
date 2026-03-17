@@ -1,13 +1,8 @@
 import { json, Router } from "express";
-import { getAgents } from "shared/clients/cms.js";
 import { createAnonymousRequestContext } from "shared/request-context.js";
-import {
-  findOrCreateUser,
-  getUser,
-  getUserByApiKey,
-  getConfig as getUsersConfig,
-} from "shared/clients/users.js";
 
+import { getAgents } from "../../cms.js";
+import { findOrCreateUser, getConfig as getUsersConfig, resolveIdentity } from "../../users.js";
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
 
 const { OAUTH_PROVIDER_ENABLED } = process.env;
@@ -40,22 +35,23 @@ api.all("/session", async (req, res) => {
     session.expires = session.cookie.expires;
   }
 
-  let user = null;
-  if (session.user?.id) {
-    user = await getUser(session.user.id);
-  } else if (apiKey) {
-    user = await getUserByApiKey(apiKey);
-    if (user) {
-      session.user = user;
-    }
-  } else {
-    user = session.user;
+  let user = await resolveIdentity({
+    sessionUserId: session.user?.id,
+    apiKey,
+  });
+
+  if (!user && !session.user?.id && !apiKey) {
+    user = session.user || null;
+  }
+
+  if (user && apiKey && !session.user?.id) {
+    session.user = user;
   }
 
   res.json({ user, expires: session.cookie.expires });
 });
 
-api.get("/config", async (req, res) => {
+api.get("/config", async (_req, res) => {
   const anonymousContext = createAnonymousRequestContext({ source: "server" });
   const [usersConfig, agentList] = await Promise.all([
     getUsersConfig(),
