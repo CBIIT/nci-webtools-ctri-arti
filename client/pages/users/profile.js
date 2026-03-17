@@ -4,11 +4,8 @@ import html from "solid-js/html";
 import { AlertContainer } from "../../components/alert.js";
 import { Status, useAuthContext } from "../../contexts/auth-context.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
-<<<<<<< arti-228-limit
 import RequestLimitIncrease from "./request-limit-increase.js";
-=======
 import { fetchCachedJson } from "../../utils/static-data.js";
->>>>>>> dev
 
 const fetchConfig = () => fetchCachedJson("/api/config");
 
@@ -17,6 +14,23 @@ function UserProfile() {
   const [config] = createResource(fetchConfig);
   const [saving, setSaving] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
+
+  // Fetch current user session
+  const [session] = createResource(async () => {
+    try {
+      const response = await fetch("/api/v1/session");
+      if (!response.ok) {
+        await handleHttpError(response, "fetching your profile");
+        return null;
+      }
+      return response.json();
+    } catch (err) {
+      const error = new Error("Something went wrong while retrieving your profile.");
+      error.cause = err;
+      handleError(error, "Session API Error");
+      return null;
+    }
+  });
 
   async function handleSubmit(e) {
     e.preventDefault();
