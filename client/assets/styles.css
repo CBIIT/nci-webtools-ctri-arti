@@ -1420,10 +1420,13 @@ dialog .close-btn {
 
 .btn-save-primary:hover,
 .btn-save-primary:focus,
-.btn-save-primary:active {
-  background: #0d5ed4;
-  border: 0.5px solid #373737;
-  color: #ffffff;
+.btn-save-primary:active,
+.btn-save-primary:focus-visible,
+.btn-save-primary.active,
+.btn-save-primary:active:focus {
+  background: #0d5ed4 !important;
+  border: 0.5px solid #373737 !important;
+  color: #ffffff !important;
 }
 
 .btn-save-primary:disabled {
@@ -1432,10 +1435,6 @@ dialog .close-btn {
   color: #ffffff;
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-.btn-save-primary.btn-save-primary-sm {
-  padding: 9.5px 22px;
 }
 
 /* Inline Select Component */

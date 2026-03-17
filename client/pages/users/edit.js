@@ -340,7 +340,7 @@ function UserEdit() {
                 <!-- Form Buttons -->
                 <div class="d-flex justify-content-center">
                   <button type="submit" class="btn btn-save-primary" disabled=${saving}>
-                    ${() => (saving() ? "Saving..." : "Save")}
+                    Save
                   </button>
                 </div>
               </form>

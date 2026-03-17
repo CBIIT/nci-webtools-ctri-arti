@@ -200,12 +200,8 @@ function UserProfile() {
 
                 <!-- Form Buttons -->
                 <div class="d-flex justify-content-center">
-                  <button
-                    type="submit"
-                    class="btn btn-save-primary btn-save-primary-sm"
-                    disabled=${saving}
-                  >
-                    ${() => (saving() ? "Saving..." : "Edit Profile")}
+                  <button type="submit" class="btn btn-save-primary" disabled=${saving}>
+                    Save
                   </button>
                 </div>
               </form>
