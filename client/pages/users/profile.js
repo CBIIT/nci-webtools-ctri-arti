@@ -15,23 +15,6 @@ function UserProfile() {
   const [saving, setSaving] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
 
-  // Fetch current user session
-  const [session] = createResource(async () => {
-    try {
-      const response = await fetch("/api/v1/session");
-      if (!response.ok) {
-        await handleHttpError(response, "fetching your profile");
-        return null;
-      }
-      return response.json();
-    } catch (err) {
-      const error = new Error("Something went wrong while retrieving your profile.");
-      error.cause = err;
-      handleError(error, "Session API Error");
-      return null;
-    }
-  });
-
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
@@ -249,7 +232,7 @@ function UserProfile() {
             </div>
             <div class="row align-items-center mb-4">
               <div class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-4 col-xl-4 align-self-center">
-                <${RequestLimitIncrease} session=${() => session()} />
+                <${RequestLimitIncrease} user=${() => user()} />
               </div>
             </div>
 

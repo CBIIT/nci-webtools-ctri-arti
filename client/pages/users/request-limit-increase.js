@@ -20,9 +20,8 @@ import { Check } from "lucide-solid"
  * - Success confirmation UI after successful submission
  * 
  * @param {Object} props - Component properties
- * @param {Object} props.session - User session data containing authentication and user info
- * @param {Object} props.session.user - User object from the session
- * @param {number|null} props.session.user.budget - User's current daily cost limit in USD (null means unlimited)
+ * @param {Object} props.user - User object from the user
+ * @param {number|null} props.user.budget - User's current daily cost limit in USD (null means unlimited)
  * 
  * @returns {JSX.Element} A SolidJS component containing a trigger button and modal dialog
  * 
@@ -30,12 +29,14 @@ import { Check } from "lucide-solid"
  * // Basic usage with session data
  * <RequestLimitIncrease session={userSession} />
  * 
- * @example  
- * // Example session structure expected by component
- * const userSession = {
- *   user: {
- *     budget: 50 // $50 daily limit, or null for unlimited
- *   }
+ * @example
+ * // Basic usage with user data
+ * <RequestLimitIncrease user={user} />
+ * 
+ * @example
+ * // Example user structure expected by component
+ * const user = {
+ *   budget: 50 // $50 daily limit, or null for unlimited
  * }
  * 
  * @throws {Error} Displays user-friendly error messages for failed API requests
@@ -148,17 +149,13 @@ function RequestLimitIncrease(props) {
                     <label class="form-label font-inter no-mb">Current Cost Limit Per Day</label>
                     <p class="form-static-value">
                       ${() => {
-                        const sessionData = props.session
+                        const user = props.user
 
-                        if (!sessionData) {
-                          return "No session data"
+                        if (!user) {
+                          return "No user"
                         }
 
-                        if (!sessionData.user) {
-                          return "No user in session"
-                        }
-
-                        const budget = sessionData.user.budget
+                        const budget = user.budget
 
                         if (budget === null) {
                           return "Unlimited"
