@@ -7,15 +7,30 @@ import { eq } from "drizzle-orm";
 import express from "express";
 import request from "supertest";
 
-import { createConversationsRouter } from "../../services/routes/conversations.js";
+import { createServerApi } from "../../services/api.js";
 
 function buildApp() {
   const app = express();
-  app.use((req, res, next) => {
+  app.use((req, _res, next) => {
     req.session = {};
     next();
   });
-  app.use(createConversationsRouter({ modules: { cms: createCmsService({ source: "server" }) } }));
+  app.use(
+    createServerApi({
+      modules: {
+        agents: {
+          async *chat() {}
+        },
+        users: {},
+        cms: createCmsService({ source: "server" }),
+        gateway: {
+          async listModels() {
+            return [];
+          },
+        },
+      },
+    })
+  );
   return app;
 }
 

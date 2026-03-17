@@ -10,6 +10,95 @@ function sendGatewayError(res, error) {
   });
 }
 
+function resolveGatewayInvokeInput(req) {
+  return {
+    ...req.body,
+    requestId: resolveRequestId(req.body?.requestId, req.headers["x-request-id"]),
+  };
+}
+
+function sendGatewayRateLimit(res, result, { includeCode = true } = {}) {
+  return res.status(429).json({
+    error: result.error,
+    ...(includeCode ? { code: result.code || "GATEWAY_RATE_LIMITED" } : {}),
+  });
+}
+
+function forwardGatewayError(error, next, { operation, createUnexpectedError } = {}) {
+  if (error.statusCode) {
+    return next(error);
+  }
+
+  logger.error(`Error in ${operation}:`, error);
+  return next(createUnexpectedError ? createUnexpectedError(error, operation) : error);
+}
+
+async function streamGatewayResponse(res, stream) {
+  for await (const message of stream) {
+    try {
+      res.write(JSON.stringify(message) + "\n");
+    } catch (error) {
+      logger.error("Error processing stream message:", error);
+    }
+  }
+  res.end();
+}
+
+export function createGatewayModelRouter({
+  application,
+  invokePath = "/v1/model/invoke",
+  listPath = "/v1/models",
+  resolveInvokeInput = resolveGatewayInvokeInput,
+  includeRateLimitCode = true,
+  createUnexpectedError,
+} = {}) {
+  if (!application) {
+    throw new Error("gateway application is required");
+  }
+
+  const api = Router();
+  api.use(json({ limit: 1024 ** 3 })); // 1GB
+
+  api.post(invokePath, async (req, res, next) => {
+    try {
+      const result = await application.invoke(resolveInvokeInput(req));
+
+      if (result?.status === 429) {
+        return sendGatewayRateLimit(res, result, { includeCode: includeRateLimitCode });
+      }
+
+      if (!result?.stream) {
+        return res.json(result);
+      }
+
+      await streamGatewayResponse(res, result.stream);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendGatewayError(res, error);
+      }
+
+      return forwardGatewayError(error, next, {
+        operation: "gateway invoke",
+        createUnexpectedError,
+      });
+    }
+  });
+
+  api.get(listPath, async (req, res, next) => {
+    try {
+      const results = await application.listModels({ type: req.query.type });
+      res.json(results);
+    } catch (error) {
+      return forwardGatewayError(error, next, {
+        operation: "gateway list models",
+        createUnexpectedError,
+      });
+    }
+  });
+
+  return api;
+}
+
 export function createGatewayRouter({ application } = {}) {
   if (!application) {
     throw new Error("gateway application is required");
@@ -17,52 +106,8 @@ export function createGatewayRouter({ application } = {}) {
 
   const api = Router();
 
-  api.use(json({ limit: 1024 ** 3 })); // 1GB
   api.use(logRequests());
-
-  api.post("/v1/model/invoke", async (req, res, next) => {
-    try {
-      const result = await application.invoke({
-        ...req.body,
-        requestId: resolveRequestId(req.body?.requestId, req.headers["x-request-id"]),
-      });
-
-      if (result?.status === 429) {
-        return res.status(429).json({
-          error: result.error,
-          code: result.code || "GATEWAY_RATE_LIMITED",
-        });
-      }
-
-      if (!result?.stream) {
-        return res.json(result);
-      }
-
-      for await (const message of result.stream) {
-        try {
-          res.write(JSON.stringify(message) + "\n");
-        } catch (error) {
-          logger.error("Error processing stream message:", error);
-        }
-      }
-      res.end();
-    } catch (error) {
-      if (error.statusCode) {
-        return sendGatewayError(res, error);
-      }
-      logger.error("Error in gateway invoke:", error);
-      next(error);
-    }
-  });
-
-  api.get("/v1/models", async (req, res, next) => {
-    try {
-      const results = await application.listModels({ type: req.query.type });
-      res.json(results);
-    } catch (error) {
-      next(error);
-    }
-  });
+  api.use(createGatewayModelRouter({ application }));
 
   api.get("/v1/guardrails", async (_req, res, next) => {
     try {
