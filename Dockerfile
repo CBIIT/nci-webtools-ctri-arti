@@ -1,7 +1,7 @@
 FROM public.ecr.aws/docker/library/almalinux:10
 
 RUN dnf -y update \
-    && dnf -y install nodejs \
+    && dnf -y install curl nodejs \
     && dnf clean all
 
 WORKDIR /app
