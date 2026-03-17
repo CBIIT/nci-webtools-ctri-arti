@@ -32,10 +32,7 @@ export const MODEL_OPTIONS = Object.freeze({
   },
   NIH: {
     SONNET: {
-      v4_6: "gemini-2.5-pro-preview-06-05",
-    },
-    GEMINI: {
-      v2_5_PRO: "gemini-2.5-pro-preview-06-05",
+      v4_6: "idp.us.anthropic.claude-sonnet-4-6",
     },
   },
 });
