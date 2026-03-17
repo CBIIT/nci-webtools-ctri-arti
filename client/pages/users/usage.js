@@ -17,13 +17,14 @@ import {
   registerErrorDataCollector,
   unregisterErrorDataCollector,
 } from "../../utils/global-error-handler.js";
+import { fetchCachedJson } from "../../utils/static-data.js";
 import { capitalize } from "../../utils/utils.js";
 
 import { formatDate, formatDateInputForDisplay } from "./date-utils.js";
 
 export { formatDate, formatDateInputForDisplay } from "./date-utils.js";
 
-const fetchConfig = () => fetch("/api/config").then((r) => r.json());
+const fetchConfig = () => fetchCachedJson("/api/config");
 
 // Shared date range utilities
 export const VALID_DATE_RANGES = [
@@ -147,13 +148,11 @@ function UsersList() {
 
   const [rolesResource] = createResource(async () => {
     try {
-      const response = await fetch("/api/v1/admin/roles");
-      if (!response.ok) {
-        await handleHttpError(response, "fetching roles");
-        return [];
-      }
-      return response.json();
+      return await fetchCachedJson("/api/v1/admin/roles");
     } catch (err) {
+      if (err.response) {
+        await handleHttpError(err.response, "fetching roles");
+      }
       const error = new Error("Something went wrong while retrieving roles.");
       error.cause = err;
       handleError(error, "Roles API Error");
