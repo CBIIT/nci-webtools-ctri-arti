@@ -50,7 +50,6 @@ function RequestLimitIncrease(props) {
     limitDialog.showModal()
   }
   const closeDialog = () => {
-    console.log("closeDialog clicked")
     resetDialog()
     limitDialog.close()
   }
@@ -68,7 +67,6 @@ function RequestLimitIncrease(props) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log("handleSubmit called with reason:", reason())
 
     try {
       setIsSubmitting(true)
