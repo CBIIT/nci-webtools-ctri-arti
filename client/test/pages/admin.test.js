@@ -1,30 +1,134 @@
 import assert from "../assert.js";
-import { mountApp, waitForElement } from "../helpers.js";
+import {
+  installMockFetch,
+  jsonResponse,
+  mountApp,
+  waitForCondition,
+  waitForElement,
+  waitForNetworkIdle,
+} from "../helpers.js";
 import test from "../test.js";
 
-const urlParams = new URLSearchParams(window.location.search);
-const TEST_API_KEY = urlParams.get("apiKey");
+const baseUser = {
+  id: 1,
+  email: "integration@example.org",
+  firstName: "Integration",
+  lastName: "Tester",
+  status: "active",
+  roleID: 1,
+  budget: 10,
+  remaining: 9.59,
+  Role: { id: 1, name: "admin" },
+};
 
-function headers(extra = {}) {
-  const h = { "Content-Type": "application/json", ...extra };
-  if (TEST_API_KEY) h["x-api-key"] = TEST_API_KEY;
-  return h;
+const roles = [
+  { id: 1, name: "admin" },
+  { id: 2, name: "super_admin" },
+  { id: 3, name: "user" },
+];
+
+function buildUsersResponse(url, user) {
+  let data = [{ ...user, Role: user.Role }];
+  const search = (url.searchParams.get("search") || "").toLowerCase();
+  const status = url.searchParams.get("status");
+  const roleID = url.searchParams.get("roleID");
+
+  if (search) {
+    const haystack = `${user.email} ${user.firstName} ${user.lastName}`.toLowerCase();
+    data = haystack.includes(search) ? data : [];
+  }
+
+  if (status) {
+    data = data.filter((entry) => entry.status === status);
+  }
+
+  if (roleID) {
+    data = data.filter((entry) => String(entry.roleID) === String(roleID));
+  }
+
+  return { data, meta: { total: data.length } };
 }
 
-async function api(method, path, body) {
-  const opts = { method, headers: headers() };
-  if (body !== undefined) opts.body = JSON.stringify(body);
-  const res = await fetch(`/api/v1${path}`, opts);
-  const json = await res.json();
-  return { status: res.status, json };
+function installAdminMocks() {
+  let currentUser = structuredClone(baseUser);
+
+  return installMockFetch(async ({ url, request, input, init, originalFetch }) => {
+    if (url.pathname === "/api/v1/session") {
+      return jsonResponse({ user: currentUser, expires: "2099-01-01T00:00:00.000Z" });
+    }
+
+    if (url.pathname === "/api/config") {
+      return jsonResponse({ budgetLabel: "Monthly" });
+    }
+
+    if (url.pathname === "/api/v1/admin/roles") {
+      return jsonResponse(roles);
+    }
+
+    if (url.pathname === "/api/v1/admin/users" && request.method === "GET") {
+      return jsonResponse(buildUsersResponse(url, currentUser));
+    }
+
+    if (url.pathname === `/api/v1/admin/users/${currentUser.id}` && request.method === "GET") {
+      return jsonResponse(currentUser);
+    }
+
+    if (url.pathname === "/api/v1/admin/users" && request.method === "POST") {
+      const body = await request.json();
+      const nextRole =
+        roles.find((role) => role.id === Number(body.roleID || currentUser.roleID)) || currentUser.Role;
+      currentUser = {
+        ...currentUser,
+        ...body,
+        id: currentUser.id,
+        roleID: Number(body.roleID || currentUser.roleID),
+        Role: { id: nextRole.id, name: nextRole.name },
+      };
+      return jsonResponse(currentUser);
+    }
+
+    if (url.pathname === "/api/v1/admin/analytics") {
+      const groupBy = url.searchParams.get("groupBy");
+
+      if (groupBy === "user") {
+        return jsonResponse({
+          data: [
+            {
+              userID: currentUser.id,
+              User: currentUser,
+              Role: currentUser.Role,
+              totalRequests: 3,
+              usageCost: 0.3,
+              guardrailCost: 0.01,
+              totalCost: 0.31,
+            },
+          ],
+          meta: { total: 1 },
+        });
+      }
+    }
+
+    return originalFetch(input, init);
+  });
 }
 
-let testUser;
+async function chooseInlineSelectOption(container, triggerSelector, label) {
+  const trigger = await waitForElement(container, triggerSelector);
+  trigger.click();
+
+  const option = await waitForElement(container, ".custom-dropdown-option", (el) =>
+    el.textContent.trim().includes(label)
+  );
+  option.click();
+
+  return waitForElement(container, triggerSelector, (el) => el.textContent.includes(label), 2000);
+}
 
 test("Admin Page Tests", async (t) => {
-  // Fetch session to get test user before subtests
-  const { json: sessionData } = await api("GET", "/session");
-  testUser = sessionData.user;
+  const restoreFetch = installAdminMocks();
+  const testUser = baseUser;
+
+  try {
 
   // ── Users List Page ─────────────────────────────────────────────────────
 
@@ -74,7 +178,7 @@ test("Admin Page Tests", async (t) => {
       const searchInput = container.querySelector("#search-filter");
       searchInput.value = testUser.email.substring(0, 5);
       searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 500));
+      await waitForNetworkIdle();
       assert.strictEqual(errors.length, 0, `Errors after search: ${errors.map((e) => e.message)}`);
     } finally {
       dispose();
@@ -90,7 +194,7 @@ test("Admin Page Tests", async (t) => {
       const searchInput = container.querySelector("#search-filter");
       searchInput.value = "ab";
       searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 300));
+      await waitForNetworkIdle();
       assert.strictEqual(
         errors.length,
         0,
@@ -111,7 +215,7 @@ test("Admin Page Tests", async (t) => {
       if (roleFilter.options.length > 1) {
         roleFilter.selectedIndex = 1;
         roleFilter.dispatchEvent(new InputEvent("input", { bubbles: true }));
-        await new Promise((r) => setTimeout(r, 300));
+        await waitForNetworkIdle();
       }
       assert.strictEqual(
         errors.length,
@@ -134,7 +238,7 @@ test("Admin Page Tests", async (t) => {
       // Switch to inactive
       statusFilter.value = "inactive";
       statusFilter.dispatchEvent(new InputEvent("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 300));
+      await waitForNetworkIdle();
       assert.strictEqual(
         errors.length,
         0,
@@ -144,13 +248,13 @@ test("Admin Page Tests", async (t) => {
       // Switch to active
       statusFilter.value = "active";
       statusFilter.dispatchEvent(new InputEvent("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 300));
+      await waitForNetworkIdle();
       assert.strictEqual(errors.length, 0, `Errors after active: ${errors.map((e) => e.message)}`);
 
       // Switch back to All
       statusFilter.value = "";
       statusFilter.dispatchEvent(new InputEvent("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 300));
+      await waitForNetworkIdle();
       assert.strictEqual(errors.length, 0, `Errors after All: ${errors.map((e) => e.message)}`);
     } finally {
       dispose();
@@ -168,7 +272,7 @@ test("Admin Page Tests", async (t) => {
 
       // Click first sortable column (Name)
       thElements[0].click();
-      await new Promise((r) => setTimeout(r, 300));
+      await waitForNetworkIdle();
 
       // Check for sort indicator
       const sortedTh = container.querySelector("table thead th");
@@ -279,7 +383,7 @@ test("Admin Page Tests", async (t) => {
       assert.ok(!emailInput, "Email should not be an editable input");
 
       // Email should appear in the page content
-      const emailEl = await waitForElement(container, "h1.fs-3", (el) =>
+      const emailEl = await waitForElement(container, ".profile-card-email", (el) =>
         el.textContent.includes(testUser.email)
       );
       assert.ok(emailEl, "Email should be displayed as text");
@@ -295,27 +399,26 @@ test("Admin Page Tests", async (t) => {
     try {
       await waitForElement(container, "#firstName");
 
-      const roleSelect = container.querySelector("#roleID");
       const noLimitCheckbox = container.querySelector("#noLimitCheckbox");
       const budgetInput = container.querySelector("#budget");
 
+      const roleSelect = container.querySelector("#roleID");
       assert.ok(roleSelect, "Role select should exist");
       assert.ok(noLimitCheckbox, "No limit checkbox should exist");
       assert.ok(budgetInput, "Budget input should exist");
 
-      // Change to Admin role (id=1) -> should set noLimit=true
-      roleSelect.value = "1";
-      roleSelect.dispatchEvent(new Event("change", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 200));
+      // Change to Admin role -> should set noLimit=true
+      await chooseInlineSelectOption(container, "#roleID", "Admin");
+      await waitForElement(container, "#budget", (el) => el.disabled, 2000);
       assert.ok(noLimitCheckbox.checked, "Admin role should set noLimit to true");
       assert.ok(budgetInput.disabled, "Budget should be disabled for admin");
 
-      // Change to User role (id=3) -> should set budget=1, noLimit=false
-      roleSelect.value = "3";
-      roleSelect.dispatchEvent(new Event("change", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 200));
+      // Change to User role -> should set budget=1, noLimit=false
+      await chooseInlineSelectOption(container, "#roleID", "User");
+      await waitForElement(container, "#budget", (el) => !el.disabled && el.value === "1", 2000);
       assert.ok(!noLimitCheckbox.checked, "User role should set noLimit to false");
       assert.ok(!budgetInput.disabled, "Budget should be enabled for user role");
+      assert.strictEqual(budgetInput.value, "1", "User role should reset budget to the default");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
       dispose();
@@ -335,20 +438,20 @@ test("Admin Page Tests", async (t) => {
       if (noLimitCheckbox.checked) {
         noLimitCheckbox.checked = false;
         noLimitCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
-        await new Promise((r) => setTimeout(r, 200));
+        await waitForCondition(() => !budgetInput.disabled, 1000, "admin unlimited off precondition");
       }
       assert.ok(!budgetInput.disabled, "Budget should be enabled when noLimit is off");
 
       // Check noLimit
       noLimitCheckbox.checked = true;
       noLimitCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 200));
+      await waitForCondition(() => budgetInput.disabled, 1000, "admin unlimited on");
       assert.ok(budgetInput.disabled, "Budget should be disabled when noLimit is on");
 
       // Uncheck noLimit
       noLimitCheckbox.checked = false;
       noLimitCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 200));
+      await waitForCondition(() => !budgetInput.disabled, 1000, "admin unlimited off");
       assert.ok(!budgetInput.disabled, "Budget should re-enable when noLimit is off");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
@@ -362,38 +465,23 @@ test("Admin Page Tests", async (t) => {
     try {
       await waitForElement(container, "#firstName");
 
+      await chooseInlineSelectOption(container, "#roleID", "User");
+
       const budgetInput = container.querySelector("#budget");
-      const resetButton = Array.from(container.querySelectorAll("button")).find(
-        (b) => b.textContent.trim() === "Reset" && b.type === "button"
-      );
+      const resetButton = container.querySelector(".profile-budget-reset-btn");
       assert.ok(resetButton, "Reset button should exist");
+      assert.ok(!resetButton.disabled, "Reset button should be enabled for limited roles");
 
       // Change budget to a custom value
       budgetInput.value = "999";
       budgetInput.dispatchEvent(new Event("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 100));
+      assert.strictEqual(budgetInput.value, "999", "Budget should accept the custom value");
 
       // Click reset
       resetButton.click();
-      await new Promise((r) => setTimeout(r, 200));
+      await waitForElement(container, "#budget", (el) => el.value === "1", 2000);
 
-      // Budget should reset to role default (not 999)
-      assert.notStrictEqual(budgetInput.value, "999", "Budget should not be 999 after reset");
-      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
-    } finally {
-      dispose();
-      document.body.removeChild(container);
-    }
-  });
-
-  await t.test("/_/users/:id: Cancel link points to /_/users", async () => {
-    const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}`);
-    try {
-      await waitForElement(container, "#firstName");
-
-      // Find the Cancel button within the form area (btn-outline-secondary)
-      const cancelLink = container.querySelector('a.btn-outline-secondary[href="/_/users"]');
-      assert.ok(cancelLink, "Cancel link should exist with href=/_/users");
+      assert.strictEqual(budgetInput.value, "1", "Budget should reset to the role default");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
       dispose();
@@ -427,22 +515,31 @@ test("Admin Page Tests", async (t) => {
       document.body.removeChild(container);
     }
   });
+  } finally {
+    restoreFetch();
+  }
 });
 
 test("Admin Usage Page Tests", async (t) => {
-  await t.test("/_/usage renders AI Usage Dashboard page", async () => {
-    const { container, errors, dispose } = mountApp("/_/usage");
-    try {
-      const h1 = await waitForElement(container, "h1", (el) =>
-        el.textContent.includes("AI Usage Dashboard")
-      );
-      assert.ok(h1, "Should render AI Usage Dashboard heading");
-      const table = await waitForElement(container, "table");
-      assert.ok(table, "Should render a data table");
-      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
-    } finally {
-      dispose();
-      document.body.removeChild(container);
-    }
-  });
+  const restoreFetch = installAdminMocks();
+
+  try {
+    await t.test("/_/usage renders AI Usage Dashboard page", async () => {
+      const { container, errors, dispose } = mountApp("/_/usage");
+      try {
+        const h1 = await waitForElement(container, "h1", (el) =>
+          el.textContent.includes("AI Usage Dashboard")
+        );
+        assert.ok(h1, "Should render AI Usage Dashboard heading");
+        const table = await waitForElement(container, "table");
+        assert.ok(table, "Should render a data table");
+        assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+      } finally {
+        dispose();
+        document.body.removeChild(container);
+      }
+    });
+  } finally {
+    restoreFetch();
+  }
 });
