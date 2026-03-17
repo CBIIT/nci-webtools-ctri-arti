@@ -138,62 +138,78 @@ function addCachePointsToMessages(messages, hasCache) {
   return result;
 }
 
-/**
- * Validate and normalize messages: filter nulls, ensure non-empty content,
- * strip reasoning when disabled, convert base64 bytes, and interleave missing tool results.
- */
-function processMessages(messages, thoughtBudget) {
-  messages = messages.filter(Boolean);
-  for (const message of messages) {
-    if (!message.content.filter(Boolean).length) {
-      message.content.push({ text: "_" });
-    }
-    const contents = message.content.filter((c) => {
-      if (thoughtBudget <= 0 && c.reasoningContent) {
-        return false;
-      }
-      return !!c;
-    });
-    message.content = contents;
-    for (const content of contents) {
-      if (!content) continue;
-      // prevent empty text content
-      if (content.text?.trim().length === 0) {
-        content.text = "_";
-      }
-      // transform base64 encoded bytes to Uint8Array
-      const source = content.document?.source || content.image?.source;
-      if (source?.bytes) {
-        if (typeof source.bytes === "string") {
-          source.bytes = Uint8Array.from(Buffer.from(source.bytes, "base64"));
-        } else if (source.bytes?.type === "Buffer" && Array.isArray(source.bytes.data)) {
-          source.bytes = new Uint8Array(source.bytes.data);
-        }
-      }
-      if (content.document) {
-        content.document.name = getProviderVisibleFileName(content.document);
-      }
-      if (content.image) {
-        content.image.name = getProviderVisibleFileName(content.image);
-      }
-      // ensure tool call inputs are in the correct format
-      if (content.toolUse) {
-        const toolUseId = content.toolUse.toolUseId;
-        if (typeof content.toolUse.input === "string") {
-          content.toolUse.input = { text: content.toolUse.input };
-        }
-        // if tool results don't exist, interleave an empty result
-        if (!messages.find((m) => m.content.find((c) => c.toolResult?.toolUseId === toolUseId))) {
-          const toolResultsIndex = messages.indexOf(message) + 1;
-          const content = [{ json: { results: {} } }];
-          const toolResult = { toolUseId, content };
-          const toolResultsMessage = { role: "user", content: [{ toolResult }] };
-          messages.splice(toolResultsIndex, 0, toolResultsMessage);
-        }
-      }
+function normalizeMessageContent(content, thoughtBudget) {
+  if (thoughtBudget <= 0 && content.reasoningContent) {
+    return null;
+  }
+  if (content.text?.trim().length === 0) {
+    content.text = "_";
+  }
+
+  const source = content.document?.source || content.image?.source;
+  if (source?.bytes) {
+    if (typeof source.bytes === "string") {
+      source.bytes = Uint8Array.from(Buffer.from(source.bytes, "base64"));
+    } else if (source.bytes?.type === "Buffer" && Array.isArray(source.bytes.data)) {
+      source.bytes = new Uint8Array(source.bytes.data);
     }
   }
+
+  if (content.document) {
+    content.document.name = getProviderVisibleFileName(content.document);
+  }
+  if (content.image) {
+    content.image.name = getProviderVisibleFileName(content.image);
+  }
+  if (content.toolUse && typeof content.toolUse.input === "string") {
+    content.toolUse.input = { text: content.toolUse.input };
+  }
+
+  return content;
+}
+
+function interleaveMissingToolResults(messages) {
+  for (const message of messages) {
+    for (const content of message.content) {
+      if (!content.toolUse) continue;
+
+      const toolUseId = content.toolUse.toolUseId;
+      const hasToolResult = messages.some((candidate) =>
+        candidate.content.some((block) => block.toolResult?.toolUseId === toolUseId)
+      );
+      if (hasToolResult) continue;
+
+      const toolResultsIndex = messages.indexOf(message) + 1;
+      const toolResultsMessage = {
+        role: "user",
+        content: [{ toolResult: { toolUseId, content: [{ json: { results: {} } }] } }],
+      };
+      messages.splice(toolResultsIndex, 0, toolResultsMessage);
+    }
+  }
+
   return messages;
+}
+
+/**
+ * Validate and normalize messages: filter nulls, ensure non-empty content,
+ * strip reasoning when disabled, convert base64 bytes, and interleave missing
+ * tool results without rewriting message roles.
+ */
+function processMessages(messages, thoughtBudget) {
+  const normalizedMessages = messages.filter(Boolean).map((message) => {
+    const content = (message.content || [])
+      .filter(Boolean)
+      .map((block) => normalizeMessageContent(block, thoughtBudget))
+      .filter(Boolean);
+
+    return {
+      ...message,
+      content: content.length > 0 ? content : [{ text: "_" }],
+    };
+  });
+
+  return interleaveMissingToolResults(normalizedMessages);
 }
 
 /**

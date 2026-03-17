@@ -191,6 +191,58 @@ test("provider filename sanitization", async (t) => {
   );
 });
 
+test("processMessages", async (t) => {
+  await t.test("preserves message roles while normalizing provider content", () => {
+    const messages = [
+      {
+        role: "user",
+        content: [
+          { text: "Search for test" },
+          { toolUse: { toolUseId: "tu_1", name: "search", input: "{}" } },
+        ],
+      },
+      {
+        role: "assistant",
+        content: [
+          { toolResult: { toolUseId: "tu_1", content: [{ json: { ok: true } }] } },
+          { text: "Done" },
+        ],
+      },
+    ];
+
+    const result = processMessages(structuredClone(messages), 0);
+
+    assert.deepStrictEqual(
+      result.map((message) => ({
+        role: message.role,
+        content: message.content.map((content) =>
+          content.text
+            ? { text: content.text }
+            : content.toolUse
+              ? { toolUse: content.toolUse }
+              : { toolResult: content.toolResult }
+        ),
+      })),
+      [
+        {
+          role: "user",
+          content: [
+            { text: "Search for test" },
+            { toolUse: { toolUseId: "tu_1", name: "search", input: { text: "{}" } } },
+          ],
+        },
+        {
+          role: "assistant",
+          content: [
+            { toolResult: { toolUseId: "tu_1", content: [{ json: { ok: true } }] } },
+            { text: "Done" },
+          ],
+        },
+      ]
+    );
+  });
+});
+
 test("inline upload limits", async (t) => {
   await t.test("rejects more than five inline files in one message", async () => {
     const content = Array.from({ length: 6 }, (_, index) => ({
