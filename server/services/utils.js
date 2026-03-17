@@ -2,13 +2,14 @@ import { inspect } from "util";
 
 import forge from "node-forge";
 import {
-  createAnonymousRequestContext,
-  createUserRequestContext,
+  createRequestContext,
   requireUserRequestContext,
 } from "shared/request-context.js";
+import { createHttpError, getDateRange, routeHandler } from "shared/utils.js";
 
 // Re-export search functions from shared
 export { braveSearch, govSearch, search } from "shared/search.js";
+export { createHttpError, getDateRange, routeHandler };
 
 export const log = (value) =>
   console.log(inspect(value, { depth: null, colors: true, compact: false, breakLength: 120 }));
@@ -106,14 +107,9 @@ export function createCertificate(opts = {}) {
   return { key: privateKeyPem, cert: certPem };
 }
 
-// Re-export from shared
-export { getDateRange } from "shared/utils.js";
-
 export function getRequestContext(req, { allowAnonymous = false, source = "server" } = {}) {
   const requestId = req.headers?.["x-request-id"];
-  const baseContext = req.session?.user?.id
-    ? createUserRequestContext(req.session.user.id, { source, requestId })
-    : createAnonymousRequestContext({ source, requestId });
+  const baseContext = createRequestContext(req.session?.user?.id ?? null, { source, requestId });
 
   return allowAnonymous ? baseContext : requireUserRequestContext(baseContext);
 }
@@ -134,32 +130,4 @@ export function getAuthenticatedUser(req, options = {}) {
     throw createHttpError(401, "Authentication required");
   }
   return user;
-}
-
-/**
- * Wraps an async Express route handler with automatic error forwarding.
- * Eliminates repetitive try/catch/next boilerplate in route definitions.
- *
- * @param {Function} fn - Async function (req, res, next) => Promise<void>
- * @returns {Function} Express middleware that catches errors and forwards them via next()
- */
-export function routeHandler(fn) {
-  return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
-}
-
-/**
- * Creates an error with a custom status code and user-friendly message,
- * while preserving the original error details.
- *
- * @param {number} statusCode - HTTP status code (e.g., 500, 400)
- * @param {Error|string} error - Original error or error message
- * @param {string} userMessage - User-friendly message to display
- * @returns {Error} Enhanced error object
- */
-export function createHttpError(statusCode, error, userMessage) {
-  const err = error instanceof Error ? error : new Error(error);
-  err.statusCode = statusCode;
-  err.additionalError = err.message;
-  err.message = userMessage || err.message;
-  return err;
 }
