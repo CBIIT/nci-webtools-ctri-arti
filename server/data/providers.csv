@@ -1,4 +1,0 @@
-id,name,apiKey
-1,bedrock,null
-2,google,env:GEMINI_API_KEY
-99,mock,null

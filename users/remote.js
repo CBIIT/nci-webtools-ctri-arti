@@ -1,35 +1,17 @@
-function buildQueryString(params) {
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(params || {})) {
-    if (value === undefined || value === null) continue;
-    query.set(key, String(value));
-  }
-  const str = query.toString();
-  return str ? `?${str}` : "";
-}
-
-async function httpRequest(fetchImpl, baseUrl, method, path, body) {
-  const response = await fetchImpl(`${baseUrl}${path}`, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
-    const err = new Error(error.error || "Users request failed");
-    err.status = response.status;
-    throw err;
-  }
-
-  return response.json();
-}
+import { buildQueryString, requestJson } from "../shared/clients/http.js";
 
 export function createUsersRemote({ baseUrl, fetchImpl = fetch }) {
+  function requestUsers(path, options = {}) {
+    return requestJson(fetchImpl, {
+      url: `${baseUrl}${path}`,
+      errorMessage: "Users request failed",
+      ...options,
+    });
+  }
+
   const remote = {
-    getUser: (id) => httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/users/${id}`),
-    resolveUser: (query) =>
-      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/users/resolve${buildQueryString(query)}`),
+    getUser: (id) => requestUsers(`/api/v1/users/${id}`),
+    resolveUser: (query) => requestUsers(`/api/v1/users/resolve${buildQueryString(query)}`),
     resolveIdentity: ({ sessionUserId, apiKey } = {}) => {
       if (apiKey) return remote.getUserByApiKey(apiKey);
       if (sessionUserId) return remote.getUser(sessionUserId);
@@ -38,32 +20,48 @@ export function createUsersRemote({ baseUrl, fetchImpl = fetch }) {
     getUserByEmail: (email) => remote.resolveUser({ email }),
     getUserByApiKey: (apiKey) => remote.resolveUser({ apiKey }),
     findOrCreateUser: (data) =>
-      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/users/find-or-create", data),
-    getUsers: (query) =>
-      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/users${buildQueryString(query)}`),
-    createUser: (data) => httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/users", data),
-    updateUser: (id, data) => httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/users/${id}`, data),
-    deleteUser: (id) => httpRequest(fetchImpl, baseUrl, "DELETE", `/api/v1/users/${id}`),
+      requestUsers("/api/v1/users/find-or-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: data,
+      }),
+    getUsers: (query) => requestUsers(`/api/v1/users${buildQueryString(query)}`),
+    createUser: (data) =>
+      requestUsers("/api/v1/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: data,
+      }),
+    updateUser: (id, data) =>
+      requestUsers(`/api/v1/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: data,
+      }),
+    deleteUser: (id) => requestUsers(`/api/v1/users/${id}`, { method: "DELETE" }),
     updateProfile: (id, data) =>
-      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/users/${id}/profile`, data),
-    getRoles: () => httpRequest(fetchImpl, baseUrl, "GET", "/api/v1/roles"),
+      requestUsers(`/api/v1/users/${id}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: data,
+      }),
+    getRoles: () => requestUsers("/api/v1/roles"),
     recordUsage: (userId, rows) =>
-      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/usage", { userId, rows }),
+      requestUsers("/api/v1/usage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: { userId, rows },
+      }),
     getUserUsage: (userId, query) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "GET",
-        `/api/v1/users/${userId}/usage${buildQueryString(query)}`
-      ),
-    getUsage: (query) =>
-      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/usage${buildQueryString(query)}`),
-    getAnalytics: (query) =>
-      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/analytics${buildQueryString(query)}`),
-    resetAllBudgets: () => httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/budgets/reset"),
+      requestUsers(`/api/v1/users/${userId}/usage${buildQueryString(query)}`),
+    getUsage: (query) => requestUsers(`/api/v1/usage${buildQueryString(query)}`),
+    getAnalytics: (query) => requestUsers(`/api/v1/analytics${buildQueryString(query)}`),
+    resetAllBudgets: () => requestUsers("/api/v1/budgets/reset", { method: "POST" }),
     resetUserBudget: (userId) =>
-      httpRequest(fetchImpl, baseUrl, "POST", `/api/v1/users/${userId}/budget/reset`),
-    getConfig: () => httpRequest(fetchImpl, baseUrl, "GET", "/api/v1/config"),
+      requestUsers(`/api/v1/users/${userId}/budget/reset`, {
+        method: "POST",
+      }),
+    getConfig: () => requestUsers("/api/v1/config"),
   };
 
   return remote;

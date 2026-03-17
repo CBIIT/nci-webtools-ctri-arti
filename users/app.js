@@ -1,12 +1,10 @@
+import { UserService } from "./user.js";
+
 function countAffected(result) {
   return result?.length ?? result?.rowCount ?? result?.affectedRows ?? result?.changes ?? 0;
 }
 
-export function createUsersApplication({ service } = {}) {
-  if (!service) {
-    throw new Error("users service is required");
-  }
-
+export function createUsersApplication({ service = new UserService() } = {}) {
   return {
     getUser(id) {
       return service.getUser(id);

@@ -1,10 +1,7 @@
-import db from "database";
 import { getSchemaReadiness } from "database/readiness.js";
-
 import { json, Router } from "express";
 
 import { requireRole } from "../../auth.js";
-import { trackUsage } from "../../gateway.js";
 import { sendFeedback, sendLogReport, sendJustificationEmail } from "../email.js";
 import { parseDocument } from "../parsers.js";
 import { proxyMiddleware } from "../proxy.js";
@@ -28,10 +25,16 @@ function getMimeTypeFromKey(key) {
 }
 
 export function createToolsRouter({
+  modules,
   sendFeedbackImpl = sendFeedback,
   sendLogReportImpl = sendLogReport,
   sendJustificationEmailImpl = sendJustificationEmail,
 } = {}) {
+  if (!modules?.gateway) {
+    throw new Error("gateway module is required");
+  }
+
+  const { gateway } = modules;
   const api = Router();
   api.use(json({ limit: 1024 ** 3 })); // 1GB
 
@@ -64,7 +67,7 @@ export function createToolsRouter({
     const chars = req.body.text?.length || 0;
     if (context.userId && chars > 0) {
       try {
-        await trackUsage(
+        await gateway.trackUsage(
           context.userId,
           "aws-translate",
           [{ quantity: chars, unit: "characters" }],
@@ -171,4 +174,4 @@ export function createToolsRouter({
   return api;
 }
 
-export default createToolsRouter();
+export default createToolsRouter;

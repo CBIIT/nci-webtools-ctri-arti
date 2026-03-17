@@ -231,20 +231,6 @@ export async function editor(
     return null;
   }
 
-  async function saveResource(p, content) {
-    const existing = await getResource(p);
-    if (existing) {
-      const err = assertWritable(existing);
-      if (err) return err;
-      await cms.updateConversationResource(userId, existing.id, { content });
-      return null;
-    }
-    const resource = { agentID: agentId, name: p, content, type: "file" };
-    if (!isAgentScoped(p)) resource.conversationID = conversationId;
-    await cms.storeConversationResource(userId, resource);
-    return null;
-  }
-
   try {
     switch (command) {
       case "view": {
@@ -371,14 +357,14 @@ export async function editor(
 /**
  * Think tool — dedicated reasoning space, no file storage needed
  */
-export async function think({ thought }) {
+export async function think({ thought: _thought }) {
   return "Thinking complete.";
 }
 
 /**
  * DocxTemplate tool — fetch DOCX, extract blocks or apply replacements
  */
-export async function docxTemplate({ docxUrl, replacements }, context) {
+export async function docxTemplate({ docxUrl, replacements }, _context) {
   const { convertToHtml } = await import("mammoth");
 
   let templateBuffer;
@@ -401,8 +387,6 @@ export async function docxTemplate({ docxUrl, replacements }, context) {
 
   // Discovery mode: return document blocks with metadata
   if (!replacements) {
-    const { docxExtractTextBlocks } = await import("shared/parsers.js");
-    // If shared doesn't have docxExtractTextBlocks, fall back to mammoth
     const result = await convertToHtml({ buffer: templateBuffer });
     return { html: result.value, templateDownloadUrl: docxUrl };
   }

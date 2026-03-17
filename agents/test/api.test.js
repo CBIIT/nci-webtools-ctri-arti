@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import api from "agents/api.js";
 import express from "express";
 import request from "supertest";
+
+import api from "agents/api.js";
 
 function buildApp() {
   const app = express();

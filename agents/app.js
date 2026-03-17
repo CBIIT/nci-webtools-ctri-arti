@@ -1,3 +1,5 @@
+import { createCmsService } from "cms/service.js";
+import { createGatewayService } from "gateway/service.js";
 import { requireUserRequestContext } from "shared/request-context.js";
 
 import { runAgentLoop } from "./loop.js";
@@ -10,12 +12,22 @@ function createAppError(statusCode, message) {
 
 export function createAgentsApplication({
   runLoop = runAgentLoop,
-  gateway,
+  gateway = createGatewayService(),
   cms,
   source = "direct",
 } = {}) {
+  const cmsModule = cms ?? createCmsService({ gateway, source });
+
   return {
-    async *chat({ context, userId, agentId, conversationId, message, modelOverride, thoughtBudget }) {
+    async *chat({
+      context,
+      userId,
+      agentId,
+      conversationId,
+      message,
+      modelOverride,
+      thoughtBudget,
+    }) {
       const requestContext = requireUserRequestContext(context ?? userId, { source });
 
       if (!message?.content) {
@@ -31,7 +43,7 @@ export function createAgentsApplication({
         modelOverride,
         thoughtBudget: thoughtBudget || 0,
         gateway,
-        cms,
+        cms: cmsModule,
       });
     },
   };

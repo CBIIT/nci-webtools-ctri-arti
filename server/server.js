@@ -8,7 +8,8 @@ import session from "express-session";
 import logger from "shared/logger.js";
 import { nocache } from "shared/middleware.js";
 
-import api from "./services/api.js";
+import { getServerModules } from "./compose.js";
+import { createServerApi } from "./services/api.js";
 import { touchSession } from "./services/middleware.js";
 import { startScheduler } from "./services/scheduler.js";
 import { createCertificate } from "./services/utils.js";
@@ -18,7 +19,6 @@ const sessionMaxAge = parseInt(SESSION_MAX_AGE, 10) || 30 * 60 * 1000;
 
 const entrypointUrl = process.argv[1] ? pathToFileURL(process.argv[1]).href : null;
 
-// Only start server if this file is run directly (not imported)
 if (entrypointUrl && import.meta.url === entrypointUrl) {
   let schemaReady = false;
   const application = await createApp(process.env);
@@ -63,12 +63,14 @@ export async function createApp(env = process.env) {
 
   let store;
   if (!PGHOST) {
-    // Use memory store for PGlite (local dev / tests)
     store = new session.MemoryStore();
   } else {
     const { createSessionStore } = await import("./services/session-store.js");
     store = createSessionStore(session);
   }
+
+  const modules = await getServerModules();
+  const api = createServerApi({ modules });
 
   app.use(
     session({

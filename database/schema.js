@@ -1,7 +1,7 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
-import { relations, sql } from "drizzle-orm";
+import { eq, relations, sql } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -71,8 +71,12 @@ export const RolePolicy = pgTable(
   "RolePolicy",
   {
     id: serial("id").primaryKey(),
-    roleID: integer("roleID").notNull().references(() => Role.id, { onDelete: "cascade" }),
-    policyID: integer("policyID").notNull().references(() => Policy.id, { onDelete: "cascade" }),
+    roleID: integer("roleID")
+      .notNull()
+      .references(() => Role.id, { onDelete: "cascade" }),
+    policyID: integer("policyID")
+      .notNull()
+      .references(() => Policy.id, { onDelete: "cascade" }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -232,7 +236,9 @@ export const Conversation = pgTable(
   "Conversation",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID").notNull().references(() => User.id, { onDelete: "cascade" }),
+    userID: integer("userID")
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade" }),
     agentID: integer("agentID").references(() => Agent.id, { onDelete: "set null" }),
     title: text("title"),
     deleted: boolean("deleted").default(false),
@@ -334,8 +340,12 @@ export const UserAgent = pgTable(
   "UserAgent",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID").notNull().references(() => User.id, { onDelete: "cascade" }),
-    agentID: integer("agentID").notNull().references(() => Agent.id, { onDelete: "cascade" }),
+    userID: integer("userID")
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade" }),
+    agentID: integer("agentID")
+      .notNull()
+      .references(() => Agent.id, { onDelete: "cascade" }),
     role: text("role"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -349,8 +359,12 @@ export const UserTool = pgTable(
   "UserTool",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID").notNull().references(() => User.id, { onDelete: "cascade" }),
-    toolID: integer("toolID").notNull().references(() => Tool.id, { onDelete: "cascade" }),
+    userID: integer("userID")
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade" }),
+    toolID: integer("toolID")
+      .notNull()
+      .references(() => Tool.id, { onDelete: "cascade" }),
     credential: json("credential"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -364,8 +378,12 @@ export const AgentTool = pgTable(
   "AgentTool",
   {
     id: serial("id").primaryKey(),
-    toolID: integer("toolID").notNull().references(() => Tool.id, { onDelete: "cascade" }),
-    agentID: integer("agentID").notNull().references(() => Agent.id, { onDelete: "cascade" }),
+    toolID: integer("toolID")
+      .notNull()
+      .references(() => Tool.id, { onDelete: "cascade" }),
+    agentID: integer("agentID")
+      .notNull()
+      .references(() => Agent.id, { onDelete: "cascade" }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -532,8 +550,6 @@ export const tables = {
  * When `t` is omitted, uses this module's PG tables. For SQLite, pass the SQLite tables.
  */
 export async function seedDatabase(db) {
-  const { sql, eq } = await import("drizzle-orm");
-
   const T = {
     Role,
     Policy,

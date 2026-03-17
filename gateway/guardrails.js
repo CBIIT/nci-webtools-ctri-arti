@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
-
 import db, { Agent, Guardrail } from "database";
+
 import { eq, inArray, sql } from "drizzle-orm";
 import logger from "shared/logger.js";
 
@@ -45,7 +45,8 @@ function computeSpecHash(guardrail) {
 }
 
 async function loadBedrockSdk() {
-  return await import("@aws-sdk/client-bedrock");
+  loadBedrockSdk.sdkPromise ||= import("@aws-sdk/client-bedrock");
+  return loadBedrockSdk.sdkPromise;
 }
 
 async function createManagementClient() {
@@ -135,7 +136,9 @@ async function createRemoteGuardrail(client, guardrail, specHash) {
 
   let createResponse;
   try {
-    createResponse = await client.send(new CreateGuardrailCommand(buildGuardrailPayload(guardrail)));
+    createResponse = await client.send(
+      new CreateGuardrailCommand(buildGuardrailPayload(guardrail))
+    );
   } catch (error) {
     if (!isDuplicateNameError(error)) throw error;
     const duplicateGuardrail = await findRemoteGuardrailByName(client, guardrail.name);

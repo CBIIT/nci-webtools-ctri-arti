@@ -8,13 +8,22 @@ import { createToolsRouter } from "../../services/routes/tools.js";
 
 const { TEST_API_KEY } = process.env;
 
-function buildApp(deps) {
+function buildApp(deps = {}) {
   const app = express();
   app.use((req, res, next) => {
     req.session = {};
     next();
   });
-  app.use(createToolsRouter(deps));
+  app.use(
+    createToolsRouter({
+      modules: {
+        gateway: {
+          trackUsage: async () => null,
+        },
+      },
+      ...deps,
+    })
+  );
   return app;
 }
 

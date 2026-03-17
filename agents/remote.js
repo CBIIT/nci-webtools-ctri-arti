@@ -3,9 +3,9 @@ import {
   requireUserRequestContext,
 } from "shared/request-context.js";
 
-import { parseNdjsonStream } from "../shared/clients/ndjson.js";
+import { createPlainError, streamNdjsonRequest } from "../shared/clients/http.js";
 
-export function createAgentsRemote({ baseUrl }) {
+export function createAgentsRemote({ baseUrl, fetchImpl = fetch }) {
   return {
     async *chat({
       context,
@@ -19,24 +19,17 @@ export function createAgentsRemote({ baseUrl }) {
       const requestContext = requireUserRequestContext(context ?? userId, {
         source: "internal-http",
       });
-      const response = await fetch(
-        `${baseUrl}/api/agents/${agentId}/conversations/${conversationId}/chat`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...requestContextToInternalHeaders(requestContext),
-          },
-          body: JSON.stringify({ message, modelOverride, thoughtBudget }),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(error.error || `Agents error: ${response.status}`);
-      }
-
-      for await (const event of parseNdjsonStream(response.body, {
+      for await (const event of streamNdjsonRequest(fetchImpl, {
+        url: `${baseUrl}/api/agents/${agentId}/conversations/${conversationId}/chat`,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...requestContextToInternalHeaders(requestContext),
+        },
+        body: { message, modelOverride, thoughtBudget },
+        errorMessage: "Agents request failed",
+        createError: (response, _message, payload) =>
+          createPlainError(response, `Agents error: ${response.status}`, payload),
         onParseError: (error) => console.error("Error parsing agent stream line:", error),
       })) {
         yield event;

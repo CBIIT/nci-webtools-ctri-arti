@@ -17,8 +17,8 @@ import { createGatewayRemote } from "gateway/remote.js";
 import { createGatewayService } from "gateway/service.js";
 import { normalizeEmbeddingUsageItems } from "shared/gateway-usage.js";
 import { createAnonymousRequestContext, createUserRequestContext } from "shared/request-context.js";
+import { createUsersApplication } from "users/app.js";
 import { createUsersRemote } from "users/remote.js";
-import { createUsersService } from "users/service.js";
 
 import usersApi from "../../users/api.js";
 
@@ -80,7 +80,7 @@ test("transport parity", async (t) => {
     const usersServer = await startServer(usersApi, "/api");
 
     try {
-      const directClient = createUsersService();
+      const directClient = createUsersApplication();
       const httpClient = createUsersRemote({ baseUrl: usersServer.url });
 
       const [directUser, httpUser] = await Promise.all([
@@ -126,7 +126,7 @@ test("transport parity", async (t) => {
       .returning();
 
     try {
-      const directClient = createUsersService();
+      const directClient = createUsersApplication();
       const httpClient = createUsersRemote({ baseUrl: usersServer.url });
 
       const [directSingleReset, httpSingleReset] = await Promise.all([

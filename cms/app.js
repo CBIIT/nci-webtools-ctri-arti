@@ -28,6 +28,10 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
     return createRequestContext(context, { source });
   }
 
+  function getUserId(context) {
+    return normalizeContext(context).userId;
+  }
+
   async function requireEditableAgent(context, agentId) {
     const existingAgent = await service.getAgent(context.userId, agentId);
     if (!existingAgent) {
@@ -41,15 +45,15 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
 
   return {
     createAgent(context, data) {
-      return service.createAgent(normalizeContext(context).userId, data);
+      return service.createAgent(getUserId(context), data);
     },
 
     getAgents(context) {
-      return service.getAgents(normalizeContext(context).userId);
+      return service.getAgents(getUserId(context));
     },
 
     getAgent(context, agentId) {
-      return service.getAgent(normalizeContext(context).userId, agentId);
+      return service.getAgent(getUserId(context), agentId);
     },
 
     async updateAgent(context, agentId, updates) {
@@ -69,7 +73,7 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
     },
 
     createConversation(context, data) {
-      return service.createConversation(normalizeContext(context).userId, data);
+      return service.createConversation(getUserId(context), data);
     },
 
     async getConversations(context, options = {}) {
@@ -80,19 +84,19 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
     },
 
     getConversation(context, conversationId) {
-      return service.getConversation(normalizeContext(context).userId, conversationId);
+      return service.getConversation(getUserId(context), conversationId);
     },
 
     updateConversation(context, conversationId, updates) {
-      return service.updateConversation(normalizeContext(context).userId, conversationId, updates);
+      return service.updateConversation(getUserId(context), conversationId, updates);
     },
 
     deleteConversation(context, conversationId) {
-      return service.deleteConversation(normalizeContext(context).userId, conversationId);
+      return service.deleteConversation(getUserId(context), conversationId);
     },
 
     getContext(context, conversationId, options) {
-      return service.getContext(normalizeContext(context).userId, conversationId, options);
+      return service.getContext(getUserId(context), conversationId, options);
     },
 
     summarize(context, conversationId, params) {
@@ -104,35 +108,35 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
     },
 
     appendConversationMessage(context, data) {
-      return service.appendConversationMessage(normalizeContext(context).userId, data);
+      return service.appendConversationMessage(getUserId(context), data);
     },
 
     appendUserMessage(context, data) {
-      return service.appendUserMessage(normalizeContext(context).userId, data);
+      return service.appendUserMessage(getUserId(context), data);
     },
 
     appendAssistantMessage(context, data) {
-      return service.appendAssistantMessage(normalizeContext(context).userId, data);
+      return service.appendAssistantMessage(getUserId(context), data);
     },
 
     appendToolResultsMessage(context, data) {
-      return service.appendToolResultsMessage(normalizeContext(context).userId, data);
+      return service.appendToolResultsMessage(getUserId(context), data);
     },
 
     getMessages(context, conversationId) {
-      return service.getMessages(normalizeContext(context).userId, conversationId);
+      return service.getMessages(getUserId(context), conversationId);
     },
 
     getMessage(context, messageId) {
-      return service.getMessage(normalizeContext(context).userId, messageId);
+      return service.getMessage(getUserId(context), messageId);
     },
 
     updateMessage(context, messageId, updates) {
-      return service.updateMessage(normalizeContext(context).userId, messageId, updates);
+      return service.updateMessage(getUserId(context), messageId, updates);
     },
 
     deleteMessage(context, messageId) {
-      return service.deleteMessage(normalizeContext(context).userId, messageId);
+      return service.deleteMessage(getUserId(context), messageId);
     },
 
     createTool(data) {
@@ -144,7 +148,7 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
     },
 
     getTools(context) {
-      return service.getTools(normalizeContext(context).userId);
+      return service.getTools(getUserId(context));
     },
 
     updateTool(toolId, updates) {
@@ -176,43 +180,39 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
     },
 
     storeConversationResource(context, data) {
-      return service.storeConversationResource(normalizeContext(context).userId, data);
+      return service.storeConversationResource(getUserId(context), data);
     },
 
     getResource(context, resourceId) {
-      return service.getResource(normalizeContext(context).userId, resourceId);
+      return service.getResource(getUserId(context), resourceId);
     },
 
     updateConversationResource(context, resourceId, updates) {
-      return service.updateConversationResource(
-        normalizeContext(context).userId,
-        resourceId,
-        updates
-      );
+      return service.updateConversationResource(getUserId(context), resourceId, updates);
     },
 
     getResourcesByAgent(context, agentId) {
-      return service.getResourcesByAgent(normalizeContext(context).userId, agentId);
+      return service.getResourcesByAgent(getUserId(context), agentId);
     },
 
     getResourcesByConversation(context, conversationId) {
-      return service.getResourcesByConversation(normalizeContext(context).userId, conversationId);
+      return service.getResourcesByConversation(getUserId(context), conversationId);
     },
 
     deleteConversationResource(context, resourceId) {
-      return service.deleteConversationResource(normalizeContext(context).userId, resourceId);
+      return service.deleteConversationResource(getUserId(context), resourceId);
     },
 
     storeConversationVectors(context, data) {
-      return service.storeConversationVectors(normalizeContext(context).userId, data);
+      return service.storeConversationVectors(getUserId(context), data);
     },
 
     getVectorsByConversation(context, conversationId) {
-      return service.getVectorsByConversation(normalizeContext(context).userId, conversationId);
+      return service.getVectorsByConversation(getUserId(context), conversationId);
     },
 
     getVectorsByResource(context, resourceId) {
-      return service.getVectorsByResource(normalizeContext(context).userId, resourceId);
+      return service.getVectorsByResource(getUserId(context), resourceId);
     },
 
     searchVectors(params) {
@@ -220,23 +220,23 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
     },
 
     deleteVectorsByResource(context, resourceId) {
-      return service.deleteVectorsByResource(normalizeContext(context).userId, resourceId);
+      return service.deleteVectorsByResource(getUserId(context), resourceId);
     },
 
     deleteVectorsByConversation(context, conversationId) {
-      return service.deleteVectorsByConversation(normalizeContext(context).userId, conversationId);
+      return service.deleteVectorsByConversation(getUserId(context), conversationId);
     },
 
     searchMessages(context, params) {
-      return service.searchMessages(normalizeContext(context).userId, params);
+      return service.searchMessages(getUserId(context), params);
     },
 
     searchResourceVectors(context, params) {
-      return service.searchResourceVectors(normalizeContext(context).userId, params);
+      return service.searchResourceVectors(getUserId(context), params);
     },
 
     searchChunks(context, params) {
-      return service.searchChunks(normalizeContext(context).userId, params);
+      return service.searchChunks(getUserId(context), params);
     },
   };
 }

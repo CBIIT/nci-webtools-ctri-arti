@@ -14,10 +14,10 @@ import { test } from "node:test";
 
 import { eq } from "drizzle-orm";
 import { createGatewayUsage } from "gateway/usage.js";
-import { createUsersService } from "users/service.js";
+import { createUsersApplication } from "users/app.js";
 import { UserService } from "users/user.js";
 
-const users = createUsersService();
+const users = createUsersApplication();
 const { trackModelUsage, trackUsage } = createGatewayUsage({
   recordUsage: (...args) => users.recordUsage(...args),
 });
