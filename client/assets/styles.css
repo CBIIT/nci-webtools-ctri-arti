@@ -1434,6 +1434,10 @@ dialog .close-btn {
   cursor: not-allowed;
 }
 
+.btn-save-primary.btn-save-primary-sm {
+  padding: 9.5px 22px;
+}
+
 /* Inline Select Component */
 .custom-dropdown {
   width: 100%;

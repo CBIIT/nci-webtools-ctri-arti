@@ -219,3 +219,20 @@
 .profile-required-asterisk {
   margin-left: 2px;
 }
+
+.profile-cost-limit-divider {
+  border-left: 1px solid #343434;
+  height: 21px;
+  margin: 0 15px;
+}
+
+.profile-cost-limit-note {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 22px;
+  display: flex;
+  align-items: center;
+  color: #62666d;
+}
