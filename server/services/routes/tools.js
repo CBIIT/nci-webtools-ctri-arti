@@ -1,4 +1,5 @@
-import db, { rawSql } from "database";
+import db from "database";
+import { getSchemaReadiness } from "database/readiness.js";
 
 import { json, Router } from "express";
 
@@ -35,11 +36,14 @@ export function createToolsRouter({
   api.use(json({ limit: 1024 ** 3 })); // 1GB
 
   api.get("/status", async (req, res) => {
-    const [health] = await rawSql`SELECT 'ok' AS health`;
+    const readiness = await getSchemaReadiness();
     res.json({
       version: VERSION,
       uptime: process.uptime(),
-      database: health,
+      database: {
+        health: readiness.ready ? "ok" : "waiting",
+        ...readiness,
+      },
     });
   });
 

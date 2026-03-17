@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./index.js",
+    "./readiness.js": "./readiness.js",
     "./schema.js": "./schema.js",
     "./csv-loader.js": "./csv-loader.js",
     "./relational-audit.js": "./relational-audit.js",
