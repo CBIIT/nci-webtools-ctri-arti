@@ -183,7 +183,7 @@ function RequestLimitIncrease(props) {
                       value=${() => reason()}
                       onInput=${(e) => setReason(e.target.value)}
                     />
-                    <div class="remaining-characters text-end">
+                    <div class="remaining-characters text-end font-inter">
                       ${() => 500 - reason().length} characters remaining
                     </div>
                   </div>
