@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 import Handlebars from "handlebars";
+import { sendJustificationEmail } from "../services/email.js";
 
 test("email template", async (t) => {
   const templatePath = new URL("../templates/error-log-report.hbs", import.meta.url);
@@ -49,5 +50,41 @@ test("email template", async (t) => {
     });
 
     assert.ok(html.length > 0);
+  });
+
+  await t.test("sendJustificationEmail formats the outgoing message", async () => {
+    let sent = null;
+    const env = {
+      EMAIL_ADMIN: "admin@test.com",
+      EMAIL_SENDER: "sender@test.com",
+      TIER: "dev",
+    };
+
+    const result = await sendJustificationEmail(
+      {
+        justification: "Need more capacity",
+        userName: "Test Admin",
+        userEmail: "test@test.com",
+        currentLimit: 1000,
+      },
+      env,
+      async (params) => {
+        sent = params;
+        return { messageId: "test-message-id" };
+      }
+    );
+
+    assert.deepStrictEqual(result, { messageId: "test-message-id" });
+    assert.deepStrictEqual(sent, {
+      from: "sender@test.com",
+      to: "admin@test.com",
+      subject: "[DEV] User Request Limit Increase",
+      text:
+        "Hello Admin Team,\n\n" +
+        "A new request has been submitted to increase a user’s daily cost limit. Please review the details below:\n\n" +
+        "User Name: [Test Admin]\nUser Email: [test@test.com]\nCurrent Daily Limit: $[1000]\n" +
+        "Reason for Request:\n\nNeed more capacity\n\nPlease review this request and take the appropriate action.\n\n" +
+        "Thank you,\nResearch Optimizer System",
+    });
   });
 });

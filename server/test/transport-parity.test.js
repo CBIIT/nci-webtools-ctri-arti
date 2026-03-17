@@ -1,10 +1,11 @@
 import http from "node:http";
 import assert from "node:assert/strict";
+import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
 
-import db, { Agent, Model, Usage, User } from "database";
+import db, { Agent, Model, Resource, Usage, User } from "database";
 import { v1Router as cmsApi } from "cms/api.js";
 import { ConversationService } from "cms/conversation.js";
 import { eq, and } from "drizzle-orm";
@@ -19,7 +20,7 @@ import {
 } from "shared/request-context.js";
 import usersApi from "../../users/api.js";
 
-const ROOT = "E:\\Projects\\nci-webtools-ctri-research-optimizer";
+const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
 function createHttpApp(router, basePath = "/") {
   const app = express();
@@ -479,13 +480,18 @@ test("transport parity", async (t) => {
       conversationId: foreignConversation.id,
       content: [{ text: "Foreign message" }],
     });
-    const foreignResource = await svc.storeConversationResource(otherUser.id, {
-      conversationID: foreignConversation.id,
-      messageID: foreignMessage.id,
-      name: "foreign.txt",
-      type: "text/plain",
-      content: "Foreign resource",
-    });
+    const [foreignResource] = await db
+      .insert(Resource)
+      .values({
+        userID: otherUser.id,
+        conversationID: foreignConversation.id,
+        messageID: foreignMessage.id,
+        name: "foreign.txt",
+        type: "text/plain",
+        content: "Foreign resource",
+        metadata: {},
+      })
+      .returning();
 
     try {
       const context = createUserRequestContext(user.id, { source: "direct" });

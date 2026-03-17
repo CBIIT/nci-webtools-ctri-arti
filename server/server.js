@@ -15,8 +15,10 @@ import { createCertificate } from "./services/utils.js";
 const { PORT = 8080, SESSION_MAX_AGE, PGHOST } = process.env;
 const sessionMaxAge = parseInt(SESSION_MAX_AGE, 10) || 30 * 60 * 1000;
 
+const entrypointUrl = process.argv[1] ? pathToFileURL(process.argv[1]).href : null;
+
 // Only start server if this file is run directly (not imported)
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (entrypointUrl && import.meta.url === entrypointUrl) {
   const app = await createApp(process.env);
   const _scheduler = startScheduler();
   createServer(app, process.env).listen(PORT, () =>
