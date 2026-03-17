@@ -15,36 +15,59 @@ import { getToolFn } from "./tools.js";
  * @param {number} params.agentId
  * @param {number} params.conversationId - conversation ID
  * @param {Object} params.userMessage - { role: "user", content: [...] }
- * @param {string} params.model - model ID
+ * @param {string} params.modelOverride - optional explicit model override
  * @param {number} params.thoughtBudget - 0 for no reasoning, >0 for extended thinking
  * @param {Object} params.gateway - gateway client { invoke }
  * @param {Object} params.cms - CMS client
  */
 export async function* runAgentLoop({
   userId,
+  requestId,
   agentId,
   conversationId,
   userMessage,
-  model,
+  modelOverride,
   thoughtBudget = 0,
   gateway,
   cms,
 }) {
+  const terminalStopReasons = new Set([
+    "end_turn",
+    "guardrail_intervened",
+    "content_filtered",
+    "max_tokens",
+    "stop_sequence",
+    "malformed_model_output",
+    "malformed_tool_use",
+    "model_context_window_exceeded",
+  ]);
+
   // 1. Load agent config + conversation
   const agent = await cms.getAgent(userId, agentId);
   if (!agent) throw new Error(`Agent not found: ${agentId}`);
+  const effectiveModel = modelOverride || agent.runtime?.model;
+  if (!effectiveModel) {
+    throw new Error(`Agent runtime model not resolved: ${agentId}`);
+  }
 
   const toolNames = agent.tools || ["search", "browse", "data", "editor", "think"];
   const toolSpecs = getToolSpecs(toolNames);
   const tools = toolSpecs.map(({ toolSpec }) => ({ toolSpec }));
 
   const conversation = await cms.getConversation(userId, conversationId);
+  if (!conversation) {
+    throw new Error(`Conversation not found: ${conversationId}`);
+  }
 
   // 2. Process uploaded files → resources, then build clean message for model
   await processUploads(userMessage, { userId, agentId, conversationId, cms });
 
   // Persist the cleaned message (no base64 blobs, no resourceOnly flags)
-  await cms.addMessage(userId, conversationId, userMessage);
+  await cms.appendUserMessage(userId, {
+    conversationId,
+    content: userMessage.content,
+    parentID: userMessage.parentID || null,
+  });
 
   // 3. Build system prompt (before summarization so it can reuse the same params)
   // Use conversation.createdAt for stable cache prefix — the date never changes
@@ -88,11 +111,12 @@ export async function* runAgentLoop({
       .join("\n") || "";
 
   const summaryStream = cms.summarize(userId, conversationId, {
-    model,
+    model: effectiveModel,
     system,
     tools,
     thoughtBudget,
     userText,
+    requestId,
   });
   const summaryIterator = summaryStream?.[Symbol.asyncIterator]?.();
   const firstSummaryEvent = summaryIterator ? await summaryIterator.next() : { done: true };
@@ -120,7 +144,7 @@ export async function* runAgentLoop({
   }
 
   // Tool execution context
-  const toolContext = { userId, agentId, conversationId, gateway, cms };
+  const toolContext = { userId, requestId, agentId, conversationId, gateway, cms };
 
   // 6. Agent loop
   let done = false;
@@ -128,13 +152,15 @@ export async function* runAgentLoop({
     // Invoke model (streaming)
     const result = await gateway.invoke({
       userID: userId,
-      model,
+      requestId,
+      model: effectiveModel,
       messages,
       system,
       tools,
       thoughtBudget,
       stream: true,
       type: agent.name || "agent",
+      guardrailConfig: agent.runtime?.guardrailConfig || null,
     });
 
     if (result.status === 429) {
@@ -171,10 +197,13 @@ export async function* runAgentLoop({
 
     // Build and persist assistant message
     const assistantMessage = { role: "assistant", content: assistantContent };
-    await cms.addMessage(userId, conversationId, assistantMessage);
+    await cms.appendAssistantMessage(userId, {
+      conversationId,
+      content: assistantMessage.content,
+    });
     messages.push(assistantMessage);
 
-    if (stopReason === "end_turn" || !stopReason) {
+    if (!stopReason || terminalStopReasons.has(stopReason)) {
       done = true;
     } else if (stopReason === "tool_use") {
       const toolUses = assistantContent.filter((b) => b.toolUse).map((b) => b.toolUse);
@@ -248,7 +277,10 @@ export async function* runAgentLoop({
 
         // Persist tool results message
         const toolResultsMessage = { role: "user", content: toolResultContent };
-        await cms.addMessage(userId, conversationId, toolResultsMessage);
+        await cms.appendToolResultsMessage(userId, {
+          conversationId,
+          content: toolResultsMessage.content,
+        });
         messages.push(toolResultsMessage);
       }
     }
@@ -358,7 +390,7 @@ async function processUploads(userMessage, { userId, agentId, conversationId, cm
 
     const { content, encoding } = await extractContent(rawBytes, file.format);
 
-    await cms.addResource(userId, {
+    await cms.storeConversationResource(userId, {
       agentID: agentId,
       conversationID: conversationId,
       name: file.originalName || file.name,

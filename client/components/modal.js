@@ -1,6 +1,7 @@
 import { createEffect, createResource, Show } from "solid-js";
 import html from "solid-js/html";
 
+import { fetchCachedText } from "../utils/static-data.js";
 import { getMarked } from "../utils/utils.js";
 
 /**
@@ -20,12 +21,14 @@ import { getMarked } from "../utils/utils.js";
  */
 export default function Modal(props) {
   createEffect(() => (document.body.style.overflow = props.open ? "hidden" : "auto"));
-  const [innerHTML] = createResource(() => {
-    if (!props.url) return Promise.resolve("");
-    return fetch(props.url)
-      .then((r) => r.text())
-      .then((text) => getMarked().parse(text));
-  });
+  const [innerHTML] = createResource(
+    () => (props.open && props.url ? props.url : null),
+    async (url) => {
+      if (!url) return "";
+      const text = await fetchCachedText(url);
+      return getMarked().parse(text);
+    }
+  );
   return html`
     <dialog
       class="modal modal-lg border-0 show"

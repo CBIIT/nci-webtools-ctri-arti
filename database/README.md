@@ -1,10 +1,10 @@
 # database
 
-Shared database package — Drizzle ORM schema, migrations, relations, and seed data.
+Shared database package — Drizzle ORM schema, migrations, relations, audit helpers, and seed data.
 
 ## Overview
 
-Workspace library package (not a running service). Imported by all services that need database access. Provides model definitions, association setup, and initial seed data loading.
+Workspace library package (not a running service). Imported by all services that need database access. Provides model definitions, association setup, migration bootstrap, relational-audit helpers, and initial seed data loading.
 
 ## Quick Start
 
@@ -23,14 +23,23 @@ When imported, the package:
 
 1. **Select dialect** — PGlite (when `DB_STORAGE` is set) or PostgreSQL (production)
 2. **Create Drizzle instance** — Registers all table definitions and relations from `schema.js`
-3. **Run migrations** (unless `DB_SKIP_SYNC=true`) — Applies Drizzle migrations via `migrate()`
+3. **Run checked-in SQL migrations** (unless `DB_SKIP_SYNC=true`)
 4. **Seed data** — Upserts roles, policies, providers, models, prompts, agents, tools, and agent-tools from CSV files
+5. **Run relational audit** (unless `DB_SKIP_SYNC=true` or `DB_SKIP_AUDIT=true`) — Fails startup if foreign keys, ownership edges, or required columns are still inconsistent
 
 Microservices that connect to an already-initialized database should set `DB_SKIP_SYNC=true`.
 
 ## Model Reference
 
-All foreign keys use uppercase ID suffix (e.g., `userID`, `modelID`, `conversationID`).
+All relationship columns use uppercase `ID` suffixes such as `userID`, `modelID`, and `conversationID`.
+
+Important:
+
+- Drizzle relations are defined in `schema.js` for application code.
+- The checked-in migrations now enforce the core foreign-key graph and the main required ownership columns.
+- Runtime sync and test bootstrap now use the same checked-in migration files instead of separate schema definitions.
+- Some columns are intentionally nullable because the product supports global agents and agent-scoped resources outside a conversation.
+- Use `npm run db:audit-relations` to verify an existing PostgreSQL database before and after deployment.
 
 | Model            | Key Attributes                                                                                                                                                                 | Indexes                                        |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
@@ -39,15 +48,15 @@ All foreign keys use uppercase ID suffix (e.g., `userID`, `modelID`, `conversati
 | **Policy**       | name, resource, action                                                                                                                                                         | —                                              |
 | **RolePolicy**   | roleID, policyID                                                                                                                                                               | (roleID+policyID unique)                       |
 | **Provider**     | name, apiKey, endpoint                                                                                                                                                         | —                                              |
-| **Model**        | providerID, name, internalName, type, description, maxContext, maxOutput, maxReasoning, cost1kInput, cost1kOutput, cost1kCacheRead, cost1kCacheWrite, defaultParameters (JSON) | internalName, providerID                       |
-| **Usage**        | userID, modelID, type, agentID, messageID, inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens, cost                                                                  | userID, modelID, createdAt, (userID+createdAt) |
+| **Model**        | providerID, name, internalName, type, description, maxContext, maxOutput, maxReasoning, cost1kInput, cost1kOutput, cost1kCacheRead, cost1kCacheWrite, pricing (JSON), defaultParameters (JSON) | internalName, providerID                       |
+| **Usage**        | userID, modelID, type, agentID, messageID, quantity, unit, unitCost, cost                                                                                                     | userID, modelID, createdAt, (userID+createdAt), unit |
 | **Prompt**       | name, version, content (TEXT)                                                                                                                                                  | name, (name+version unique)                    |
 | **Agent**        | userID, modelID, name, description, promptID, modelParameters (JSON)                                                                                                           | userID, modelID, promptID                      |
 | **Tool**         | name, description, type, authenticationType, endpoint, transportType, customConfig (JSON)                                                                                      | —                                              |
 | **Conversation** | userID, agentID, title, deleted (BOOLEAN), deletedAt, summaryMessageID                                                                                                         | agentID, (userID+createdAt), deleted           |
 | **Message**      | conversationID, parentID, role, content (JSON)                                                                                                                                 | conversationID, (conversationID+createdAt)     |
-| **Resource**     | agentID, messageID, name, type, content (TEXT), s3Uri, metadata (JSON)                                                                                                         | agentID, messageID                             |
-| **Vector**       | conversationID, resourceID, toolID, order, content (TEXT), embedding (JSON)                                                                                                    | conversationID, toolID, (resourceID+order)     |
+| **Resource**     | userID, agentID, conversationID, messageID, name, type, content (TEXT), s3Uri, metadata (JSON)                                                                               | userID, agentID, conversationID, messageID     |
+| **Vector**       | conversationID, resourceID, toolID, order, content (TEXT), embedding (`vector(3072)`)                                                                                         | conversationID, toolID, (resourceID+order), trigram/full-text content indexes |
 | **UserAgent**    | userID, agentID, role                                                                                                                                                          | (userID+agentID unique)                        |
 | **UserTool**     | userID, toolID, credential (JSON)                                                                                                                                              | (userID+toolID unique)                         |
 | **AgentTool**    | toolID, agentID                                                                                                                                                                | (toolID+agentID unique)                        |

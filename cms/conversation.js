@@ -13,7 +13,6 @@ import db, {
 
 import { eq, and, or, isNull, isNotNull, inArray, gte, lte, asc, desc, sql } from "drizzle-orm";
 import { chunkText } from "shared/chunker.js";
-import { embed as gatewayEmbed } from "shared/clients/gateway.js";
 import {
   assertValidEmbedding,
   getEmbeddingsFromResult,
@@ -23,10 +22,21 @@ import {
   RESOURCE_CHUNK_SIZE,
 } from "shared/embeddings.js";
 
-let _invoke = null;
-let _embed = gatewayEmbed;
 const _summarizing = new Set();
 const CONVERSATION_SUMMARY_TOKEN = "[Conversation Summary]";
+const DEFAULT_CHAT_MODEL = "us.anthropic.claude-sonnet-4-6";
+
+async function missingEmbedDependency() {
+  throw new Error("ConversationService embed dependency is required");
+}
+
+function buildGuardrailRuntimeConfig(guardrail) {
+  if (!guardrail?.awsGuardrailId) return null;
+  return {
+    guardrailIdentifier: guardrail.awsGuardrailId,
+    guardrailVersion: guardrail.awsGuardrailVersion || "DRAFT",
+  };
+}
 
 function estimateMessageTokens(messages) {
   let tokens = 0;
@@ -52,13 +62,16 @@ function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
-export class ConversationService {
-  static setInvoker(fn) {
-    _invoke = fn;
-  }
+function createNotFoundError(message) {
+  const error = new Error(message);
+  error.statusCode = 404;
+  return error;
+}
 
-  static setEmbedder(fn) {
-    _embed = fn;
+export class ConversationService {
+  constructor({ invoke = null, embed = missingEmbedDependency } = {}) {
+    this.invokeModel = invoke;
+    this.embedContent = embed;
   }
 
   #isTextResource(resource) {
@@ -87,6 +100,74 @@ export class ConversationService {
     return eq(Resource.userID, userId);
   }
 
+  async #requireConversation(userId, conversationId) {
+    const conversation = await this.getConversation(userId, conversationId);
+    if (!conversation) {
+      throw createNotFoundError(`Conversation not found: ${conversationId}`);
+    }
+    return conversation;
+  }
+
+  async #requireMessage(userId, messageId) {
+    const message = await this.getMessage(userId, messageId);
+    if (!message) {
+      throw createNotFoundError(`Message not found: ${messageId}`);
+    }
+    return message;
+  }
+
+  async #requireOwnedResource(userId, resourceId) {
+    const [resource] = await db
+      .select()
+      .from(Resource)
+      .where(and(eq(Resource.id, resourceId), this.#resourceWriteCondition(userId)))
+      .limit(1);
+    if (!resource) {
+      throw createNotFoundError(`Resource not found: ${resourceId}`);
+    }
+    return resource;
+  }
+
+  async #normalizeResourceWrite(userId, data) {
+    const resourceData = {
+      userID: userId || null,
+      agentID: data.agentID || null,
+      conversationID: data.conversationID || null,
+      messageID: data.messageID || null,
+      name: data.name,
+      type: data.type,
+      content: data.content,
+      s3Uri: data.s3Uri || null,
+      metadata: data.metadata || {},
+    };
+
+    if (resourceData.messageID) {
+      const message = await this.#requireMessage(userId, resourceData.messageID);
+      if (
+        resourceData.conversationID !== null &&
+        Number(resourceData.conversationID) !== Number(message.conversationID)
+      ) {
+        throw createNotFoundError(
+          `Conversation ${resourceData.conversationID} does not own message ${resourceData.messageID}`
+        );
+      }
+      resourceData.conversationID = message.conversationID;
+    }
+
+    if (resourceData.conversationID !== null) {
+      await this.#requireConversation(userId, resourceData.conversationID);
+    }
+
+    if (resourceData.agentID !== null) {
+      const agent = await this.getAgent(userId, resourceData.agentID);
+      if (!agent) {
+        throw createNotFoundError(`Agent not found: ${resourceData.agentID}`);
+      }
+    }
+
+    return resourceData;
+  }
+
   async #buildResourceVectors(userId, resource) {
     if (this.#isTextResource(resource)) {
       const chunks = chunkText(resource.content, {
@@ -98,7 +179,7 @@ export class ConversationService {
 
       if (!chunks.length) return [];
 
-      const result = await _embed({
+      const result = await this.embedContent({
         userID: userId,
         model: NOVA_EMBEDDING_MODEL,
         content: chunks,
@@ -116,7 +197,7 @@ export class ConversationService {
     }
 
     if (resource?.type === "image" && typeof resource.content === "string" && resource.content) {
-      const result = await _embed({
+      const result = await this.embedContent({
         userID: userId,
         model: NOVA_EMBEDDING_MODEL,
         content: [{ image: resource.content }],
@@ -183,6 +264,32 @@ export class ConversationService {
       where: eq(Model.internalName, "us.anthropic.claude-sonnet-4-6"),
     });
     return sonnet || null;
+  }
+
+  #buildAgentRuntimeConfig(agent) {
+    return {
+      model: agent?.Model?.internalName || DEFAULT_CHAT_MODEL,
+      modelID: agent?.modelID || null,
+      modelParameters: agent?.modelParameters || null,
+      systemPrompt: agent?.Prompt?.content || null,
+      guardrailID: agent?.guardrailID || null,
+      guardrailConfig: buildGuardrailRuntimeConfig(agent?.Guardrail),
+      tools: (agent?.AgentTools || []).map((at) => at.Tool?.name).filter(Boolean),
+    };
+  }
+
+  async resolveAgentRuntimeConfig(userId, agentId, { modelOverride = null } = {}) {
+    const agent = await this.getAgent(userId, agentId);
+    if (!agent) return null;
+
+    return {
+      agent,
+      runtime: {
+        ...agent.runtime,
+        overrideModel: modelOverride || null,
+        effectiveModel: modelOverride || agent.runtime?.model || DEFAULT_CHAT_MODEL,
+      },
+    };
   }
 
   async checkSummarizationNeeded(userId, conversationId) {
@@ -264,6 +371,7 @@ export class ConversationService {
         description: data.description || null,
         modelID: data.modelID || null,
         promptID: data.promptID || null,
+        guardrailID: data.guardrailID || null,
         modelParameters: data.modelParameters || null,
       })
       .returning();
@@ -282,7 +390,16 @@ export class ConversationService {
     const agent = await db.query.Agent.findFirst({
       where: and(eq(Agent.id, agentId), this.#agentReadCondition(userId)),
       with: {
+        Model: { columns: { id: true, internalName: true, name: true, defaultParameters: true } },
         Prompt: { columns: { id: true, name: true, content: true } },
+        Guardrail: {
+          columns: {
+            id: true,
+            name: true,
+            awsGuardrailId: true,
+            awsGuardrailVersion: true,
+          },
+        },
         AgentTools: { with: { Tool: { columns: { name: true } } } },
       },
     });
@@ -290,8 +407,9 @@ export class ConversationService {
     if (!agent) return null;
 
     const result = { ...agent };
-    result.systemPrompt = result.Prompt?.content || null;
-    result.tools = (result.AgentTools || []).map((at) => at.Tool?.name).filter(Boolean);
+    result.runtime = this.#buildAgentRuntimeConfig(result);
+    result.systemPrompt = result.runtime.systemPrompt;
+    result.tools = result.runtime.tools;
     return result;
   }
 
@@ -299,7 +417,16 @@ export class ConversationService {
     const agents = await db.query.Agent.findMany({
       where: this.#agentReadCondition(userId),
       with: {
+        Model: { columns: { id: true, internalName: true, name: true, defaultParameters: true } },
         Prompt: { columns: { id: true, name: true, content: true } },
+        Guardrail: {
+          columns: {
+            id: true,
+            name: true,
+            awsGuardrailId: true,
+            awsGuardrailVersion: true,
+          },
+        },
         AgentTools: { with: { Tool: { columns: { name: true } } } },
       },
       orderBy: desc(Agent.createdAt),
@@ -307,8 +434,9 @@ export class ConversationService {
 
     return agents.map((agent) => {
       const result = { ...agent };
-      result.systemPrompt = result.Prompt?.content || null;
-      result.tools = (result.AgentTools || []).map((at) => at.Tool?.name).filter(Boolean);
+      result.runtime = this.#buildAgentRuntimeConfig(result);
+      result.systemPrompt = result.runtime.systemPrompt;
+      result.tools = result.runtime.tools;
       return result;
     });
   }
@@ -468,21 +596,54 @@ export class ConversationService {
 
   // ===== MESSAGE METHODS =====
 
-  async addMessage(userId, conversationId, data) {
+  async appendConversationMessage(userId, { conversationId, role, content, parentID = null }) {
+    await this.#requireConversation(userId, conversationId);
+
     const [msg] = await db
       .insert(Message)
       .values({
         conversationID: conversationId,
-        parentID: data.parentID || null,
-        role: data.role,
-        content: data.content,
+        parentID,
+        role,
+        content,
       })
       .returning();
     return msg;
   }
 
-  async *summarize(userId, conversationId, { model, system, tools, thoughtBudget, userText } = {}) {
-    if (!_invoke) return;
+  async appendUserMessage(userId, { conversationId, content, parentID = null }) {
+    return this.appendConversationMessage(userId, {
+      conversationId,
+      role: "user",
+      content,
+      parentID,
+    });
+  }
+
+  async appendAssistantMessage(userId, { conversationId, content, parentID = null }) {
+    return this.appendConversationMessage(userId, {
+      conversationId,
+      role: "assistant",
+      content,
+      parentID,
+    });
+  }
+
+  async appendToolResultsMessage(userId, { conversationId, content, parentID = null }) {
+    return this.appendConversationMessage(userId, {
+      conversationId,
+      role: "user",
+      content,
+      parentID,
+    });
+  }
+
+  async *summarize(
+    userId,
+    conversationId,
+    { model, system, tools, thoughtBudget, userText, requestId } = {}
+  ) {
+    if (!this.invokeModel) return;
 
     const check = await this.checkSummarizationNeeded(userId, conversationId);
     if (!check) return;
@@ -503,11 +664,12 @@ export class ConversationService {
       "\n\n" +
       "Continue addressing this message in your next response.";
 
-    const result = await _invoke({
+    const result = await this.invokeModel({
       type: "chat-summary",
       model: model || check.model,
       stream: true,
       thoughtBudget: thoughtBudget ?? 0,
+      requestId,
       system,
       tools,
       messages: [...check.messages, { role: "user", content: [{ text: summaryPrompt }] }],
@@ -642,18 +804,8 @@ export class ConversationService {
 
   // ===== RESOURCE METHODS =====
 
-  async addResource(userId, data) {
-    const resourceData = {
-      userID: userId || null,
-      agentID: data.agentID || null,
-      conversationID: data.conversationID || null,
-      messageID: data.messageID || null,
-      name: data.name,
-      type: data.type,
-      content: data.content,
-      s3Uri: data.s3Uri || null,
-      metadata: data.metadata || {},
-    };
+  async storeConversationResource(userId, data) {
+    const resourceData = await this.#normalizeResourceWrite(userId, data);
     const vectors = await this.#buildResourceVectors(userId, resourceData);
 
     return db.transaction(async (tx) => {
@@ -679,23 +831,21 @@ export class ConversationService {
     return resource || null;
   }
 
-  async updateResource(userId, resourceId, updates) {
-    const [existing] = await db
-      .select()
-      .from(Resource)
-      .where(and(eq(Resource.id, resourceId), this.#resourceWriteCondition(userId)))
-      .limit(1);
-    if (!existing) return null;
+  async updateConversationResource(userId, resourceId, updates) {
+    const existing = await this.#requireOwnedResource(userId, resourceId);
 
     const resourceUpdates = stripAutoFields(updates);
-    const shouldReindex = this.#shouldReindexResource(existing, resourceUpdates);
-    const nextResource = { ...existing, ...resourceUpdates };
+    const nextResource = await this.#normalizeResourceWrite(userId, {
+      ...existing,
+      ...resourceUpdates,
+    });
+    const shouldReindex = this.#shouldReindexResource(existing, nextResource);
     const vectors = shouldReindex ? await this.#buildResourceVectors(userId, nextResource) : null;
 
     return db.transaction(async (tx) => {
       const [resource] = await tx
         .update(Resource)
-        .set(resourceUpdates)
+        .set(stripAutoFields(nextResource))
         .where(eq(Resource.id, resourceId))
         .returning();
 
@@ -738,13 +888,8 @@ export class ConversationService {
       .orderBy(asc(Resource.createdAt));
   }
 
-  async deleteResource(userId, resourceId) {
-    const [resource] = await db
-      .select({ id: Resource.id })
-      .from(Resource)
-      .where(and(eq(Resource.id, resourceId), this.#resourceWriteCondition(userId)))
-      .limit(1);
-    if (!resource) return 0;
+  async deleteConversationResource(userId, resourceId) {
+    await this.#requireOwnedResource(userId, resourceId);
 
     await db.delete(Vector).where(eq(Vector.resourceID, resourceId));
     const result = await db.delete(Resource).where(eq(Resource.id, resourceId));
@@ -753,7 +898,28 @@ export class ConversationService {
 
   // ===== VECTOR METHODS =====
 
-  async addVectors(userId, conversationId, vectors) {
+  async storeConversationVectors(userId, { conversationId, vectors }) {
+    await this.#requireConversation(userId, conversationId);
+
+    for (const vector of vectors) {
+      if (
+        vector.conversationID !== null &&
+        vector.conversationID !== undefined &&
+        Number(vector.conversationID) !== Number(conversationId)
+      ) {
+        throw createNotFoundError(
+          `Vector conversation ${vector.conversationID} does not match ${conversationId}`
+        );
+      }
+      if (vector.resourceID) {
+        await this.getResource(userId, vector.resourceID).then((resource) => {
+          if (!resource) {
+            throw createNotFoundError(`Resource not found: ${vector.resourceID}`);
+          }
+        });
+      }
+    }
+
     const records = vectors.map((vector, index) => ({
       conversationID: vector.conversationID ?? conversationId ?? null,
       resourceID: vector.resourceID || null,
@@ -829,11 +995,13 @@ export class ConversationService {
   }
 
   async deleteVectorsByResource(userId, resourceId) {
+    await this.#requireOwnedResource(userId, resourceId);
     const result = await db.delete(Vector).where(eq(Vector.resourceID, resourceId));
     return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
 
   async deleteVectorsByConversation(userId, conversationId) {
+    await this.#requireConversation(userId, conversationId);
     const result = await db.delete(Vector).where(eq(Vector.conversationID, conversationId));
     return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
   }
@@ -944,5 +1112,3 @@ export class ConversationService {
       .limit(limit);
   }
 }
-
-export const conversationService = new ConversationService();

@@ -22,11 +22,10 @@ export function useSessionPersistence({
   getSnapshot,
   restoreSnapshot,
   onRetryJob,
+  getUserEmail,
 }) {
   let db = null;
   const pendingRetries = [];
-
-  const [session] = createResource(() => fetch("/api/v1/session").then((r) => r.json()));
 
   function setParam(key, value) {
     const url = new URL(window.location);
@@ -107,12 +106,12 @@ export function useSessionPersistence({
   }
 
   createEffect(async () => {
-    const user = session()?.user;
-    if (!user) {
+    const userEmail = typeof getUserEmail === "function" ? getUserEmail() : getUserEmail;
+    if (!userEmail) {
       return;
     }
 
-    db = await getDatabase(user.email || "anonymous");
+    db = await getDatabase(userEmail || "anonymous");
 
     const sessionId = new URLSearchParams(window.location.search).get("id");
     if (sessionId) {

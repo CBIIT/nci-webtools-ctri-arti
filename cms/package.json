@@ -5,6 +5,10 @@
   "exports": {
     ".": "./index.js",
     "./api.js": "./api.js",
+    "./http.js": "./http.js",
+    "./remote.js": "./remote.js",
+    "./service.js": "./service.js",
+    "./app.js": "./app.js",
     "./conversation.js": "./conversation.js"
   },
   "scripts": {

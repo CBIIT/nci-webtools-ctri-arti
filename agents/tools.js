@@ -110,6 +110,7 @@ If the document doesn't contain information relevant to the question, state this
 
   const result = await context.gateway.invoke({
     userID: context.userId,
+    requestId: context.requestId,
     model,
     messages,
     system,
@@ -235,12 +236,12 @@ export async function editor(
     if (existing) {
       const err = assertWritable(existing);
       if (err) return err;
-      await cms.updateResource(userId, existing.id, { content });
+      await cms.updateConversationResource(userId, existing.id, { content });
       return null;
     }
     const resource = { agentID: agentId, name: p, content, type: "file" };
     if (!isAgentScoped(p)) resource.conversationID = conversationId;
-    await cms.addResource(userId, resource);
+    await cms.storeConversationResource(userId, resource);
     return null;
   }
 
@@ -279,7 +280,7 @@ export async function editor(
             if (first) entries.add(rest.includes("/") ? first + "/" : first);
           }
         }
-        if (entries.size > 0)
+        if (entries.size > 0 || isDir || normPath === "")
           return { status: "directory", path: prefix || "/", entries: Array.from(entries).sort() };
         return { status: "error", error: `Not found: ${path}` };
       }
@@ -295,7 +296,7 @@ export async function editor(
           };
         const resource = { agentID: agentId, name: normPath, content: file_text, type: "file" };
         if (!isAgentScoped(normPath)) resource.conversationID = conversationId;
-        const created = await cms.addResource(userId, resource);
+        const created = await cms.storeConversationResource(userId, resource);
         return { status: "created", path, content: file_text, resourceId: created.id };
       }
 
@@ -315,7 +316,7 @@ export async function editor(
           return { status: "error", error: `old_str appears ${count} times. Be more specific.` };
 
         const newContent = resource.content.replace(old_str, new_str);
-        await cms.updateResource(userId, resource.id, { content: newContent });
+        await cms.updateConversationResource(userId, resource.id, { content: newContent });
         return { status: "replaced", path, content: newContent, resourceId: resource.id };
       }
 
@@ -333,7 +334,7 @@ export async function editor(
         const idx = Math.max(0, Math.min(lines.length, insert_line));
         lines.splice(idx, 0, new_str);
         const newContent = lines.join("\n");
-        await cms.updateResource(userId, resource.id, { content: newContent });
+        await cms.updateConversationResource(userId, resource.id, { content: newContent });
         return { status: "inserted", path, content: newContent, resourceId: resource.id };
       }
 
@@ -342,7 +343,7 @@ export async function editor(
         if (!resource) return { status: "error", error: `Not found: ${path}` };
         const err = assertWritable(resource);
         if (err) return err;
-        await cms.deleteResource(userId, resource.id);
+        await cms.deleteConversationResource(userId, resource.id);
         return { status: "deleted", path };
       }
 
@@ -355,7 +356,7 @@ export async function editor(
         const newNormPath = new_path.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "/");
         const existing = await getResource(newNormPath);
         if (existing) return { status: "error", error: `Destination already exists: ${new_path}` };
-        await cms.updateResource(userId, resource.id, { name: newNormPath });
+        await cms.updateConversationResource(userId, resource.id, { name: newNormPath });
         return { status: "renamed", old_path: path, new_path, resourceId: resource.id };
       }
 
@@ -463,6 +464,7 @@ export async function recall({ query, dateFrom, dateTo }, context) {
       try {
         const embedResult = await gateway.embed({
           userID: userId,
+          requestId: context.requestId,
           model: NOVA_EMBEDDING_MODEL,
           content: [query],
           purpose: NOVA_RETRIEVAL_PURPOSE,

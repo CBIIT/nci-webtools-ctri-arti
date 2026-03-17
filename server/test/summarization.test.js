@@ -37,17 +37,17 @@ test("Automatic Conversation Summarization", async (t) => {
     assert.strictEqual(sonnet.maxContext, TINY_MAX_CONTEXT);
   });
 
-  // ===== 1. addMessage is a pure insert (no summarization) =====
+  // ===== 1. appendConversationMessage is a pure insert (no summarization) =====
 
-  await t.test("addMessage does not trigger summarization", async () => {
+  await t.test("appendConversationMessage does not trigger summarization", async () => {
     let invoked = false;
-    ConversationService.setInvoker(async () => {
+    svc.invokeModel = async () => {
       invoked = true;
       return {
         output: { message: { content: [{ text: "should not be called" }] } },
         usage: { inputTokens: 10, outputTokens: 5 },
       };
-    });
+    };
 
     const agent = await svc.createAgent(testUser.id, {
       name: "Pure Insert Agent",
@@ -59,14 +59,15 @@ test("Automatic Conversation Summarization", async (t) => {
     });
 
     // Add a large message — should NOT trigger summarization
-    await svc.addMessage(testUser.id, conversation.id, {
+    await svc.appendConversationMessage(testUser.id, {
+      conversationId: conversation.id,
       role: "user",
       content: [{ text: "A".repeat(400) }],
     });
 
-    assert.strictEqual(invoked, false, "Invoker should not be called by addMessage");
+    assert.strictEqual(invoked, false, "Invoker should not be called by appendConversationMessage");
     const conv = await svc.getConversation(testUser.id, conversation.id);
-    assert.strictEqual(conv.summaryMessageID, null, "No summary from addMessage");
+    assert.strictEqual(conv.summaryMessageID, null, "No summary from appendConversationMessage");
   });
 
   // ===== 2. summarize() triggers when tokens exceed 80% =====
@@ -77,7 +78,7 @@ test("Automatic Conversation Summarization", async (t) => {
       `${CONVERSATION_SUMMARY_TOKEN}\n\n` +
       "This is the mock summary of the conversation including all key decisions and context needed to continue.";
 
-    ConversationService.setInvoker(async (params) => {
+    svc.invokeModel = async (params) => {
       invokedWith = params;
       return {
         stream: (async function* () {
@@ -87,7 +88,7 @@ test("Automatic Conversation Summarization", async (t) => {
           yield { messageStop: { stopReason: "end_turn" } };
         })(),
       };
-    });
+    };
 
     const agent = await svc.createAgent(testUser.id, {
       name: "Summarize Agent",
@@ -99,12 +100,12 @@ test("Automatic Conversation Summarization", async (t) => {
     });
 
     // Add messages that stay under threshold
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "Hi" }],
     });
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "assistant",
+    await svc.appendAssistantMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "Hello!" }],
     });
 
@@ -119,8 +120,8 @@ test("Automatic Conversation Summarization", async (t) => {
     assert.strictEqual(invokedWith, null, "Invoker should not have been called");
 
     // Add a large message that pushes past 80%
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "A".repeat(400) }],
     });
 
@@ -194,7 +195,7 @@ test("Automatic Conversation Summarization", async (t) => {
   await t.test("re-summarizes when new messages exceed threshold again", async () => {
     let invokeCount = 0;
 
-    ConversationService.setInvoker(async (_params) => {
+    svc.invokeModel = async (_params) => {
       invokeCount++;
       const text = `Re-summary #${invokeCount}: comprehensive conversation summary with all key decisions and requirements preserved.`;
       return {
@@ -205,7 +206,7 @@ test("Automatic Conversation Summarization", async (t) => {
           yield { messageStop: { stopReason: "end_turn" } };
         })(),
       };
-    });
+    };
 
     const agent = await svc.createAgent(testUser.id, {
       name: "Resummarize Agent",
@@ -217,8 +218,8 @@ test("Automatic Conversation Summarization", async (t) => {
     });
 
     // Add large message and summarize
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "B".repeat(400) }],
     });
     for await (const _ of svc.summarize(testUser.id, conversation.id, {
@@ -233,8 +234,8 @@ test("Automatic Conversation Summarization", async (t) => {
     assert.strictEqual(invokeCount, 1);
 
     // Add more messages after the summary to push past the threshold again
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "assistant",
+    await svc.appendAssistantMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "C".repeat(400) }],
     });
     for await (const _ of svc.summarize(testUser.id, conversation.id, { userText: "continue" })) {
@@ -257,9 +258,9 @@ test("Automatic Conversation Summarization", async (t) => {
   // ===== 4. FAILURE HANDLING =====
 
   await t.test("throws on invoker failure", async () => {
-    ConversationService.setInvoker(async () => {
+    svc.invokeModel = async () => {
       throw new Error("Simulated gateway failure");
-    });
+    };
 
     const agent = await svc.createAgent(testUser.id, { name: "Failure Agent", modelID: HAIKU_ID });
     const conversation = await svc.createConversation(testUser.id, {
@@ -267,8 +268,8 @@ test("Automatic Conversation Summarization", async (t) => {
       title: "Failure Test",
     });
 
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "D".repeat(400) }],
     });
 
@@ -289,7 +290,7 @@ test("Automatic Conversation Summarization", async (t) => {
   // ===== 5. NO INVOKER = NO SUMMARIZATION =====
 
   await t.test("yields nothing when no invoker is set", async () => {
-    ConversationService.setInvoker(null);
+    svc.invokeModel = null;
 
     const agent = await svc.createAgent(testUser.id, {
       name: "No Invoker Agent",
@@ -300,8 +301,8 @@ test("Automatic Conversation Summarization", async (t) => {
       title: "No Invoker Test",
     });
 
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "E".repeat(400) }],
     });
 
@@ -322,7 +323,7 @@ test("Automatic Conversation Summarization", async (t) => {
     const text =
       "Sonnet default summary with enough content to pass the minimum length validation for summaries.";
 
-    ConversationService.setInvoker(async (params) => {
+    svc.invokeModel = async (params) => {
       invokedModel = params.model;
       return {
         stream: (async function* () {
@@ -332,7 +333,7 @@ test("Automatic Conversation Summarization", async (t) => {
           yield { messageStop: { stopReason: "end_turn" } };
         })(),
       };
-    });
+    };
 
     const agent = await svc.createAgent(testUser.id, { name: "No Model Agent" });
     const conversation = await svc.createConversation(testUser.id, {
@@ -340,8 +341,8 @@ test("Automatic Conversation Summarization", async (t) => {
       title: "Default Model Test",
     });
 
-    await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "F".repeat(400) }],
     });
 
@@ -358,7 +359,7 @@ test("Automatic Conversation Summarization", async (t) => {
   // ===== 7. GETCONTEXT IGNORES NULL-CONTENT PLACEHOLDER =====
 
   await t.test("getContext ignores summary placeholder with null content", async () => {
-    ConversationService.setInvoker(null);
+    svc.invokeModel = null;
 
     const agent = await svc.createAgent(testUser.id, {
       name: "Placeholder Agent",
@@ -369,12 +370,12 @@ test("Automatic Conversation Summarization", async (t) => {
       title: "Placeholder Test",
     });
 
-    const msg1 = await svc.addMessage(testUser.id, conversation.id, {
-      role: "user",
+    const msg1 = await svc.appendUserMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "message one" }],
     });
-    const _msg2 = await svc.addMessage(testUser.id, conversation.id, {
-      role: "assistant",
+    const _msg2 = await svc.appendAssistantMessage(testUser.id, {
+      conversationId: conversation.id,
       content: [{ text: "message two" }],
     });
 
@@ -404,7 +405,7 @@ test("Automatic Conversation Summarization", async (t) => {
   await t.test("teardown: restore maxContext values", async () => {
     await setMaxContext(HAIKU_ID, ORIGINAL_HAIKU_MAX_CONTEXT);
     await setMaxContext(SONNET_ID, ORIGINAL_SONNET_MAX_CONTEXT);
-    ConversationService.setInvoker(null);
+    svc.invokeModel = null;
 
     const [haiku] = await db.select().from(Model).where(eq(Model.id, HAIKU_ID)).limit(1);
     assert.strictEqual(haiku.maxContext, ORIGINAL_HAIKU_MAX_CONTEXT, "Haiku maxContext restored");

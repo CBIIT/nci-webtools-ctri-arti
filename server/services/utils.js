@@ -1,6 +1,11 @@
 import { inspect } from "util";
 
 import forge from "node-forge";
+import {
+  createAnonymousRequestContext,
+  createUserRequestContext,
+  requireUserRequestContext,
+} from "shared/request-context.js";
 
 // Re-export search functions from shared
 export { braveSearch, govSearch, search } from "shared/search.js";
@@ -104,19 +109,31 @@ export function createCertificate(opts = {}) {
 // Re-export from shared
 export { getDateRange } from "shared/utils.js";
 
+export function getRequestContext(req, { allowAnonymous = false, source = "server" } = {}) {
+  const requestId = req.headers?.["x-request-id"];
+  const baseContext = req.session?.user?.id
+    ? createUserRequestContext(req.session.user.id, { source, requestId })
+    : createAnonymousRequestContext({ source, requestId });
+
+  return allowAnonymous ? baseContext : requireUserRequestContext(baseContext);
+}
+
 /**
  * Extracts the authenticated user ID from a request, or throws 401.
  * @param {import("express").Request} req
  * @returns {string} userId
  */
 export function getUserId(req) {
-  const userId = req.session?.user?.id;
-  if (!userId) {
-    const error = new Error("Authentication required");
-    error.statusCode = 401;
-    throw error;
+  return getRequestContext(req).userId;
+}
+
+export function getAuthenticatedUser(req, options = {}) {
+  const context = getRequestContext(req, options);
+  const user = req.session?.user;
+  if (!user || Number(user.id) !== Number(context.userId)) {
+    throw createHttpError(401, "Authentication required");
   }
-  return userId;
+  return user;
 }
 
 /**

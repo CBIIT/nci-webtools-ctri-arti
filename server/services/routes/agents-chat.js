@@ -1,21 +1,15 @@
 import { Router } from "express";
-import { agentsClient } from "shared/clients/agents.js";
-import { requireRole } from "users/middleware.js";
 
-import { getUserId } from "../utils.js";
+import { chat } from "../../agents.js";
+import { requireRole } from "../../auth.js";
+import { getRequestContext } from "../utils.js";
 
 const api = Router();
 
-/**
- * POST /agents/:agentId/conversations/:conversationId/chat
- *
- * Proxies to the agents service (or runs locally in monolith mode).
- * Streams NDJSON back to the client.
- */
 api.post("/agents/:agentId/conversations/:conversationId/chat", requireRole(), async (req, res) => {
-  const userId = getUserId(req);
+  const context = getRequestContext(req);
   const { agentId, conversationId } = req.params;
-  const { message, model, thoughtBudget } = req.body;
+  const { message, modelOverride, thoughtBudget } = req.body;
 
   if (!message?.content) {
     return res.status(400).json({ error: "Message content required" });
@@ -26,12 +20,12 @@ api.post("/agents/:agentId/conversations/:conversationId/chat", requireRole(), a
   res.setHeader("Cache-Control", "no-cache");
 
   try {
-    const stream = agentsClient.chat({
-      userId,
+    const stream = chat({
+      context,
       agentId: Number(agentId),
       conversationId: Number(conversationId),
       message,
-      model,
+      modelOverride,
       thoughtBudget,
     });
 
@@ -43,7 +37,7 @@ api.post("/agents/:agentId/conversations/:conversationId/chat", requireRole(), a
     try {
       res.write(JSON.stringify({ agentError: { message: error.message } }) + "\n");
     } catch {
-      // Response may already be closed
+      // Response may already be closed.
     }
   }
 

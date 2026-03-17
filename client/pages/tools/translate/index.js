@@ -282,6 +282,7 @@ export default function Page() {
     store,
     setStore,
     defaultStore,
+    getUserEmail: () => user()?.email,
     getSnapshot: () => ({
       sourceFiles: sourceFiles(),
       targetLanguages: targetLanguages(),

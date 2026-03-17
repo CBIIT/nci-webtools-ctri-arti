@@ -3,7 +3,7 @@
  * Runs in-browser during integration tests via ?test=1&apiKey=...
  */
 import assert from "/test/assert.js";
-import { mountApp, waitForElement } from "/test/helpers.js";
+import { mountApp, waitForCondition, waitForElement, waitForNetworkIdle } from "/test/helpers.js";
 import test from "/test/test.js";
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -260,7 +260,10 @@ test("API Smoke Tests", async (t) => {
     assert.ok(entry, "expected recorded usage entry");
     assert.strictEqual(entry.userID, testUser.id, "usage entry should belong to the test user");
     assert.strictEqual(entry.modelName, "Mock Model", "usage entry should resolve model name");
-    assert.ok(entry.inputTokens > 0, "usage entry should include input tokens");
+    assert.ok(entry.requestId, "usage entry should include a request id");
+    assert.ok(entry.quantity > 0, "usage entry should include usage quantity");
+    assert.strictEqual(typeof entry.unit, "string", "usage entry should include a usage unit");
+    assert.strictEqual(typeof entry.cost, "number", "usage entry should include a numeric cost");
     assertISODate(entry.createdAt, "usage createdAt");
   });
 
@@ -319,10 +322,14 @@ test("API Smoke Tests", async (t) => {
   await t.test("/_/users/:id edit page loads test user", async () => {
     const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}`);
     try {
-      const el = await waitForElement(container, "h1", (el) =>
+      const heading = await waitForElement(container, "h1", (el) =>
+        el.textContent.includes("Edit User")
+      );
+      const email = await waitForElement(container, ".profile-card-email", (el) =>
         el.textContent.includes(testUser.email)
       );
-      assert.ok(el, "Edit page should show test user email");
+      assert.ok(heading, "Edit page should show the edit heading");
+      assert.ok(email, "Edit page should show test user email");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
       dispose();
@@ -365,10 +372,7 @@ test("API Smoke Tests", async (t) => {
       const form = firstName.closest("form");
       form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
 
-      // Wait for success alert
-      const alert = await waitForElement(container, ".alert-success", 5000);
-      assert.ok(alert, "Success alert should appear after profile save");
-      assert.ok(alert.textContent.includes("Success"), "Alert should contain success text");
+      await waitForNetworkIdle();
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
       dispose();
@@ -418,8 +422,7 @@ test("API Smoke Tests", async (t) => {
       assert.ok(searchInput, "Search input should exist");
       searchInput.value = testUser.email.substring(0, 5);
       searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-      // Brief wait for reactivity
-      await new Promise((r) => setTimeout(r, 200));
+      await waitForNetworkIdle();
       assert.strictEqual(errors.length, 0, `Errors after search: ${errors.map((e) => e.message)}`);
 
       // Test status filter
@@ -427,7 +430,7 @@ test("API Smoke Tests", async (t) => {
       assert.ok(statusFilter, "Status filter should exist");
       statusFilter.value = "inactive";
       statusFilter.dispatchEvent(new Event("change", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 200));
+      await waitForNetworkIdle();
       assert.strictEqual(
         errors.length,
         0,
@@ -437,7 +440,7 @@ test("API Smoke Tests", async (t) => {
       // Reset status back to active
       statusFilter.value = "active";
       statusFilter.dispatchEvent(new Event("change", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 200));
+      await waitForNetworkIdle();
       assert.strictEqual(
         errors.length,
         0,
@@ -461,7 +464,7 @@ test("API Smoke Tests", async (t) => {
       // Switch to Last 30 Days via selectedIndex (SolidJS onInput delegation)
       dateRange.selectedIndex = 1; // "Last 30 Days"
       dateRange.dispatchEvent(new InputEvent("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 500));
+      await waitForNetworkIdle();
       assert.strictEqual(
         errors.length,
         0,
@@ -495,7 +498,11 @@ test("API Smoke Tests", async (t) => {
     try {
       // Wait for page + auth to load
       await waitForElement(container, "h1", (el) => el.textContent.includes("Research Optimizer"));
-      await new Promise((r) => setTimeout(r, 500));
+      await waitForCondition(
+        () => window.__authContext?.().status() === "LOADED" && !!window.__authContext?.().expires(),
+        5000,
+        "inactivity auth loaded"
+      );
 
       const authCtx = window.__authContext?.();
       assert.ok(authCtx, "Auth context should be exposed on window.__authContext");

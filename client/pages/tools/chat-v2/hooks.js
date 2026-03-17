@@ -33,6 +33,7 @@ export function useAgent({ agentId, conversationId }) {
     name: null,
     conversation: { id: null, name: null },
     modelId: null,
+    modelOverride: null,
     reasoningMode: false,
     loading: false,
     summarizing: false,
@@ -113,6 +114,25 @@ export function useAgent({ agentId, conversationId }) {
     await loadConversations();
   });
 
+  createEffect(async () => {
+    const requestedAgentId = params.agentId;
+    if (!requestedAgentId) return;
+
+    try {
+      const record = await api(`/agents/${requestedAgentId}`);
+      if (params.agentId !== requestedAgentId) return;
+      setAgent((current) => ({
+        ...current,
+        id: record.id,
+        name: record.name,
+        modelId: record.runtime?.model || null,
+        modelOverride: null,
+      }));
+    } catch (error) {
+      console.error("Failed to load agent:", error);
+    }
+  });
+
   async function sendMessage(text, files = [], modelId, reasoningMode) {
     setAgent("loading", true);
 
@@ -135,11 +155,14 @@ export function useAgent({ agentId, conversationId }) {
       const userMessage = { role: "user", content };
 
       const record = await api(`/agents/${params.agentId}`);
+      const modelOverride = modelId && modelId !== record.runtime?.model ? modelId : null;
+      const effectiveModel = modelOverride || record.runtime?.model || null;
 
       setAgent({
         id: record.id,
         conversation: { id: currentConversationId, name: agent.conversation.name },
-        modelId,
+        modelId: effectiveModel,
+        modelOverride,
         reasoningMode,
         name: record.name,
         messages: agent.messages.concat([userMessage]),
@@ -253,7 +276,11 @@ async function streamChat(store, setStore, agentId, conversationId) {
   const response = await fetch(`/api/v1/agents/${agentId}/conversations/${conversationId}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: userMessage, model: store.modelId, thoughtBudget }),
+    body: JSON.stringify({
+      message: userMessage,
+      modelOverride: store.modelOverride || null,
+      thoughtBudget,
+    }),
   });
 
   if (!response.ok) {

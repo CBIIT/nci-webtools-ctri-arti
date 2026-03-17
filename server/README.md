@@ -50,7 +50,7 @@ All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for ful
 | POST   | `/translate`           | `requireRole()` | AWS Translate                    |
 | GET    | `/translate/languages` | `requireRole()` | List supported languages         |
 | POST   | `/feedback`            | `requireRole()` | Send user feedback email         |
-| POST   | `/log`                 | None            | Send error/log report email      |
+| POST   | `/log`                 | `requireRole()` | Send error/log report email      |
 | GET    | `/data`                | `requireRole()` | S3 file access with auto-parsing |
 | POST   | `/usage`               | `requireRole()` | Let user request usage change    |
 
@@ -114,7 +114,7 @@ Both service clients use a factory pattern resolved at module load time:
 - Direct mode: calls `runModel()` from `gateway/inference.js`, handles rate limiting and usage tracking locally.
 - HTTP mode: POSTs to `GATEWAY_URL/api/v1/model/invoke`, parses newline-delimited JSON streaming.
 
-**`shared/clients/cms.js`** — Exports 30+ conversation methods (`createAgent`, `createConversation`, `addMessage`, `createTool`, `createPrompt`, etc.).
+**`shared/clients/cms.js`** — Exports the CMS command/query surface (`createAgent`, `createConversation`, `appendUserMessage`, `storeConversationResource`, `storeConversationVectors`, `createTool`, `createPrompt`, etc.).
 
 - Direct mode: instantiates `ConversationService` from `cms/conversation.js`.
 - HTTP mode: makes HTTP requests with `X-User-Id` header to `CMS_URL/api/v1/...`.

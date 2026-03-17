@@ -56,7 +56,8 @@ export async function sendFeedback({ feedback, context }, env = process.env) {
 
 export async function sendJustificationEmail(
   { justification, userName, userEmail, currentLimit },
-  env = process.env
+  env = process.env,
+  send = sendEmail
 ) {
   const { EMAIL_ADMIN, EMAIL_SENDER, TIER } = env;
   const tierPrefix = TIER && TIER.toUpperCase() !== "PROD" ? `[${TIER.toUpperCase()}] ` : "";
@@ -67,12 +68,12 @@ export async function sendJustificationEmail(
     `Reason for Request:\n\n${justification}\n\nPlease review this request and take the appropriate action.\n\n` +
     "Thank you,\nResearch Optimizer System";
 
-  return await sendEmail({
+  return await send({
     from: (EMAIL_SENDER || EMAIL_ADMIN)?.split(",")?.[0]?.trim(),
     to: EMAIL_ADMIN,
     subject: `${tierPrefix}User Request Limit Increase`,
     text,
-  });
+  }, env);
 }
 
 function formatMetadataForTemplate(metadata) {

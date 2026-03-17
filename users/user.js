@@ -21,6 +21,10 @@ const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 
 // ===== Private helpers =====
 
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
 function serializeUtcTimestamp(value) {
   if (!value) return value;
   if (value instanceof Date) return value.toISOString();
@@ -52,9 +56,34 @@ function getGroupColumn(groupBy) {
       return Usage.userID;
     case "model":
       return Usage.modelID;
+    case "type":
+      return sql`COALESCE(${Usage.type}, 'unknown')`;
     default:
       return sql`to_char(date_trunc('day', timezone('UTC', ${Usage.createdAt})), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
   }
+}
+
+function buildRequestKeySql() {
+  return sql`COALESCE(${Usage.requestId}, CASE WHEN ${Usage.messageID} IS NOT NULL THEN CONCAT('message:', ${Usage.messageID}::text) ELSE CONCAT('usage:', ${Usage.id}::text) END)`;
+}
+
+function normalizeBalanceFields(data, existing = null) {
+  const next = { ...data };
+  const budget = hasOwn(next, "budget") ? next.budget : existing?.budget;
+  const remainingProvided = hasOwn(next, "remaining");
+
+  if (budget === null || budget === undefined) {
+    if (!remainingProvided || next.remaining !== null) {
+      next.remaining = null;
+    }
+    return next;
+  }
+
+  if (!remainingProvided || next.remaining === null) {
+    next.remaining = budget;
+  }
+
+  return next;
 }
 
 export class UserService {
@@ -87,7 +116,7 @@ export class UserService {
 
     const [{ value: userCount }] = await db.select({ value: count() }).from(User);
     const isFirstUser = userCount === 0;
-    const defaults = isFirstUser ? { roleID: 1 } : { roleID: 3, budget: 1 };
+    const defaults = isFirstUser ? { roleID: 1 } : { roleID: 3, budget: 1, remaining: 1 };
 
     const [user] = await db
       .insert(User)
@@ -163,7 +192,8 @@ export class UserService {
       userData.apiKey = `rsk_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
     }
 
-    const [user] = await db.insert(User).values(userData).returning();
+    const normalizedUserData = normalizeBalanceFields(userData);
+    const [user] = await db.insert(User).values(normalizedUserData).returning();
     return user;
   }
 
@@ -189,7 +219,12 @@ export class UserService {
     const [existing] = await db.select().from(User).where(eq(User.id, +id)).limit(1);
     if (!existing) return null;
 
-    const [user] = await db.update(User).set(userData).where(eq(User.id, +id)).returning();
+    const normalizedUserData = normalizeBalanceFields(userData, existing);
+    const [user] = await db
+      .update(User)
+      .set(normalizedUserData)
+      .where(eq(User.id, +id))
+      .returning();
     return user;
   }
 
@@ -228,14 +263,17 @@ export class UserService {
 
     const inserted = await db.insert(Usage).values(rows).returning();
 
-    const totalCost = rows.reduce((sum, r) => sum + (r.cost || 0), 0);
+    const totalCost = rows.reduce(
+      (sum, r) => sum + (r.type === "guardrail" ? 0 : (r.cost || 0)),
+      0
+    );
     if (totalCost > 0) {
       await db
         .update(User)
         .set({
-          remaining: sql`GREATEST(0, COALESCE(${User.remaining}, 0) - ${totalCost})`,
+          remaining: sql`GREATEST(0, COALESCE(${User.remaining}, ${User.budget}, 0) - ${totalCost})`,
         })
-        .where(eq(User.id, userId));
+        .where(and(eq(User.id, userId), isNotNull(User.budget)));
     }
 
     return inserted;
@@ -267,6 +305,7 @@ export class UserService {
     return {
       data: rows.map((usage) => ({
         id: usage.id,
+        requestId: usage.requestId,
         type: usage.type,
         userID: usage.userID,
         modelID: usage.modelID,
@@ -334,6 +373,7 @@ export class UserService {
     return {
       data: rows.map((usage) => ({
         id: usage.id,
+        requestId: usage.requestId,
         type: usage.type,
         userID: usage.userID,
         modelID: usage.modelID,
@@ -369,12 +409,17 @@ export class UserService {
     sortOrder = "desc",
     role: roleFilter,
     status: statusFilter,
+    type,
   } = {}) {
     const { startDate, endDate } = getDateRange(startDateParam, endDateParam);
     const groupCol = getGroupColumn(groupBy);
+    const requestKey = buildRequestKeySql();
+    const guardrailCostSum = sql`SUM(CASE WHEN ${Usage.type} = 'guardrail' THEN ${Usage.cost} ELSE 0 END)`;
+    const usageCostSum = sql`SUM(CASE WHEN ${Usage.type} = 'guardrail' THEN 0 ELSE ${Usage.cost} END)`;
 
     const baseConditions = [between(Usage.createdAt, startDate, endDate)];
     if (userId) baseConditions.push(eq(Usage.userID, +userId));
+    if (type) baseConditions.push(eq(Usage.type, type));
 
     if (groupBy === "user") {
       const joinConditions = [...baseConditions];
@@ -398,7 +443,9 @@ export class UserService {
 
       const aggregateSortMapping = {
         totalCost: sum(Usage.cost),
-        totalRequests: countDistinct(Usage.messageID),
+        usageCost: usageCostSum,
+        guardrailCost: guardrailCostSum,
+        totalRequests: countDistinct(requestKey),
         totalInputTokens: inputTokenSum,
         totalOutputTokens: outputTokenSum,
         estimatedCost: sum(Usage.cost),
@@ -415,9 +462,11 @@ export class UserService {
         .select({
           userID: Usage.userID,
           totalCost: sum(Usage.cost),
+          usageCost: usageCostSum,
+          guardrailCost: guardrailCostSum,
           totalInputTokens: inputTokenSum,
           totalOutputTokens: outputTokenSum,
-          totalRequests: count(),
+          totalRequests: countDistinct(requestKey),
           User: {
             id: User.id,
             email: User.email,
@@ -478,9 +527,11 @@ export class UserService {
         .select({
           modelID: Usage.modelID,
           totalCost: sum(Usage.cost),
+          usageCost: usageCostSum,
+          guardrailCost: guardrailCostSum,
           totalInputTokens: modelInputSum,
           totalOutputTokens: modelOutputSum,
-          totalRequests: count(),
+          totalRequests: countDistinct(requestKey),
           Model: { name: Model.name },
         })
         .from(Usage)
@@ -490,6 +541,24 @@ export class UserService {
         .orderBy(desc(sum(Usage.cost)));
 
       return { data, meta: { groupBy } };
+    }
+
+    if (groupBy === "type") {
+      const where = and(...baseConditions);
+
+      const data = await db
+        .select({
+          type: groupCol,
+          totalCost: sum(Usage.cost),
+          totalRequests: countDistinct(requestKey),
+          uniqueUsers: countDistinct(Usage.userID),
+        })
+        .from(Usage)
+        .where(where)
+        .groupBy(groupCol)
+        .orderBy(desc(sum(Usage.cost)));
+
+      return { data, meta: { groupBy, type } };
     }
 
     // Time-based grouping (hour, day, week, month)
@@ -502,9 +571,11 @@ export class UserService {
       .select({
         period: groupCol,
         totalCost: sum(Usage.cost),
+        usageCost: usageCostSum,
+        guardrailCost: guardrailCostSum,
         totalInputTokens: timeInputSum,
         totalOutputTokens: timeOutputSum,
-        totalRequests: count(),
+        totalRequests: countDistinct(requestKey),
         uniqueUsers: countDistinct(Usage.userID),
       })
       .from(Usage)

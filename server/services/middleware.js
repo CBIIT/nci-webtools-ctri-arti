@@ -11,8 +11,73 @@ const {
   OAUTH_DISCOVERY_URL,
   OAUTH_CLIENT_ID,
   OAUTH_CLIENT_SECRET,
+  OAUTH_PROVIDER_ENABLED,
   EMAIL_DEV,
 } = process.env;
+
+const LOCAL_OAUTH_ENABLED = OAUTH_PROVIDER_ENABLED?.toLowerCase() === "true";
+let externalOidcConfigPromise;
+const localOauthHandlers = new Map();
+
+function getRequestOrigin(req) {
+  return `${req.protocol}://${req.get("host")}`;
+}
+
+function getLocalIssuer(req) {
+  return new URL("/api/oauth/", getRequestOrigin(req));
+}
+
+function getLocalEndpoint(req, path) {
+  return new URL(path, getLocalIssuer(req)).href;
+}
+
+function getCallbackUrl(req) {
+  return OAUTH_CALLBACK_URL || new URL("/api/login", getRequestOrigin(req)).href;
+}
+
+function getLocalOidcConfig(req) {
+  const issuer = getLocalIssuer(req);
+
+  return new client.Configuration(
+    {
+      issuer: issuer.href,
+      authorization_endpoint: getLocalEndpoint(req, "auth"),
+      token_endpoint: getLocalEndpoint(req, "token"),
+      userinfo_endpoint: getLocalEndpoint(req, "me"),
+      jwks_uri: getLocalEndpoint(req, "jwks"),
+      response_types_supported: ["code"],
+      subject_types_supported: ["public"],
+      id_token_signing_alg_values_supported: ["RS256"],
+      token_endpoint_auth_methods_supported: ["client_secret_post", "client_secret_basic"],
+      claims_supported: ["sub", "email", "email_verified", "given_name", "family_name", "name"],
+      code_challenge_methods_supported: ["S256"],
+    },
+    OAUTH_CLIENT_ID,
+    OAUTH_CLIENT_SECRET
+  );
+}
+
+async function getExternalOidcConfig() {
+  if (!OAUTH_CLIENT_ID) return null;
+
+  if (!externalOidcConfigPromise) {
+    externalOidcConfigPromise = client.discovery(
+      new URL(OAUTH_DISCOVERY_URL),
+      OAUTH_CLIENT_ID,
+      OAUTH_CLIENT_SECRET
+    );
+  }
+
+  return externalOidcConfigPromise;
+}
+
+async function getOidcConfig(req) {
+  if (LOCAL_OAUTH_ENABLED) {
+    return getLocalOidcConfig(req);
+  }
+
+  return getExternalOidcConfig();
+}
 
 /**
  * Logs errors (should be used as the last middleware)
@@ -54,9 +119,12 @@ export function logErrors(formatter = (e) => ({ error: e.message })) {
  */
 export async function loginMiddleware(req, res, next) {
   try {
-    const oidcConfig = OAUTH_CLIENT_ID
-      ? await client.discovery(new URL(OAUTH_DISCOVERY_URL), OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET)
-      : null;
+    const oidcConfig = await getOidcConfig(req);
+    if (!oidcConfig) {
+      const error = new Error("OIDC is not configured");
+      error.statusCode = 503;
+      throw error;
+    }
     const sess = req.session;
 
     // Initially, we need to build the authorization URL and redirect the user to the authorization server.
@@ -72,7 +140,7 @@ export async function loginMiddleware(req, res, next) {
 
       const authUrl = client.buildAuthorizationUrl(oidcConfig, {
         response_type: "code",
-        redirect_uri: OAUTH_CALLBACK_URL,
+        redirect_uri: getCallbackUrl(req),
         scope: "openid profile email",
         state: sess.oidc.state,
         nonce: sess.oidc.nonce,
@@ -111,39 +179,48 @@ export async function loginMiddleware(req, res, next) {
  * Returns middleware for handling local OIDC provider (for development/testing)
  */
 export function oauthMiddleware() {
-  const hostname = HOSTNAME || "localhost";
-  const port = PORT !== "443" ? ":" + PORT : "";
-  const issuer = `https://${hostname}${port}`;
-  const provider = new Provider(issuer, {
-    clients: [
-      {
-        client_id: OAUTH_CLIENT_ID,
-        client_secret: OAUTH_CLIENT_SECRET,
-        redirect_uris: [OAUTH_CALLBACK_URL || "https://localhost/api/login"],
-      },
-    ],
-    claims: {
-      profile: ["given_name", "family_name", "name"],
-      email: ["email", "email_verified"],
-    },
-    async findAccount(ctx, subject, _token) {
-      return {
-        accountId: subject,
-        async claims(_use, _scope) {
+  return (req, res, next) => {
+    const issuer = HOSTNAME
+      ? new URL(`/api/oauth/`, `https://${HOSTNAME}${PORT !== "443" ? `:${PORT}` : ""}`)
+      : getLocalIssuer(req);
+
+    let handler = localOauthHandlers.get(issuer.href);
+    if (!handler) {
+      const provider = new Provider(issuer.href, {
+        clients: [
+          {
+            client_id: OAUTH_CLIENT_ID,
+            client_secret: OAUTH_CLIENT_SECRET,
+            redirect_uris: [OAUTH_CALLBACK_URL || new URL("/api/login", issuer).href],
+          },
+        ],
+        claims: {
+          profile: ["given_name", "family_name", "name"],
+          email: ["email", "email_verified"],
+        },
+        async findAccount(ctx, subject, _token) {
           return {
-            sub: subject,
-            email: subject,
-            email_verified: true,
-            given_name: "Local",
-            family_name: "User",
-            name: "Local User",
+            accountId: subject,
+            async claims(_use, _scope) {
+              return {
+                sub: subject,
+                email: subject,
+                email_verified: true,
+                given_name: "Local",
+                family_name: "User",
+                name: "Local User",
+              };
+            },
           };
         },
-      };
-    },
-  });
-  provider.proxy = true;
-  return provider.callback();
+      });
+      provider.proxy = true;
+      handler = provider.callback();
+      localOauthHandlers.set(issuer.href, handler);
+    }
+
+    return handler(req, res, next);
+  };
 }
 
 /**

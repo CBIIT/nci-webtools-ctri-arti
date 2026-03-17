@@ -1,25 +1,23 @@
 import { Router } from "express";
+
+import { requireRole } from "../../auth.js";
 import {
-  getUsers,
-  getUser,
   createUser,
-  updateUser,
   deleteUser,
-  updateProfile,
-  getRoles,
-  getUserUsage,
-  getUsage,
   getAnalytics,
+  getRoles,
+  getUsage,
+  getUser,
+  getUsers,
+  getUserUsage,
   resetAllBudgets,
   resetUserBudget,
-} from "shared/clients/users.js";
-import { requireRole } from "users/middleware.js";
-
-import { routeHandler } from "../utils.js";
+  updateProfile,
+  updateUser,
+} from "../../users.js";
+import { getAuthenticatedUser, routeHandler } from "../utils.js";
 
 const api = Router();
-
-// ===== User Management =====
 
 api.get(
   "/admin/users",
@@ -52,7 +50,7 @@ api.post(
   "/admin/profile",
   requireRole(),
   routeHandler(async (req, res) => {
-    const currentUser = req.session.user;
+    const currentUser = getAuthenticatedUser(req);
     const user = await updateProfile(currentUser.id, req.body);
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json(user);
@@ -80,8 +78,6 @@ api.delete(
   })
 );
 
-// ===== Usage =====
-
 api.get(
   "/admin/users/:id/usage",
   requireRole("admin"),
@@ -101,7 +97,7 @@ api.get(
 api.get(
   "/admin/roles",
   requireRole("admin"),
-  routeHandler(async (req, res) => {
+  routeHandler(async (_req, res) => {
     const roles = await getRoles();
     res.json(roles);
   })
@@ -126,9 +122,9 @@ api.get(
 api.post(
   "/admin/usage/reset",
   requireRole("admin"),
-  routeHandler(async (req, res) => {
+  routeHandler(async (_req, res) => {
     const result = await resetAllBudgets();
-    res.json({ success: true, updatedUsers: result.length ?? result.rowCount ?? 0 });
+    res.json(result);
   })
 );
 
@@ -136,13 +132,11 @@ api.post(
   "/admin/users/:id/reset-limit",
   requireRole("admin"),
   routeHandler(async (req, res) => {
-    const user = await resetUserBudget(req.params.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ success: true, user });
+    const result = await resetUserBudget(req.params.id);
+    if (!result) return res.status(404).json({ error: "User not found" });
+    res.json(result);
   })
 );
-
-// ===== Analytics =====
 
 api.get(
   "/admin/analytics",
@@ -153,6 +147,7 @@ api.get(
       endDate: req.query.endDate,
       groupBy: req.query.groupBy,
       userId: req.query.userId,
+      type: req.query.type,
       search: req.query.search,
       limit: req.query.limit ? +req.query.limit : undefined,
       offset: req.query.offset ? +req.query.offset : undefined,

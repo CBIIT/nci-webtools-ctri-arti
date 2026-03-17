@@ -326,7 +326,7 @@ paths:
         schema:
           type: integer
     post:
-      operationId: addMessage
+      operationId: appendConversationMessage
       summary: Add a message to a conversation
       tags: [Messages]
       requestBody:
@@ -622,7 +622,7 @@ paths:
   # ===== RESOURCES =====
   /api/v1/resources:
     post:
-      operationId: addResource
+      operationId: storeConversationResource
       summary: Create a resource
       tags: [Resources]
       requestBody:
@@ -676,7 +676,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
     delete:
-      operationId: deleteResource
+      operationId: deleteConversationResource
       summary: Delete a resource
       description: Cascading delete — removes associated vectors.
       tags: [Resources]
@@ -713,7 +713,7 @@ paths:
   # ===== VECTORS =====
   /api/v1/vectors:
     post:
-      operationId: addVectors
+      operationId: storeConversationVectors
       summary: Add vectors
       description: Bulk create. Order defaults to array index.
       tags: [Vectors]

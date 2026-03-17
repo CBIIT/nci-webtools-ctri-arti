@@ -2,32 +2,21 @@ import { createResource, createSignal, ErrorBoundary, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { AlertContainer } from "../../components/alert.js";
+import { Status, useAuthContext } from "../../contexts/auth-context.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
+<<<<<<< arti-228-limit
 import RequestLimitIncrease from "./request-limit-increase.js";
+=======
+import { fetchCachedJson } from "../../utils/static-data.js";
+>>>>>>> dev
 
-const fetchConfig = () => fetch("/api/config").then((r) => r.json());
+const fetchConfig = () => fetchCachedJson("/api/config");
 
 function UserProfile() {
+  const { user, status, setData } = useAuthContext();
   const [config] = createResource(fetchConfig);
   const [saving, setSaving] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
-
-  // Fetch current user session
-  const [session] = createResource(async () => {
-    try {
-      const response = await fetch("/api/v1/session");
-      if (!response.ok) {
-        await handleHttpError(response, "fetching your profile");
-        return null;
-      }
-      return response.json();
-    } catch (err) {
-      const error = new Error("Something went wrong while retrieving your profile.");
-      error.cause = err;
-      handleError(error, "Session API Error");
-      return null;
-    }
-  });
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -51,6 +40,8 @@ function UserProfile() {
         return;
       }
 
+      const updatedUser = await response.json();
+      setData(updatedUser);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
@@ -94,14 +85,14 @@ function UserProfile() {
         <//>
 
         <!-- Error Alert -->
-        <${Show} when=${() => session.error}>
+        <${Show} when=${() => status() === Status.ERROR}>
           <div class="alert alert-danger" role="alert">
-            ${() => session.error || "An error occurred while loading your profile"}
+            An error occurred while loading your profile
           </div>
         <//>
 
         <!-- Loading State -->
-        <${Show} when=${() => session.loading}>
+        <${Show} when=${() => status() === Status.LOADING}>
           <div class="d-flex justify-content-center my-5">
             <div class="spinner-border text-primary" role="status">
               <span class="visually-hidden">Loading...</span>
@@ -119,7 +110,7 @@ function UserProfile() {
         </div>
         <div class="row mt-4 mb-5">
           <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto fs-3">
-            ${() => session()?.user?.email || ""}
+            ${() => user()?.email || ""}
           </h1>
           <div class="position-relative offset-sm-2 offset-md-3 offset-xl-4">
             <img
@@ -139,7 +130,7 @@ function UserProfile() {
         </div>
 
         <!-- Profile Form -->
-        <${Show} when=${() => !session.loading}>
+        <${Show} when=${() => status() !== Status.LOADING}>
           <form onSubmit=${handleSubmit} class="mb-5">
             <div class="row align-items-center mb-2">
               <!-- Account Type -->
@@ -159,7 +150,7 @@ function UserProfile() {
                 >Email</label
               >
               <div class="col-sm-3 col-xl-2">
-                <div>${() => session()?.user?.email || ""}</div>
+                <div>${() => user()?.email || ""}</div>
               </div>
             </div>
 
@@ -176,7 +167,7 @@ function UserProfile() {
                   class="form-control"
                   id="firstName"
                   name="firstName"
-                  value=${() => session()?.user?.firstName || ""}
+                  value=${() => user()?.firstName || ""}
                   placeholder="Enter first name"
                 />
               </div>
@@ -195,7 +186,7 @@ function UserProfile() {
                   class="form-control"
                   id="lastName"
                   name="lastName"
-                  value=${() => session()?.user?.lastName || ""}
+                  value=${() => user()?.lastName || ""}
                   placeholder="Enter last name"
                 />
               </div>
@@ -208,7 +199,7 @@ function UserProfile() {
                 >Status</label
               >
               <div class="col-sm-3 col-xl-2">
-                <div class="text-capitalize">${() => session()?.user?.status}</div>
+                <div class="text-capitalize">${() => user()?.status}</div>
               </div>
             </div>
 
@@ -219,7 +210,7 @@ function UserProfile() {
                 >Role</label
               >
               <div class="col-sm-3 col-xl-2">
-                <div class="text-capitalize">${() => session()?.user?.Role?.name}</div>
+                <div class="text-capitalize">${() => user()?.Role?.name}</div>
               </div>
             </div>
 
@@ -232,11 +223,11 @@ function UserProfile() {
               <div class="col-sm-3 col-xl-2">
                 <div>
                   ${() => {
-                    const user = session()?.user;
-                    if (user?.budget === null) {
+                    const currentUser = user();
+                    if (currentUser?.budget === null) {
                       return "Unlimited";
                     } else {
-                      return user?.budget;
+                      return currentUser?.budget;
                     }
                   }}
                 </div>

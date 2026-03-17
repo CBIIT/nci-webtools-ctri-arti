@@ -206,7 +206,8 @@ async function buildInferenceParams(
   systemPrompt,
   tools,
   thoughtBudget,
-  outputConfig
+  outputConfig,
+  guardrailConfig
 ) {
   const {
     model: { maxOutput, maxReasoning, cost1kCacheRead },
@@ -240,6 +241,12 @@ async function buildInferenceParams(
     inferenceConfig,
     additionalModelRequestFields,
     ...(outputConfig && { outputConfig }),
+    ...(guardrailConfig && {
+      guardrailConfig: {
+        ...guardrailConfig,
+        trace: guardrailConfig.trace || "enabled",
+      },
+    }),
   };
 
   return { input, provider };
@@ -265,6 +272,7 @@ export async function runModel({
   thoughtBudget = 0,
   stream = false,
   outputConfig,
+  guardrailConfig,
 }) {
   if (!model || !messages || messages?.length === 0) {
     return null;
@@ -279,7 +287,8 @@ export async function runModel({
     systemPrompt,
     tools,
     thoughtBudget,
-    outputConfig
+    outputConfig,
+    guardrailConfig
   );
 
   const response = stream ? provider.converseStream(input) : provider.converse(input);
