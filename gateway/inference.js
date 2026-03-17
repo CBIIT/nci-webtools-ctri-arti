@@ -4,17 +4,22 @@ import { eq } from "drizzle-orm";
 import { assertValidEmbedding } from "shared/embeddings.js";
 
 import bedrock from "./providers/bedrock.js";
+import databricks from "./providers/databricks.js";
 import gemini from "./providers/gemini.js";
 import mock from "./providers/mock.js";
 import { validateInlineMessages } from "./upload-limits.js";
 
 export async function getModelProvider(value) {
-  const providers = { bedrock, gemini, mock };
+  const providers = { bedrock, gemini, mock, databricks };
   const result = await db.query.Model.findFirst({
     where: eq(Model.internalName, value),
     with: { Provider: true },
   });
-  const provider = new providers[result?.Provider?.name]();
+  const providerRow = result?.Provider;
+  const provider =
+    providerRow?.name === "databricks"
+      ? new providers[providerRow.name](providerRow)
+      : new providers[providerRow.name]();
   return { model: result, provider };
 }
 

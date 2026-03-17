@@ -71,8 +71,12 @@ export const RolePolicy = pgTable(
   "RolePolicy",
   {
     id: serial("id").primaryKey(),
-    roleID: integer("roleID").notNull().references(() => Role.id, { onDelete: "cascade" }),
-    policyID: integer("policyID").notNull().references(() => Policy.id, { onDelete: "cascade" }),
+    roleID: integer("roleID")
+      .notNull()
+      .references(() => Role.id, { onDelete: "cascade" }),
+    policyID: integer("policyID")
+      .notNull()
+      .references(() => Policy.id, { onDelete: "cascade" }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -232,7 +236,9 @@ export const Conversation = pgTable(
   "Conversation",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID").notNull().references(() => User.id, { onDelete: "cascade" }),
+    userID: integer("userID")
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade" }),
     agentID: integer("agentID").references(() => Agent.id, { onDelete: "set null" }),
     title: text("title"),
     deleted: boolean("deleted").default(false),
@@ -334,8 +340,12 @@ export const UserAgent = pgTable(
   "UserAgent",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID").notNull().references(() => User.id, { onDelete: "cascade" }),
-    agentID: integer("agentID").notNull().references(() => Agent.id, { onDelete: "cascade" }),
+    userID: integer("userID")
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade" }),
+    agentID: integer("agentID")
+      .notNull()
+      .references(() => Agent.id, { onDelete: "cascade" }),
     role: text("role"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -349,8 +359,12 @@ export const UserTool = pgTable(
   "UserTool",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID").notNull().references(() => User.id, { onDelete: "cascade" }),
-    toolID: integer("toolID").notNull().references(() => Tool.id, { onDelete: "cascade" }),
+    userID: integer("userID")
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade" }),
+    toolID: integer("toolID")
+      .notNull()
+      .references(() => Tool.id, { onDelete: "cascade" }),
     credential: json("credential"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -364,8 +378,12 @@ export const AgentTool = pgTable(
   "AgentTool",
   {
     id: serial("id").primaryKey(),
-    toolID: integer("toolID").notNull().references(() => Tool.id, { onDelete: "cascade" }),
-    agentID: integer("agentID").notNull().references(() => Agent.id, { onDelete: "cascade" }),
+    toolID: integer("toolID")
+      .notNull()
+      .references(() => Tool.id, { onDelete: "cascade" }),
+    agentID: integer("agentID")
+      .notNull()
+      .references(() => Agent.id, { onDelete: "cascade" }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -563,11 +581,24 @@ export async function seedDatabase(db) {
   async function upsert(table, rows, conflictTarget, updateCols) {
     if (!rows.length) return;
     const now = new Date();
-    const rowsWithTimestamps = rows.map((row) => ({
-      ...row,
-      createdAt: row.createdAt || now,
-      updatedAt: now,
-    }));
+
+    // Get json columns for this table
+    const jsonCols = new Set(
+      Object.entries(table)
+        .filter(([, col]) => col?.columnType === "PgJson" || col?.columnType === "PgJsonb")
+        .map(([key]) => key)
+    );
+
+    const rowsWithTimestamps = rows.map((row) => {
+      const prepared = { ...row };
+      for (const [key, val] of Object.entries(prepared)) {
+        if (val !== null && typeof val === "object" && !jsonCols.has(key)) {
+          prepared[key] = JSON.stringify(val);
+        }
+      }
+      return { ...prepared, createdAt: prepared.createdAt || now, updatedAt: now };
+    });
+
     const setObj = {};
     for (const col of updateCols) {
       setObj[col] = sql.raw(`excluded."${col}"`);
