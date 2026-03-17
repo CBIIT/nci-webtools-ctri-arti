@@ -729,13 +729,8 @@ function ChatApp() {
 
                 <!-- Privacy Notice -->
                 <div class="text-center bg-chat text-muted small py-1">
-                  <span
-                    class="me-1"
-                    title="Your conversations are stored only on your personal device."
-                  >
-                    To maintain your privacy, we never retain your data on our systems.
-                  </span>
-                  Please double-check statements, as Research Optimizer can make mistakes.
+                  Please double-check statements. AI is not always right, even when it sounds
+                  confident.
                 </div>
               </div>
             </div>
