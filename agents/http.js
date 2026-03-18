@@ -1,22 +1,11 @@
 import { json, Router } from "express";
-import {
-  createRequestContext,
-  parseInternalUserIdHeader,
-  requireUserRequestContext,
-} from "shared/request-context.js";
+import { readHttpRequestContext } from "shared/request-context.js";
 
 export function getAgentRequestContext(req) {
-  const headerContext = parseInternalUserIdHeader(req.headers["x-user-id"], {
-    requestId: req.headers["x-request-id"],
+  return readHttpRequestContext(req, {
+    allowInternalHeader: true,
+    source: "server",
   });
-  if (headerContext) return requireUserRequestContext(headerContext);
-
-  return requireUserRequestContext(
-    createRequestContext(req.session?.user?.id, {
-      source: "server",
-      requestId: req.headers["x-request-id"],
-    })
-  );
 }
 
 async function streamEvents(res, stream) {
@@ -87,3 +76,4 @@ export function createAgentsChatRouter({
 }
 
 export const createAgentsRouter = createAgentsChatRouter;
+

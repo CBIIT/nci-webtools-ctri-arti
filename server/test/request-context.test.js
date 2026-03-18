@@ -8,6 +8,8 @@ import {
   createUserRequestContext,
   normalizeRequestId,
   parseInternalUserIdHeader,
+  readHttpRequestContext,
+  readInternalRequestContext,
   resolveRequestId,
   requestContextToInternalHeaders,
   requireUserRequestContext,
@@ -62,6 +64,46 @@ test("request context normalization", async (t) => {
     assert.throws(() => parseInternalUserIdHeader("abc"), /positive integer/);
   });
 
+  await t.test("reads request context from internal HTTP headers", () => {
+    assert.deepStrictEqual(
+      readInternalRequestContext({
+        "x-user-id": "42",
+        "x-request-id": "req-5",
+      }),
+      {
+        actorType: "user",
+        userId: 42,
+        requestId: "req-5",
+        source: "internal-http",
+      }
+    );
+  });
+
+  await t.test("prefers internal HTTP headers over session context when allowed", () => {
+    assert.deepStrictEqual(
+      readHttpRequestContext(
+        {
+          headers: {
+            "x-user-id": "42",
+            "x-request-id": "req-6",
+          },
+          session: {
+            user: {
+              id: 99,
+            },
+          },
+        },
+        { allowInternalHeader: true }
+      ),
+      {
+        actorType: "user",
+        userId: 42,
+        requestId: "req-6",
+        source: "internal-http",
+      }
+    );
+  });
+
   await t.test("requires an authenticated user when asked", () => {
     assert.throws(
       () => requireUserRequestContext(createAnonymousRequestContext({ source: "server" })),
@@ -84,3 +126,4 @@ test("request context normalization", async (t) => {
     assert.match(createRequestId(), /^[0-9a-f-]{36}$/i);
   });
 });
+
