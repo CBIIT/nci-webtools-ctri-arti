@@ -4,6 +4,18 @@ import { createAnonymousRequestContext } from "shared/request-context.js";
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
 
 const { OAUTH_PROVIDER_ENABLED } = process.env;
+const COMMON_USAGE_TYPES = [
+  "agent",
+  "browse-query",
+  "chat",
+  "chat-summary",
+  "chat-title",
+  "consent-crafter",
+  "data-tool",
+  "embedding",
+  "guardrail",
+  "translate",
+];
 
 export function createAuthRouter({ modules } = {}) {
   if (!modules?.cms || !modules?.users) {
@@ -66,8 +78,7 @@ export function createAuthRouter({ modules } = {}) {
         ),
     ]);
 
-    const staticTypes = ["chat", "chat-title", "data-tool", "consent-crafter", "translate"];
-    const usageTypes = [...new Set([...staticTypes, ...agentList])];
+    const usageTypes = [...new Set([...COMMON_USAGE_TYPES, ...agentList])].sort();
 
     res.json({
       ...usersConfig,
@@ -79,4 +90,3 @@ export function createAuthRouter({ modules } = {}) {
 }
 
 export default createAuthRouter;
-

@@ -615,7 +615,6 @@ export class UserService {
       describeCron(USAGE_RESET_SCHEDULE);
 
     return {
-      budgetResetSchedule: USAGE_RESET_SCHEDULE,
       budgetLabel,
       budgetResetDescription,
     };
