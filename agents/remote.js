@@ -20,7 +20,7 @@ export function createAgentsRemote({ baseUrl, fetchImpl = fetch }) {
         source: "internal-http",
       });
       for await (const event of streamNdjsonRequest(fetchImpl, {
-        url: `${baseUrl}/api/agents/${agentId}/conversations/${conversationId}/chat`,
+        url: `${baseUrl}/api/v1/agents/${agentId}/conversations/${conversationId}/chat`,
         method: "POST",
         headers: {
           "Content-Type": "application/json",

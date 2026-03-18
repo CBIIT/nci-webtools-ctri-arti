@@ -31,7 +31,7 @@ These are owned by `server` because they are browser-facing or session-aware:
 
 - `agents/http.js`: `/agents/:agentId/conversations/:conversationId/chat`
 - `cms/http.js`: `/agents`, `/conversations`, `/messages`, `/resources`, `/vectors`, `/tools`, `/prompts`, `/search/*`
-- `gateway/http.js`: `/model`, `/model/list`
+- `gateway/http.js`: `/model/invoke`, `/model/list`
 
 That is the current boundary rule: browser-facing edge concerns stay in `server`; service-shaped APIs live with the service and get mounted here.
 

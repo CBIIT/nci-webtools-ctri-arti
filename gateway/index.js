@@ -14,7 +14,7 @@ const users = USERS_URL ? createUsersRemote({ baseUrl: USERS_URL }) : createUser
 const appService = createGatewayService({ users });
 const app = createSchemaReadyServiceApp({
   router: createGatewayRouter({ application: appService }),
-  mountPath: "/api",
+  mountPath: "/api/v1",
   onReady: () => appService.reconcileGuardrails(),
   readinessFailureMessage: "Gateway startup readiness failed",
 });

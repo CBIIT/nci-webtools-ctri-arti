@@ -109,7 +109,7 @@ If the document doesn't contain information relevant to the question, state this
   const messages = [{ role: "user", content: [{ text: prompt }] }];
 
   const result = await context.gateway.invoke({
-    userID: context.userId,
+    userId: context.userId,
     requestId: context.requestId,
     model,
     messages,
@@ -447,7 +447,7 @@ export async function recall({ query, dateFrom, dateTo }, context) {
     (async () => {
       try {
         const embedResult = await gateway.embed({
-          userID: userId,
+          userId,
           requestId: context.requestId,
           model: NOVA_EMBEDDING_MODEL,
           content: [query],
@@ -522,4 +522,3 @@ export const toolImplementations = {
 export function getToolFn(name) {
   return toolImplementations[name];
 }
-

@@ -16,19 +16,17 @@ The root shows the deployable boundary. The actual domain code lives under `core
 
 ## HTTP API
 
-Standalone gateway mounts its routes under `/api`.
+Standalone gateway mounts its routes under `/api/v1`.
 
 Core endpoints:
 
 - `POST /api/v1/model/invoke`
-- `GET /api/v1/models`
+- `GET /api/v1/model/list`
 - `GET /api/v1/guardrails`
 - `POST /api/v1/guardrails/reconcile`
 - `DELETE /api/v1/guardrails/:id`
 - `POST /api/v1/usage`
 - `POST /api/v1/model-usage`
-
-`server` mounts the shared model router at the public edge paths `/api/model` and `/api/model/list`.
 
 ## Runtime Modes
 

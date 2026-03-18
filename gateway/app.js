@@ -40,6 +40,10 @@ async function getRateLimitResponse(userID) {
   };
 }
 
+function resolveGatewayUserId(userId, userID) {
+  return userId ?? userID ?? null;
+}
+
 export function createGatewayApplication({
   modelInvoker = runModel,
   embeddingInvoker = runEmbedding,
@@ -69,6 +73,7 @@ export function createGatewayApplication({
 
   return {
     async invoke({
+      userId,
       userID,
       model,
       type,
@@ -77,13 +82,13 @@ export function createGatewayApplication({
       tools,
       thoughtBudget,
       stream,
-      ip,
       requestId,
       outputConfig,
       content,
       purpose,
       guardrailConfig,
     }) {
+      userID = resolveGatewayUserId(userId, userID);
       const { limited, modelRecord } = await requirePreflight({ userID, model });
       if (limited) return limited;
 
@@ -112,7 +117,7 @@ export function createGatewayApplication({
 
       if (!result?.stream) {
         if (userID) {
-          await modelUsageTracker(userID, model, ip, result.usage, {
+          await modelUsageTracker(userID, model, result.usage, {
             type,
             requestId,
             trace: result.trace,
@@ -125,7 +130,7 @@ export function createGatewayApplication({
         stream: (async function* () {
           for await (const message of result.stream) {
             if (message.metadata && userID) {
-              await modelUsageTracker(userID, model, ip, message.metadata.usage, {
+              await modelUsageTracker(userID, model, message.metadata.usage, {
                 type,
                 requestId,
                 trace: message.metadata.trace,
@@ -137,7 +142,8 @@ export function createGatewayApplication({
       };
     },
 
-    async embed({ userID, model, content, purpose, ip, type, requestId }) {
+    async embed({ userId, userID, model, content, purpose, type, requestId }) {
+      userID = resolveGatewayUserId(userId, userID);
       const { limited } = await requirePreflight({ userID, model });
       if (limited) return limited;
 
@@ -156,8 +162,8 @@ export function createGatewayApplication({
       return usageTracker(userID, model, usageItems, options);
     },
 
-    async trackModelUsage(userID, model, ip, usageData, options) {
-      return modelUsageTracker(userID, model, ip, usageData, options);
+    async trackModelUsage(userID, model, usageData, options) {
+      return modelUsageTracker(userID, model, usageData, options);
     },
 
     listModels({ type } = {}) {
@@ -190,6 +196,3 @@ export function createGatewayApplication({
     },
   };
 }
-
-
-

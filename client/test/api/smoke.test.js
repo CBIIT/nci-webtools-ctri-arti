@@ -95,9 +95,9 @@ test("API Smoke Tests", async (t) => {
     assert.strictEqual(delRes.status, 200);
   });
 
-  // ── POST /model with mock-model to generate usage ─────────────────────
-  await t.test("POST /model with mock-model generates usage", async () => {
-    const res = await fetch("/api/v1/model", {
+  // ── POST /model/invoke with mock-model to generate usage ──────────────
+  await t.test("POST /model/invoke with mock-model generates usage", async () => {
+    const res = await fetch("/api/v1/model/invoke", {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({
@@ -195,24 +195,27 @@ test("API Smoke Tests", async (t) => {
     assert.ok(json.length > 0, "should have at least one model");
   });
 
-  // ── POST /model streaming ─────────────────────────────────────────────
-  await t.test("POST /model with mock-model stream=true returns streaming response", async () => {
-    const res = await fetch("/api/v1/model", {
-      method: "POST",
-      headers: headers(),
-      body: JSON.stringify({
-        model: "mock-model",
-        messages: [{ role: "user", content: [{ text: "stream test" }] }],
-        stream: true,
-      }),
-    });
-    assert.ok(res.ok, `streaming request failed: ${res.status}`);
-    // Streaming responses have text/event-stream or similar content type
-    const text = await res.text();
-    assert.ok(text.length > 0, "streaming response should have content");
-  });
+  // ── POST /model/invoke streaming ──────────────────────────────────────
+  await t.test(
+    "POST /model/invoke with mock-model stream=true returns streaming response",
+    async () => {
+      const res = await fetch("/api/v1/model/invoke", {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({
+          model: "mock-model",
+          messages: [{ role: "user", content: [{ text: "stream test" }] }],
+          stream: true,
+        }),
+      });
+      assert.ok(res.ok, `streaming request failed: ${res.status}`);
+      // Streaming responses have text/event-stream or similar content type
+      const text = await res.text();
+      assert.ok(text.length > 0, "streaming response should have content");
+    }
+  );
 
-  await t.test("POST /model stream=true is recorded in GET /admin/usage", async () => {
+  await t.test("POST /model/invoke stream=true is recorded in GET /admin/usage", async () => {
     const today = formatLocalDate(new Date());
     const monthAgo = formatLocalDate(new Date(Date.now() - 30 * 86400000));
     const usageType = `e2e-usage-repro-${Date.now()}`;
@@ -224,7 +227,7 @@ test("API Smoke Tests", async (t) => {
     assert.strictEqual(before.status, 200);
     const beforeCount = before.json?.meta?.total ?? before.json?.data?.length ?? 0;
 
-    const res = await fetch("/api/v1/model", {
+    const res = await fetch("/api/v1/model/invoke", {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({
@@ -499,7 +502,8 @@ test("API Smoke Tests", async (t) => {
       // Wait for page + auth to load
       await waitForElement(container, "h1", (el) => el.textContent.includes("Research Optimizer"));
       await waitForCondition(
-        () => window.__authContext?.().status() === "LOADED" && !!window.__authContext?.().expires(),
+        () =>
+          window.__authContext?.().status() === "LOADED" && !!window.__authContext?.().expires(),
         5000,
         "inactivity auth loaded"
       );

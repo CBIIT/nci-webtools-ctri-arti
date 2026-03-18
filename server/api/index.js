@@ -10,7 +10,7 @@ import { logErrors } from "./middleware.js";
 import { createAdminRouter } from "./routes/admin.js";
 import { createAuthRouter } from "./routes/auth.js";
 import { createToolsRouter } from "./routes/tools.js";
-import { createHttpError, getRequestContext } from "./utils.js";
+import { getRequestContext } from "./utils.js";
 
 const PUBLIC_ROUTES = new Set(["/config", "/login", "/logout", "/session", "/status"]);
 
@@ -34,7 +34,6 @@ export function createServerApi({ modules } = {}) {
   api.use(
     createAgentsChatRouter({
       application: modules.agents,
-      routePath: "/agents/:agentId/conversations/:conversationId/chat",
     })
   );
   api.use(
@@ -52,30 +51,18 @@ export function createServerApi({ modules } = {}) {
       resolveContext(req) {
         return getRequestContext(req);
       },
-      downloadPath: "/resources/:id/download",
     })
   );
   api.use(
     createGatewayModelRouter({
       application: modules.gateway,
-      invokePath: "/model",
-      listPath: "/model/list",
       resolveInvokeInput(req) {
-        const context = getRequestContext(req);
-        const ip = req.ip || req.socket.remoteAddress;
+        const { userId, requestId } = getRequestContext(req);
         return {
-          userID: context.userId,
-          requestId: context.requestId,
-          ip,
           ...req.body,
+          userId,
+          requestId,
         };
-      },
-      includeRateLimitCode: false,
-      createUnexpectedError(error, operation) {
-        if (operation === "gateway list models") {
-          return createHttpError(500, error, "An error occurred while fetching models");
-        }
-        return createHttpError(500, error, "An error occurred while processing the model request");
       },
     })
   );
@@ -86,4 +73,3 @@ export function createServerApi({ modules } = {}) {
 }
 
 export default createServerApi;
-

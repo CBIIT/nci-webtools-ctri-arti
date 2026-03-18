@@ -13,7 +13,6 @@ import {
 export function createCmsConversationsRouter({
   application,
   resolveContext = readRequestContext,
-  downloadPath = null,
 } = {}) {
   if (!application) {
     throw new Error("cms application is required");
@@ -33,7 +32,10 @@ export function createCmsConversationsRouter({
   api.get(
     "/conversations",
     withResolvedContext(resolveContext, async (req, res) => {
-      const conversations = await application.getConversations(req.context, parsePageQuery(req.query));
+      const conversations = await application.getConversations(
+        req.context,
+        parsePageQuery(req.query)
+      );
       res.json(conversations);
     })
   );
@@ -50,7 +52,11 @@ export function createCmsConversationsRouter({
   api.put(
     "/conversations/:id",
     withResolvedContext(resolveContext, async (req, res) => {
-      const conversation = await application.updateConversation(req.context, req.params.id, req.body);
+      const conversation = await application.updateConversation(
+        req.context,
+        req.params.id,
+        req.body
+      );
       if (!conversation) return sendNotFound(res, "Conversation");
       res.json(conversation);
     })
@@ -144,6 +150,15 @@ export function createCmsConversationsRouter({
   );
 
   api.get(
+    "/resources/:id/download",
+    withResolvedContext(resolveContext, async (req, res) => {
+      const resource = await application.getResource(req.context, req.params.id);
+      if (!resource) return sendNotFound(res, "Resource");
+      sendResourceDownload(res, resource);
+    })
+  );
+
+  api.get(
     "/resources/:id",
     withResolvedContext(resolveContext, async (req, res) => {
       const resource = await application.getResource(req.context, req.params.id);
@@ -151,17 +166,6 @@ export function createCmsConversationsRouter({
       res.json(resource);
     })
   );
-
-  if (downloadPath) {
-    api.get(
-      downloadPath,
-      withResolvedContext(resolveContext, async (req, res) => {
-        const resource = await application.getResource(req.context, req.params.id);
-        if (!resource) return sendNotFound(res, "Resource");
-        sendResourceDownload(res, resource);
-      })
-    );
-  }
 
   api.put(
     "/resources/:id",
@@ -217,12 +221,13 @@ export function createCmsConversationsRouter({
   api.get(
     "/conversations/:conversationId/vectors",
     withResolvedContext(resolveContext, async (req, res) => {
-      const vectors = await application.getVectorsByConversation(req.context, req.params.conversationId);
+      const vectors = await application.getVectorsByConversation(
+        req.context,
+        req.params.conversationId
+      );
       res.json(vectors);
     })
   );
 
   return api;
 }
-
-

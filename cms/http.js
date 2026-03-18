@@ -24,8 +24,3 @@ export function createCmsRouter({ application } = {}) {
 
   return v1;
 }
-
-
-
-
-

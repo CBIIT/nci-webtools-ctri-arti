@@ -165,7 +165,7 @@ function buildSystemPrompt(
  * @param {string} options.consentLibrary - consent-library.txt content
  * @param {Object} options.fullSchema - consent-schema.json parsed object
  * @param {string} options.model - Model ID (e.g. Opus 4.6)
- * @param {Function} options.runModelFn - Function to call /api/model (params => responseText)
+ * @param {Function} options.runModelFn - Function to call /api/model/invoke (params => responseText)
  * @param {Function} [options.onProgress] - Progress callback ({status, completed, total, message})
  * @param {string} [options.templateAnalysis] - Template structure analysis text
  * @param {string} [options.fieldDescriptions] - Schema field descriptions text
@@ -284,7 +284,7 @@ export async function runFieldExtraction({
  * @param {string} options.protocolText - Full protocol document text
  * @param {string} options.promptTemplate - Prompt text with ${protocol} placeholder
  * @param {string} options.model - Model ID
- * @param {Function} options.runModelFn - Function to call /api/model
+ * @param {Function} options.runModelFn - Function to call /api/model/invoke
  * @param {Function} [options.onProgress] - Progress callback
  * @returns {Promise<Object>} Extracted fields as JSON
  */

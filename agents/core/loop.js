@@ -206,7 +206,7 @@ export async function* runAgentLoop({
   let done = false;
   while (!done) {
     const result = await gateway.invoke({
-      userID: userId,
+      userId,
       requestId,
       model: effectiveModel,
       messages,
@@ -281,7 +281,3 @@ export async function* runAgentLoop({
     done = toolExecutionDone;
   }
 }
-
-
-
-

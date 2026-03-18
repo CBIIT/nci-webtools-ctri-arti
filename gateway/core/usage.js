@@ -109,7 +109,6 @@ export function createModelUsageTracker({ trackUsage }) {
   return async function trackModelUsage(
     userID,
     modelValue,
-    ip,
     usageData,
     { type, agentID, messageID, requestId, trace } = {}
   ) {
@@ -163,4 +162,3 @@ export function createGatewayUsage({ recordUsage }) {
     trackModelUsage,
   };
 }
-

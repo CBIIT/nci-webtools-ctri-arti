@@ -21,6 +21,7 @@ const cms = CMS_URL
 const application = createAgentsApplication({ gateway, cms, source: "internal-http" });
 const app = createSchemaReadyServiceApp({
   router: createAgentsRouter({ application }),
+  mountPath: "/api/v1",
   readinessFailureMessage: "Agents schema readiness failed",
 });
 

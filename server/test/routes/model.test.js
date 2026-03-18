@@ -16,7 +16,7 @@ function buildApp({ invokeResult, listModelsResult } = {}) {
     createServerApi({
       modules: {
         agents: {
-          async *chat() {}
+          async *chat() {},
         },
         users: {},
         cms: {
@@ -53,16 +53,15 @@ describe("server model route", () => {
     const app = buildApp();
 
     const res = await request(app)
-      .post("/model")
+      .post("/model/invoke")
       .set("X-API-Key", process.env.TEST_API_KEY)
       .set("X-Request-Id", "req-server-model")
       .send({ model: "test-model", messages: [{ role: "user", content: [{ text: "hello" }] }] });
 
     assert.equal(res.status, 200);
-    assert.equal(res.body.echoed.userID > 0, true);
+    assert.equal(res.body.echoed.userId > 0, true);
     assert.equal(res.body.echoed.requestId, "req-server-model");
     assert.equal(res.body.echoed.model, "test-model");
-    assert.equal(typeof res.body.echoed.ip, "string");
   });
 
   it("mounts the shared gateway model router at the public list path", async () => {
@@ -76,18 +75,25 @@ describe("server model route", () => {
     assert.deepStrictEqual(res.body, [{ name: "Model A", type: "embedding" }]);
   });
 
-  it("preserves the edge 429 response shape", async () => {
+  it("preserves the canonical 429 response shape", async () => {
     const app = buildApp({
-      invokeResult: async () => ({ status: 429, error: "Rate limited", code: "IGNORED_AT_EDGE" }),
+      invokeResult: async () => ({
+        status: 429,
+        error: "Rate limited",
+        code: "GATEWAY_RATE_LIMITED",
+      }),
     });
 
     const res = await request(app)
-      .post("/model")
+      .post("/model/invoke")
       .set("X-API-Key", process.env.TEST_API_KEY)
       .send({ model: "test-model", messages: [{ role: "user", content: [{ text: "hello" }] }] });
 
     assert.equal(res.status, 429);
-    assert.deepStrictEqual(res.body, { error: "Rate limited" });
+    assert.deepStrictEqual(res.body, {
+      error: "Rate limited",
+      code: "GATEWAY_RATE_LIMITED",
+    });
   });
 
   it("preserves the edge invoke error message for unexpected failures", async () => {
@@ -98,7 +104,7 @@ describe("server model route", () => {
     });
 
     const res = await request(app)
-      .post("/model")
+      .post("/model/invoke")
       .set("X-API-Key", process.env.TEST_API_KEY)
       .send({ model: "test-model", messages: [{ role: "user", content: [{ text: "hello" }] }] });
 
@@ -115,9 +121,7 @@ describe("server model route", () => {
       },
     });
 
-    const res = await request(app)
-      .get("/model/list")
-      .set("X-API-Key", process.env.TEST_API_KEY);
+    const res = await request(app).get("/model/list").set("X-API-Key", process.env.TEST_API_KEY);
 
     assert.equal(res.status, 500);
     assert.deepStrictEqual(res.body, {
@@ -125,5 +129,3 @@ describe("server model route", () => {
     });
   });
 });
-
-

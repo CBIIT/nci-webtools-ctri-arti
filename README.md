@@ -230,7 +230,7 @@ sequenceDiagram
     participant Agents
     participant CMS
     participant Gateway
-    Browser->>Server: POST /api/agents/:agentId/conversations/:conversationId/chat
+    Browser->>Server: POST /api/v1/agents/:agentId/conversations/:conversationId/chat
     Server->>Agents: chat(...)
     Agents->>CMS: load agent definition + conversation state
     Agents->>Gateway: invoke(...)

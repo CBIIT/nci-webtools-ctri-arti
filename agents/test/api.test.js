@@ -22,7 +22,7 @@ describe("Agents API request context", () => {
 
   it("rejects explicit anonymous internal requests", async () => {
     const res = await request(app)
-      .post("/api/agents/1/conversations/1/chat")
+      .post("/agents/1/conversations/1/chat")
       .set("X-User-Id", "anonymous")
       .send(body);
 
@@ -32,7 +32,7 @@ describe("Agents API request context", () => {
 
   it("rejects invalid internal user id headers", async () => {
     const res = await request(app)
-      .post("/api/agents/1/conversations/1/chat")
+      .post("/agents/1/conversations/1/chat")
       .set("X-User-Id", "not-a-user")
       .send(body);
 
@@ -42,7 +42,7 @@ describe("Agents API request context", () => {
 
   it("rejects requests without message content", async () => {
     const res = await request(app)
-      .post("/api/agents/1/conversations/1/chat")
+      .post("/agents/1/conversations/1/chat")
       .set("X-User-Id", "1")
       .send({});
 

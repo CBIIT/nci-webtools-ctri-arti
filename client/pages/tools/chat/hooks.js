@@ -254,7 +254,7 @@ export function useChat() {
         ],
       };
 
-      const response = await fetch("/api/v1/model", {
+      const response = await fetch("/api/v1/model/invoke", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -490,7 +490,7 @@ export function useChat() {
       setLoading(true);
 
       while (!isComplete) {
-        const response = await fetch("/api/v1/model", {
+        const response = await fetch("/api/v1/model/invoke", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({

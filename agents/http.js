@@ -16,7 +16,7 @@ async function streamEvents(res, stream) {
 
 export function createAgentsChatRouter({
   application,
-  routePath = "/api/agents/:agentId/conversations/:conversationId/chat",
+  routePath = "/agents/:agentId/conversations/:conversationId/chat",
   resolveContext = getAgentRequestContext,
 } = {}) {
   if (!application) {
@@ -76,4 +76,3 @@ export function createAgentsChatRouter({
 }
 
 export const createAgentsRouter = createAgentsChatRouter;
-

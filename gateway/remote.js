@@ -34,7 +34,7 @@ export function createGatewayRemote({ baseUrl, fetchImpl = fetch }) {
       });
 
       if (response.status === 429) {
-        return { error: (await readJsonErrorPayload(response)).error, status: 429 };
+        return { ...(await readJsonErrorPayload(response)), status: 429 };
       }
 
       if (!response.ok) {
@@ -68,7 +68,7 @@ export function createGatewayRemote({ baseUrl, fetchImpl = fetch }) {
     },
 
     async listModels({ type } = {}) {
-      return requestGateway(`/api/v1/models${buildQueryString({ type })}`);
+      return requestGateway(`/api/v1/model/list${buildQueryString({ type })}`);
     },
 
     async listGuardrails() {
@@ -95,11 +95,11 @@ export function createGatewayRemote({ baseUrl, fetchImpl = fetch }) {
       });
     },
 
-    async trackModelUsage(userID, model, ip, usageData, options) {
+    async trackModelUsage(userID, model, usageData, options) {
       return requestGateway("/api/v1/model-usage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: { userID, model, ip, usageData, options },
+        body: { userID, model, usageData, options },
       });
     },
   };

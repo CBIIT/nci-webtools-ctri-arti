@@ -229,7 +229,7 @@ test("transport parity", async (t) => {
           cms,
         }),
       }),
-      "/"
+      "/api/v1"
     );
 
     try {
@@ -283,7 +283,7 @@ test("transport parity", async (t) => {
   });
 
   await t.test("Gateway embedding billing matches in direct and HTTP mode", async () => {
-    const gatewayServer = await startServer(gatewayApi, "/api");
+    const gatewayServer = await startServer(gatewayApi, "/api/v1");
     const modelName = `mock-embedding-${Date.now()}`;
     const [model] = await db
       .insert(Model)
@@ -339,8 +339,8 @@ test("transport parity", async (t) => {
       };
 
       const [directResult, httpResult] = await Promise.all([
-        directClient.embed({ userID: directUser.id, ...input }),
-        httpClient.embed({ userID: httpUser.id, ...input }),
+        directClient.embed({ userId: directUser.id, ...input }),
+        httpClient.embed({ userId: httpUser.id, ...input }),
       ]);
 
       assert.equal(directResult.embeddings.length, httpResult.embeddings.length);
@@ -384,7 +384,7 @@ test("transport parity", async (t) => {
   });
 
   await t.test("Gateway missing-model errors match in direct and HTTP mode", async () => {
-    const gatewayServer = await startServer(gatewayApi, "/api");
+    const gatewayServer = await startServer(gatewayApi, "/api/v1");
 
     try {
       const directClient = createGatewayService();
@@ -393,7 +393,7 @@ test("transport parity", async (t) => {
       const [directError, httpError] = await Promise.all([
         directClient
           .invoke({
-            userID: null,
+            userId: null,
             model: "missing-model-for-parity",
             messages: [{ role: "user", content: [{ text: "hello" }] }],
             stream: false,
@@ -404,7 +404,7 @@ test("transport parity", async (t) => {
           ),
         httpClient
           .invoke({
-            userID: null,
+            userId: null,
             model: "missing-model-for-parity",
             messages: [{ role: "user", content: [{ text: "hello" }] }],
             stream: false,
@@ -636,4 +636,3 @@ test("transport parity", async (t) => {
     }
   });
 });
-

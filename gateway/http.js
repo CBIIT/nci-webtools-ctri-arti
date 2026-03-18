@@ -11,26 +11,39 @@ function sendGatewayError(res, error) {
 }
 
 function resolveGatewayInvokeInput(req) {
+  const { userId, userID, ...body } = req.body || {};
   return {
-    ...req.body,
-    requestId: resolveRequestId(req.body?.requestId, req.headers["x-request-id"]),
+    ...body,
+    userId: userId ?? userID ?? null,
+    requestId: resolveRequestId(body?.requestId, req.headers["x-request-id"]),
   };
 }
 
-function sendGatewayRateLimit(res, result, { includeCode = true } = {}) {
+function sendGatewayRateLimit(res, result) {
   return res.status(429).json({
     error: result.error,
-    ...(includeCode ? { code: result.code || "GATEWAY_RATE_LIMITED" } : {}),
+    code: result.code || "GATEWAY_RATE_LIMITED",
   });
 }
 
-function forwardGatewayError(error, next, { operation, createUnexpectedError } = {}) {
+function createGatewayUnexpectedError(operation, cause) {
+  const message =
+    operation === "gateway list models"
+      ? "An error occurred while fetching models"
+      : "An error occurred while processing the model request";
+  const error = new Error(message);
+  error.statusCode = 500;
+  error.cause = cause;
+  return error;
+}
+
+function forwardGatewayError(error, next, { operation } = {}) {
   if (error.statusCode) {
     return next(error);
   }
 
   logger.error(`Error in ${operation}:`, error);
-  return next(createUnexpectedError ? createUnexpectedError(error, operation) : error);
+  return next(createGatewayUnexpectedError(operation, error));
 }
 
 async function streamGatewayResponse(res, stream) {
@@ -46,11 +59,9 @@ async function streamGatewayResponse(res, stream) {
 
 export function createGatewayModelRouter({
   application,
-  invokePath = "/v1/model/invoke",
-  listPath = "/v1/models",
+  invokePath = "/model/invoke",
+  listPath = "/model/list",
   resolveInvokeInput = resolveGatewayInvokeInput,
-  includeRateLimitCode = true,
-  createUnexpectedError,
 } = {}) {
   if (!application) {
     throw new Error("gateway application is required");
@@ -64,7 +75,7 @@ export function createGatewayModelRouter({
       const result = await application.invoke(resolveInvokeInput(req));
 
       if (result?.status === 429) {
-        return sendGatewayRateLimit(res, result, { includeCode: includeRateLimitCode });
+        return sendGatewayRateLimit(res, result);
       }
 
       if (!result?.stream) {
@@ -79,7 +90,6 @@ export function createGatewayModelRouter({
 
       return forwardGatewayError(error, next, {
         operation: "gateway invoke",
-        createUnexpectedError,
       });
     }
   });
@@ -91,7 +101,6 @@ export function createGatewayModelRouter({
     } catch (error) {
       return forwardGatewayError(error, next, {
         operation: "gateway list models",
-        createUnexpectedError,
       });
     }
   });
@@ -109,7 +118,7 @@ export function createGatewayRouter({ application } = {}) {
   api.use(logRequests());
   api.use(createGatewayModelRouter({ application }));
 
-  api.get("/v1/guardrails", async (_req, res, next) => {
+  api.get("/guardrails", async (_req, res, next) => {
     try {
       const results = await application.listGuardrails();
       res.json(results);
@@ -118,7 +127,7 @@ export function createGatewayRouter({ application } = {}) {
     }
   });
 
-  api.post("/v1/guardrails/reconcile", async (req, res, next) => {
+  api.post("/guardrails/reconcile", async (req, res, next) => {
     try {
       const ids = Array.isArray(req.body?.ids) ? req.body.ids : undefined;
       const results = await application.reconcileGuardrails({ ids });
@@ -128,7 +137,7 @@ export function createGatewayRouter({ application } = {}) {
     }
   });
 
-  api.delete("/v1/guardrails/:id", async (req, res, next) => {
+  api.delete("/guardrails/:id", async (req, res, next) => {
     try {
       const result = await application.deleteGuardrail(Number(req.params.id));
       res.json(result);
@@ -140,7 +149,7 @@ export function createGatewayRouter({ application } = {}) {
     }
   });
 
-  api.post("/v1/usage", async (req, res, next) => {
+  api.post("/usage", async (req, res, next) => {
     try {
       const result = await application.trackUsage(
         req.body?.userID,
@@ -154,12 +163,11 @@ export function createGatewayRouter({ application } = {}) {
     }
   });
 
-  api.post("/v1/model-usage", async (req, res, next) => {
+  api.post("/model-usage", async (req, res, next) => {
     try {
       const result = await application.trackModelUsage(
         req.body?.userID,
         req.body?.model,
-        req.body?.ip,
         req.body?.usageData,
         req.body?.options
       );

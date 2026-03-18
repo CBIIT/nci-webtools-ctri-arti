@@ -16,9 +16,11 @@ This service is no longer a stub. The core loop lives in [core/loop.js](core/loo
 
 ## HTTP API
 
-Standalone agents exposes one shared route:
+Standalone agents mounts its routes under `/api/v1`.
 
-- `POST /api/agents/:agentId/conversations/:conversationId/chat`
+The shared chat route is:
+
+- `POST /api/v1/agents/:agentId/conversations/:conversationId/chat`
 
 Responses stream back as newline-delimited JSON.
 
