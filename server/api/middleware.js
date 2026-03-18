@@ -2,7 +2,7 @@ import Provider from "oidc-provider";
 import * as client from "openid-client";
 import logger, { formatObject } from "shared/logger.js";
 
-import { sendLogReport } from "./email.js";
+import { sendLogReport } from "../integrations/email.js";
 
 const {
   HOSTNAME,
@@ -241,3 +241,5 @@ export function touchSession({ except } = {}) {
     next();
   };
 }
+
+

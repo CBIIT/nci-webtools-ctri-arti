@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import express from "express";
 import request from "supertest";
 
-import { createServerApi } from "../../services/api.js";
+import { createServerApi } from "../../api/index.js";
 
 function buildApp({ invokeResult, listModelsResult } = {}) {
   const app = express();
@@ -125,3 +125,5 @@ describe("server model route", () => {
     });
   });
 });
+
+

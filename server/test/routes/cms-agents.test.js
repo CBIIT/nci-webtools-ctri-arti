@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import express from "express";
 import request from "supertest";
 
-import { createServerApi } from "../../services/api.js";
+import { createServerApi } from "../../api/index.js";
 
 function buildApp() {
   const app = express();
@@ -82,3 +82,5 @@ describe("server CMS agents routes", () => {
     assert.deepStrictEqual(res.body, { error: "Authentication required" });
   });
 });
+
+

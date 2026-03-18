@@ -2,12 +2,12 @@ import { getSchemaReadiness } from "database/readiness.js";
 import { json, Router } from "express";
 
 import { requireRole } from "../../auth.js";
-import { sendFeedback, sendLogReport, sendJustificationEmail } from "../email.js";
-import { parseDocument } from "../parsers.js";
-import { proxyMiddleware } from "../proxy.js";
-import { getFile, listFiles } from "../s3.js";
-import { textract } from "../textract.js";
-import { getLanguages, translate } from "../translate.js";
+import { sendFeedback, sendLogReport, sendJustificationEmail } from "../../integrations/email.js";
+import { parseDocument } from "../../integrations/parsers.js";
+import { proxyMiddleware } from "../../integrations/proxy.js";
+import { getFile, listFiles } from "../../integrations/s3.js";
+import { textract } from "../../integrations/textract.js";
+import { getLanguages, translate } from "../../integrations/translate.js";
 import { getAuthenticatedUser, getRequestContext, search } from "../utils.js";
 
 const { VERSION, S3_BUCKETS, EMAIL_DEV, EMAIL_ADMIN, EMAIL_USER_REPORTS } = process.env;
@@ -175,3 +175,10 @@ export function createToolsRouter({
 }
 
 export default createToolsRouter;
+
+
+
+
+
+
+

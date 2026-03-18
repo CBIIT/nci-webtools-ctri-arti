@@ -79,3 +79,4 @@ export function createAuthRouter({ modules } = {}) {
 }
 
 export default createAuthRouter;
+

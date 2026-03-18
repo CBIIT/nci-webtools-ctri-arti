@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 import session from "express-session";
 
-import { createSessionStore } from "../services/session-store.js";
+import { createSessionStore } from "../runtime/session-store.js";
 
 function promisify(store, method, ...args) {
   return new Promise((resolve, reject) => {
@@ -126,3 +126,5 @@ test("session-store", async (t) => {
     assert.ok(result, "Session should survive touch with invalid expires");
   });
 });
+
+

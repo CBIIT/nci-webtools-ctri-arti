@@ -7,7 +7,7 @@ import express from "express";
 import request from "supertest";
 import { createUsersApplication } from "users/app.js";
 
-import { createAdminRouter } from "../../services/routes/admin.js";
+import { createAdminRouter } from "../../api/routes/admin.js";
 
 const { TEST_API_KEY } = process.env;
 const originalProfiles = new Map();
@@ -126,3 +126,5 @@ describe("budget admin routes", () => {
     assert.equal(updated.remaining, updated.budget);
   });
 });
+
+

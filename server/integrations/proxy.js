@@ -1,6 +1,6 @@
 import { Readable } from "stream";
 
-import { createHttpError } from "./utils.js";
+import { createHttpError } from "../api/utils.js";
 
 export const WHITELIST = [/.*/i];
 
@@ -69,3 +69,5 @@ export function getAuthorizedHeaders(url, env = process.env) {
     }[url.hostname] || {}
   );
 }
+
+

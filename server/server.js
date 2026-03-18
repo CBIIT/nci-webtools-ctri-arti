@@ -8,11 +8,11 @@ import session from "express-session";
 import logger from "shared/logger.js";
 import { nocache } from "shared/middleware.js";
 
+import { createServerApi } from "./api/index.js";
+import { touchSession } from "./api/middleware.js";
+import { createCertificate } from "./api/utils.js";
 import { getServerModules } from "./compose.js";
-import { createServerApi } from "./services/api.js";
-import { touchSession } from "./services/middleware.js";
-import { startScheduler } from "./services/scheduler.js";
-import { createCertificate } from "./services/utils.js";
+import { startScheduler } from "./runtime/scheduler.js";
 
 const { PORT = 8080, SESSION_MAX_AGE, PGHOST } = process.env;
 const sessionMaxAge = parseInt(SESSION_MAX_AGE, 10) || 30 * 60 * 1000;
@@ -65,7 +65,7 @@ export async function createApp(env = process.env) {
   if (!PGHOST) {
     store = new session.MemoryStore();
   } else {
-    const { createSessionStore } = await import("./services/session-store.js");
+    const { createSessionStore } = await import("./runtime/session-store.js");
     store = createSessionStore(session);
   }
 
@@ -107,3 +107,9 @@ export function createServer(app, env = process.env) {
   }
   return lib.createServer(options, app);
 }
+
+
+
+
+
+

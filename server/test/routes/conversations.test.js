@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import express from "express";
 import request from "supertest";
 
-import { createServerApi } from "../../services/api.js";
+import { createServerApi } from "../../api/index.js";
 
 function buildApp() {
   const app = express();
@@ -116,3 +116,5 @@ describe("GET /resources/:id", () => {
     await db.delete(Resource).where(eq(Resource.id, resource.id));
   });
 });
+
+

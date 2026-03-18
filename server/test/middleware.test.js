@@ -6,7 +6,8 @@ import { eq } from "drizzle-orm";
 import { logRequests, nocache } from "shared/middleware.js";
 
 import { requireRole } from "../auth.js";
-import { logErrors } from "../services/middleware.js";
+
+import { logErrors } from "../api/middleware.js";
 
 function createMockReq(overrides = {}) {
   return {
@@ -227,3 +228,5 @@ test("nocache", async (t) => {
     assert.ok(nextCalled);
   });
 });
+
+

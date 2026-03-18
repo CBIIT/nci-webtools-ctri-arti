@@ -8,7 +8,7 @@ import {
   getDateRange,
   createCertificate,
   getAuthenticatedUser,
-} from "../services/utils.js";
+} from "../api/utils.js";
 
 test("retry", async (t) => {
   await t.test("succeeds on first try", async () => {
@@ -198,3 +198,5 @@ test("getAuthenticatedUser", async (t) => {
     );
   });
 });
+
+

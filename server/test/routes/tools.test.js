@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import express from "express";
 import request from "supertest";
 
-import { createToolsRouter } from "../../services/routes/tools.js";
+import { createToolsRouter } from "../../api/routes/tools.js";
 
 const { TEST_API_KEY } = process.env;
 
@@ -52,3 +52,5 @@ describe("POST /usage", () => {
     });
   });
 });
+
+

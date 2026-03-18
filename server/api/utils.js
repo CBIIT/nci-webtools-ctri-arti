@@ -2,8 +2,7 @@ import { inspect } from "util";
 
 import forge from "node-forge";
 import {
-  createRequestContext,
-  requireUserRequestContext,
+  readHttpRequestContext,
 } from "shared/request-context.js";
 import { createHttpError, getDateRange, routeHandler } from "shared/utils.js";
 
@@ -108,10 +107,7 @@ export function createCertificate(opts = {}) {
 }
 
 export function getRequestContext(req, { allowAnonymous = false, source = "server" } = {}) {
-  const requestId = req.headers?.["x-request-id"];
-  const baseContext = createRequestContext(req.session?.user?.id ?? null, { source, requestId });
-
-  return allowAnonymous ? baseContext : requireUserRequestContext(baseContext);
+  return readHttpRequestContext(req, { allowAnonymous, source });
 }
 
 /**
@@ -131,3 +127,4 @@ export function getAuthenticatedUser(req, options = {}) {
   }
   return user;
 }
+
