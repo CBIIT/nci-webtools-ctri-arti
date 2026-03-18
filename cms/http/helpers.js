@@ -1,4 +1,4 @@
-import { parseInternalUserIdHeader } from "shared/request-context.js";
+import { readInternalRequestContext } from "shared/request-context.js";
 import { routeHandler } from "shared/utils.js";
 
 export const JSON_UPLOAD_LIMIT = 1024 ** 3;
@@ -22,22 +22,7 @@ const RESOURCE_MIME_TYPES = {
 };
 
 export function readRequestContext(req, { required = true } = {}) {
-  try {
-    const context = parseInternalUserIdHeader(req.headers["x-user-id"], {
-      requestId: req.headers["x-request-id"],
-    });
-
-    if (!context && required) {
-      const error = new Error("X-User-Id header required");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    return context;
-  } catch (error) {
-    error.statusCode ||= 400;
-    throw error;
-  }
+  return readInternalRequestContext(req.headers, { required });
 }
 
 export function withResolvedContext(resolveContext, handler, options) {
@@ -112,3 +97,4 @@ export function sendResourceDownload(res, resource) {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   res.send(content);
 }
+

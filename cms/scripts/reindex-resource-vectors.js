@@ -2,7 +2,7 @@ import db, { Resource, rawSql } from "database";
 
 import { asc } from "drizzle-orm";
 
-import { ConversationService } from "./conversation.js";
+import { ConversationService } from "../core/conversation-service.js";
 
 const args = new Set(process.argv.slice(2));
 const reindexAll = args.has("--all");
@@ -49,3 +49,5 @@ for (const resource of resources) {
 
 console.log(`Reindex complete. succeeded=${succeeded} failed=${failed}`);
 process.exitCode = failed ? 1 : 0;
+
+

@@ -1,5 +1,5 @@
-import { getToolSpecs } from "../tool-specs.js";
-import { getToolFn } from "../tools.js";
+import { getToolFn } from "../tools/index.js";
+import { getToolSpecs } from "../tools/specs.js";
 
 import { buildSystemPrompt } from "./prompt.js";
 import { accumulateContent, parseToolUseInputs } from "./streaming.js";
@@ -281,3 +281,7 @@ export async function* runAgentLoop({
     done = toolExecutionDone;
   }
 }
+
+
+
+

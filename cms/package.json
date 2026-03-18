@@ -13,7 +13,7 @@
   },
   "scripts": {
     "start": "node --env-file .env index.js",
-    "reindex:vectors": "node reindex-resource-vectors.js"
+    "reindex:vectors": "node scripts/reindex-resource-vectors.js"
   },
   "dependencies": {
     "database": "*",
@@ -22,3 +22,5 @@
     "shared": "*"
   }
 }
+
+

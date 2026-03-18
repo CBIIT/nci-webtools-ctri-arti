@@ -6,8 +6,9 @@ import {
   readRequestContext,
   sendNotFound,
   sendResourceDownload,
+  streamResponse,
   withResolvedContext,
-} from "./http-helpers.js";
+} from "./helpers.js";
 
 export function createCmsConversationsRouter({
   application,
@@ -75,6 +76,21 @@ export function createCmsConversationsRouter({
   );
 
   api.post(
+    "/conversations/:id/summarize",
+    withResolvedContext(resolveContext, async (req, res) => {
+      await streamResponse(res, application.summarize(req.context, req.params.id, req.body));
+    })
+  );
+
+  api.post(
+    "/summarize",
+    withResolvedContext(resolveContext, async (req, res) => {
+      const { conversationId, ...params } = req.body;
+      await streamResponse(res, application.summarize(req.context, conversationId, params));
+    })
+  );
+
+  api.post(
     "/conversations/:conversationId/messages",
     withResolvedContext(resolveContext, async (req, res) => {
       const message = await application.appendConversationMessage(req.context, {
@@ -90,6 +106,15 @@ export function createCmsConversationsRouter({
     withResolvedContext(resolveContext, async (req, res) => {
       const messages = await application.getMessages(req.context, req.params.conversationId);
       res.json(messages);
+    })
+  );
+
+  api.get(
+    "/messages/:id",
+    withResolvedContext(resolveContext, async (req, res) => {
+      const message = await application.getMessage(req.context, req.params.id);
+      if (!message) return sendNotFound(res, "Message");
+      res.json(message);
     })
   );
 
@@ -199,3 +224,5 @@ export function createCmsConversationsRouter({
 
   return api;
 }
+
+
