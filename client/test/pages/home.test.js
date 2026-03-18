@@ -1,6 +1,33 @@
 import assert from "../assert.js";
 import { installMockFetch, jsonResponse, mountApp, waitForCondition, waitForElement } from "../helpers.js";
 import test from "../test.js";
+import { AUTH_STATE_STORAGE_KEY, authSync } from "../../contexts/auth-context.js";
+
+function stubReload() {
+  const originalReload = authSync.reload;
+  let count = 0;
+
+  authSync.reload = () => {
+    count++;
+  };
+
+  return {
+    get count() {
+      return count;
+    },
+    restore() {
+      authSync.reload = originalReload;
+    },
+  };
+}
+
+function setPrivacyNoticeAccepted(value) {
+  document.cookie = `privacyNoticeAccepted=${value}; path=/`;
+}
+
+function clearPrivacyNoticeAccepted() {
+  document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
+}
 
 test("Home Page Tests", async (t) => {
   const restoreFetch = installMockFetch(({ url }) => {
@@ -88,4 +115,251 @@ test("Home Page Tests", async (t) => {
       document.body.removeChild(container);
     }
   }
+});
+
+test("Auth Sync Tests", async (t) => {
+  await t.test("authenticated tab reloads on logout event", async () => {
+    localStorage.removeItem("userDetails");
+    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+
+    const restoreFetch = installMockFetch(({ url }) => {
+      if (url.pathname === "/api/v1/session") {
+        return jsonResponse({
+          user: {
+            id: 1,
+            email: "integration@example.org",
+            firstName: "Integration",
+            lastName: "Tester",
+            Role: { id: 1, name: "admin" },
+          },
+        });
+      }
+      return null;
+    });
+
+    const reload = stubReload();
+    const { container, errors, dispose } = mountApp("/");
+
+    try {
+      await waitForCondition(
+        () => window.__authContext?.().status() === "LOADED" && window.__authContext?.().isLoggedIn(),
+        5000,
+        "authenticated auth loaded"
+      );
+
+      authSync.handleStorageEvent({
+        key: AUTH_STATE_STORAGE_KEY,
+        newValue: JSON.stringify({ isLoggedIn: false, at: Date.now() }),
+      });
+
+      await waitForCondition(() => reload.count === 1, 2000, "logout sync reload");
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    } finally {
+      reload.restore();
+      restoreFetch();
+      dispose();
+      if (container.parentNode === document.body) {
+        document.body.removeChild(container);
+      }
+    }
+  });
+
+  await t.test("logged out tab reloads on login event", async () => {
+    localStorage.removeItem("userDetails");
+    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+
+    const restoreFetch = installMockFetch(({ url }) => {
+      if (url.pathname === "/api/v1/session") {
+        return jsonResponse({ user: null, expires: null });
+      }
+      return null;
+    });
+
+    const reload = stubReload();
+    const { container, errors, dispose } = mountApp("/");
+
+    try {
+      await waitForCondition(
+        () =>
+          window.__authContext?.().status() === "LOADED" && !window.__authContext?.().isLoggedIn(),
+        5000,
+        "logged out auth loaded"
+      );
+
+      authSync.handleStorageEvent({
+        key: AUTH_STATE_STORAGE_KEY,
+        newValue: JSON.stringify({ isLoggedIn: true, at: Date.now() }),
+      });
+
+      await waitForCondition(() => reload.count === 1, 2000, "login sync reload");
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    } finally {
+      reload.restore();
+      restoreFetch();
+      dispose();
+      if (container.parentNode === document.body) {
+        document.body.removeChild(container);
+      }
+    }
+  });
+});
+
+test("Inactivity Dialog Tests", async (t) => {
+  await t.test("warning appears and Extend Session works", async () => {
+    localStorage.removeItem("userDetails");
+    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+    sessionStorage.removeItem("sessionTimedOut");
+    setPrivacyNoticeAccepted("true");
+
+    const nearExpiry = new Date(Date.now() + 10 * 1000).toISOString();
+    const initialExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const farFutureExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const sessionUser = {
+      id: 1,
+      email: "integration@example.org",
+      firstName: "Integration",
+      lastName: "Tester",
+      Role: { id: 1, name: "admin" },
+    };
+    let shouldConfirmExpiringSession = false;
+
+    const restoreFetch = installMockFetch(({ url, request }) => {
+      if (url.pathname === "/api/v1/session" && request.method === "GET") {
+        return jsonResponse({
+          user: sessionUser,
+          expires: shouldConfirmExpiringSession ? nearExpiry : initialExpiry,
+        });
+      }
+
+      if (url.pathname === "/api/v1/session" && request.method === "POST") {
+        return jsonResponse({
+          user: sessionUser,
+          expires: farFutureExpiry,
+        });
+      }
+
+      return null;
+    });
+
+    const { container, errors, dispose } = mountApp("/");
+
+    try {
+      await waitForCondition(
+        () => window.__authContext?.().status() === "LOADED" && !!window.__authContext?.().expires(),
+        5000,
+        "inactivity auth loaded"
+      );
+
+      const authCtx = window.__authContext?.();
+      await waitForCondition(
+        () => !container.querySelector("dialog[open]"),
+        1000,
+        "privacy notice hidden"
+      );
+      authCtx.updateExpires(nearExpiry);
+      shouldConfirmExpiringSession = true;
+
+      const warningModal = await waitForElement(container, ".inactivity-warning-modal", 5000);
+      assert.ok(warningModal, "Warning modal should appear when session is about to expire");
+
+      const warningText = container.querySelector(".inactivity-warning-text");
+      assert.ok(warningText, "Warning text should be present");
+      assert.ok(
+        warningText.textContent.includes("about to expire"),
+        "Warning should mention expiration"
+      );
+
+      const extendBtn = container.querySelector(".extend-button");
+      assert.ok(extendBtn, "Extend Session button should be present");
+      extendBtn.click();
+
+      await waitForCondition(
+        () => !container.querySelector(".inactivity-warning-modal"),
+        5000,
+        "warning modal close after extend"
+      );
+
+      assert.ok(
+        !container.querySelector(".inactivity-warning-modal"),
+        "Warning modal should be gone after extending session"
+      );
+      assert.strictEqual(authCtx.expires(), farFutureExpiry);
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    } finally {
+      restoreFetch();
+      dispose();
+      if (container.parentNode === document.body) {
+        document.body.removeChild(container);
+      }
+      clearPrivacyNoticeAccepted();
+    }
+  });
+
+  await t.test("skips warning when server expiry was rolled forward", async () => {
+    localStorage.removeItem("userDetails");
+    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+    sessionStorage.removeItem("sessionTimedOut");
+    setPrivacyNoticeAccepted("true");
+
+    const nearExpiry = new Date(Date.now() + 10 * 1000).toISOString();
+    const initialExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const farFutureExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const sessionUser = {
+      id: 1,
+      email: "integration@example.org",
+      firstName: "Integration",
+      lastName: "Tester",
+      Role: { id: 1, name: "admin" },
+    };
+
+    let shouldRollSessionForward = false;
+
+    const restoreFetch = installMockFetch(({ url, request }) => {
+      if (url.pathname === "/api/v1/session" && request.method === "GET") {
+        return jsonResponse({
+          user: sessionUser,
+          expires: shouldRollSessionForward ? farFutureExpiry : initialExpiry,
+        });
+      }
+      return null;
+    });
+
+    const { container, errors, dispose } = mountApp("/");
+
+    try {
+      await waitForCondition(
+        () => window.__authContext?.().status() === "LOADED" && !!window.__authContext?.().expires(),
+        5000,
+        "inactivity auth loaded"
+      );
+
+      const authCtx = window.__authContext?.();
+      await waitForCondition(
+        () => !container.querySelector("dialog[open]"),
+        1000,
+        "privacy notice hidden"
+      );
+      authCtx.updateExpires(nearExpiry);
+      shouldRollSessionForward = true;
+
+      await waitForCondition(
+        () => authCtx.expires() === farFutureExpiry,
+        5000,
+        "rolled forward session expiry"
+      );
+
+      assert.ok(
+        !container.querySelector(".inactivity-warning-modal"),
+        "Warning modal should stay hidden when server expiry was extended"
+      );
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    } finally {
+      restoreFetch();
+      dispose();
+      if (container.parentNode === document.body) {
+        document.body.removeChild(container);
+      }
+      clearPrivacyNoticeAccepted();
+    }
+  });
 });

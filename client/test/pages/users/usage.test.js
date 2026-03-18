@@ -697,8 +697,8 @@ test("User Usage Detail Tests", async (t) => {
       const recentRows = Array.from(tables.at(-1).querySelectorAll("tbody tr"));
       assert.strictEqual(
         recentRows.length,
-        4,
-        "recent requests should keep separate rows for distinct models"
+        5,
+        "recent requests should keep separate rows for distinct models and ungrouped unknown requests"
       );
 
       const chatRow = recentRows.find(
@@ -739,6 +739,15 @@ test("User Usage Detail Tests", async (t) => {
             row.textContent.includes("$0.01")
         ),
         "guardrail costs should stay attached to the guardrail model row"
+      );
+      assert.ok(
+        recentRows.some(
+          (row) =>
+            row.textContent.includes("AWS Guardrails") &&
+            row.textContent.includes("$0.00") &&
+            row.textContent.trim().endsWith("$0.00")
+        ),
+        "unknown requests should remain separate rows instead of being merged by model"
       );
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
