@@ -105,10 +105,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  budgetResetSchedule:
-                    type: string
-                    description: Cron expression for budget reset schedule
-                    example: "0 0 * * *"
                   budgetLabel:
                     type: string
                     description: Human-readable period label (e.g., "Daily", "Weekly")
@@ -117,6 +113,11 @@ paths:
                     type: string
                     description: Human-readable reset description for error messages
                     example: "tomorrow at 12:00 AM"
+                  usageTypes:
+                    type: array
+                    description: Common usage type labels plus available agent names.
+                    items:
+                      type: string
 
   # ===== MODEL INFERENCE =====
   /api/model/invoke:
