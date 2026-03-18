@@ -2,6 +2,10 @@ import os
 from typing import TypedDict, List, Optional
 from dotenv import load_dotenv
 
+KMSKeyAliasName_DynamoDB = "aws/dynamodb"  ### AWS-managed KMS-Key for DynamoDB-Table encryption. REF: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/EncryptionAtRest.html#encryption-at-rest.aws-owned-keys
+KMSKeyAliasName_S3 = "aws/s3"  ### AWS-managed KMS-Key for S3-Bucket encryption.
+
+
 load_dotenv()
 
 
