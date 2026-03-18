@@ -8,8 +8,8 @@ import {
   normalizeEmbeddingUsageItems,
 } from "shared/gateway-usage.js";
 
-import { deleteGuardrailById, listGuardrails, reconcileGuardrails } from "./guardrails.js";
-import { runModel, runEmbedding } from "./inference.js";
+import { deleteGuardrailById, listGuardrails, reconcileGuardrails } from "./core/guardrails.js";
+import { runModel, runEmbedding } from "./core/inference.js";
 
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
@@ -190,3 +190,6 @@ export function createGatewayApplication({
     },
   };
 }
+
+
+
