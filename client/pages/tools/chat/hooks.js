@@ -241,12 +241,12 @@ export function useChat() {
   };
 
   /**
-   * Generate a conversation title after the first completed exchange.
-   * Uses the existing systemPrompt and full message history.
+   * Generate a conversation title from the user's first message.
+   * Streams the response and typewriters the title into the UI as chunks arrive.
    *
    * @param {Object} params
    * @param {string} params.model - The model identifier to use.
-   * @param {Object} params.context - Client context object.
+   * @param {Object} params.userMessage - The first user message to derive a title from.
    */
   const generateConversationTitle = async ({ model, userMessage }) => {
     if (!conversation?.id) {
