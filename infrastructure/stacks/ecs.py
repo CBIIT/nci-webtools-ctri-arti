@@ -57,6 +57,20 @@ class EcsServiceStack(Stack):
             description=prefix,
         )
 
+        # Shared security group for inter-service communication via Service Connect
+        service_connect_sg = ec2.SecurityGroup(
+            self,
+            "service-connect-sg",
+            vpc=vpc_lookup,
+            description=f"{prefix} inter-service communication",
+        )
+        for svc in services:
+            service_connect_sg.add_ingress_rule(
+                peer=service_connect_sg,
+                connection=ec2.Port.tcp(svc["port"]),
+                description=f"Allow {svc['name']} traffic between services",
+            )
+
         execution_role = iam.Role(
             self,
             "ecs-task-execution-role",
@@ -198,6 +212,7 @@ class EcsServiceStack(Stack):
                 enable_ecs_managed_tags=True,
                 enable_execute_command=True,
                 min_healthy_percent=100,
+                security_groups=[service_connect_sg],
                 service_connect_configuration=ecs.ServiceConnectProps(
                     namespace=http_namespace.namespace_arn,
                     services=[
