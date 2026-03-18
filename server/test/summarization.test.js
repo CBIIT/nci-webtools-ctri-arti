@@ -2,7 +2,7 @@ import db, { User, Model, Message } from "database";
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { ConversationService } from "cms/conversation.js";
+import { ConversationService } from "cms/core/conversation-service.js";
 import { eq } from "drizzle-orm";
 
 const HAIKU_ID = 3; // Haiku model from seed data
@@ -417,3 +417,4 @@ test("Automatic Conversation Summarization", async (t) => {
     );
   });
 });
+

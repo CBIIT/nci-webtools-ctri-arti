@@ -13,7 +13,7 @@ import assert from "node:assert";
 import { test } from "node:test";
 
 import { eq } from "drizzle-orm";
-import { createGatewayUsage } from "gateway/usage.js";
+import { createGatewayUsage } from "gateway/core/usage.js";
 import { createUsersApplication } from "users/app.js";
 import { UserService } from "users/user.js";
 
@@ -507,3 +507,4 @@ test("UserService deleteUser cascades owned chat and billing rows", async () => 
   assert.equal(userToolRows.length, 0);
   assert.equal(userAgentRows.length, 0);
 });
+

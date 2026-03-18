@@ -2,7 +2,7 @@ import db, { Guardrail, User, Conversation, Message } from "database";
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { ConversationService } from "cms/conversation.js";
+import { ConversationService } from "cms/core/conversation-service.js";
 import { eq } from "drizzle-orm";
 import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
 
@@ -977,3 +977,4 @@ test("ConversationService", async (t) => {
     });
   });
 });
+

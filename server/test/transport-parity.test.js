@@ -7,7 +7,7 @@ import { createAgentsRouter } from "agents/api.js";
 import { createAgentsApplication } from "agents/app.js";
 import { createAgentsRemote } from "agents/remote.js";
 import { v1Router as cmsApi } from "cms/api.js";
-import { ConversationService } from "cms/conversation.js";
+import { ConversationService } from "cms/core/conversation-service.js";
 import { createCmsRemote } from "cms/remote.js";
 import { createCmsService } from "cms/service.js";
 import { eq, and } from "drizzle-orm";
@@ -636,3 +636,4 @@ test("transport parity", async (t) => {
     }
   });
 });
+

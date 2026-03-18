@@ -8,7 +8,6 @@
     "./api.js": "./api.js",
     "./http.js": "./http.js",
     "./remote.js": "./remote.js",
-    "./service.js": "./service.js",
     "./user.js": "./user.js"
   },
   "scripts": {

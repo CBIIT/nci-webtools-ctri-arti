@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { runModel } from "gateway/inference.js";
+import { runModel } from "gateway/core/inference.js";
 import BedrockProvider from "gateway/providers/bedrock.js";
 
 const HAIKU_MODEL = "us.anthropic.claude-3-5-haiku-20241022-v1:0";
@@ -341,3 +341,4 @@ test.skip("Cache System Tests", async (t) => {
     }
   });
 });
+

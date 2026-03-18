@@ -9,7 +9,7 @@
     "./remote.js": "./remote.js",
     "./service.js": "./service.js",
     "./app.js": "./app.js",
-    "./conversation.js": "./conversation.js"
+    "./core/conversation-service.js": "./core/conversation-service.js"
   },
   "scripts": {
     "start": "node --env-file .env index.js",
@@ -22,5 +22,3 @@
     "shared": "*"
   }
 }
-
-

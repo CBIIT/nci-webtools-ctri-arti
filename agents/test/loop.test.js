@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { MAX_INLINE_FILE_COUNT } from "gateway/upload-limits.js";
+import { MAX_INLINE_FILE_COUNT } from "gateway/core/upload-limits.js";
 import { PDFDocument } from "pdf-lib";
 
-import { runAgentLoop } from "../loop.js";
+import { runAgentLoop } from "../core/loop.js";
 
 describe("runAgentLoop", () => {
   function createMockGateway(streamEvents, onInvoke) {
@@ -660,3 +660,5 @@ describe("runAgentLoop", () => {
     );
   });
 });
+
+

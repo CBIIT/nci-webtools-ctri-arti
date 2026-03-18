@@ -2,7 +2,7 @@ import { createCmsService } from "cms/service.js";
 import { createGatewayService } from "gateway/service.js";
 import { requireUserRequestContext } from "shared/request-context.js";
 
-import { runAgentLoop } from "./loop.js";
+import { runAgentLoop } from "./core/loop.js";
 
 function createAppError(statusCode, message) {
   const error = new Error(message);
@@ -48,3 +48,4 @@ export function createAgentsApplication({
     },
   };
 }
+

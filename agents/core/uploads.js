@@ -1,4 +1,4 @@
-import { MAX_INLINE_FILE_COUNT, getInlineFileError } from "gateway/upload-limits.js";
+import { MAX_INLINE_FILE_COUNT, getInlineFileError } from "gateway/core/upload-limits.js";
 import { parseDocument } from "shared/parsers.js";
 
 const FORMAT_TO_MIME = {
@@ -108,3 +108,4 @@ export async function processUploads(userMessage, { userId, agentId, conversatio
     return true;
   });
 }
+

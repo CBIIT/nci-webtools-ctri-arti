@@ -8,8 +8,8 @@ import {
   sanitizeProviderFileName,
   getProviderVisibleFileName,
   processMessages,
-} from "gateway/inference.js";
-import { MAX_INLINE_FILE_BYTES, validateInlineMessageContent } from "gateway/upload-limits.js";
+} from "gateway/core/inference.js";
+import { MAX_INLINE_FILE_BYTES, validateInlineMessageContent } from "gateway/core/upload-limits.js";
 import { PDFDocument } from "pdf-lib";
 
 test("estimateContentTokens", async (t) => {
@@ -292,3 +292,5 @@ test("inline upload limits", async (t) => {
     await assert.rejects(() => validateInlineMessageContent(content), /maximum of 100 PDF pages/i);
   });
 });
+
+
