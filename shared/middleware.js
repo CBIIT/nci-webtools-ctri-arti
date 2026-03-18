@@ -5,7 +5,13 @@ import logger, { formatObject } from "./logger.js";
  * @param {function} formatter
  * @returns (request, response, next) => void
  */
-export function logRequests(formatter = (request) => [request.path]) {
+function getLoggedRequestPath(request) {
+  const baseUrl = request.baseUrl || "";
+  const path = request.path || "";
+  return `${baseUrl}${path}` || request.originalUrl || "/";
+}
+
+export function logRequests(formatter = (request) => [getLoggedRequestPath(request)]) {
   return (request, response, next) => {
     request.startTime = new Date().getTime();
     logger.info(formatter(request));
