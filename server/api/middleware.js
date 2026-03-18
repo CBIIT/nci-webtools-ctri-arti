@@ -5,13 +5,13 @@ import logger, { formatObject } from "shared/logger.js";
 import { sendLogReport } from "../integrations/email.js";
 
 const {
-  HOSTNAME,
   PORT,
   OAUTH_CALLBACK_URL,
   OAUTH_DISCOVERY_URL,
   OAUTH_CLIENT_ID,
   OAUTH_CLIENT_SECRET,
   OAUTH_PROVIDER_ENABLED,
+  OAUTH_PROVIDER_ISSUER,
   EMAIL_DEV,
 } = process.env;
 
@@ -27,8 +27,16 @@ function getLocalIssuer(req) {
   return new URL("/api/oauth/", getRequestOrigin(req));
 }
 
-function getLocalEndpoint(req, path) {
-  return new URL(path, getLocalIssuer(req)).href;
+function getLocalEndpoint(issuer, path) {
+  return new URL(path, issuer).href;
+}
+
+export function getOauthProviderIssuer(req) {
+  if (OAUTH_PROVIDER_ISSUER) {
+    return new URL(OAUTH_PROVIDER_ISSUER);
+  }
+
+  return getLocalIssuer(req);
 }
 
 function getCallbackUrl(req) {
@@ -36,15 +44,15 @@ function getCallbackUrl(req) {
 }
 
 function getLocalOidcConfig(req) {
-  const issuer = getLocalIssuer(req);
+  const issuer = getOauthProviderIssuer(req);
 
   return new client.Configuration(
     {
       issuer: issuer.href,
-      authorization_endpoint: getLocalEndpoint(req, "auth"),
-      token_endpoint: getLocalEndpoint(req, "token"),
-      userinfo_endpoint: getLocalEndpoint(req, "me"),
-      jwks_uri: getLocalEndpoint(req, "jwks"),
+      authorization_endpoint: getLocalEndpoint(issuer, "auth"),
+      token_endpoint: getLocalEndpoint(issuer, "token"),
+      userinfo_endpoint: getLocalEndpoint(issuer, "me"),
+      jwks_uri: getLocalEndpoint(issuer, "jwks"),
       response_types_supported: ["code"],
       subject_types_supported: ["public"],
       id_token_signing_alg_values_supported: ["RS256"],
@@ -180,9 +188,7 @@ export async function loginMiddleware(req, res, next) {
  */
 export function oauthMiddleware() {
   return (req, res, next) => {
-    const issuer = HOSTNAME
-      ? new URL(`/api/oauth/`, `https://${HOSTNAME}${PORT !== "443" ? `:${PORT}` : ""}`)
-      : getLocalIssuer(req);
+    const issuer = getOauthProviderIssuer(req);
 
     let handler = localOauthHandlers.get(issuer.href);
     if (!handler) {
@@ -241,5 +247,3 @@ export function touchSession({ except } = {}) {
     next();
   };
 }
-
-

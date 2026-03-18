@@ -7,7 +7,7 @@ import { logRequests, nocache } from "shared/middleware.js";
 
 import { requireRole } from "../auth.js";
 
-import { logErrors } from "../api/middleware.js";
+import { getOauthProviderIssuer, logErrors } from "../api/middleware.js";
 
 function createMockReq(overrides = {}) {
   return {
@@ -229,4 +229,32 @@ test("nocache", async (t) => {
   });
 });
 
+test("getOauthProviderIssuer", async (t) => {
+  await t.test("defaults to the request host", () => {
+    const issuer = getOauthProviderIssuer({
+      protocol: "https",
+      get(name) {
+        return name === "host" ? "localhost" : undefined;
+      },
+    });
 
+    assert.strictEqual(issuer.href, "https://localhost/api/oauth/");
+  });
+
+  await t.test("supports explicit issuer override", async () => {
+    process.env.OAUTH_PROVIDER_ISSUER = "https://example.test/api/oauth/";
+    const { getOauthProviderIssuer: getIssuerWithOverride } = await import(
+      `../api/middleware.js?issuer-override=${Date.now()}`
+    );
+
+    const issuer = getIssuerWithOverride({
+      protocol: "https",
+      get(name) {
+        return name === "host" ? "localhost" : undefined;
+      },
+    });
+
+    assert.strictEqual(issuer.href, "https://example.test/api/oauth/");
+    delete process.env.OAUTH_PROVIDER_ISSUER;
+  });
+});
