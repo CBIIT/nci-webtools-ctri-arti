@@ -1,8 +1,8 @@
+import { createAgentsApplication } from "./app.js";
 import { createAgentsRouter } from "./http.js";
-import { createAgentsService } from "./service.js";
 
 const router = createAgentsRouter({
-  application: createAgentsService({ source: "internal-http" }),
+  application: createAgentsApplication({ source: "internal-http" }),
 });
 
 export { createAgentsRouter };

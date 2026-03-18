@@ -1,23 +1,36 @@
+import db, { Resource, User } from "database";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import db, { Resource, User } from "database";
-import { ConversationService } from "cms/conversation.js";
+import { createCmsService } from "cms/service.js";
 import { eq } from "drizzle-orm";
 import express from "express";
 import request from "supertest";
 
-import api from "../../services/routes/conversations.js";
-
-const svc = new ConversationService();
+import { createServerApi } from "../../api/index.js";
 
 function buildApp() {
   const app = express();
-  app.use((req, res, next) => {
+  app.use((req, _res, next) => {
     req.session = {};
     next();
   });
-  app.use(api);
+  app.use(
+    createServerApi({
+      modules: {
+        agents: {
+          async *chat() {}
+        },
+        users: {},
+        cms: createCmsService({ source: "server" }),
+        gateway: {
+          async listModels() {
+            return [];
+          },
+        },
+      },
+    })
+  );
   return app;
 }
 
@@ -103,3 +116,5 @@ describe("GET /resources/:id", () => {
     await db.delete(Resource).where(eq(Resource.id, resource.id));
   });
 });
+
+

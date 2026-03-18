@@ -195,6 +195,20 @@ function UserUsage() {
     return ["unknown", "null", "undefined"].includes(requestId.toLowerCase()) ? null : requestId;
   }
 
+  function normalizeModelGroupKey(entry) {
+    const modelId = String(entry.modelID ?? "").trim();
+    if (modelId && !["null", "undefined"].includes(modelId.toLowerCase())) {
+      return `id:${modelId}`;
+    }
+
+    const modelName = String(entry.modelName || "").trim();
+    if (modelName && !["unknown", "null", "undefined"].includes(modelName.toLowerCase())) {
+      return `name:${modelName.toLowerCase()}`;
+    }
+
+    return null;
+  }
+
   // Create computed values for display
   const userStats = createMemo(() => {
     const data = analyticsData()?.data?.[0];
@@ -216,7 +230,10 @@ function UserUsage() {
 
     for (const entry of rawUsageData()?.data || []) {
       const requestId = normalizeRequestId(entry.requestId);
-      const key = requestId ? `request:${requestId}` : `usage-${entry.id}`;
+      const modelGroupKey = normalizeModelGroupKey(entry);
+      const key = requestId
+        ? `request:${requestId}:${modelGroupKey || "unknown-model"}`
+        : `usage-${entry.id}`;
       const current = grouped.get(key) || {
         requestId,
         createdAt: entry.createdAt,
@@ -265,11 +282,7 @@ function UserUsage() {
       }
 
       const entryModelName = entry.modelName || "Unknown";
-      if (!current.modelName) {
-        current.modelName = entryModelName;
-      } else if (current.modelName !== entryModelName) {
-        current.modelName = "Multiple";
-      }
+      current.modelName = current.modelName || entryModelName;
 
       grouped.set(key, current);
     }
@@ -586,7 +599,11 @@ function UserUsage() {
                                 dailyAnalytics().data.map(
                                   (day) => html`
                                     <tr>
-                                      <td>${formatDateInputForDisplay(String(day.period || "").slice(0, 10))}</td>
+                                      <td>
+                                        ${formatDateInputForDisplay(
+                                          String(day.period || "").slice(0, 10)
+                                        )}
+                                      </td>
                                       <td class="text-end">
                                         ${formatCurrency(day.usageCost || 0)}
                                       </td>
@@ -645,7 +662,9 @@ function UserUsage() {
                                     <td class="text-end">
                                       ${formatCurrency(entry.guardrailCost || 0)}
                                     </td>
-                                    <td class="text-end">${formatCurrency(entry.totalCost || 0)}</td>
+                                    <td class="text-end">
+                                      ${formatCurrency(entry.totalCost || 0)}
+                                    </td>
                                   </tr>
                                 `
                               )}

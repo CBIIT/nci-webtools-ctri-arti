@@ -1,25 +1,24 @@
 import { json, Router } from "express";
-import {
-  createRequestContext,
-  parseInternalUserIdHeader,
-  requireUserRequestContext,
-} from "shared/request-context.js";
+import { readHttpRequestContext } from "shared/request-context.js";
 
-function getAgentRequestContext(req) {
-  const headerContext = parseInternalUserIdHeader(req.headers["x-user-id"], {
-    requestId: req.headers["x-request-id"],
+export function getAgentRequestContext(req) {
+  return readHttpRequestContext(req, {
+    allowInternalHeader: true,
+    source: "server",
   });
-  if (headerContext) return requireUserRequestContext(headerContext);
-
-  return requireUserRequestContext(
-    createRequestContext(req.session?.user?.id, {
-      source: "server",
-      requestId: req.headers["x-request-id"],
-    })
-  );
 }
 
-export function createAgentsRouter({ application } = {}) {
+async function streamEvents(res, stream) {
+  for await (const event of stream) {
+    res.write(JSON.stringify(event) + "\n");
+  }
+}
+
+export function createAgentsChatRouter({
+  application,
+  routePath = "/agents/:agentId/conversations/:conversationId/chat",
+  resolveContext = getAgentRequestContext,
+} = {}) {
   if (!application) {
     throw new Error("agents application is required");
   }
@@ -27,10 +26,10 @@ export function createAgentsRouter({ application } = {}) {
   const api = Router();
   api.use(json({ limit: 1024 ** 3 }));
 
-  api.post("/api/agents/:agentId/conversations/:conversationId/chat", async (req, res) => {
+  api.post(routePath, async (req, res) => {
     let context;
     try {
-      context = getAgentRequestContext(req);
+      context = resolveContext(req);
     } catch (error) {
       return res.status(error.statusCode || 400).json({ error: error.message });
     }
@@ -47,7 +46,7 @@ export function createAgentsRouter({ application } = {}) {
     res.setHeader("Cache-Control", "no-cache");
 
     try {
-      const loop = application.chat({
+      const stream = application.chat({
         context,
         agentId: Number(agentId),
         conversationId: Number(conversationId),
@@ -56,9 +55,7 @@ export function createAgentsRouter({ application } = {}) {
         thoughtBudget,
       });
 
-      for await (const event of loop) {
-        res.write(JSON.stringify(event) + "\n");
-      }
+      await streamEvents(res, stream);
     } catch (error) {
       if (!res.headersSent && error.statusCode) {
         return res.status(error.statusCode).json({ error: error.message });
@@ -77,3 +74,5 @@ export function createAgentsRouter({ application } = {}) {
 
   return api;
 }
+
+export const createAgentsRouter = createAgentsChatRouter;

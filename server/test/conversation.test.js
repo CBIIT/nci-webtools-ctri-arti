@@ -2,7 +2,7 @@ import db, { Guardrail, User, Conversation, Message } from "database";
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { ConversationService } from "cms/conversation.js";
+import { ConversationService } from "cms/core/conversation-service.js";
 import { eq } from "drizzle-orm";
 import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
 
@@ -245,6 +245,43 @@ test("ConversationService", async (t) => {
       assert.strictEqual(msg.content[0].toolResult.toolUseId, "tool_test_1");
     });
 
+    await mt.test("appendConversationMessage rejects user toolUse rows", async () => {
+      await assert.rejects(
+        svc.appendConversationMessage(testUser.id, {
+          conversationId,
+          role: "user",
+          content: [
+            {
+              toolUse: {
+                toolUseId: "tool_invalid_user",
+                name: "search",
+                input: { query: "bad" },
+              },
+            },
+          ],
+        }),
+        /User messages cannot contain tool uses/
+      );
+    });
+
+    await mt.test("appendConversationMessage rejects assistant toolResult rows", async () => {
+      await assert.rejects(
+        svc.appendConversationMessage(testUser.id, {
+          conversationId,
+          role: "assistant",
+          content: [
+            {
+              toolResult: {
+                toolUseId: "tool_invalid_assistant",
+                content: [{ json: { ok: false } }],
+              },
+            },
+          ],
+        }),
+        /Assistant messages cannot contain tool results/
+      );
+    });
+
     await mt.test("getMessage", async () => {
       const msg = await svc.getMessage(testUser.id, messageId);
       assert.ok(msg);
@@ -326,6 +363,23 @@ test("ConversationService", async (t) => {
       });
       assert.ok(updated);
       assert.deepStrictEqual(updated.content, [{ text: "Updated" }]);
+    });
+
+    await mt.test("updateMessage rejects malformed tool role changes", async () => {
+      await assert.rejects(
+        svc.updateMessage(testUser.id, messageId, {
+          content: [
+            {
+              toolUse: {
+                toolUseId: "tool_invalid_update",
+                name: "editor",
+                input: { command: "view", path: "notes.txt" },
+              },
+            },
+          ],
+        }),
+        /User messages cannot contain tool uses/
+      );
     });
 
     await mt.test("deleteMessage", async () => {
@@ -923,3 +977,4 @@ test("ConversationService", async (t) => {
     });
   });
 });
+

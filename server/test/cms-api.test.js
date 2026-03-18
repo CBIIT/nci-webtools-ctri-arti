@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { v1Router } from "cms/api.js";
-import { ConversationService } from "cms/conversation.js";
+import { ConversationService } from "cms/core/conversation-service.js";
 import db, { User } from "database";
 import { eq } from "drizzle-orm";
 import express from "express";
@@ -149,3 +149,4 @@ describe("CMS API", () => {
     assert.equal(res.body.error, `Conversation not found: ${conversation.id}`);
   });
 });
+

@@ -1,7 +1,7 @@
+import { createUsersApplication } from "./app.js";
 import { createUsersRouter } from "./http.js";
-import { createUsersService } from "./service.js";
 
-const router = createUsersRouter({ application: createUsersService() });
+const router = createUsersRouter({ application: createUsersApplication() });
 
 export { createUsersRouter };
 export default router;

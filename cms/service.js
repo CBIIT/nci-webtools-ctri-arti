@@ -1,7 +1,7 @@
 import { createGatewayService } from "gateway/service.js";
 
 import { createCmsApplication } from "./app.js";
-import { ConversationService } from "./conversation.js";
+import { ConversationService } from "./core/conversation-service.js";
 
 export function createCmsService({ gateway = createGatewayService(), source = "direct" } = {}) {
   const service = new ConversationService({
@@ -14,3 +14,5 @@ export function createCmsService({ gateway = createGatewayService(), source = "d
     source,
   });
 }
+
+

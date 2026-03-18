@@ -7,7 +7,7 @@ import { createAgentsRouter } from "agents/api.js";
 import { createAgentsApplication } from "agents/app.js";
 import { createAgentsRemote } from "agents/remote.js";
 import { v1Router as cmsApi } from "cms/api.js";
-import { ConversationService } from "cms/conversation.js";
+import { ConversationService } from "cms/core/conversation-service.js";
 import { createCmsRemote } from "cms/remote.js";
 import { createCmsService } from "cms/service.js";
 import { eq, and } from "drizzle-orm";
@@ -17,8 +17,8 @@ import { createGatewayRemote } from "gateway/remote.js";
 import { createGatewayService } from "gateway/service.js";
 import { normalizeEmbeddingUsageItems } from "shared/gateway-usage.js";
 import { createAnonymousRequestContext, createUserRequestContext } from "shared/request-context.js";
+import { createUsersApplication } from "users/app.js";
 import { createUsersRemote } from "users/remote.js";
-import { createUsersService } from "users/service.js";
 
 import usersApi from "../../users/api.js";
 
@@ -80,7 +80,7 @@ test("transport parity", async (t) => {
     const usersServer = await startServer(usersApi, "/api");
 
     try {
-      const directClient = createUsersService();
+      const directClient = createUsersApplication();
       const httpClient = createUsersRemote({ baseUrl: usersServer.url });
 
       const [directUser, httpUser] = await Promise.all([
@@ -126,7 +126,7 @@ test("transport parity", async (t) => {
       .returning();
 
     try {
-      const directClient = createUsersService();
+      const directClient = createUsersApplication();
       const httpClient = createUsersRemote({ baseUrl: usersServer.url });
 
       const [directSingleReset, httpSingleReset] = await Promise.all([
@@ -229,7 +229,7 @@ test("transport parity", async (t) => {
           cms,
         }),
       }),
-      "/"
+      "/api/v1"
     );
 
     try {
@@ -283,7 +283,7 @@ test("transport parity", async (t) => {
   });
 
   await t.test("Gateway embedding billing matches in direct and HTTP mode", async () => {
-    const gatewayServer = await startServer(gatewayApi, "/api");
+    const gatewayServer = await startServer(gatewayApi, "/api/v1");
     const modelName = `mock-embedding-${Date.now()}`;
     const [model] = await db
       .insert(Model)
@@ -339,8 +339,8 @@ test("transport parity", async (t) => {
       };
 
       const [directResult, httpResult] = await Promise.all([
-        directClient.embed({ userID: directUser.id, ...input }),
-        httpClient.embed({ userID: httpUser.id, ...input }),
+        directClient.embed({ userId: directUser.id, ...input }),
+        httpClient.embed({ userId: httpUser.id, ...input }),
       ]);
 
       assert.equal(directResult.embeddings.length, httpResult.embeddings.length);
@@ -384,7 +384,7 @@ test("transport parity", async (t) => {
   });
 
   await t.test("Gateway missing-model errors match in direct and HTTP mode", async () => {
-    const gatewayServer = await startServer(gatewayApi, "/api");
+    const gatewayServer = await startServer(gatewayApi, "/api/v1");
 
     try {
       const directClient = createGatewayService();
@@ -393,7 +393,7 @@ test("transport parity", async (t) => {
       const [directError, httpError] = await Promise.all([
         directClient
           .invoke({
-            userID: null,
+            userId: null,
             model: "missing-model-for-parity",
             messages: [{ role: "user", content: [{ text: "hello" }] }],
             stream: false,
@@ -404,7 +404,7 @@ test("transport parity", async (t) => {
           ),
         httpClient
           .invoke({
-            userID: null,
+            userId: null,
             model: "missing-model-for-parity",
             messages: [{ role: "user", content: [{ text: "hello" }] }],
             stream: false,

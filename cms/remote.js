@@ -1,6 +1,12 @@
 import { createRequestContext, requestContextToInternalHeaders } from "shared/request-context.js";
 
-import { parseNdjsonStream } from "../shared/clients/ndjson.js";
+import {
+  buildQueryString,
+  createPlainError,
+  createStatusError,
+  requestJson,
+  streamNdjsonRequest,
+} from "../shared/clients/http.js";
 
 function normalizeClientContext(userIdOrContext, source = "internal-http") {
   return createRequestContext(userIdOrContext, { source });
@@ -27,83 +33,99 @@ function normalizeConversationPage(result, { limit = 20, offset = 0 } = {}) {
   };
 }
 
-async function httpRequest(baseUrl, method, path, body, userIdOrContext) {
-  const response = await fetch(`${baseUrl}${path}`, {
+async function httpRequest(fetchImpl, baseUrl, method, path, body, userIdOrContext) {
+  return requestJson(fetchImpl, {
+    url: `${baseUrl}${path}`,
     method,
     headers: createHeaders(userIdOrContext),
-    body: body ? JSON.stringify(body) : undefined,
+    body,
+    errorMessage: "CMS request failed",
+    createError: createStatusError,
   });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
-    const err = new Error(error.error || "CMS request failed");
-    err.status = response.status;
-    throw err;
-  }
-
-  return response.json();
 }
 
-async function* streamRequest(baseUrl, method, path, body, userIdOrContext) {
-  const response = await fetch(`${baseUrl}${path}`, {
+async function* streamRequest(fetchImpl, baseUrl, method, path, body, userIdOrContext) {
+  for await (const event of streamNdjsonRequest(fetchImpl, {
+    url: `${baseUrl}${path}`,
     method,
     headers: createHeaders(userIdOrContext),
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(error.error || "CMS stream request failed");
-  }
-
-  for await (const event of parseNdjsonStream(response.body)) {
+    body,
+    errorMessage: "CMS stream request failed",
+    createError: createPlainError,
+  })) {
     if (event.error) throw new Error(event.error);
     yield event;
   }
 }
 
-export function createCmsRemote({ baseUrl }) {
+export function createCmsRemote({ baseUrl, fetchImpl = fetch }) {
   return {
-    createAgent: (context, data) => httpRequest(baseUrl, "POST", "/api/v1/agents", data, context),
-    getAgents: (context) => httpRequest(baseUrl, "GET", "/api/v1/agents", null, context),
+    createAgent: (context, data) =>
+      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/agents", data, context),
+    getAgents: (context) =>
+      httpRequest(fetchImpl, baseUrl, "GET", "/api/v1/agents", undefined, context),
     getAgent: (context, agentId) =>
-      httpRequest(baseUrl, "GET", `/api/v1/agents/${agentId}`, null, context),
+      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/agents/${agentId}`, undefined, context),
     updateAgent: (context, agentId, updates) =>
-      httpRequest(baseUrl, "PUT", `/api/v1/agents/${agentId}`, updates, context),
+      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/agents/${agentId}`, updates, context),
     deleteAgent: (context, agentId) =>
-      httpRequest(baseUrl, "DELETE", `/api/v1/agents/${agentId}`, null, context),
+      httpRequest(fetchImpl, baseUrl, "DELETE", `/api/v1/agents/${agentId}`, undefined, context),
 
     createConversation: (context, data) =>
-      httpRequest(baseUrl, "POST", "/api/v1/conversations", data, context),
+      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/conversations", data, context),
     getConversations: (context, options = {}) => {
       const { limit = 20, offset = 0 } = options;
       return httpRequest(
+        fetchImpl,
         baseUrl,
         "GET",
-        `/api/v1/conversations?limit=${limit}&offset=${offset}`,
-        null,
+        `/api/v1/conversations${buildQueryString({ limit, offset })}`,
+        undefined,
         context
       ).then((result) => normalizeConversationPage(result, { limit, offset }));
     },
     getConversation: (context, conversationId) =>
-      httpRequest(baseUrl, "GET", `/api/v1/conversations/${conversationId}`, null, context),
+      httpRequest(
+        fetchImpl,
+        baseUrl,
+        "GET",
+        `/api/v1/conversations/${conversationId}`,
+        undefined,
+        context
+      ),
     updateConversation: (context, conversationId, updates) =>
-      httpRequest(baseUrl, "PUT", `/api/v1/conversations/${conversationId}`, updates, context),
+      httpRequest(
+        fetchImpl,
+        baseUrl,
+        "PUT",
+        `/api/v1/conversations/${conversationId}`,
+        updates,
+        context
+      ),
     deleteConversation: (context, conversationId) =>
-      httpRequest(baseUrl, "DELETE", `/api/v1/conversations/${conversationId}`, null, context),
+      httpRequest(
+        fetchImpl,
+        baseUrl,
+        "DELETE",
+        `/api/v1/conversations/${conversationId}`,
+        undefined,
+        context
+      ),
 
     getContext: (context, conversationId, options = {}) => {
-      const query = options.compressed ? "?compressed=true" : "";
+      const query = buildQueryString({ compressed: options.compressed ? true : undefined });
       return httpRequest(
+        fetchImpl,
         baseUrl,
         "GET",
         `/api/v1/conversations/${conversationId}/context${query}`,
-        null,
+        undefined,
         context
       );
     },
     summarize: (context, conversationId, params) =>
       streamRequest(
+        fetchImpl,
         baseUrl,
         "POST",
         `/api/v1/conversations/${conversationId}/summarize`,
@@ -113,6 +135,7 @@ export function createCmsRemote({ baseUrl }) {
 
     appendConversationMessage: (context, data) =>
       httpRequest(
+        fetchImpl,
         baseUrl,
         "POST",
         `/api/v1/conversations/${data.conversationId}/messages`,
@@ -121,6 +144,7 @@ export function createCmsRemote({ baseUrl }) {
       ),
     appendUserMessage: (context, data) =>
       httpRequest(
+        fetchImpl,
         baseUrl,
         "POST",
         `/api/v1/conversations/${data.conversationId}/messages`,
@@ -129,6 +153,7 @@ export function createCmsRemote({ baseUrl }) {
       ),
     appendAssistantMessage: (context, data) =>
       httpRequest(
+        fetchImpl,
         baseUrl,
         "POST",
         `/api/v1/conversations/${data.conversationId}/messages`,
@@ -137,6 +162,7 @@ export function createCmsRemote({ baseUrl }) {
       ),
     appendToolResultsMessage: (context, data) =>
       httpRequest(
+        fetchImpl,
         baseUrl,
         "POST",
         `/api/v1/conversations/${data.conversationId}/messages`,
@@ -145,55 +171,83 @@ export function createCmsRemote({ baseUrl }) {
       ),
     getMessages: (context, conversationId) =>
       httpRequest(
+        fetchImpl,
         baseUrl,
         "GET",
         `/api/v1/conversations/${conversationId}/messages`,
-        null,
+        undefined,
         context
       ),
     getMessage: (context, messageId) =>
-      httpRequest(baseUrl, "GET", `/api/v1/messages/${messageId}`, null, context),
+      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/messages/${messageId}`, undefined, context),
     updateMessage: (context, messageId, updates) =>
-      httpRequest(baseUrl, "PUT", `/api/v1/messages/${messageId}`, updates, context),
+      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/messages/${messageId}`, updates, context),
     deleteMessage: (context, messageId) =>
-      httpRequest(baseUrl, "DELETE", `/api/v1/messages/${messageId}`, null, context),
+      httpRequest(
+        fetchImpl,
+        baseUrl,
+        "DELETE",
+        `/api/v1/messages/${messageId}`,
+        undefined,
+        context
+      ),
 
-    createTool: (data) => httpRequest(baseUrl, "POST", "/api/v1/tools", data, null),
-    getTool: (toolId) => httpRequest(baseUrl, "GET", `/api/v1/tools/${toolId}`, null, null),
-    getTools: (context) => httpRequest(baseUrl, "GET", "/api/v1/tools", null, context),
+    createTool: (data) => httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/tools", data, null),
+    getTool: (toolId) =>
+      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/tools/${toolId}`, undefined, null),
+    getTools: (context) =>
+      httpRequest(fetchImpl, baseUrl, "GET", "/api/v1/tools", undefined, context),
     updateTool: (toolId, updates) =>
-      httpRequest(baseUrl, "PUT", `/api/v1/tools/${toolId}`, updates, null),
-    deleteTool: (toolId) => httpRequest(baseUrl, "DELETE", `/api/v1/tools/${toolId}`, null, null),
+      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/tools/${toolId}`, updates, null),
+    deleteTool: (toolId) =>
+      httpRequest(fetchImpl, baseUrl, "DELETE", `/api/v1/tools/${toolId}`, undefined, null),
 
-    createPrompt: (data) => httpRequest(baseUrl, "POST", "/api/v1/prompts", data, null),
-    getPrompt: (promptId) => httpRequest(baseUrl, "GET", `/api/v1/prompts/${promptId}`, null, null),
-    getPrompts: () => httpRequest(baseUrl, "GET", "/api/v1/prompts", null, null),
+    createPrompt: (data) => httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/prompts", data, null),
+    getPrompt: (promptId) =>
+      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/prompts/${promptId}`, undefined, null),
+    getPrompts: () => httpRequest(fetchImpl, baseUrl, "GET", "/api/v1/prompts", undefined, null),
     updatePrompt: (promptId, updates) =>
-      httpRequest(baseUrl, "PUT", `/api/v1/prompts/${promptId}`, updates, null),
+      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/prompts/${promptId}`, updates, null),
     deletePrompt: (promptId) =>
-      httpRequest(baseUrl, "DELETE", `/api/v1/prompts/${promptId}`, null, null),
+      httpRequest(fetchImpl, baseUrl, "DELETE", `/api/v1/prompts/${promptId}`, undefined, null),
 
     storeConversationResource: (context, data) =>
-      httpRequest(baseUrl, "POST", "/api/v1/resources", data, context),
+      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/resources", data, context),
     getResource: (context, resourceId) =>
-      httpRequest(baseUrl, "GET", `/api/v1/resources/${resourceId}`, null, context),
+      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/resources/${resourceId}`, undefined, context),
     updateConversationResource: (context, resourceId, updates) =>
-      httpRequest(baseUrl, "PUT", `/api/v1/resources/${resourceId}`, updates, context),
+      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/resources/${resourceId}`, updates, context),
     getResourcesByAgent: (context, agentId) =>
-      httpRequest(baseUrl, "GET", `/api/v1/agents/${agentId}/resources`, null, context),
+      httpRequest(
+        fetchImpl,
+        baseUrl,
+        "GET",
+        `/api/v1/agents/${agentId}/resources`,
+        undefined,
+        context
+      ),
     getResourcesByConversation: (context, conversationId) =>
       httpRequest(
+        fetchImpl,
         baseUrl,
         "GET",
         `/api/v1/conversations/${conversationId}/resources`,
-        null,
+        undefined,
         context
       ),
     deleteConversationResource: (context, resourceId) =>
-      httpRequest(baseUrl, "DELETE", `/api/v1/resources/${resourceId}`, null, context),
+      httpRequest(
+        fetchImpl,
+        baseUrl,
+        "DELETE",
+        `/api/v1/resources/${resourceId}`,
+        undefined,
+        context
+      ),
 
     storeConversationVectors: (context, data) =>
       httpRequest(
+        fetchImpl,
         baseUrl,
         "POST",
         "/api/v1/vectors",
@@ -201,33 +255,60 @@ export function createCmsRemote({ baseUrl }) {
         context
       ),
     getVectorsByConversation: (context, conversationId) =>
-      httpRequest(baseUrl, "GET", `/api/v1/conversations/${conversationId}/vectors`, null, context),
+      httpRequest(
+        fetchImpl,
+        baseUrl,
+        "GET",
+        `/api/v1/conversations/${conversationId}/vectors`,
+        undefined,
+        context
+      ),
     getVectorsByResource: (context, resourceId) =>
-      httpRequest(baseUrl, "GET", `/api/v1/resources/${resourceId}/vectors`, null, context),
+      httpRequest(
+        fetchImpl,
+        baseUrl,
+        "GET",
+        `/api/v1/resources/${resourceId}/vectors`,
+        undefined,
+        context
+      ),
     searchVectors: (params) => {
-      const query = new URLSearchParams();
-      for (const [key, value] of Object.entries(params || {})) {
-        if (value === undefined || value === null) continue;
-        query.set(key, key === "embedding" ? JSON.stringify(value) : String(value));
-      }
-      return httpRequest(baseUrl, "GET", `/api/v1/vectors/search?${query}`, null, null);
+      const query = buildQueryString(params, {
+        serializeValue: (key, value) => (key === "embedding" ? JSON.stringify(value) : value),
+      });
+      return httpRequest(
+        fetchImpl,
+        baseUrl,
+        "GET",
+        `/api/v1/vectors/search${query}`,
+        undefined,
+        null
+      );
     },
     deleteVectorsByResource: (context, resourceId) =>
-      httpRequest(baseUrl, "DELETE", `/api/v1/resources/${resourceId}/vectors`, null, context),
+      httpRequest(
+        fetchImpl,
+        baseUrl,
+        "DELETE",
+        `/api/v1/resources/${resourceId}/vectors`,
+        undefined,
+        context
+      ),
     deleteVectorsByConversation: (context, conversationId) =>
       httpRequest(
+        fetchImpl,
         baseUrl,
         "DELETE",
         `/api/v1/conversations/${conversationId}/vectors`,
-        null,
+        undefined,
         context
       ),
 
     searchMessages: (context, params) =>
-      httpRequest(baseUrl, "POST", "/api/v1/search/messages", params, context),
+      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/search/messages", params, context),
     searchResourceVectors: (context, params) =>
-      httpRequest(baseUrl, "POST", "/api/v1/search/vectors", params, context),
+      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/search/vectors", params, context),
     searchChunks: (context, params) =>
-      httpRequest(baseUrl, "POST", "/api/v1/search/chunks", params, context),
+      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/search/chunks", params, context),
   };
 }

@@ -9,13 +9,13 @@
     "./http.js": "./http.js",
     "./remote.js": "./remote.js",
     "./service.js": "./service.js",
-    "./guardrails.js": "./guardrails.js",
-    "./inference.js": "./inference.js",
-    "./upload-limits.js": "./upload-limits.js",
-    "./usage.js": "./usage.js",
     "./providers/bedrock.js": "./providers/bedrock.js",
     "./providers/gemini.js": "./providers/gemini.js",
-    "./providers/mock.js": "./providers/mock.js"
+    "./providers/mock.js": "./providers/mock.js",
+    "./core/guardrails.js": "./core/guardrails.js",
+    "./core/inference.js": "./core/inference.js",
+    "./core/upload-limits.js": "./core/upload-limits.js",
+    "./core/usage.js": "./core/usage.js"
   },
   "scripts": {
     "start": "node --env-file .env index.js"

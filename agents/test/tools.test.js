@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
 
-import { getToolFn, toolImplementations } from "../tools.js";
+import { getToolFn, toolImplementations } from "../tools/index.js";
 
 function embeddingOf(...values) {
   return Array.from({ length: NOVA_EMBEDDING_DIMENSIONS }, (_, index) => values[index] ?? 0);
@@ -389,3 +389,5 @@ describe("tools", () => {
     });
   });
 });
+
+

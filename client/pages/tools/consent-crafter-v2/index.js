@@ -541,7 +541,7 @@ export default function Page() {
   }
 
   async function runModel(params) {
-    const response = await fetch("/api/v1/model", {
+    const response = await fetch("/api/v1/model/invoke", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...params, type: "consent-crafter" }),

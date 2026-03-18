@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import db, { Guardrail } from "database";
 import { eq } from "drizzle-orm";
-import { deleteGuardrailById, listGuardrails, toRuntimeGuardrailConfig } from "gateway/guardrails.js";
+import { deleteGuardrailById, listGuardrails, toRuntimeGuardrailConfig } from "gateway/core/guardrails.js";
 
 test("guardrail seed data is available to gateway management", async () => {
   const guardrails = await listGuardrails();
@@ -29,3 +29,4 @@ test("deleteGuardrailById refuses to delete assigned guardrails", async () => {
     return true;
   });
 });
+

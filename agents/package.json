@@ -7,9 +7,8 @@
     "./api.js": "./api.js",
     "./http.js": "./http.js",
     "./remote.js": "./remote.js",
-    "./service.js": "./service.js",
     "./app.js": "./app.js",
-    "./loop.js": "./loop.js"
+    "./core/loop.js": "./core/loop.js"
   },
   "scripts": {
     "start": "node --env-file .env index.js",

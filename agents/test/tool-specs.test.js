@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import specs, { getToolSpecs } from "../tool-specs.js";
+import specs, { getToolSpecs } from "../tools/specs.js";
 
 describe("tool-specs", () => {
   it("exports all tool specs by default", () => {
@@ -40,3 +40,5 @@ describe("tool-specs", () => {
     }
   });
 });
+
+

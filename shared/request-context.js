@@ -142,6 +142,40 @@ export function parseInternalUserIdHeader(headerValue, options = {}) {
   });
 }
 
+export function readInternalRequestContext(headers = {}, { required = true } = {}) {
+  try {
+    const context = parseInternalUserIdHeader(headers["x-user-id"], {
+      requestId: headers["x-request-id"],
+    });
+
+    if (!context && required) {
+      throw createContextError("X-User-Id header required");
+    }
+
+    return context;
+  } catch (error) {
+    error.statusCode ||= 400;
+    throw error;
+  }
+}
+
+export function readHttpRequestContext(
+  req,
+  { allowAnonymous = false, allowInternalHeader = false, source = "server" } = {}
+) {
+  const headerContext = allowInternalHeader
+    ? readInternalRequestContext(req.headers, { required: false })
+    : null;
+  const sessionContext =
+    headerContext ||
+    createRequestContext(req.session?.user?.id ?? null, {
+      source,
+      requestId: req.headers?.["x-request-id"],
+    });
+
+  return allowAnonymous ? sessionContext : requireUserRequestContext(sessionContext);
+}
+
 export function requireUserRequestContext(input, options = {}) {
   const context = createRequestContext(input, options);
   if (context.actorType !== "user") {

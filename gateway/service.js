@@ -1,9 +1,9 @@
-import { createUsersService } from "users/service.js";
+import { createUsersApplication } from "users/app.js";
 
 import { createGatewayApplication } from "./app.js";
-import { createGatewayUsage } from "./usage.js";
+import { createGatewayUsage } from "./core/usage.js";
 
-export function createGatewayService({ users = createUsersService() } = {}) {
+export function createGatewayService({ users = createUsersApplication() } = {}) {
   const usage = createGatewayUsage({
     recordUsage: (...args) => users.recordUsage(...args),
   });
@@ -13,3 +13,5 @@ export function createGatewayService({ users = createUsersService() } = {}) {
     modelUsageTracker: usage.trackModelUsage,
   });
 }
+
+

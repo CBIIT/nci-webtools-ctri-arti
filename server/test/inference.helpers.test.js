@@ -8,8 +8,8 @@ import {
   sanitizeProviderFileName,
   getProviderVisibleFileName,
   processMessages,
-} from "gateway/inference.js";
-import { MAX_INLINE_FILE_BYTES, validateInlineMessageContent } from "gateway/upload-limits.js";
+} from "gateway/core/inference.js";
+import { MAX_INLINE_FILE_BYTES, validateInlineMessageContent } from "gateway/core/upload-limits.js";
 import { PDFDocument } from "pdf-lib";
 
 test("estimateContentTokens", async (t) => {
@@ -191,6 +191,58 @@ test("provider filename sanitization", async (t) => {
   );
 });
 
+test("processMessages", async (t) => {
+  await t.test("preserves message roles while normalizing provider content", () => {
+    const messages = [
+      {
+        role: "user",
+        content: [
+          { text: "Search for test" },
+          { toolUse: { toolUseId: "tu_1", name: "search", input: "{}" } },
+        ],
+      },
+      {
+        role: "assistant",
+        content: [
+          { toolResult: { toolUseId: "tu_1", content: [{ json: { ok: true } }] } },
+          { text: "Done" },
+        ],
+      },
+    ];
+
+    const result = processMessages(structuredClone(messages), 0);
+
+    assert.deepStrictEqual(
+      result.map((message) => ({
+        role: message.role,
+        content: message.content.map((content) =>
+          content.text
+            ? { text: content.text }
+            : content.toolUse
+              ? { toolUse: content.toolUse }
+              : { toolResult: content.toolResult }
+        ),
+      })),
+      [
+        {
+          role: "user",
+          content: [
+            { text: "Search for test" },
+            { toolUse: { toolUseId: "tu_1", name: "search", input: { text: "{}" } } },
+          ],
+        },
+        {
+          role: "assistant",
+          content: [
+            { toolResult: { toolUseId: "tu_1", content: [{ json: { ok: true } }] } },
+            { text: "Done" },
+          ],
+        },
+      ]
+    );
+  });
+});
+
 test("inline upload limits", async (t) => {
   await t.test("rejects more than five inline files in one message", async () => {
     const content = Array.from({ length: 6 }, (_, index) => ({
@@ -240,3 +292,5 @@ test("inline upload limits", async (t) => {
     await assert.rejects(() => validateInlineMessageContent(content), /maximum of 100 PDF pages/i);
   });
 });
+
+

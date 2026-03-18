@@ -1,4 +1,9 @@
-import { resolveIdentity } from "./users.js";
+import { getUsersModule } from "./compose.js";
+
+async function resolveIdentity({ sessionUserId, apiKey } = {}) {
+  const users = await getUsersModule();
+  return users.resolveIdentity({ sessionUserId, apiKey });
+}
 
 export function requireRole(requiredRole) {
   return async (req, res, next) => {

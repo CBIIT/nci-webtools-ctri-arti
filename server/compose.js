@@ -1,11 +1,11 @@
+import { createAgentsApplication } from "agents/app.js";
 import { createAgentsRemote } from "agents/remote.js";
-import { createAgentsService } from "agents/service.js";
 import { createCmsRemote } from "cms/remote.js";
 import { createCmsService } from "cms/service.js";
 import { createGatewayRemote } from "gateway/remote.js";
 import { createGatewayService } from "gateway/service.js";
+import { createUsersApplication } from "users/app.js";
 import { createUsersRemote } from "users/remote.js";
-import { createUsersService } from "users/service.js";
 
 const { USERS_URL, GATEWAY_URL, CMS_URL, AGENTS_URL } = process.env;
 
@@ -17,7 +17,7 @@ function shouldBootstrapLocalGuardrails() {
 }
 
 function createUsersModule() {
-  return USERS_URL ? createUsersRemote({ baseUrl: USERS_URL }) : createUsersService();
+  return USERS_URL ? createUsersRemote({ baseUrl: USERS_URL }) : createUsersApplication();
 }
 
 async function createGatewayModule({ users }) {
@@ -45,7 +45,7 @@ function createCmsModule({ gateway }) {
 function createAgentsModule({ gateway, cms }) {
   return AGENTS_URL
     ? createAgentsRemote({ baseUrl: AGENTS_URL })
-    : createAgentsService({ gateway, cms, source: "server" });
+    : createAgentsApplication({ gateway, cms, source: "server" });
 }
 
 async function createServerModules() {
