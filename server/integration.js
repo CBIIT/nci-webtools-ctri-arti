@@ -21,12 +21,16 @@ async function runTests({
   const page = await browser.newPage();
   page.setDefaultTimeout(60 * 60 * 1000);
 
-  const url =
-    TEST_URL ||
-    `http://localhost:${PORT}/?test=1` +
-      (TEST_API_KEY ? `&apiKey=${encodeURIComponent(TEST_API_KEY)}` : "") +
-      (TEST_SLOW === "1" ? "&slow=1" : "") +
-      (TEST_PROFILE === "1" ? "&profile=1" : "");
+  const url = new URL(TEST_URL || `http://localhost:${PORT}/?test=1`);
+  if (TEST_API_KEY && !url.searchParams.has("apiKey")) {
+    url.searchParams.set("apiKey", TEST_API_KEY);
+  }
+  if (TEST_SLOW === "1" && !url.searchParams.has("slow")) {
+    url.searchParams.set("slow", "1");
+  }
+  if (TEST_PROFILE === "1" && !url.searchParams.has("profile")) {
+    url.searchParams.set("profile", "1");
+  }
 
   let failed = false;
   let coverageEntries;
@@ -48,7 +52,7 @@ async function runTests({
     console.log("Starting browser JS coverage");
     await page.coverage.startJSCoverage({ reportAnonymousScripts: true });
 
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.goto(url.href, { waitUntil: "domcontentloaded", timeout: 60000 });
     // eslint-disable-next-line no-undef
     await page.waitForFunction(() => window.TESTS_DONE === true, { timeout: 60 * 60 * 1000 });
 
@@ -61,7 +65,7 @@ async function runTests({
   }
 
   if (coverageEntries) {
-    printCoverage(coverageEntries, url, env.TEST_COVERAGE_INCLUDE_TESTS === "1");
+    printCoverage(coverageEntries, url.href, env.TEST_COVERAGE_INCLUDE_TESTS === "1");
   }
 
   console.log(`Integration runtime: ${((Date.now() - startedAt) / 1000).toFixed(3)}s`);
