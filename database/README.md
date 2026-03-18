@@ -1,426 +1,183 @@
 # database
 
-Shared database package — Drizzle ORM schema, migrations, relations, audit helpers, and seed data.
+Shared database package for schema, migrations, readiness, seed data, and integrity checks.
 
-## Overview
+This package is imported by the running services. It is not a deployable service by itself.
 
-Workspace library package (not a running service). Imported by all services that need database access. Provides model definitions, association setup, migration bootstrap, relational-audit helpers, and initial seed data loading.
+## Directory Shape
 
-## Quick Start
+- [index.js](index.js): database bootstrap and primary exports
+- [schema.js](schema.js): Drizzle tables, relations, and seeding logic
+- [readiness.js](readiness.js): schema readiness helpers used by service startup
+- [sync.js](sync.js): migration helpers and result normalization
+- [relational-audit.js](relational-audit.js): integrity auditing
+- [csv-loader.js](csv-loader.js): seed-data loader
+- [migrations/](migrations/): checked-in SQL migrations
+- [data/](data/): CSV seed data and prompt files
+- [scripts/](scripts/): audit scripts
 
-```js
-import { User, Role, Model, Agent, Conversation, Message } from "database";
-import { eq } from "drizzle-orm";
-import db from "database";
+## Initialization Behavior
 
-const [user] = await db.select().from(User).where(eq(User.id, 1));
-const conversations = await db.select().from(Conversation).where(eq(Conversation.userID, 1));
-```
+Importing `database` boots the database connection and, unless disabled, the schema lifecycle.
 
-## Initialization Sequence
+Current sequence from [index.js](index.js):
 
-When imported, the package:
+1. choose PGlite when `PGHOST` is unset, otherwise use PostgreSQL
+2. create the Drizzle client with the shared schema
+3. run `init.sql`
+4. apply checked-in SQL migrations from `migrations/` unless `DB_SKIP_SYNC=true`
+5. seed reference data from `data/`
+6. run relational integrity checks unless `DB_SKIP_AUDIT=true`
 
-1. **Select dialect** — PGlite (when `DB_STORAGE` is set) or PostgreSQL (production)
-2. **Create Drizzle instance** — Registers all table definitions and relations from `schema.js`
-3. **Run checked-in SQL migrations** (unless `DB_SKIP_SYNC=true`)
-4. **Seed data** — Upserts roles, policies, providers, models, prompts, agents, tools, and agent-tools from CSV files
-5. **Run relational audit** (unless `DB_SKIP_SYNC=true` or `DB_SKIP_AUDIT=true`) — Fails startup if foreign keys, ownership edges, or required columns are still inconsistent
+This package is intentionally used by both local direct mode and the standalone HTTP services.
 
-Microservices that connect to an already-initialized database should set `DB_SKIP_SYNC=true`.
+## Schema Overview
 
-## Model Reference
+The current schema includes these major groups.
 
-All relationship columns use uppercase `ID` suffixes such as `userID`, `modelID`, and `conversationID`.
+### Identity and auth
 
-Important:
+- `User`
+- `Role`
+- `Policy`
+- `RolePolicy`
+- `Session`
 
-- Drizzle relations are defined in `schema.js` for application code.
-- The checked-in migrations now enforce the core foreign-key graph and the main required ownership columns.
-- Runtime sync and test bootstrap now use the same checked-in migration files instead of separate schema definitions.
-- Some columns are intentionally nullable because the product supports global agents and agent-scoped resources outside a conversation.
-- Use `npm run db:audit-relations` to verify an existing PostgreSQL database before and after deployment.
+### Model and guardrail reference data
 
-| Model            | Key Attributes                                                                                                                                                                 | Indexes                                        |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
-| **User**         | email, firstName, lastName, status, roleID, apiKey, budget, remaining                                                                                                          | email, roleID                                  |
-| **Role**         | name, displayOrder                                                                                                                                                             | displayOrder                                   |
-| **Policy**       | name, resource, action                                                                                                                                                         | —                                              |
-| **RolePolicy**   | roleID, policyID                                                                                                                                                               | (roleID+policyID unique)                       |
-| **Provider**     | name, apiKey, endpoint                                                                                                                                                         | —                                              |
-| **Model**        | providerID, name, internalName, type, description, maxContext, maxOutput, maxReasoning, cost1kInput, cost1kOutput, cost1kCacheRead, cost1kCacheWrite, pricing (JSON), defaultParameters (JSON) | internalName, providerID                       |
-| **Usage**        | userID, modelID, type, agentID, messageID, quantity, unit, unitCost, cost                                                                                                     | userID, modelID, createdAt, (userID+createdAt), unit |
-| **Prompt**       | name, version, content (TEXT)                                                                                                                                                  | name, (name+version unique)                    |
-| **Agent**        | userID, modelID, name, description, promptID, modelParameters (JSON)                                                                                                           | userID, modelID, promptID                      |
-| **Tool**         | name, description, type, authenticationType, endpoint, transportType, customConfig (JSON)                                                                                      | —                                              |
-| **Conversation** | userID, agentID, title, deleted (BOOLEAN), deletedAt, summaryMessageID                                                                                                         | agentID, (userID+createdAt), deleted           |
-| **Message**      | conversationID, parentID, role, content (JSON)                                                                                                                                 | conversationID, (conversationID+createdAt)     |
-| **Resource**     | userID, agentID, conversationID, messageID, name, type, content (TEXT), s3Uri, metadata (JSON)                                                                               | userID, agentID, conversationID, messageID     |
-| **Vector**       | conversationID, resourceID, toolID, order, content (TEXT), embedding (`vector(3072)`)                                                                                         | conversationID, toolID, (resourceID+order), trigram/full-text content indexes |
-| **UserAgent**    | userID, agentID, role                                                                                                                                                          | (userID+agentID unique)                        |
-| **UserTool**     | userID, toolID, credential (JSON)                                                                                                                                              | (userID+toolID unique)                         |
-| **AgentTool**    | toolID, agentID                                                                                                                                                                | (toolID+agentID unique)                        |
+- `Provider`
+- `Model`
+- `Guardrail`
+- `Prompt`
+- `Tool`
 
-## Associations
+### Conversation state
 
-```
-User → Role (belongsTo)
-Role → User (hasMany)
+- `Agent`
+- `Conversation`
+- `Message`
+- `Resource`
+- `Vector`
 
-RolePolicy → Role, Policy (belongsTo)
-Role, Policy → RolePolicy (hasMany)
+### Join and ownership tables
 
-Model → Provider (belongsTo)
+- `UserAgent`
+- `UserTool`
+- `AgentTool`
 
-Usage → User, Model, Agent, Message (belongsTo)
-User, Model → Usage (hasMany)
+### Usage and budget tracking
 
-Agent → Prompt, User (belongsTo)
-Prompt, User → Agent (hasMany)
+- `Usage`
 
-Conversation → User, Agent (belongsTo)
-Agent → Conversation (hasMany)
+Important schema details that were missing from the old README:
 
-Message → Conversation (belongsTo)
-Conversation → Message (hasMany)
+- `Guardrail` is now a first-class table
+- `Session` is persisted in the database
+- `Usage` uses generalized quantity/unit rows plus `requestId`
+- `Resource` now carries `userID` and `conversationID`
+- `Agent` can reference `guardrailID`
 
-Resource → Agent, Message (belongsTo)
-Agent → Resource (hasMany)
+## Service Ownership
 
-Vector → Conversation, Resource, Tool (belongsTo)
-Conversation → Vector (hasMany)
+This is the current ownership model at a high level.
 
-UserAgent → User, Agent (belongsTo)
-User, Agent → UserAgent (hasMany)
+| Tables                                                                                                           | Primary writer           |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `User`, `Role`, `Usage`                                                                                          | `users`                  |
+| `Provider`, `Model`, `Guardrail` runtime sync                                                                    | `gateway` plus seed data |
+| `Prompt`, `Tool`, `Agent`, `Conversation`, `Message`, `Resource`, `Vector`, `UserAgent`, `UserTool`, `AgentTool` | `cms`                    |
+| `Session`                                                                                                        | `server`                 |
+| `Policy`, `RolePolicy`, baseline reference rows                                                                  | seed data / migrations   |
 
-UserTool → User, Tool (belongsTo)
-User, Tool → UserTool (hasMany)
+Some services read across these boundaries:
 
-AgentTool → Agent, Tool (belongsTo)
-Agent, Tool → AgentTool (hasMany)
-```
-
-## Entity Relationship Diagram
-
-```mermaid
-erDiagram
-    Role {
-        int id PK
-        string name
-        int displayOrder
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Policy {
-        int id PK
-        string name
-        string resource
-        string action
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    RolePolicy {
-        int id PK
-        int roleID FK
-        int policyID FK
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    User {
-        int id PK
-        string email
-        string firstName
-        string lastName
-        string status
-        int roleID FK
-        string apiKey
-        float budget
-        float remaining
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Provider {
-        int id PK
-        string name
-        string apiKey
-        string endpoint
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Model {
-        int id PK
-        int providerID FK
-        string name
-        string internalName
-        string type
-        string description
-        int maxContext
-        int maxOutput
-        int maxReasoning
-        float cost1kInput
-        float cost1kOutput
-        float cost1kCacheRead
-        float cost1kCacheWrite
-        jsonb defaultParameters
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Usage {
-        int id PK
-        int userID FK
-        int modelID FK
-        string type
-        int agentID FK
-        int messageID FK
-        float inputTokens
-        float outputTokens
-        float cacheReadTokens
-        float cacheWriteTokens
-        float cost
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Prompt {
-        int id PK
-        string name
-        int version
-        string content
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Agent {
-        int id PK
-        int userID FK
-        int modelID FK
-        string name
-        string description
-        int promptID FK
-        jsonb modelParameters
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Tool {
-        int id PK
-        string name
-        string description
-        string type
-        string authenticationType
-        string endpoint
-        string transportType
-        jsonb customConfig
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Conversation {
-        int id PK
-        int userID FK
-        int agentID FK
-        string title
-        boolean deleted
-        datetime deletedAt
-        int summaryMessageID
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Message {
-        int id PK
-        int conversationID FK
-        int parentID
-        string role
-        jsonb content
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Resource {
-        int id PK
-        int agentID FK
-        int messageID FK
-        string name
-        string type
-        string content
-        string s3Uri
-        jsonb metadata
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Vector {
-        int id PK
-        int conversationID FK
-        int resourceID FK
-        int toolID FK
-        int order
-        string content
-        jsonb embedding
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    UserAgent {
-        int id PK
-        int userID FK
-        int agentID FK
-        string role
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    UserTool {
-        int id PK
-        int userID FK
-        int toolID FK
-        jsonb credential
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    AgentTool {
-        int id PK
-        int toolID FK
-        int agentID FK
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    %% Access Management
-    Role ||--o{ User : "roleID"
-    Role ||--o{ RolePolicy : "roleID"
-    Policy ||--o{ RolePolicy : "policyID"
-
-    %% AI Configuration
-    Provider ||--o{ Model : "providerID"
-    Model ||--o{ Agent : "modelID"
-    Prompt ||--o{ Agent : "promptID"
-    User ||--o{ Agent : "userID"
-
-    %% Usage Tracking
-    User ||--o{ Usage : "userID"
-    Model ||--o{ Usage : "modelID"
-    Agent ||--o{ Usage : "agentID"
-    Message ||--o{ Usage : "messageID"
-
-    %% Conversations
-    Agent ||--o{ Conversation : "agentID"
-    User ||--o{ Conversation : "userID"
-    Conversation ||--o{ Message : "conversationID"
-
-    %% Resources & Vectors
-    Agent ||--o{ Resource : "agentID"
-    Message ||--o{ Resource : "messageID"
-    Conversation ||--o{ Vector : "conversationID"
-    Resource ||--o{ Vector : "resourceID"
-    Tool ||--o{ Vector : "toolID"
-
-    %% Join Tables
-    User ||--o{ UserAgent : "userID"
-    Agent ||--o{ UserAgent : "agentID"
-    User ||--o{ UserTool : "userID"
-    Tool ||--o{ UserTool : "toolID"
-    Tool ||--o{ AgentTool : "toolID"
-    Agent ||--o{ AgentTool : "agentID"
-```
-
-## Data Ownership Matrix
-
-Which service owns (writes) each model, and which services read it.
-
-| Model                                          | Owner (writes)                   | Readers                    |
-| ---------------------------------------------- | -------------------------------- | -------------------------- |
-| User, Role                                     | server (auth/admin)              | gateway (rate limit check) |
-| Policy, RolePolicy                             | seed data (read-only at runtime) | server (authorization)     |
-| Provider, Model                                | seed data (read-only at runtime) | gateway (model lookup)     |
-| Usage                                          | gateway (inference tracking)     | server (admin analytics)   |
-| Prompt, Tool                                   | seed data + cms                  | cms (agent resolution)     |
-| Agent, Conversation, Message, Resource, Vector | cms                              | server (via cms client)    |
-| UserAgent, UserTool, AgentTool                 | cms                              | cms (junction lookups)     |
+- `gateway` reads `Model` and `Guardrail`, and records usage through `users`
+- `server` reads through service modules rather than treating the database package as its own domain
 
 ## Seed Data
 
-Loaded from CSV files in `data/` via the CSV loader on startup:
+Seed data currently comes from [data/](data/):
 
-| File                | Records | Notes                                                                  |
-| ------------------- | ------- | ---------------------------------------------------------------------- |
-| `roles.csv`         | 3       | admin, super user, user                                                |
-| `policies.csv`      | 6       | Authorization policies (resource + action)                             |
-| `role-policies.csv` | —       | Maps roles to policies                                                 |
-| `providers.csv`     | 3       | bedrock, google (apiKey via `env:GEMINI_API_KEY`), mock                |
-| `models.csv`        | 8       | Claude Opus/Sonnet/Haiku, Llama Maverick/Scout, Gemini Pro/Flash, Mock |
-| `prompts.csv`       | 3       | References `file:prompts/ada.txt`, `fedpulse.txt`, `eagle.txt`         |
-| `agents.csv`        | 3       | Standard Chat, FedPulse, EAGLE (all global: userID=null)               |
-| `tools.csv`         | 7       | search, browse, code, editor, think, data, docxTemplate                |
-| `agent-tools.csv`   | —       | Maps agents to tools via AgentTool junction                            |
+- `roles.csv`
+- `policies.csv`
+- `role-policies.csv`
+- `providers.csv`
+- `models.csv`
+- `guardrails.csv`
+- `prompts.csv`
+- `agents.csv`
+- `tools.csv`
+- `agent-tools.csv`
 
-A test admin user is created when `TEST_API_KEY` is set.
+Prompt bodies live under [data/prompts](data/prompts).
 
-### CSV Loader Features
-
-| Feature               | Syntax                          | Example                                  |
-| --------------------- | ------------------------------- | ---------------------------------------- |
-| Quoted fields         | `"value with, commas"`          | `"[{""key"":""val""}]"`                  |
-| Null values           | `null`                          | `null` → `null`                          |
-| File references       | `file:relative/path`            | `file:prompts/ada.txt` → file contents   |
-| Environment variables | `env:VAR_NAME`                  | `env:GEMINI_API_KEY` → process.env value |
-| JSON auto-detection   | Values starting with `[` or `{` | `[""a""]` → `["a"]`                      |
-| Numeric auto-casting  | Numeric strings                 | `0.005` → `0.005`                        |
-
-File references are resolved relative to the CSV file's directory.
+If `TEST_API_KEY` is set, startup also creates a seeded admin test user.
 
 ## Exports
 
-```js
-// Named model exports
-import {
-  User,
-  Role,
-  Policy,
-  RolePolicy,
-  Provider,
-  Model,
-  Prompt,
-  Agent,
-  Conversation,
-  Message,
-  Tool,
-  Resource,
-  Vector,
-  UserAgent,
-  UserTool,
-  AgentTool,
-  Usage,
-} from "database";
+### Default export
 
-// Default export: Drizzle instance
+```js
 import db from "database";
 ```
 
-From `schema.js`:
+### Named exports from `database`
 
-- Table definitions (`User`, `Role`, `Policy`, etc.) — Drizzle `pgTable` objects
-- Relation definitions (`userRelations`, `roleRelations`, etc.) — Drizzle `relations()` objects
-- `tables` — Object containing all table references for iteration
-- `seedDatabase(db)` — Loads CSVs and upserts seed data
+Current named table exports include:
+
+- `User`
+- `Role`
+- `Policy`
+- `RolePolicy`
+- `Provider`
+- `Model`
+- `Prompt`
+- `Guardrail`
+- `Agent`
+- `Conversation`
+- `Message`
+- `Tool`
+- `Resource`
+- `Vector`
+- `UserAgent`
+- `UserTool`
+- `AgentTool`
+- `Usage`
+- `Session`
+
+`index.js` also exports:
+
+- `rawSql(...)`
+
+Additional package entrypoints:
+
+- `database/readiness.js`
+- `database/schema.js`
+- `database/csv-loader.js`
+- `database/relational-audit.js`
+- `database/sync.js`
 
 ## Configuration
 
-| Variable       | Required | Default  | Description                                       |
-| -------------- | -------- | -------- | ------------------------------------------------- |
-| `DB_STORAGE`   | No       | —        | PGlite data directory (uses embedded PG when set) |
-| `DB_SKIP_SYNC` | No       | false    | Skip schema sync and seed (for microservices)     |
-| `PGHOST`       | Prod     | —        | PostgreSQL host                                   |
-| `PGPORT`       | No       | 5432     | PostgreSQL port                                   |
-| `PGDATABASE`   | No       | postgres | PostgreSQL database                               |
-| `PGUSER`       | Prod     | —        | PostgreSQL user                                   |
-| `PGPASSWORD`   | Prod     | —        | PostgreSQL password                               |
-| `TEST_API_KEY` | No       | —        | Creates test admin user                           |
+- `DB_STORAGE`: use PGlite and optionally persist to this path
+- `DB_SKIP_SYNC=true`: skip `init.sql`, migrations, seeding, and audit
+- `DB_SKIP_AUDIT=true`: skip integrity audit after sync
+- `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`: use PostgreSQL instead of PGlite
+- `DB_SSL=1`: enable SSL for PostgreSQL
+- `TEST_API_KEY`: seed a test admin user
+
+## Useful Commands
+
+From the repo root:
+
+```bash
+npm run db
+npm run db:sql
+npm run db:audit-vectors
+npm run db:audit-relations
+```
+
+## Notes
+
+- This README is intentionally higher-level than the old one. The old version became inaccurate because it tried to duplicate the full schema by hand.
+- For exact truth, trust [schema.js](schema.js), [index.js](index.js), and the migration files in [migrations/](migrations/).

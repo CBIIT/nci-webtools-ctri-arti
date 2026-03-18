@@ -1,175 +1,65 @@
 # cms
 
-Conversation Management Service — CRUD operations for agents, conversations, messages, tools, prompts, resources, and vectors.
+Conversation management service for agents, conversations, messages, resources, vectors, tools, prompts, and search.
 
-## Overview
+## Directory Shape
 
-The CMS manages the conversation data model. It contains no inference logic or auth decisions — just data operations scoped by userId. Runs either embedded in the main server (monolith mode) or as a standalone microservice on port 3002.
+- [index.js](index.js): standalone HTTP entrypoint
+- [app.js](app.js): application interface used by direct callers
+- [service.js](service.js): local composition
+- [http.js](http.js): shared HTTP composition root
+- [remote.js](remote.js): HTTP client for remote mode
+- [core/](core/): conversation-service and domain logic
+- [http/](http/): route families and HTTP helpers
+- [scripts/](scripts/): operational scripts such as vector reindexing
 
-## Quick Start
+The service root shows the runtime boundary; the capability code is grouped under `core/` and `http/`.
+
+## HTTP API
+
+Standalone CMS mounts its routes under `/api/v1`.
+
+Route families:
+
+- agents: `/agents`
+- conversations and summaries: `/conversations`, `/summarize`
+- messages: `/conversations/:conversationId/messages`, `/messages/:id`
+- resources: `/resources`, `/agents/:agentId/resources`, `/conversations/:conversationId/resources`
+- vectors and search: `/vectors`, `/resources/:resourceId/vectors`, `/search/messages`, `/search/vectors`, `/search/chunks`
+- tools and prompts: `/tools`, `/prompts`
+
+`server` mounts the same shared CMS routers for the public API, with browser/session-aware request context in front of them.
+
+## Runtime Modes
+
+### Direct mode
+
+`server` composes CMS in-process through `cms/service.js`. This is the simpler local path.
+
+### HTTP mode
+
+Set `CMS_URL` for `server`, or run standalone CMS directly. The edge server will use `cms/remote.js`, while the service serves `cms/http.js`.
+
+## Running It
+
+From the repo root:
 
 ```bash
-# Standalone microservice
 npm start -w cms
-
-# Or via docker compose (starts automatically)
-docker compose up --build -w
 ```
 
-## API Reference
+The standalone service defaults to port `3002`.
 
-All routes are mounted under `/api/v1`. All requests must include an `X-User-Id` header. Returns `400` if missing.
+## Important Environment Variables
 
-| Resource      | Endpoints                                            | Description                                  |
-| ------------- | ---------------------------------------------------- | -------------------------------------------- |
-| Agents        | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Agent CRUD                                   |
-| Conversations | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Conversation CRUD with pagination            |
-| Context       | `GET /conversations/:id/context`                     | Get conversation with messages and resources |
-| Compress      | `POST /conversations/:id/compress`                   | Compress conversation with summary           |
-| Messages      | `POST`, `GET`, `PUT /:id`, `DELETE /:id`             | Message CRUD                                 |
-| Tools         | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Tool CRUD                                    |
-| Prompts       | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | Prompt CRUD                                  |
-| Resources     | `POST`, `GET /:id`, `GET` by agent, `DELETE /:id`    | Resource CRUD                                |
-| Vectors       | `POST`, `GET` by conversation, `GET /search`         | Vector storage and search                    |
+- `PORT`
+- `GATEWAY_URL`
+- `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`
+- `DB_STORAGE`
+- `DB_SKIP_SYNC`
 
-See [openapi.yaml](openapi.yaml) for full request/response schemas.
+## Notes
 
-### Pagination
-
-`GET /api/v1/conversations` returns a normalized paginated response:
-
-```json
-{
-  "data": [...],
-  "meta": { "total": 42, "limit": 20, "offset": 0 }
-}
-```
-
-## Architecture
-
-### ConversationService (`conversation.js`)
-
-Core business logic class. All methods take `userId` as first parameter for ownership scoping.
-
-#### Agent Methods
-
-| Method                                  | Parameters                                            | Returns       | Notes                                                                                                       |
-| --------------------------------------- | ----------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
-| `createAgent(userId, data)`             | `{ name, description?, promptID?, modelParameters? }` | Agent         | Sets userID on creation                                                                                     |
-| `getAgent(userId, agentId)`             | —                                                     | Agent \| null | User's OR global agents. Flattens `Prompt.content` → `systemPrompt`. Resolves tools via AgentTool junction. |
-| `getAgents(userId)`                     | —                                                     | Agent[]       | User's + global agents, ordered by createdAt DESC                                                           |
-| `updateAgent(userId, agentId, updates)` | `{ ...fields, tools? }`                               | Agent \| null | Only updates user-owned agents. Syncs AgentTool junction when `tools` array provided.                       |
-| `deleteAgent(userId, agentId)`          | —                                                     | number        | Cascading: deletes conversations, messages, resources, vectors                                              |
-
-#### Conversation Methods
-
-| Method                                                | Parameters             | Returns              | Notes                                                       |
-| ----------------------------------------------------- | ---------------------- | -------------------- | ----------------------------------------------------------- |
-| `createConversation(userId, data)`                    | `{ title?, agentID? }` | Conversation         |                                                             |
-| `getConversation(userId, conversationId)`             | —                      | Conversation \| null | Scoped to userId, excludes soft-deleted                     |
-| `getConversations(userId, options)`                   | `{ limit?, offset? }`  | `{ count, rows }`    | Paginated, ordered by createdAt DESC, excludes soft-deleted |
-| `updateConversation(userId, conversationId, updates)` | —                      | Conversation \| null |                                                             |
-| `deleteConversation(userId, conversationId)`          | —                      | number               | Soft delete (sets `deleted: true`, `deletedAt`)             |
-
-#### Context & Compress
-
-| Method                                               | Parameters                      | Returns                                 | Notes                                                                |
-| ---------------------------------------------------- | ------------------------------- | --------------------------------------- | -------------------------------------------------------------------- |
-| `getContext(userId, conversationId)`                 | —                               | `{ conversation, messages, resources }` | Returns full conversation context including message-linked resources |
-| `compressConversation(userId, conversationId, data)` | `{ summary, summaryMessageID }` | Conversation                            | Sets summaryMessageID on the conversation                            |
-
-#### Message Methods
-
-| Method                                      | Parameters                     | Returns         | Notes                    |
-| ------------------------------------------- | ------------------------------ | --------------- | ------------------------ |
-| `appendConversationMessage(userId, data)`   | `{ conversationId, role, content, parentID? }` | Message | Validates conversation ownership before write |
-| `appendUserMessage(userId, data)`           | `{ conversationId, content, parentID? }` | Message | Convenience command for user turns |
-| `appendAssistantMessage(userId, data)`      | `{ conversationId, content, parentID? }` | Message | Convenience command for assistant turns |
-| `appendToolResultsMessage(userId, data)`    | `{ conversationId, content, parentID? }` | Message | Persists tool results as a user turn |
-| `getMessages(userId, conversationId)`       | —                              | Message[]       | Ordered by createdAt ASC |
-| `getMessage(userId, messageId)`             | —                              | Message \| null |                          |
-| `updateMessage(userId, messageId, updates)` | —                              | Message \| null |                          |
-| `deleteMessage(userId, messageId)`          | —                              | number          |                          |
-
-#### Tool Methods
-
-| Method                        | Parameters            | Returns      | Notes                                                        |
-| ----------------------------- | --------------------- | ------------ | ------------------------------------------------------------ |
-| `createTool(data)`            | `{ name, type, ... }` | Tool         |                                                              |
-| `getTool(toolId)`             | —                     | Tool \| null |                                                              |
-| `getTools(userId)`            | —                     | Tool[]       | Returns builtin tools + user's tools (via UserTool junction) |
-| `updateTool(toolId, updates)` | —                     | Tool \| null |                                                              |
-| `deleteTool(toolId)`          | —                     | number       | Cascading: destroys vectors, AgentTool, UserTool records     |
-
-#### Prompt Methods
-
-| Method                            | Parameters                         | Returns        | Notes                             |
-| --------------------------------- | ---------------------------------- | -------------- | --------------------------------- |
-| `createPrompt(data)`              | `{ name, content, version?, ... }` | Prompt         |                                   |
-| `getPrompt(promptId)`             | —                                  | Prompt \| null |                                   |
-| `getPrompts(options)`             | —                                  | Prompt[]       | Ordered by name ASC, version DESC |
-| `updatePrompt(promptId, updates)` | —                                  | Prompt \| null |                                   |
-| `deletePrompt(promptId)`          | —                                  | number         |                                   |
-
-#### Resource Methods
-
-| Method                                 | Parameters                                                         | Returns          | Notes                       |
-| -------------------------------------- | ------------------------------------------------------------------ | ---------------- | --------------------------- |
-| `storeConversationResource(userId, data)` | `{ name, type, content, agentID?, conversationID?, messageID?, s3Uri?, metadata? }` | Resource | Validates referenced conversation/message ownership before write |
-| `getResource(userId, resourceId)`      | —                                                                  | Resource \| null |                             |
-| `updateConversationResource(userId, resourceId, updates)` | —                                          | Resource \| null | Reindexes vectors when resource content changes |
-| `getResourcesByAgent(userId, agentId)` | —                                                                  | Resource[]       | Ordered by createdAt ASC    |
-| `deleteConversationResource(userId, resourceId)` | —                                                           | number           | Cascading: destroys vectors |
-
-#### Vector Methods
-
-| Method                                                | Parameters                                                | Returns  | Notes                                            |
-| ----------------------------------------------------- | --------------------------------------------------------- | -------- | ------------------------------------------------ |
-| `storeConversationVectors(userId, data)`              | `{ conversationId, vectors }`                              | Vector[] | Bulk create. Order defaults to array index. Validates conversation ownership first. |
-| `getVectorsByConversation(userId, conversationId)`    | —                                                         | Vector[] | Ordered by order ASC                             |
-| `getVectorsByResource(userId, resourceId)`            | —                                                         | Vector[] | Ordered by order ASC                             |
-| `searchVectors(params)`                               | `{ toolID?, conversationID?, embedding?, topN? }`         | Vector[] | Cosine similarity search when embedding provided |
-| `deleteVectorsByConversation(userId, conversationId)` | —                                                         | number   |                                                  |
-
-### Ownership Model
-
-All operations enforce user ownership via `WHERE userID = :userId`. Exceptions:
-
-- `getAgent` and `getAgents` also return global agents where `userID IS NULL`
-- Global agents cannot be modified or deleted through user endpoints (returns `403`)
-- Tool and Prompt methods are not user-scoped (they use IDs directly)
-
-## Configuration
-
-| Variable       | Required | Default | Description                                        |
-| -------------- | -------- | ------- | -------------------------------------------------- |
-| `PORT`         | No       | 3002    | Service port                                       |
-| `DB_STORAGE`   | No       | —       | PGlite data directory (uses embedded PG when set)  |
-| `DB_SKIP_SYNC` | No       | false   | Skip schema sync (set `true` in microservice mode) |
-| `PGHOST`       | Prod     | —       | PostgreSQL host                                    |
-| `PGPORT`       | Prod     | —       | PostgreSQL port                                    |
-| `PGDATABASE`   | Prod     | —       | PostgreSQL database name                           |
-| `PGUSER`       | Prod     | —       | PostgreSQL user                                    |
-| `PGPASSWORD`   | Prod     | —       | PostgreSQL password                                |
-
-## Data Ownership
-
-| Operation               | Models                                                                            |
-| ----------------------- | --------------------------------------------------------------------------------- |
-| **Owns (reads/writes)** | Agent, Conversation, Message, Resource, Vector, Tool, Prompt, AgentTool, UserTool |
-| **Reads**               | Prompt (for agent resolution)                                                     |
-
-## Client Integration
-
-The server connects to CMS via `shared/clients/cms.js`, a factory-pattern client:
-
-- **Direct mode** (no `CMS_URL`): Instantiates `ConversationService` and calls methods directly.
-- **HTTP mode** (`CMS_URL` set): Makes HTTP requests with `X-User-Id` header.
-
-```js
-import { createConversation, appendUserMessage, getMessages } from "./services/clients/cms.js";
-
-const conversation = await createConversation(userId, { title: "New Chat", agentID: 1 });
-await appendUserMessage(userId, { conversationId: conversation.id, content: [{ text: "Hello" }] });
-const messages = await getMessages(userId, conversation.id);
-```
+- The old root-level `conversation.js` shim is gone. The underlying service implementation now lives at [core/conversation-service.js](core/conversation-service.js).
+- `cms/http.js` is only the composition root now; the actual route families live in [http/](http/).
+- If docs drift again, trust [http.js](http.js), [core/conversation-service.js](core/conversation-service.js), and the route tests under [server/test/routes](../server/test/routes/).
