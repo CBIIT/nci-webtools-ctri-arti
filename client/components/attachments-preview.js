@@ -1,7 +1,6 @@
 import { File as FileIcon, X } from "lucide-solid";
-import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, onMount, Show, untrack } from "solid-js";
 import html from "solid-js/html";
-
 
 import { attachmentFileTypes } from "../configs/attachment-file-types.js";
 
@@ -10,6 +9,8 @@ import { attachmentFileTypes } from "../configs/attachment-file-types.js";
  *
  * @param {*} props - Component props.
  * @param props.onNamesChange - Callback function triggered when attachment names change.
+ * @param props.onFilesChange - Callback function triggered when attachment files change.
+ * @param props.files - Optional external file list to render.
  * @param props.inputRef - The input element reference.
  * @param props.onReject - Callback function triggered when a file is rejected.
  * @param props.onResetRef - Callback function triggered when the attachments are reset.
@@ -57,6 +58,18 @@ export default function AttachmentsPreview(props) {
   const revokeAll = (list) => list.forEach((a) => a.url && URL.revokeObjectURL(a.url));
 
   const emitNames = (list) => props.onNamesChange && props.onNamesChange(list.map((a) => a.name));
+  const emitFiles = (list) => props.onFilesChange && props.onFilesChange(list.map((a) => a.file));
+
+  const readFiles = () =>
+    (typeof props.files === "function" ? props.files() : props.files || []).filter(Boolean);
+
+  const replaceAttachments = (files, { emit = false } = {}) => {
+    revokeAll(untrack(() => attachments()));
+    const list = files.map(buildAttachment);
+    setAttachments(list);
+    emitNames(list);
+    if (emit) emitFiles(list);
+  };
 
   const syncFromInput = () => {
     const el = typeof props.inputRef === "function" ? props.inputRef() : props.inputRef;
@@ -91,10 +104,7 @@ export default function AttachmentsPreview(props) {
       }
     }
 
-    revokeAll(attachments());
-    const list = allowed.map(buildAttachment);
-    setAttachments(list);
-    emitNames(list);
+    replaceAttachments(allowed, { emit: true });
   };
 
   const removeAttachment = (id) => {
@@ -117,13 +127,20 @@ export default function AttachmentsPreview(props) {
 
     setAttachments(next);
     emitNames(next);
+    emitFiles(next);
   };
 
-  const reset = () => {
+  const reset = ({ emit = true } = {}) => {
     revokeAll(attachments());
     setAttachments([]);
     emitNames([]);
+    if (emit) emitFiles([]);
   };
+
+  createEffect(() => {
+    if (!("files" in props)) return;
+    replaceAttachments(readFiles());
+  });
 
   onMount(() => {
     props.onResetRef && props.onResetRef(reset);
@@ -137,12 +154,14 @@ export default function AttachmentsPreview(props) {
     el.addEventListener("change", handler);
     detach = () => el.removeEventListener("change", handler);
 
-    syncFromInput();
+    if (!("files" in props)) {
+      syncFromInput();
+    }
   });
 
   onCleanup(() => {
     detach && detach();
-    reset();
+    reset({ emit: false });
   });
 
   return html`

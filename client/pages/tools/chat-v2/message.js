@@ -60,7 +60,7 @@ function getSearchResults(toolResult) {
 }
 
 function isSummaryText(text = "") {
-  return typeof text === "string" && text.startsWith(CONVERSATION_SUMMARY_TOKEN);
+  return typeof text === "string" && text.trimStart().startsWith(CONVERSATION_SUMMARY_TOKEN);
 }
 
 export default function Message(p) {
