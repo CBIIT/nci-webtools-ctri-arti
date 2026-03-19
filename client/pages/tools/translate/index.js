@@ -108,7 +108,7 @@ function buildTranslationPrompt(targetLang, sourceLang, options = {}) {
 }
 
 async function runModel(params) {
-  const res = await fetch("/api/v1/model", {
+  const res = await fetch("/api/v1/model/invoke", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...params, type: "translate" }),
@@ -282,6 +282,7 @@ export default function Page() {
     store,
     setStore,
     defaultStore,
+    getUserEmail: () => user()?.email,
     getSnapshot: () => ({
       sourceFiles: sourceFiles(),
       targetLanguages: targetLanguages(),

@@ -8,10 +8,8 @@
     "./utils.js": "./utils.js",
     "./cron.js": "./cron.js",
     "./embeddings.js": "./embeddings.js",
-    "./clients/gateway.js": "./clients/gateway.js",
-    "./clients/cms.js": "./clients/cms.js",
-    "./clients/agents.js": "./clients/agents.js",
-    "./clients/users.js": "./clients/users.js",
+    "./gateway-usage.js": "./gateway-usage.js",
+    "./request-context.js": "./request-context.js",
     "./search.js": "./search.js",
     "./parsers.js": "./parsers.js",
     "./s3.js": "./s3.js",
@@ -19,10 +17,10 @@
     "./chunker.js": "./chunker.js"
   },
   "dependencies": {
-    "@huggingface/transformers": "^3.6.0",
-    "@aws-sdk/client-s3": "^3.1003.0",
+    "@huggingface/transformers": "^3.8.1",
+    "@aws-sdk/client-s3": "^3.1011.0",
     "lodash": "^4.17.23",
-    "mammoth": "^1.11.0",
+    "mammoth": "^1.12.0",
     "pdfjs-dist": "^5.5.207",
     "winston": "^3.19.0"
   }

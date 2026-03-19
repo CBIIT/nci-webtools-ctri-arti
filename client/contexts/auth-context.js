@@ -1,6 +1,6 @@
 import { createContext, createEffect, createMemo, onCleanup, useContext } from "solid-js";
 import html from "solid-js/html";
-import { createStore } from "solid-js/store";
+import { createStore, reconcile } from "solid-js/store";
 
 import { safeParseJson } from "../utils/parsers.js";
 
@@ -9,6 +9,19 @@ export const Status = {
   LOADED: "LOADED", // Successfully retrieved user data
   SAVING: "SAVING", // Saving user data updates
   ERROR: "ERROR", // Error retrieving user data
+};
+
+export const AUTH_STATE_STORAGE_KEY = "auth-state-sync";
+export const authSync = {
+  reload: () => window.location.reload(),
+  handleStorageEvent(event) {
+    if (event.key !== AUTH_STATE_STORAGE_KEY || !event.newValue) {
+      return false;
+    }
+
+    authSync.reload();
+    return true;
+  },
 };
 
 const initialState = () => ({
@@ -62,15 +75,29 @@ export const AuthProvider = (props) => {
     : null;
 
   const [state, setState] = createStore(cachedState || initialState());
+  const initialResolvedAuthState = cachedState?.isLoggedIn ?? false;
+  let hasResolvedInitialSession = false;
+  let lastResolvedAuthState = initialResolvedAuthState;
 
-  const getMyUser = async () => {
+  const getSessionHeaders = () => {
+    const apiKey = new URLSearchParams(location.search).get("apiKey");
+    return apiKey ? { "x-api-key": apiKey } : undefined;
+  };
+
+  const broadcastAuthState = (isLoggedIn) => {
+    localStorage.setItem(AUTH_STATE_STORAGE_KEY, JSON.stringify({ isLoggedIn, at: Date.now() }));
+  };
+
+  const fetchSession = async ({ method = "GET", signal } = {}) => {
     try {
-      const apiKey = new URLSearchParams(location.search).get("apiKey");
-      const headers = apiKey ? { "x-api-key": apiKey } : undefined;
-      const response = await fetch("/api/v1/session", { headers });
+      const response = await fetch("/api/v1/session", {
+        method,
+        headers: getSessionHeaders(),
+        signal,
+      });
 
       if (!response.ok) {
-        return { error: new Error("Failed to fetch session"), data: null };
+        return { error: new Error(`Failed to ${method === "POST" ? "refresh" : "fetch"} session`) };
       }
 
       const data = await response.json();
@@ -80,11 +107,51 @@ export const AuthProvider = (props) => {
     }
   };
 
+  const resetState = (status = Status.LOADING) => {
+    if (state.isLoggedIn) {
+      setState("isLoggedIn", false);
+    }
+    if (state.status !== status) {
+      setState("status", status);
+    }
+    if (state.user !== null) {
+      setState("user", null);
+    }
+    if (state.expires !== null) {
+      setState("expires", null);
+    }
+  };
+
+  const applySessionData = (data) => {
+    if (!data?.user) {
+      resetState(Status.LOADED);
+      return data;
+    }
+
+    if (!state.isLoggedIn) {
+      setState("isLoggedIn", true);
+    }
+    if (state.status !== Status.LOADED) {
+      setState("status", Status.LOADED);
+    }
+    if (state.user === null) {
+      setState("user", data.user);
+    } else {
+      setState("user", reconcile(data.user));
+    }
+    if (state.expires !== data.expires) {
+      setState("expires", data.expires ?? null);
+    }
+
+    return data;
+  };
+
   const logout = () => {
     if (!state.isLoggedIn) {
       return;
     }
 
+    broadcastAuthState(false);
     window.location.href = "/api/v1/logout";
 
     return;
@@ -93,24 +160,36 @@ export const AuthProvider = (props) => {
   const setData = (data) => {
     if (!state.isLoggedIn) return;
 
-    setState((prev) => ({ ...prev, user: { ...state.user, ...data } }));
+    setState("user", reconcile({ ...state.user, ...data }));
+  };
+
+  const checkSession = async () => {
+    const { data, error } = await fetchSession();
+    if (error) {
+      console.error("Error checking session", error);
+      return null;
+    }
+    return applySessionData(data);
   };
 
   const refreshSession = async () => {
-    try {
-      const apiKey = new URLSearchParams(location.search).get("apiKey");
-      const headers = apiKey ? { "x-api-key": apiKey } : undefined;
-      const response = await fetch("/api/v1/session", { method: "POST", headers });
-      if (!response.ok) return;
-      const data = await response.json();
-      if (data.user) setState((prev) => ({ ...prev, user: data.user, expires: data.expires }));
-    } catch (e) {
-      console.error("Error refreshing session", e);
+    const { data, error } = await fetchSession({ method: "POST" });
+    if (error) {
+      console.error("Error refreshing session", error);
+      return null;
     }
+
+    return applySessionData(data);
   };
 
   const updateExpires = (expires) => {
-    setState((prev) => ({ ...prev, expires }));
+    if (state.expires !== expires) {
+      setState("expires", expires);
+    }
+  };
+
+  const onStorage = (event) => {
+    authSync.handleStorageEvent(event);
   };
 
   createEffect(() => {
@@ -118,31 +197,41 @@ export const AuthProvider = (props) => {
     const { signal } = controller;
 
     (async () => {
-      const { data, error } = await getMyUser();
+      const { data, error } = await fetchSession({ signal });
 
       if (signal.aborted) {
         return;
       }
 
       if (error) {
-        setState({ ...initialState(), status: Status.ERROR });
-        return;
-      }
-      if (!data?.user) {
-        setState({ ...initialState(), status: Status.LOADED });
+        resetState(Status.ERROR);
         return;
       }
 
-      // User has an active session
-      setState({
-        isLoggedIn: true,
-        status: Status.LOADED,
-        user: data.user,
-        expires: data.expires,
-      });
+      applySessionData(data);
     })();
 
     onCleanup(() => controller.abort());
+  });
+
+  createEffect(() => {
+    if (state.status !== Status.LOADED) {
+      return;
+    }
+
+    if (!hasResolvedInitialSession) {
+      hasResolvedInitialSession = true;
+      if (state.isLoggedIn !== initialResolvedAuthState) {
+        broadcastAuthState(state.isLoggedIn);
+      }
+      lastResolvedAuthState = state.isLoggedIn;
+      return;
+    }
+
+    if (state.isLoggedIn !== lastResolvedAuthState) {
+      broadcastAuthState(state.isLoggedIn);
+      lastResolvedAuthState = state.isLoggedIn;
+    }
   });
 
   createEffect(() => {
@@ -153,6 +242,8 @@ export const AuthProvider = (props) => {
 
     localStorage.removeItem("userDetails");
   });
+  window.addEventListener("storage", onStorage);
+  onCleanup(() => window.removeEventListener("storage", onStorage));
 
   const value = createMemo(() => ({
     status: () => state.status,
@@ -161,6 +252,7 @@ export const AuthProvider = (props) => {
     expires: () => state.expires,
     logout: () => logout(),
     setData: (data) => setData(data),
+    checkSession: () => checkSession(),
     refreshSession: () => refreshSession(),
     updateExpires: (expires) => updateExpires(expires),
   }));

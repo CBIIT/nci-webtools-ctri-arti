@@ -1,7 +1,7 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
-import { relations, sql } from "drizzle-orm";
+import { eq, relations, sql } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -32,7 +32,7 @@ export const User = pgTable(
     firstName: text("firstName"),
     lastName: text("lastName"),
     status: text("status"),
-    roleID: integer("roleID"),
+    roleID: integer("roleID").references(() => Role.id, { onDelete: "set null" }),
     apiKey: text("apiKey"),
     budget: doublePrecision("budget"),
     remaining: doublePrecision("remaining"),
@@ -71,8 +71,12 @@ export const RolePolicy = pgTable(
   "RolePolicy",
   {
     id: serial("id").primaryKey(),
-    roleID: integer("roleID"),
-    policyID: integer("policyID"),
+    roleID: integer("roleID")
+      .notNull()
+      .references(() => Role.id, { onDelete: "cascade" }),
+    policyID: integer("policyID")
+      .notNull()
+      .references(() => Policy.id, { onDelete: "cascade" }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -94,7 +98,7 @@ export const Model = pgTable(
   "Model",
   {
     id: serial("id").primaryKey(),
-    providerID: integer("providerID"),
+    providerID: integer("providerID").references(() => Provider.id, { onDelete: "set null" }),
     name: text("name"),
     internalName: text("internalName"),
     type: text("type"),
@@ -123,11 +127,12 @@ export const Usage = pgTable(
   "Usage",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    modelID: integer("modelID"),
+    userID: integer("userID").references(() => User.id, { onDelete: "cascade" }),
+    modelID: integer("modelID").references(() => Model.id, { onDelete: "set null" }),
+    requestId: text("requestId"),
     type: text("type"),
-    agentID: integer("agentID"),
-    messageID: integer("messageID"),
+    agentID: integer("agentID").references(() => Agent.id, { onDelete: "set null" }),
+    messageID: integer("messageID").references(() => Message.id, { onDelete: "set null" }),
     quantity: doublePrecision("quantity"),
     unit: text("unit"),
     unitCost: doublePrecision("unitCost"),
@@ -140,6 +145,7 @@ export const Usage = pgTable(
   (t) => [
     index("Usage_userID_idx").on(t.userID),
     index("Usage_modelID_idx").on(t.modelID),
+    index("Usage_requestId_idx").on(t.requestId),
     index("Usage_createdAt_idx").on(t.createdAt),
     index("Usage_userID_createdAt_idx").on(t.userID, t.createdAt),
     index("Usage_unit_idx").on(t.unit),
@@ -164,15 +170,41 @@ export const Prompt = pgTable(
   ]
 );
 
+export const Guardrail = pgTable(
+  "Guardrail",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name"),
+    description: text("description"),
+    blockedInputMessaging: text("blockedInputMessaging"),
+    blockedOutputsMessaging: text("blockedOutputsMessaging"),
+    policyConfig: json("policyConfig"),
+    awsGuardrailId: text("awsGuardrailId"),
+    awsGuardrailArn: text("awsGuardrailArn"),
+    awsGuardrailVersion: text("awsGuardrailVersion"),
+    specHash: text("specHash"),
+    lastSyncError: text("lastSyncError"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    uniqueIndex("Guardrail_name_idx").on(t.name),
+    index("Guardrail_awsGuardrailId_idx").on(t.awsGuardrailId),
+  ]
+);
+
 export const Agent = pgTable(
   "Agent",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    modelID: integer("modelID"),
+    userID: integer("userID").references(() => User.id, { onDelete: "cascade" }),
+    modelID: integer("modelID").references(() => Model.id, { onDelete: "set null" }),
     name: text("name"),
     description: text("description"),
-    promptID: integer("promptID"),
+    promptID: integer("promptID").references(() => Prompt.id, { onDelete: "set null" }),
+    guardrailID: integer("guardrailID").references(() => Guardrail.id, { onDelete: "set null" }),
     modelParameters: json("modelParameters"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -183,6 +215,7 @@ export const Agent = pgTable(
     index("Agent_userID_idx").on(t.userID),
     index("Agent_modelID_idx").on(t.modelID),
     index("Agent_promptID_idx").on(t.promptID),
+    index("Agent_guardrailID_idx").on(t.guardrailID),
   ]
 );
 
@@ -203,12 +236,16 @@ export const Conversation = pgTable(
   "Conversation",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    agentID: integer("agentID"),
+    userID: integer("userID")
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade" }),
+    agentID: integer("agentID").references(() => Agent.id, { onDelete: "set null" }),
     title: text("title"),
     deleted: boolean("deleted").default(false),
     deletedAt: timestamp("deletedAt", { withTimezone: true }),
-    summaryMessageID: integer("summaryMessageID"),
+    summaryMessageID: integer("summaryMessageID").references(() => Message.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -225,8 +262,10 @@ export const Message = pgTable(
   "Message",
   {
     id: serial("id").primaryKey(),
-    conversationID: integer("conversationID"),
-    parentID: integer("parentID"),
+    conversationID: integer("conversationID")
+      .notNull()
+      .references(() => Conversation.id, { onDelete: "cascade" }),
+    parentID: integer("parentID").references(() => Message.id, { onDelete: "set null" }),
     role: text("role"),
     content: json("content"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
@@ -244,10 +283,12 @@ export const Resource = pgTable(
   "Resource",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    agentID: integer("agentID"),
-    conversationID: integer("conversationID"),
-    messageID: integer("messageID"),
+    userID: integer("userID").references(() => User.id, { onDelete: "cascade" }),
+    agentID: integer("agentID").references(() => Agent.id, { onDelete: "set null" }),
+    conversationID: integer("conversationID").references(() => Conversation.id, {
+      onDelete: "cascade",
+    }),
+    messageID: integer("messageID").references(() => Message.id, { onDelete: "set null" }),
     name: text("name"),
     type: text("type"),
     content: text("content"),
@@ -270,9 +311,11 @@ export const Vector = pgTable(
   "Vector",
   {
     id: serial("id").primaryKey(),
-    conversationID: integer("conversationID"),
-    resourceID: integer("resourceID"),
-    toolID: integer("toolID"),
+    conversationID: integer("conversationID").references(() => Conversation.id, {
+      onDelete: "cascade",
+    }),
+    resourceID: integer("resourceID").references(() => Resource.id, { onDelete: "cascade" }),
+    toolID: integer("toolID").references(() => Tool.id, { onDelete: "set null" }),
     order: integer("order"),
     content: text("content"),
     embedding: vector("embedding", { dimensions: NOVA_EMBEDDING_DIMENSIONS }),
@@ -297,8 +340,12 @@ export const UserAgent = pgTable(
   "UserAgent",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    agentID: integer("agentID"),
+    userID: integer("userID")
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade" }),
+    agentID: integer("agentID")
+      .notNull()
+      .references(() => Agent.id, { onDelete: "cascade" }),
     role: text("role"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -312,8 +359,12 @@ export const UserTool = pgTable(
   "UserTool",
   {
     id: serial("id").primaryKey(),
-    userID: integer("userID"),
-    toolID: integer("toolID"),
+    userID: integer("userID")
+      .notNull()
+      .references(() => User.id, { onDelete: "cascade" }),
+    toolID: integer("toolID")
+      .notNull()
+      .references(() => Tool.id, { onDelete: "cascade" }),
     credential: json("credential"),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
@@ -327,8 +378,12 @@ export const AgentTool = pgTable(
   "AgentTool",
   {
     id: serial("id").primaryKey(),
-    toolID: integer("toolID"),
-    agentID: integer("agentID"),
+    toolID: integer("toolID")
+      .notNull()
+      .references(() => Tool.id, { onDelete: "cascade" }),
+    agentID: integer("agentID")
+      .notNull()
+      .references(() => Agent.id, { onDelete: "cascade" }),
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true })
       .defaultNow()
@@ -392,10 +447,15 @@ export const promptRelations = relations(Prompt, ({ many }) => ({
   Agents: many(Agent),
 }));
 
+export const guardrailRelations = relations(Guardrail, ({ many }) => ({
+  Agents: many(Agent),
+}));
+
 export const agentRelations = relations(Agent, ({ one, many }) => ({
   User: one(User, { fields: [Agent.userID], references: [User.id] }),
   Model: one(Model, { fields: [Agent.modelID], references: [Model.id] }),
   Prompt: one(Prompt, { fields: [Agent.promptID], references: [Prompt.id] }),
+  Guardrail: one(Guardrail, { fields: [Agent.guardrailID], references: [Guardrail.id] }),
   Conversations: many(Conversation),
   Resources: many(Resource),
   UserAgents: many(UserAgent),
@@ -470,6 +530,7 @@ export const tables = {
   Model,
   Usage,
   Prompt,
+  Guardrail,
   Agent,
   Tool,
   Conversation,
@@ -489,9 +550,19 @@ export const tables = {
  * When `t` is omitted, uses this module's PG tables. For SQLite, pass the SQLite tables.
  */
 export async function seedDatabase(db) {
-  const { sql, eq } = await import("drizzle-orm");
-
-  const T = { Role, Policy, RolePolicy, Provider, Model, Prompt, Agent, Tool, AgentTool, User };
+  const T = {
+    Role,
+    Policy,
+    RolePolicy,
+    Provider,
+    Model,
+    Prompt,
+    Guardrail,
+    Agent,
+    Tool,
+    AgentTool,
+    User,
+  };
 
   const roles = loadCsv(resolve(dataDir, "roles.csv"));
   const policies = loadCsv(resolve(dataDir, "policies.csv"));
@@ -499,6 +570,7 @@ export async function seedDatabase(db) {
   const providers = loadCsv(resolve(dataDir, "providers.csv"));
   const modelRows = loadCsv(resolve(dataDir, "models.csv"));
   const prompts = loadCsv(resolve(dataDir, "prompts.csv"));
+  const guardrails = loadCsv(resolve(dataDir, "guardrails.csv"));
   const agents = loadCsv(resolve(dataDir, "agents.csv"));
   const tools = loadCsv(resolve(dataDir, "tools.csv"));
   const agentTools = loadCsv(resolve(dataDir, "agent-tools.csv"));
@@ -541,7 +613,14 @@ export async function seedDatabase(db) {
     "maxReasoning",
   ]);
   await upsert(T.Prompt, prompts, T.Prompt.id, ["name", "version", "content"]);
-  await upsert(T.Agent, agents, T.Agent.id, ["name", "modelID", "promptID"]);
+  await upsert(T.Guardrail, guardrails, T.Guardrail.id, [
+    "name",
+    "description",
+    "blockedInputMessaging",
+    "blockedOutputsMessaging",
+    "policyConfig",
+  ]);
+  await upsert(T.Agent, agents, T.Agent.id, ["name", "modelID", "promptID", "guardrailID"]);
   await upsert(T.Tool, tools, T.Tool.id, ["name", "description", "type"]);
   await upsert(T.AgentTool, agentTools, T.AgentTool.id, ["agentID", "toolID"]);
 

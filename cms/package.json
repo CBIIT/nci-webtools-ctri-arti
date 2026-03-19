@@ -5,11 +5,15 @@
   "exports": {
     ".": "./index.js",
     "./api.js": "./api.js",
-    "./conversation.js": "./conversation.js"
+    "./http.js": "./http.js",
+    "./remote.js": "./remote.js",
+    "./service.js": "./service.js",
+    "./app.js": "./app.js",
+    "./core/conversation-service.js": "./core/conversation-service.js"
   },
   "scripts": {
     "start": "node --env-file .env index.js",
-    "reindex:vectors": "node reindex-resource-vectors.js"
+    "reindex:vectors": "node scripts/reindex-resource-vectors.js"
   },
   "dependencies": {
     "database": "*",

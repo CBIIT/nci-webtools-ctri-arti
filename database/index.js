@@ -5,6 +5,8 @@ import { fileURLToPath } from "url";
 import { sql } from "drizzle-orm";
 import logger from "shared/logger.js";
 
+import { getResultRows } from "./sync.js";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const migrationsFolder = resolve(__dirname, "migrations");
 const initSql = readFileSync(resolve(__dirname, "init.sql"), "utf-8");
@@ -12,6 +14,7 @@ const initSql = readFileSync(resolve(__dirname, "init.sql"), "utf-8");
 const {
   DB_STORAGE,
   DB_SKIP_SYNC = "false",
+  DB_SKIP_AUDIT = "false",
   PGHOST,
   PGPORT,
   PGDATABASE,
@@ -30,7 +33,9 @@ async function runMigrations(execFn) {
   // Query already-applied migrations
   const result = await execFn(`SELECT "name" FROM "Migration"`);
   const applied = new Set(
-    (Array.isArray(result) ? result : (result?.rows ?? [])).map((r) => r.name)
+    getResultRows(result)
+      .map((row) => row.name)
+      .filter(Boolean)
   );
 
   const migrationFiles = readdirSync(migrationsFolder)
@@ -50,6 +55,26 @@ async function runMigrations(execFn) {
     }
     await execFn(`INSERT INTO "Migration" ("name") VALUES ('${file}')`);
     logger.info(`migration applied: ${file}`);
+  }
+}
+
+async function ensureRelationalIntegrity(db) {
+  if (DB_SKIP_AUDIT === "true") return;
+
+  const { auditRelationalIntegrity } = await import("./relational-audit.js");
+  const audit = await auditRelationalIntegrity(db);
+  const orphaned = audit.orphanedRows.filter((entry) => entry.count > 0);
+  const nullable = audit.nullableViolations.filter((entry) => entry.count > 0);
+
+  if (audit.missingForeignKeys.length || orphaned.length || nullable.length) {
+    throw new Error(
+      [
+        "Relational integrity audit failed after database sync.",
+        `missingForeignKeys=${JSON.stringify(audit.missingForeignKeys)}`,
+        `orphanedRows=${JSON.stringify(orphaned)}`,
+        `nullableViolations=${JSON.stringify(nullable)}`,
+      ].join(" ")
+    );
   }
 }
 
@@ -80,6 +105,7 @@ if (!usePg) {
 
     const { seedDatabase } = schema;
     await seedDatabase(db);
+    await ensureRelationalIntegrity(db);
   }
 } else {
   // PostgreSQL mode (production)
@@ -105,6 +131,7 @@ if (!usePg) {
 
     const { seedDatabase } = schema;
     await seedDatabase(db);
+    await ensureRelationalIntegrity(db);
   }
 }
 
@@ -116,6 +143,7 @@ export const {
   Provider,
   Model,
   Prompt,
+  Guardrail,
   Agent,
   Conversation,
   Message,

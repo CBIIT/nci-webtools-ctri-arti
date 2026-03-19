@@ -17,13 +17,14 @@ import {
   registerErrorDataCollector,
   unregisterErrorDataCollector,
 } from "../../utils/global-error-handler.js";
+import { fetchCachedJson } from "../../utils/static-data.js";
 import { capitalize } from "../../utils/utils.js";
 
 import { formatDate, formatDateInputForDisplay } from "./date-utils.js";
 
 export { formatDate, formatDateInputForDisplay } from "./date-utils.js";
 
-const fetchConfig = () => fetch("/api/config").then((r) => r.json());
+const fetchConfig = () => fetchCachedJson("/api/config");
 
 // Shared date range utilities
 export const VALID_DATE_RANGES = [
@@ -103,6 +104,15 @@ export function validateDateRange(dateRange, defaultRange = "Last 30 Days") {
   return VALID_DATE_RANGES.includes(dateRange) ? dateRange : defaultRange;
 }
 
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value || 0);
+}
+
 function UsersList() {
   const [config] = createResource(fetchConfig);
   const [selectedDateRange, setSelectedDateRange] = createSignal("This Week");
@@ -138,13 +148,11 @@ function UsersList() {
 
   const [rolesResource] = createResource(async () => {
     try {
-      const response = await fetch("/api/v1/admin/roles");
-      if (!response.ok) {
-        await handleHttpError(response, "fetching roles");
-        return [];
-      }
-      return response.json();
+      return await fetchCachedJson("/api/v1/admin/roles");
     } catch (err) {
+      if (err.response) {
+        await handleHttpError(err.response, "fetching roles");
+      }
       const error = new Error("Something went wrong while retrieving roles.");
       error.cause = err;
       handleError(error, "Roles API Error");
@@ -156,7 +164,7 @@ function UsersList() {
   const [searchQuery, setSearchQuery] = createSignal("");
   const [selectedRole, setSelectedRole] = createSignal("All");
   const [selectedStatus, setSelectedStatus] = createSignal("active");
-  const [sortColumn, setSortColumn] = createSignal("estimatedCost");
+  const [sortColumn, setSortColumn] = createSignal("totalCost");
   const [sortOrder, setSortOrder] = createSignal("desc");
   const [currentPage, setCurrentPage] = createSignal(1);
   const rowsPerPage = 20;
@@ -232,12 +240,11 @@ function UsersList() {
         email: user.email,
         role: userStats.Role?.name || "No Role",
         roleID: user.roleID,
-        totalTokens: Math.round(
-          (userStats.totalInputTokens || 0) + (userStats.totalOutputTokens || 0)
-        ),
-        costLimit: limitDisplay,
-        estimatedCost: parseFloat(Number(userStats.totalCost || 0).toFixed(2)),
         totalRequests: userStats.totalRequests || 0,
+        usageCost: Number(userStats.usageCost || 0),
+        guardrailCost: Number(userStats.guardrailCost || 0),
+        totalCost: Number(userStats.totalCost || 0),
+        costLimit: limitDisplay,
       };
     });
   });
@@ -485,9 +492,21 @@ function UsersList() {
               render: (user) => user.role || "No Role",
             },
             {
-              key: "totalTokens",
-              title: "Total Tokens",
+              key: "totalRequests",
+              title: "Requests",
               cellClassName: "small",
+            },
+            {
+              key: "usageCost",
+              title: "Usage Cost ($)",
+              cellClassName: "small",
+              render: (user) => formatCurrency(user.usageCost),
+            },
+            {
+              key: "guardrailCost",
+              title: "Guardrail Cost ($)",
+              cellClassName: "small",
+              render: (user) => formatCurrency(user.guardrailCost),
             },
             {
               key: "costLimit",
@@ -495,9 +514,10 @@ function UsersList() {
               cellClassName: "small",
             },
             {
-              key: "estimatedCost",
-              title: "Estimated Cost ($)",
+              key: "totalCost",
+              title: "Total Cost ($)",
               cellClassName: "small",
+              render: (user) => formatCurrency(user.totalCost),
             },
             {
               key: "action",

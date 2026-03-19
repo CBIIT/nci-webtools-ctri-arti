@@ -9,6 +9,7 @@ import { fileToBase64, splitFilename } from "../../../utils/parsers.js";
 import { getClientContext, runTool } from "../../../utils/tools.js";
 import { jsonToXml } from "../../../utils/xml.js";
 
+import { titleSystemPrompt } from "./chat-title-config.js";
 import { systemPrompt, tools } from "./config.js";
 
 /**
@@ -81,6 +82,24 @@ function sanitizeTitle(rawTitle) {
 }
 
 /**
+ * Typewrite new characters from a title string starting at a given offset.
+ *
+ * @param {string} text - The full text to typewrite.
+ * @param {number} from - Character index to start from.
+ * @param {(partial: string) => void} onUpdate - Called with the visible text each tick.
+ * @param {number} [delay=30] - Milliseconds between each character.
+ * @returns {Promise<number>} The number of characters displayed after completion.
+ */
+async function typewriteTitle(text, from, onUpdate, delay = 30) {
+  for (let i = from; i < text.length; i++) {
+    onUpdate(text.slice(0, i + 1));
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+
+  return text.length;
+}
+
+/**
  * Get current project ID from URL
  * @returns {string} - "2" for FedPulse, "1" for Default
  */
@@ -96,6 +115,8 @@ export function useChat() {
   const [loading, setLoading] = createSignal(false);
   const [userEmail, setUserEmail] = createSignal(null);
   const [db, setDB] = createSignal(null);
+  const [isTitleGenerating, setIsTitleGenerating] = createSignal(false);
+  let titleManuallyRenamed = false;
 
   // Initialize user session and database
   const initializeDatabase = async () => {
@@ -196,6 +217,10 @@ export function useChat() {
     const targetConversationId = conversationId || conversation?.id;
     if (!database || !targetConversationId) return;
 
+    if (updates?.title) {
+      titleManuallyRenamed = true;
+    }
+
     try {
       await database.updateConversation(targetConversationId, updates);
 
@@ -216,14 +241,14 @@ export function useChat() {
   };
 
   /**
-   * Generate a conversation title after the first completed exchange.
-   * Uses the existing systemPrompt and full message history.
+   * Generate a conversation title from the user's first message.
+   * Streams the response and typewriters the title into the UI as chunks arrive.
    *
    * @param {Object} params
    * @param {string} params.model - The model identifier to use.
-   * @param {Object} params.context - Client context object.
+   * @param {Object} params.userMessage - The first user message to derive a title from.
    */
-  const generateConversationTitle = async ({ model, context }) => {
+  const generateConversationTitle = async ({ model, userMessage }) => {
     if (!conversation?.id) {
       return;
     }
@@ -233,37 +258,45 @@ export function useChat() {
       return;
     }
 
+    titleManuallyRenamed = false;
+    setIsTitleGenerating(true);
+
     try {
-      const baseMessages = structuredClone(unwrap(messages));
-      const titleSystemPrompt = systemPrompt(getClientContext(context));
+      const titleMessages = userMessage ? [userMessage] : structuredClone(unwrap(messages));
+      const conversationContext = titleMessages
+        .map((m) => {
+          const text = m.content
+            ?.map((c) => c.text || "")
+            .filter(Boolean)
+            .join(" ");
+          return text;
+        })
+        .join("\n");
+
       const titleInstructionMessage = {
         role: "user",
         content: [
           {
             text:
-              "You are helping name this chat between a user and an AI assistant.\n\n" +
-              "Based on the entire conversation so far, respond with ONLY a short title that follows ALL of these rules:\n" +
-              "- Maximum 30 characters (count spaces).\n" +
-              "- Clear, specific, and relevant to what the user and assistant discussed.\n" +
-              "- Use only letters, numbers, and spaces (no punctuation, emojis, or other special characters).\n" +
-              "- No quotation marks.\n" +
-              "- No line breaks.\n" +
-              "- If your draft is longer than 30 characters, shorten it before responding.\n\n" +
-              "Respond with the title text only.",
+              "Generate a title for the following message.\n\n" +
+              "<message>\n" +
+              conversationContext +
+              "\n</message>\n\n" +
+              "Remember: Output ONLY the title (30 characters or fewer, letters/numbers/spaces only). Nothing else.",
           },
         ],
       };
 
-      const response = await fetch("/api/v1/model", {
+      const response = await fetch("/api/v1/model/invoke", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           model,
-          tools,
-          messages: [...baseMessages, titleInstructionMessage],
-          system: titleSystemPrompt,
+          tools: [],
+          messages: [titleInstructionMessage],
+          system: titleSystemPrompt(),
           thoughtBudget: 0,
-          stream: false,
+          stream: true,
           type: "chat-title",
         }),
       });
@@ -273,20 +306,48 @@ export function useChat() {
         return;
       }
 
-      const json = await response.json();
-
-      const contentBlocks = json?.output?.message?.content;
+      const decoder = new TextDecoder();
       let rawTitle = "";
+      let displayedLength = 0;
+      const onTitleUpdate = (title) => setConversation((prev) => ({ ...prev, title }));
 
-      if (Array.isArray(contentBlocks)) {
-        rawTitle = contentBlocks
-          .map((block) => (typeof block?.text === "string" ? block.text : ""))
-          .join(" ")
-          .trim();
+      for await (const chunk of readStream(response)) {
+        if (titleManuallyRenamed) {
+          break;
+        }
+
+        const values = decoder
+          .decode(chunk, { stream: true })
+          .trim()
+          .split("\n")
+          .filter(Boolean)
+          .map((e) => JSON.parse(e));
+
+        for (const value of values) {
+          const { contentBlockDelta } = value;
+
+          if (contentBlockDelta?.delta?.text) {
+            rawTitle += contentBlockDelta.delta.text;
+          }
+        }
+
+        if (!titleManuallyRenamed) {
+          displayedLength = await typewriteTitle(
+            sanitizeTitle(rawTitle),
+            displayedLength,
+            onTitleUpdate
+          );
+        }
+      }
+
+      if (titleManuallyRenamed) {
+        return;
       }
 
       const sanitizedTitle = sanitizeTitle(rawTitle);
-      if (!sanitizedTitle) {
+      displayedLength = await typewriteTitle(sanitizedTitle, displayedLength, onTitleUpdate);
+
+      if (titleManuallyRenamed || !sanitizedTitle) {
         return;
       }
 
@@ -298,6 +359,8 @@ export function useChat() {
       );
       wrappedError.cause = error;
       handleError(wrappedError, "Generate Title Error");
+    } finally {
+      setIsTitleGenerating(false);
     }
   };
 
@@ -470,6 +533,13 @@ export function useChat() {
     setMessages(messages.length, userMessage);
     reset?.();
 
+    if (isFirstUserMessage) {
+      generateConversationTitle({
+        model: MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5,
+        userMessage,
+      });
+    }
+
     // Store user message in database (as array)
     if (database && conversation.id) {
       try {
@@ -490,7 +560,7 @@ export function useChat() {
       setLoading(true);
 
       while (!isComplete) {
-        const response = await fetch("/api/v1/model", {
+        const response = await fetch("/api/v1/model/invoke", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -709,13 +779,6 @@ export function useChat() {
           }
         }
       }
-
-      if (isFirstUserMessage) {
-        await generateConversationTitle({
-          model: MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5,
-          context,
-        });
-      }
     } catch (error) {
       console.error("Error sending message:", error);
       const wrappedError = new Error("Something went wrong while sending your message.");
@@ -736,5 +799,6 @@ export function useChat() {
     loading,
     loadConversation,
     userEmail,
+    isTitleGenerating,
   };
 }

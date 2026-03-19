@@ -24,6 +24,7 @@
     "db:sql": "psql \"postgresql://postgres:postgres@127.0.0.1:5433/postgres?sslmode=disable&gssencmode=disable\"",
     "db:generate": "drizzle-kit generate",
     "db:audit-vectors": "node database/scripts/audit-vector-schema.js",
+    "db:audit-relations": "node database/scripts/audit-relational-integrity.js",
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
     "prepare": "husky || true"
@@ -44,12 +45,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "drizzle-kit": "^0.31.9",
-    "eslint": "^10.0.2",
-    "eslint-plugin-import-x": "^4.16.1",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^10.0.3",
+    "eslint-plugin-import-x": "^4.16.2",
     "globals": "^17.4.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.3.2",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.8.1"
   }
 }

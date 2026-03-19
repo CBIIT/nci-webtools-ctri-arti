@@ -105,10 +105,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  budgetResetSchedule:
-                    type: string
-                    description: Cron expression for budget reset schedule
-                    example: "0 0 * * *"
                   budgetLabel:
                     type: string
                     description: Human-readable period label (e.g., "Daily", "Weekly")
@@ -117,9 +113,14 @@ paths:
                     type: string
                     description: Human-readable reset description for error messages
                     example: "tomorrow at 12:00 AM"
+                  usageTypes:
+                    type: array
+                    description: Common usage type labels plus available agent names.
+                    items:
+                      type: string
 
   # ===== MODEL INFERENCE =====
-  /api/model:
+  /api/model/invoke:
     post:
       operationId: infer
       summary: Run AI model inference
@@ -770,7 +771,7 @@ paths:
         schema:
           type: integer
     post:
-      operationId: addMessage
+      operationId: appendConversationMessage
       summary: Add a message
       tags: [Conversations]
       security:
@@ -841,7 +842,7 @@ paths:
 
   /api/resources:
     post:
-      operationId: addResource
+      operationId: storeConversationResource
       summary: Create a resource
       tags: [Conversations]
       security:
@@ -891,7 +892,7 @@ paths:
         "200":
           description: Resource details
     delete:
-      operationId: deleteResource
+      operationId: deleteConversationResource
       summary: Delete a resource
       description: Cascading delete — removes vectors.
       tags: [Conversations]
@@ -928,7 +929,7 @@ paths:
         schema:
           type: integer
     post:
-      operationId: addVectors
+      operationId: storeConversationVectors
       summary: Add vectors to a conversation
       tags: [Conversations]
       security:

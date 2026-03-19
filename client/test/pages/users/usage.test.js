@@ -5,27 +5,173 @@ import {
   normalizeUtcTimestamp,
 } from "../../../pages/users/date-utils.js";
 import assert from "../../assert.js";
-import { mountApp, waitForElement } from "../../helpers.js";
+import {
+  installMockFetch,
+  jsonResponse,
+  mountApp,
+  waitForCondition,
+  waitForElement,
+  waitForNetworkIdle,
+} from "../../helpers.js";
 import test from "../../test.js";
 
-const urlParams = new URLSearchParams(window.location.search);
-const TEST_API_KEY = urlParams.get("apiKey");
+const testUser = {
+  id: 1,
+  email: "integration@example.org",
+  firstName: "Integration",
+  lastName: "Tester",
+  budget: 10,
+  remaining: 9.59,
+  status: "active",
+  roleID: 1,
+  Role: { id: 1, name: "admin" },
+};
 
-function headers(extra = {}) {
-  const h = { "Content-Type": "application/json", ...extra };
-  if (TEST_API_KEY) h["x-api-key"] = TEST_API_KEY;
-  return h;
+const usageRows = [
+  {
+    id: 1,
+    requestId: "req-abc",
+    modelID: 101,
+    type: "chat",
+    modelName: "Mock Model",
+    quantity: 100,
+    unit: "input_tokens",
+    cost: 0.25,
+    createdAt: "2026-03-16T21:33:08Z",
+  },
+  {
+    id: 2,
+    requestId: "req-abc",
+    modelID: 202,
+    type: "guardrail",
+    modelName: "AWS Guardrails",
+    quantity: 2,
+    unit: "content_policy_units",
+    cost: 0.01,
+    createdAt: "2026-03-16T21:33:08Z",
+  },
+  {
+    id: 3,
+    requestId: "unknown",
+    modelID: 303,
+    type: "chat-title",
+    modelName: "Chat Title",
+    quantity: 20,
+    unit: "input_tokens",
+    cost: 0.05,
+    createdAt: "2026-03-16T21:30:00Z",
+  },
+];
+
+function createUsagePageHandler(overrideHandler) {
+  return ({ url, input, init, originalFetch }) => {
+    const overridden = overrideHandler?.({ url, input, init, originalFetch });
+    if (overridden) {
+      return overridden;
+    }
+
+    if (url.pathname === "/api/v1/session") {
+      return jsonResponse({ user: testUser, expires: "2099-01-01T00:00:00.000Z" });
+    }
+
+    if (url.pathname === "/api/config") {
+      return jsonResponse({ budgetLabel: "Monthly" });
+    }
+
+    if (url.pathname === "/api/v1/admin/roles") {
+      return jsonResponse([
+        { id: 1, name: "admin" },
+        { id: 2, name: "super_admin" },
+        { id: 3, name: "user" },
+      ]);
+    }
+
+    if (url.pathname === `/api/v1/admin/users/${testUser.id}`) {
+      return jsonResponse(testUser);
+    }
+
+    if (url.pathname === "/api/v1/admin/analytics") {
+      const groupBy = url.searchParams.get("groupBy");
+      const userId = url.searchParams.get("userId");
+
+      if (groupBy === "user" && userId) {
+        return jsonResponse({
+          data: [{ totalRequests: 3, usageCost: 0.3, guardrailCost: 0.01, totalCost: 0.31 }],
+        });
+      }
+
+      if (groupBy === "user") {
+        return jsonResponse({
+          data: [
+            {
+              userID: testUser.id,
+              User: testUser,
+              Role: testUser.Role,
+              totalRequests: 3,
+              usageCost: 0.3,
+              guardrailCost: 0.01,
+              totalCost: 0.31,
+            },
+          ],
+          meta: { total: 1 },
+        });
+      }
+
+      if (groupBy === "day") {
+        return jsonResponse({
+          data: [
+            {
+              period: "2026-03-16T00:00:00Z",
+              totalRequests: 2,
+              usageCost: 0.3,
+              guardrailCost: 0.01,
+              totalCost: 0.31,
+            },
+          ],
+        });
+      }
+
+      if (groupBy === "model") {
+        return jsonResponse({
+          data: [{ Model: { name: "Mock Model" }, totalRequests: 2, totalCost: 0.3 }],
+        });
+      }
+
+      if (groupBy === "type") {
+        return jsonResponse({
+          data: [
+            { type: "chat", totalRequests: 2, totalCost: 0.3 },
+            { type: "guardrail", totalRequests: 1, totalCost: 0.01 },
+          ],
+        });
+      }
+    }
+
+    if (url.pathname === "/api/v1/admin/usage") {
+      return jsonResponse({ data: usageRows });
+    }
+
+    return originalFetch(input, init);
+  };
 }
 
-async function api(method, path, body) {
-  const opts = { method, headers: headers() };
-  if (body !== undefined) opts.body = JSON.stringify(body);
-  const res = await fetch(`/api/v1${path}`, opts);
-  const json = await res.json();
-  return { status: res.status, json };
+function mountUsagePage(path, overrideHandler) {
+  const restoreFetch = installMockFetch(createUsagePageHandler(overrideHandler));
+  const mounted = mountApp(path);
+
+  return {
+    ...mounted,
+    restoreFetch,
+  };
 }
 
-let testUser;
+function cleanupMountedPage({ container, dispose, restoreFetch }) {
+  restoreFetch?.();
+  dispose();
+  if (container.parentNode === document.body) {
+    document.body.removeChild(container);
+  }
+}
 
 test("Usage date utilities", async (t) => {
   await t.test("formatDate keeps local calendar date", () => {
@@ -57,12 +203,9 @@ test("Usage date utilities", async (t) => {
 });
 
 test("Usage Dashboard Tests", async (t) => {
-  // Fetch session to get test user before subtests
-  const { json: sessionData } = await api("GET", "/session");
-  testUser = sessionData.user;
-
   await t.test("/_/usage renders AI Usage Dashboard heading", async () => {
-    const { container, errors, dispose } = mountApp("/_/usage");
+    const page = mountUsagePage("/_/usage");
+    const { container, errors } = page;
     try {
       const h1 = await waitForElement(container, "h1", (el) =>
         el.textContent.includes("AI Usage Dashboard")
@@ -70,13 +213,13 @@ test("Usage Dashboard Tests", async (t) => {
       assert.ok(h1, "Should render AI Usage Dashboard heading");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/usage has filter controls", async () => {
-    const { container, errors, dispose } = mountApp("/_/usage");
+    const page = mountUsagePage("/_/usage");
+    const { container, errors } = page;
     try {
       await waitForElement(container, "h1", (el) => el.textContent.includes("AI Usage Dashboard"));
 
@@ -91,13 +234,13 @@ test("Usage Dashboard Tests", async (t) => {
       assert.ok(dateRangeFilter, "Date range filter should exist");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/usage table has expected columns", async () => {
-    const { container, errors, dispose } = mountApp("/_/usage");
+    const page = mountUsagePage("/_/usage");
+    const { container, errors } = page;
     try {
       const table = await waitForElement(container, "table");
       assert.ok(table, "Table should exist");
@@ -118,20 +261,24 @@ test("Usage Dashboard Tests", async (t) => {
         "Should have User Role column"
       );
       assert.ok(
-        headers.some((h) => h.includes("Input Tokens")),
-        "Should have Input Tokens column"
+        headers.some((h) => h.includes("Requests")),
+        "Should have Requests column"
       );
       assert.ok(
-        headers.some((h) => h.includes("Output Tokens")),
-        "Should have Output Tokens column"
+        headers.some((h) => h.includes("Usage Cost")),
+        "Should have Usage Cost column"
+      );
+      assert.ok(
+        headers.some((h) => h.includes("Guardrail Cost")),
+        "Should have Guardrail Cost column"
       );
       assert.ok(
         headers.some((h) => h.includes("Cost Limit")),
         "Should have Cost Limit column"
       );
       assert.ok(
-        headers.some((h) => h.includes("Estimated Cost")),
-        "Should have Estimated Cost column"
+        headers.some((h) => h.includes("Total Cost")),
+        "Should have Total Cost column"
       );
       assert.ok(
         headers.some((h) => h.includes("Action")),
@@ -139,13 +286,13 @@ test("Usage Dashboard Tests", async (t) => {
       );
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/usage: date range change to Last 30 Days works", async () => {
-    const { container, errors, dispose } = mountApp("/_/usage");
+    const page = mountUsagePage("/_/usage");
+    const { container, errors } = page;
     try {
       await waitForElement(container, "td", (el) => el.textContent.includes(testUser.email));
 
@@ -154,20 +301,20 @@ test("Usage Dashboard Tests", async (t) => {
 
       dateRange.selectedIndex = 1; // "Last 30 Days"
       dateRange.dispatchEvent(new InputEvent("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 500));
+      await waitForNetworkIdle();
       assert.strictEqual(
         errors.length,
         0,
         `Errors after date range change: ${errors.map((e) => e.message)}`
       );
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/usage: Custom date range shows inputs", async () => {
-    const { container, errors, dispose } = mountApp("/_/usage");
+    const page = mountUsagePage("/_/usage");
+    const { container, errors } = page;
     try {
       await waitForElement(container, "td", (el) => el.textContent.includes(testUser.email));
 
@@ -181,13 +328,13 @@ test("Usage Dashboard Tests", async (t) => {
       assert.ok(endDate, "Custom end date input should appear");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/usage: search filter works", async () => {
-    const { container, errors, dispose } = mountApp("/_/usage");
+    const page = mountUsagePage("/_/usage");
+    const { container, errors } = page;
     try {
       await waitForElement(container, "td", (el) => el.textContent.includes(testUser.email));
 
@@ -195,16 +342,16 @@ test("Usage Dashboard Tests", async (t) => {
       assert.ok(searchInput, "Search input should exist");
       searchInput.value = testUser.email.substring(0, 5);
       searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 300));
+      await waitForNetworkIdle();
       assert.strictEqual(errors.length, 0, `Errors after search: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/usage: role filter works", async () => {
-    const { container, errors, dispose } = mountApp("/_/usage");
+    const page = mountUsagePage("/_/usage");
+    const { container, errors } = page;
     try {
       await waitForElement(container, "h1", (el) => el.textContent.includes("AI Usage Dashboard"));
 
@@ -214,7 +361,7 @@ test("Usage Dashboard Tests", async (t) => {
       if (roleFilter.options.length > 1) {
         roleFilter.selectedIndex = 1;
         roleFilter.dispatchEvent(new InputEvent("input", { bubbles: true }));
-        await new Promise((r) => setTimeout(r, 300));
+        await waitForNetworkIdle();
       }
       assert.strictEqual(
         errors.length,
@@ -222,13 +369,13 @@ test("Usage Dashboard Tests", async (t) => {
         `Errors after role change: ${errors.map((e) => e.message)}`
       );
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/usage: status filter works", async () => {
-    const { container, errors, dispose } = mountApp("/_/usage");
+    const page = mountUsagePage("/_/usage");
+    const { container, errors } = page;
     try {
       await waitForElement(container, "h1", (el) => el.textContent.includes("AI Usage Dashboard"));
 
@@ -236,20 +383,20 @@ test("Usage Dashboard Tests", async (t) => {
       assert.ok(statusFilter, "Status filter should exist");
       statusFilter.value = "active";
       statusFilter.dispatchEvent(new InputEvent("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 300));
+      await waitForNetworkIdle();
       assert.strictEqual(
         errors.length,
         0,
         `Errors after status change: ${errors.map((e) => e.message)}`
       );
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/usage: View Details links exist", async () => {
-    const { container, errors, dispose } = mountApp("/_/usage");
+    const page = mountUsagePage("/_/usage");
+    const { container, errors } = page;
     try {
       await waitForElement(container, "td", (el) => el.textContent.includes(testUser.email));
 
@@ -264,21 +411,15 @@ test("Usage Dashboard Tests", async (t) => {
       );
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 });
 
 test("User Usage Detail Tests", async (t) => {
-  // Ensure testUser is available
-  if (!testUser) {
-    const { json: sessionData } = await api("GET", "/session");
-    testUser = sessionData.user;
-  }
-
   await t.test("/_/users/:id/usage renders Usage Statistics heading", async () => {
-    const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}/usage`);
+    const page = mountUsagePage(`/_/users/${testUser.id}/usage`);
+    const { container, errors } = page;
     try {
       const h1 = await waitForElement(container, "h1", (el) =>
         el.textContent.includes("Usage Statistics")
@@ -286,13 +427,13 @@ test("User Usage Detail Tests", async (t) => {
       assert.ok(h1, "Should render Usage Statistics heading");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/users/:id/usage has Back to Usage Dashboard link", async () => {
-    const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}/usage`);
+    const page = mountUsagePage(`/_/users/${testUser.id}/usage`);
+    const { container, errors } = page;
     try {
       await waitForElement(container, "h1", (el) => el.textContent.includes("Usage Statistics"));
 
@@ -302,13 +443,13 @@ test("User Usage Detail Tests", async (t) => {
       assert.ok(backLink.textContent.trim().includes("Back"), "Link should contain 'Back' text");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/users/:id/usage shows user info card", async () => {
-    const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}/usage`);
+    const page = mountUsagePage(`/_/users/${testUser.id}/usage`);
+    const { container, errors } = page;
     try {
       const emailEl = await waitForElement(container, "*", (el) =>
         el.textContent.includes(testUser.email)
@@ -316,13 +457,13 @@ test("User Usage Detail Tests", async (t) => {
       assert.ok(emailEl, "User email should be displayed");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/users/:id/usage has date range filter", async () => {
-    const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}/usage`);
+    const page = mountUsagePage(`/_/users/${testUser.id}/usage`);
+    const { container, errors } = page;
     try {
       await waitForElement(container, "h1", (el) => el.textContent.includes("Usage Statistics"));
 
@@ -336,33 +477,33 @@ test("User Usage Detail Tests", async (t) => {
       assert.ok(options.includes("Custom"), "Should have Custom option");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/users/:id/usage: date range change works", async () => {
-    const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}/usage`);
+    const page = mountUsagePage(`/_/users/${testUser.id}/usage`);
+    const { container, errors } = page;
     try {
       await waitForElement(container, "h1", (el) => el.textContent.includes("Usage Statistics"));
 
       const dateRange = container.querySelector("#date-range-filter");
       dateRange.selectedIndex = 1; // "Last 30 Days"
       dateRange.dispatchEvent(new InputEvent("input", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 500));
+      await waitForNetworkIdle();
       assert.strictEqual(
         errors.length,
         0,
         `Errors after date change: ${errors.map((e) => e.message)}`
       );
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/users/:id/usage: Custom date range shows inputs", async () => {
-    const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}/usage`);
+    const page = mountUsagePage(`/_/users/${testUser.id}/usage`);
+    const { container, errors } = page;
     try {
       await waitForElement(container, "h1", (el) => el.textContent.includes("Usage Statistics"));
 
@@ -376,17 +517,23 @@ test("User Usage Detail Tests", async (t) => {
       assert.ok(endDate, "Custom end date input should appear");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
     }
   });
 
   await t.test("/_/users/:id/usage has section headings", async () => {
-    const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}/usage`);
+    const page = mountUsagePage(`/_/users/${testUser.id}/usage`);
+    const { container, errors } = page;
     try {
       await waitForElement(container, "h1", (el) => el.textContent.includes("Usage Statistics"));
-      // Wait for content to load
-      await new Promise((r) => setTimeout(r, 1000));
+      await waitForCondition(
+        () => {
+          const allText = container.textContent || "";
+          return allText.includes("Usage by Model") || allText.includes("No usage data");
+        },
+        5000,
+        "user usage section headings"
+      );
 
       const allText = container.textContent;
       assert.ok(
@@ -395,8 +542,216 @@ test("User Usage Detail Tests", async (t) => {
       );
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      dispose();
-      document.body.removeChild(container);
+      cleanupMountedPage(page);
+    }
+  });
+
+  await t.test("/_/users/:id/usage recent requests group by request id and model id", async () => {
+    const usageTestUser = {
+      ...testUser,
+      id: 123,
+      email: "usage-test@example.org",
+      firstName: "Usage",
+      lastName: "Tester",
+      remaining: 9.5,
+    };
+    const page = mountUsagePage("/_/users/123/usage", ({ url }) => {
+      if (url.pathname === "/api/v1/session") {
+        return jsonResponse({ user: usageTestUser, expires: "2099-01-01T00:00:00.000Z" });
+      }
+
+      if (url.pathname === "/api/v1/admin/users/123") {
+        return jsonResponse(usageTestUser);
+      }
+
+      if (url.pathname === "/api/v1/admin/analytics") {
+        const groupBy = url.searchParams.get("groupBy");
+        if (groupBy === "user") {
+          return jsonResponse({
+            data: [{ totalRequests: 3, usageCost: 0.4, guardrailCost: 0.01, totalCost: 0.41 }],
+          });
+        }
+        if (groupBy === "type") {
+          return jsonResponse({
+            data: [
+              { type: "chat", totalRequests: 2, totalCost: 0.4 },
+              { type: "guardrail", totalRequests: 1, totalCost: 0.01 },
+            ],
+          });
+        }
+        if (groupBy === "day") {
+          return jsonResponse({
+            data: [
+              {
+                period: "2026-03-16T00:00:00Z",
+                totalRequests: 2,
+                usageCost: 0.3,
+                guardrailCost: 0.01,
+                totalCost: 0.31,
+              },
+            ],
+          });
+        }
+        if (groupBy === "model") {
+          return jsonResponse({
+            data: [{ Model: { name: "Chat" }, totalRequests: 2, totalCost: 0.4 }],
+          });
+        }
+      }
+
+      if (url.pathname === "/api/v1/admin/usage") {
+        return jsonResponse({
+          data: [
+            {
+              id: 1,
+              requestId: "req-abc",
+              modelID: 101,
+              type: "chat",
+              modelName: "Chat",
+              quantity: 100,
+              unit: "input_tokens",
+              cost: 0.25,
+              createdAt: "2026-03-16T21:33:08Z",
+            },
+            {
+              id: 2,
+              requestId: "req-abc",
+              modelID: 202,
+              type: "guardrail",
+              modelName: "AWS Guardrails",
+              quantity: 2,
+              unit: "content_policy_units",
+              cost: 0.01,
+              createdAt: "2026-03-16T21:33:08Z",
+            },
+            {
+              id: 3,
+              requestId: "req-abc",
+              modelID: 303,
+              type: "embedding",
+              modelName: "Embedding",
+              quantity: 50,
+              unit: "input_tokens",
+              cost: 0.02,
+              createdAt: "2026-03-16T21:32:30Z",
+            },
+            {
+              id: 4,
+              requestId: "unknown",
+              modelID: 404,
+              type: "chat-title",
+              modelName: "Chat Title",
+              quantity: 20,
+              unit: "input_tokens",
+              cost: 0.05,
+              createdAt: "2026-03-16T21:30:00Z",
+            },
+            {
+              id: 5,
+              requestId: "unknown",
+              modelID: 202,
+              type: "guardrail",
+              modelName: "AWS Guardrails",
+              quantity: 1,
+              unit: "content_policy_units",
+              cost: 0,
+              createdAt: "2026-03-16T21:29:00Z",
+            },
+          ],
+        });
+      }
+
+      return null;
+    });
+    const { container, errors } = page;
+    try {
+      await waitForElement(container, "h1", (el) => el.textContent.includes("Usage Statistics"));
+      await waitForElement(container, "th", (el) => el.textContent.includes("Usage Cost"));
+
+      const tables = Array.from(container.querySelectorAll("table"));
+      const dailyHeaders = Array.from(tables.at(-2).querySelectorAll("thead th")).map((el) =>
+        el.textContent.trim()
+      );
+      assert.ok(dailyHeaders.includes("Date"), "daily usage should show Date");
+      assert.ok(dailyHeaders.includes("Usage Cost"), "daily usage should show Usage Cost");
+      assert.ok(dailyHeaders.includes("Guardrail Cost"), "daily usage should show Guardrail Cost");
+      assert.ok(dailyHeaders.includes("Total Cost"), "daily usage should show Total Cost");
+
+      const recentHeaders = Array.from(tables.at(-1).querySelectorAll("thead th")).map((el) =>
+        el.textContent.trim()
+      );
+      assert.ok(recentHeaders.includes("Date"), "recent requests should show Date");
+      assert.ok(recentHeaders.includes("Type"), "recent requests should show Type");
+      assert.ok(recentHeaders.includes("Model"), "recent requests should show Model");
+      assert.ok(recentHeaders.includes("Usage Cost"), "recent requests should show Usage Cost");
+      assert.ok(
+        recentHeaders.includes("Guardrail Cost"),
+        "recent requests should show Guardrail Cost"
+      );
+      assert.ok(recentHeaders.includes("Total Cost"), "recent requests should show Total Cost");
+      assert.ok(
+        !recentHeaders.includes("Total Requests"),
+        "recent requests should not show Total Requests"
+      );
+
+      const recentRows = Array.from(tables.at(-1).querySelectorAll("tbody tr"));
+      assert.strictEqual(
+        recentRows.length,
+        5,
+        "recent requests should keep separate rows for distinct models and ungrouped unknown requests"
+      );
+
+      const chatRow = recentRows.find(
+        (row) =>
+          row.textContent.includes("Chat") &&
+          row.textContent.includes("$0.25") &&
+          row.textContent.includes("$0.00")
+      );
+      assert.ok(chatRow, "expected chat row for req-abc");
+      assert.ok(
+        !chatRow.textContent.includes("Multiple"),
+        "request row should not collapse model names to Multiple"
+      );
+      const usageCostCell = chatRow.querySelector("td:nth-child(4) span[title]");
+      assert.ok(usageCostCell, "usage cost cell should expose a breakdown tooltip");
+      assert.ok(
+        usageCostCell.getAttribute("title").includes("Chat: Input Tokens"),
+        "usage tooltip should include the individual usage item breakdown"
+      );
+      assert.ok(
+        !usageCostCell.getAttribute("title").includes("Guardrail: Content Policy Units"),
+        "usage tooltip should stay scoped to the request-model group"
+      );
+      assert.ok(
+        recentRows.some(
+          (row) =>
+            row.textContent.includes("Embedding") &&
+            row.textContent.includes("$0.02") &&
+            row.textContent.includes("$0.00")
+        ),
+        "same request id with a different model should render as a separate row"
+      );
+      assert.ok(
+        recentRows.some(
+          (row) =>
+            row.textContent.includes("AWS Guardrails") &&
+            row.textContent.includes("$0.00") &&
+            row.textContent.includes("$0.01")
+        ),
+        "guardrail costs should stay attached to the guardrail model row"
+      );
+      assert.ok(
+        recentRows.some(
+          (row) =>
+            row.textContent.includes("AWS Guardrails") &&
+            row.textContent.includes("$0.00") &&
+            row.textContent.trim().endsWith("$0.00")
+        ),
+        "unknown requests should remain separate rows instead of being merged by model"
+      );
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    } finally {
+      cleanupMountedPage(page);
     }
   });
 });

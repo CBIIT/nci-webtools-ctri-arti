@@ -19,6 +19,7 @@ import html from "solid-js/html";
 import { AlertContainer } from "../../../components/alert.js";
 import AttachmentsPreview from "../../../components/attachments-preview.js";
 import ClassToggle from "../../../components/class-toggle.js";
+import { asFileList } from "../../../components/file-input.js";
 import Loader from "../../../components/loader.js";
 import ScrollTo from "../../../components/scroll-to.js";
 import Tooltip from "../../../components/tooltip.js";
@@ -27,10 +28,23 @@ import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 
 import DeleteConversation from "./delete-conversation.js";
+import {
+  EMPTY_CHAT_DRAFT,
+  clearChatDraft,
+  getChatDraftScope,
+  loadChatDraft,
+  saveChatDraft,
+} from "./draft-store.js";
 import { useAgent } from "./hooks.js";
 import Message from "./message.js";
 
 const MAX_TITLE_LENGTH = 30;
+const ADMIN_MODEL_OPTIONS = [
+  { value: MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6, label: "Opus" },
+  { value: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6, label: "Sonnet" },
+  { value: MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5, label: "Haiku" },
+];
+const DEFAULT_ADMIN_MODEL = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6;
 
 // =================================================================================
 // EXPORTED PAGE COMPONENT (for router)
@@ -53,10 +67,8 @@ function ChatApp() {
   const {
     agent,
     params,
-    setParams,
     sendMessage,
     conversations,
-    loadConversations,
     updateConversation,
     deleteConversation,
     generateTitle,
@@ -78,6 +90,10 @@ function ChatApp() {
   const [isStreaming, setIsStreaming] = createSignal(false);
   const [openMenu, setOpenMenu] = createSignal(null);
   const [editingState, setEditingState] = createSignal({ id: null, context: null, title: "" });
+  const [draftMessage, setDraftMessage] = createSignal("");
+  const [draftFiles, setDraftFiles] = createSignal([]);
+  const [selectedModelId, setSelectedModelId] = createSignal(null);
+  const [draftReasoningMode, setDraftReasoningMode] = createSignal(false);
 
   // Refs
   let titleInputRef;
@@ -89,6 +105,60 @@ function ChatApp() {
 
   // Computed values
   const hasConversationId = createMemo(() => params.conversationId || agent.conversation?.id);
+  const draftScope = createMemo(() =>
+    getChatDraftScope(
+      params.agentId || agent.id,
+      user?.()?.id,
+      params.conversationId || agent.conversation?.id || (params.agentId ? "new" : null)
+    )
+  );
+  const selectedAdminModelId = createMemo(() => {
+    const activeValue = selectedModelId() || agent.modelId || DEFAULT_ADMIN_MODEL;
+    return ADMIN_MODEL_OPTIONS.some((option) => option.value === activeValue)
+      ? activeValue
+      : DEFAULT_ADMIN_MODEL;
+  });
+
+  function hasOwn(obj, key) {
+    return Object.prototype.hasOwnProperty.call(obj, key);
+  }
+
+  function saveDraftPatch(patch, scope = draftScope()) {
+    const nextDraft = {
+      message: hasOwn(patch, "message") ? patch.message || "" : draftMessage(),
+      modelId: hasOwn(patch, "modelId") ? patch.modelId || null : selectedModelId(),
+      files: hasOwn(patch, "files") ? Array.from(patch.files || []).filter(Boolean) : draftFiles(),
+      reasoningMode: hasOwn(patch, "reasoningMode")
+        ? Boolean(patch.reasoningMode)
+        : draftReasoningMode(),
+    };
+
+    setDraftMessage(nextDraft.message);
+    setSelectedModelId(nextDraft.modelId);
+    setDraftFiles(nextDraft.files);
+    setDraftReasoningMode(nextDraft.reasoningMode);
+
+    if (!scope) return;
+    void saveChatDraft(scope, nextDraft).catch((error) => {
+      console.warn("Failed to persist chat draft:", error);
+    });
+  }
+
+  function handleMessageInput(event) {
+    saveDraftPatch({ message: event.currentTarget.value || "" });
+  }
+
+  function handleFilesChange(files) {
+    saveDraftPatch({ files });
+  }
+
+  function handleModelChange(event) {
+    saveDraftPatch({ modelId: event.currentTarget.value || null });
+  }
+
+  function handleReasoningModeChange(event) {
+    saveDraftPatch({ reasoningMode: event.currentTarget.checked });
+  }
 
   // URL sync effect
   createEffect(() => {
@@ -101,6 +171,38 @@ function ChatApp() {
     }
     const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
     window.history.replaceState({}, "", newUrl);
+  });
+
+  createEffect(async () => {
+    const scope = draftScope();
+    if (!scope) {
+      setDraftMessage(EMPTY_CHAT_DRAFT.message);
+      setDraftFiles(EMPTY_CHAT_DRAFT.files);
+      setSelectedModelId(EMPTY_CHAT_DRAFT.modelId);
+      setDraftReasoningMode(EMPTY_CHAT_DRAFT.reasoningMode);
+      return;
+    }
+
+    try {
+      const draft = await loadChatDraft(scope);
+      if (draftScope() !== scope) return;
+      setDraftMessage(draft.message);
+      setDraftFiles(draft.files);
+      setSelectedModelId(draft.modelId);
+      setDraftReasoningMode(draft.reasoningMode);
+    } catch (error) {
+      if (draftScope() !== scope) return;
+      console.warn("Failed to load chat draft:", error);
+      setDraftMessage(EMPTY_CHAT_DRAFT.message);
+      setDraftFiles(EMPTY_CHAT_DRAFT.files);
+      setSelectedModelId(EMPTY_CHAT_DRAFT.modelId);
+      setDraftReasoningMode(EMPTY_CHAT_DRAFT.reasoningMode);
+    }
+  });
+
+  createEffect(() => {
+    if (!inputFilesEl) return;
+    inputFilesEl.files = asFileList(draftFiles());
   });
 
   // Editing helpers
@@ -195,15 +297,15 @@ function ChatApp() {
     if (agent.loading || isStreaming()) return;
 
     const form = event.target;
-    const text = form.message.value;
-    const files = Array.from(form.inputFiles?.files || []);
-    const reasoningMode = form.reasoningMode.checked;
-    const defaultModel = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6;
-    const modelId = form.model?.value || defaultModel;
+    const text = draftMessage();
+    const files = draftFiles();
+    const reasoningMode = draftReasoningMode();
+    const modelId = user?.()?.Role?.name === "admin" ? selectedAdminModelId() : null;
+    const scope = draftScope();
 
-    form.message.value = "";
+    saveDraftPatch({ message: "", files: [] }, scope);
     if (form.inputFiles) form.inputFiles.value = "";
-    attachmentsReset?.();
+    attachmentsReset?.({ emit: false });
 
     const isFirstMessage = agent.messages?.length === 0;
     setIsStreaming(true);
@@ -215,6 +317,9 @@ function ChatApp() {
       if (isFirstMessage) {
         await generateTitle(MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5);
       }
+    } catch (error) {
+      saveDraftPatch({ message: text, files }, scope);
+      throw error;
     } finally {
       setIsStreaming(false);
     }
@@ -230,14 +335,16 @@ function ChatApp() {
     if (!id) return;
 
     await deleteConversation(id);
+    await clearChatDraft(getChatDraftScope(params.agentId || agent.id, user?.()?.id, id));
     setDeleteConversationId(null);
   }
 
   function clearChat() {
+    const scope = draftScope();
+    saveDraftPatch({ message: "", files: [] }, scope);
     if (!formRef) return;
-    formRef.message.value = "";
     if (formRef.inputFiles) formRef.inputFiles.value = "";
-    attachmentsReset?.();
+    attachmentsReset?.({ emit: false });
   }
 
   function startEditingTitle(conversationId, currentTitle, context) {
@@ -617,6 +724,8 @@ function ChatApp() {
                 >
                   <!-- Attachments Preview -->
                   <${AttachmentsPreview}
+                    files=${draftFiles}
+                    onFilesChange=${handleFilesChange}
                     inputRef=${() => inputFilesEl}
                     onResetRef=${(fn) => (attachmentsReset = fn)}
                   />
@@ -625,9 +734,11 @@ function ChatApp() {
                   <label for="message" class="visually-hidden">Chat Message</label>
                   <textarea
                     onKeyDown=${handleKeyDown}
+                    onInput=${handleMessageInput}
                     class="form-control form-control-sm font-inter fw-normal fs-6 lh-md text-black resize-none border-0 bg-transparent shadow-0 p-3 pt-4 px-4"
                     id="message"
                     name="message"
+                    value=${draftMessage}
                     placeholder="Ask me a question. (Shift + Enter for new line)"
                     rows="2"
                     autofocus
@@ -674,6 +785,8 @@ function ChatApp() {
                             type="checkbox"
                             id="reasoningMode"
                             name="reasoningMode"
+                            checked=${draftReasoningMode}
+                            onInput=${handleReasoningModeChange}
                           />
                           <label
                             class="form-check-label text-secondary fw-semibold cursor-pointer fs-6"
@@ -685,22 +798,32 @@ function ChatApp() {
                       <//>
                     </div>
 
-                    <!-- Right: Model Selector (admin only) + Clear + Send -->
+                    <!-- Right: Admin override selector + Clear + Send -->
                     <div class="d-flex w-auto align-items-center gap-2">
                       <${Show} when=${() => user?.()?.Role?.name === "admin"}>
-                        <label for="model" class="visually-hidden">Model Selection</label>
-                        <select
-                          class="model-dropdown form-select form-select-lg fw-semibold fs-6 h-100 border-0 bg-primary-hover cursor-pointer"
-                          name="model"
-                          id="model"
-                          required
-                        >
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6} selected>
-                            Sonnet
-                          </option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku</option>
-                        </select>
+                        <div class="d-flex flex-column align-items-start gap-1">
+                          <select
+                            class="model-dropdown form-select form-select-lg fw-semibold fs-6 h-100 border-0 bg-primary-hover cursor-pointer"
+                            name="model"
+                            id="model"
+                            value=${selectedAdminModelId}
+                            title="Admin only. Leave this at the saved agent model unless you intentionally need an override."
+                            aria-label="Admin model override"
+                            onInput=${handleModelChange}
+                            required
+                          >
+                            <${For} each=${ADMIN_MODEL_OPTIONS}>
+                              ${(option) => html`
+                                <option
+                                  value=${option.value}
+                                  selected=${() => selectedAdminModelId() === option.value}
+                                >
+                                  ${option.label}
+                                </option>
+                              `}
+                            <//>
+                          </select>
+                        </div>
                       <//>
 
                       <div class="d-flex flex-row gap-2">
@@ -726,13 +849,8 @@ function ChatApp() {
 
                 <!-- Privacy Notice -->
                 <div class="text-center bg-chat text-muted small py-1">
-                  <span
-                    class="me-1"
-                    title="Your conversations are stored only on your personal device."
-                  >
-                    To maintain your privacy, we never retain your data on our systems.
-                  </span>
-                  Please double-check statements, as Research Optimizer can make mistakes.
+                  Please double-check statements. AI is not always right, even when it sounds
+                  confident.
                 </div>
               </div>
             </div>

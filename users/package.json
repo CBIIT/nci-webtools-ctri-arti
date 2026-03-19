@@ -3,15 +3,19 @@
   "version": "1.0.0",
   "type": "module",
   "exports": {
-    "./user.js": "./user.js",
-    "./middleware.js": "./middleware.js"
+    ".": "./index.js",
+    "./app.js": "./app.js",
+    "./api.js": "./api.js",
+    "./http.js": "./http.js",
+    "./remote.js": "./remote.js",
+    "./user.js": "./user.js"
   },
   "scripts": {
     "start": "node --env-file .env index.js"
   },
   "dependencies": {
     "database": "*",
-    "drizzle-orm": "^0.43.1",
+    "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
     "shared": "*"
   }

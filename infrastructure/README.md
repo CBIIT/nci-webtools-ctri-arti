@@ -1,327 +1,172 @@
 # infrastructure
 
-AWS CDK v2 (Python) infrastructure for deploying the Research Optimizer platform.
+AWS CDK v2 deployment for the current service layout.
 
-## Architecture
+This directory describes and deploys the ECS/Fargate shape of the app, not the direct local monolith. In AWS, the edge server still runs as the public entrypoint, but the backend services run as separate containers in the same ECS task.
 
-### System Overview
+## Current Topology
 
-```mermaid
-graph LR
-    User([User]) --> ALB
+The deployed task currently includes five containers:
 
-    subgraph AWS_Cloud [AWS Cloud]
-        ALB[Application<br/>Load Balancer]
+- `main`: the `server` app, exposed through the ALB
+- `gateway`: model inference and guardrails
+- `cms`: conversations, agents, resources, vectors, tools, and prompts
+- `agents`: chat orchestration
+- `users`: users, roles, budgets, usage, and analytics
 
-        subgraph ECSTask [ECS Fargate Task]
-            Main["main :80<br/>(server)"]
-            GW["gateway :3001<br/>(inference)"]
-            CMS["cms :3002<br/>(conversations)"]
+Internal service URLs are wired over localhost inside the same task:
 
-            Main -- "localhost:3001" --> GW
-            Main -- "localhost:3002" --> CMS
-        end
+- `GATEWAY_URL=http://localhost:3001`
+- `CMS_URL=http://localhost:3002`
+- `AGENTS_URL=http://localhost:3003`
+- `USERS_URL=http://localhost:3004`
 
-        ALB -- ":443 HTTPS" --> Main
-        GW --> Bedrock[Amazon Bedrock]
-        GW --> Gemini[Google Gemini]
-        GW --> RDS[(Aurora PostgreSQL)]
-        CMS --> RDS
-        Main --> S3[Amazon S3]
-        Main --> Translate[Amazon Translate]
-    end
+That means AWS runs in HTTP mode, while local direct mode still exists for development.
 
-    subgraph SM [Secrets Manager]
-        Creds[DB Credentials]
-    end
+## Directory Shape
 
-    RDS -. "generated" .-> Creds
-    Creds -. "injected" .-> ECSTask
-```
+- [app.py](app.py): CDK app entrypoint
+- [config.py](config.py): environment-driven stack configuration and container definitions
+- [deploy.sh](deploy.sh): image build, push, and deploy script
+- [stacks/ecr.py](stacks/ecr.py): ECR repository stack
+- [stacks/ecs.py](stacks/ecs.py): ECS service stack
+- [stacks/rds.py](stacks/rds.py): Aurora/Postgres stack
+- [templates/](templates/): retained infra templates and references
 
-### CDK Stacks
+## What The CDK Config Actually Does
 
-```mermaid
-graph TB
-    subgraph "CDK App"
-        ECR["<b>ecr-repository</b><br/>Container registry<br/>Image scanning + cleanup"]
-        ECSStack["<b>ecs-service</b><br/>Fargate cluster + service<br/>ALB target group<br/>Auto-scaling 1–4 tasks"]
-        RDSStack["<b>rds-cluster</b><br/>Aurora Serverless v2<br/>PostgreSQL 16.6<br/>0–1 ACU"]
-    end
+### ECR
 
-    ECR -- "image URIs" --> ECSStack
-    RDSStack -- "credentials via<br/>Secrets Manager" --> ECSStack
+Creates a single repository named from `{NAMESPACE}-{APPLICATION}-{TIER}`.
 
-    subgraph "Existing Resources"
-        VPC[VPC]
-        ALB[ALB + HTTPS Listener]
-        Subnets[Subnets]
-    end
+### ECS
 
-    VPC --> ECSStack
-    VPC --> RDSStack
-    ALB --> ECSStack
-    Subnets --> ECSStack
-    Subnets --> RDSStack
-```
+Creates:
 
-### ECS Task Containers
+- a Fargate cluster
+- one service running the five-container task definition
+- an ALB target group and host-header listener rule
+- autoscaling on CPU and memory
+- CloudWatch logs
 
-```mermaid
-graph TB
-    subgraph "Fargate Task &ensp; (2 vCPU, 4 GB)"
-        subgraph "main container :80"
-            Server["Express.js Server<br/>HTTPS, OAuth, static files<br/>API routing, CORS proxy"]
-        end
+Important runtime facts from the current config:
 
-        subgraph "gateway container :3001"
-            Gateway["AI Inference<br/>Multi-provider abstraction<br/>Usage tracking, rate limiting"]
-        end
+- task size: `2 vCPU`, `4 GB`
+- desired count: `1`
+- autoscaling range: `1` to `4`
+- all service containers run with `DB_SKIP_SYNC=true`
+- only `main` is directly exposed through the ALB
 
-        subgraph "cms container :3002"
-            CMS["Conversation Management<br/>Agents, conversations, messages<br/>Tools, prompts, resources, vectors"]
-        end
-    end
+### RDS
 
-    subgraph "Shared Resources"
-        DB[(Aurora PostgreSQL<br/>Secrets Manager creds)]
-        CW[CloudWatch Logs<br/>1-month retention]
-        SSM[SSM Parameters<br/>App secrets]
-    end
+Defines an Aurora Serverless PostgreSQL cluster and database credentials in Secrets Manager.
 
-    Server --> DB
-    Gateway --> DB
-    CMS --> DB
-    Server --> CW
-    Gateway --> CW
-    CMS --> CW
-    SSM --> Server
-    SSM --> Gateway
-    SSM --> CMS
-```
+The RDS stack exists in code, but the current deploy script does not automatically deploy it.
 
-### Deployment Pipeline
+## Deployment Flow
 
-```mermaid
-graph LR
-    subgraph "infrastructure/deploy.sh"
-        A["1. Deploy<br/>ECR stack"] --> B["2. Build<br/>Docker images"]
-        B --> C["3. Push to ECR<br/>(main, gateway, cms)"]
-        C --> D["4. Deploy<br/>ECS stack"]
-    end
+The current [deploy.sh](deploy.sh) does this:
 
-    subgraph "Docker Build"
-        Base[Dockerfile<br/>base image] --> MainImg[main image<br/>npm start -w server]
-        Base --> GWImg[gateway image<br/>npm start -w gateway]
-        Base --> CMSImg[cms image<br/>npm start -w cms]
-    end
+1. load `infrastructure/.env` when present
+2. deploy the ECR stack
+3. build and push five images:
+   - `main`
+   - `gateway`
+   - `cms`
+   - `agents`
+   - `users`
+4. deploy the ECS stack
 
-    B --> Base
-    C --> ECR[(ECR Registry)]
-    ECR --> D
+The script currently leaves the RDS deploy line commented out.
 
-    Note["RDS deployed separately<br/>(not in pipeline)"]
+## Environment Variables
 
-    style Note fill:none,stroke:none
-```
+Configuration is loaded from [config.py](config.py) and [`.env.example`](.env.example).
 
-## Overview
+### Required
 
-Three CDK stacks deploy the application to AWS:
+- `AWS_ACCOUNT_ID`
+- `AWS_REGION`
+- `VPC`
+- `SUBNETS`
+- `NAMESPACE`
+- `APPLICATION`
+- `TIER`
+- `DOMAIN_NAME`
 
-| Stack                     | Resource    | Description                                      |
-| ------------------------- | ----------- | ------------------------------------------------ |
-| `{prefix}-ecr-repository` | ECR         | Docker image registry with auto-cleanup          |
-| `{prefix}-ecs-service`    | ECS Fargate | 3-container task (main, gateway, cms) behind ALB |
-| `{prefix}-rds-cluster`    | RDS Aurora  | Serverless v2 PostgreSQL                         |
+### Optional
 
-The `prefix` is `{NAMESPACE}-{APPLICATION}-{TIER}` (e.g., `ctri-research-optimizer-dev`).
+- `ALT_DOMAIN_NAME`
+- `AWS_PROFILE`
+- `GITHUB_SHA`
 
-## Prerequisites
+### Image Overrides
 
-- Python 3.9+
-- AWS CDK v2 (`npm install -g aws-cdk`)
-- AWS CLI configured with appropriate credentials
-- CDK bootstrap completed in target account
-- Existing ALB with HTTPS listener tagged `Name={TIER}`
+These can be supplied manually, though `deploy.sh` usually computes them:
 
-## Quick Start
+- `MAIN_IMAGE`
+- `GATEWAY_IMAGE`
+- `CMS_IMAGE`
+- `AGENTS_IMAGE`
+- `USERS_IMAGE`
+
+Legacy `SERVER_IMAGE` still exists as a compatibility fallback for `MAIN_IMAGE`.
+
+### App Secrets Passed To Containers
+
+`main` receives:
+
+- `SESSION_SECRET`
+- `OAUTH_CLIENT_ID`
+- `OAUTH_CLIENT_SECRET`
+- `OAUTH_CALLBACK_URL`
+- `OAUTH_DISCOVERY_URL`
+- `S3_BUCKETS`
+- `EMAIL_ADMIN`
+- `EMAIL_DEV`
+- `EMAIL_USER_REPORTS`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASSWORD`
+- `BRAVE_SEARCH_API_KEY`
+- `DATA_GOV_API_KEY`
+- `CONGRESS_GOV_API_KEY`
+
+`gateway` receives:
+
+- `GEMINI_API_KEY`
+
+`agents` currently also receives:
+
+- `BRAVE_SEARCH_API_KEY`
+- `DATA_GOV_API_KEY`
+- `S3_BUCKETS`
+
+All service containers receive database credentials via Secrets Manager:
+
+- `PGHOST`
+- `PGPORT`
+- `PGDATABASE`
+- `PGUSER`
+- `PGPASSWORD`
+
+## Local Infra Workflow
 
 ```bash
 cd infrastructure
-pip install -r requirements.txt
-cp .env.example .env   # Configure environment variables
-cdk diff               # Preview changes
-cdk deploy --all       # Deploy all stacks
+cp .env.example .env
 ```
 
-## Configuration
+Then either:
 
-Configuration is loaded from environment variables via `config.py`.
+- run `cdk diff` / `cdk synth` directly for inspection
+- run `bash deploy.sh` to build images and deploy the current configured stacks
 
-### Required Variables
+If using SSO locally, set `AWS_PROFILE` before running `deploy.sh`.
 
-| Variable          | Description                                       |
-| ----------------- | ------------------------------------------------- |
-| `AWS_ACCOUNT_ID`  | AWS account ID                                    |
-| `AWS_REGION`      | AWS region                                        |
-| `VPC`             | VPC name (looked up by name, not ID)              |
-| `SUBNETS`         | Comma-separated subnet IDs                        |
-| `NAMESPACE`       | Resource namespace (e.g., `ctri`)                 |
-| `APPLICATION`     | Application name (e.g., `research-optimizer`)     |
-| `TIER`            | Environment tier (e.g., `dev`, `staging`, `prod`) |
-| `DOMAIN_NAME`     | Application domain name                           |
-| `ALT_DOMAIN_NAME` | Optional alternate domain (redirects to primary)  |
+## Notes
 
-### Container Images
-
-| Variable        | Description                                                                  |
-| --------------- | ---------------------------------------------------------------------------- |
-| `MAIN_IMAGE`    | Main server container image URI (falls back to `SERVER_IMAGE`, then `httpd`) |
-| `GATEWAY_IMAGE` | Gateway service container image URI (falls back to `httpd`)                  |
-| `CMS_IMAGE`     | CMS service container image URI (falls back to `httpd`)                      |
-
-### Application Secrets
-
-Stored as SSM Parameters, injected into containers at runtime:
-
-| Variable               | Container | Description                  |
-| ---------------------- | --------- | ---------------------------- |
-| `SESSION_SECRET`       | main      | Cookie signing secret        |
-| `OAUTH_CLIENT_ID`      | main      | OIDC client ID               |
-| `OAUTH_CLIENT_SECRET`  | main      | OIDC client secret           |
-| `OAUTH_CALLBACK_URL`   | main      | OIDC redirect URI            |
-| `OAUTH_DISCOVERY_URL`  | main      | OIDC discovery URL           |
-| `GEMINI_API_KEY`       | gateway   | Google Gemini API key        |
-| `BRAVE_SEARCH_API_KEY` | main      | Brave Search API key         |
-| `DATA_GOV_API_KEY`     | main      | GovInfo API key              |
-| `CONGRESS_GOV_API_KEY` | main      | Congress.gov API key         |
-| `S3_BUCKETS`           | main      | Allowed S3 buckets           |
-| `EMAIL_ADMIN`          | main      | Admin notification email     |
-| `EMAIL_DEV`            | main      | Developer error report email |
-| `EMAIL_USER_REPORTS`   | main      | User feedback email          |
-| `SMTP_HOST`            | main      | SMTP server host             |
-| `SMTP_PORT`            | main      | SMTP server port             |
-| `SMTP_USER`            | main      | SMTP username                |
-| `SMTP_PASSWORD`        | main      | SMTP password                |
-
-Database credentials (PGHOST, PGUSER, PGPASSWORD, PGPORT, PGDATABASE) are pulled from Secrets Manager, created by the RDS stack. They are injected into all 3 containers.
-
-### Auto-injected Environment Variables
-
-These are set automatically by config.py (not user-configurable):
-
-| Variable       | Container    | Value                    |
-| -------------- | ------------ | ------------------------ |
-| `PORT`         | main         | `80`                     |
-| `PORT`         | gateway      | `3001`                   |
-| `PORT`         | cms          | `3002`                   |
-| `GATEWAY_URL`  | main         | `http://localhost:3001`  |
-| `CMS_URL`      | main         | `http://localhost:3002`  |
-| `DB_SKIP_SYNC` | gateway, cms | `true`                   |
-| `VERSION`      | main         | `GITHUB_SHA` or `latest` |
-| `TIER`         | main         | Environment tier         |
-
-## Stack Details
-
-### ECR Repository
-
-- Creates container registry named `{prefix}`
-- Enables image scanning on push
-- Auto-deletes untagged images older than 10 days
-
-### ECS Service
-
-- **Task definition:** 2 vCPU, 4 GB memory
-- **Containers:** 3 per task (main:80, gateway:3001, cms:3002)
-- **Networking:** Same task = same network namespace (containers communicate via localhost)
-- **Load balancer:** Attaches to existing ALB via listener lookup (matched by `Name={TIER}` tag)
-- **Autoscaling:** 1–4 tasks, 70% CPU/memory target
-- **Logging:** CloudWatch with 1-month retention
-
-IAM permissions granted to tasks:
-
-- Amazon Bedrock (AI inference)
-- Amazon RDS Data API
-- Secrets Manager
-- Amazon Translate, Polly
-- Amazon S3
-- Amazon EFS
-- AWS Marketplace
-
-### RDS Cluster
-
-- Aurora Serverless v2, PostgreSQL 16.6
-- Auto-scales 0–1 ACU (configurable via `minCapacity`/`maxCapacity`)
-- 7-day backup retention
-- Data API enabled
-- Credentials stored in Secrets Manager
-
-## Docker Image Strategy
-
-All services share a single base `Dockerfile` at the project root. Service-specific images override only the `CMD`:
-
-```
-Dockerfile      → main image    (CMD: npm start -w server)
-gateway/Dockerfile → gateway image (FROM main, CMD: npm start -w gateway)
-cms/Dockerfile  → cms image     (FROM main, CMD: npm start -w cms)
-```
-
-## CI/CD Pipeline
-
-The `infrastructure/deploy.sh` script orchestrates deployment:
-
-1. Deploy ECR stack
-2. Build and push 3 Docker images (main, gateway, cms)
-3. Deploy ECS stack
-
-Note: RDS deployment is handled separately (not part of the automated pipeline).
-
-### Local Deployment
-
-```bash
-# Prerequisites: Docker, Python 3.9+, AWS CDK, Node.js, AWS SSO login
-cd infrastructure
-cp .env.example .env   # Fill in values (see .env.example for reference)
-
-# Authenticate with AWS
-aws sso login --profile <your-profile>
-export AWS_PROFILE=<your-profile>
-
-# Run deployment
-bash deploy.sh
-```
-
-### CI/CD Deployment
-
-Pushes to `*dev` or `*qa` branches trigger the GitHub Actions deploy workflow, which injects `infrastructure/.env` from the `ENV_FILE` repository secret.
-
-## Deployment Order
-
-For a fresh deployment:
-
-1. `{prefix}-ecr-repository` — Create container registry
-2. Push Docker images to ECR
-3. `{prefix}-rds-cluster` — Create database (generates credentials in Secrets Manager)
-4. `{prefix}-ecs-service` — Deploy application containers
-
-## CDK Bootstrap
-
-Before first deployment, bootstrap CDK in your account:
-
-```bash
-cdk bootstrap aws://ACCOUNT_ID/REGION \
-  --qualifier hnb659fds \
-  --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
-  --trust ACCOUNT_ID
-```
-
-## Commands
-
-```bash
-cdk diff                    # Preview changes
-cdk synth                   # Generate CloudFormation templates
-cdk deploy --all            # Deploy all stacks
-cdk deploy {prefix}-ecs-service  # Deploy specific stack
-cdk destroy --all           # Destroy all stacks (use with caution)
-```
+- This README reflects the current five-service backend layout.
+- If this file drifts again, trust [config.py](config.py), [deploy.sh](deploy.sh), and [stacks/ecs.py](stacks/ecs.py).
+- The old three-container description is obsolete.

@@ -1,176 +1,121 @@
 # server
 
-Edge server — HTTPS termination, authentication, static file serving, and API routing to internal services.
+The edge application. It owns HTTPS, session/auth flows, static client serving, edge-only routes, and composition of the internal services.
 
-## Overview
+## What Lives Here
 
-The main application server. Serves the client SPA, handles OAuth/OIDC authentication, and proxies API requests to the gateway (inference) and CMS (conversations) services. Supports monolith deployment (all services in-process) or microservice deployment (services as separate processes).
+- [server.js](server.js): process entrypoint and HTTP/HTTPS server setup
+- [compose.js](compose.js): selects direct modules or HTTP remotes for `users`, `gateway`, `cms`, and `agents`
+- [auth.js](auth.js): role checks and identity resolution
+- [api/](api/): edge API composition and edge-only route families
+- [integrations/](integrations/): S3, Textract, Translate, proxy, parser, and email adapters
+- [runtime/](runtime/): session store and scheduled jobs
+- [templates/](templates/): email/report templates
+- [test/](test/): backend and integration-oriented tests
 
-## Quick Start
+## API Shape
+
+All public API routes are mounted under `/api`.
+
+### Edge-owned routes
+
+These are owned by `server` because they are browser-facing or session-aware:
+
+- auth and session: `/login`, `/logout`, `/session`, `/config`, optional `/oauth/*`
+- admin: `/admin/*`
+- tools and integrations: `/status`, `/search`, `/browse/*url`, `/textract`, `/translate`, `/translate/languages`, `/feedback`, `/log`, `/data`, `/usage`
+
+### Mounted service-owned routes
+
+`server/api/index.js` mounts shared routers from the service packages rather than reimplementing them:
+
+- `agents/http.js`: `/agents/:agentId/conversations/:conversationId/chat`
+- `cms/http.js`: `/agents`, `/conversations`, `/messages`, `/resources`, `/vectors`, `/tools`, `/prompts`, `/search/*`
+- `gateway/http.js`: `/model/invoke`, `/model/list`
+
+That is the current boundary rule: browser-facing edge concerns stay in `server`; service-shaped APIs live with the service and get mounted here.
+
+## Deployment Modes
+
+### Direct local mode
+
+Default when service URLs are unset.
+
+```text
+server
+  |- users app
+  |- gateway service
+  |- cms service
+  `- agents app
+```
+
+This is the simplest local mode and the one the codebase is optimized around.
+
+### HTTP mode
+
+Set any of these to move a service out of process:
+
+- `USERS_URL`
+- `GATEWAY_URL`
+- `CMS_URL`
+- `AGENTS_URL`
+
+`compose.js` will use the corresponding `remote.js` client instead of the in-process module.
+
+## Running It
 
 ```bash
-cd server
-npm install
-cp .env.example .env   # Configure environment
-cp test.env.example test.env # Configure test environment
-npm run start:dev      # Watch mode with auto-restart
-npm test               # Run unit + integration tests
-npm run test:integration  # Full integration tests with browser
+cp .env.example .env
+cp test.env.example test.env
+npm start
 ```
 
-## API Reference
+Dev watch mode:
 
-All endpoints are mounted under `/api`. See [openapi.yaml](openapi.yaml) for full schemas.
-
-### Auth
-
-| Method | Path       | Auth            | Description                                |
-| ------ | ---------- | --------------- | ------------------------------------------ |
-| GET    | `/login`   | OIDC middleware | Initiate OAuth login, redirect to provider |
-| GET    | `/logout`  | None            | Destroy session, redirect                  |
-| GET    | `/session` | None            | Get current session info (user + expiry)   |
-| POST   | `/session` | None            | Refresh session expiry (touch + return)    |
-| GET    | `/config`  | None            | Client configuration (budget, usage types) |
-
-### Model Inference
-
-| Method | Path          | Auth            | Description                            |
-| ------ | ------------- | --------------- | -------------------------------------- |
-| POST   | `/model`      | `requireRole()` | AI inference (streaming/non-streaming) |
-| GET    | `/model/list` | `requireRole()` | List available models                  |
-
-### Tools
-
-| Method | Path                   | Auth            | Description                      |
-| ------ | ---------------------- | --------------- | -------------------------------- |
-| GET    | `/status`              | None            | Health check                     |
-| GET    | `/search`              | `requireRole()` | Web search (Brave + GovInfo)     |
-| ALL    | `/browse/*url`         | `requireRole()` | CORS proxy for external URLs     |
-| POST   | `/textract`            | `requireRole()` | AWS Textract document extraction |
-| POST   | `/translate`           | `requireRole()` | AWS Translate                    |
-| GET    | `/translate/languages` | `requireRole()` | List supported languages         |
-| POST   | `/feedback`            | `requireRole()` | Send user feedback email         |
-| POST   | `/log`                 | None            | Send error/log report email      |
-| GET    | `/data`                | `requireRole()` | S3 file access with auto-parsing |
-| POST   | `/usage`               | `requireRole()` | Let user request usage change    |
-
-### Conversations
-
-| Resource      | Endpoints                                            | Auth            |
-| ------------- | ---------------------------------------------------- | --------------- |
-| Agents        | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | `requireRole()` |
-| Conversations | `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` | `requireRole()` |
-| Context       | `GET /conversations/:id/context`                     | `requireRole()` |
-| Compress      | `POST /conversations/:id/compress`                   | `requireRole()` |
-| Messages      | `POST`, `GET`, `PUT /:id`, `DELETE /:id`             | `requireRole()` |
-| Resources     | `POST`, `GET /:id`, `GET` by agent, `DELETE /:id`    | `requireRole()` |
-| Vectors       | `POST`, `GET` by conversation                        | `requireRole()` |
-
-### Admin
-
-| Method | Path                           | Auth            | Description                            |
-| ------ | ------------------------------ | --------------- | -------------------------------------- |
-| GET    | `/admin/users`                 | admin           | List users with search/sort/pagination |
-| GET    | `/admin/users/:id`             | admin           | Get user by ID                         |
-| POST   | `/admin/users`                 | admin           | Create or update user                  |
-| DELETE | `/admin/users/:id`             | admin           | Delete user                            |
-| POST   | `/admin/profile`               | `requireRole()` | Update own profile                     |
-| GET    | `/admin/roles`                 | admin           | List all roles                         |
-| GET    | `/admin/users/:id/usage`       | admin           | Get user's usage history               |
-| GET    | `/admin/usage`                 | admin           | Get all usage records                  |
-| POST   | `/admin/usage/reset`           | admin           | Reset all usage budgets                |
-| POST   | `/admin/users/:id/reset-limit` | admin           | Reset single user's budget             |
-| GET    | `/admin/analytics`             | admin           | Aggregated usage analytics             |
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────┐
-│  server.js (port 443/8080)                       │
-│  ┌────────────────────────────────────────────┐  │
-│  │ /api                                       │  │
-│  │  ├── auth.js      (login, session)         │  │
-│  │  ├── model.js     → Gateway Client ────────│──│──► Gateway (:3001)
-│  │  ├── tools.js     (search, browse, data)   │  │
-│  │  ├── conversations.js → CMS Client ────────│──│──► CMS (:3002)
-│  │  └── admin.js     (users, analytics)       │  │
-│  └────────────────────────────────────────────┘  │
-│  /static  (client files)                         │
-└──────────────────────────────────────────────────┘
+```bash
+npm run start:dev
 ```
 
-### Deployment Modes
+From the repo root:
 
-**Monolith** (default): All services run in a single process. Gateway and CMS clients call service functions directly via `import`.
-
-**Microservice**: Set `GATEWAY_URL` and/or `CMS_URL` environment variables to route requests over HTTP to separate service processes.
-
-### Factory Clients
-
-Both service clients use a factory pattern resolved at module load time:
-
-**`shared/clients/gateway.js`** — Exports `invoke()` and `listModels()`.
-
-- Direct mode: calls `runModel()` from `gateway/inference.js`, handles rate limiting and usage tracking locally.
-- HTTP mode: POSTs to `GATEWAY_URL/api/v1/model/invoke`, parses newline-delimited JSON streaming.
-
-**`shared/clients/cms.js`** — Exports 30+ conversation methods (`createAgent`, `createConversation`, `addMessage`, `createTool`, `createPrompt`, etc.).
-
-- Direct mode: instantiates `ConversationService` from `cms/conversation.js`.
-- HTTP mode: makes HTTP requests with `X-User-Id` header to `CMS_URL/api/v1/...`.
-
-### Authentication
-
-Three methods:
-
-1. **Session** — OAuth/OIDC login sets `session.user`. First user gets admin role; subsequent users get user role with `budget=5`.
-2. **API Key** — `X-API-Key` header looked up in User table. Generates `rsk_...` format keys.
-3. **Internal** — `X-User-Id` header for microservice communication (used by CMS).
-
-### Error Handling
-
-- Route handlers use `routeHandler()` wrapper for automatic error forwarding
-- `logErrors()` middleware catches all errors, logs them, optionally emails dev team (when `EMAIL_DEV` set)
-- Errors include `statusCode` (HTTP status) and user-friendly `message`
-
-## Configuration
-
-| Variable                  | Required | Default        | Description                                              |
-| ------------------------- | -------- | -------------- | -------------------------------------------------------- |
-| `PORT`                    | No       | 8080           | Server port                                              |
-| `SESSION_SECRET`          | Yes      | —              | Cookie signing secret                                    |
-| `AWS_ACCESS_KEY_ID`       | Yes      | —              | AWS credentials                                          |
-| `AWS_SECRET_ACCESS_KEY`   | Yes      | —              | AWS credentials                                          |
-| `DB_STORAGE`              | No       | —              | PGlite data directory (uses embedded PG when set)        |
-| `CLIENT_FOLDER`           | No       | ../client      | Path to static client files                              |
-| `HTTPS_KEY`, `HTTPS_CERT` | No       | auto-generated | TLS key/cert                                             |
-| `SESSION_MAX_AGE`         | No       | 1800000        | Session TTL in ms (30 min)                               |
-| `OAUTH_PROVIDER_ENABLED`  | No       | —              | Enable local OIDC provider for dev                       |
-| `OAUTH_DISCOVERY_URL`     | No       | —              | OIDC discovery URL                                       |
-| `OAUTH_CLIENT_ID`         | No       | —              | OIDC client ID                                           |
-| `OAUTH_CLIENT_SECRET`     | No       | —              | OIDC client secret                                       |
-| `OAUTH_CALLBACK_URL`      | No       | —              | OIDC redirect URI                                        |
-| `GATEWAY_URL`             | No       | —              | Gateway service URL (enables HTTP mode)                  |
-| `CMS_URL`                 | No       | —              | CMS service URL (enables HTTP mode)                      |
-| `GEMINI_API_KEY`          | No       | —              | Google Gemini API key                                    |
-| `BRAVE_SEARCH_API_KEY`    | No       | —              | Brave Search API key                                     |
-| `DATA_GOV_API_KEY`        | No       | —              | GovInfo API key                                          |
-| `CONGRESS_GOV_API_KEY`    | No       | —              | Congress.gov API key                                     |
-| `S3_BUCKETS`              | No       | —              | Comma-separated allowed S3 buckets                       |
-| `TEST_API_KEY`            | No       | —              | Creates test admin user with this API key                |
-| `EMAIL_DEV`               | No       | —              | Developer error report email                             |
-| `EMAIL_ADMIN`             | No       | —              | Admin notification email                                 |
-| `EMAIL_USER_REPORTS`      | No       | —              | User feedback email                                      |
-| `USAGE_RESET_SCHEDULE`    | No       | `0 0 * * *`    | Cron expression for usage limit reset (daily by default) |
-| `VERSION`                 | No       | —              | Reported by `/api/status`                                |
+```bash
+npm start -w server
+```
 
 ## Testing
 
 ```bash
-npm test                 # Unit tests (Node built-in test runner)
-npm run test:integration # Integration tests (Playwright browser + API)
+npm test
+npm run test:unit
+npm run test:integration
 ```
 
-Tests use real services (AWS Bedrock, PostgreSQL/PGlite). No mocking.
+The `server/test` suite is broader than a normal service-local test folder because it verifies:
 
-When running tests, make sure your local server is running.
+- direct local composition
+- public edge routing
+- parity between direct and HTTP-backed service calls
+
+## Key Environment Variables
+
+See [.env.example](.env.example) and [test.env.example](test.env.example) for the full current set.
+
+The ones that matter most for structure are:
+
+- `PORT`
+- `SESSION_SECRET`
+- `CLIENT_FOLDER`
+- `USERS_URL`
+- `GATEWAY_URL`
+- `CMS_URL`
+- `AGENTS_URL`
+- `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`
+- `DB_STORAGE`
+- `OAUTH_PROVIDER_ENABLED`, `OAUTH_DISCOVERY_URL`, `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OAUTH_CALLBACK_URL`
+- optional local OAuth issuer override: `OAUTH_PROVIDER_ISSUER`
+
+## Notes
+
+- `server` is not a generic proxy. It is the browser boundary and BFF.
+- The internal service APIs are still first-class because they must also run in Docker Compose and ECS.
+- When docs or code disagree, trust `server/api/index.js`, `compose.js`, and the tests.

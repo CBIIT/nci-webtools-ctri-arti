@@ -1,10 +1,9 @@
-import db, { User, Conversation, Message } from "database";
+import db, { Guardrail, User, Conversation, Message } from "database";
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { ConversationService } from "cms/conversation.js";
+import { ConversationService } from "cms/core/conversation-service.js";
 import { eq } from "drizzle-orm";
-import { embed as gatewayEmbed } from "shared/clients/gateway.js";
 import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
 
 const svc = new ConversationService();
@@ -25,11 +24,12 @@ function mockEmbeddingFor(value) {
 test("ConversationService", async (t) => {
   let testUser;
 
-  ConversationService.setEmbedder(async ({ content }) => ({
+  const originalEmbedContent = svc.embedContent;
+  svc.embedContent = async ({ content }) => ({
     embeddings: content.map((item) => mockEmbeddingFor(item)),
-  }));
+  });
   t.after(() => {
-    ConversationService.setEmbedder(gatewayEmbed);
+    svc.embedContent = originalEmbedContent;
   });
 
   await t.test("setup: get test user", async () => {
@@ -53,6 +53,9 @@ test("ConversationService", async (t) => {
       const agent = await svc.getAgent(testUser.id, agentId);
       assert.ok(agent);
       assert.strictEqual(agent.name, "Test Agent");
+      assert.ok(agent.runtime);
+      assert.strictEqual(typeof agent.runtime.model, "string");
+      assert.strictEqual(agent.runtime.guardrailConfig, null);
     });
 
     await at.test("getAgents lists user and global agents", async () => {
@@ -60,6 +63,36 @@ test("ConversationService", async (t) => {
       assert.ok(agents.length >= 1);
       const found = agents.find((a) => a.id === agentId);
       assert.ok(found);
+      assert.strictEqual(typeof found.runtime?.model, "string");
+    });
+
+    await at.test("resolveAgentRuntimeConfig uses saved model and explicit override", async () => {
+      const resolved = await svc.resolveAgentRuntimeConfig(testUser.id, agentId);
+      assert.ok(resolved);
+      assert.strictEqual(resolved.agent.id, agentId);
+      assert.strictEqual(resolved.runtime.effectiveModel, resolved.agent.runtime.model);
+
+      const overridden = await svc.resolveAgentRuntimeConfig(testUser.id, agentId, {
+        modelOverride: "override-model",
+      });
+      assert.strictEqual(overridden.runtime.overrideModel, "override-model");
+      assert.strictEqual(overridden.runtime.effectiveModel, "override-model");
+    });
+
+    await at.test("global FedPulse exposes its linked guardrail runtime", async () => {
+      const fedPulse = (await svc.getAgents(null)).find((agent) => agent.name === "FedPulse");
+      assert.ok(fedPulse, "FedPulse should exist in seeded global agents");
+      assert.equal(fedPulse.guardrailID, 1);
+      assert.equal(fedPulse.runtime.guardrailID, 1);
+      assert.equal(fedPulse.runtime.guardrailConfig, null);
+
+      const [guardrail] = await db
+        .select()
+        .from(Guardrail)
+        .where(eq(Guardrail.id, fedPulse.guardrailID))
+        .limit(1);
+      assert.ok(guardrail, "FedPulse guardrail should exist in seed data");
+      assert.equal(guardrail.name, "FedPulse Prompt Attack");
     });
 
     await at.test("getAgents with null userId only lists global agents", async () => {
@@ -81,8 +114,8 @@ test("ConversationService", async (t) => {
         agentID: agentId,
         title: "Agent Conversation",
       });
-      const _msg = await svc.addMessage(testUser.id, conversation.id, {
-        role: "user",
+      const _msg = await svc.appendUserMessage(testUser.id, {
+        conversationId: conversation.id,
         content: [{ text: "hello" }],
       });
 
@@ -94,6 +127,15 @@ test("ConversationService", async (t) => {
       // Soft-deleted conversation should not be found
       const deletedConversation = await svc.getConversation(testUser.id, conversation.id);
       assert.strictEqual(deletedConversation, null);
+
+      const [rawConversation] = await db
+        .select()
+        .from(Conversation)
+        .where(eq(Conversation.id, conversation.id))
+        .limit(1);
+      assert.ok(rawConversation);
+      assert.strictEqual(rawConversation.deleted, true);
+      assert.strictEqual(rawConversation.agentID, null);
     });
   });
 
@@ -168,9 +210,9 @@ test("ConversationService", async (t) => {
       conversationId = conversation.id;
     });
 
-    await mt.test("addMessage", async () => {
-      const msg = await svc.addMessage(testUser.id, conversationId, {
-        role: "user",
+    await mt.test("appendUserMessage", async () => {
+      const msg = await svc.appendUserMessage(testUser.id, {
+        conversationId,
         content: [{ text: "Hello" }],
       });
       assert.ok(msg.id);
@@ -178,13 +220,66 @@ test("ConversationService", async (t) => {
       messageId = msg.id;
     });
 
-    await mt.test("addMessage with parentID", async () => {
-      const msg = await svc.addMessage(testUser.id, conversationId, {
-        role: "assistant",
+    await mt.test("appendAssistantMessage with parentID", async () => {
+      const msg = await svc.appendAssistantMessage(testUser.id, {
+        conversationId,
         content: [{ text: "Hi there" }],
         parentID: messageId,
       });
       assert.strictEqual(msg.parentID, messageId);
+    });
+
+    await mt.test("appendToolResultsMessage", async () => {
+      const msg = await svc.appendToolResultsMessage(testUser.id, {
+        conversationId,
+        content: [
+          {
+            toolResult: {
+              toolUseId: "tool_test_1",
+              content: [{ json: { ok: true } }],
+            },
+          },
+        ],
+      });
+      assert.strictEqual(msg.role, "user");
+      assert.strictEqual(msg.content[0].toolResult.toolUseId, "tool_test_1");
+    });
+
+    await mt.test("appendConversationMessage rejects user toolUse rows", async () => {
+      await assert.rejects(
+        svc.appendConversationMessage(testUser.id, {
+          conversationId,
+          role: "user",
+          content: [
+            {
+              toolUse: {
+                toolUseId: "tool_invalid_user",
+                name: "search",
+                input: { query: "bad" },
+              },
+            },
+          ],
+        }),
+        /User messages cannot contain tool uses/
+      );
+    });
+
+    await mt.test("appendConversationMessage rejects assistant toolResult rows", async () => {
+      await assert.rejects(
+        svc.appendConversationMessage(testUser.id, {
+          conversationId,
+          role: "assistant",
+          content: [
+            {
+              toolResult: {
+                toolUseId: "tool_invalid_assistant",
+                content: [{ json: { ok: false } }],
+              },
+            },
+          ],
+        }),
+        /Assistant messages cannot contain tool results/
+      );
     });
 
     await mt.test("getMessage", async () => {
@@ -270,6 +365,23 @@ test("ConversationService", async (t) => {
       assert.deepStrictEqual(updated.content, [{ text: "Updated" }]);
     });
 
+    await mt.test("updateMessage rejects malformed tool role changes", async () => {
+      await assert.rejects(
+        svc.updateMessage(testUser.id, messageId, {
+          content: [
+            {
+              toolUse: {
+                toolUseId: "tool_invalid_update",
+                name: "editor",
+                input: { command: "view", path: "notes.txt" },
+              },
+            },
+          ],
+        }),
+        /User messages cannot contain tool uses/
+      );
+    });
+
     await mt.test("deleteMessage", async () => {
       const count = await svc.deleteMessage(testUser.id, messageId);
       assert.strictEqual(count, 1);
@@ -286,15 +398,15 @@ test("ConversationService", async (t) => {
     await ct.test("setup conversation with messages and resources", async () => {
       const conversation = await svc.createConversation(testUser.id, { title: "Context Test" });
       conversationId = conversation.id;
-      const msg1 = await svc.addMessage(testUser.id, conversationId, {
-        role: "user",
+      const msg1 = await svc.appendUserMessage(testUser.id, {
+        conversationId,
         content: [{ text: "q1" }],
       });
-      await svc.addMessage(testUser.id, conversationId, {
-        role: "assistant",
+      await svc.appendAssistantMessage(testUser.id, {
+        conversationId,
         content: [{ text: "a1" }],
       });
-      await svc.addResource(testUser.id, {
+      await svc.storeConversationResource(testUser.id, {
         messageID: msg1.id,
         name: "doc.txt",
         type: "text/plain",
@@ -375,8 +487,29 @@ test("ConversationService", async (t) => {
       agentId = agent.id;
     });
 
-    await rt.test("addResource", async () => {
-      const resource = await svc.addResource(testUser.id, {
+    await rt.test(
+      "storeConversationResource allows user resources under global agents",
+      async () => {
+        const [globalAgent] = await svc.getAgents(null);
+        assert.ok(globalAgent, "expected at least one global agent from seed data");
+
+        const resource = await svc.storeConversationResource(testUser.id, {
+          agentID: globalAgent.id,
+          name: "memories/profile.txt",
+          type: "text/plain",
+          content: "preferred editor behavior",
+        });
+
+        assert.ok(resource.id);
+        assert.strictEqual(resource.agentID, globalAgent.id);
+        assert.strictEqual(resource.userID, testUser.id);
+
+        await svc.deleteConversationResource(testUser.id, resource.id);
+      }
+    );
+
+    await rt.test("storeConversationResource", async () => {
+      const resource = await svc.storeConversationResource(testUser.id, {
         agentID: agentId,
         name: "document.txt",
         type: "text/plain",
@@ -399,30 +532,35 @@ test("ConversationService", async (t) => {
       assert.ok(resources.length >= 1);
     });
 
-    await rt.test("addResource indexes text into vectors", async () => {
+    await rt.test("storeConversationResource indexes text into vectors", async () => {
       const vectors = await svc.getVectorsByResource(testUser.id, resourceId);
       assert.strictEqual(vectors.length, 1);
       assert.strictEqual(vectors[0].content, "file content");
       assert.strictEqual(vectors[0].embedding.length, NOVA_EMBEDDING_DIMENSIONS);
     });
 
-    await rt.test("updateResource reindexes vectors when content changes", async () => {
-      await svc.updateResource(testUser.id, resourceId, { content: "updated file content" });
+    await rt.test("updateConversationResource reindexes vectors when content changes", async () => {
+      await svc.updateConversationResource(testUser.id, resourceId, {
+        content: "updated file content",
+      });
       const vectors = await svc.getVectorsByResource(testUser.id, resourceId);
       assert.strictEqual(vectors.length, 1);
       assert.strictEqual(vectors[0].content, "updated file content");
       assert.strictEqual(vectors[0].embedding.length, NOVA_EMBEDDING_DIMENSIONS);
     });
 
-    await rt.test("deleteResource cascades vectors", async () => {
+    await rt.test("deleteConversationResource cascades vectors", async () => {
       // Create a conversation for vectors (vectors still use conversationID)
       const conv = await svc.createConversation(testUser.id, { title: "Resource Vector Test" });
-      await svc.addVectors(testUser.id, conv.id, [
-        { resourceID: resourceId, content: "chunk 1", embedding: embeddingOf(0.1) },
-        { resourceID: resourceId, content: "chunk 2", embedding: embeddingOf(0.2) },
-      ]);
+      await svc.storeConversationVectors(testUser.id, {
+        conversationId: conv.id,
+        vectors: [
+          { resourceID: resourceId, content: "chunk 1", embedding: embeddingOf(0.1) },
+          { resourceID: resourceId, content: "chunk 2", embedding: embeddingOf(0.2) },
+        ],
+      });
 
-      await svc.deleteResource(testUser.id, resourceId);
+      await svc.deleteConversationResource(testUser.id, resourceId);
 
       const resource = await svc.getResource(testUser.id, resourceId);
       assert.strictEqual(resource, null);
@@ -476,6 +614,7 @@ test("ConversationService", async (t) => {
 
   await t.test("Prompt CRUD", async (pt) => {
     let promptId;
+    let agentId;
 
     await pt.test("createPrompt", async () => {
       const prompt = await svc.createPrompt({
@@ -506,9 +645,21 @@ test("ConversationService", async (t) => {
     });
 
     await pt.test("deletePrompt", async () => {
+      const agent = await svc.createAgent(testUser.id, {
+        name: "Prompt Owner Agent",
+        promptID: promptId,
+      });
+      agentId = agent.id;
+
       await svc.deletePrompt(promptId);
       const prompt = await svc.getPrompt(promptId);
       assert.strictEqual(prompt, null);
+
+      const updatedAgent = await svc.getAgent(testUser.id, agentId);
+      assert.ok(updatedAgent);
+      assert.strictEqual(updatedAgent.promptID, null);
+      assert.strictEqual(updatedAgent.systemPrompt, null);
+      assert.strictEqual(updatedAgent.runtime.systemPrompt, null);
     });
   });
 
@@ -533,12 +684,12 @@ test("ConversationService", async (t) => {
       });
       conversationId = conversation.id;
 
-      await svc.addMessage(testUser.id, conversationId, {
-        role: "user",
+      await svc.appendUserMessage(testUser.id, {
+        conversationId,
         content: [{ text: "The capital of France is Paris" }],
       });
-      await svc.addMessage(testUser.id, conversationId, {
-        role: "assistant",
+      await svc.appendAssistantMessage(testUser.id, {
+        conversationId,
         content: [{ text: "That is correct. Paris is indeed the capital of France." }],
       });
 
@@ -547,12 +698,12 @@ test("ConversationService", async (t) => {
         agentID: otherAgentId,
       });
       otherConversationId = otherConversation.id;
-      await svc.addMessage(testUser.id, otherConversationId, {
-        role: "user",
+      await svc.appendUserMessage(testUser.id, {
+        conversationId: otherConversationId,
         content: [{ text: "France also appears in this other agent conversation." }],
       });
 
-      const resource = await svc.addResource(testUser.id, {
+      const resource = await svc.storeConversationResource(testUser.id, {
         agentID: otherAgentId,
         name: "geography.txt",
         type: "text/plain",
@@ -561,23 +712,26 @@ test("ConversationService", async (t) => {
       resourceId = resource.id;
       await svc.deleteVectorsByResource(testUser.id, resourceId);
 
-      await svc.addVectors(testUser.id, conversationId, [
-        {
-          resourceID: resourceId,
-          content: "France is a country in Western Europe",
-          embedding: embeddingOf(0.9, 0.1, 0.1),
-        },
-        {
-          resourceID: resourceId,
-          content: "Its capital is Paris",
-          embedding: embeddingOf(0.8, 0.2, 0.1),
-        },
-        {
-          resourceID: resourceId,
-          content: "Quantum physics studies subatomic particles",
-          embedding: embeddingOf(0.1, 0.1, 0.9),
-        },
-      ]);
+      await svc.storeConversationVectors(testUser.id, {
+        conversationId,
+        vectors: [
+          {
+            resourceID: resourceId,
+            content: "France is a country in Western Europe",
+            embedding: embeddingOf(0.9, 0.1, 0.1),
+          },
+          {
+            resourceID: resourceId,
+            content: "Its capital is Paris",
+            embedding: embeddingOf(0.8, 0.2, 0.1),
+          },
+          {
+            resourceID: resourceId,
+            content: "Quantum physics studies subatomic particles",
+            embedding: embeddingOf(0.1, 0.1, 0.9),
+          },
+        ],
+      });
     });
 
     await st.test("searchMessages finds matching text", async () => {
@@ -644,7 +798,7 @@ test("ConversationService", async (t) => {
         title: "Vector Test Conversation",
       });
       conversationId = conversation.id;
-      const resource = await svc.addResource(testUser.id, {
+      const resource = await svc.storeConversationResource(testUser.id, {
         name: "vec-doc.txt",
         type: "text/plain",
         content: "vector test content",
@@ -653,12 +807,15 @@ test("ConversationService", async (t) => {
       await svc.deleteVectorsByResource(testUser.id, resourceId);
     });
 
-    await vt.test("addVectors", async () => {
-      const vectors = await svc.addVectors(testUser.id, conversationId, [
-        { resourceID: resourceId, content: "chunk A", embedding: embeddingOf(0.1, 0.2, 0.3) },
-        { resourceID: resourceId, content: "chunk B", embedding: embeddingOf(0.4, 0.5, 0.6) },
-        { content: "standalone", embedding: embeddingOf(0.7, 0.8, 0.9) },
-      ]);
+    await vt.test("storeConversationVectors", async () => {
+      const vectors = await svc.storeConversationVectors(testUser.id, {
+        conversationId,
+        vectors: [
+          { resourceID: resourceId, content: "chunk A", embedding: embeddingOf(0.1, 0.2, 0.3) },
+          { resourceID: resourceId, content: "chunk B", embedding: embeddingOf(0.4, 0.5, 0.6) },
+          { content: "standalone", embedding: embeddingOf(0.7, 0.8, 0.9) },
+        ],
+      });
       assert.strictEqual(vectors.length, 3);
     });
 
@@ -691,6 +848,132 @@ test("ConversationService", async (t) => {
 
       const vectors = await svc.getVectorsByConversation(testUser.id, conversationId);
       assert.strictEqual(vectors.length, 0);
+    });
+  });
+
+  await t.test("Ownership invariants", async (ot) => {
+    let otherUser;
+    let foreignConversationId;
+    let foreignMessageId;
+    let foreignResourceId;
+
+    await ot.test("setup foreign user fixtures", async () => {
+      const email = `conversation-owner-${Date.now()}-${Math.random()}@test.com`;
+      [otherUser] = await db
+        .insert(User)
+        .values({
+          email,
+          firstName: "Other",
+          lastName: "User",
+          status: "active",
+          roleID: 3,
+          budget: 5,
+          remaining: 5,
+        })
+        .returning();
+
+      const conversation = await svc.createConversation(otherUser.id, {
+        title: "Foreign Conversation",
+      });
+      foreignConversationId = conversation.id;
+
+      const message = await svc.appendUserMessage(otherUser.id, {
+        conversationId: foreignConversationId,
+        content: [{ text: "Foreign message" }],
+      });
+      foreignMessageId = message.id;
+
+      const resource = await svc.storeConversationResource(otherUser.id, {
+        conversationID: foreignConversationId,
+        messageID: foreignMessageId,
+        name: "foreign.txt",
+        type: "text/plain",
+        content: "foreign resource",
+      });
+      foreignResourceId = resource.id;
+    });
+
+    await ot.test("appendConversationMessage rejects foreign conversation", async () => {
+      const before = await svc.getMessages(otherUser.id, foreignConversationId);
+
+      await assert.rejects(
+        svc.appendConversationMessage(testUser.id, {
+          conversationId: foreignConversationId,
+          role: "user",
+          content: [{ text: "Should not persist" }],
+        }),
+        /Conversation not found/
+      );
+
+      const after = await svc.getMessages(otherUser.id, foreignConversationId);
+      assert.strictEqual(after.length, before.length);
+    });
+
+    await ot.test("storeConversationResource rejects foreign message ownership", async () => {
+      const before = await svc.getResourcesByConversation(otherUser.id, foreignConversationId);
+
+      await assert.rejects(
+        svc.storeConversationResource(testUser.id, {
+          conversationID: foreignConversationId,
+          messageID: foreignMessageId,
+          name: "stolen.txt",
+          type: "text/plain",
+          content: "Should not persist",
+        }),
+        /Message not found/
+      );
+
+      const after = await svc.getResourcesByConversation(otherUser.id, foreignConversationId);
+      assert.strictEqual(after.length, before.length);
+    });
+
+    await ot.test("storeConversationVectors rejects foreign conversation", async () => {
+      const before = await svc.getVectorsByConversation(otherUser.id, foreignConversationId);
+
+      await assert.rejects(
+        svc.storeConversationVectors(testUser.id, {
+          conversationId: foreignConversationId,
+          vectors: [{ content: "Should not persist", embedding: embeddingOf(0.3, 0.2, 0.1) }],
+        }),
+        /Conversation not found/
+      );
+
+      const after = await svc.getVectorsByConversation(otherUser.id, foreignConversationId);
+      assert.strictEqual(after.length, before.length);
+    });
+
+    await ot.test("deleteVectorsByResource rejects foreign resource", async () => {
+      await svc.storeConversationVectors(otherUser.id, {
+        conversationId: foreignConversationId,
+        vectors: [
+          {
+            resourceID: foreignResourceId,
+            content: "Foreign chunk",
+            embedding: embeddingOf(0.4, 0.5, 0.6),
+          },
+        ],
+      });
+      const before = await svc.getVectorsByResource(otherUser.id, foreignResourceId);
+
+      await assert.rejects(
+        svc.deleteVectorsByResource(testUser.id, foreignResourceId),
+        /Resource not found/
+      );
+
+      const after = await svc.getVectorsByResource(otherUser.id, foreignResourceId);
+      assert.strictEqual(after.length, before.length);
+    });
+
+    await ot.test("deleteVectorsByConversation rejects foreign conversation", async () => {
+      const before = await svc.getVectorsByConversation(otherUser.id, foreignConversationId);
+
+      await assert.rejects(
+        svc.deleteVectorsByConversation(testUser.id, foreignConversationId),
+        /Conversation not found/
+      );
+
+      const after = await svc.getVectorsByConversation(otherUser.id, foreignConversationId);
+      assert.strictEqual(after.length, before.length);
     });
   });
 });

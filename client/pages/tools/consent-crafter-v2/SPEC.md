@@ -62,7 +62,7 @@ npm run test:integration
   client/test/pages/tools/consent-crafter-v2/index.test.js
      - Fetches resources from server (same URLs the real app uses)
      - Calls runFieldExtraction() from extract.js
-     - Calls /api/model endpoint for real Bedrock inference
+     - Calls /api/model/invoke endpoint for real Bedrock inference
      - Generates DOCX via docx-templates (same as processJob)
      - Logs full JSON extraction + DOCX text to console
      - Runs assertions on field presence, types, and values
@@ -83,7 +83,7 @@ Configuration in `server/test.env`:
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | All 78 required fields present | Every field in `consent-schema.json` required array                                                                                                          |
 | Non-empty strings              | pi*name, study_title, study_site, cohort, contact*_, key*info*_, study_purpose, study_procedures_intro, risks_intro, benefits_description, disease_condition |
-| Boolean types                  | parent*permission, is_investigational, coi*_, genomic\__, payment booleans                                                                                   |
+| Boolean types                  | parent*permission, is_investigational, coi*\_, genomic\_\_, payment booleans                                                                                 |
 | Drug risks structure           | Array of objects with drug_name, common/occasional/rare definitions and risks arrays                                                                         |
 | Procedure risks                | Array of non-empty strings, "Heading: risk text..." format                                                                                                   |
 | Protocol-specific values       | pi_name contains "Gulley", study_duration includes "2 year", accrual_ceiling is numeric                                                                      |

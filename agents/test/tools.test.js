@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
 
-import { getToolFn, toolImplementations } from "../tools.js";
+import { getToolFn, toolImplementations } from "../tools/index.js";
 
 function embeddingOf(...values) {
   return Array.from({ length: NOVA_EMBEDDING_DIMENSIONS }, (_, index) => values[index] ?? 0);
@@ -47,17 +47,17 @@ describe("tools", () => {
       return {
         getResourcesByAgent: async () => [...resources],
         getResourcesByConversation: async () => resources.filter((r) => r.conversationID),
-        addResource: async (userId, data) => {
+        storeConversationResource: async (userId, data) => {
           const resource = { id: resources.length + 1, userID: userId, ...data };
           resources.push(resource);
           return resource;
         },
-        updateResource: async (userId, resourceId, updates) => {
+        updateConversationResource: async (userId, resourceId, updates) => {
           const r = resources.find((r) => r.id === resourceId);
           if (r) Object.assign(r, updates);
           return r;
         },
-        deleteResource: async (userId, resourceId) => {
+        deleteConversationResource: async (userId, resourceId) => {
           const idx = resources.findIndex((r) => r.id === resourceId);
           if (idx >= 0) resources.splice(idx, 1);
         },
@@ -139,6 +139,22 @@ describe("tools", () => {
       assert.ok(result.entries.includes("a.txt"));
       assert.ok(result.entries.includes("b.txt"));
       assert.ok(result.entries.includes("sub/"));
+    });
+
+    it("lists root and empty scoped directories instead of failing", async () => {
+      const cms = createMockCms();
+      const context = { userId: 1, agentId: 1, conversationId: 10, cms };
+
+      const root = await toolImplementations.editor({ command: "view", path: "/" }, context);
+      assert.equal(root.status, "directory");
+      assert.deepStrictEqual(root.entries, []);
+
+      const memories = await toolImplementations.editor(
+        { command: "view", path: "memories/" },
+        context
+      );
+      assert.equal(memories.status, "directory");
+      assert.deepStrictEqual(memories.entries, []);
     });
 
     it("returns error for missing file on view", async () => {

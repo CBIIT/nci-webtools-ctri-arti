@@ -7,7 +7,8 @@ import {
   routeHandler,
   getDateRange,
   createCertificate,
-} from "../services/utils.js";
+  getAuthenticatedUser,
+} from "../api/utils.js";
 
 test("retry", async (t) => {
   await t.test("succeeds on first try", async () => {
@@ -178,5 +179,22 @@ test("createCertificate", async (t) => {
     const altNames = [{ type: 2, value: "test.example.com" }];
     const { cert } = createCertificate({ altNames });
     assert.ok(cert.startsWith("-----BEGIN CERTIFICATE-----"));
+  });
+});
+
+test("getAuthenticatedUser", async (t) => {
+  await t.test("returns the authenticated session user", () => {
+    const user = getAuthenticatedUser({
+      headers: {},
+      session: { user: { id: 7, email: "user@test.com" } },
+    });
+    assert.deepStrictEqual(user, { id: 7, email: "user@test.com" });
+  });
+
+  await t.test("throws when there is no authenticated session user", () => {
+    assert.throws(
+      () => getAuthenticatedUser({ headers: {}, session: {} }),
+      /Authentication required/
+    );
   });
 });
