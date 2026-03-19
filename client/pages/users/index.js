@@ -64,7 +64,7 @@ function UsersList() {
   const [sortColumn, setSortColumn] = createSignal("lastName");
   const [sortOrder, setSortOrder] = createSignal("asc");
   const [currentPage, setCurrentPage] = createSignal(1);
-  const rowsPerPage = 20;
+  const [rowsPerPage, setRowsPerPage] = createSignal(20);
 
   const statuses = ["All", "active", "inactive"];
 
@@ -86,8 +86,8 @@ function UsersList() {
     status: selectedStatus() === "All" ? undefined : selectedStatus(),
     sortBy: sortColumn(),
     sortOrder: sortOrder(),
-    limit: rowsPerPage,
-    offset: (currentPage() - 1) * rowsPerPage,
+    limit: rowsPerPage(),
+    offset: (currentPage() - 1) * rowsPerPage(),
   }));
 
   const [usersResource] = createResource(usersParams, async (params) => {
@@ -156,6 +156,11 @@ function UsersList() {
 
   const handlePageChange = ({ page }) => {
     setCurrentPage(page);
+  };
+
+  const handleRowsPerPageChange = ({ rowsPerPage }) => {
+    setRowsPerPage(rowsPerPage);
+    setCurrentPage(1);
   };
 
   // Check for alert message from navigation state
@@ -292,6 +297,8 @@ function UsersList() {
           sortOrder=${sortOrder}
           onSort=${handleSort}
           onPageChange=${handlePageChange}
+          rowsPerPage=${rowsPerPage}
+          onRowsPerPageChange=${handleRowsPerPageChange}
           className="users-table"
           columns=${[
             {
