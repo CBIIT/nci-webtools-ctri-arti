@@ -185,7 +185,7 @@ function UserProfile() {
                 </div>
 
                 <div>
-                  <${RequestLimitIncrease} />
+                  <${RequestLimitIncrease} user=${() => user()} />
                 </div>
 
                 <hr class="profile-divider my-4" />
