@@ -1,6 +1,11 @@
 import { json, Router } from "express";
 
-import { JSON_UPLOAD_LIMIT, readRequestContext, sendNotFound, withResolvedContext } from "./helpers.js";
+import {
+  JSON_UPLOAD_LIMIT,
+  readRequestContext,
+  sendNotFound,
+  withResolvedContext,
+} from "./helpers.js";
 
 export function createCmsToolsRouter({ application, resolveContext = readRequestContext } = {}) {
   if (!application) {
@@ -136,5 +141,3 @@ export function createCmsToolsRouter({ application, resolveContext = readRequest
 
   return api;
 }
-
-

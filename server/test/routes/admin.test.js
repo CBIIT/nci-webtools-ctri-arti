@@ -126,5 +126,3 @@ describe("budget admin routes", () => {
     assert.equal(updated.remaining, updated.budget);
   });
 });
-
-

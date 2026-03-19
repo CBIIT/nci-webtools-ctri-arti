@@ -27,9 +27,7 @@ test("email template", async (t) => {
       userName: "Test User",
       version: "1.0.0",
       isUserReported: false,
-      detailRows: [
-        { label: "Error", value: "Something failed", isMultiline: false },
-      ],
+      detailRows: [{ label: "Error", value: "Something failed", isMultiline: false }],
     });
 
     assert.ok(html.includes("Test User"));
@@ -89,5 +87,3 @@ test("email template", async (t) => {
     });
   });
 });
-
-

@@ -13,7 +13,7 @@ export function usageTableHeader(props) {
       >
         <!-- User Filter -->
         <div style="grid-column: span 2;">
-          <label for="search-filter" class="form-label fw-semibold">User</label>
+          <label for="search-filter" class="form-label">User</label>
           <input
             type="text"
             class="form-control"
@@ -26,7 +26,7 @@ export function usageTableHeader(props) {
 
         <!-- Role Filter -->
         <div>
-          <label for="role-filter" class="form-label fw-semibold">Role</label>
+          <label for="role-filter" class="form-label">Role</label>
           <select
             class="form-select"
             id="role-filter"
@@ -42,7 +42,7 @@ export function usageTableHeader(props) {
 
         <!-- Status Filter -->
         <div>
-          <label for="status-filter" class="form-label fw-semibold">Status</label>
+          <label for="status-filter" class="form-label">Status</label>
           <select
             class="form-select"
             id="status-filter"
@@ -61,7 +61,7 @@ export function usageTableHeader(props) {
 
         <!-- Tool Filter -->
         <div>
-          <label for="tool-filter" class="form-label fw-semibold">Tool</label>
+          <label for="tool-filter" class="form-label">Tool</label>
           <select
             class="form-select"
             id="tool-filter"
@@ -79,7 +79,7 @@ export function usageTableHeader(props) {
       <!-- Type Filter -->
       <div style="display: grid; gap: 1rem; grid-template-columns: repeat(4, minmax(0, 1fr));">
         <div>
-          <label for="type-filter" class="form-label fw-semibold">Type</label>
+          <label for="type-filter" class="form-label">Type</label>
           <select
             class="form-select"
             id="type-filter"
@@ -95,7 +95,7 @@ export function usageTableHeader(props) {
 
         <!-- Date Range Filter -->
         <div>
-          <label for="date-range-filter" class="form-label fw-semibold">Date Range</label>
+          <label for="date-range-filter" class="form-label">Date Range</label>
           <select
             class="form-select"
             id="date-range-filter"
@@ -111,7 +111,7 @@ export function usageTableHeader(props) {
         <!-- Custom Date Range Filter -->
         <${Show} when=${() => props.selectedDateRange === "Custom"}>
           <div>
-            <label for="custom-startDate" class="form-label fw-semibold">Start Date</label>
+            <label for="custom-startDate" class="form-label">Start Date</label>
             <input
               type="date"
               id="custom-startDate"
@@ -123,7 +123,7 @@ export function usageTableHeader(props) {
             />
           </div>
           <div>
-            <label for="custom-endDate" class="form-label fw-semibold">End Date</label>
+            <label for="custom-endDate" class="form-label">End Date</label>
             <input
               type="date"
               id="custom-endDate"

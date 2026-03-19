@@ -71,6 +71,7 @@ export function DataTable(props) {
     if (isRemote) {
       // For remote pagination, get total from props
       return Math.ceil((props.totalItems || 0) / rowsPerPage());
+      return Math.ceil((props.totalItems || 0) / rowsPerPage());
     } else {
       // For local pagination, calculate from filtered data
       let data = props.data || [];
@@ -208,10 +209,10 @@ export function DataTable(props) {
       </table>
     </div>
 
-    <div class="container d-flex justify-content-end align-items-center flex-wrap gap-3 p-2">
+    <div class="container d-flex justify-content-end align-items-center flex-wrap gap-3 p-2 mt-3">
       <div>Page ${() => (totalPages() === 0 ? 0 : currentPage())} of ${() => totalPages()}</div>
       <div class="d-flex align-items-center gap-2">
-        <label for="rows-per-page" class="form-label mb-0">Rows per page</label>
+        <label for="rows-per-page" class="form-label mb-0 fw-normal">Rows per page:</label>
         <select
           id="rows-per-page"
           class="form-select form-select-sm"
@@ -228,14 +229,14 @@ export function DataTable(props) {
       </div>
       <div>
         <button
-          class="btn btn-sm btn-outline-primary me-2"
+          class="btn btn-sm btn-outline-primary me-2 table-pagination-btn"
           onClick=${() => handlePageChange(Math.max(1, currentPage() - 1))}
           disabled=${() => currentPage() === 1}
         >
           Previous
         </button>
         <button
-          class="btn btn-sm btn-outline-primary"
+          class="btn btn-sm btn-outline-primary table-pagination-btn"
           onClick=${() => handlePageChange(Math.min(totalPages(), currentPage() + 1))}
           disabled=${() => totalPages() === 0 || currentPage() === totalPages()}
         >

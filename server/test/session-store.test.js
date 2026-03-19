@@ -126,5 +126,3 @@ test("session-store", async (t) => {
     assert.ok(result, "Session should survive touch with invalid expires");
   });
 });
-
-

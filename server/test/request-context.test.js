@@ -126,4 +126,3 @@ test("request context normalization", async (t) => {
     assert.match(createRequestId(), /^[0-9a-f-]{36}$/i);
   });
 });
-

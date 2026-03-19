@@ -16,7 +16,7 @@ function buildApp() {
     createServerApi({
       modules: {
         agents: {
-          async *chat() {}
+          async *chat() {},
         },
         users: {},
         cms: {
@@ -82,5 +82,3 @@ describe("server CMS agents routes", () => {
     assert.deepStrictEqual(res.body, { error: "Authentication required" });
   });
 });
-
-

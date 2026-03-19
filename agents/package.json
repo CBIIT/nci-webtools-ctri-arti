@@ -19,7 +19,7 @@
     "database": "*",
     "express": "^5.2.1",
     "gateway": "*",
-    "mammoth": "^1.11.0",
+    "mammoth": "^1.12.0",
     "shared": "*"
   }
 }

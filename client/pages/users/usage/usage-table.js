@@ -55,8 +55,7 @@ export function usageTable(props) {
             });
             return `/_/users/${user.id}/usage?${params.toString()}`;
           }}
-          class="btn d-inline-flex align-items-center justify-content-center text-decoration-none rounded-pill px-3 py-2 fw-semibold"
-          style="min-width: 150px; border: 2px solid #5d84e5; color: #3f3f3f; background-color: transparent;"
+          class="btn usage-view-details-btn d-inline-flex align-items-center justify-content-center text-decoration-none rounded-pill px-2 py-1"
         >
           View Details
         </a>

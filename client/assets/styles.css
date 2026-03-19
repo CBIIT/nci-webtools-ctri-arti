@@ -633,8 +633,19 @@ ul {
   border-color: #5d84e5 !important;
 }
 
+.usage-view-details-btn {
+  border: 1px solid #5d84e5;
+  color: #3f3f3f;
+  background-color: #ffffff;
+  height: 33px;
+  padding: 0 10px;
+  gap: 5px;
+  border-radius: 80px;
+}
+
 .users-table tbody > tr {
   --bs-table-bg: #fff;
+  height: 48px;
 }
 
 .users-table-striped tbody > tr:nth-of-type(odd) {
@@ -651,6 +662,7 @@ ul {
 
 .usage-users-table tbody > tr > td {
   border-color: #d9e2f5;
+  height: 48px;
 }
 
 .users-table .btn {
@@ -667,6 +679,13 @@ ul {
 }
 .table-pagination select {
   border: none;
+}
+.table-pagination-btn {
+  height: 31px;
+  border-radius: 4px;
+}
+.table-pagination-btn:disabled {
+  opacity: 0.5;
 }
 
 dialog.modal[open] {
@@ -1438,10 +1457,13 @@ dialog .close-btn {
 
 .btn-save-primary:hover,
 .btn-save-primary:focus,
-.btn-save-primary:active {
-  background: #0d5ed4;
-  border: 0.5px solid #373737;
-  color: #ffffff;
+.btn-save-primary:active,
+.btn-save-primary:focus-visible,
+.btn-save-primary.active,
+.btn-save-primary:active:focus {
+  background: #0d5ed4 !important;
+  border: 0.5px solid #373737 !important;
+  color: #ffffff !important;
 }
 
 .btn-save-primary:disabled {

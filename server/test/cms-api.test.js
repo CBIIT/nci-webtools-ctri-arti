@@ -1,9 +1,9 @@
+import db, { User } from "database";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { v1Router } from "cms/api.js";
 import { ConversationService } from "cms/core/conversation-service.js";
-import db, { User } from "database";
 import { eq } from "drizzle-orm";
 import express from "express";
 import request from "supertest";
@@ -102,16 +102,13 @@ describe("CMS API", () => {
       content: [{ text: "Foreign message" }],
     });
 
-    const res = await request(app)
-      .post("/resources")
-      .set("X-User-Id", String(user.id))
-      .send({
-        conversationID: conversation.id,
-        messageID: message.id,
-        name: "foreign.txt",
-        type: "text/plain",
-        content: "Should not persist",
-      });
+    const res = await request(app).post("/resources").set("X-User-Id", String(user.id)).send({
+      conversationID: conversation.id,
+      messageID: message.id,
+      name: "foreign.txt",
+      type: "text/plain",
+      content: "Should not persist",
+    });
 
     assert.equal(res.status, 404);
     assert.equal(res.body.error, `Message not found: ${message.id}`);
@@ -149,4 +146,3 @@ describe("CMS API", () => {
     assert.equal(res.body.error, `Conversation not found: ${conversation.id}`);
   });
 });
-

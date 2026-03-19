@@ -6,13 +6,7 @@ const env = process.env;
 const app = await createApp(env);
 createServer(app, env).listen(env.PORT, runTests);
 
-async function runTests({
-  PORT,
-  TEST_URL,
-  TEST_API_KEY,
-  TEST_SLOW,
-  TEST_PROFILE,
-} = env) {
+async function runTests({ PORT, TEST_URL, TEST_API_KEY, TEST_SLOW, TEST_PROFILE } = env) {
   const startedAt = Date.now();
   const browser = await chromium.launch({
     headless: true,
@@ -21,12 +15,16 @@ async function runTests({
   const page = await browser.newPage();
   page.setDefaultTimeout(60 * 60 * 1000);
 
-  const url =
-    TEST_URL ||
-    `http://localhost:${PORT}/?test=1` +
-      (TEST_API_KEY ? `&apiKey=${encodeURIComponent(TEST_API_KEY)}` : "") +
-      (TEST_SLOW === "1" ? "&slow=1" : "") +
-      (TEST_PROFILE === "1" ? "&profile=1" : "");
+  const url = new URL(TEST_URL || `http://localhost:${PORT}/?test=1`);
+  if (TEST_API_KEY && !url.searchParams.has("apiKey")) {
+    url.searchParams.set("apiKey", TEST_API_KEY);
+  }
+  if (TEST_SLOW === "1" && !url.searchParams.has("slow")) {
+    url.searchParams.set("slow", "1");
+  }
+  if (TEST_PROFILE === "1" && !url.searchParams.has("profile")) {
+    url.searchParams.set("profile", "1");
+  }
 
   let failed = false;
   let coverageEntries;
@@ -37,7 +35,9 @@ async function runTests({
     failed = true;
   });
   page.on("requestfailed", (request) => {
-    console.error(`Request failed: ${request.method()} ${request.url()} ${request.failure().errorText}`);
+    console.error(
+      `Request failed: ${request.method()} ${request.url()} ${request.failure().errorText}`
+    );
   });
   page.on("crash", () => {
     console.error("Page crashed");
@@ -48,7 +48,7 @@ async function runTests({
     console.log("Starting browser JS coverage");
     await page.coverage.startJSCoverage({ reportAnonymousScripts: true });
 
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.goto(url.href, { waitUntil: "domcontentloaded", timeout: 60000 });
     // eslint-disable-next-line no-undef
     await page.waitForFunction(() => window.TESTS_DONE === true, { timeout: 60 * 60 * 1000 });
 
@@ -61,7 +61,7 @@ async function runTests({
   }
 
   if (coverageEntries) {
-    printCoverage(coverageEntries, url, env.TEST_COVERAGE_INCLUDE_TESTS === "1");
+    printCoverage(coverageEntries, url.href, env.TEST_COVERAGE_INCLUDE_TESTS === "1");
   }
 
   console.log(`Integration runtime: ${((Date.now() - startedAt) / 1000).toFixed(3)}s`);
@@ -100,7 +100,13 @@ function printCoverage(entries, baseUrl, includeTests) {
       rows.push([dir, "", "", "", ""]);
     }
 
-    rows.push([`  ${name}`, pct(file.coveredLines, file.lines), "n/a", pct(file.coveredFuncs, file.funcs), file.uncovered]);
+    rows.push([
+      `  ${name}`,
+      pct(file.coveredLines, file.lines),
+      "n/a",
+      pct(file.coveredFuncs, file.funcs),
+      file.uncovered,
+    ]);
   }
 
   renderTable(
@@ -112,7 +118,15 @@ function printCoverage(entries, baseUrl, includeTests) {
       { key: "uncovered lines" },
     ],
     rows,
-    [["all files", pct(totals.coveredLines, totals.lines), "n/a", pct(totals.coveredFuncs, totals.funcs), ""]]
+    [
+      [
+        "all files",
+        pct(totals.coveredLines, totals.lines),
+        "n/a",
+        pct(totals.coveredFuncs, totals.funcs),
+        "",
+      ],
+    ]
   );
 }
 
@@ -126,7 +140,8 @@ function summarizeEntry(entry, origin, includeTests) {
     return null;
   }
 
-  if (url.origin !== origin || url.pathname === "/" || entry.url.includes("node_modules")) return null;
+  if (url.origin !== origin || url.pathname === "/" || entry.url.includes("node_modules"))
+    return null;
   if (!includeTests && entry.url.includes("/test/")) return null;
 
   const source = entry.source || "";
@@ -141,7 +156,15 @@ function summarizeEntry(entry, origin, includeTests) {
   const coveredFunctionNames = new Set();
 
   for (const fn of entry.functions) {
-    const informative = fn.ranges.filter((_, i) => !(i === 0 && !fn.functionName && fn.ranges[i].startOffset === 0 && fn.ranges[i].endOffset >= source.length));
+    const informative = fn.ranges.filter(
+      (_, i) =>
+        !(
+          i === 0 &&
+          !fn.functionName &&
+          fn.ranges[i].startOffset === 0 &&
+          fn.ranges[i].endOffset >= source.length
+        )
+    );
     if (!informative.length) continue;
 
     if (fn.functionName) {
@@ -201,7 +224,12 @@ function renderTable(columns, rows, footerRows = []) {
   const divider = `ℹ ${"-".repeat(totalTableWidth(columns))}`;
   console.log("");
   console.log(divider);
-  console.log(renderTableRow(columns, columns.map((column) => column.key)));
+  console.log(
+    renderTableRow(
+      columns,
+      columns.map((column) => column.key)
+    )
+  );
   console.log(divider);
   for (const row of rows) {
     console.log(renderTableRow(columns, row));

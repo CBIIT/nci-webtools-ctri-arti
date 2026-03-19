@@ -53,5 +53,3 @@ export function createCmsAgentsRouter({ application, resolveContext = readReques
 
   return api;
 }
-
-

@@ -198,5 +198,3 @@ test("getAuthenticatedUser", async (t) => {
     );
   });
 });
-
-

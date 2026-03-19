@@ -1,5 +1,5 @@
 import { openDB } from "idb";
-import { createEffect, createResource } from "solid-js";
+import { createEffect } from "solid-js";
 import { reconcile, unwrap } from "solid-js/store";
 
 /**

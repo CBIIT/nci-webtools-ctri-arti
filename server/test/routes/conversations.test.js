@@ -19,7 +19,7 @@ function buildApp() {
     createServerApi({
       modules: {
         agents: {
-          async *chat() {}
+          async *chat() {},
         },
         users: {},
         cms: createCmsService({ source: "server" }),
@@ -116,5 +116,3 @@ describe("GET /resources/:id", () => {
     await db.delete(Resource).where(eq(Resource.id, resource.id));
   });
 });
-
-

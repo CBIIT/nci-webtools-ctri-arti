@@ -5,7 +5,6 @@ import logger, { formatObject } from "shared/logger.js";
 import { sendLogReport } from "../integrations/email.js";
 
 const {
-  PORT,
   OAUTH_CALLBACK_URL,
   OAUTH_DISCOVERY_URL,
   OAUTH_CLIENT_ID,

@@ -13,5 +13,3 @@ export function createGatewayService({ users = createUsersApplication() } = {}) 
     modelUsageTracker: usage.trackModelUsage,
   });
 }
-
-

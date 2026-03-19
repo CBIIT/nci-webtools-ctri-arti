@@ -363,5 +363,3 @@ export async function runEmbedding({ model, content, purpose = "GENERIC_INDEX" }
 
 // Export helper functions for testing
 export { estimateContentTokens, calculateCacheBoundaries, addCachePointsToMessages };
-
-

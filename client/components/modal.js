@@ -1,4 +1,4 @@
-import { createEffect, createResource, Show } from "solid-js";
+import { createEffect, createResource, onCleanup, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { fetchCachedText } from "../utils/static-data.js";
@@ -20,9 +20,18 @@ import { getMarked } from "../utils/utils.js";
  * @returns
  */
 export default function Modal(props) {
-  createEffect(() => (document.body.style.overflow = props.open ? "hidden" : "auto"));
+  const read = (value) => (typeof value === "function" ? value() : value);
+  const isOpen = () => !!read(props.open);
+
+  createEffect(() => {
+    document.body.style.overflow = isOpen() ? "hidden" : "auto";
+  });
+  onCleanup(() => {
+    document.body.style.overflow = "auto";
+  });
+
   const [innerHTML] = createResource(
-    () => (props.open && props.url ? props.url : null),
+    () => (isOpen() && props.url ? props.url : null),
     async (url) => {
       if (!url) return "";
       const text = await fetchCachedText(url);
@@ -32,20 +41,20 @@ export default function Modal(props) {
   return html`
     <dialog
       class="modal modal-lg border-0 show"
-      open=${() => props.open}
+      open=${isOpen}
       onClose=${() => props.setOpen?.(false)}
       onSubmit=${(e) => props.onSubmit?.(e)}
     >
       <form
         method="dialog"
         class="modal-dialog modal-dialog-scrollable"
-        classList=${() => props.dialogClass || ""}
+        classList=${() => read(props.dialogClass) || ""}
       >
         <div class="modal-content">
           <${Show} when=${props.title}>
             <div class="modal-header">${props.title}</div>
           <//>
-          <div class="modal-body" classList=${() => props.bodyClass || ""}>
+          <div class="modal-body" classList=${() => read(props.bodyClass) || ""}>
             <${Show} when=${props.url} fallback=${props.children}>
               <div class="markdown small" innerHTML=${innerHTML} />
             <//>

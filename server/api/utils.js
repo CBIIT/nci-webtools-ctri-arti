@@ -1,9 +1,7 @@
 import { inspect } from "util";
 
 import forge from "node-forge";
-import {
-  readHttpRequestContext,
-} from "shared/request-context.js";
+import { readHttpRequestContext } from "shared/request-context.js";
 import { createHttpError, getDateRange, routeHandler } from "shared/utils.js";
 
 // Re-export search functions from shared
@@ -127,4 +125,3 @@ export function getAuthenticatedUser(req, options = {}) {
   }
   return user;
 }
-

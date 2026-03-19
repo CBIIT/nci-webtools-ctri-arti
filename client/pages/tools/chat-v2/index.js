@@ -67,10 +67,8 @@ function ChatApp() {
   const {
     agent,
     params,
-    setParams,
     sendMessage,
     conversations,
-    loadConversations,
     updateConversation,
     deleteConversation,
     generateTitle,
