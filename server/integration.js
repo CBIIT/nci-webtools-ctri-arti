@@ -6,13 +6,7 @@ const env = process.env;
 const app = await createApp(env);
 createServer(app, env).listen(env.PORT, runTests);
 
-async function runTests({
-  PORT,
-  TEST_URL,
-  TEST_API_KEY,
-  TEST_SLOW,
-  TEST_PROFILE,
-} = env) {
+async function runTests({ PORT, TEST_URL, TEST_API_KEY, TEST_SLOW, TEST_PROFILE } = env) {
   const startedAt = Date.now();
   const browser = await chromium.launch({
     headless: true,
@@ -41,7 +35,9 @@ async function runTests({
     failed = true;
   });
   page.on("requestfailed", (request) => {
-    console.error(`Request failed: ${request.method()} ${request.url()} ${request.failure().errorText}`);
+    console.error(
+      `Request failed: ${request.method()} ${request.url()} ${request.failure().errorText}`
+    );
   });
   page.on("crash", () => {
     console.error("Page crashed");
@@ -104,7 +100,13 @@ function printCoverage(entries, baseUrl, includeTests) {
       rows.push([dir, "", "", "", ""]);
     }
 
-    rows.push([`  ${name}`, pct(file.coveredLines, file.lines), "n/a", pct(file.coveredFuncs, file.funcs), file.uncovered]);
+    rows.push([
+      `  ${name}`,
+      pct(file.coveredLines, file.lines),
+      "n/a",
+      pct(file.coveredFuncs, file.funcs),
+      file.uncovered,
+    ]);
   }
 
   renderTable(
@@ -116,7 +118,15 @@ function printCoverage(entries, baseUrl, includeTests) {
       { key: "uncovered lines" },
     ],
     rows,
-    [["all files", pct(totals.coveredLines, totals.lines), "n/a", pct(totals.coveredFuncs, totals.funcs), ""]]
+    [
+      [
+        "all files",
+        pct(totals.coveredLines, totals.lines),
+        "n/a",
+        pct(totals.coveredFuncs, totals.funcs),
+        "",
+      ],
+    ]
   );
 }
 
@@ -130,7 +140,8 @@ function summarizeEntry(entry, origin, includeTests) {
     return null;
   }
 
-  if (url.origin !== origin || url.pathname === "/" || entry.url.includes("node_modules")) return null;
+  if (url.origin !== origin || url.pathname === "/" || entry.url.includes("node_modules"))
+    return null;
   if (!includeTests && entry.url.includes("/test/")) return null;
 
   const source = entry.source || "";
@@ -145,7 +156,15 @@ function summarizeEntry(entry, origin, includeTests) {
   const coveredFunctionNames = new Set();
 
   for (const fn of entry.functions) {
-    const informative = fn.ranges.filter((_, i) => !(i === 0 && !fn.functionName && fn.ranges[i].startOffset === 0 && fn.ranges[i].endOffset >= source.length));
+    const informative = fn.ranges.filter(
+      (_, i) =>
+        !(
+          i === 0 &&
+          !fn.functionName &&
+          fn.ranges[i].startOffset === 0 &&
+          fn.ranges[i].endOffset >= source.length
+        )
+    );
     if (!informative.length) continue;
 
     if (fn.functionName) {
@@ -205,7 +224,12 @@ function renderTable(columns, rows, footerRows = []) {
   const divider = `ℹ ${"-".repeat(totalTableWidth(columns))}`;
   console.log("");
   console.log(divider);
-  console.log(renderTableRow(columns, columns.map((column) => column.key)));
+  console.log(
+    renderTableRow(
+      columns,
+      columns.map((column) => column.key)
+    )
+  );
   console.log(divider);
   for (const row of rows) {
     console.log(renderTableRow(columns, row));

@@ -38,7 +38,6 @@ function formatLocalDate(date) {
 let testUser;
 
 test("API Smoke Tests", async (t) => {
-
   // ── GET /session ──────────────────────────────────────────────────────────
   await t.test("GET /session returns user", async () => {
     const { status, json } = await api("GET", "/session");
@@ -494,5 +493,4 @@ test("API Smoke Tests", async (t) => {
       document.body.removeChild(container);
     }
   });
-
 });

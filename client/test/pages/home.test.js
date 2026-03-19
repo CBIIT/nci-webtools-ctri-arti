@@ -1,7 +1,13 @@
-import assert from "../assert.js";
-import { installMockFetch, jsonResponse, mountApp, waitForCondition, waitForElement } from "../helpers.js";
-import test from "../test.js";
 import { AUTH_STATE_STORAGE_KEY, authSync } from "../../contexts/auth-context.js";
+import assert from "../assert.js";
+import {
+  installMockFetch,
+  jsonResponse,
+  mountApp,
+  waitForCondition,
+  waitForElement,
+} from "../helpers.js";
+import test from "../test.js";
 
 function stubReload() {
   const originalReload = authSync.reload;
@@ -142,7 +148,8 @@ test("Auth Sync Tests", async (t) => {
 
     try {
       await waitForCondition(
-        () => window.__authContext?.().status() === "LOADED" && window.__authContext?.().isLoggedIn(),
+        () =>
+          window.__authContext?.().status() === "LOADED" && window.__authContext?.().isLoggedIn(),
         5000,
         "authenticated auth loaded"
       );
@@ -245,7 +252,8 @@ test("Inactivity Dialog Tests", async (t) => {
 
     try {
       await waitForCondition(
-        () => window.__authContext?.().status() === "LOADED" && !!window.__authContext?.().expires(),
+        () =>
+          window.__authContext?.().status() === "LOADED" && !!window.__authContext?.().expires(),
         5000,
         "inactivity auth loaded"
       );
@@ -328,7 +336,8 @@ test("Inactivity Dialog Tests", async (t) => {
 
     try {
       await waitForCondition(
-        () => window.__authContext?.().status() === "LOADED" && !!window.__authContext?.().expires(),
+        () =>
+          window.__authContext?.().status() === "LOADED" && !!window.__authContext?.().expires(),
         5000,
         "inactivity auth loaded"
       );
