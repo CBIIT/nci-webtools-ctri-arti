@@ -265,8 +265,99 @@ a.disabled-link {
   margin-bottom: 0;
 }
 
+.form-header-label {
+  font-weight: 400;
+  line-height: 22px !important;
+  font-size: 14px;
+  font-style: normal;
+  color: var(--Neutral-Black, #343434);
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+}
+
+
+.usage-container {
+  display: flex;
+  padding: 30px 41px 40px 41px !important;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  border-radius: 20px;
+  border: 3px solid var(--Blue-Blue-3, #2595DF);
+  background: #FFF;
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.25);
+}
+
+.form-header-input-group {
+  display: flex;
+  height: 75px;
+  flex-direction:column;
+  align-items: start;
+  gap:5px !important;
+}
+
+.form-header-input-label {
+  color: var(--Neutral-Black, #343434);
+  font-family: Inter;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500 !important;
+}
+
+.data-form-field {
+  padding: 10px 16px !important;
+  height: 46px !important;
+}
+
+.search-placeholder {
+  font-family: "Inter" !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  color: #62666d !important;
+}
+
+.usage-search-input-icon {
+  background-image: url("/assets/images/icon-search.svg");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+  padding-right: 16px;
+}
+
+.form-header-input-label::-webkit-calendar-picker-indicator {
+  background-image: url("/assets/images/icon-chevron-down.svg");
+  background-size: 10px 10px;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 20px;
+  height: 20px;
+}
+
+.form-label-usage-page {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+  letter-spacing: 0px;
+}
+
 .form-label-user {
   color: #356aad;
+}
+
+.data-table-header-label {
+  font-family: "Poppins" !important;
+  font-weight: 600 !important;
+  font-size: 15px;
+  line-height: 22.5px;
+  letter-spacing: 0.5px;
+}
+
+.page-count-label {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 21px !important;
+  letter-spacing: 0px !important;
+  color: #62666d !important;
 }
 
 .background-object {
@@ -623,16 +714,71 @@ ul {
   --bs-table-bg: rgb(8, 58, 80);
   --bs-table-color-type: #fff;
 }
-.users-table tbody > tr:nth-of-type(odd) {
+
+.usage-users-table thead {
+  --bs-table-bg: #2f4f97;
+  --bs-table-color-type: #fff;
+}
+
+.usage-users-table {
+  border-color: #5d84e5 !important;
+}
+
+.usage-view-details-btn {
+  border: 1px solid #036ac5;
+  color: #343434;
+  background-color: #ffffff;
+  height: 33px;
+  padding: 0 10px;
+  gap: 5px;
+  border-radius: 80px;
+  font-family: "Nunito";
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 16px;
+  letter-spacing: 0%;
+  text-align: center;
+}
+
+.usage-card-body {
+  display: flex;
+  padding: 30px 41px 40px 41px !important;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px !important;
+  border-radius: 20px !important;
+  border: 3px solid var(--Blue-Blue-3, #2595DF) !important;
+  background: #FFF !important;
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.25) !important;
+}
+
+.usage-card-body-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 20px;
+}
+
+.users-table tbody > tr {
+  --bs-table-bg: #fff;
+  height: 48px;
+}
+
+.users-table-striped tbody > tr:nth-of-type(odd) {
   --bs-table-striped-bg: #fff;
 }
 
-.users-table tbody > tr:nth-of-type(even) {
+.users-table-striped tbody > tr:nth-of-type(even) {
   --bs-table-bg: rgb(227, 238, 249);
 }
 
 .users-table tbody > tr > td {
   border-color: rgb(8, 58, 80);
+}
+
+.usage-users-table tbody > tr > td {
+  border-color: #d9e2f5;
+  height: 48px;
 }
 
 .users-table .btn {
@@ -649,6 +795,18 @@ ul {
 }
 .table-pagination select {
   border: none;
+}
+.table-pagination-btn {
+  border-radius: 4px;
+  height: 31px;
+  border: 1px solid #e5e7eb !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 21px !important;
+  letter-spacing: 0px !important;
+}
+.table-pagination-btn:disabled {
+  opacity: 0.5;
 }
 
 dialog.modal[open] {

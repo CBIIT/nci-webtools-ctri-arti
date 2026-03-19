@@ -13,7 +13,7 @@ const ExportConversations = AuthorizedImport({ path: "./tools/export-conversatio
 const Users = AuthorizedImport({ path: "./users/index.js", roles: [1] });
 const UserEdit = AuthorizedImport({ path: "./users/edit.js", roles: [1] });
 const UserProfile = AuthorizedImport({ path: "./users/profile.js" });
-const Usage = AuthorizedImport({ path: "./users/usage.js", roles: [1] });
+const Usage = AuthorizedImport({ path: "./users/usage/usage.js", roles: [1] });
 const UserUsage = AuthorizedImport({ path: "./users/user-usage.js", roles: [1] });
 
 /**
