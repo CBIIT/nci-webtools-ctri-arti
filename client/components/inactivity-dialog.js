@@ -8,13 +8,42 @@ import { secondsToMinuteString } from "../utils/utils.js";
 const WARN_AT = 300;
 
 export default function InactivityDialog() {
-  const { isLoggedIn, logout, expires, refreshSession } = useAuthContext() || {};
+  const { isLoggedIn, logout, expires, refreshSession, checkSession } = useAuthContext() || {};
 
   const [timeLeft, setTimeLeft] = createSignal(WARN_AT);
   const [warning, setWarning] = createSignal(false);
   const [timedOut, setTimedOut] = createSignal(
     sessionStorage.getItem("sessionTimedOut") === "true"
   );
+  let isCheckingSession = false;
+
+  const getSecondsLeft = (exp) => Math.max(0, Math.round((new Date(exp) - Date.now()) / 1000));
+
+  const verifyExpiringSession = async () => {
+    if (isCheckingSession) {
+      return;
+    }
+
+    isCheckingSession = true;
+
+    try {
+      const session = await checkSession();
+      if (session && !session.user) {
+        sessionStorage.setItem("sessionTimedOut", "true");
+        setTimeLeft(0);
+        setWarning(false);
+        return;
+      }
+
+      const nextExpires = session?.expires;
+      const secs = nextExpires ? getSecondsLeft(nextExpires) : 0;
+
+      setTimeLeft(secs);
+      setWarning(secs > 0 && secs <= WARN_AT);
+    } finally {
+      isCheckingSession = false;
+    }
+  };
 
   createEffect(() => {
     if (!isLoggedIn()) return;
@@ -22,13 +51,17 @@ export default function InactivityDialog() {
     const id = setInterval(() => {
       const exp = expires();
       if (!exp) return;
-      const secs = Math.max(0, Math.round((new Date(exp) - Date.now()) / 1000));
+      const secs = getSecondsLeft(exp);
       setTimeLeft(secs);
+      if (warning() && secs > WARN_AT) {
+        setWarning(false);
+        return;
+      }
       if (secs <= 0) {
         sessionStorage.setItem("sessionTimedOut", "true");
         logout();
       } else if (secs <= WARN_AT && !warning()) {
-        setWarning(true);
+        verifyExpiringSession();
       }
     }, 1000);
 
