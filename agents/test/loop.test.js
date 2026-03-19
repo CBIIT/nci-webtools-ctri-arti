@@ -23,12 +23,13 @@ describe("runAgentLoop", () => {
   }
 
   function createMockCms(agent = {}) {
+    let nextId = 1;
     const messages = [];
     const resources = [];
     const appendMessage =
       (role) =>
       async (_userId, { content }) => {
-        const message = { role, content };
+        const message = { id: nextId++, role, content };
         messages.push(message);
         return message;
       };
@@ -59,6 +60,11 @@ describe("runAgentLoop", () => {
       storeConversationResource: async (_userId, resource) => {
         resources.push(resource);
         return resource;
+      },
+      deleteMessage: async (_userId, messageId) => {
+        const index = messages.findIndex((m) => m.id === messageId);
+        if (index !== -1) messages.splice(index, 1);
+        return index !== -1 ? 1 : 0;
       },
       summarize: async function* () {},
       getResourcesByAgent: async () => resources,
@@ -317,12 +323,7 @@ describe("runAgentLoop", () => {
     }
 
     assert.equal(callCount, 1);
-    assert.equal(cms._messages.length, 2);
-    assert.equal(cms._messages[1].role, "assistant");
-    assert.equal(
-      cms._messages[1].content[0].text,
-      "Your request was blocked for security reasons."
-    );
+    assert.equal(cms._messages.length, 0, "blocked messages should be deleted from history");
     assert.equal(events.filter((event) => event.messageStop).length, 1);
     assert.equal(events.at(-1).messageStop.stopReason, "guardrail_intervened");
   });
@@ -660,5 +661,3 @@ describe("runAgentLoop", () => {
     );
   });
 });
-
-

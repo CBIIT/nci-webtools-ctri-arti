@@ -173,7 +173,7 @@ export async function* runAgentLoop({
   });
 
   await processUploads(userMessage, { userId, agentId, conversationId, cms });
-  await cms.appendUserMessage(userId, {
+  const savedUserMessage = await cms.appendUserMessage(userId, {
     conversationId,
     content: userMessage.content,
     parentID: userMessage.parentID || null,
@@ -238,13 +238,19 @@ export async function* runAgentLoop({
     parseToolUseInputs(assistantContent);
 
     const assistantMessage = { role: "assistant", content: assistantContent };
-    await cms.appendAssistantMessage(userId, {
+    const savedAssistantMessage = await cms.appendAssistantMessage(userId, {
       conversationId,
       content: assistantMessage.content,
     });
     messages.push(assistantMessage);
 
     if (!stopReason || TERMINAL_STOP_REASONS.has(stopReason)) {
+      if (stopReason === "guardrail_intervened") {
+        await Promise.all([
+          cms.deleteMessage(userId, savedUserMessage.id),
+          cms.deleteMessage(userId, savedAssistantMessage.id),
+        ]);
+      }
       done = true;
       continue;
     }
