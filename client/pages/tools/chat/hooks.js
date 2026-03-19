@@ -282,7 +282,7 @@ export function useChat() {
               "<message>\n" +
               conversationContext +
               "\n</message>\n\n" +
-              "Remember: Output ONLY the title (30 characters or fewer, letters/numbers/spaces only). Nothing else.",
+              "Remember: Output ONLY the title (20 characters or fewer, letters/numbers/spaces only). Nothing else.",
           },
         ],
       };
