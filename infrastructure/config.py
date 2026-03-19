@@ -207,6 +207,7 @@ def load_config() -> tuple[Config, str, str]:
             "namespace": namespace,
             "application": application,
             "tier": tier,
+            "aws_env": "nonprod",
         },
     }
 

@@ -64,17 +64,17 @@ class DynamoDBTableStack(Stack):
         **kwargs,
     ) -> None:
         super().__init__(scope=scope, id=id_, stack_name=id_, **kwargs)
-        stk = Stack.of(scope)
+        stk = Stack.of(self)
 
         ### Automated-Testing generates stuff that has NO retention needs.
         data_classification_type: DATA_CLASSIFICATION_TYPES = DATA_CLASSIFICATION_TYPES.CLOUD_TEMPORARY
 
         self.process_status_table = standard_dynamodb_table(
             scope=self,
-            id="",
+            id='test-automation-logs',
             tier = tier,
-            data_classification_type = data_classification_type,
-            ddbtbl_name = f"{stk.stack_name}-test-automation-logs",
+            ddbtbl_name = f"{tier}-test-automation-logs",
+            # ddbtbl_name = f"{stk.stack_name}-test-automation-logs",
             # ddbtbl_name=aws_names.gen_dynamo_table_name(tier, 'fact_process_status'),
             partition_key=aws_dynamodb.Attribute(name="execution_id", type=aws_dynamodb.AttributeType.STRING),
             sort_key=aws_dynamodb.Attribute(name="step", type=aws_dynamodb.AttributeType.STRING),
