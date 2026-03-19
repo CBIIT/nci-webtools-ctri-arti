@@ -98,9 +98,3 @@ Object.assign(
   resourceMethods,
   searchMethods
 );
-
-
-
-
-
-

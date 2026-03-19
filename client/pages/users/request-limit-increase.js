@@ -1,6 +1,5 @@
-import { createSignal, Switch, Match, Show } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import html from "solid-js/html";
-import { Check } from "lucide-solid";
 
 /**
  * A SolidJS component that renders a button and modal dialog for users to request
@@ -26,8 +25,8 @@ import { Check } from "lucide-solid";
  * @returns {JSX.Element} A SolidJS component containing a trigger button and modal dialog
  *
  * @example
- * // Basic usage with session data
- * <RequestLimitIncrease session={userSession} />
+ * // Basic usage
+ * <RequestLimitIncrease />
  *
  * @example
  * // Basic usage with user data

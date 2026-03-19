@@ -9,5 +9,3 @@ test("resetUsageLimits returns the users reset result", async () => {
   assert.equal(result.success, true);
   assert.equal(typeof result.updatedUsers, "number");
 });
-
-

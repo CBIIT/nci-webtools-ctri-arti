@@ -52,5 +52,3 @@ describe("POST /usage", () => {
     });
   });
 });
-
-

@@ -93,5 +93,3 @@ export function createCmsSearchRouter({ application, resolveContext = readReques
 
   return api;
 }
-
-

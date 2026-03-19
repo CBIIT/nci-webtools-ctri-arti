@@ -1,19 +1,23 @@
-import { createResource, createSignal, ErrorBoundary, Show } from "solid-js";
+import { createResource, createSignal, ErrorBoundary, onMount, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { AlertContainer } from "../../components/alert.js";
 import { Status, useAuthContext } from "../../contexts/auth-context.js";
-import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
-import RequestLimitIncrease from "./request-limit-increase.js";
+import { alerts, clearAlert, handleError, handleHttpError, showAlert } from "../../utils/alerts.js";
 import { fetchCachedJson } from "../../utils/static-data.js";
+
+import RequestLimitIncrease from "./request-limit-increase.js";
 
 const fetchConfig = () => fetchCachedJson("/api/config");
 
 function UserProfile() {
-  const { user, status, setData } = useAuthContext();
+  const { user, status, setData, checkSession } = useAuthContext();
   const [config] = createResource(fetchConfig);
   const [saving, setSaving] = createSignal(false);
-  const [showSuccess, setShowSuccess] = createSignal(false);
+
+  onMount(() => {
+    checkSession();
+  });
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -39,8 +43,7 @@ function UserProfile() {
 
       const updatedUser = await response.json();
       setData(updatedUser);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      showAlert({ message: "Success! Your profile has been updated.", type: "success" });
     } catch (err) {
       const error = new Error("Something went wrong while saving your profile.");
       error.cause = err;
@@ -58,197 +61,145 @@ function UserProfile() {
         return null;
       }}
     >
-      <img
-        src="assets/images/users/profile_banner.png"
-        alt="Profile Management Banner"
-        class="img-fluid object-fit-cover w-100"
-        style="height:153px;"
-      />
-      <div class="container pb-4">
-        <!-- Success Banner -->
-        <${Show} when=${showSuccess}>
-          <div
-            class="alert alert-success alert-dismissible fade show position-absolute top-0 start-50 translate-middle-x mt-3"
-            role="alert"
-          >
-            <strong>Success!</strong> Your profile has been updated.
-            <button
-              type="button"
-              class="btn-close"
-              onClick=${() => setShowSuccess(false)}
-              aria-label="Close"
-            ></button>
-          </div>
-        <//>
-
-        <!-- Error Alert -->
-        <${Show} when=${() => status() === Status.ERROR}>
-          <div class="alert alert-danger" role="alert">
-            An error occurred while loading your profile
-          </div>
-        <//>
-
-        <!-- Loading State -->
-        <${Show} when=${() => status() === Status.LOADING}>
-          <div class="d-flex justify-content-center my-5">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-          </div>
-        <//>
-
-        <!-- Profile Header -->
-        <div class="row position-relative mb-5" style="margin-top:-80px">
-          <h1
-            class="offset-sm-2 offset-md-3 offset-xl-4 col-auto font-title text-white fw-bold display-5"
-          >
-            User Profile
-          </h1>
-        </div>
-        <div class="row mt-4 mb-5">
-          <h1 class="offset-sm-2 offset-md-3 offset-xl-4 col-auto fs-3">
-            ${() => user()?.email || ""}
-          </h1>
-          <div class="position-relative offset-sm-2 offset-md-3 offset-xl-4">
-            <img
-              class="position-absolute"
-              src="assets/images/users/profile_icon.svg"
-              alt="Profile Icon"
-              style="
-              width: 150px;
-              top: -115px;
-              left: -75px; 
-              transform: translateX(-50%);
-              filter: drop-shadow(10px 13px 9px rgba(0, 0, 0, 0.35));
-              z-index: 10;
-            "
-            />
+      <div class="bg-profile font-smooth">
+        <div
+          class="d-flex align-items-center profile-banner"
+          aria-label="Profile Management Banner"
+        >
+          <div class="container">
+            <h1 class="profile-title fw-medium font-outfit text-white mb-0">User Profile</h1>
           </div>
         </div>
+        <div class="container profile-container">
+          <!-- Error Alert -->
+          <${Show} when=${() => status() === Status.ERROR}>
+            <div class="alert alert-danger" role="alert">
+              An error occurred while loading your profile
+            </div>
+          <//>
 
-        <!-- Profile Form -->
-        <${Show} when=${() => status() !== Status.LOADING}>
-          <form onSubmit=${handleSubmit} class="mb-5">
-            <div class="row align-items-center mb-2">
-              <!-- Account Type -->
-              <label
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Account Type</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <div>NIH</div>
+          <!-- Loading State -->
+          <${Show} when=${() => status() === Status.LOADING}>
+            <div class="d-flex justify-content-center my-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
               </div>
             </div>
-
-            <div class="row align-items-center mb-2">
-              <!-- Email -->
-              <label
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Email</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <div>${() => user()?.email || ""}</div>
-              </div>
-            </div>
-
-            <div class="row align-items-center mb-2">
-              <!-- First Name -->
-              <label
-                for="firstName"
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >First Name</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <input
-                  type="text"
-                  class="form-control"
-                  id="firstName"
-                  name="firstName"
-                  value=${() => user()?.firstName || ""}
-                  placeholder="Enter first name"
-                />
-              </div>
-            </div>
-
-            <div class="row align-items-center mb-2">
-              <!-- Last Name -->
-              <label
-                for="lastName"
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Last Name</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <input
-                  type="text"
-                  class="form-control"
-                  id="lastName"
-                  name="lastName"
-                  value=${() => user()?.lastName || ""}
-                  placeholder="Enter last name"
-                />
-              </div>
-            </div>
-
-            <div class="row align-items-center mb-2">
-              <!-- Status -->
-              <label
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Status</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <div class="text-capitalize">${() => user()?.status}</div>
-              </div>
-            </div>
-
-            <div class="row align-items-center mb-2">
-              <!-- Role -->
-              <label
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >Role</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <div class="text-capitalize">${() => user()?.Role?.name}</div>
-              </div>
-            </div>
-
-            <div class="row align-items-center mb-2">
-              <!-- Cost Limit -->
-              <label
-                class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-3 col-xl-2 align-self-center col-form-label form-label-user fw-semibold"
-                >${() => config()?.budgetLabel || ""} Cost Limit ($)</label
-              >
-              <div class="col-sm-3 col-xl-2">
-                <div>
-                  ${() => {
-                    const currentUser = user();
-                    if (currentUser?.budget === null) {
-                      return "Unlimited";
-                    } else {
-                      return currentUser?.budget;
-                    }
-                  }}
+          <//>
+          <${Show} when=${() => status() !== Status.LOADING}>
+            <div class="profile-card mx-auto">
+              <!-- Profile Icon and Email -->
+              <div class="text-center profile-header">
+                <div
+                  class="profile-card-icon-wrapper d-inline-flex align-items-center justify-content-center"
+                >
+                  <img
+                    class="profile-card-icon"
+                    src="assets/images/users/user_icon.svg"
+                    alt="Profile Icon"
+                  />
+                </div>
+                <div class="profile-card-email text-center fw-medium mt-3 text-break">
+                  ${() => user()?.email || ""}
                 </div>
               </div>
-            </div>
-            <div class="row align-items-center mb-4">
-              <div class="offset-sm-2 offset-md-3 offset-xl-4 col-sm-4 col-xl-4 align-self-center">
-                <${RequestLimitIncrease} user=${() => user()} />
-              </div>
-            </div>
 
-            <div class="row">
-              <!-- Form Buttons -->
-              <div class="col-12 mt-4">
-                <div class="d-flex gap-2 justify-content-center">
-                  <a href="/" class="btn btn-outline-secondary text-decoration-none"> Cancel </a>
-                  <button type="submit" class="btn btn-primary" disabled=${saving}>
-                    ${() => (saving() ? "Saving..." : "Save Profile")}
+              <form onSubmit=${handleSubmit}>
+                <!-- Account Type -->
+                <div class="mb-3">
+                  <span class="profile-form-label">Account Type</span>
+                  <div class="profile-form-value fw-medium text-break">NIH</div>
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                  <span class="profile-form-label">Email</span>
+                  <div class="profile-form-value fw-medium text-break">
+                    ${() => user()?.email || ""}
+                  </div>
+                </div>
+
+                <!-- First Name -->
+                <div class="mb-3">
+                  <label for="firstName" class="profile-form-label">First Name</label>
+                  <input
+                    type="text"
+                    class="form-control profile-form-value fw-medium"
+                    id="firstName"
+                    name="firstName"
+                    value=${() => user()?.firstName || ""}
+                    placeholder="Enter first name"
+                  />
+                </div>
+
+                <!-- Last Name -->
+                <div class="mb-3">
+                  <label for="lastName" class="profile-form-label">Last Name</label>
+                  <input
+                    type="text"
+                    class="form-control profile-form-value fw-medium"
+                    id="lastName"
+                    name="lastName"
+                    value=${() => user()?.lastName || ""}
+                    placeholder="Enter last name"
+                  />
+                </div>
+
+                <!-- Status -->
+                <div class="mb-3">
+                  <span class="profile-form-label">Status</span>
+                  <div class="profile-form-value fw-medium text-capitalize">
+                    ${() => user()?.status || ""}
+                  </div>
+                </div>
+
+                <!-- Role -->
+                <div class="mb-3">
+                  <span class="profile-form-label">Role</span>
+                  <div class="profile-form-value fw-medium text-capitalize">
+                    ${() => user()?.Role?.name || ""}
+                  </div>
+                </div>
+
+                <!-- Cost Limit -->
+                <div class="mb-3">
+                  <span class="profile-form-label"
+                    >${() => config()?.budgetLabel || ""} Cost Limit</span
+                  >
+                  <div class="d-flex align-items-center">
+                    <span class="profile-form-value fw-medium">
+                      ${() => {
+                        const currentUser = user();
+                        if (currentUser?.budget === null) {
+                          return "Unlimited";
+                        } else {
+                          return `$${currentUser?.budget}`;
+                        }
+                      }}
+                    </span>
+                    <span class="profile-cost-limit-divider"></span>
+                    <span class="profile-cost-limit-note"
+                      >The limit will be reset at midnight.</span
+                    >
+                  </div>
+                </div>
+
+                <div>
+                  <${RequestLimitIncrease} />
+                </div>
+
+                <hr class="profile-divider my-4" />
+
+                <!-- Form Buttons -->
+                <div class="d-flex justify-content-center">
+                  <button type="submit" class="btn btn-save-primary" disabled=${saving}>
+                    Save
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
-          </form>
-        <//>
+          <//>
+        </div>
       </div>
     <//>
   `;

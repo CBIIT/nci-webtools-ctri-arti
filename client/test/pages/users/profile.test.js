@@ -111,7 +111,7 @@ test("Profile Page Tests", async (t) => {
       assert.ok(
         alert.textContent.includes("Success") ||
           alert.textContent.includes("success") ||
-        alert.textContent.includes("updated"),
+          alert.textContent.includes("updated"),
         `Alert should contain success text, got: "${alert.textContent.trim().substring(0, 80)}"`
       );
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);

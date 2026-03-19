@@ -3,7 +3,7 @@
  * Runs in-browser during integration tests via ?test=1&apiKey=...
  */
 import assert from "/test/assert.js";
-import { mountApp, waitForCondition, waitForElement, waitForNetworkIdle } from "/test/helpers.js";
+import { mountApp, waitForElement, waitForNetworkIdle } from "/test/helpers.js";
 import test from "/test/test.js";
 
 const urlParams = new URLSearchParams(window.location.search);

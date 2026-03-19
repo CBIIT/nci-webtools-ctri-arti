@@ -69,5 +69,3 @@ export function getAuthorizedHeaders(url, env = process.env) {
     }[url.hostname] || {}
   );
 }
-
-

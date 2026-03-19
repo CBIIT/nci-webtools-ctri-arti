@@ -49,4 +49,3 @@ async function getPage(pdfDoc, pageIndex) {
   singlePagePdf.addPage(page);
   return await singlePagePdf.save();
 }
-

@@ -263,10 +263,7 @@ export class UserService {
 
     const inserted = await db.insert(Usage).values(rows).returning();
 
-    const totalCost = rows.reduce(
-      (sum, r) => sum + (r.type === "guardrail" ? 0 : (r.cost || 0)),
-      0
-    );
+    const totalCost = rows.reduce((sum, r) => sum + (r.type === "guardrail" ? 0 : r.cost || 0), 0);
     if (totalCost > 0) {
       await db
         .update(User)

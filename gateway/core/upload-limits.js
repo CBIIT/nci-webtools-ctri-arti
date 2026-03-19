@@ -73,4 +73,3 @@ export async function validateInlineMessages(messages = []) {
     await validateInlineMessageContent(message?.content || []);
   }
 }
-

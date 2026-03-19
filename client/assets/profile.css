@@ -1,38 +1,38 @@
-#request-limit-increase-container .btn.btn-pill{
+#request-limit-increase-container .btn.btn-pill {
   border-radius: 19px;
   padding: 6px 24px;
   font-weight: 800;
 }
 .btn-pill:focus-within {
-  box-shadow: 0 0 0 0.25rem rgba(49,132,253, .5);
+  box-shadow: 0 0 0 0.25rem rgba(49, 132, 253, 0.5);
 }
-#request-limit-increase-container .btn.btn-cancel{
-  border: 0.5px solid #A5A5A5;
+#request-limit-increase-container .btn.btn-cancel {
+  border: 0.5px solid #a5a5a5;
   background-color: transparent;
-  color: #3C3C3C;
+  color: #3c3c3c;
 }
-#request-limit-increase-container .btn.btn-action{
-  background-color: #1075FD;
-  border: 0.5px solid #2C8DFA;
-  color: #FFFFFF;
+#request-limit-increase-container .btn.btn-action {
+  background-color: #1075fd;
+  border: 0.5px solid #2c8dfa;
+  color: #ffffff;
 }
 
 #request-limit-increase-dialog {
   margin: 0;
   padding: 0;
   max-width: 100vw;
-  max-height: 100vh
+  max-height: 100vh;
 }
 #request-limit-increase-dialog textarea {
   border-radius: 10px;
-  border: 1px solid #A5A5A5;
+  border: 1px solid #a5a5a5;
 }
 #request-limit-increase-dialog .modal-dialog {
   max-width: 600px;
   border-radius: 20px;
 }
 #request-limit-increase-dialog .modal-header {
-  color: #252C32;
+  color: #252c32;
   font-size: 28px;
   font-style: normal;
   font-weight: 500;
@@ -56,7 +56,7 @@
 }
 #request-limit-increase-dialog .form-label {
   font-size: 14px;
-  color: #6B7280;
+  color: #6b7280;
   font-weight: 400;
   line-height: 21px;
   margin-bottom: 8px;
@@ -69,11 +69,11 @@
 }
 .form-label.required::after {
   content: " *";
-  color: #FB2C36;
+  color: #fb2c36;
 }
 #request-limit-increase-dialog .form-static-value {
   font-size: 17px;
-  color: #6B7280;
+  color: #6b7280;
   font-weight: 500;
   line-height: 22px;
 }
@@ -85,8 +85,8 @@
 }
 #request-limit-increase-dialog .success-container {
   border-radius: 10px;
-  border: 1px solid #B9F8CF;
-  background: #F0FDF4;
+  border: 1px solid #b9f8cf;
+  background: #f0fdf4;
   display: flex;
   padding: 25px 12px;
   flex-direction: column;
@@ -106,10 +106,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 5px solid #00C950;
+  border: 5px solid #00c950;
 }
 #request-limit-increase-button {
-  color: #3C3C3C;
+  color: #3c3c3c;
   font-family: Nunito;
   font-size: 16px;
   font-style: normal;
@@ -125,6 +125,6 @@
   gap: 5px;
 
   border-radius: 80px;
-  border: 1.25px solid #2C8DFA;
-  background: #FFF;
+  border: 1.25px solid #2c8dfa;
+  background: #fff;
 }
