@@ -3,7 +3,7 @@ import aws_cdk as cdk
 
 from config import load_config
 from synthesizer import create_synthesizer
-from stacks import EcrRepositoryStack, EcsServiceStack, RdsClusterStack
+from stacks import EcrRepositoryStack, EcsServiceStack, RdsClusterStack, BucketsStack, DynamoDBTableStack
 
 
 def main():
@@ -60,6 +60,22 @@ def main():
         max_capacity=rds_config.get("maxCapacity", 1),
         seconds_until_auto_pause=rds_config.get("secondsUntilAutoPause", 300),
         backup_retention_period=rds_config.get("backupRetentionPeriod", 7),
+    )
+
+    BucketsStack(
+        app,
+        f"{prefix}-buckets",
+        tier=tier,
+        aws_env=config["tags"]["aws_env"],
+        env=env,
+    )
+
+    DynamoDBTableStack(
+        app,
+        f"{prefix}-dynamodb-tables",
+        tier=tier,
+        aws_env=config["tags"]["aws_env"],
+        env=env,
     )
 
     app.synth()
