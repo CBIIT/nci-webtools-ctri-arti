@@ -167,14 +167,14 @@ test("Agent Chat E2E Tests", async (t) => {
   await t.test("setup: create conversations (like clicking New Chat)", async () => {
     const r1 = await api("POST", "/conversations", {
       title: "__agent_e2e_basic__",
-      agentID: agentId,
+      agentId,
     });
     assert.strictEqual(r1.status, 201);
     conversationId = r1.json.id;
 
     const r2 = await api("POST", "/conversations", {
       title: "__agent_e2e_tool__",
-      agentID: agentId,
+      agentId,
     });
     assert.strictEqual(r2.status, 201);
     toolConversationId = r2.json.id;
@@ -312,7 +312,7 @@ test("Agent Chat E2E Tests", async (t) => {
 
     const { json: conv } = await api("POST", "/conversations", {
       title: "__agent_e2e_no_tools__",
-      agentID: noToolsAgent.id,
+      agentId: noToolsAgent.id,
     });
 
     const { response, events } = await sendChatMessage(
@@ -373,7 +373,7 @@ test("Agent Chat E2E Tests", async (t) => {
   await t.test("stream events have correct structure for client rendering", async () => {
     const { json: conv } = await api("POST", "/conversations", {
       title: "__agent_e2e_structure__",
-      agentID: agentId,
+      agentId,
     });
 
     const { response, events } = await sendChatMessage(agentId, conv.id, "Test structure");
@@ -417,7 +417,7 @@ test("Agent Chat E2E Tests", async (t) => {
     // mock-model always sends {"query":"mock test"} for recall tool, so seed text matching that
     const { json: convA } = await api("POST", "/conversations", {
       title: "__recall_e2e_source__",
-      agentID: recallAgent.id,
+      agentId: recallAgent.id,
     });
     assert.ok(convA.id);
 
@@ -438,7 +438,7 @@ test("Agent Chat E2E Tests", async (t) => {
     // 4. Create conversation B to trigger recall
     const { json: convB } = await api("POST", "/conversations", {
       title: "__recall_e2e_search__",
-      agentID: recallAgent.id,
+      agentId: recallAgent.id,
     });
     assert.ok(convB.id);
 

@@ -1,9 +1,10 @@
+import "../test-support/db.js";
+import db, { User } from "database";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { v1Router } from "cms/api.js";
-import { ConversationService } from "cms/conversation.js";
-import db, { User } from "database";
+import { ConversationService } from "cms/core/conversation-service.js";
 import { eq } from "drizzle-orm";
 import express from "express";
 import request from "supertest";
@@ -97,8 +98,9 @@ describe("CMS API", () => {
     const conversation = await svc.createConversation(otherUser.id, {
       title: "Foreign CMS API resource conversation",
     });
-    const message = await svc.appendUserMessage(otherUser.id, {
+    const message = await svc.appendConversationMessage(otherUser.id, {
       conversationId: conversation.id,
+      role: "user",
       content: [{ text: "Foreign message" }],
     });
 
@@ -106,8 +108,8 @@ describe("CMS API", () => {
       .post("/resources")
       .set("X-User-Id", String(user.id))
       .send({
-        conversationID: conversation.id,
-        messageID: message.id,
+        conversationId: conversation.id,
+        messageId: message.id,
         name: "foreign.txt",
         type: "text/plain",
         content: "Should not persist",
@@ -115,6 +117,38 @@ describe("CMS API", () => {
 
     assert.equal(res.status, 404);
     assert.equal(res.body.error, `Message not found: ${message.id}`);
+  });
+
+  it("accepts canonical agentId for conversation writes", async () => {
+    const [user] = await db.select().from(User).where(eq(User.email, "test@test.com")).limit(1);
+    assert.ok(user, "test user should exist");
+
+    const agent = await svc.createAgent(user.id, { name: `Legacy alias agent ${Date.now()}` });
+
+    try {
+      const res = await request(app)
+        .post("/conversations")
+        .set("X-User-Id", String(user.id))
+        .send({
+          title: "Canonical conversation",
+          agentId: agent.id,
+        });
+
+      assert.equal(res.status, 201);
+      assert.equal(res.body.title, "Canonical conversation");
+      assert.equal(res.body.agentID, agent.id);
+    } finally {
+      await svc.deleteAgent(user.id, agent.id);
+    }
+  });
+
+  it("does not expose the deprecated summarize alias route", async () => {
+    const res = await request(app)
+      .post("/summarize")
+      .set("X-User-Id", "1")
+      .send({ conversationId: 1 });
+
+    assert.equal(res.status, 404);
   });
 
   it("rejects vector writes into another user's conversation", async () => {
@@ -138,10 +172,9 @@ describe("CMS API", () => {
     });
 
     const res = await request(app)
-      .post("/vectors")
+      .post(`/conversations/${conversation.id}/vectors`)
       .set("X-User-Id", String(user.id))
       .send({
-        conversationID: conversation.id,
         vectors: [{ content: "Should not persist" }],
       });
 

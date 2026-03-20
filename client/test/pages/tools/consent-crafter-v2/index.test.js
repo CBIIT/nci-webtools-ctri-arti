@@ -29,11 +29,11 @@ const urlParams = new URLSearchParams(window.location.search);
 const TEST_API_KEY = urlParams.get("apiKey");
 
 async function runModel(params) {
-  console.log(`[runModel] POST /api/model (model=${params.model})`);
+  console.log(`[runModel] POST /api/model/invoke (model=${params.model})`);
   const headers = { "Content-Type": "application/json" };
   if (TEST_API_KEY) headers["x-api-key"] = TEST_API_KEY;
 
-  const response = await fetch("/api/v1/model", {
+  const response = await fetch("/api/v1/model/invoke", {
     method: "POST",
     headers,
     body: JSON.stringify(params),

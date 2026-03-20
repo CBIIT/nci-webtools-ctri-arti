@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { test } from "node:test";
 
@@ -8,7 +9,7 @@ import {
   getDateRange,
   createCertificate,
   getAuthenticatedUser,
-} from "../services/utils.js";
+} from "../api/utils.js";
 
 test("retry", async (t) => {
   await t.test("succeeds on first try", async () => {

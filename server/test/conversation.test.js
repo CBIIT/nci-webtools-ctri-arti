@@ -1,10 +1,10 @@
-import db, { Guardrail, User, Conversation, Message } from "database";
+import "../test-support/db.js";
+import db, { Agent, Guardrail, User, Conversation, Message } from "database";
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { ConversationService } from "cms/conversation.js";
+import { ConversationService } from "cms/core/conversation-service.js";
 import { eq } from "drizzle-orm";
-import { embed as gatewayEmbed } from "shared/clients/gateway.js";
 import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
 
 const svc = new ConversationService();
@@ -25,11 +25,12 @@ function mockEmbeddingFor(value) {
 test("ConversationService", async (t) => {
   let testUser;
 
-  ConversationService.setEmbedder(async ({ content }) => ({
+  const originalEmbedContent = svc.embedContent;
+  svc.embedContent = async ({ content }) => ({
     embeddings: content.map((item) => mockEmbeddingFor(item)),
-  }));
+  });
   t.after(() => {
-    ConversationService.setEmbedder(gatewayEmbed);
+    svc.embedContent = originalEmbedContent;
   });
 
   await t.test("setup: get test user", async () => {
@@ -102,6 +103,30 @@ test("ConversationService", async (t) => {
       assert.ok(!agents.some((agent) => agent.id === agentId));
     });
 
+    await at.test("global agents cannot be updated or deleted", async () => {
+      const [globalAgent] = await db
+        .insert(Agent)
+        .values({
+          userID: null,
+          name: `Global immutability agent ${Date.now()}`,
+        })
+        .returning();
+
+      try {
+        await assert.rejects(
+          () => svc.updateAgent(testUser.id, globalAgent.id, { name: "Should not persist" }),
+          (error) => error?.message === "Cannot modify global agent" && error?.statusCode === 403
+        );
+
+        await assert.rejects(
+          () => svc.deleteAgent(testUser.id, globalAgent.id),
+          (error) => error?.message === "Cannot modify global agent" && error?.statusCode === 403
+        );
+      } finally {
+        await db.delete(Agent).where(eq(Agent.id, globalAgent.id));
+      }
+    });
+
     await at.test("updateAgent", async () => {
       const updated = await svc.updateAgent(testUser.id, agentId, { name: "Updated Agent" });
       assert.ok(updated);
@@ -111,11 +136,12 @@ test("ConversationService", async (t) => {
     await at.test("deleteAgent cascades to conversations", async () => {
       // Create a conversation under this agent
       const conversation = await svc.createConversation(testUser.id, {
-        agentID: agentId,
+        agentId,
         title: "Agent Conversation",
       });
-      const _msg = await svc.appendUserMessage(testUser.id, {
+      const _msg = await svc.appendConversationMessage(testUser.id, {
         conversationId: conversation.id,
+        role: "user",
         content: [{ text: "hello" }],
       });
 
@@ -154,6 +180,19 @@ test("ConversationService", async (t) => {
       conversationId = conversation.id;
     });
 
+    await ct.test("createConversation uses canonical agentId", async () => {
+      const agent = await svc.createAgent(testUser.id, { name: "Legacy alias conversation agent" });
+      try {
+        const conversation = await svc.createConversation(testUser.id, {
+          title: "Canonical agentId is supported",
+          agentId: agent.id,
+        });
+        assert.equal(conversation.agentID, agent.id);
+      } finally {
+        await svc.deleteAgent(testUser.id, agent.id);
+      }
+    });
+
     await ct.test("getConversation", async () => {
       const conversation = await svc.getConversation(testUser.id, conversationId);
       assert.ok(conversation);
@@ -165,9 +204,11 @@ test("ConversationService", async (t) => {
       await svc.createConversation(testUser.id, { title: "Conversation 2" });
       await svc.createConversation(testUser.id, { title: "Conversation 3" });
 
-      const { count, rows } = await svc.getConversations(testUser.id, { limit: 2, offset: 0 });
-      assert.ok(count >= 3);
-      assert.strictEqual(rows.length, 2);
+      const { data, meta } = await svc.getConversations(testUser.id, { limit: 2, offset: 0 });
+      assert.ok(meta.total >= 3);
+      assert.strictEqual(meta.limit, 2);
+      assert.strictEqual(meta.offset, 0);
+      assert.strictEqual(data.length, 2);
     });
 
     await ct.test("updateConversation", async () => {
@@ -210,9 +251,10 @@ test("ConversationService", async (t) => {
       conversationId = conversation.id;
     });
 
-    await mt.test("appendUserMessage", async () => {
-      const msg = await svc.appendUserMessage(testUser.id, {
+    await mt.test("appendConversationMessage with user role", async () => {
+      const msg = await svc.appendConversationMessage(testUser.id, {
         conversationId,
+        role: "user",
         content: [{ text: "Hello" }],
       });
       assert.ok(msg.id);
@@ -220,18 +262,20 @@ test("ConversationService", async (t) => {
       messageId = msg.id;
     });
 
-    await mt.test("appendAssistantMessage with parentID", async () => {
-      const msg = await svc.appendAssistantMessage(testUser.id, {
+    await mt.test("appendConversationMessage with assistant role and parentID", async () => {
+      const msg = await svc.appendConversationMessage(testUser.id, {
         conversationId,
+        role: "assistant",
         content: [{ text: "Hi there" }],
         parentID: messageId,
       });
       assert.strictEqual(msg.parentID, messageId);
     });
 
-    await mt.test("appendToolResultsMessage", async () => {
-      const msg = await svc.appendToolResultsMessage(testUser.id, {
+    await mt.test("appendConversationMessage with tool results", async () => {
+      const msg = await svc.appendConversationMessage(testUser.id, {
         conversationId,
+        role: "user",
         content: [
           {
             toolResult: {
@@ -243,6 +287,43 @@ test("ConversationService", async (t) => {
       });
       assert.strictEqual(msg.role, "user");
       assert.strictEqual(msg.content[0].toolResult.toolUseId, "tool_test_1");
+    });
+
+    await mt.test("appendConversationMessage rejects user toolUse rows", async () => {
+      await assert.rejects(
+        svc.appendConversationMessage(testUser.id, {
+          conversationId,
+          role: "user",
+          content: [
+            {
+              toolUse: {
+                toolUseId: "tool_invalid_user",
+                name: "search",
+                input: { query: "bad" },
+              },
+            },
+          ],
+        }),
+        /User messages cannot contain tool uses/
+      );
+    });
+
+    await mt.test("appendConversationMessage rejects assistant toolResult rows", async () => {
+      await assert.rejects(
+        svc.appendConversationMessage(testUser.id, {
+          conversationId,
+          role: "assistant",
+          content: [
+            {
+              toolResult: {
+                toolUseId: "tool_invalid_assistant",
+                content: [{ json: { ok: false } }],
+              },
+            },
+          ],
+        }),
+        /Assistant messages cannot contain tool results/
+      );
     });
 
     await mt.test("getMessage", async () => {
@@ -328,6 +409,23 @@ test("ConversationService", async (t) => {
       assert.deepStrictEqual(updated.content, [{ text: "Updated" }]);
     });
 
+    await mt.test("updateMessage rejects malformed tool role changes", async () => {
+      await assert.rejects(
+        svc.updateMessage(testUser.id, messageId, {
+          content: [
+            {
+              toolUse: {
+                toolUseId: "tool_invalid_update",
+                name: "editor",
+                input: { command: "view", path: "notes.txt" },
+              },
+            },
+          ],
+        }),
+        /User messages cannot contain tool uses/
+      );
+    });
+
     await mt.test("deleteMessage", async () => {
       const count = await svc.deleteMessage(testUser.id, messageId);
       assert.strictEqual(count, 1);
@@ -344,16 +442,18 @@ test("ConversationService", async (t) => {
     await ct.test("setup conversation with messages and resources", async () => {
       const conversation = await svc.createConversation(testUser.id, { title: "Context Test" });
       conversationId = conversation.id;
-      const msg1 = await svc.appendUserMessage(testUser.id, {
+      const msg1 = await svc.appendConversationMessage(testUser.id, {
         conversationId,
+        role: "user",
         content: [{ text: "q1" }],
       });
-      await svc.appendAssistantMessage(testUser.id, {
+      await svc.appendConversationMessage(testUser.id, {
         conversationId,
+        role: "assistant",
         content: [{ text: "a1" }],
       });
       await svc.storeConversationResource(testUser.id, {
-        messageID: msg1.id,
+        messageId: msg1.id,
         name: "doc.txt",
         type: "text/plain",
         content: "doc content",
@@ -440,7 +540,7 @@ test("ConversationService", async (t) => {
         assert.ok(globalAgent, "expected at least one global agent from seed data");
 
         const resource = await svc.storeConversationResource(testUser.id, {
-          agentID: globalAgent.id,
+          agentId: globalAgent.id,
           name: "memories/profile.txt",
           type: "text/plain",
           content: "preferred editor behavior",
@@ -454,9 +554,23 @@ test("ConversationService", async (t) => {
       }
     );
 
+    await rt.test("storeConversationResource rejects legacy direct-mode aliases", async () => {
+      await assert.rejects(
+        svc.storeConversationResource(testUser.id, {
+          agentID: agentId,
+          name: "legacy.txt",
+          type: "text/plain",
+          content: "legacy alias should fail",
+        }),
+        (error) =>
+          error?.statusCode === 400 &&
+          error?.message?.includes("Resource input must use canonical field names")
+      );
+    });
+
     await rt.test("storeConversationResource", async () => {
       const resource = await svc.storeConversationResource(testUser.id, {
-        agentID: agentId,
+        agentId: agentId,
         name: "document.txt",
         type: "text/plain",
         content: "file content",
@@ -626,31 +740,34 @@ test("ConversationService", async (t) => {
 
       const conversation = await svc.createConversation(testUser.id, {
         title: "Search Test Conversation",
-        agentID: agentId,
+        agentId,
       });
       conversationId = conversation.id;
 
-      await svc.appendUserMessage(testUser.id, {
+      await svc.appendConversationMessage(testUser.id, {
         conversationId,
+        role: "user",
         content: [{ text: "The capital of France is Paris" }],
       });
-      await svc.appendAssistantMessage(testUser.id, {
+      await svc.appendConversationMessage(testUser.id, {
         conversationId,
+        role: "assistant",
         content: [{ text: "That is correct. Paris is indeed the capital of France." }],
       });
 
       const otherConversation = await svc.createConversation(testUser.id, {
         title: "Other Agent Search Conversation",
-        agentID: otherAgentId,
+        agentId: otherAgentId,
       });
       otherConversationId = otherConversation.id;
-      await svc.appendUserMessage(testUser.id, {
+      await svc.appendConversationMessage(testUser.id, {
         conversationId: otherConversationId,
+        role: "user",
         content: [{ text: "France also appears in this other agent conversation." }],
       });
 
       const resource = await svc.storeConversationResource(testUser.id, {
-        agentID: otherAgentId,
+        agentId: otherAgentId,
         name: "geography.txt",
         type: "text/plain",
         content: "France is a country in Western Europe. Its capital is Paris.",
@@ -778,7 +895,7 @@ test("ConversationService", async (t) => {
 
     await vt.test("searchVectors with cosine similarity", async () => {
       const results = await svc.searchVectors({
-        conversationID: conversationId,
+        conversationId,
         embedding: embeddingOf(0.1, 0.2, 0.3),
         topN: 2,
       });
@@ -823,15 +940,16 @@ test("ConversationService", async (t) => {
       });
       foreignConversationId = conversation.id;
 
-      const message = await svc.appendUserMessage(otherUser.id, {
+      const message = await svc.appendConversationMessage(otherUser.id, {
         conversationId: foreignConversationId,
+        role: "user",
         content: [{ text: "Foreign message" }],
       });
       foreignMessageId = message.id;
 
       const resource = await svc.storeConversationResource(otherUser.id, {
-        conversationID: foreignConversationId,
-        messageID: foreignMessageId,
+        conversationId: foreignConversationId,
+        messageId: foreignMessageId,
         name: "foreign.txt",
         type: "text/plain",
         content: "foreign resource",
@@ -860,8 +978,8 @@ test("ConversationService", async (t) => {
 
       await assert.rejects(
         svc.storeConversationResource(testUser.id, {
-          conversationID: foreignConversationId,
-          messageID: foreignMessageId,
+          conversationId: foreignConversationId,
+          messageId: foreignMessageId,
           name: "stolen.txt",
           type: "text/plain",
           content: "Should not persist",

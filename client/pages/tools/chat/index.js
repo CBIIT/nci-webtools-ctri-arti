@@ -42,6 +42,7 @@ export default function Page() {
     messages,
     loading,
     submitMessage,
+    isTitleGenerating,
   } = useChat();
   const [toggles, setToggles] = createSignal({ conversations: true });
   const [isAtBottom, setIsAtBottom] = createSignal(true);
@@ -203,7 +204,7 @@ export default function Page() {
   }
 
   function startEditingTitle(conversationId, currentTitle, context) {
-    if (!conversationId) {
+    if (!conversationId || isTitleGenerating()) {
       return;
     }
 
@@ -411,7 +412,9 @@ export default function Page() {
                         >
                           <${Show}
                             when=${() => isEditing("sidebar", conv.id)}
-                            fallback=${() => conv.title || "Untitled"}
+                            fallback=${() =>
+                              (conv.id === conversation?.id ? conversation?.title : conv.title) ||
+                              "Untitled"}
                           >
                             <input
                               type="text"
@@ -454,9 +457,18 @@ export default function Page() {
                                 <button
                                   type="button"
                                   class="dropdown-item small d-flex align-items-center"
+                                  style=${() =>
+                                    isTitleGenerating()
+                                      ? "cursor: not-allowed !important; opacity: 0.5; pointer-events: auto;"
+                                      : ""}
+                                  disabled=${() => isTitleGenerating()}
                                   onClick=${(event) => handleConversationMenuEdit(event, conv)}
                                 >
-                                  <${Pencil} size="18" color="black" class="me-2" />
+                                  <${Pencil}
+                                    size="18"
+                                    color=${() => (isTitleGenerating() ? "gray" : "black")}
+                                    class="me-2"
+                                  />
                                   Edit title
                                 </button>
                               </li>
@@ -677,6 +689,12 @@ export default function Page() {
                             Sonnet 4.6
                           </option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
+                          <option value=${MODEL_OPTIONS.DATABRICKS.CLAUDE.OPUS.v4_6}>
+                            Opus 4.6 (via IDP)
+                          </option>
+                          <option value=${MODEL_OPTIONS.DATABRICKS.CLAUDE.SONNET.v4_6}>
+                            Sonnet 4.6 (via IDP)
+                          </option>
                         </select>
                       <//>
 

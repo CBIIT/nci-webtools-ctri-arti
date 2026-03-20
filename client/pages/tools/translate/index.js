@@ -108,7 +108,7 @@ function buildTranslationPrompt(targetLang, sourceLang, options = {}) {
 }
 
 async function runModel(params) {
-  const res = await fetch("/api/v1/model", {
+  const res = await fetch("/api/v1/model/invoke", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...params, type: "translate" }),

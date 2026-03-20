@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -8,6 +9,8 @@ import {
   createUserRequestContext,
   normalizeRequestId,
   parseInternalUserIdHeader,
+  readHttpRequestContext,
+  readInternalRequestContext,
   resolveRequestId,
   requestContextToInternalHeaders,
   requireUserRequestContext,
@@ -60,6 +63,46 @@ test("request context normalization", async (t) => {
 
   await t.test("rejects invalid internal user id headers", () => {
     assert.throws(() => parseInternalUserIdHeader("abc"), /positive integer/);
+  });
+
+  await t.test("reads request context from internal HTTP headers", () => {
+    assert.deepStrictEqual(
+      readInternalRequestContext({
+        "x-user-id": "42",
+        "x-request-id": "req-5",
+      }),
+      {
+        actorType: "user",
+        userId: 42,
+        requestId: "req-5",
+        source: "internal-http",
+      }
+    );
+  });
+
+  await t.test("prefers internal HTTP headers over session context when allowed", () => {
+    assert.deepStrictEqual(
+      readHttpRequestContext(
+        {
+          headers: {
+            "x-user-id": "42",
+            "x-request-id": "req-6",
+          },
+          session: {
+            user: {
+              id: 99,
+            },
+          },
+        },
+        { allowInternalHeader: true }
+      ),
+      {
+        actorType: "user",
+        userId: 42,
+        requestId: "req-6",
+        source: "internal-http",
+      }
+    );
   });
 
   await t.test("requires an authenticated user when asked", () => {

@@ -1,10 +1,11 @@
+import "../test-support/db.js";
 import db, { Session } from "database";
 import assert from "node:assert";
 import { test } from "node:test";
 
 import session from "express-session";
 
-import { createSessionStore } from "../services/session-store.js";
+import { createSessionStore } from "../runtime/session-store.js";
 
 function promisify(store, method, ...args) {
   return new Promise((resolve, reject) => {

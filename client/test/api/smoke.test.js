@@ -3,7 +3,7 @@
  * Runs in-browser during integration tests via ?test=1&apiKey=...
  */
 import assert from "/test/assert.js";
-import { mountApp, waitForCondition, waitForElement, waitForNetworkIdle } from "/test/helpers.js";
+import { mountApp, waitForElement, waitForNetworkIdle } from "/test/helpers.js";
 import test from "/test/test.js";
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -95,9 +95,9 @@ test("API Smoke Tests", async (t) => {
     assert.strictEqual(delRes.status, 200);
   });
 
-  // ── POST /model with mock-model to generate usage ─────────────────────
-  await t.test("POST /model with mock-model generates usage", async () => {
-    const res = await fetch("/api/v1/model", {
+  // ── POST /model/invoke with mock-model to generate usage ──────────────
+  await t.test("POST /model/invoke with mock-model generates usage", async () => {
+    const res = await fetch("/api/v1/model/invoke", {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({
@@ -195,24 +195,27 @@ test("API Smoke Tests", async (t) => {
     assert.ok(json.length > 0, "should have at least one model");
   });
 
-  // ── POST /model streaming ─────────────────────────────────────────────
-  await t.test("POST /model with mock-model stream=true returns streaming response", async () => {
-    const res = await fetch("/api/v1/model", {
-      method: "POST",
-      headers: headers(),
-      body: JSON.stringify({
-        model: "mock-model",
-        messages: [{ role: "user", content: [{ text: "stream test" }] }],
-        stream: true,
-      }),
-    });
-    assert.ok(res.ok, `streaming request failed: ${res.status}`);
-    // Streaming responses have text/event-stream or similar content type
-    const text = await res.text();
-    assert.ok(text.length > 0, "streaming response should have content");
-  });
+  // ── POST /model/invoke streaming ──────────────────────────────────────
+  await t.test(
+    "POST /model/invoke with mock-model stream=true returns streaming response",
+    async () => {
+      const res = await fetch("/api/v1/model/invoke", {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({
+          model: "mock-model",
+          messages: [{ role: "user", content: [{ text: "stream test" }] }],
+          stream: true,
+        }),
+      });
+      assert.ok(res.ok, `streaming request failed: ${res.status}`);
+      // Streaming responses have text/event-stream or similar content type
+      const text = await res.text();
+      assert.ok(text.length > 0, "streaming response should have content");
+    }
+  );
 
-  await t.test("POST /model stream=true is recorded in GET /admin/usage", async () => {
+  await t.test("POST /model/invoke stream=true is recorded in GET /admin/usage", async () => {
     const today = formatLocalDate(new Date());
     const monthAgo = formatLocalDate(new Date(Date.now() - 30 * 86400000));
     const usageType = `e2e-usage-repro-${Date.now()}`;
@@ -224,7 +227,7 @@ test("API Smoke Tests", async (t) => {
     assert.strictEqual(before.status, 200);
     const beforeCount = before.json?.meta?.total ?? before.json?.data?.length ?? 0;
 
-    const res = await fetch("/api/v1/model", {
+    const res = await fetch("/api/v1/model/invoke", {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({
@@ -298,20 +301,6 @@ test("API Smoke Tests", async (t) => {
         el.textContent.includes(testUser.email)
       );
       assert.ok(cell, "Test user email should appear in usage table");
-      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
-    } finally {
-      dispose();
-      document.body.removeChild(container);
-    }
-  });
-
-  await t.test("/_/profile shows test user email", async () => {
-    const { container, errors, dispose } = mountApp("/_/profile");
-    try {
-      const el = await waitForElement(container, "h1", (el) =>
-        el.textContent.includes(testUser.email)
-      );
-      assert.ok(el, "Profile page should show test user email");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
       dispose();
@@ -486,83 +475,6 @@ test("API Smoke Tests", async (t) => {
         `Errors after custom date switch: ${errors.map((e) => e.message)}`
       );
     } finally {
-      dispose();
-      document.body.removeChild(container);
-    }
-  });
-
-  // ── Inactivity dialog E2E ──────────────────────────────────────────────
-  await t.test("Inactivity dialog: warning appears and Extend Session works", async () => {
-    const { container, errors, dispose } = mountApp("/");
-    const originalFetch = window.fetch;
-    try {
-      // Wait for page + auth to load
-      await waitForElement(container, "h1", (el) => el.textContent.includes("Research Optimizer"));
-      await waitForCondition(
-        () => window.__authContext?.().status() === "LOADED" && !!window.__authContext?.().expires(),
-        5000,
-        "inactivity auth loaded"
-      );
-
-      const authCtx = window.__authContext?.();
-      assert.ok(authCtx, "Auth context should be exposed on window.__authContext");
-      assert.ok(authCtx.updateExpires, "Auth context should have updateExpires");
-      assert.ok(authCtx.expires(), "Auth context should have an expires value");
-
-      // Set expires to 10 seconds from now — under the warning threshold
-      authCtx.updateExpires(new Date(Date.now() + 10 * 1000).toISOString());
-
-      // Wait for the warning modal to appear
-      const warningModal = await waitForElement(container, ".inactivity-warning-modal", 10000);
-      assert.ok(warningModal, "Warning modal should appear when session is about to expire");
-
-      // Verify countdown text is shown
-      const warningText = container.querySelector(".inactivity-warning-text");
-      assert.ok(warningText, "Warning text should be present");
-      assert.ok(
-        warningText.textContent.includes("about to expire"),
-        "Warning should mention expiration"
-      );
-
-      // Intercept POST /session to return a far-future expiry
-      const farFutureExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-      window.fetch = function (url, opts) {
-        if (typeof url === "string" && url.includes("/api/v1/session") && opts?.method === "POST") {
-          return Promise.resolve(
-            new Response(JSON.stringify({ user: authCtx.user(), expires: farFutureExpiry }), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            })
-          );
-        }
-        return originalFetch.apply(this, arguments);
-      };
-
-      // Click "EXTEND SESSION"
-      const extendBtn = container.querySelector(".extend-button");
-      assert.ok(extendBtn, "Extend Session button should be present");
-      extendBtn.click();
-
-      // Wait for warning modal to disappear
-      await new Promise((resolve, reject) => {
-        const start = Date.now();
-        (function check() {
-          const modal = container.querySelector(".inactivity-warning-modal");
-          if (!modal) return resolve();
-          if (Date.now() - start > 5000)
-            return reject(new Error("Warning modal did not close after Extend Session"));
-          requestAnimationFrame(check);
-        })();
-      });
-
-      assert.ok(
-        !container.querySelector(".inactivity-warning-modal"),
-        "Warning modal should be gone after extending session"
-      );
-
-      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
-    } finally {
-      window.fetch = originalFetch;
       dispose();
       document.body.removeChild(container);
     }

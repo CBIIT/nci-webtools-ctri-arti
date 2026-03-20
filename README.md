@@ -1,285 +1,332 @@
 # Research Optimizer
 
-AI research platform for biomedical and regulatory information analysis. Features a streaming chat interface with multi-model AI support, document analysis, web search, and privacy-first local conversation storage.
+Choose one development mode.
+
+## Direct mode
+
+Fastest way to work on the app locally.
+
+```bash
+npm install
+cp server/.env.example server/.env
+cp server/test.env.example server/test.env
+npm start
+```
+
+Open `https://localhost`.
+
+Use `npm run start:dev -w server` if you want auto-restart while editing.
+
+```text
+browser -> server
+             |- users
+             |- gateway
+             |- cms
+             `- agents
+```
+
+What this does:
+
+- starts `server` at the repo root
+- `server` composes `users`, `gateway`, `cms`, and `agents` in-process through `server/compose.js`
+- keeps the service boundaries in code, but runs them in one Node process
+
+Use this mode for most day-to-day backend work.
+
+## Docker Compose mode
+
+Closest local match to deployment, and the easiest way to get the full local dependency stack.
+
+```bash
+npm install
+cp server/.env.example server/.env
+docker compose up --build --watch
+```
+
+Open `https://localhost`.
+
+```text
+browser -> server -> users
+                 -> gateway
+                 -> cms
+                 -> agents
+
+plus:
+  postgres
+  mail
+```
+
+What this does:
+
+- starts the full HTTP-shaped development stack from [docker-compose.yml](docker-compose.yml)
+- runs `server`, `users`, `gateway`, `cms`, and `agents` as separate services
+- starts `postgres` and `mail`
+- uses Compose watch rules for sync/restart and rebuild during development
+
+Use this mode when you want to stay close to the ECS deployment shape.
+
+## Advanced HTTP mode
+
+If you want real service-to-service HTTP locally without Docker, see [docs/architecture.md](docs/architecture.md).
+
+That mode is supported, but it is not the zero-config path:
+
+- each standalone service reads its own package-local `.env`
+- all services need to share the same Postgres instance
+- non-server services should set `DB_SKIP_SYNC=true` to match Docker Compose and ECS
+
+## Important About Credentials
+
+`server/.env.example` is only a starting point. Copy it to `server/.env`, then update the values for the features you want to use.
+
+To run model inference locally, you need real AWS Bedrock credentials:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- usually `AWS_REGION`
+
+Some other features also need real credentials or API keys, such as:
+
+- `GEMINI_API_KEY`
+- `BRAVE_SEARCH_API_KEY`
+- email / SMTP settings
+
+Without those values, the app may still start, but inference and some integrations will not work.
+
+Expect a local HTTPS certificate warning in development.
+
+## Workspace Layout
+
+| Directory                         | Owns                                                                                                |
+| --------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [client](client/)                 | frontend UI, served by `server`                                                                     |
+| [server](server/)                 | the only public entrypoint; serves the client, handles auth/session, and mounts the API             |
+| [users](users/)                   | users, roles, budgets, usage rows, analytics, and app config                                        |
+| [gateway](gateway/)               | model inference, provider adapters, guardrails, and usage shaping                                   |
+| [cms](cms/)                       | stored state for agent definitions, conversations, messages, resources, vectors, tools, and prompts |
+| [agents](agents/)                 | runtime execution of an agent definition against a conversation                                     |
+| [database](database/)             | shared schema, migrations, readiness, and seed data                                                 |
+| [shared](shared/)                 | request context, middleware, logging, and common utilities                                          |
+| [infrastructure](infrastructure/) | ECS/Fargate and Aurora deployment                                                                   |
+
+Important distinction:
+
+- `cms` stores what an agent is
+- `agents` runs an agent
+
+That is the biggest naming trap in the repo.
 
 ## Architecture
 
-```
-Client (SolidJS) ──► Server (:443) ──┬──► Gateway (:3001) ──► AI Providers
-                                     ├──► CMS (:3002)           (Bedrock, Gemini)
-                                     └──► PostgreSQL (:5432)
+The browser only talks to `server`.
+
+`server` is the front door for:
+
+- HTTPS and static client files
+- OIDC/session login
+- edge-only routes like admin, search, translate, S3 access, and feedback
+- mounting shared service-owned routers for chat, conversations, and model calls
+
+The key composition file is [server/compose.js](server/compose.js):
+
+- unset `USERS_URL`, `GATEWAY_URL`, `CMS_URL`, and `AGENTS_URL` to compose local modules directly
+- set those URLs to switch `server` to the matching `remote.js` clients over HTTP
+
+That is the dependency-injection model in this repo: composition happens at the edges, collaborators are passed in, and service `core/` code stays unaware of direct-vs-HTTP mode.
+
+### Direct mode topology
+
+```mermaid
+flowchart LR
+    browser[Browser] --> server[server]
+    server --> client[client]
+    server --> users[users app]
+    server --> gateway[gateway service]
+    server --> cms[cms service]
+    server --> agents[agents app]
+    gateway --> users
+    cms --> gateway
+    agents --> gateway
+    agents --> cms
+    users --> db[(PGlite or Postgres)]
+    gateway --> db
+    cms --> db
+    agents --> db
 ```
 
-| Package                           | Type           | Port     | Description                                                                    |
-| --------------------------------- | -------------- | -------- | ------------------------------------------------------------------------------ |
-| [client](client/)                 | Frontend       | —        | Buildless SolidJS chat interface with local IndexedDB storage                  |
-| [server](server/)                 | Service        | 443/8080 | Edge server — HTTPS, OAuth, static files, API routing                          |
-| [gateway](gateway/)               | Service        | 3001     | AI inference — multi-provider abstraction, usage tracking                      |
-| [cms](cms/)                       | Service        | 3002     | Conversation management — agents, conversations, messages, tools, prompts CRUD |
-| [agents](agents/)                 | Service (stub) | 3003     | Chat orchestration (planned)                                                   |
-| [users](users/)                   | Service        | 3004     | User management, roles, usage tracking, budget management                      |
-| [database](database/)             | Library        | —        | Drizzle ORM schema, relations, seed data                                       |
-| [shared](shared/)                 | Library        | —        | Logger, middleware, utilities                                                  |
-| [infrastructure](infrastructure/) | CDK            | —        | AWS deployment (ECR, ECS Fargate, RDS Aurora)                                  |
+This is the shape created by `server/compose.js` when the service URLs are unset.
 
-## Quick Start
+### HTTP-shaped topology
+
+```mermaid
+flowchart LR
+    browser[Browser] --> server[server]
+    server --> client[client]
+    server -->|USERS_URL| users[users service :3004]
+    server -->|GATEWAY_URL| gateway[gateway service :3001]
+    server -->|CMS_URL| cms[cms service :3002]
+    server -->|AGENTS_URL| agents[agents service :3003]
+    gateway -->|USERS_URL| users
+    cms -->|GATEWAY_URL| gateway
+    agents -->|GATEWAY_URL| gateway
+    agents -->|CMS_URL| cms
+    users --> db[(Postgres)]
+    gateway --> db
+    cms --> db
+    agents --> db
+    mail[mail]:::dep
+
+    classDef dep fill:#f4f4f4,stroke:#999,color:#222;
+```
+
+This is the intended HTTP-shaped runtime:
+
+- `server` uses remote clients when the service URLs are set
+- `gateway` calls `users` over HTTP when `USERS_URL` is set
+- `cms` calls `gateway` over HTTP when `GATEWAY_URL` is set
+- `agents` calls `gateway` and `cms` over HTTP when `GATEWAY_URL` and `CMS_URL` are set
+
+See [docs/architecture.md](docs/architecture.md) for a deeper breakdown of the advanced HTTP setup.
+
+## Typical Request Flows
+
+### Login and session
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Server
+    participant Users
+    Browser->>Server: GET /api/login or session-backed request
+    Server->>Server: run OIDC/session flow
+    Server->>Users: resolveIdentity({ sessionUserId, apiKey })
+    Users-->>Server: user + role
+    Server-->>Browser: session-backed response
+```
+
+### Model call
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Server
+    participant Gateway
+    participant Users
+    Browser->>Server: POST /api/model
+    Server->>Server: build request context
+    Server->>Gateway: invoke(...)
+    Gateway->>Gateway: validate model and run provider call
+    Gateway->>Users: track usage
+    Gateway-->>Server: JSON or NDJSON stream
+    Server-->>Browser: JSON or NDJSON stream
+```
+
+### Chat
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Server
+    participant Agents
+    participant CMS
+    participant Gateway
+    Browser->>Server: POST /api/v1/agents/:agentId/conversations/:conversationId/chat
+    Server->>Agents: chat(...)
+    Agents->>CMS: load agent definition + conversation state
+    Agents->>Gateway: invoke(...)
+    Gateway-->>Agents: model output
+    Agents->>Agents: execute tools and loop as needed
+    Agents->>CMS: persist messages, resources, and state
+    Agents-->>Server: NDJSON events
+    Server-->>Browser: NDJSON events
+```
+
+## Where To Make Changes
+
+Use this map when deciding where to work.
+
+- auth, session, browser-facing route behavior, static serving: `server`
+- frontend UI and browser-only behavior: `client`
+- user lookup, roles, budget logic, usage analytics: `users`
+- provider logic, model invocation, guardrails, usage shaping: `gateway`
+- stored agents, conversations, messages, resources, vectors, tools, prompts: `cms`
+- runtime chat loop, tool execution, streaming behavior: `agents`
+
+If you are changing stored agent metadata, that is `cms`.
+If you are changing how an agent actually runs, that is `agents`.
+
+## Directory Conventions
+
+Service roots should show the runtime boundary, not hide it.
+
+Common root files:
+
+- `index.js`: standalone service entrypoint
+- `app.js`: application-facing interface
+- `http.js`: shared HTTP route composition
+- `remote.js`: HTTP client for remote mode
+- `service.js`: local composition helper when the service needs one
+- `package.json`, `Dockerfile`, `README.md`, `openapi.yaml`
+
+Common subdirectories:
+
+- `core/`: business logic in `gateway`, `cms`, and `agents`
+- `http/`: CMS route families and HTTP helpers
+- `providers/`: external provider adapters in `gateway`
+- `tools/`: tool implementations and specs in `agents`
+- `api/`, `integrations/`, `runtime/`: edge API, external adapters, and process concerns in `server`
+- `scripts/`: one-off operational scripts
+- `test/`: service-local tests
+
+Rule of thumb:
+
+- if you are changing behavior, prefer `core/` or service-owned route files
+- if you are changing startup wiring, go to `index.js`, `service.js`, or `server/compose.js`
+- if you are changing transport behavior, go to `http.js` or `remote.js`
+
+## Database And Startup
+
+[database](database/) is a shared package, not a service.
+
+When imported, it:
+
+- uses PGlite if `PGHOST` is unset
+- uses PostgreSQL if `PGHOST` is set
+- runs `init.sql`
+- applies checked-in migrations unless `DB_SKIP_SYNC=true`
+- seeds reference data
+- runs integrity checks unless disabled
+
+Standalone services use [shared/service-app.js](shared/service-app.js) to expose `/health` and wait for schema readiness before serving traffic.
+
+That means:
+
+- direct mode is near-zero setup because it can use PGlite
+- Docker Compose uses Postgres
+- most services do not need manual schema setup for normal development
+
+## Common Commands
 
 ```bash
-# Start full development environment
-docker compose up --build -w
-
-# Access at https://localhost (ignore cert warnings for dev)
-```
-
-The client must be served through the server (needs HTTPS, OAuth, API proxy).
-
-## Development Modes
-
-### Docker (recommended)
-
-Runs all services as separate containers with hot reload:
-
-```bash
-docker compose up --build -w
-```
-
-### Single-Process Monolith
-
-All services run in one process. No `GATEWAY_URL`/`CMS_URL` set — factory clients call service code directly:
-
-```bash
-cd server
-cp .env.example .env   # Configure with PGlite for easy setup
-cp test.env.example test.env # Configure test environment
-npm install
-npm run start:dev
-```
-
-### Multi-Process Microservices
-
-Each service runs separately. Set `GATEWAY_URL` and `CMS_URL` to enable HTTP mode:
-
-```bash
-npm start -w gateway   # Port 3001
-npm start -w cms       # Port 3002
-GATEWAY_URL=http://localhost:3001 CMS_URL=http://localhost:3002 npm start -w server
-```
-
-## Database
-
-The project uses [PGlite](https://pglite.dev/) — an embedded PostgreSQL that runs in-process with zero configuration. Data is stored locally in `./data`.
-
-```bash
-# Start a PGlite server on port 5433 (required for db:sql)
+npm start
+npm run start:dev -w server
+npm test
+npm test -w server
+npm test -w agents
+npm run lint
 npm run db
-
-# Connect with psql (requires psql on PATH)
 npm run db:sql
-
-# Run a quick query
-npm run db:sql -- -c "SELECT * FROM \"User\""
 ```
 
-> **Note:** `psql` must be installed separately. Download the [PostgreSQL binaries](https://www.enterprisedb.com/download-postgresql-binaries) zip, extract it, and add the `bin` folder to your PATH.
+Most backend verification still lives under `server/test` because that suite exercises direct composition, mounted public routes, and direct-vs-HTTP transport parity.
 
-For production PostgreSQL, set `PGHOST`, `PGUSER`, `PGPASSWORD` (see Environment Variables below).
+## Package Docs
 
-## Environment Variables
-
-Core variables needed across services. See individual service READMEs for complete lists.
-
-| Variable                         | Services        | Description                                       |
-| -------------------------------- | --------------- | ------------------------------------------------- |
-| `SESSION_SECRET`                 | server          | Cookie signing secret                             |
-| `AWS_ACCESS_KEY_ID`              | server, gateway | AWS credentials                                   |
-| `AWS_SECRET_ACCESS_KEY`          | server, gateway | AWS credentials                                   |
-| `GEMINI_API_KEY`                 | gateway         | Google Gemini API key                             |
-| `DB_STORAGE`                     | all             | PGlite data directory (uses embedded PG when set) |
-| `DB_SKIP_SYNC`                   | gateway, cms    | Skip schema sync (`true` in microservice mode)    |
-| `PGHOST`, `PGUSER`, `PGPASSWORD` | all (postgres)  | PostgreSQL connection                             |
-| `GATEWAY_URL`                    | server          | Gateway service URL (enables HTTP mode)           |
-| `CMS_URL`                        | server          | CMS service URL (enables HTTP mode)               |
-| `OAUTH_CLIENT_ID`                | server          | OIDC client ID                                    |
-| `OAUTH_CLIENT_SECRET`            | server          | OIDC client secret                                |
-| `BRAVE_SEARCH_API_KEY`           | server          | Brave Search API key                              |
-
-## Testing
-
-```bash
-cd server && npm test               # Backend unit tests (Node built-in test runner)
-cd server && npm run test:integration  # Full integration tests (Playwright + API)
-```
-
-Tests use real services (AWS Bedrock, PostgreSQL/PGlite). No mocking.
-
-When running tests, make sure your local server is running.
-
-## Deployment
-
-Deployed to AWS using CDK. See [infrastructure/](infrastructure/) for details.
-
-```bash
-# CI/CD pipeline
-./deploy.sh
-```
-
-The deploy script builds 3 Docker images (main, gateway, cms), pushes to ECR, and deploys via CDK to ECS Fargate with Aurora Serverless PostgreSQL.
-
-## Project Structure
-
-```
-research-optimizer/
-├── package.json              # Root workspace config (shared, database, gateway, cms, agents, users, server)
-├── docker-compose.yml        # Multi-service development
-├── deploy.sh                 # CI/CD deployment script
-├── Dockerfile                # Multi-service container image
-│
-├── client/                   # Frontend (buildless SolidJS, not an npm workspace)
-│   ├── components/           # Reusable UI components
-│   ├── models/               # IndexedDB, embeddings, data models
-│   ├── pages/tools/chat/     # Main chat interface
-│   └── utils/                # Client utilities
-│
-├── server/                   # Edge server (HTTPS, auth, routing)
-│   ├── server.js             # Entry point
-│   ├── services/
-│   │   ├── routes/           # API endpoints (auth, model, tools, admin)
-│   │   └── clients/          # Factory clients (gateway.js, cms.js)
-│   └── openapi.yaml          # Public API spec
-│
-├── gateway/                  # AI inference service
-│   ├── inference.js          # Provider orchestration
-│   ├── providers/            # Bedrock, Gemini, Mock
-│   ├── usage.js              # Token tracking
-│   └── openapi.yaml          # Service API spec
-│
-├── cms/                      # Conversation management service
-│   ├── conversation.js       # ConversationService class
-│   ├── api.js                # REST routes
-│   └── openapi.yaml          # Service API spec
-│
-├── agents/                   # Chat orchestration (stub)
-├── users/                    # User management, roles, usage tracking
-│
-├── database/                 # Shared database package
-│   ├── schema.js             # Table definitions, relations, seed data
-│   ├── csv-loader.js         # Seed data parser
-│   └── data/                 # Seed CSVs
-│
-├── shared/                   # Shared utilities
-│   ├── logger.js             # Winston logging
-│   ├── middleware.js          # Request/error logging, nocache
-│   └── utils.js              # routeHandler, createHttpError
-│
-└── infrastructure/        # AWS CDK deployment
-    ├── stacks/               # ECR, ECS, RDS stacks
-    └── config.py             # Environment configuration
-```
-
-## Documentation Index
-
-| Document                                             | Description                              |
-| ---------------------------------------------------- | ---------------------------------------- |
-| [client/readme.md](client/readme.md)                 | Frontend architecture and components     |
-| [server/README.md](server/README.md)                 | Edge server, API reference               |
-| [server/openapi.yaml](server/openapi.yaml)           | Public API spec (OpenAPI 3.1)            |
-| [gateway/README.md](gateway/README.md)               | Inference service architecture           |
-| [gateway/openapi.yaml](gateway/openapi.yaml)         | Gateway API spec (OpenAPI 3.1)           |
-| [cms/README.md](cms/README.md)                       | Conversation management service          |
-| [cms/openapi.yaml](cms/openapi.yaml)                 | CMS API spec (OpenAPI 3.1)               |
-| [database/README.md](database/README.md)             | Data models, ownership matrix, seed data |
-| [shared/README.md](shared/README.md)                 | Shared library reference                 |
-| [agents/README.md](agents/README.md)                 | Chat orchestration (stub)                |
-| [users/README.md](users/README.md)                   | User management and usage tracking       |
-| [infrastructure/README.md](infrastructure/README.md) | AWS CDK deployment                       |
-
-## Code Health
-
-This project prioritizes long-term maintainability measured by one thing: **the cost of the next change should stay roughly constant over time.** When that cost grows, the architecture is degrading. When it stays flat, the architecture is healthy.
-
-Both developers returning to code after months and automated tools encountering the codebase fresh benefit from the same properties: explicit structure, clear boundaries, and self-documenting organization.
-
-### Core Properties
-
-**Locality of Change**
-When modifying behavior X, only files related to X should need to change. If a search feature change requires edits in authentication, billing, and notification code, the concept is scattered and the boundaries are wrong.
-
-_Test: Pick any feature. Can you name which files you'd touch without grep?_
-
-**Predictability of Location**
-The directory structure should mirror the conceptual structure. A developer should find code based on what it does, from directory names alone.
-
-_Test: Describe a feature. Can a newcomer find it from the tree without full-text search?_
-
-**Independence of Understanding**
-Module A should be understandable without loading module B into your head. When understanding one part requires loading the entire system, the architecture has failed.
-
-_Test: Open any file. Can you understand it by reading only its imports and contents?_
-
-**Explicit Dependencies**
-When A depends on B, that relationship is visible at the boundary — imports, parameters, type signatures. No hidden state, no action-at-a-distance, no implicit coupling through shared mutable state or naming conventions.
-
-_Test: Can you determine a module's full dependency set from its import statements and function signatures?_
-
-**Proportional Effort**
-The size of a code change should be proportional to the size of the behavior change. When a small feature request demands a large refactor, the architecture is fighting you.
-
-_Test: Were recent code changes proportional to the conceptual changes they implemented?_
-
-**Deletability**
-The ultimate boundary test. A feature should be removable by deleting its directory and its entry point. If removal requires surgery across the system, the boundaries are wrong.
-
-_Test: Pick a feature. What would it take to remove it completely?_
-
-### Structural Anti-Patterns
-
-These patterns increase cognitive load and maintenance cost over time. They should be identified and resolved proactively, prioritized by how frequently the affected area changes.
-
-| Pattern                   | What It Looks Like                                                        | Why It Hurts                                                                                       |
-| ------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Concept Scattering**    | One concept spread across many directories                                | Understanding requires reconstructing the concept from fragments; every change is a scavenger hunt |
-| **Concept Tangling**      | One file serving multiple unrelated concepts                              | Can't change one without risking the other; can't understand one without reading the other         |
-| **Circular Dependencies** | A depends on B depends on A                                               | Kills ability to reason about either in isolation; usually means the boundary is misplaced         |
-| **Hub Modules**           | One file that everything imports                                          | Responsibilities defined by callers, not coherent purpose; changes ripple unpredictably            |
-| **Shotgun Surgery**       | One conceptual change touches many files across many directories          | The concept isn't co-located; maintenance cost multiplies with each fragment                       |
-| **Passthrough Layers**    | A calls B calls C, but B adds nothing                                     | Indirection without abstraction; every layer is a hop readers must trace through                   |
-| **Leaky Abstractions**    | Callers must understand a module's internals to use it                    | Boundary exists on paper, not in practice; callers couple to implementation                        |
-| **Misplaced Boundaries**  | Module boundary cuts through a concept instead of between concepts        | Related code separated; unrelated code grouped; changes cross boundaries unnecessarily             |
-| **Implicit Coupling**     | Modules share hidden assumptions about data shape, timing, or conventions | Independent-looking changes break unrelated code; the most dangerous coupling                      |
-| **Abstraction Mismatch**  | Code vocabulary doesn't match domain vocabulary                           | Developers constantly translate between what the code says and what it means                       |
-
-### Architectural Review Framework
-
-Code health is maintained through structured analysis at four levels. Each level has its own cognitive load profile and failure modes.
-
-**System Topology** — How do subsystems relate? Are dependency directions correct (high-level policy never depends on low-level detail)? Can you reason about one subsystem without loading another?
-
-**Module/Feature Boundaries** — Within a subsystem, does each directory represent one coherent concept? Are related files co-located? Do boundaries fall between concepts, not through them?
-
-**File Responsibility** — Does each file have a single summarizable purpose? Do its exports form a coherent interface, or is it a grab-bag?
-
-**Function/Block Structure** — How many concepts must you hold in working memory simultaneously? Is control flow legible? Do names self-document?
-
-### Analyzing Code Health
-
-Effective review requires understanding the full topology before proposing changes:
-
-1. **Map the dependency graph** — Trace imports across the codebase. Identify what depends on what, and whether those directions are correct.
-2. **Locate concepts** — For each major feature (chat, inference, authentication, tools), identify every file that participates. Measure how scattered or co-located each concept is.
-3. **Measure understanding radius** — For frequently-changed files, determine how many other files you must read to safely modify them.
-4. **Test boundaries** — Check whether module boundaries align with concept boundaries. Apply the deletability test to each feature.
-5. **Assess change patterns** — Identify high-churn areas. Check whether recent changes were localized (healthy) or scattered (unhealthy).
-
-### Proposing Structural Changes
-
-Architectural improvements should be proposed — not applied silently — with enough context for an informed decision:
-
-1. **What**: The specific structural change (move, split, merge, re-boundary)
-2. **Which anti-pattern**: What it addresses from the table above
-3. **Which property it restores**: Which core property (locality, predictability, independence, etc.) it improves
-4. **Cognitive load impact**: What concepts are removed from working memory, at which level, and for which tasks
-5. **Maintenance cost delta**: How this affects the cost of future changes — both the reduction for common operations and any new cost introduced (more files, new boundaries, migration effort)
-6. **Tradeoffs**: Every structural change has costs. State them explicitly. Prefer reversible changes over irreversible ones.
-7. **Incremental path**: Whether this can be done in stages or requires a single coordinated change
-
-Rank proposals by **maintenance impact**: the frequency of changes in the affected area multiplied by the cognitive load the current structure imposes during those changes. High-churn, high-load areas are highest priority.
+- [server/README.md](server/README.md)
+- [users/README.md](users/README.md)
+- [gateway/README.md](gateway/README.md)
+- [cms/README.md](cms/README.md)
+- [agents/README.md](agents/README.md)
+- [database/README.md](database/README.md)
+- [shared/README.md](shared/README.md)
+- [infrastructure/README.md](infrastructure/README.md)

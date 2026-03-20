@@ -74,11 +74,11 @@ paths:
                 error: "Embedding not yet implemented"
                 code: "GATEWAY_NOT_IMPLEMENTED"
 
-  /api/v1/models:
+  /api/v1/model/list:
     get:
       operationId: listModels
       summary: List available models
-      description: Returns all models with `providerID: 1` (Bedrock). Supports optional type filter.
+      description: Returns all models with `providerID: 1` (Bedrock) or `providerID: 3` (Databricks/IDP). Supports optional type filter.
       parameters:
         - name: type
           in: query
@@ -150,9 +150,6 @@ components:
           type: boolean
           default: false
           description: Whether to stream the response.
-        ip:
-          type: string
-          description: Client IP address for usage tracking.
         outputConfig:
           type: object
           description: Additional output configuration passed to the provider.

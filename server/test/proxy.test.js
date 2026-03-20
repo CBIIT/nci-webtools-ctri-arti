@@ -1,7 +1,8 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { getAuthorizedUrl, getAuthorizedHeaders, WHITELIST } from "../services/proxy.js";
+import { getAuthorizedUrl, getAuthorizedHeaders, WHITELIST } from "../integrations/proxy.js";
 
 test("getAuthorizedUrl", async (t) => {
   await t.test("adds api_key for govinfo.gov", () => {

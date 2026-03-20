@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { test } from "node:test";
 
@@ -63,3 +64,6 @@ test("createLogger", async (t) => {
     assert.strictEqual(logger.level, "debug");
   });
 });
+
+
+

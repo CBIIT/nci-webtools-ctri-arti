@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 from aws_cdk import (
     Stack,
     aws_ec2 as ec2,
@@ -13,7 +13,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 
-from config import ContainerDefinition, TaskDefinition
+from config import ServiceDefinition
 
 
 class EcsServiceStack(Stack):
@@ -28,15 +28,14 @@ class EcsServiceStack(Stack):
         subnets: List[str],
         domain_name: str,
         alt_domain_name: Optional[str] = None,
-        desired_count: int,
         priority: int,
-        task_definition: TaskDefinition,
-        min_capacity: int,
-        max_capacity: int,
-        target_capacity_percent: int,
+        services: List[ServiceDefinition],
+        secrets: dict,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
+
+        self._prefix = prefix
 
         vpc_lookup = ec2.Vpc.from_lookup(self, "ecs-service-vpc", vpc_name=vpc)
 
@@ -57,6 +56,20 @@ class EcsServiceStack(Stack):
             name=f"{prefix}-http",
             description=prefix,
         )
+
+        # Shared security group for inter-service communication via Service Connect
+        service_connect_sg = ec2.SecurityGroup(
+            self,
+            "service-connect-sg",
+            vpc=vpc_lookup,
+            description=f"{prefix} inter-service communication",
+        )
+        for svc in services:
+            service_connect_sg.add_ingress_rule(
+                peer=service_connect_sg,
+                connection=ec2.Port.tcp(svc["port"]),
+                description=f"Allow {svc['name']} traffic between services",
+            )
 
         execution_role = iam.Role(
             self,
@@ -115,85 +128,71 @@ class EcsServiceStack(Stack):
             retention=logs.RetentionDays.ONE_MONTH,
         )
 
-        fargate_task_definition = ecs.FargateTaskDefinition(
+        listener = elbv2.ApplicationListener.from_lookup(
             self,
-            "ecs-task-definition",
-            execution_role=execution_role,
-            task_role=task_role,
-            family=id,
-            memory_limit_mib=task_definition.get("memoryLimitMiB", 2048),
-            cpu=task_definition.get("cpu", 1024),
-            volumes=[
-                ecs.Volume(
-                    name=vol["name"],
-                    efs_volume_configuration=ecs.EfsVolumeConfiguration(
-                        file_system_id=vol["efsVolumeConfiguration"]["fileSystemId"],
-                        root_directory=vol["efsVolumeConfiguration"].get("rootDirectory"),
-                        transit_encryption="ENABLED"
-                        if vol["efsVolumeConfiguration"].get("transitEncryption") == "ENABLED"
-                        else "DISABLED",
-                        authorization_config=ecs.AuthorizationConfig(
-                            access_point_id=vol["efsVolumeConfiguration"]["authorizationConfig"][
-                                "accessPointId"
-                            ],
-                            iam="ENABLED"
-                            if vol["efsVolumeConfiguration"]["authorizationConfig"].get("iam")
-                            == "ENABLED"
-                            else "DISABLED",
-                        ),
-                    ),
-                )
-                for vol in task_definition.get("volumes", [])
-            ],
+            "ecs-service-listener",
+            load_balancer_tags={"Name": tier},
+            listener_protocol=elbv2.ApplicationProtocol.HTTPS,
         )
 
-        containers: List[ContainerDefinition] = task_definition.get("containers", [])
-        for i, container_props in enumerate(containers):
-            secrets: dict[str, ecs.Secret] = {}
+        shared_secrets = self._build_secrets(secrets)
 
-            if "secrets" in container_props:
-                for param_key, string_value in container_props["secrets"].items():
-                    parameter_label = param_key.lower().replace("_", "-")
+        for svc in services:
+            name = svc["name"]
+            port = svc["port"]
 
-                    if isinstance(string_value, list):
-                        secret_name, field = string_value
-                        secret = secretsmanager.Secret.from_secret_name_v2(
-                            self,
-                            f"secret-{container_props['name']}-{parameter_label}",
-                            secret_name,
-                        )
-                        secrets[param_key] = ecs.Secret.from_secrets_manager(secret, field)
-                    elif string_value:
-                        parameter_name = f"/{prefix}/{container_props['name']}/{parameter_label}"
-                        ssm_param = ssm.StringParameter(
-                            self,
-                            f"secret-{container_props['name']}-{parameter_label}",
-                            parameter_name=parameter_name,
-                            string_value=string_value,
-                        )
-                        secrets[param_key] = ecs.Secret.from_ssm_parameter(ssm_param)
+            task_def = ecs.FargateTaskDefinition(
+                self,
+                f"task-def-{name}",
+                execution_role=execution_role,
+                task_role=task_role,
+                family=f"{id}-{name}",
+                cpu=svc.get("cpu", 1024),
+                memory_limit_mib=svc.get("memoryLimitMiB", 2048),
+                volumes=[
+                    ecs.Volume(
+                        name=vol["name"],
+                        efs_volume_configuration=ecs.EfsVolumeConfiguration(
+                            file_system_id=vol["efsVolumeConfiguration"]["fileSystemId"],
+                            root_directory=vol["efsVolumeConfiguration"].get("rootDirectory"),
+                            transit_encryption="ENABLED"
+                            if vol["efsVolumeConfiguration"].get("transitEncryption") == "ENABLED"
+                            else "DISABLED",
+                            authorization_config=ecs.AuthorizationConfig(
+                                access_point_id=vol["efsVolumeConfiguration"]["authorizationConfig"][
+                                    "accessPointId"
+                                ],
+                                iam="ENABLED"
+                                if vol["efsVolumeConfiguration"]["authorizationConfig"].get("iam")
+                                == "ENABLED"
+                                else "DISABLED",
+                            ),
+                        ),
+                    )
+                    for vol in svc.get("volumes", [])
+                ],
+            )
 
-            container = fargate_task_definition.add_container(
-                f"container-{i}",
-                image=self._container_image(i, container_props["image"]),
-                container_name=container_props["name"],
+            container = task_def.add_container(
+                f"container-{name}",
+                image=self._container_image(name, svc["image"]),
+                container_name=name,
                 port_mappings=[
                     ecs.PortMapping(
-                        name=pm["name"],
-                        container_port=pm["containerPort"],
+                        name=name,
+                        container_port=port,
                     )
-                    for pm in container_props.get("portMappings", [])
                 ],
-                environment=container_props.get("environment", {}),
-                secrets=secrets,
+                environment=svc.get("environment", {}),
+                secrets=shared_secrets,
                 logging=ecs.AwsLogDriver(
                     log_group=log_group,
-                    stream_prefix=container_props["name"],
+                    stream_prefix=name,
                 ),
             )
 
-            if "mountPoints" in container_props:
-                for mp in container_props["mountPoints"]:
+            if "mountPoints" in svc:
+                for mp in svc["mountPoints"]:
                     container.add_mount_points(
                         ecs.MountPoint(
                             source_volume=mp["sourceVolume"],
@@ -202,96 +201,114 @@ class EcsServiceStack(Stack):
                         )
                     )
 
-        port_mapping = None
-        if containers and containers[0].get("portMappings"):
-            port_mapping = containers[0]["portMappings"][0]
-
-        service = ecs.FargateService(
-            self,
-            "ecs-service",
-            cluster=cluster,
-            desired_count=desired_count,
-            task_definition=fargate_task_definition,
-            service_name=prefix,
-            propagate_tags=ecs.PropagatedTagSource.TASK_DEFINITION,
-            enable_ecs_managed_tags=True,
-            enable_execute_command=True,
-            min_healthy_percent=100,
-            service_connect_configuration=ecs.ServiceConnectProps(
-                namespace=http_namespace.namespace_arn,
-                services=[
-                    ecs.ServiceConnectService(
-                        port_mapping_name=port_mapping["name"],
-                        dns_name=prefix,
-                        port=port_mapping["containerPort"],
-                    )
-                ],
-            ),
-        )
-
-        listener = elbv2.ApplicationListener.from_lookup(
-            self,
-            "ecs-service-listener",
-            load_balancer_tags={"Name": tier},
-            listener_protocol=elbv2.ApplicationProtocol.HTTPS,
-        )
-
-        target_group = elbv2.ApplicationTargetGroup(
-            self,
-            "ecs-service-target-group",
-            vpc=vpc_lookup,
-            port=port_mapping["containerPort"] if port_mapping else 80,
-            protocol=elbv2.ApplicationProtocol.HTTP,
-            target_type=elbv2.TargetType.IP,
-            target_group_name=prefix,
-        )
-
-        listener.add_target_groups(
-            "ecs-service-listener-targets",
-            target_groups=[target_group],
-            priority=priority,
-            conditions=[
-                elbv2.ListenerCondition.host_headers([domain_name]),
-            ],
-        )
-
-        if alt_domain_name:
-            listener.add_action(
-                "ecs-service-listener-redirect",
-                action=elbv2.ListenerAction.redirect(
-                    host=domain_name,
-                    port="443",
-                    protocol="HTTPS",
-                    permanent=True,
-                    path="/#{path}",
-                    query="#{query}",
+            fargate_service = ecs.FargateService(
+                self,
+                f"service-{name}",
+                cluster=cluster,
+                desired_count=svc.get("desiredCount", 1),
+                task_definition=task_def,
+                service_name=f"{prefix}-{name}",
+                propagate_tags=ecs.PropagatedTagSource.TASK_DEFINITION,
+                enable_ecs_managed_tags=True,
+                enable_execute_command=True,
+                min_healthy_percent=100,
+                security_groups=[service_connect_sg],
+                service_connect_configuration=ecs.ServiceConnectProps(
+                    namespace=http_namespace.namespace_arn,
+                    services=[
+                        ecs.ServiceConnectService(
+                            port_mapping_name=name,
+                            dns_name=name,
+                            port=port,
+                        )
+                    ],
                 ),
-                priority=priority + 1,
-                conditions=[elbv2.ListenerCondition.host_headers([alt_domain_name])],
             )
 
-        service.attach_to_application_target_group(target_group)
+            if svc.get("exposedViaAlb"):
+                target_group = elbv2.ApplicationTargetGroup(
+                    self,
+                    "ecs-service-target-group",
+                    vpc=vpc_lookup,
+                    port=port,
+                    protocol=elbv2.ApplicationProtocol.HTTP,
+                    target_type=elbv2.TargetType.IP,
+                    target_group_name=prefix,
+                )
 
-        scaling = service.auto_scale_task_count(
-            min_capacity=min_capacity,
-            max_capacity=max_capacity,
-        )
+                listener.add_target_groups(
+                    "ecs-service-listener-targets",
+                    target_groups=[target_group],
+                    priority=priority,
+                    conditions=[
+                        elbv2.ListenerCondition.host_headers([domain_name]),
+                    ],
+                )
 
-        scaling.scale_on_cpu_utilization(
-            "cpu-scaling",
-            target_utilization_percent=target_capacity_percent,
-        )
+                if alt_domain_name:
+                    listener.add_action(
+                        "ecs-service-listener-redirect",
+                        action=elbv2.ListenerAction.redirect(
+                            host=domain_name,
+                            port="443",
+                            protocol="HTTPS",
+                            permanent=True,
+                            path="/#{path}",
+                            query="#{query}",
+                        ),
+                        priority=priority + 1,
+                        conditions=[elbv2.ListenerCondition.host_headers([alt_domain_name])],
+                    )
 
-        scaling.scale_on_memory_utilization(
-            "memory-scaling",
-            target_utilization_percent=target_capacity_percent,
-        )
+                fargate_service.attach_to_application_target_group(target_group)
 
-    def _container_image(self, idx, uri):
+            scaling = fargate_service.auto_scale_task_count(
+                min_capacity=svc.get("minCapacity", 1),
+                max_capacity=svc.get("maxCapacity", 4),
+            )
+
+            target_pct = svc.get("targetCapacityPercent", 70)
+
+            scaling.scale_on_cpu_utilization(
+                f"cpu-scaling-{name}",
+                target_utilization_percent=target_pct,
+            )
+
+            scaling.scale_on_memory_utilization(
+                f"memory-scaling-{name}",
+                target_utilization_percent=target_pct,
+            )
+
+    def _build_secrets(self, secrets_config):
+        """Build shared ECS secrets from config. Called once, reused across all services."""
+        secrets = {}
+        for param_key, string_value in secrets_config.items():
+            parameter_label = param_key.lower().replace("_", "-")
+
+            if isinstance(string_value, list):
+                secret_name, field = string_value
+                secret = secretsmanager.Secret.from_secret_name_v2(
+                    self,
+                    f"secret-{parameter_label}",
+                    secret_name,
+                )
+                secrets[param_key] = ecs.Secret.from_secrets_manager(secret, field)
+            elif string_value:
+                parameter_name = f"/{self._prefix}/{parameter_label}"
+                ssm_param = ssm.StringParameter(
+                    self,
+                    f"secret-{parameter_label}",
+                    parameter_name=parameter_name,
+                    string_value=string_value,
+                )
+                secrets[param_key] = ecs.Secret.from_ssm_parameter(ssm_param)
+        return secrets
+
+    def _container_image(self, name, uri):
         """Use from_ecr_repository for ECR URIs, from_registry otherwise."""
         host, _, repo_tag = uri.partition("/")
         if ".dkr.ecr." in host:
             repo_name, _, tag = repo_tag.partition(":")
-            repo = ecr.Repository.from_repository_name(self, f"ecr-repo-{idx}", repo_name)
+            repo = ecr.Repository.from_repository_name(self, f"ecr-repo-{name}", repo_name)
             return ecs.ContainerImage.from_ecr_repository(repo, tag=tag or "latest")
         return ecs.ContainerImage.from_registry(uri)

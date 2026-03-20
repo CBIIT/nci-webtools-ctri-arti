@@ -12,3 +12,4 @@ __pycache__
 cdk.out
 /scripts
 /docs
+/data

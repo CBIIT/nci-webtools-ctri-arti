@@ -159,7 +159,7 @@ paths:
               properties:
                 title:
                   type: string
-                agentID:
+                agentId:
                   type: integer
       responses:
         "201":
@@ -284,13 +284,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /api/v1/conversations/{id}/compress:
+  /api/v1/conversations/{id}/summarize:
     parameters:
       - $ref: "#/components/parameters/ResourceId"
     post:
-      operationId: compressConversation
-      summary: Compress a conversation
-      description: Sets a summary message ID on the conversation for context windowing.
+      operationId: summarizeConversation
+      summary: Summarize a conversation
+      description: Streams a model-generated conversation summary and persists it when long enough to be useful for context windowing.
       tags: [Conversations]
       requestBody:
         required: true
@@ -299,17 +299,27 @@ paths:
             schema:
               type: object
               properties:
-                summary:
+                model:
                   type: string
-                summaryMessageID:
+                system:
+                  type: string
+                thoughtBudget:
                   type: integer
+                userText:
+                  type: string
+                requestId:
+                  type: string
+                tools:
+                  type: array
+                  items:
+                    type: object
       responses:
         "200":
-          description: Conversation compressed
+          description: Newline-delimited JSON summary stream
           content:
-            application/json:
+            application/x-ndjson:
               schema:
-                $ref: "#/components/schemas/Conversation"
+                type: string
         "404":
           description: Conversation not found
           content:
@@ -639,9 +649,9 @@ paths:
                   type: string
                 content:
                   type: string
-                agentID:
+                agentId:
                   type: integer
-                messageID:
+                messageId:
                   type: integer
                 s3Uri:
                   type: string
@@ -711,50 +721,6 @@ paths:
                   $ref: "#/components/schemas/Resource"
 
   # ===== VECTORS =====
-  /api/v1/vectors:
-    post:
-      operationId: storeConversationVectors
-      summary: Add vectors
-      description: Bulk create. Order defaults to array index.
-      tags: [Vectors]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [vectors]
-              properties:
-                conversationID:
-                  type: integer
-                vectors:
-                  type: array
-                  items:
-                    type: object
-                    required: [content]
-                    properties:
-                      content:
-                        type: string
-                      embedding:
-                        type: array
-                        items:
-                          type: number
-                      resourceID:
-                        type: integer
-                      toolID:
-                        type: integer
-                      order:
-                        type: integer
-      responses:
-        "201":
-          description: Vectors created
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Vector"
-
   /api/v1/vectors/search:
     get:
       operationId: searchVectors
@@ -762,11 +728,11 @@ paths:
       description: Cosine similarity search when embedding is provided.
       tags: [Vectors]
       parameters:
-        - name: toolID
+        - name: toolId
           in: query
           schema:
             type: integer
-        - name: conversationID
+        - name: conversationId
           in: query
           schema:
             type: integer

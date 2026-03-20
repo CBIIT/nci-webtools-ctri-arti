@@ -1,9 +1,11 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 import Handlebars from "handlebars";
-import { sendJustificationEmail } from "../services/email.js";
+
+import { sendJustificationEmail } from "../integrations/email.js";
 
 test("email template", async (t) => {
   const templatePath = new URL("../templates/error-log-report.hbs", import.meta.url);
@@ -26,9 +28,7 @@ test("email template", async (t) => {
       userName: "Test User",
       version: "1.0.0",
       isUserReported: false,
-      detailRows: [
-        { label: "Error", value: "Something failed", isMultiline: false },
-      ],
+      detailRows: [{ label: "Error", value: "Something failed", isMultiline: false }],
     });
 
     assert.ok(html.includes("Test User"));

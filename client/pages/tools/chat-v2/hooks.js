@@ -143,7 +143,7 @@ export function useAgent({ agentId, conversationId }) {
         setAgent("conversation", "name", "Untitled");
         const conv = await api("/conversations", {
           method: "POST",
-          body: JSON.stringify({ title: "Untitled", agentID: agentId }),
+          body: JSON.stringify({ title: "Untitled", agentId }),
         });
         currentConversationId = conv.id;
         setParams("conversationId", currentConversationId);
@@ -186,7 +186,7 @@ export function useAgent({ agentId, conversationId }) {
     if (!conversationId || agent.conversation.name !== "Untitled" || !messageText?.trim()) return;
 
     try {
-      const response = await fetch("/api/v1/model", {
+      const response = await fetch("/api/v1/model/invoke", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

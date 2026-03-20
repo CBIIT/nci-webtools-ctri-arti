@@ -41,12 +41,9 @@ def main():
         subnets=ecs_config["subnets"],
         domain_name=ecs_config["domainName"],
         alt_domain_name=ecs_config.get("altDomainName"),
-        desired_count=ecs_config["desiredCount"],
         priority=ecs_config["priority"],
-        task_definition=ecs_config["taskDefinition"],
-        min_capacity=ecs_config["minCapacity"],
-        max_capacity=ecs_config["maxCapacity"],
-        target_capacity_percent=ecs_config["targetCapacityPercent"],
+        services=ecs_config["services"],
+        secrets=ecs_config["secrets"],
     )
 
     # RDS Cluster Stack

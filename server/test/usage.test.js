@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import db, {
   User,
   Model,
@@ -13,8 +14,14 @@ import assert from "node:assert";
 import { test } from "node:test";
 
 import { eq } from "drizzle-orm";
-import { trackModelUsage, trackUsage } from "gateway/usage.js";
+import { createGatewayUsage } from "gateway/core/usage.js";
+import { createUsersApplication } from "users/app.js";
 import { UserService } from "users/user.js";
+
+const users = createUsersApplication();
+const { trackModelUsage, trackUsage } = createGatewayUsage({
+  recordUsage: (...args) => users.recordUsage(...args),
+});
 
 test("trackModelUsage", async (t) => {
   // The DB is auto-seeded via database.js (defaults to in-memory PGlite when PGHOST is not set)
@@ -51,7 +58,7 @@ test("trackModelUsage", async (t) => {
       cacheWriteInputTokens: 0,
     };
 
-    const records = await trackModelUsage(testUser.id, "mock-model", "127.0.0.1", usageData);
+    const records = await trackModelUsage(testUser.id, "mock-model", usageData);
     assert.ok(records, "Should create usage records");
     assert.ok(Array.isArray(records), "Should return an array");
 
@@ -91,7 +98,7 @@ test("trackModelUsage", async (t) => {
       cacheWriteInputTokens: 0,
     };
 
-    await trackModelUsage(testUser.id, "mock-model", "127.0.0.1", usageData);
+    await trackModelUsage(testUser.id, "mock-model", usageData);
 
     const [userAfter] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
     assert.ok(userAfter.remaining <= balanceBefore, "Balance should decrease or stay same");
@@ -100,38 +107,35 @@ test("trackModelUsage", async (t) => {
   await t.test("records guardrail costs without reducing user budget", async () => {
     const [userBefore] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
 
-    const records = await trackModelUsage(
-      testUser.id,
-      "mock-model",
-      "127.0.0.1",
-      null,
-      {
-        requestId: `guardrail-${Date.now()}`,
-        trace: {
-          guardrail: {
-            inputAssessment: {
-              input: {
-                invocationMetrics: {
-                  usage: {
-                    contentPolicyUnits: 2,
-                    topicPolicyUnits: 1,
-                    wordPolicyUnits: 4,
-                    sensitiveInformationPolicyUnits: 3,
-                    contextualGroundingPolicyUnits: 5,
-                    contentPolicyImageUnits: 2,
-                    automatedReasoningPolicyUnits: 7,
-                    automatedReasoningPolicies: 2,
-                  },
+    const records = await trackModelUsage(testUser.id, "mock-model", null, {
+      requestId: `guardrail-${Date.now()}`,
+      trace: {
+        guardrail: {
+          inputAssessment: {
+            input: {
+              invocationMetrics: {
+                usage: {
+                  contentPolicyUnits: 2,
+                  topicPolicyUnits: 1,
+                  wordPolicyUnits: 4,
+                  sensitiveInformationPolicyUnits: 3,
+                  contextualGroundingPolicyUnits: 5,
+                  contentPolicyImageUnits: 2,
+                  automatedReasoningPolicyUnits: 7,
+                  automatedReasoningPolicies: 2,
                 },
               },
             },
           },
         },
-      }
-    );
+      },
+    });
 
     assert.ok(Array.isArray(records), "Should return guardrail usage rows");
-    assert.ok(records.every((row) => row.type === "guardrail"), "Rows should be marked guardrail");
+    assert.ok(
+      records.every((row) => row.type === "guardrail"),
+      "Rows should be marked guardrail"
+    );
     assert.ok(
       records.every((row) => row.modelID === guardrailModel.id),
       "Rows should be recorded against AWS Guardrails"
@@ -141,9 +145,7 @@ test("trackModelUsage", async (t) => {
       "Should record content policy usage"
     );
     assert.ok(
-      records.some(
-        (row) => row.unit === "automated_reasoning_policy_units" && row.quantity === 14
-      ),
+      records.some((row) => row.unit === "automated_reasoning_policy_units" && row.quantity === 14),
       "Should multiply automated reasoning units by policy count"
     );
 
@@ -156,19 +158,19 @@ test("trackModelUsage", async (t) => {
   });
 
   await t.test("handles missing userId gracefully", async () => {
-    const result = await trackModelUsage(null, "mock-model", "127.0.0.1", { inputTokens: 10 });
+    const result = await trackModelUsage(null, "mock-model", { inputTokens: 10 });
     assert.strictEqual(result, undefined);
   });
 
   await t.test("handles missing model gracefully", async () => {
-    const result = await trackModelUsage(testUser.id, "nonexistent-model", "127.0.0.1", {
+    const result = await trackModelUsage(testUser.id, "nonexistent-model", {
       inputTokens: 10,
     });
     assert.strictEqual(result, undefined);
   });
 
   await t.test("handles missing usageData gracefully", async () => {
-    const result = await trackModelUsage(testUser.id, "mock-model", "127.0.0.1", null);
+    const result = await trackModelUsage(testUser.id, "mock-model", null);
     assert.strictEqual(result, undefined);
   });
 });
@@ -506,3 +508,6 @@ test("UserService deleteUser cascades owned chat and billing rows", async () => 
   assert.equal(userToolRows.length, 0);
   assert.equal(userAgentRows.length, 0);
 });
+
+
+

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { MAX_INLINE_FILE_COUNT } from "gateway/upload-limits.js";
+import { MAX_INLINE_FILE_COUNT } from "gateway/core/upload-limits.js";
 import { PDFDocument } from "pdf-lib";
 
-import { runAgentLoop } from "../loop.js";
+import { runAgentLoop } from "../core/loop.js";
 
 describe("runAgentLoop", () => {
   function createMockGateway(streamEvents, onInvoke) {
@@ -25,11 +25,6 @@ describe("runAgentLoop", () => {
   function createMockCms(agent = {}) {
     const messages = [];
     const resources = [];
-    const appendMessage = (role) => async (_userId, { content }) => {
-      const message = { role, content };
-      messages.push(message);
-      return message;
-    };
     return {
       getAgent: async () => ({
         name: "TestAgent",
@@ -51,9 +46,6 @@ describe("runAgentLoop", () => {
         messages.push(message);
         return message;
       },
-      appendUserMessage: appendMessage("user"),
-      appendAssistantMessage: appendMessage("assistant"),
-      appendToolResultsMessage: appendMessage("user"),
       storeConversationResource: async (_userId, resource) => {
         resources.push(resource);
         return resource;
@@ -184,7 +176,12 @@ describe("runAgentLoop", () => {
       invokedModel = params.model;
     });
     const cms = createMockCms({
-      runtime: { model: "saved-runtime-model", modelID: 77, modelParameters: null, tools: ["search", "browse"] },
+      runtime: {
+        model: "saved-runtime-model",
+        modelID: 77,
+        modelParameters: null,
+        tools: ["search", "browse"],
+      },
     });
 
     const loop = runAgentLoop({
@@ -312,13 +309,17 @@ describe("runAgentLoop", () => {
     assert.equal(callCount, 1);
     assert.equal(cms._messages.length, 2);
     assert.equal(cms._messages[1].role, "assistant");
-    assert.equal(cms._messages[1].content[0].text, "Your request was blocked for security reasons.");
+    assert.equal(
+      cms._messages[1].content[0].text,
+      "Your request was blocked for security reasons."
+    );
     assert.equal(events.filter((event) => event.messageStop).length, 1);
     assert.equal(events.at(-1).messageStop.stopReason, "guardrail_intervened");
   });
 
   it("handles tool_use stop reason with tool execution", async () => {
     let callCount = 0;
+    const invokedMessages = [];
 
     // First call: model uses a tool
     const toolUseEvents = [
@@ -347,8 +348,14 @@ describe("runAgentLoop", () => {
     ];
 
     const gateway = {
-      invoke: async () => {
+      invoke: async (params) => {
         callCount++;
+        invokedMessages.push(
+          params.messages.map((message) => ({
+            role: message.role,
+            content: structuredClone(message.content),
+          }))
+        );
         const events = callCount === 1 ? toolUseEvents : endTurnEvents;
         return {
           stream: (async function* () {
@@ -377,6 +384,24 @@ describe("runAgentLoop", () => {
 
     // Should have 2 gateway calls (tool_use + end_turn)
     assert.equal(callCount, 2);
+    assert.deepStrictEqual(
+      invokedMessages[1].slice(-2).map((message) => ({
+        role: message.role,
+        blockKinds: message.content.map((content) =>
+          content.toolUse
+            ? "toolUse"
+            : content.toolResult
+              ? "toolResult"
+              : content.text
+                ? "text"
+                : "other"
+        ),
+      })),
+      [
+        { role: "assistant", blockKinds: ["toolUse"] },
+        { role: "user", blockKinds: ["toolResult"] },
+      ]
+    );
 
     // Should have tool result events
     const toolResults = events.filter((e) => e.toolResult);

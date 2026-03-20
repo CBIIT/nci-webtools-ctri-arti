@@ -1,6 +1,6 @@
-import db, { Model, User } from "database";
+import db, { Model, Provider, User } from "database";
 
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, or } from "drizzle-orm";
 import { describeCron } from "shared/cron.js";
 import {
   buildRateLimitMessage,
@@ -8,9 +8,8 @@ import {
   normalizeEmbeddingUsageItems,
 } from "shared/gateway-usage.js";
 
-import { runModel, runEmbedding } from "./inference.js";
-import { deleteGuardrailById, listGuardrails, reconcileGuardrails } from "./guardrails.js";
-import { trackModelUsage, trackUsage } from "./usage.js";
+import { deleteGuardrailById, listGuardrails, reconcileGuardrails } from "./core/guardrails.js";
+import { runEmbedding, runModel } from "./core/inference.js";
 
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
@@ -29,9 +28,9 @@ async function getModelRecord(modelValue) {
   return modelRecord || null;
 }
 
-async function getRateLimitResponse(userID) {
-  if (!userID) return null;
-  const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
+async function getRateLimitResponse(userId) {
+  if (!userId) return null;
+  const [user] = await db.select().from(User).where(eq(User.id, userId)).limit(1);
   if (!isRateLimitedUser(user)) return null;
 
   return {
@@ -44,16 +43,23 @@ async function getRateLimitResponse(userID) {
 export function createGatewayApplication({
   modelInvoker = runModel,
   embeddingInvoker = runEmbedding,
-  modelUsageTracker = trackModelUsage,
-  usageTracker = trackUsage,
+  modelUsageTracker,
+  usageTracker,
 } = {}) {
-  async function requirePreflight({ userID, model }) {
+  if (typeof modelUsageTracker !== "function") {
+    throw new Error("modelUsageTracker is required");
+  }
+  if (typeof usageTracker !== "function") {
+    throw new Error("usageTracker is required");
+  }
+
+  async function requirePreflight({ userId, model }) {
     const modelRecord = await getModelRecord(model);
     if (!modelRecord) {
       throw createGatewayError(404, "Model not found", "GATEWAY_MODEL_NOT_FOUND");
     }
 
-    const limited = await getRateLimitResponse(userID);
+    const limited = await getRateLimitResponse(userId);
     if (limited) {
       return { limited, modelRecord };
     }
@@ -63,7 +69,7 @@ export function createGatewayApplication({
 
   return {
     async invoke({
-      userID,
+      userId,
       model,
       type,
       messages,
@@ -71,21 +77,20 @@ export function createGatewayApplication({
       tools,
       thoughtBudget,
       stream,
-      ip,
       requestId,
       outputConfig,
       content,
       purpose,
       guardrailConfig,
     }) {
-      const { limited, modelRecord } = await requirePreflight({ userID, model });
+      const { limited, modelRecord } = await requirePreflight({ userId, model });
       if (limited) return limited;
 
       if (modelRecord.type === "embedding") {
         const result = await embeddingInvoker({ model, content, purpose });
-        if (userID && result.usage) {
+        if (userId && result.usage) {
           const usageItems = normalizeEmbeddingUsageItems(result.usage);
-          await usageTracker(userID, model, usageItems, {
+          await usageTracker(userId, model, usageItems, {
             type: type || "embedding",
             requestId,
           });
@@ -105,8 +110,8 @@ export function createGatewayApplication({
       });
 
       if (!result?.stream) {
-        if (userID) {
-          await modelUsageTracker(userID, model, ip, result.usage, {
+        if (userId) {
+          await modelUsageTracker(userId, model, result.usage, {
             type,
             requestId,
             trace: result.trace,
@@ -118,8 +123,8 @@ export function createGatewayApplication({
       return {
         stream: (async function* () {
           for await (const message of result.stream) {
-            if (message.metadata && userID) {
-              await modelUsageTracker(userID, model, ip, message.metadata.usage, {
+            if (message.metadata && userId) {
+              await modelUsageTracker(userId, model, message.metadata.usage, {
                 type,
                 requestId,
                 trace: message.metadata.trace,
@@ -131,14 +136,14 @@ export function createGatewayApplication({
       };
     },
 
-    async embed({ userID, model, content, purpose, ip, type, requestId }) {
-      const { limited } = await requirePreflight({ userID, model });
+    async embed({ userId, model, content, purpose, type, requestId }) {
+      const { limited } = await requirePreflight({ userId, model });
       if (limited) return limited;
 
       const result = await embeddingInvoker({ model, content, purpose });
-      if (userID && result.usage) {
+      if (userId && result.usage) {
         const usageItems = normalizeEmbeddingUsageItems(result.usage);
-        await usageTracker(userID, model, usageItems, {
+        await usageTracker(userId, model, usageItems, {
           type: type || "embedding",
           requestId,
         });
@@ -146,8 +151,16 @@ export function createGatewayApplication({
       return result;
     },
 
+    async trackUsage(userId, model, usageItems, options) {
+      return usageTracker(userId, model, usageItems, options);
+    },
+
+    async trackModelUsage(userId, model, usageData, options) {
+      return modelUsageTracker(userId, model, usageData, options);
+    },
+
     listModels({ type } = {}) {
-      const where = [eq(Model.providerID, 1)];
+      const where = [or(eq(Model.providerID, 1), eq(Model.providerID, 3))];
       if (type) where.push(eq(Model.type, type));
 
       return db
@@ -158,9 +171,13 @@ export function createGatewayApplication({
           maxContext: Model.maxContext,
           maxOutput: Model.maxOutput,
           maxReasoning: Model.maxReasoning,
+          providerID: Model.providerID,
+          providerName: Provider.name,
         })
         .from(Model)
-        .where(and(...where));
+        .leftJoin(Provider, eq(Model.providerID, Provider.id))
+        .where(and(...where))
+        .orderBy(asc(Model.providerID), asc(Model.id));
     },
 
     listGuardrails({ ids } = {}) {
@@ -176,3 +193,4 @@ export function createGatewayApplication({
     },
   };
 }
+

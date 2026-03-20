@@ -1,4 +1,5 @@
 import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
+import { estimateEmbeddingTextTokens } from "shared/token-estimation.js";
 
 // Test provider for mocking AI responses in tests
 export default class MockProvider {
@@ -169,7 +170,7 @@ export default class MockProvider {
     });
     return {
       embedding,
-      inputTextTokenCount: typeof content === "string" ? Math.ceil(content.length / 4) : 0,
+      inputTextTokenCount: typeof content === "string" ? estimateEmbeddingTextTokens(content) : 0,
     };
   }
 

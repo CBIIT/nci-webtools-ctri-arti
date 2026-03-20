@@ -1,7 +1,7 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
-import { relations, sql } from "drizzle-orm";
+import { eq, relations, sql } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -550,8 +550,6 @@ export const tables = {
  * When `t` is omitted, uses this module's PG tables. For SQLite, pass the SQLite tables.
  */
 export async function seedDatabase(db) {
-  const { sql, eq } = await import("drizzle-orm");
-
   const T = {
     Role,
     Policy,
@@ -569,7 +567,11 @@ export async function seedDatabase(db) {
   const roles = loadCsv(resolve(dataDir, "roles.csv"));
   const policies = loadCsv(resolve(dataDir, "policies.csv"));
   const rolePolicies = loadCsv(resolve(dataDir, "role-policies.csv"));
-  const providers = loadCsv(resolve(dataDir, "providers.csv"));
+  const providers = loadCsv(resolve(dataDir, "providers.csv")).map((row) => ({
+    ...row,
+    apiKey:
+      row.apiKey && typeof row.apiKey === "object" ? JSON.stringify(row.apiKey) : row.apiKey,
+  }));
   const modelRows = loadCsv(resolve(dataDir, "models.csv"));
   const prompts = loadCsv(resolve(dataDir, "prompts.csv"));
   const guardrails = loadCsv(resolve(dataDir, "guardrails.csv"));
@@ -612,7 +614,7 @@ export async function seedDatabase(db) {
   await upsert(T.Role, roles, T.Role.id, ["name", "displayOrder"]);
   await upsert(T.Policy, policies, T.Policy.id, ["name", "resource", "action"]);
   await upsert(T.RolePolicy, rolePolicies, T.RolePolicy.id, ["roleID", "policyID"]);
-  await upsert(T.Provider, providers, T.Provider.id, ["name"]);
+  await upsert(T.Provider, providers, T.Provider.id, ["name", "apiKey", "endpoint"]);
   await upsert(T.Model, modelRows, T.Model.id, [
     "providerID",
     "name",
@@ -669,3 +671,4 @@ export async function seedDatabase(db) {
     }
   }
 }
+
