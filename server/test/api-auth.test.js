@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -61,3 +62,6 @@ test("server auth posture keeps public routes explicit", async (t) => {
     assert.equal(logRes.status, 401);
   });
 });
+
+
+

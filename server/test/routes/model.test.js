@@ -1,3 +1,4 @@
+import "../../test-support/db.js";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
@@ -29,11 +30,7 @@ function buildApp({ invokeResult, listModelsResult } = {}) {
             if (typeof invokeResult === "function") {
               return invokeResult(input);
             }
-            return (
-              invokeResult || {
-                echoed: input,
-              }
-            );
+            return invokeResult || { echoed: input };
           },
           async listModels(input) {
             if (typeof listModelsResult === "function") {

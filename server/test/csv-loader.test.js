@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { test } from "node:test";
 
@@ -73,3 +74,6 @@ test("parseCsv", async (t) => {
     assert.deepStrictEqual(result[0].config, { key: "value" });
   });
 });
+
+
+

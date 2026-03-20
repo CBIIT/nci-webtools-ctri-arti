@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { test } from "node:test";
 
@@ -228,3 +229,6 @@ test("getResultRows", async (t) => {
     assert.deepStrictEqual(getResultRows(rows), rows);
   });
 });
+
+
+

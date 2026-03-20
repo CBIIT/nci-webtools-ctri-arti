@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import db, { Session } from "database";
 import assert from "node:assert";
 import { test } from "node:test";
@@ -126,5 +127,8 @@ test("session-store", async (t) => {
     assert.ok(result, "Session should survive touch with invalid expires");
   });
 });
+
+
+
 
 

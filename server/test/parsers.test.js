@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { test } from "node:test";
 
@@ -49,5 +50,8 @@ test("parseDocx", async (t) => {
     }
   });
 });
+
+
+
 
 

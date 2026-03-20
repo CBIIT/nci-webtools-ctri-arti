@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { readFileSync, readdirSync } from "fs";
 import { resolve, dirname } from "path";
@@ -193,3 +194,6 @@ test("relational migrations repair dirty historical rows before enforcing foreig
     await client.close();
   }
 });
+
+
+

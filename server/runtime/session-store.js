@@ -1,6 +1,6 @@
 import db, { Session } from "database";
 
-import { sql, eq, gte, lt, and } from "drizzle-orm";
+import { eq, gte, lt, and } from "drizzle-orm";
 import logger from "shared/logger.js";
 
 const PRUNE_INTERVAL = 15 * 60 * 1000;
@@ -30,7 +30,7 @@ export function createSessionStore(session) {
 
     async #prune() {
       try {
-        await db.delete(Session).where(lt(Session.expire, sql`NOW()`));
+        await db.delete(Session).where(lt(Session.expire, new Date()));
       } catch (err) {
         logger.error("Failed to prune sessions:", err);
       }
@@ -57,7 +57,7 @@ export function createSessionStore(session) {
         db
           .select({ sess: Session.sess })
           .from(Session)
-          .where(and(eq(Session.sid, sid), gte(Session.expire, sql`NOW()`)))
+          .where(and(eq(Session.sid, sid), gte(Session.expire, new Date())))
           .then((rows) => {
             const row = rows[0];
             return row ? (typeof row.sess === "string" ? JSON.parse(row.sess) : row.sess) : null;
@@ -96,4 +96,3 @@ export function createSessionStore(session) {
 
   return new DrizzleSessionStore();
 }
-

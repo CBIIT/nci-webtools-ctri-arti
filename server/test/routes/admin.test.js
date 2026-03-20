@@ -1,3 +1,4 @@
+import "../../test-support/db.js";
 import db, { User } from "database";
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
@@ -126,5 +127,8 @@ describe("budget admin routes", () => {
     assert.equal(updated.remaining, updated.budget);
   });
 });
+
+
+
 
 

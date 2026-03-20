@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
@@ -89,5 +90,8 @@ test("email template", async (t) => {
     });
   });
 });
+
+
+
 
 

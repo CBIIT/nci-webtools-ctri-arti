@@ -73,7 +73,41 @@ async function ensureRelationalIntegrity(db) {
   }
 }
 
+function isTestRuntime() {
+  return process.execArgv.includes("--test");
+}
+
+function installPGliteTimerUnrefPatch() {
+  if (!isTestRuntime()) return;
+  if (globalThis.__pgliteTimerUnrefPatchInstalled) return;
+
+  const originalSetTimeout = globalThis.setTimeout.bind(globalThis);
+  globalThis.setTimeout = function patchedSetTimeout(callback, delay, ...args) {
+    const handle = originalSetTimeout(callback, delay, ...args);
+    const stack = new Error().stack || "";
+    if (stack.includes("@electric-sql/pglite")) {
+      handle?.unref?.();
+    }
+    return handle;
+  };
+
+  globalThis.__pgliteTimerUnrefPatchInstalled = true;
+}
+
 let db;
+let closeDatabaseImpl = async () => {};
+let closeDatabasePromise = null;
+
+export async function closeDatabase() {
+  if (!closeDatabasePromise) {
+    closeDatabasePromise = Promise.resolve(closeDatabaseImpl()).catch((error) => {
+      logger.error(`database close failed: ${error?.message || error}`);
+      throw error;
+    });
+  }
+
+  return closeDatabasePromise;
+}
 
 // Always use the same PG schema
 const schema = await import("./schema.js");
@@ -81,6 +115,8 @@ const schema = await import("./schema.js");
 const usePg = !!PGHOST;
 
 if (!usePg) {
+  installPGliteTimerUnrefPatch();
+
   // PGlite mode — embedded PostgreSQL (in-memory by default, or persistent with DB_STORAGE)
   const storage = DB_STORAGE || "memory://";
   const { PGlite } = await import("@electric-sql/pglite");
@@ -90,6 +126,9 @@ if (!usePg) {
   const { pg_trgm } = await import("@electric-sql/pglite/contrib/pg_trgm");
   const { vector } = await import("@electric-sql/pglite/vector");
   const client = new PGlite(storage, { extensions: { pg_trgm, vector } });
+  closeDatabaseImpl = async () => {
+    await client.close();
+  };
   db = drizzle({ client, schema });
 
   if (DB_SKIP_SYNC !== "true") {
@@ -116,6 +155,9 @@ if (!usePg) {
     ssl: DB_SSL === "1" ? { rejectUnauthorized: false } : false,
     onnotice: () => {},
   });
+  closeDatabaseImpl = async () => {
+    await sql.end({ timeout: 1 });
+  };
   db = drizzle(sql, { schema });
 
   if (DB_SKIP_SYNC !== "true") {
@@ -128,6 +170,13 @@ if (!usePg) {
     await seedDatabase(db);
     await ensureRelationalIntegrity(db);
   }
+}
+
+if (isTestRuntime()) {
+  const { after } = await import("node:test");
+  after(async () => {
+    await closeDatabase();
+  });
 }
 
 export const {
@@ -165,3 +214,4 @@ export function rawSql(strings, ...values) {
 }
 
 export default db;
+

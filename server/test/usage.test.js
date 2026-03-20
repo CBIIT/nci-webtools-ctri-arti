@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import db, {
   User,
   Model,
@@ -507,3 +508,6 @@ test("UserService deleteUser cascades owned chat and billing rows", async () => 
   assert.equal(userToolRows.length, 0);
   assert.equal(userAgentRows.length, 0);
 });
+
+
+

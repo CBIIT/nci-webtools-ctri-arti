@@ -1,3 +1,4 @@
+import "../../test-support/db.js";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
@@ -77,5 +78,8 @@ describe("server agents chat route", () => {
     assert.deepStrictEqual(res.body, { error: "Message content required" });
   });
 });
+
+
+
 
 

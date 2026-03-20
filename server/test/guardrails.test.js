@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { test } from "node:test";
 
@@ -29,4 +30,7 @@ test("deleteGuardrailById refuses to delete assigned guardrails", async () => {
     return true;
   });
 });
+
+
+
 

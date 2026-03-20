@@ -1,3 +1,4 @@
+import "../../test-support/db.js";
 import db, { Resource, User } from "database";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -116,5 +117,8 @@ describe("GET /resources/:id", () => {
     await db.delete(Resource).where(eq(Resource.id, resource.id));
   });
 });
+
+
+
 
 

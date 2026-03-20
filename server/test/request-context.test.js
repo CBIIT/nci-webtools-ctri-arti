@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -126,4 +127,7 @@ test("request context normalization", async (t) => {
     assert.match(createRequestId(), /^[0-9a-f-]{36}$/i);
   });
 });
+
+
+
 

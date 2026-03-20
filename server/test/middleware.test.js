@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import db, { User, Role } from "database";
 import assert from "node:assert";
 import { after, test } from "node:test";
@@ -258,3 +259,6 @@ test("getOauthProviderIssuer", async (t) => {
     delete process.env.OAUTH_PROVIDER_ISSUER;
   });
 });
+
+
+

@@ -1,3 +1,4 @@
+import "../../test-support/db.js";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
@@ -82,5 +83,8 @@ describe("server CMS agents routes", () => {
     assert.deepStrictEqual(res.body, { error: "Authentication required" });
   });
 });
+
+
+
 
 
