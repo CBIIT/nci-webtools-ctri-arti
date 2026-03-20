@@ -4,8 +4,8 @@ import html from "solid-js/html";
 
 import { AlertContainer } from "../../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../../utils/alerts.js";
-
-import { formatUtcTimestampToLocal } from "../date-utils.js";
+import { formatCurrency, formatNumber, formatTypeLabel, formatUnitLabel, normalizeRequestId, normalizeModelGroupKey } from "../../../utils/utils.js";
+import { formatUtcTimestampToLocal, formatUTCTimestampToLocalDate } from "../date-utils.js";
 import { formatDate } from "../date-utils.js";
 import { Overview } from "./overview.js";
 import { UsageSummary } from "./usage-summary.js";
@@ -192,49 +192,6 @@ function UserUsage() {
     }
   );
 
-  // Format currency
-  function formatCurrency(value) {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  }
-
-  // Format numbers with commas
-  function formatNumber(value) {
-    return new Intl.NumberFormat("en-US").format(value);
-  }
-
-  function formatTypeLabel(value) {
-    return String(value || "unknown")
-      .replace(/[-_]+/g, " ")
-      .replace(/\b\w/g, (match) => match.toUpperCase());
-  }
-  function formatUnitLabel(value) {
-    return String(value || "")
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (match) => match.toUpperCase());
-  }
-  function normalizeRequestId(value) {
-    const requestId = String(value || "").trim();
-    if (!requestId) return null;
-    return ["unknown", "null", "undefined"].includes(requestId.toLowerCase()) ? null : requestId;
-  }
-
-  function normalizeModelGroupKey(entry) {
-    const modelId = String(entry.modelID ?? "").trim();
-    if (modelId && !["null", "undefined"].includes(modelId.toLowerCase())) {
-      return `id:${modelId}`;
-    }
-    const modelName = String(entry.modelName || "").trim();
-    if (modelName && !["unknown", "null", "undefined"].includes(modelName.toLowerCase())) {
-      return `name:${modelName.toLowerCase()}`;
-    }
-    return null;
-  }
-
   // Create computed values for display
   const userStats = createMemo(() => {
     const data = analyticsData()?.data?.[0];
@@ -245,7 +202,7 @@ function UserUsage() {
     const guardrail = typeMap.get("guardrail");
     return {
       totalRequests: data.totalRequests || 0,
-      usageCost: Number(data.usageCost || 0),
+      usageCost: data.usageCost || 0,
       guardrailCost: Number(guardrail?.totalCost ?? data.guardrailCost ?? 0),
       totalCost: data.totalCost || 0,
     };
@@ -337,22 +294,17 @@ function UserUsage() {
         return null;
       }}
     >
-      <div class="w-100 overflow-hidden page-header-bg">
-        <div
-          class="w-100 d-flex align-items-start pt-3 page-header-banner"
-          style="min-height: 160px;"
-          role="img"
-          aria-label="Page header"
-        >
+      <div class="page-header-bg overflow-hidden" style="font-family: system-ui;">
+        <div class="page-header-banner pt-3 pb-5">
           <div class="container">
-            <a href="/_/usage" class="text-white text-decoration-none d-inline-flex align-items-center mb-2">
+            <a href="/_/usage" class="text-decoration-none d-inline-flex align-items-center mb-2 return-btn-color">
               <span class="me-1">&larr;</span> Back to AI Usage Dashboard
             </a>
-            <h1 class="font-title fs-1 fw-bold mb-0 text-white">Usage Statistics</h1>
+            <h1 class="fs-1 mb-0 mt-3 text-white">Usage Statistics</h1>
           </div>
         </div>
         <div class="container pb-4">
-          <div class="card shadow rounded-4 overflow-hidden page-header-content-card">
+          <div class="card shadow rounded-4 overflow-hidden page-content-card">
             <div class="card-body p-4">
               <!-- Error Alert -->
               <${Show} when=${() => analyticsData.error || userResource.error}>
@@ -393,7 +345,7 @@ function UserUsage() {
                 <${DailyUsage}
                   dailyAnalytics=${() => dailyAnalytics()}
                   userUsageDetails=${() => userUsageDetails()}
-                  formatUtcTimestampToLocal=${formatUtcTimestampToLocal}
+                  formatUTCTimestampToLocalDate=${formatUTCTimestampToLocalDate}
                   formatNumber=${formatNumber}
                   formatCurrency=${formatCurrency}
                 />

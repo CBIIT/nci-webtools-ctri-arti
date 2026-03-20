@@ -4,7 +4,7 @@ import { VALID_DATE_RANGES } from "../../constants.js";
 
 export function Overview(props) {
   return html`
-    <div class="card shadow-sm mb-4">
+    <div class="card mb-4">
       <div class="card-body">
         <h5 class="fw-bold mb-1">
           ${() =>
@@ -27,7 +27,7 @@ export function Overview(props) {
             <select
               class="form-select"
               id="date-range-filter"
-              value=${props.selectedDateRange}
+              value=${() => props.selectedDateRange}
               onInput=${(e) => props.setSelectedDateRange(e.target.value)}
             >
               <${For} each=${VALID_DATE_RANGES}>

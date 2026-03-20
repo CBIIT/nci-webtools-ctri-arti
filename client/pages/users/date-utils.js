@@ -39,3 +39,8 @@ export function formatUtcTimestampToLocal(value, locale, options) {
   const parsed = normalizeUtcTimestamp(value);
   return parsed ? parsed.toLocaleString(locale, options) : value || "";
 }
+
+export function formatUTCTimestampToLocalDate(value, locale, options) {
+  const parsed = normalizeUtcTimestamp(value);
+  return parsed ? parsed.toLocaleDateString(locale, options) : value || "";
+}
