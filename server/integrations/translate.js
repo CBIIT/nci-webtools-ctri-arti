@@ -78,4 +78,3 @@ export async function getLanguages() {
     .map((lang) => ({ value: lang.LanguageCode, label: lang.LanguageName }))
     .sort(compareOptions);
 }
-

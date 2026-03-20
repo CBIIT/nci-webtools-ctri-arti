@@ -11,7 +11,9 @@ if (!isBrowserTest) {
   const getRoutes = (await import("./routes.js")).default;
 
   render(
-    () => html` <${AuthProvider}> ${() => html`<${Router} root=${Layout}>${getRoutes()}<//>`} <//> `,
+    () => html`
+      <${AuthProvider}> ${() => html`<${Router} root=${Layout}>${getRoutes()}<//>`} <//>
+    `,
     window.app
   );
 }

@@ -370,8 +370,3 @@ test("inline upload limits", async (t) => {
     await assert.rejects(() => validateInlineMessageContent(content), /maximum of 100 PDF pages/i);
   });
 });
-
-
-
-
-

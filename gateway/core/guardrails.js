@@ -297,4 +297,3 @@ export async function deleteGuardrailById(id) {
   await db.delete(Guardrail).where(eq(Guardrail.id, id));
   return { deleted: true, guardrail };
 }
-

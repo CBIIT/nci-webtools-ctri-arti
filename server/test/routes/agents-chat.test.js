@@ -60,9 +60,11 @@ describe("server agents chat route", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    const res = await request(app).post("/agents/11/conversations/22/chat").send({
-      message: { content: [{ text: "hello" }] },
-    });
+    const res = await request(app)
+      .post("/agents/11/conversations/22/chat")
+      .send({
+        message: { content: [{ text: "hello" }] },
+      });
 
     assert.equal(res.status, 401);
     assert.deepStrictEqual(res.body, { error: "Authentication required" });
@@ -78,8 +80,3 @@ describe("server agents chat route", () => {
     assert.deepStrictEqual(res.body, { error: "Message content required" });
   });
 });
-
-
-
-
-

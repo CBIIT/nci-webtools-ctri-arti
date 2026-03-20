@@ -1,9 +1,8 @@
-import "../test-support/db.js";
-import assert from "node:assert";
 import { readFileSync, readdirSync } from "fs";
+import assert from "node:assert";
+import { test } from "node:test";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { test } from "node:test";
 
 import { PGlite } from "@electric-sql/pglite";
 import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
@@ -133,14 +132,19 @@ test("relational migrations repair dirty historical rows before enforcing foreig
 
     await applyMigrations(
       client,
-      (file) =>
-        file >= "0010_repair_relational_integrity.sql" && file < "0013_guardrails.sql"
+      (file) => file >= "0010_repair_relational_integrity.sql" && file < "0013_guardrails.sql"
     );
 
     const audit = await auditRelationalIntegrity(db);
     assert.equal(audit.missingForeignKeys.length, 0);
-    assert.deepStrictEqual(audit.orphanedRows.filter((entry) => entry.count > 0), []);
-    assert.deepStrictEqual(audit.nullableViolations.filter((entry) => entry.count > 0), []);
+    assert.deepStrictEqual(
+      audit.orphanedRows.filter((entry) => entry.count > 0),
+      []
+    );
+    assert.deepStrictEqual(
+      audit.nullableViolations.filter((entry) => entry.count > 0),
+      []
+    );
 
     const [repairedResource] = await db
       .select()
@@ -194,6 +198,5 @@ test("relational migrations repair dirty historical rows before enforcing foreig
     await client.close();
   }
 });
-
 
 

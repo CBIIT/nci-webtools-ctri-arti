@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 
 import { sql } from "drizzle-orm";
 import logger from "shared/logger.js";
+
 import { getResultRows } from "./sync.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -31,7 +32,11 @@ async function runMigrations(execFn) {
 
   // Query already-applied migrations
   const result = await execFn(`SELECT "name" FROM "Migration"`);
-  const applied = new Set(getResultRows(result).map((row) => row.name).filter(Boolean));
+  const applied = new Set(
+    getResultRows(result)
+      .map((row) => row.name)
+      .filter(Boolean)
+  );
 
   const migrationFiles = readdirSync(migrationsFolder)
     .filter((f) => f.endsWith(".sql"))

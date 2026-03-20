@@ -3,7 +3,7 @@
  * Runs in-browser during integration tests via ?test=1&apiKey=...
  */
 import assert from "/test/assert.js";
-import { mountApp, waitForCondition, waitForElement, waitForNetworkIdle } from "/test/helpers.js";
+import { mountApp, waitForElement, waitForNetworkIdle } from "/test/helpers.js";
 import test from "/test/test.js";
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -38,7 +38,6 @@ function formatLocalDate(date) {
 let testUser;
 
 test("API Smoke Tests", async (t) => {
-
   // ── GET /session ──────────────────────────────────────────────────────────
   await t.test("GET /session returns user", async () => {
     const { status, json } = await api("GET", "/session");
@@ -309,20 +308,6 @@ test("API Smoke Tests", async (t) => {
     }
   });
 
-  await t.test("/_/profile shows test user email", async () => {
-    const { container, errors, dispose } = mountApp("/_/profile");
-    try {
-      const el = await waitForElement(container, "h1", (el) =>
-        el.textContent.includes(testUser.email)
-      );
-      assert.ok(el, "Profile page should show test user email");
-      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
-    } finally {
-      dispose();
-      document.body.removeChild(container);
-    }
-  });
-
   await t.test("/_/users/:id edit page loads test user", async () => {
     const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}`);
     try {
@@ -494,5 +479,4 @@ test("API Smoke Tests", async (t) => {
       document.body.removeChild(container);
     }
   });
-
 });

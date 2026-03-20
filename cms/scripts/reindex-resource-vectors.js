@@ -49,5 +49,3 @@ for (const resource of resources) {
 
 console.log(`Reindex complete. succeeded=${succeeded} failed=${failed}`);
 process.exitCode = failed ? 1 : 0;
-
-

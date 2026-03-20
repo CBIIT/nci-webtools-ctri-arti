@@ -135,4 +135,3 @@ export function createCmsToolsRouter({ application, resolveContext = readRequest
 
   return api;
 }
-

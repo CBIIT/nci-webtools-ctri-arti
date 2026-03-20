@@ -14,13 +14,27 @@ import { createTestDb, createSeededTestDb } from "./setup.js";
 test("schema exports", async (t) => {
   await t.test("contains all expected table exports", () => {
     const expectedTables = [
-      "User", "Role", "Policy", "RolePolicy",
-      "Provider", "Model", "Usage",
-      "Prompt", "Guardrail", "Agent", "Conversation", "Message",
-      "Tool", "Resource", "Vector",
-      "UserAgent", "UserTool", "AgentTool",
+      "User",
+      "Role",
+      "Policy",
+      "RolePolicy",
+      "Provider",
+      "Model",
+      "Usage",
+      "Prompt",
+      "Guardrail",
+      "Agent",
+      "Conversation",
+      "Message",
+      "Tool",
+      "Resource",
+      "Vector",
+      "UserAgent",
+      "UserTool",
+      "AgentTool",
     ];
     for (const name of expectedTables) {
+      // eslint-disable-next-line import-x/namespace
       assert.ok(schema[name], `Missing table export: ${name}`);
     }
   });
@@ -113,7 +127,10 @@ test("seedDatabase", async (t) => {
   await t.test("seeds role-policies", async () => {
     const { db, schema: s, close } = await createSeededTestDb();
     const rolePolicies = await db.select().from(s.RolePolicy);
-    assert.ok(rolePolicies.length >= 1, `Expected at least 1 role-policy, got ${rolePolicies.length}`);
+    assert.ok(
+      rolePolicies.length >= 1,
+      `Expected at least 1 role-policy, got ${rolePolicies.length}`
+    );
     close();
   });
 

@@ -1,14 +1,13 @@
 import "../test-support/db.js";
-import db, { User, Role } from "database";
+import db, { User } from "database";
 import assert from "node:assert";
-import { after, test } from "node:test";
+import { test } from "node:test";
 
 import { eq } from "drizzle-orm";
 import { logRequests, nocache } from "shared/middleware.js";
 
-import { requireRole } from "../auth.js";
-
 import { getOauthProviderIssuer, logErrors } from "../api/middleware.js";
+import { requireRole } from "../auth.js";
 
 function createMockReq(overrides = {}) {
   return {
@@ -209,6 +208,7 @@ test("logErrors", async (t) => {
 test("nocache", async (t) => {
   await t.test("sets correct cache headers", () => {
     const res = createMockRes();
+    // eslint-disable-next-line no-unused-vars
     let nextCalled = false;
     nocache({}, res, () => {
       nextCalled = true;
@@ -259,6 +259,5 @@ test("getOauthProviderIssuer", async (t) => {
     delete process.env.OAUTH_PROVIDER_ISSUER;
   });
 });
-
 
 

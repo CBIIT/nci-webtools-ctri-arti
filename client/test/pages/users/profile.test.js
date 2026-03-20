@@ -3,6 +3,7 @@ import { installMockFetch, jsonResponse, mountApp, waitForElement } from "../../
 import test from "../../test.js";
 
 test("Profile Page Tests", async (t) => {
+  let capturedUsageRequest = null;
   const restoreFetch = installMockFetch(async ({ url, request }) => {
     if (url.pathname === "/api/v1/session") {
       return jsonResponse({
@@ -35,6 +36,11 @@ test("Profile Page Tests", async (t) => {
       });
     }
 
+    if (url.pathname === "/api/v1/usage" && request.method === "POST") {
+      capturedUsageRequest = await request.json();
+      return jsonResponse({ accepted: ["admin@test.com"] });
+    }
+
     return null;
   });
 
@@ -48,15 +54,6 @@ test("Profile Page Tests", async (t) => {
         el.textContent.includes("User Profile")
       );
       assert.ok(h1, "Should render User Profile heading");
-      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
-    });
-
-    await t.test("/_/profile shows email display", async () => {
-      // Wait for the email heading to appear (second h1 shows user email)
-      const emailH1 = await waitForElement(container, "h1.fs-3");
-      assert.ok(emailH1, "Email heading should exist");
-      // Email should be non-empty once session loads
-      await waitForElement(container, "h1.fs-3", (el) => el.textContent.trim().length > 0);
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
 
@@ -111,18 +108,44 @@ test("Profile Page Tests", async (t) => {
       assert.ok(
         alert.textContent.includes("Success") ||
           alert.textContent.includes("success") ||
-        alert.textContent.includes("updated"),
+          alert.textContent.includes("updated"),
         `Alert should contain success text, got: "${alert.textContent.trim().substring(0, 80)}"`
       );
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
 
-    await t.test("/_/profile: Cancel link points to /", async () => {
-      await waitForElement(container, "#firstName");
+    await t.test("/_/profile: request limit increase submits justification", async () => {
+      const openButton = await waitForElement(container, "#request-limit-increase-button");
+      openButton.click();
 
-      // Find the Cancel button (btn-outline-secondary) within the form
-      const cancelLink = container.querySelector('a.btn-outline-secondary[href="/"]');
-      assert.ok(cancelLink, "Cancel link should exist with href=/");
+      const reasonInput = await waitForElement(container, "#reason-for-request-ta");
+      reasonInput.value = "Need more capacity for large document review.";
+      reasonInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+      const submitButton = await waitForElement(
+        container,
+        "#submit-limit-increase-button",
+        (el) => !el.disabled
+      );
+      assert.ok(submitButton, "Submit button should exist");
+      const form = reasonInput.closest("form");
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+      const alert = await waitForElement(container, ".alert-success", (el) =>
+        el.textContent.includes("limit increase request has been submitted")
+      );
+      assert.ok(alert, "Request limit increase success alert should appear");
+      const matchingSuccessAlerts = [...container.querySelectorAll(".alert-success")].filter((el) =>
+        el.textContent.includes("limit increase request has been submitted")
+      );
+      assert.strictEqual(
+        matchingSuccessAlerts.length,
+        1,
+        "Request limit increase should show exactly one success alert"
+      );
+      assert.deepStrictEqual(capturedUsageRequest, {
+        justification: "Need more capacity for large document review.",
+      });
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
   } finally {

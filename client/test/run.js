@@ -71,7 +71,6 @@ if (enableProfiling) {
     entry.maxMs = Math.max(entry.maxMs, durationMs);
     if (!ok) entry.failures++;
   };
-
 }
 
 const originalFetch = window.fetch.bind(window);

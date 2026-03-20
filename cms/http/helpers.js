@@ -95,4 +95,3 @@ export function sendResourceDownload(res, resource) {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   res.send(content);
 }
-
