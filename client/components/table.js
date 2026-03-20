@@ -71,6 +71,7 @@ export function DataTable(props) {
     if (isRemote) {
       // For remote pagination, get total from props
       return Math.ceil((props.totalItems || 0) / rowsPerPage());
+      return Math.ceil((props.totalItems || 0) / rowsPerPage());
     } else {
       // For local pagination, calculate from filtered data
       let data = props.data || [];
@@ -130,16 +131,17 @@ export function DataTable(props) {
    * @param {number} newRowsPerPage 
    */
   const handleRowsPerPageChange = (newRowsPerPage) => {
-    if (isRemote && props.onRowsPerPageChange) {
-      props.onRowsPerPageChange({
-        rowsPerPage: newRowsPerPage,
-        page: 1,
-        search: searchQuery(),
-        column: sortColumn(),
-        order: sortOrder(),
-      });
-    }
-    else {
+    if (isRemote) {
+      if (props.onRowsPerPageChange) {
+        props.onRowsPerPageChange({
+          rowsPerPage: newRowsPerPage,
+          page: 1,
+          search: searchQuery(),
+          column: sortColumn(),
+          order: sortOrder(),
+        });
+      }
+    } else {
       setInternalRowsPerPage(newRowsPerPage);
       setInternalPage(1);
     }

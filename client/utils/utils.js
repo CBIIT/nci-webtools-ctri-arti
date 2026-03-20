@@ -231,3 +231,46 @@ export function secondsToMinuteString(seconds) {
 
   return `${formattedMinutes}:${formattedSeconds}`;
 }
+
+export function formatCurrency(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+export function formatNumber(value) {
+  return new Intl.NumberFormat("en-US").format(value);
+}
+
+export function formatTypeLabel(value) {
+  return String(value || "unknown")
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+export function formatUnitLabel(value) {
+  return String(value || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+export function normalizeRequestId(value) {
+  const requestId = String(value || "").trim();
+  if (!requestId) return null;
+  return ["unknown", "null", "undefined"].includes(requestId.toLowerCase()) ? null : requestId;
+}
+
+export function normalizeModelGroupKey(entry) {
+  const modelId = String(entry.modelID ?? "").trim();
+  if (modelId && !["null", "undefined"].includes(modelId.toLowerCase())) {
+    return `id:${modelId}`;
+  }
+  const modelName = String(entry.modelName || "").trim();
+  if (modelName && !["unknown", "null", "undefined"].includes(modelName.toLowerCase())) {
+    return `name:${modelName.toLowerCase()}`;
+  }
+  return null;
+}

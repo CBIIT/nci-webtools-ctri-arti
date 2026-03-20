@@ -1546,3 +1546,57 @@ dialog .close-btn {
   background: #acddfe;
   color: #62666d;
 }
+
+/* Page header with background image */
+.page-header-bg {
+  background: linear-gradient(180deg, #000E26 0%, #7EA4EE 55%, #FFFFFF 100%);
+}
+
+.page-header-banner {
+  background: url('/assets/images/users/user_banner.png') center top / cover no-repeat;
+  min-height: 200px;
+}
+
+.page-content-card {
+  margin-top: -36px;
+  position: relative;
+  z-index: 1;
+  border: 3px solid #2b8ec9;
+  background-color: #f8f9fa;
+}
+
+/* Usage statistic section cards */
+.usage-section-card {
+  border: 1px solid #A5A5A5;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.return-btn-color {
+  color: #CEEBFF;
+}
+
+.usage-section-card .card-header {
+  background: #6573AF;
+  color: #ffffff;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 39px;
+  padding: 0 16px;
+  gap: 10px;
+}
+
+.usage-section-card tbody {
+  font-size: 14px;
+}
+
+.usage-section-card .card-header .card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0;
+  gap: 25px;
+}
