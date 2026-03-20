@@ -1553,11 +1553,11 @@ dialog .close-btn {
 }
 
 .page-header-banner {
-  background: url('/assets/images/page-header.svg') center top / cover no-repeat;
-  min-height: 240px;
+  background: url('/assets/images/users/user_banner.png') center top / cover no-repeat;
+  min-height: 200px;
 }
 
-.page-header-content-card {
+.page-content-card {
   margin-top: -36px;
   position: relative;
   z-index: 1;
@@ -1567,21 +1567,36 @@ dialog .close-btn {
 
 /* Usage statistic section cards */
 .usage-section-card {
-  border: 2px solid #4a5ba7;
-  border-radius: 0.5rem;
+  border: 1px solid #A5A5A5;
+  border-radius: 5px;
   overflow: hidden;
   margin-bottom: 1.5rem;
 }
 
+.return-btn-color {
+  color: #CEEBFF;
+}
+
 .usage-section-card .card-header {
-  background: linear-gradient(135deg, #3b4a9e, #5a6abf);
+  background: #6573AF;
   color: #ffffff;
   border-bottom: none;
-  padding: 0.65rem 1rem;
+  border-radius: 4px 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 39px;
+  padding: 0 16px;
+  gap: 10px;
+}
+
+.usage-section-card tbody {
+  font-size: 14px;
 }
 
 .usage-section-card .card-header .card-title {
   font-size: 0.95rem;
   font-weight: 600;
   margin-bottom: 0;
+  gap: 25px;
 }

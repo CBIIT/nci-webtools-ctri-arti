@@ -14,24 +14,26 @@ export function DailyUsage(props) {
                     <thead>
                         <tr>
                         <th>Date</th>
-                        <th>Total Requests</th>
-                        <th class="text-end">Usage Cost</th>
-                        <th class="text-end">Guardrail Cost</th>
-                        <th class="text-end">Total Cost</th>
+                        <th class="text-start">Total Requests</th>
+                        <th class="text-start">Usage Cost</th>
+                        <th class="text-start">Guardrail Cost</th>
+                        <th class="text-start">Total Cost</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${() =>
                         props.dailyAnalytics.data.map(
-                            (day) => html`
+                            (day) => {
+                            console.log("day.period", day.period);
+                            return html`
                             <tr>
-                                <td>${props.formatUtcTimestampToLocal(day.period)}</td>
-                                <td class="text-end">${props.formatNumber(day.totalRequests)}</td>
-                                <td class="text-end">${day.usageCost != null ? props.formatCurrency(day.usageCost) : "Unavailable"}</td>
-                                <td class="text-end">${day.guardrailCost != null ? props.formatCurrency(day.guardrailCost) : "Unavailable"}</td>
-                                <td class="text-end">${day.totalCost != null ? props.formatCurrency(day.totalCost) : "Unavailable"}</td>
+                                <td class="text-start" style="color: #1075FD">${props.formatUTCTimestampToLocalDate(day.period)}</td>
+                                <td class="text-start" >${props.formatNumber(day.totalRequests)}</td>
+                                <td class="text-start">${day.usageCost != null ? props.formatCurrency(day.usageCost) : "Unavailable"}</td>
+                                <td class="text-start">${day.guardrailCost != null ? props.formatCurrency(day.guardrailCost) : "Unavailable"}</td>
+                                <td class="text-start">${day.totalCost != null ? props.formatCurrency(day.totalCost) : "Unavailable"}</td>
                             </tr>
-                            `
+                            `}
                         )}
                     </tbody>
                     </table>
