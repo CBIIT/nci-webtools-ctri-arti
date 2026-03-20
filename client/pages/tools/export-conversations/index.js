@@ -551,21 +551,42 @@ export default function ExportConversations() {
   const [selected, setSelected] = createSignal(new Set());
   const [dateFrom, setDateFrom] = createSignal("");
   const [dateTo, setDateTo] = createSignal("");
+  const [loadError, setLoadError] = createSignal("");
 
   const [conversations] = createResource(
     () => user()?.email,
     async (email) => {
       if (!email) return [];
-      const database = await getDB(email);
-      setDb(database);
-      const allConvs = await database.db.getAll("conversations");
-      return allConvs.sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+      setLoadError("");
+      try {
+        const database = await getDB(email);
+        setDb(database);
+        const allConvs = await database.db.getAll("conversations");
+        return allConvs.sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+      } catch (error) {
+        console.error("Failed to load conversations for export:", error);
+        setLoadError("Browser storage could not be loaded.");
+        setDb(null);
+        return [];
+      }
     }
   );
 
+  const allConversations = createMemo(() => conversations() || []);
+
+  const tableEmptyMessage = createMemo(() => {
+    if (loadError()) {
+      return `${loadError()} Showing 0 records.`;
+    }
+    if (allConversations().length) {
+      return "0 records match the selected date range.";
+    }
+    return "0 records found in browser storage.";
+  });
+
   // Date range boundaries from data
   const dateRange = createMemo(() => {
-    const convs = conversations();
+    const convs = allConversations();
     if (!convs?.length) return { min: "", max: "" };
     const dates = convs
       .map((c) => c.created)
@@ -576,8 +597,7 @@ export default function ExportConversations() {
 
   // Filtered conversations by date range
   const filtered = createMemo(() => {
-    const convs = conversations();
-    if (!convs) return [];
+    const convs = allConversations();
     const from = dateFrom();
     const to = dateTo();
     return convs.filter((c) => {
@@ -599,7 +619,7 @@ export default function ExportConversations() {
   );
 
   const totalMessages = createMemo(() =>
-    (conversations() || []).reduce((sum, c) => sum + (c.messageCount || 0), 0)
+    allConversations().reduce((sum, c) => sum + (c.messageCount || 0), 0)
   );
 
   const allFilteredSelected = createMemo(() => {
@@ -722,23 +742,21 @@ export default function ExportConversations() {
             >
           </div>
         </div>
-        <${Show} when=${() => conversations()?.length}>
-          <div class="export-stat-row">
-            <div class="export-stat">
-              <span class="export-stat-value">${() => conversations()?.length || 0}</span>
-              <span class="export-stat-label">Conversations</span>
-            </div>
-            <div class="export-stat-divider"></div>
-            <div class="export-stat">
-              <span class="export-stat-value">${() => totalMessages().toLocaleString()}</span>
-              <span class="export-stat-label">Messages</span>
-            </div>
+        <div class="export-stat-row">
+          <div class="export-stat">
+            <span class="export-stat-value">${() => allConversations().length}</span>
+            <span class="export-stat-label">Conversations</span>
           </div>
-        <//>
+          <div class="export-stat-divider"></div>
+          <div class="export-stat">
+            <span class="export-stat-value">${() => totalMessages().toLocaleString()}</span>
+            <span class="export-stat-label">Messages</span>
+          </div>
+        </div>
       </div>
 
       <!-- Filters -->
-      <${Show} when=${() => conversations()?.length}>
+      <${Show} when=${() => allConversations().length}>
         <div class="export-filters">
           <div class="export-filter-group">
             <label class="export-filter-label">From Date</label>
@@ -764,7 +782,7 @@ export default function ExportConversations() {
           </div>
           <div class="export-filter-actions">
             <${Show} when=${() => dateFrom() || dateTo()}>
-              <button class="export-filter-reset" onClick=${(e) => resetFilters()}>
+              <button class="export-filter-reset" onClick=${resetFilters}>
                 Clear dates
               </button>
             <//>
@@ -773,10 +791,13 @@ export default function ExportConversations() {
       <//>
 
       <!-- Toolbar -->
-      <${Show} when=${() => !conversations.loading && conversations()?.length}>
+      <${Show} when=${() => !conversations.loading}>
         <div class="export-toolbar">
           <div class="export-selection-info">
             ${() => {
+              if (loadError()) {
+                return html`<span><strong>0</strong> records available for export</span>`;
+              }
               const s = selectedConvs().length;
               const f = filtered().length;
               if (!s)
@@ -793,7 +814,7 @@ export default function ExportConversations() {
           </div>
           <button
             class="export-btn"
-            onClick=${(e) => handleExport()}
+            onClick=${handleExport}
             disabled=${() => exporting() || !selectedConvs().length}
           >
             ${() =>
@@ -817,53 +838,48 @@ export default function ExportConversations() {
 
       <!-- Table -->
       <${Show} when=${() => !conversations.loading}>
-        <${Show}
-          when=${() => filtered().length}
-          fallback=${html`
-            <div class="export-table-wrap">
-              <div class="export-empty">
-                <div class="export-empty-icon" innerHTML=${ArchiveIcon}></div>
-                <div class="export-empty-text">
-                  ${() =>
-                    conversations()?.length
-                      ? "No conversations match the selected date range."
-                      : "No conversations found in browser storage."}
-                </div>
-                <${Show} when=${() => conversations()?.length}>
-                  <div class="export-empty-hint">Try adjusting or clearing the date filters.</div>
-                <//>
-              </div>
-            </div>
-          `}
-        >
-          <div class="export-table-wrap">
-            <div class="export-table-scroll">
-              <table class="export-table">
-                <thead>
+        <div class="export-table-wrap">
+          <div class="export-table-scroll">
+            <table class="export-table">
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      type="checkbox"
+                      class="export-checkbox"
+                      ref=${(el) => (headerCheckboxRef = el)}
+                      checked=${allFilteredSelected}
+                      disabled=${() => !filtered().length}
+                      onChange=${(_e) => toggleAll()}
+                    />
+                  </th>
+                  <th>Title</th>
+                  <th style="text-align: center;">Messages</th>
+                  <th>Created</th>
+                  <th>Last Active</th>
+                </tr>
+              </thead>
+              <tbody>
+                <${Show} when=${() => filtered().length} fallback=${html`
                   <tr>
-                    <th>
-                      <input
-                        type="checkbox"
-                        class="export-checkbox"
-                        ref=${(el) => (headerCheckboxRef = el)}
-                        checked=${allFilteredSelected}
-                        onChange=${(e) => toggleAll()}
-                      />
-                    </th>
-                    <th>Title</th>
-                    <th style="text-align: center;">Messages</th>
-                    <th>Created</th>
-                    <th>Last Active</th>
+                    <td colspan="5">
+                      <div class="export-empty">
+                        <div class="export-empty-icon" innerHTML=${ArchiveIcon}></div>
+                        <div class="export-empty-text">${tableEmptyMessage}</div>
+                        <${Show} when=${() => allConversations().length && !loadError()}>
+                          <div class="export-empty-hint">Try adjusting or clearing the date filters.</div>
+                        <//>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
+                `}>
                   <${For} each=${filtered}>
                     ${(conv) => {
                       const isSelected = () => selected().has(conv.id);
                       return html`
                         <tr
                           classList=${() => ({ "row-selected": isSelected() })}
-                          onClick=${(e) => toggleOne(conv.id)}
+                          onClick=${(_e) => toggleOne(conv.id)}
                           style="cursor: pointer;"
                         >
                           <td>
@@ -872,7 +888,7 @@ export default function ExportConversations() {
                               class="export-checkbox"
                               checked=${isSelected}
                               onClick=${(e) => e.stopPropagation()}
-                              onChange=${(e) => toggleOne(conv.id)}
+                              onChange=${(_e) => toggleOne(conv.id)}
                             />
                           </td>
                           <td>
@@ -894,11 +910,11 @@ export default function ExportConversations() {
                       `;
                     }}
                   <//>
-                </tbody>
-              </table>
-            </div>
+                <//>
+              </tbody>
+            </table>
           </div>
-        <//>
+        </div>
       <//>
     </div>
   `;

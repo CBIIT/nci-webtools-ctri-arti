@@ -157,6 +157,7 @@ const tests = [
   "./pages/admin.test.js",
   "./pages/users/profile.test.js",
   "./pages/users/usage.test.js",
+  "./pages/tools/export-conversations.test.js",
   "./pages/tools/translate.test.js",
   "./pages/tools/chat-v2/uploads.test.js",
 ];
