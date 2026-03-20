@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -26,6 +27,20 @@ test("server auth posture keeps public routes explicit", async (t) => {
     assert.equal(logoutRes.status, 302);
   });
 
+  await t.test(
+    "config exposes supported usage types without internal schedule details",
+    async () => {
+      const res = await request(app).get("/api/v1/config");
+
+      assert.equal(res.status, 200);
+      assert.ok(Array.isArray(res.body.usageTypes), "config should return usageTypes");
+      assert.ok(res.body.usageTypes.includes("embedding"));
+      assert.ok(res.body.usageTypes.includes("guardrail"));
+      assert.ok(res.body.usageTypes.includes("chat-summary"));
+      assert.equal("budgetResetSchedule" in res.body, false);
+    }
+  );
+
   await t.test("session resolves an API-key-authenticated user for browser clients", async () => {
     const sessionRes = await request(app)
       .get("/api/v1/session")
@@ -41,7 +56,9 @@ test("server auth posture keeps public routes explicit", async (t) => {
       request(app).get("/api/v1/search"),
       request(app).get("/api/v1/conversations"),
       request(app).post("/api/v1/usage").send({ justification: "Need access" }),
-      request(app).post("/api/v1/log").send({ metadata: { error: "test" } }),
+      request(app)
+        .post("/api/v1/log")
+        .send({ metadata: { error: "test" } }),
     ]);
 
     assert.equal(searchRes.status, 401);
@@ -50,3 +67,6 @@ test("server auth posture keeps public routes explicit", async (t) => {
     assert.equal(logRes.status, 401);
   });
 });
+
+
+

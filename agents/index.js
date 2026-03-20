@@ -1,15 +1,30 @@
 import http from "http";
 
 import express from "express";
+import { createCmsRemote } from "cms/remote.js";
+import { createCmsService } from "cms/service.js";
+import { createGatewayRemote } from "gateway/remote.js";
+import { createGatewayService } from "gateway/service.js";
 import logger from "shared/logger.js";
 
-import agentRoutes from "./api.js";
+import { createSchemaReadyServiceApp } from "../shared/service-app.js";
 
-const { PORT = 3003 } = process.env;
+import { createAgentsApplication } from "./app.js";
+import { createAgentsRouter } from "./http.js";
 
-const app = express();
-app.disable("x-powered-by");
-app.get("/health", (req, res) => res.json({ status: "ok" }));
-app.use(agentRoutes);
+const { PORT = 3003, GATEWAY_URL, CMS_URL } = process.env;
+const gateway = GATEWAY_URL
+  ? createGatewayRemote({ baseUrl: GATEWAY_URL })
+  : createGatewayService();
+const cms = CMS_URL
+  ? createCmsRemote({ baseUrl: CMS_URL })
+  : createCmsService({ gateway, source: "direct" });
+const application = createAgentsApplication({ gateway, cms, source: "internal-http" });
+const router = express.Router();
+router.use("/api/v1", createAgentsRouter({ application }));
+const app = createSchemaReadyServiceApp({
+  router,
+  readinessFailureMessage: "Agents schema readiness failed",
+});
 
 http.createServer(app).listen(PORT, () => logger.info(`Agents service listening on port ${PORT}`));

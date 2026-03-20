@@ -12,6 +12,7 @@ services:
       - PGUSER=postgres
       - PGPASSWORD=postgres
       - PGDATABASE=postgres
+      - DB_SSL=0
       # Internal service URLs (docker network)
       - GATEWAY_URL=http://gateway:3001
       - CMS_URL=http://cms:3002
@@ -22,39 +23,36 @@ services:
       - ./server/.env
     develop:
       watch:
-      - action: sync+restart
-        path: ./shared
-        target: /app/shared
-        ignore:
-          - ./shared/node_modules
-      - action: sync+restart
-        path: ./database
-        target: /app/database
-        ignore:
-          - ./database/node_modules
-      - action: sync+restart
-        path: ./server
-        target: /app/server
-        ignore:
-          - ./server/node_modules
-      - action: sync
-        path: ./client
-        target: /app/client
-        ignore:
-          - ./client/node_modules
-      - action: rebuild
-        path: package.json
+        - action: sync+restart
+          path: ./shared
+          target: /app/shared
+          ignore:
+            - ./shared/node_modules
+        - action: sync+restart
+          path: ./database
+          target: /app/database
+          ignore:
+            - ./database/node_modules
+        - action: sync+restart
+          path: ./server
+          target: /app/server
+          ignore:
+            - ./server/node_modules
+        - action: sync
+          path: ./client
+          target: /app/client
+          ignore:
+            - ./client/node_modules
+        - action: rebuild
+          path: package.json
     depends_on:
       postgres:
         condition: service_healthy
-      gateway:
-        condition: service_started
-      cms:
-        condition: service_started
-      agents:
-        condition: service_started
-      users:
-        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -kfsS https://127.0.0.1/health > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
 
   # Gateway service - AI inference
   gateway:
@@ -69,33 +67,39 @@ services:
       - PGUSER=postgres
       - PGPASSWORD=postgres
       - PGDATABASE=postgres
+      - DB_SSL=0
       - USERS_URL=http://users:3004
     env_file:
       - ./server/.env
     develop:
       watch:
-      - action: sync+restart
-        path: ./shared
-        target: /app/shared
-        ignore:
-          - ./shared/node_modules
-      - action: sync+restart
-        path: ./database
-        target: /app/database
-        ignore:
-          - ./database/node_modules
-      - action: sync+restart
-        path: ./gateway
-        target: /app/gateway
-        ignore:
-          - ./gateway/node_modules
-      - action: rebuild
-        path: package.json
+        - action: sync+restart
+          path: ./shared
+          target: /app/shared
+          ignore:
+            - ./shared/node_modules
+        - action: sync+restart
+          path: ./database
+          target: /app/database
+          ignore:
+            - ./database/node_modules
+        - action: sync+restart
+          path: ./gateway
+          target: /app/gateway
+          ignore:
+            - ./gateway/node_modules
+        - action: rebuild
+          path: package.json
     depends_on:
       postgres:
         condition: service_healthy
       users:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3001/health > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
 
   # CMS service - conversation management
   cms:
@@ -110,30 +114,39 @@ services:
       - PGUSER=postgres
       - PGPASSWORD=postgres
       - PGDATABASE=postgres
+      - DB_SSL=0
+      - GATEWAY_URL=http://gateway:3001
     env_file:
       - ./server/.env
     develop:
       watch:
-      - action: sync+restart
-        path: ./shared
-        target: /app/shared
-        ignore:
-          - ./shared/node_modules
-      - action: sync+restart
-        path: ./database
-        target: /app/database
-        ignore:
-          - ./database/node_modules
-      - action: sync+restart
-        path: ./cms
-        target: /app/cms
-        ignore:
-          - ./cms/node_modules
-      - action: rebuild
-        path: package.json
+        - action: sync+restart
+          path: ./shared
+          target: /app/shared
+          ignore:
+            - ./shared/node_modules
+        - action: sync+restart
+          path: ./database
+          target: /app/database
+          ignore:
+            - ./database/node_modules
+        - action: sync+restart
+          path: ./cms
+          target: /app/cms
+          ignore:
+            - ./cms/node_modules
+        - action: rebuild
+          path: package.json
     depends_on:
       postgres:
         condition: service_healthy
+      gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3002/health > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
 
   # Agents service - chat orchestration and tool execution
   agents:
@@ -148,36 +161,42 @@ services:
       - PGUSER=postgres
       - PGPASSWORD=postgres
       - PGDATABASE=postgres
+      - DB_SSL=0
       - GATEWAY_URL=http://gateway:3001
       - CMS_URL=http://cms:3002
     env_file:
       - ./server/.env
     develop:
       watch:
-      - action: sync+restart
-        path: ./shared
-        target: /app/shared
-        ignore:
-          - ./shared/node_modules
-      - action: sync+restart
-        path: ./database
-        target: /app/database
-        ignore:
-          - ./database/node_modules
-      - action: sync+restart
-        path: ./agents
-        target: /app/agents
-        ignore:
-          - ./agents/node_modules
-      - action: rebuild
-        path: package.json
+        - action: sync+restart
+          path: ./shared
+          target: /app/shared
+          ignore:
+            - ./shared/node_modules
+        - action: sync+restart
+          path: ./database
+          target: /app/database
+          ignore:
+            - ./database/node_modules
+        - action: sync+restart
+          path: ./agents
+          target: /app/agents
+          ignore:
+            - ./agents/node_modules
+        - action: rebuild
+          path: package.json
     depends_on:
       postgres:
         condition: service_healthy
       gateway:
-        condition: service_started
+        condition: service_healthy
       cms:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3003/health > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
 
   # Users service - user management, roles, usage tracking
   users:
@@ -192,30 +211,36 @@ services:
       - PGUSER=postgres
       - PGPASSWORD=postgres
       - PGDATABASE=postgres
+      - DB_SSL=0
     env_file:
       - ./server/.env
     develop:
       watch:
-      - action: sync+restart
-        path: ./shared
-        target: /app/shared
-        ignore:
-          - ./shared/node_modules
-      - action: sync+restart
-        path: ./database
-        target: /app/database
-        ignore:
-          - ./database/node_modules
-      - action: sync+restart
-        path: ./users
-        target: /app/users
-        ignore:
-          - ./users/node_modules
-      - action: rebuild
-        path: package.json
+        - action: sync+restart
+          path: ./shared
+          target: /app/shared
+          ignore:
+            - ./shared/node_modules
+        - action: sync+restart
+          path: ./database
+          target: /app/database
+          ignore:
+            - ./database/node_modules
+        - action: sync+restart
+          path: ./users
+          target: /app/users
+          ignore:
+            - ./users/node_modules
+        - action: rebuild
+          path: package.json
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3004/health > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
 
   postgres:
     image: pgvector/pgvector:pg16

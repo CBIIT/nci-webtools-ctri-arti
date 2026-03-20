@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
 
-import { getToolFn, toolImplementations } from "../tools.js";
+import { getToolFn, toolImplementations } from "../tools/index.js";
 
 function embeddingOf(...values) {
   return Array.from({ length: NOVA_EMBEDDING_DIMENSIONS }, (_, index) => values[index] ?? 0);
@@ -49,6 +49,9 @@ describe("tools", () => {
         getResourcesByConversation: async () => resources.filter((r) => r.conversationID),
         storeConversationResource: async (userId, data) => {
           const resource = { id: resources.length + 1, userID: userId, ...data };
+          if (data.agentId !== undefined) resource.agentID = data.agentId;
+          if (data.conversationId !== undefined) resource.conversationID = data.conversationId;
+          if (data.messageId !== undefined) resource.messageID = data.messageId;
           resources.push(resource);
           return resource;
         },

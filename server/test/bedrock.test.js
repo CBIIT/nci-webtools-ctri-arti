@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { after, before, beforeEach, test } from "node:test";
 
@@ -1319,3 +1320,6 @@ test.skip("BedrockProvider", async (t) => {
     });
   });
 });
+
+
+

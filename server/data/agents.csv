@@ -1,4 +1,0 @@
-id,userId,promptId,name,tools
-1,null,1,Standard Chat,"[""search"",""browse"",""code"",""editor"",""think""]"
-2,null,2,FedPulse,"[""search"",""browse"",""code"",""editor"",""think""]"
-3,null,3,EAGLE,"[""search"",""browse"",""code"",""editor"",""think"",""data"",""docxTemplate""]"

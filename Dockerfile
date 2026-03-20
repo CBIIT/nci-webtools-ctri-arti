@@ -1,9 +1,13 @@
 FROM public.ecr.aws/docker/library/almalinux:10
 
 RUN dnf -y update \
-    && dnf -y install nodejs \
+    && dnf -y install curl nodejs24 \
     && dnf clean all
 
+RUN alternatives --install /usr/bin/node node /usr/bin/node-24 1 \
+    && alternatives --install /usr/bin/npm npm /usr/bin/npm-24 1 \
+    && alternatives --install /usr/bin/npx npx /usr/bin/npx-24 1
+    
 WORKDIR /app
 
 # Copy all workspace package.json files first (for Docker layer cache)

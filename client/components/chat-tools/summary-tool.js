@@ -8,9 +8,10 @@ import ToolHeader from "./tool-header.js";
 const CONVERSATION_SUMMARY_TOKEN = "[Conversation Summary]";
 
 function getSummaryBody(text = "") {
-  return text.startsWith(CONVERSATION_SUMMARY_TOKEN)
-    ? text.slice(CONVERSATION_SUMMARY_TOKEN.length).replace(/^\s+/, "")
-    : text;
+  const normalized = typeof text === "string" ? text.trimStart() : "";
+  return normalized.startsWith(CONVERSATION_SUMMARY_TOKEN)
+    ? normalized.slice(CONVERSATION_SUMMARY_TOKEN.length).replace(/^\s+/, "")
+    : normalized;
 }
 
 export default function SummaryTool(props) {

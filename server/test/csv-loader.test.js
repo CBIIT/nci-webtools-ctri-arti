@@ -1,7 +1,8 @@
+import "../test-support/db.js";
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { parseCsv } from "database/csv-loader.js";
+import { parseCsv } from "../../database/csv-loader.js";
 
 test("parseCsv", async (t) => {
   await t.test("parses basic CSV", () => {
@@ -68,8 +69,25 @@ test("parseCsv", async (t) => {
     assert.deepStrictEqual(result, [{ name: "Alice", age: 30 }]);
   });
 
+  await t.test("resolves nested env references inside JSON values", () => {
+    process.env._CSV_JSON_ENV = "from-env";
+    const result = parseCsv("name,config\nAlice,\"{\"\"token\"\":\"\"env:_CSV_JSON_ENV\"\",\"\"nested\"\":{\"\"value\"\":\"\"env:_CSV_JSON_ENV\"\"}}\"\n");
+    assert.deepStrictEqual(result[0].config, {
+      token: "from-env",
+      nested: { value: "from-env" },
+    });
+    delete process.env._CSV_JSON_ENV;
+  });
+
   await t.test("parses JSON object values", () => {
     const result = parseCsv('name,config\nAlice,"{""key"":""value""}"\n');
     assert.deepStrictEqual(result[0].config, { key: "value" });
   });
 });
+
+
+
+
+
+
+

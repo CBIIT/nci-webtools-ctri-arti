@@ -6,23 +6,28 @@
     ".": "./index.js",
     "./app.js": "./app.js",
     "./api.js": "./api.js",
-    "./guardrails.js": "./guardrails.js",
-    "./inference.js": "./inference.js",
-    "./upload-limits.js": "./upload-limits.js",
-    "./usage.js": "./usage.js",
+    "./http.js": "./http.js",
+    "./remote.js": "./remote.js",
+    "./service.js": "./service.js",
     "./providers/bedrock.js": "./providers/bedrock.js",
+    "./providers/databricks.js": "./providers/databricks.js",
     "./providers/gemini.js": "./providers/gemini.js",
-    "./providers/mock.js": "./providers/mock.js"
+    "./providers/mock.js": "./providers/mock.js",
+    "./core/guardrails.js": "./core/guardrails.js",
+    "./core/inference.js": "./core/inference.js",
+    "./core/upload-limits.js": "./core/upload-limits.js",
+    "./core/usage.js": "./core/usage.js"
   },
   "scripts": {
     "start": "node --env-file .env index.js"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock": "^3.1010.0",
-    "@aws-sdk/client-bedrock-runtime": "^3.1003.0",
-    "@google/genai": "^1.44.0",
+    "@aws-sdk/client-bedrock": "^3.1011.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1011.0",
+    "@google/genai": "^1.46.0",
     "database": "*",
     "express": "^5.2.1",
     "shared": "*"
   }
 }
+

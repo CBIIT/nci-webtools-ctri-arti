@@ -5,24 +5,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-class ContainerPortMapping(TypedDict):
-    name: str
-    containerPort: int
-
-
 class ContainerMountPoint(TypedDict):
     sourceVolume: str
     containerPath: str
     readOnly: bool
-
-
-class ContainerDefinition(TypedDict, total=False):
-    image: str
-    name: str
-    portMappings: List[ContainerPortMapping]
-    environment: dict[str, str]
-    secrets: dict[str, str | List[str]]
-    mountPoints: List[ContainerMountPoint]
 
 
 class EfsAuthorizationConfig(TypedDict):
@@ -42,11 +28,20 @@ class VolumeDefinition(TypedDict):
     efsVolumeConfiguration: EfsVolumeConfiguration
 
 
-class TaskDefinition(TypedDict, total=False):
-    memoryLimitMiB: int
+class ServiceDefinition(TypedDict, total=False):
+    name: str
+    image: str
+    port: int
+    environment: dict[str, str]
+    exposedViaAlb: bool
     cpu: int
-    containers: List[ContainerDefinition]
+    memoryLimitMiB: int
+    desiredCount: int
+    minCapacity: int
+    maxCapacity: int
+    targetCapacityPercent: int
     volumes: List[VolumeDefinition]
+    mountPoints: List[ContainerMountPoint]
 
 
 class EcsConfig(TypedDict, total=False):
@@ -55,11 +50,8 @@ class EcsConfig(TypedDict, total=False):
     domainName: str
     altDomainName: str
     priority: int
-    desiredCount: int
-    minCapacity: int
-    maxCapacity: int
-    targetCapacityPercent: int
-    taskDefinition: TaskDefinition
+    secrets: dict[str, str | List[str]]
+    services: List[ServiceDefinition]
 
 
 class EcrConfig(TypedDict):
@@ -114,23 +106,61 @@ def load_config() -> tuple[Config, str, str]:
     tier = get_env("TIER")
     prefix = f"{namespace}-{application}-{tier}"
 
-    # Shared secrets used by all services
-    shared_secrets = {
+    # Secrets shared by all services
+    all_secrets = {
         "PGHOST": [prefix, "host"],
         "PGPORT": [prefix, "port"],
         "PGDATABASE": [prefix, "dbname"],
         "PGUSER": [prefix, "username"],
         "PGPASSWORD": [prefix, "password"],
+        "SESSION_SECRET": get_env("SESSION_SECRET"),
+        "OAUTH_CLIENT_ID": get_env("OAUTH_CLIENT_ID"),
+        "OAUTH_CLIENT_SECRET": get_env("OAUTH_CLIENT_SECRET"),
+        "OAUTH_CALLBACK_URL": get_env("OAUTH_CALLBACK_URL"),
+        "OAUTH_DISCOVERY_URL": get_env("OAUTH_DISCOVERY_URL"),
+        "S3_BUCKETS": get_env("S3_BUCKETS", "rh-eagle"),
+        "EMAIL_ADMIN": get_env("EMAIL_ADMIN"),
+        "EMAIL_DEV": get_env("EMAIL_DEV"),
+        "EMAIL_USER_REPORTS": get_env("EMAIL_USER_REPORTS"),
+        "SMTP_HOST": get_env("SMTP_HOST"),
+        "SMTP_PORT": get_env("SMTP_PORT"),
+        "SMTP_USER": get_env("SMTP_USER"),
+        "SMTP_PASSWORD": get_env("SMTP_PASSWORD"),
+        "BRAVE_SEARCH_API_KEY": get_env("BRAVE_SEARCH_API_KEY"),
+        "DATA_GOV_API_KEY": get_env("DATA_GOV_API_KEY"),
+        "CONGRESS_GOV_API_KEY": get_env("CONGRESS_GOV_API_KEY"),
+        "GEMINI_API_KEY": get_env("GEMINI_API_KEY"),
+        "AZURE_TENANT_ID": get_env("AZURE_TENANT_ID"),
+        "AZURE_CLIENT_ID": get_env("AZURE_CLIENT_ID"),
+        "AZURE_CLIENT_SECRET": get_env("AZURE_CLIENT_SECRET"),
+        "DATABRICKS_HOST": get_env("DATABRICKS_HOST"),
     }
 
-    # Internal service URLs (same task = same network namespace = localhost)
+    # Service URLs via Service Connect DNS names
     shared_environment = {
-        "GATEWAY_URL": "http://localhost:3001",
-        "CMS_URL": "http://localhost:3002",
-        "AGENTS_URL": "http://localhost:3003",
-        "USERS_URL": "http://localhost:3004",
+        "GATEWAY_URL": "http://gateway:3001",
+        "CMS_URL": "http://cms:3002",
+        "AGENTS_URL": "http://agents:3003",
+        "USERS_URL": "http://users:3004",
     }
 
+    def build_service(name, port):
+        is_main = name == "main"
+        image = get_env(f"{name.upper()}_IMAGE")
+        if is_main and not image:
+            image = get_env("SERVER_IMAGE")
+        environment = {
+            **shared_environment,
+            "PORT": str(port),
+            **({"VERSION": get_env("GITHUB_SHA", "latest"), "TIER": tier} if is_main else {"DB_SKIP_SYNC": "true"}),
+        }
+        return {
+            "name": name,
+            "image": image or "httpd",
+            "port": port,
+            "exposedViaAlb": is_main,
+            "environment": environment,
+        }
 
     config: Config = {
         "env": {
@@ -156,133 +186,14 @@ def load_config() -> tuple[Config, str, str]:
             "domainName": get_env("DOMAIN_NAME"),
             "altDomainName": get_env("ALT_DOMAIN_NAME"),
             "priority": 100,
-            "desiredCount": 1,
-            "minCapacity": 1,
-            "maxCapacity": 4,
-            "targetCapacityPercent": 70,
-            "taskDefinition": {
-                "memoryLimitMiB": 4096,
-                "cpu": 2048,
-                "containers": [
-                    # Main app - serves client and proxies to internal services
-                    {
-                        "image": get_env("MAIN_IMAGE") or get_env("SERVER_IMAGE") or "httpd",
-                        "name": "main",
-                        "portMappings": [
-                            {
-                                "name": "main",
-                                "containerPort": 80,
-                            }
-                        ],
-                        "environment": {
-                            **shared_environment,
-                            "PORT": "80",
-                            "VERSION": get_env("GITHUB_SHA", "latest"),
-                            "TIER": tier,
-                        },
-                        "secrets": {
-                            "SESSION_SECRET": get_env("SESSION_SECRET"),
-                            "OAUTH_CLIENT_ID": get_env("OAUTH_CLIENT_ID"),
-                            "OAUTH_CLIENT_SECRET": get_env("OAUTH_CLIENT_SECRET"),
-                            "OAUTH_CALLBACK_URL": get_env("OAUTH_CALLBACK_URL"),
-                            "OAUTH_DISCOVERY_URL": get_env("OAUTH_DISCOVERY_URL"),
-                            **shared_secrets,
-                            "S3_BUCKETS": get_env("S3_BUCKETS", "rh-eagle"),
-                            "EMAIL_ADMIN": get_env("EMAIL_ADMIN"),
-                            "EMAIL_DEV": get_env("EMAIL_DEV"),
-                            "EMAIL_USER_REPORTS": get_env("EMAIL_USER_REPORTS"),
-                            "SMTP_HOST": get_env("SMTP_HOST"),
-                            "SMTP_PORT": get_env("SMTP_PORT"),
-                            "SMTP_USER": get_env("SMTP_USER"),
-                            "SMTP_PASSWORD": get_env("SMTP_PASSWORD"),
-                            "BRAVE_SEARCH_API_KEY": get_env("BRAVE_SEARCH_API_KEY"),
-                            "DATA_GOV_API_KEY": get_env("DATA_GOV_API_KEY"),
-                            "CONGRESS_GOV_API_KEY": get_env("CONGRESS_GOV_API_KEY"),
-                        },
-                    },
-                    # Gateway service - AI inference
-                    {
-                        "image": get_env("GATEWAY_IMAGE") or "httpd",
-                        "name": "gateway",
-                        "portMappings": [
-                            {
-                                "name": "gateway",
-                                "containerPort": 3001,
-                            }
-                        ],
-                        "environment": {
-                            **shared_environment,
-                            "PORT": "3001",
-                            "DB_SKIP_SYNC": "true",
-                        },
-                        "secrets": {
-                            **shared_secrets,
-                            "GEMINI_API_KEY": get_env("GEMINI_API_KEY"),
-                        },
-                    },
-                    # CMS service - conversation management
-                    {
-                        "image": get_env("CMS_IMAGE") or "httpd",
-                        "name": "cms",
-                        "portMappings": [
-                            {
-                                "name": "cms",
-                                "containerPort": 3002,
-                            }
-                        ],
-                        "environment": {
-                            **shared_environment,
-                            "PORT": "3002",
-                            "DB_SKIP_SYNC": "true",
-                        },
-                        "secrets": {
-                            **shared_secrets,
-                        },
-                    },
-                    # Agents service - chat orchestration and tool execution
-                    {
-                        "image": get_env("AGENTS_IMAGE") or "httpd",
-                        "name": "agents",
-                        "portMappings": [
-                            {
-                                "name": "agents",
-                                "containerPort": 3003,
-                            }
-                        ],
-                        "environment": {
-                            **shared_environment,
-                            "PORT": "3003",
-                            "DB_SKIP_SYNC": "true",
-                        },
-                        "secrets": {
-                            **shared_secrets,
-                            "BRAVE_SEARCH_API_KEY": get_env("BRAVE_SEARCH_API_KEY"),
-                            "DATA_GOV_API_KEY": get_env("DATA_GOV_API_KEY"),
-                            "S3_BUCKETS": get_env("S3_BUCKETS", "rh-eagle"),
-                        },
-                    },
-                    # Users service - user management, roles, usage tracking
-                    {
-                        "image": get_env("USERS_IMAGE") or "httpd",
-                        "name": "users",
-                        "portMappings": [
-                            {
-                                "name": "users",
-                                "containerPort": 3004,
-                            }
-                        ],
-                        "environment": {
-                            **shared_environment,
-                            "PORT": "3004",
-                            "DB_SKIP_SYNC": "true",
-                        },
-                        "secrets": {
-                            **shared_secrets,
-                        },
-                    },
-                ],
-                "volumes": [],
-            },
+            "secrets": all_secrets,
+            "services": [
+                build_service("main", 80),
+                build_service("gateway", 3001),
+                build_service("cms", 3002),
+                build_service("agents", 3003),
+                build_service("users", 3004),
+            ],
         },
         "tags": {
             "namespace": namespace,
@@ -292,3 +203,4 @@ def load_config() -> tuple[Config, str, str]:
     }
 
     return config, prefix, tier
+

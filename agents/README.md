@@ -1,34 +1,62 @@
 # agents
 
-Chat orchestration service (stub).
+Chat orchestration service. It turns a user message into a streamed assistant response by coordinating CMS state, gateway inference, and tool execution.
 
-## Overview
+## Directory Shape
 
-The agents service is the orchestration layer for AI chat. When a user sends a message, this service handles the full round-trip: resolve agent config, fetch conversation history, call gateway for inference, persist the response, and handle tool execution loops.
+- [index.js](index.js): standalone HTTP entrypoint
+- [app.js](app.js): application interface used by direct callers
+- [http.js](http.js): shared chat route definition
+- [remote.js](remote.js): HTTP client for remote mode
+- [core/](core/): loop, prompt, streaming, and upload helpers
+- [tools/](tools/): tool implementations and tool specs
+- [test/](test/): service-local tests
 
-## Quick Start
+This service is no longer a stub. The core loop lives in [core/loop.js](core/loop.js).
+
+## HTTP API
+
+Standalone agents mounts its routes under `/api/v1`.
+
+The shared chat route is:
+
+- `POST /api/v1/agents/:agentId/conversations/:conversationId/chat`
+
+Responses stream back as newline-delimited JSON.
+
+`server` mounts that same route definition for the public edge API.
+
+## Runtime Modes
+
+### Direct mode
+
+When `server` composes agents in-process, it builds the application directly with local `gateway` and `cms` modules.
+
+### HTTP mode
+
+Set `AGENTS_URL` for `server`, or run the standalone service. The standalone service can still talk to CMS and gateway either directly or over `CMS_URL` and `GATEWAY_URL`.
+
+## Running It
+
+From the repo root:
 
 ```bash
 npm start -w agents
+npm test -w agents
 ```
 
-## API
+The standalone service defaults to port `3003`.
 
-| Method | Path                                                      | Description                                  |
-| ------ | --------------------------------------------------------- | -------------------------------------------- |
-| GET    | `/health`                                                 | Health check — returns `{ status: "ok" }`    |
-| POST   | `/api/agents/:agentId/conversations/:conversationId/chat` | Send a message, get streamed NDJSON response |
+## Important Environment Variables
 
-## Responsibilities
+- `PORT`
+- `CMS_URL`
+- `GATEWAY_URL`
+- `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`
+- `DB_STORAGE`
+- `DB_SKIP_SYNC`
 
-- Resolve agent configuration from CMS (system prompt, tools, model)
-- Fetch conversation history from CMS
-- Call gateway for streaming inference
-- Persist assistant responses back to CMS
-- Handle tool execution loops (search, browse, data, editor, think, docxTemplate)
+## Notes
 
-## Configuration
-
-| Variable | Required | Default | Description  |
-| -------- | -------- | ------- | ------------ |
-| `PORT`   | No       | 3003    | Service port |
+- The old root `loop.js` shim is gone; imports should target [core/loop.js](core/loop.js).
+- The service is intentionally small at the boundary: one route, one orchestration responsibility, and the actual loop logic under `core/`.

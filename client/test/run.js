@@ -1,4 +1,5 @@
 const params = new URLSearchParams(window.location.search);
+const testParam = params.get("test") || "";
 const includeSlow = params.get("slow") === "1";
 const enableProfiling = params.get("profile") === "1";
 const network = {
@@ -7,6 +8,38 @@ const network = {
 };
 window.__TEST_NETWORK__ = network;
 let metrics = null;
+
+function normalizeTestPath(value = "") {
+  return value.replace(/\\/g, "/").replace(/^\.\//, "");
+}
+
+function parseTestSelector(value) {
+  const parts = value
+    .split(/::|#/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const first = parts[0] || "";
+  if (first.includes(".test.")) {
+    return {
+      raw: value,
+      file: normalizeTestPath(parts.shift()),
+      names: parts,
+    };
+  }
+
+  return {
+    raw: value,
+    file: null,
+    names: parts,
+  };
+}
+
+function matchesTestFile(testFile, selectorFile) {
+  const test = normalizeTestPath(testFile);
+  const selector = normalizeTestPath(selectorFile);
+  return test === selector || test.endsWith(`/${selector}`) || test.endsWith(selector);
+}
 
 if (enableProfiling) {
   metrics = {
@@ -38,7 +71,6 @@ if (enableProfiling) {
     entry.maxMs = Math.max(entry.maxMs, durationMs);
     if (!ok) entry.failures++;
   };
-
 }
 
 const originalFetch = window.fetch.bind(window);
@@ -124,24 +156,58 @@ const tests = [
   "./pages/admin.test.js",
   "./pages/users/profile.test.js",
   "./pages/users/usage.test.js",
+  "./pages/tools/export-conversations.test.js",
   "./pages/tools/translate.test.js",
   "./pages/tools/chat-v2/uploads.test.js",
+  "./pages/tools/chat-v2/model-list.test.js",
 ];
 
 if (includeSlow) {
   tests.push("./api/agents-chat.test.js");
   tests.push("./pages/tools/chat-v2/e2e.test.js");
 }
-for (const test of tests) {
+const selectors =
+  testParam && testParam !== "1"
+    ? testParam
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map(parseTestSelector)
+    : [];
+const fileSelectors = selectors.filter((selector) => selector.file);
+const selectedTests = fileSelectors.length
+  ? tests.filter((test) => fileSelectors.some((selector) => matchesTestFile(test, selector.file)))
+  : tests;
+
+// test.js reads these globals during module evaluation, so they must be set
+// before we import the test registry or any test files.
+window.__TEST_FILTER__ = {
+  enabled: selectors.length > 0,
+  selectors,
+};
+
+if (selectors.length) {
+  console.log(`Running filtered browser tests: ${selectedTests.join(", ")}`);
+}
+
+// Keep this as a dynamic import: test.js reads window.__TEST_FILTER__ during
+// module evaluation, so converting this to a static import breaks filtering.
+const { run } = await import("./test.js");
+
+for (const test of selectedTests) {
   try {
+    window.__CURRENT_TEST_FILE__ = normalizeTestPath(test);
     await import(test);
   } catch (error) {
     console.error(`Error loading test ${test}:`, error);
+  } finally {
+    delete window.__CURRENT_TEST_FILE__;
   }
 }
 
-import { run } from "./test.js";
-
 // Run all tests and await for completion before setting TESTS_DONE
-await run();
+const summary = await run();
 reportMetrics();
+if (summary.fail > 0) {
+  throw new Error(`${summary.fail} browser test${summary.fail === 1 ? "" : "s"} failed`);
+}

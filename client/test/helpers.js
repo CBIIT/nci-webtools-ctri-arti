@@ -122,11 +122,15 @@ export function waitForCondition(predicate, timeoutMs = 5000, label = "condition
 }
 
 export function waitForNetworkIdle(idleMs = 50, timeoutMs = 5000) {
-  return waitForCondition(() => {
-    const network = window.__TEST_NETWORK__ || window.__TEST_METRICS__?.network;
-    if (!network) return true;
-    return network.pending === 0 && performance.now() - network.lastActivity >= idleMs;
-  }, timeoutMs, `network idle (${idleMs}ms)`);
+  return waitForCondition(
+    () => {
+      const network = window.__TEST_NETWORK__ || window.__TEST_METRICS__?.network;
+      if (!network) return true;
+      return network.pending === 0 && performance.now() - network.lastActivity >= idleMs;
+    },
+    timeoutMs,
+    `network idle (${idleMs}ms)`
+  );
 }
 
 /** Poll until a DOM element matching selector+predicate appears inside container. */

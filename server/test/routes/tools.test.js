@@ -1,20 +1,30 @@
+import "../../test-support/db.js";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import express from "express";
 import request from "supertest";
 
-import { createToolsRouter } from "../../services/routes/tools.js";
+import { createToolsRouter } from "../../api/routes/tools.js";
 
 const { TEST_API_KEY } = process.env;
 
-function buildApp(deps) {
+function buildApp(deps = {}) {
   const app = express();
   app.use((req, res, next) => {
     req.session = {};
     next();
   });
-  app.use(createToolsRouter(deps));
+  app.use(
+    createToolsRouter({
+      modules: {
+        gateway: {
+          trackUsage: async () => null,
+        },
+      },
+      ...deps,
+    })
+  );
   return app;
 }
 

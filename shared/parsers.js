@@ -1,4 +1,4 @@
-import { convertToHtml as loadDocx } from "mammoth";
+import { convertToHtml as loadDocx, extractRawText as loadDocxText } from "mammoth";
 import { getDocument as loadPdf } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 function toPdfData(buffer) {
@@ -47,6 +47,16 @@ export async function parseDocument(buffer, mimetype) {
  */
 export async function parseDocx(buffer) {
   const contents = await loadDocx({ buffer });
+  return contents?.value || "No text found in DOCX";
+}
+
+/**
+ * Extracts raw text from a DOCX buffer.
+ * @param {Buffer} buffer
+ * @returns {Promise<string>} extracted text
+ */
+export async function parseDocxText(buffer) {
+  const contents = await loadDocxText({ buffer });
   return contents?.value || "No text found in DOCX";
 }
 

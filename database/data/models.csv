@@ -9,5 +9,7 @@ id,providerID,name,internalName,type,cost1kInput,cost1kOutput,cost1kCacheRead,co
 20,1,Nova Embeddings,amazon.nova-2-multimodal-embeddings-v1:0,embedding,null,null,null,null,"{""input_tokens"":0.000000135,""images"":0.00006,""document_images"":0.0006,""video_seconds"":0.0007,""audio_seconds"":0.00014}",null,null,null
 21,1,AWS Translate,aws-translate,translate,null,null,null,null,"{""characters"":0.000015}",null,null,null
 22,1,AWS Guardrails,aws-guardrails,guardrail,null,null,null,null,"{""topic_policy_units"":0.00015,""content_policy_units"":0.00015,""content_policy_image_units"":0.00075,""sensitive_information_policy_units"":0.0001,""word_policy_units"":0,""contextual_grounding_policy_units"":0.0001,""automated_reasoning_policy_units"":0.00017}",null,null,null
-30,3,Sonnet 4.6 (via IDP),idp.us.anthropic.claude-sonnet-4-6,chat,0.003,0.015,0.0003,0.00375,"{""input_tokens"":0.000003,""output_tokens"":0.000015,""cache_read_tokens"":0.0000003,""cache_write_tokens"":0.00000375}",1000000,64000,60000
+30,3,Sonnet 4.6 (via IDP),databricks-claude-sonnet-4-6,chat,0.003,0.015,0.0003,0.00375,"{""input_tokens"":0.000003,""output_tokens"":0.000015,""cache_read_tokens"":0.0000003,""cache_write_tokens"":0.00000375}",1000000,64000,60000
+31,3,Opus 4.6 (via IDP),databricks-claude-opus-4-6,chat,0.005,0.025,0.0005,0.00625,"{""input_tokens"":0.000005,""output_tokens"":0.000025,""cache_read_tokens"":0.0000005,""cache_write_tokens"":0.00000625}",200000,64000,60000
 99,99,Mock Model,mock-model,chat,0.0000001,0.0000005,0.00000001,0.00000012,"{""input_tokens"":0.0000000001,""output_tokens"":0.0000000005,""cache_read_tokens"":0.00000000001,""cache_write_tokens"":0.00000000012}",1000000,100000,500000
+

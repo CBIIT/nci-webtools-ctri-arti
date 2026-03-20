@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 
 function quoteIdentifier(identifier) {
-  return `"${identifier.replaceAll("\"", "\"\"")}"`;
+  return `"${identifier.replaceAll('"', '""')}"`;
 }
 
 function normalizeRows(result) {
@@ -27,14 +27,34 @@ export const REQUIRED_FOREIGN_KEYS = [
   { childTable: "Agent", childColumn: "guardrailID", parentTable: "Guardrail", parentColumn: "id" },
   { childTable: "Conversation", childColumn: "userID", parentTable: "User", parentColumn: "id" },
   { childTable: "Conversation", childColumn: "agentID", parentTable: "Agent", parentColumn: "id" },
-  { childTable: "Conversation", childColumn: "summaryMessageID", parentTable: "Message", parentColumn: "id" },
-  { childTable: "Message", childColumn: "conversationID", parentTable: "Conversation", parentColumn: "id" },
+  {
+    childTable: "Conversation",
+    childColumn: "summaryMessageID",
+    parentTable: "Message",
+    parentColumn: "id",
+  },
+  {
+    childTable: "Message",
+    childColumn: "conversationID",
+    parentTable: "Conversation",
+    parentColumn: "id",
+  },
   { childTable: "Message", childColumn: "parentID", parentTable: "Message", parentColumn: "id" },
   { childTable: "Resource", childColumn: "userID", parentTable: "User", parentColumn: "id" },
   { childTable: "Resource", childColumn: "agentID", parentTable: "Agent", parentColumn: "id" },
-  { childTable: "Resource", childColumn: "conversationID", parentTable: "Conversation", parentColumn: "id" },
+  {
+    childTable: "Resource",
+    childColumn: "conversationID",
+    parentTable: "Conversation",
+    parentColumn: "id",
+  },
   { childTable: "Resource", childColumn: "messageID", parentTable: "Message", parentColumn: "id" },
-  { childTable: "Vector", childColumn: "conversationID", parentTable: "Conversation", parentColumn: "id" },
+  {
+    childTable: "Vector",
+    childColumn: "conversationID",
+    parentTable: "Conversation",
+    parentColumn: "id",
+  },
   { childTable: "Vector", childColumn: "resourceID", parentTable: "Resource", parentColumn: "id" },
   { childTable: "Vector", childColumn: "toolID", parentTable: "Tool", parentColumn: "id" },
   { childTable: "UserAgent", childColumn: "userID", parentTable: "User", parentColumn: "id" },

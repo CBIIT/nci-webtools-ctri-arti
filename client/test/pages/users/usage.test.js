@@ -31,6 +31,7 @@ const usageRows = [
   {
     id: 1,
     requestId: "req-abc",
+    modelID: 101,
     type: "chat",
     modelName: "Mock Model",
     quantity: 100,
@@ -41,6 +42,7 @@ const usageRows = [
   {
     id: 2,
     requestId: "req-abc",
+    modelID: 202,
     type: "guardrail",
     modelName: "AWS Guardrails",
     quantity: 2,
@@ -51,6 +53,7 @@ const usageRows = [
   {
     id: 3,
     requestId: "unknown",
+    modelID: 303,
     type: "chat-title",
     modelName: "Chat Title",
     quantity: 20,
@@ -523,10 +526,14 @@ test("User Usage Detail Tests", async (t) => {
     const { container, errors } = page;
     try {
       await waitForElement(container, "h1", (el) => el.textContent.includes("Usage Statistics"));
-      await waitForCondition(() => {
-        const allText = container.textContent || "";
-        return allText.includes("Usage by Model") || allText.includes("No usage data");
-      }, 5000, "user usage section headings");
+      await waitForCondition(
+        () => {
+          const allText = container.textContent || "";
+          return allText.includes("Usage by Model") || allText.includes("No usage data");
+        },
+        5000,
+        "user usage section headings"
+      );
 
       const allText = container.textContent;
       assert.ok(
@@ -539,7 +546,7 @@ test("User Usage Detail Tests", async (t) => {
     }
   });
 
-  await t.test("/_/users/:id/usage recent requests show request-level rows and full tooltip breakdowns", async () => {
+  await t.test("/_/users/:id/usage recent requests group by request id and model id", async () => {
     const usageTestUser = {
       ...testUser,
       id: 123,
@@ -598,6 +605,7 @@ test("User Usage Detail Tests", async (t) => {
             {
               id: 1,
               requestId: "req-abc",
+              modelID: 101,
               type: "chat",
               modelName: "Chat",
               quantity: 100,
@@ -608,6 +616,7 @@ test("User Usage Detail Tests", async (t) => {
             {
               id: 2,
               requestId: "req-abc",
+              modelID: 202,
               type: "guardrail",
               modelName: "AWS Guardrails",
               quantity: 2,
@@ -617,7 +626,19 @@ test("User Usage Detail Tests", async (t) => {
             },
             {
               id: 3,
+              requestId: "req-abc",
+              modelID: 303,
+              type: "embedding",
+              modelName: "Embedding",
+              quantity: 50,
+              unit: "input_tokens",
+              cost: 0.02,
+              createdAt: "2026-03-16T21:32:30Z",
+            },
+            {
+              id: 4,
               requestId: "unknown",
+              modelID: 404,
               type: "chat-title",
               modelName: "Chat Title",
               quantity: 20,
@@ -626,8 +647,9 @@ test("User Usage Detail Tests", async (t) => {
               createdAt: "2026-03-16T21:30:00Z",
             },
             {
-              id: 4,
+              id: 5,
               requestId: "unknown",
+              modelID: 202,
               type: "guardrail",
               modelName: "AWS Guardrails",
               quantity: 1,
@@ -662,36 +684,70 @@ test("User Usage Detail Tests", async (t) => {
       assert.ok(recentHeaders.includes("Type"), "recent requests should show Type");
       assert.ok(recentHeaders.includes("Model"), "recent requests should show Model");
       assert.ok(recentHeaders.includes("Usage Cost"), "recent requests should show Usage Cost");
-      assert.ok(recentHeaders.includes("Guardrail Cost"), "recent requests should show Guardrail Cost");
+      assert.ok(
+        recentHeaders.includes("Guardrail Cost"),
+        "recent requests should show Guardrail Cost"
+      );
       assert.ok(recentHeaders.includes("Total Cost"), "recent requests should show Total Cost");
       assert.ok(
         !recentHeaders.includes("Total Requests"),
         "recent requests should not show Total Requests"
       );
 
-      const reqRow = Array.from(container.querySelectorAll("tbody tr")).find((row) =>
-        row.textContent.includes("Chat") &&
-        row.textContent.includes("$0.25") &&
-        row.textContent.includes("$0.01")
+      const recentRows = Array.from(tables.at(-1).querySelectorAll("tbody tr"));
+      assert.strictEqual(
+        recentRows.length,
+        5,
+        "recent requests should keep separate rows for distinct models and ungrouped unknown requests"
       );
-      assert.ok(reqRow, "expected grouped chat request row");
+
+      const chatRow = recentRows.find(
+        (row) =>
+          row.textContent.includes("Chat") &&
+          row.textContent.includes("$0.25") &&
+          row.textContent.includes("$0.00")
+      );
+      assert.ok(chatRow, "expected chat row for req-abc");
       assert.ok(
-        reqRow.textContent.includes("Chat"),
-        "request row should keep the original non-guardrail model"
+        !chatRow.textContent.includes("Multiple"),
+        "request row should not collapse model names to Multiple"
       );
-      const usageCostCell = reqRow.querySelector('td:nth-child(4) span[title]');
+      const usageCostCell = chatRow.querySelector("td:nth-child(4) span[title]");
       assert.ok(usageCostCell, "usage cost cell should expose a breakdown tooltip");
       assert.ok(
         usageCostCell.getAttribute("title").includes("Chat: Input Tokens"),
         "usage tooltip should include the individual usage item breakdown"
       );
       assert.ok(
-        usageCostCell.getAttribute("title").includes("Guardrail: Content Policy Units"),
-        "usage tooltip should include guardrail entries tied to the same request id"
+        !usageCostCell.getAttribute("title").includes("Guardrail: Content Policy Units"),
+        "usage tooltip should stay scoped to the request-model group"
       );
       assert.ok(
-        reqRow.textContent.includes("$0.01"),
-        "guardrail cost should be shown separately from usage cost"
+        recentRows.some(
+          (row) =>
+            row.textContent.includes("Embedding") &&
+            row.textContent.includes("$0.02") &&
+            row.textContent.includes("$0.00")
+        ),
+        "same request id with a different model should render as a separate row"
+      );
+      assert.ok(
+        recentRows.some(
+          (row) =>
+            row.textContent.includes("AWS Guardrails") &&
+            row.textContent.includes("$0.00") &&
+            row.textContent.includes("$0.01")
+        ),
+        "guardrail costs should stay attached to the guardrail model row"
+      );
+      assert.ok(
+        recentRows.some(
+          (row) =>
+            row.textContent.includes("AWS Guardrails") &&
+            row.textContent.includes("$0.00") &&
+            row.textContent.trim().endsWith("$0.00")
+        ),
+        "unknown requests should remain separate rows instead of being merged by model"
       );
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {

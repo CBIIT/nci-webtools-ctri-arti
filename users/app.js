@@ -10,10 +10,24 @@ export function createUsersApplication({ service = new UserService() } = {}) {
       return service.getUser(id);
     },
 
+    getUserByEmail(email) {
+      return service.getUserByEmail(email);
+    },
+
+    getUserByApiKey(apiKey) {
+      return service.getUserByApiKey(apiKey);
+    },
+
     resolveUser({ id, email, apiKey }) {
       if (apiKey) return service.getUserByApiKey(apiKey);
       if (email) return service.getUserByEmail(email);
       return service.getUser(id);
+    },
+
+    resolveIdentity({ sessionUserId, apiKey } = {}) {
+      if (apiKey) return service.getUserByApiKey(apiKey);
+      if (sessionUserId) return service.getUser(sessionUserId);
+      return null;
     },
 
     findOrCreateUser(data) {

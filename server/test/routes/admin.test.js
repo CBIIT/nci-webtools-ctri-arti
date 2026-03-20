@@ -1,12 +1,14 @@
+import "../../test-support/db.js";
+import db, { User } from "database";
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 
-import db, { User } from "database";
 import { eq } from "drizzle-orm";
 import express from "express";
 import request from "supertest";
+import { createUsersApplication } from "users/app.js";
 
-import api from "../../services/routes/admin.js";
+import { createAdminRouter } from "../../api/routes/admin.js";
 
 const { TEST_API_KEY } = process.env;
 const originalProfiles = new Map();
@@ -18,7 +20,7 @@ function buildApp() {
     req.session = {};
     next();
   });
-  app.use(api);
+  app.use(createAdminRouter({ modules: { users: createUsersApplication() } }));
   return app;
 }
 
