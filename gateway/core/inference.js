@@ -2,6 +2,11 @@ import db, { Model } from "database";
 
 import { eq } from "drizzle-orm";
 import { assertValidEmbedding } from "shared/embeddings.js";
+import {
+  estimateContentTokens,
+  estimateConverseTokens,
+  estimateMessageTokens,
+} from "shared/token-estimation.js";
 
 import bedrock from "../providers/bedrock.js";
 import gemini from "../providers/gemini.js";
@@ -17,23 +22,6 @@ export async function getModelProvider(value) {
   });
   const provider = new providers[result?.Provider?.name]();
   return { model: result, provider };
-}
-
-/**
- * Estimates the number of tokens in a content item
- * @param {Object} content - Content item from a message
- * @returns {number} Estimated token count
- */
-function estimateContentTokens(content) {
-  let tokens = 0;
-  if (content.text) tokens += Math.ceil(content.text.length / 8);
-  if (content.document?.source?.text) tokens += Math.ceil(content.document.source.text.length / 8);
-  if (content.document?.source?.bytes)
-    tokens += Math.ceil(content.document.source.bytes.length / 3);
-  if (content.image?.source?.bytes) tokens += Math.ceil(content.image.source.bytes.length / 3);
-  if (content.toolUse) tokens += Math.ceil(JSON.stringify(content.toolUse).length / 8);
-  if (content.toolResult) tokens += Math.ceil(JSON.stringify(content.toolResult).length / 8);
-  return tokens;
 }
 
 function sanitizeProviderFileName(name = "") {
@@ -86,21 +74,26 @@ function calculateCacheBoundaries(maxTokens = 2000000) {
  * Adds cache points to messages array at optimal positions
  * @param {Array} messages - Array of message objects
  * @param {boolean} hasCache - Whether the model supports caching
+ * @param {Object} options - Additional converse input context
  * @returns {Array} Modified messages array with cache points
  */
-function addCachePointsToMessages(messages, hasCache) {
+function addCachePointsToMessages(
+  messages,
+  hasCache,
+  { system = [], toolConfig, additionalModelRequestFields } = {}
+) {
   if (!hasCache || !messages?.length) return messages;
 
   const cachePoint = { cachePoint: { type: "default" } };
   const boundaries = calculateCacheBoundaries();
   const result = [];
-  let totalTokens = 0;
+  let totalTokens = estimateConverseTokens({ system, toolConfig, additionalModelRequestFields });
   const cachePositions = [];
 
   // First pass: find where to place cache points
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i];
-    const messageTokens = message.content.reduce((sum, c) => sum + estimateContentTokens(c), 0);
+    const messageTokens = estimateMessageTokens([message]);
     const previousTotal = totalTokens;
     totalTokens += messageTokens;
 
@@ -126,7 +119,6 @@ function addCachePointsToMessages(messages, hasCache) {
     const shouldAddCache = selectedPositions.some((pos) => pos.index === i);
 
     if (shouldAddCache) {
-      // Clone the message and add cache point to its content
       result.push({
         ...message,
         content: [...message.content, cachePoint],
@@ -224,7 +216,8 @@ async function buildInferenceParams(
   tools,
   thoughtBudget,
   outputConfig,
-  guardrailConfig
+  guardrailConfig,
+  { includeCachePoints = true } = {}
 ) {
   const {
     model: { maxOutput, maxReasoning, cost1kCacheRead },
@@ -233,15 +226,8 @@ async function buildInferenceParams(
   const hasCache = !!cost1kCacheRead;
   const maxTokens = Math.min(maxOutput, thoughtBudget + 2000);
 
-  // Add cache points to messages
-  messages = addCachePointsToMessages(messages, hasCache);
-
-  // Cache point for system and tools
-  const cachePoint = hasCache ? { cachePoint: { type: "default" } } : undefined;
-  const system = systemPrompt ? [{ text: systemPrompt }, cachePoint].filter(Boolean) : undefined;
-  const toolConfig =
-    tools.length > 0 ? { tools: [...tools, cachePoint].filter(Boolean) } : undefined;
-  const inferenceConfig = thoughtBudget > 0 ? { maxTokens } : undefined;
+  const rawSystem = systemPrompt ? [{ text: systemPrompt }] : undefined;
+  const rawToolConfig = tools.length > 0 ? { tools: [...tools] } : undefined;
   const additionalModelRequestFields = {};
   if (thoughtBudget > 0 && maxReasoning > 0) {
     additionalModelRequestFields.thinking = { type: "enabled", budget_tokens: +thoughtBudget };
@@ -249,6 +235,22 @@ async function buildInferenceParams(
   if (modelId.includes("sonnet-4")) {
     additionalModelRequestFields.anthropic_beta = ["context-1m-2025-08-07"];
   }
+
+  if (includeCachePoints) {
+    messages = addCachePointsToMessages(messages, hasCache, {
+      system: rawSystem,
+      toolConfig: rawToolConfig,
+      additionalModelRequestFields,
+    });
+  }
+
+  const cachePoint =
+    includeCachePoints && hasCache ? { cachePoint: { type: "default" } } : undefined;
+  const system = rawSystem ? [...rawSystem, cachePoint].filter(Boolean) : undefined;
+  const toolConfig = rawToolConfig
+    ? { tools: [...rawToolConfig.tools, cachePoint].filter(Boolean) }
+    : undefined;
+  const inferenceConfig = thoughtBudget > 0 ? { maxTokens } : undefined;
 
   const input = {
     modelId,
@@ -363,5 +365,3 @@ export async function runEmbedding({ model, content, purpose = "GENERIC_INDEX" }
 
 // Export helper functions for testing
 export { estimateContentTokens, calculateCacheBoundaries, addCachePointsToMessages };
-
-

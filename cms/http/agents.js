@@ -1,6 +1,6 @@
-import { json, Router } from "express";
+import { Router } from "express";
 
-import { JSON_UPLOAD_LIMIT, readRequestContext, withResolvedContext } from "./helpers.js";
+import { readRequestContext, withResolvedContext } from "./helpers.js";
 
 export function createCmsAgentsRouter({ application, resolveContext = readRequestContext } = {}) {
   if (!application) {
@@ -8,7 +8,6 @@ export function createCmsAgentsRouter({ application, resolveContext = readReques
   }
 
   const api = Router();
-  api.use(json({ limit: JSON_UPLOAD_LIMIT }));
 
   api.post(
     "/agents",

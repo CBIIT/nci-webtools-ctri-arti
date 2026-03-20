@@ -20,19 +20,6 @@ function createHeaders(userIdOrContext) {
   };
 }
 
-function normalizeConversationPage(result, { limit = 20, offset = 0 } = {}) {
-  if (result?.data !== undefined) return result;
-
-  return {
-    data: result?.rows || [],
-    meta: {
-      total: result?.count || 0,
-      limit,
-      offset,
-    },
-  };
-}
-
 async function httpRequest(fetchImpl, baseUrl, method, path, body, userIdOrContext) {
   return requestJson(fetchImpl, {
     url: `${baseUrl}${path}`,
@@ -82,7 +69,7 @@ export function createCmsRemote({ baseUrl, fetchImpl = fetch }) {
         `/api/v1/conversations${buildQueryString({ limit, offset })}`,
         undefined,
         context
-      ).then((result) => normalizeConversationPage(result, { limit, offset }));
+      );
     },
     getConversation: (context, conversationId) =>
       httpRequest(
@@ -140,33 +127,6 @@ export function createCmsRemote({ baseUrl, fetchImpl = fetch }) {
         "POST",
         `/api/v1/conversations/${data.conversationId}/messages`,
         data,
-        context
-      ),
-    appendUserMessage: (context, data) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "POST",
-        `/api/v1/conversations/${data.conversationId}/messages`,
-        { ...data, role: "user" },
-        context
-      ),
-    appendAssistantMessage: (context, data) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "POST",
-        `/api/v1/conversations/${data.conversationId}/messages`,
-        { ...data, role: "assistant" },
-        context
-      ),
-    appendToolResultsMessage: (context, data) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "POST",
-        `/api/v1/conversations/${data.conversationId}/messages`,
-        { ...data, role: "user" },
         context
       ),
     getMessages: (context, conversationId) =>
@@ -250,8 +210,8 @@ export function createCmsRemote({ baseUrl, fetchImpl = fetch }) {
         fetchImpl,
         baseUrl,
         "POST",
-        "/api/v1/vectors",
-        { conversationID: data.conversationId, vectors: data.vectors },
+        `/api/v1/conversations/${data.conversationId}/vectors`,
+        { vectors: data.vectors },
         context
       ),
     getVectorsByConversation: (context, conversationId) =>
@@ -273,9 +233,12 @@ export function createCmsRemote({ baseUrl, fetchImpl = fetch }) {
         context
       ),
     searchVectors: (params) => {
-      const query = buildQueryString(params, {
-        serializeValue: (key, value) => (key === "embedding" ? JSON.stringify(value) : value),
-      });
+      const query = buildQueryString(
+        params,
+        {
+          serializeValue: (key, value) => (key === "embedding" ? JSON.stringify(value) : value),
+        }
+      );
       return httpRequest(
         fetchImpl,
         baseUrl,
@@ -312,3 +275,4 @@ export function createCmsRemote({ baseUrl, fetchImpl = fetch }) {
       httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/search/chunks", params, context),
   };
 }
+

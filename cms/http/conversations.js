@@ -1,7 +1,6 @@
-import { json, Router } from "express";
+import { Router } from "express";
 
 import {
-  JSON_UPLOAD_LIMIT,
   parsePageQuery,
   readRequestContext,
   sendNotFound,
@@ -19,12 +18,14 @@ export function createCmsConversationsRouter({
   }
 
   const api = Router();
-  api.use(json({ limit: JSON_UPLOAD_LIMIT }));
 
   api.post(
     "/conversations",
     withResolvedContext(resolveContext, async (req, res) => {
-      const conversation = await application.createConversation(req.context, req.body);
+      const conversation = await application.createConversation(
+        req.context,
+        req.body
+      );
       res.status(201).json(conversation);
     })
   );
@@ -89,14 +90,6 @@ export function createCmsConversationsRouter({
   );
 
   api.post(
-    "/summarize",
-    withResolvedContext(resolveContext, async (req, res) => {
-      const { conversationId, ...params } = req.body;
-      await streamResponse(res, application.summarize(req.context, conversationId, params));
-    })
-  );
-
-  api.post(
     "/conversations/:conversationId/messages",
     withResolvedContext(resolveContext, async (req, res) => {
       const message = await application.appendConversationMessage(req.context, {
@@ -144,7 +137,10 @@ export function createCmsConversationsRouter({
   api.post(
     "/resources",
     withResolvedContext(resolveContext, async (req, res) => {
-      const resource = await application.storeConversationResource(req.context, req.body);
+      const resource = await application.storeConversationResource(
+        req.context,
+        req.body
+      );
       res.status(201).json(resource);
     })
   );
@@ -211,8 +207,8 @@ export function createCmsConversationsRouter({
     "/conversations/:conversationId/vectors",
     withResolvedContext(resolveContext, async (req, res) => {
       const vectors = await application.storeConversationVectors(req.context, {
+        ...req.body,
         conversationId: Number(req.params.conversationId),
-        vectors: req.body.vectors,
       });
       res.status(201).json(vectors);
     })

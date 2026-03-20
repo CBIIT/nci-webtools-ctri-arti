@@ -7,6 +7,8 @@ import { parseDocument } from "shared/parsers.js";
 import { listFiles, getFile } from "shared/s3.js";
 import { search as searchWeb } from "shared/search.js";
 
+import { normalizeCmsResources } from "../resources.js";
+
 const { S3_BUCKETS } = process.env;
 
 /**
@@ -188,7 +190,7 @@ function getMimeTypeFromKey(key) {
  *     memories/, skills/ → agent-scoped (persist across conversations, user+agent scoped)
  *     everything else    → conversation-scoped
  * - Existing resources are updated in-place (preserving their original scope)
- * - Resources without userID are read-only (system/seed resources)
+ * - Resources without userId are read-only (system/seed resources)
  * - Returns structured objects { status, path, content, entries, error }
  */
 export async function editor(
@@ -212,11 +214,14 @@ export async function editor(
     const [convResources, agentResources] = await Promise.all([
       conversationId ? cms.getResourcesByConversation(userId, conversationId) : [],
       cms.getResourcesByAgent(userId, agentId),
+    ]).then(([conversationResources, allAgentResources]) => [
+      normalizeCmsResources(conversationResources),
+      normalizeCmsResources(allAgentResources),
     ]);
-    const agentOnly = agentResources.filter((r) => !r.conversationID);
+    const agentOnly = agentResources.filter((resource) => !resource.conversationId);
     const byName = new Map();
-    for (const r of agentOnly) byName.set(r.name, r);
-    for (const r of convResources) byName.set(r.name, r);
+    for (const resource of agentOnly) byName.set(resource.name, resource);
+    for (const resource of convResources) byName.set(resource.name, resource);
     return Array.from(byName.values());
   }
 
@@ -226,7 +231,7 @@ export async function editor(
   }
 
   function assertWritable(resource) {
-    if (!resource.userID)
+    if (!resource.userId)
       return { status: "error", error: `${resource.name} is read-only (system resource)` };
     return null;
   }
@@ -280,8 +285,8 @@ export async function editor(
             status: "error",
             error: `File already exists: ${path}. Use str_replace to edit.`,
           };
-        const resource = { agentID: agentId, name: normPath, content: file_text, type: "file" };
-        if (!isAgentScoped(normPath)) resource.conversationID = conversationId;
+        const resource = { agentId, name: normPath, content: file_text, type: "file" };
+        if (!isAgentScoped(normPath)) resource.conversationId = conversationId;
         const created = await cms.storeConversationResource(userId, resource);
         return { status: "created", path, content: file_text, resourceId: created.id };
       }

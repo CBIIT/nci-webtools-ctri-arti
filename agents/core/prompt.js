@@ -1,3 +1,5 @@
+import { normalizeCmsResources } from "../resources.js";
+
 function buildMemoryContent(agentResources) {
   const memoryFiles = agentResources.filter(
     (resource) => resource.name.startsWith("memories/") && resource.content
@@ -78,8 +80,8 @@ export async function buildSystemPrompt({ agent, conversation, userId, agentId, 
     day: "numeric",
   });
 
-  const resources = await cms.getResourcesByAgent(userId, agentId);
-  const agentResources = resources.filter((resource) => !resource.conversationID);
+  const resources = normalizeCmsResources(await cms.getResourcesByAgent(userId, agentId));
+  const agentResources = resources.filter((resource) => !resource.conversationId);
   const memoryContent = buildMemoryContent(agentResources);
 
   if (agent.systemPrompt) {

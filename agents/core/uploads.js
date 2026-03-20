@@ -70,8 +70,8 @@ export async function processUploads(userMessage, { userId, agentId, conversatio
     const { content, encoding } = await extractContent(rawBytes, file.format);
 
     await cms.storeConversationResource(userId, {
-      agentID: agentId,
-      conversationID: conversationId,
+      agentId,
+      conversationId,
       name: file.originalName || file.name,
       type: block.document ? "document" : "image",
       content,
@@ -108,4 +108,3 @@ export async function processUploads(userMessage, { userId, agentId, conversatio
     return true;
   });
 }
-

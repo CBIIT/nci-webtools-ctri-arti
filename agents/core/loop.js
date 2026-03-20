@@ -173,8 +173,9 @@ export async function* runAgentLoop({
   });
 
   await processUploads(userMessage, { userId, agentId, conversationId, cms });
-  await cms.appendUserMessage(userId, {
+  await cms.appendConversationMessage(userId, {
     conversationId,
+    role: "user",
     content: userMessage.content,
     parentID: userMessage.parentID || null,
   });
@@ -238,8 +239,9 @@ export async function* runAgentLoop({
     parseToolUseInputs(assistantContent);
 
     const assistantMessage = { role: "assistant", content: assistantContent };
-    await cms.appendAssistantMessage(userId, {
+    await cms.appendConversationMessage(userId, {
       conversationId,
+      role: "assistant",
       content: assistantMessage.content,
     });
     messages.push(assistantMessage);
@@ -271,8 +273,9 @@ export async function* runAgentLoop({
     }
 
     if (toolResultsMessage) {
-      await cms.appendToolResultsMessage(userId, {
+      await cms.appendConversationMessage(userId, {
         conversationId,
+        role: "user",
         content: toolResultsMessage.content,
       });
       messages.push(toolResultsMessage);

@@ -1,5 +1,6 @@
 import { getSchemaReadiness } from "database/readiness.js";
 import { json, Router } from "express";
+import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 
 import { requireRole } from "../../auth.js";
 import { sendFeedback, sendLogReport, sendJustificationEmail } from "../../integrations/email.js";
@@ -36,7 +37,7 @@ export function createToolsRouter({
 
   const { gateway } = modules;
   const api = Router();
-  api.use(json({ limit: 1024 ** 3 })); // 1GB
+  api.use(json({ limit: JSON_BODY_LIMIT }));
 
   api.get("/status", async (req, res) => {
     const readiness = await getSchemaReadiness();
@@ -175,8 +176,6 @@ export function createToolsRouter({
 }
 
 export default createToolsRouter;
-
-
 
 
 

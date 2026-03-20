@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import db, { Agent, Model, Resource, Usage, User } from "database";
 import assert from "node:assert/strict";
 import http from "node:http";
@@ -72,6 +73,40 @@ test("transport parity", async (t) => {
       );
     } finally {
       await svc.deleteAgent(user.id, privateAgent.id);
+      await cmsServer.close();
+    }
+  });
+
+  await t.test("CMS conversation writes use the same canonical input in direct and HTTP mode", async () => {
+    const cmsServer = await startServer(cmsApi, "/api/v1");
+    const [user] = await db.select().from(User).where(eq(User.email, "test@test.com")).limit(1);
+    assert.ok(user, "test user should exist");
+
+    const svc = new ConversationService();
+    const agent = await svc.createAgent(user.id, {
+      name: "Parity canonical input agent " + Date.now(),
+    });
+
+    try {
+      const context = createUserRequestContext(user.id, { source: "direct" });
+      const directClient = createCmsService({ source: "direct" });
+      const httpClient = createCmsRemote({ baseUrl: cmsServer.url });
+
+      const [directConversation, httpConversation] = await Promise.all([
+        directClient.createConversation(context, {
+          title: "Direct canonical conversation",
+          agentId: agent.id,
+        }),
+        httpClient.createConversation(context, {
+          title: "HTTP canonical conversation",
+          agentId: agent.id,
+        }),
+      ]);
+
+      assert.equal(directConversation.agentID, agent.id);
+      assert.equal(httpConversation.agentID, agent.id);
+    } finally {
+      await svc.deleteAgent(user.id, agent.id);
       await cmsServer.close();
     }
   });
@@ -173,11 +208,11 @@ test("transport parity", async (t) => {
     });
     const directConversation = await svc.createConversation(user.id, {
       title: "Agents modelOverride parity direct",
-      agentID: agent.id,
+      agentId: agent.id,
     });
     const httpConversation = await svc.createConversation(user.id, {
       title: "Agents modelOverride parity http",
-      agentID: agent.id,
+      agentId: agent.id,
     });
 
     const fakeGateway = {
@@ -206,14 +241,12 @@ test("transport parity", async (t) => {
     const cms = {
       getAgent: (userId, agentId) => svc.getAgent(userId, agentId),
       getConversation: (userId, conversationId) => svc.getConversation(userId, conversationId),
-      appendUserMessage: (userId, data) => svc.appendUserMessage(userId, data),
+      appendConversationMessage: (userId, data) => svc.appendConversationMessage(userId, data),
       getResourcesByAgent: (userId, agentId) => svc.getResourcesByAgent(userId, agentId),
       summarize: async function* () {},
       getContext: (userId, conversationId, options) =>
         svc.getContext(userId, conversationId, options),
-      appendAssistantMessage: (userId, data) => svc.appendAssistantMessage(userId, data),
       storeConversationResource: (userId, data) => svc.storeConversationResource(userId, data),
-      appendToolResultsMessage: (userId, data) => svc.appendToolResultsMessage(userId, data),
     };
 
     const application = createAgentsApplication({
@@ -466,8 +499,9 @@ test("transport parity", async (t) => {
     const foreignConversation = await svc.createConversation(otherUser.id, {
       title: "Transport foreign conversation",
     });
-    const foreignMessage = await svc.appendUserMessage(otherUser.id, {
+    const foreignMessage = await svc.appendConversationMessage(otherUser.id, {
       conversationId: foreignConversation.id,
+      role: "user",
       content: [{ text: "Foreign message" }],
     });
     const [foreignResource] = await db
@@ -526,16 +560,16 @@ test("transport parity", async (t) => {
       await expectSameError(
         () =>
           directClient.storeConversationResource(context, {
-            conversationID: foreignConversation.id,
-            messageID: foreignMessage.id,
+            conversationId: foreignConversation.id,
+            messageId: foreignMessage.id,
             name: "stolen.txt",
             type: "text/plain",
             content: "Should not persist",
           }),
         () =>
           httpClient.storeConversationResource(context, {
-            conversationID: foreignConversation.id,
-            messageID: foreignMessage.id,
+            conversationId: foreignConversation.id,
+            messageId: foreignMessage.id,
             name: "stolen.txt",
             type: "text/plain",
             content: "Should not persist",
@@ -636,3 +670,6 @@ test("transport parity", async (t) => {
     }
   });
 });
+
+
+

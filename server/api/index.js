@@ -2,6 +2,7 @@ import { createAgentsChatRouter } from "agents/http.js";
 import { createCmsAgentsRouter, createCmsConversationsRouter } from "cms/http.js";
 import { json, Router } from "express";
 import { createGatewayModelRouter } from "gateway/http.js";
+import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 import { logRequests } from "shared/middleware.js";
 
 import { requireRole } from "../auth.js";
@@ -21,7 +22,7 @@ export function createServerApi({ modules } = {}) {
 
   const api = Router();
 
-  api.use(json({ limit: 1024 ** 3 })); // 1GB
+  api.use(json({ limit: JSON_BODY_LIMIT }));
   api.use(logRequests());
   api.use((req, res, next) => {
     const isOauthRoute = req.path === "/oauth" || req.path.startsWith("/oauth/");

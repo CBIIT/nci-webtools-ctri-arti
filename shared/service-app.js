@@ -5,20 +5,36 @@ import logger from "./logger.js";
 
 export function createSchemaReadyServiceApp({
   router,
-  mountPath,
   onReady,
   readinessFailureMessage = "Service schema readiness failed",
   expressImpl = express,
   getReadiness = getSchemaReadiness,
   waitUntilReady = waitForSchemaReady,
   loggerImpl = logger,
+  autoStartReadiness = true,
 } = {}) {
   if (!router) {
     throw new Error("service router is required");
   }
 
   let schemaReady = false;
+  let readinessPromise = null;
   const app = expressImpl();
+
+  async function startReadiness() {
+    if (readinessPromise) return readinessPromise;
+
+    readinessPromise = waitUntilReady()
+      .then(async () => {
+        schemaReady = true;
+        await onReady?.();
+      })
+      .catch((error) => {
+        loggerImpl.error(`${readinessFailureMessage}: ${error.message || error}`);
+      });
+
+    return readinessPromise;
+  }
 
   app.disable("x-powered-by");
   app.get("/health", async (_req, res) => {
@@ -37,19 +53,13 @@ export function createSchemaReadyServiceApp({
       schema: readiness,
     });
   });
+  app.use(router);
 
-  if (mountPath) {
-    app.use(mountPath, router);
-  } else {
-    app.use(router);
+  app.startReadiness = startReadiness;
+
+  if (autoStartReadiness) {
+    void startReadiness();
   }
-
-  waitUntilReady()
-    .then(async () => {
-      schemaReady = true;
-      await onReady?.();
-    })
-    .catch((error) => loggerImpl.error(`${readinessFailureMessage}: ${error.message || error}`));
 
   return app;
 }

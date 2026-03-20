@@ -1,5 +1,6 @@
 import http from "http";
 
+import express from "express";
 import { createGatewayRemote } from "gateway/remote.js";
 import { createGatewayService } from "gateway/service.js";
 import logger from "shared/logger.js";
@@ -14,9 +15,10 @@ const gateway = GATEWAY_URL
   ? createGatewayRemote({ baseUrl: GATEWAY_URL })
   : createGatewayService();
 const application = createCmsService({ gateway, source: "internal-http" });
+const router = express.Router();
+router.use("/api/v1", createCmsRouter({ application }));
 const app = createSchemaReadyServiceApp({
-  router: createCmsRouter({ application }),
-  mountPath: "/api/v1",
+  router,
   readinessFailureMessage: "CMS schema readiness failed",
 });
 

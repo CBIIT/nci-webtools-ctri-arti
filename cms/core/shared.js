@@ -23,6 +23,21 @@ export function createValidationError(message) {
   return error;
 }
 
+export function createForbiddenError(message) {
+  const error = new Error(message);
+  error.statusCode = 403;
+  return error;
+}
+
+export function assertNoLegacyFields(input, legacyKeys, label = "Input") {
+  const present = legacyKeys.filter((key) => hasOwn(input, key));
+  if (!present.length) return;
+
+  throw createValidationError(
+    `${label} must use canonical field names, not legacy aliases: ${present.join(", ")}`
+  );
+}
+
 export function getMutationCount(result) {
   return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
 }

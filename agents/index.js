@@ -1,5 +1,6 @@
 import http from "http";
 
+import express from "express";
 import { createCmsRemote } from "cms/remote.js";
 import { createCmsService } from "cms/service.js";
 import { createGatewayRemote } from "gateway/remote.js";
@@ -19,9 +20,10 @@ const cms = CMS_URL
   ? createCmsRemote({ baseUrl: CMS_URL })
   : createCmsService({ gateway, source: "direct" });
 const application = createAgentsApplication({ gateway, cms, source: "internal-http" });
+const router = express.Router();
+router.use("/api/v1", createAgentsRouter({ application }));
 const app = createSchemaReadyServiceApp({
-  router: createAgentsRouter({ application }),
-  mountPath: "/api/v1",
+  router,
   readinessFailureMessage: "Agents schema readiness failed",
 });
 

@@ -1,4 +1,5 @@
 import { json, Router } from "express";
+import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 import { createAnonymousRequestContext } from "shared/request-context.js";
 
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
@@ -24,7 +25,7 @@ export function createAuthRouter({ modules } = {}) {
 
   const { cms, users } = modules;
   const api = Router();
-  api.use(json({ limit: 1024 ** 3 })); // 1GB
+  api.use(json({ limit: JSON_BODY_LIMIT }));
 
   if (OAUTH_PROVIDER_ENABLED?.toLowerCase() === "true") {
     api.use("/oauth", oauthMiddleware());

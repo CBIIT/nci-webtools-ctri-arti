@@ -2,7 +2,13 @@ import db, { Agent, AgentTool, Conversation, Tool } from "database";
 
 import { and, desc, eq, inArray } from "drizzle-orm";
 
-import { agentReadCondition, getMutationCount, stripAutoFields } from "./shared.js";
+import {
+  agentReadCondition,
+  createForbiddenError,
+  createNotFoundError,
+  getMutationCount,
+  stripAutoFields,
+} from "./shared.js";
 
 const DEFAULT_CHAT_MODEL = "us.anthropic.claude-sonnet-4-6";
 
@@ -34,6 +40,18 @@ function hydrateAgent(agent) {
   result.systemPrompt = result.runtime.systemPrompt;
   result.tools = result.runtime.tools;
   return result;
+}
+
+async function requireMutableAgent(service, userId, agentId, { allowMissing = false } = {}) {
+  const agent = await service.getAgent(userId, agentId);
+  if (!agent) {
+    if (allowMissing) return null;
+    throw createNotFoundError("Agent not found");
+  }
+  if (agent.userID === null) {
+    throw createForbiddenError("Cannot modify global agent");
+  }
+  return agent;
 }
 
 export const agentMethods = {
@@ -106,6 +124,8 @@ export const agentMethods = {
   },
 
   async updateAgent(userId, agentId, updates) {
+    await requireMutableAgent(this, userId, agentId);
+
     const { tools, ...agentFields } = updates;
     const result = await db
       .update(Agent)
@@ -127,6 +147,9 @@ export const agentMethods = {
   },
 
   async deleteAgent(userId, agentId) {
+    const agent = await requireMutableAgent(this, userId, agentId, { allowMissing: true });
+    if (!agent) return 0;
+
     const conversations = await db
       .select()
       .from(Conversation)

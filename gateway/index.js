@@ -1,5 +1,6 @@
 import http from "http";
 
+import express from "express";
 import logger from "shared/logger.js";
 import { createUsersApplication } from "users/app.js";
 import { createUsersRemote } from "users/remote.js";
@@ -12,9 +13,10 @@ import { createGatewayService } from "./service.js";
 const { PORT = 3001, USERS_URL } = process.env;
 const users = USERS_URL ? createUsersRemote({ baseUrl: USERS_URL }) : createUsersApplication();
 const appService = createGatewayService({ users });
+const router = express.Router();
+router.use("/api/v1", createGatewayRouter({ application: appService }));
 const app = createSchemaReadyServiceApp({
-  router: createGatewayRouter({ application: appService }),
-  mountPath: "/api/v1",
+  router,
   onReady: () => appService.reconcileGuardrails(),
   readinessFailureMessage: "Gateway startup readiness failed",
 });

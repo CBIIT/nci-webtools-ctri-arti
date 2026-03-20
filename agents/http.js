@@ -14,11 +14,7 @@ async function streamEvents(res, stream) {
   }
 }
 
-export function createAgentsChatRouter({
-  application,
-  routePath = "/agents/:agentId/conversations/:conversationId/chat",
-  resolveContext = getAgentRequestContext,
-} = {}) {
+export function createAgentsChatRouter({ application, resolveContext = getAgentRequestContext } = {}) {
   if (!application) {
     throw new Error("agents application is required");
   }
@@ -26,7 +22,7 @@ export function createAgentsChatRouter({
   const api = Router();
   api.use(json({ limit: 1024 ** 3 }));
 
-  api.post(routePath, async (req, res) => {
+  api.post("/agents/:agentId/conversations/:conversationId/chat", async (req, res) => {
     let context;
     try {
       context = resolveContext(req);

@@ -1,4 +1,5 @@
-import { Router } from "express";
+import { json, Router } from "express";
+import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 import { logErrors, logRequests } from "shared/middleware.js";
 
 import { createCmsAgentsRouter } from "./http/agents.js";
@@ -15,6 +16,7 @@ export function createCmsRouter({ application } = {}) {
   }
 
   const v1 = Router();
+  v1.use(json({ limit: JSON_BODY_LIMIT }));
   v1.use(logRequests());
   v1.use(createCmsAgentsRouter({ application }));
   v1.use(createCmsConversationsRouter({ application }));

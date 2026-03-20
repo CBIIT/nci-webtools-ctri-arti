@@ -1,3 +1,4 @@
+import "../test-support/db.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -27,21 +28,25 @@ test("createSchemaReadyServiceApp gates routes until readiness resolves", async 
   let ready = false;
   let onReadyCalled = false;
 
-  const router = express.Router();
-  router.get("/ping", (_req, res) => {
+  const serviceRouter = express.Router();
+  serviceRouter.get("/ping", (_req, res) => {
     res.json({ ok: true });
   });
 
+  const router = express.Router();
+  router.use("/api", serviceRouter);
+
   const app = createSchemaReadyServiceApp({
     router,
-    mountPath: "/api",
     getReadiness: async () => ({ ready }),
     waitUntilReady: () => deferred.promise,
     onReady: async () => {
       onReadyCalled = true;
     },
     loggerImpl: { error() {} },
+    autoStartReadiness: false,
   });
+  const readinessPromise = app.startReadiness();
 
   const beforeReady = await request(app).get("/api/ping");
   assert.equal(beforeReady.status, 503);
@@ -53,8 +58,7 @@ test("createSchemaReadyServiceApp gates routes until readiness resolves", async 
 
   ready = true;
   deferred.resolve();
-  await deferred.promise;
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await readinessPromise;
 
   const afterReady = await request(app).get("/api/ping");
   assert.equal(afterReady.status, 200);
@@ -70,7 +74,7 @@ test("createSchemaReadyServiceApp logs readiness failures", async () => {
   const failure = new Error("boom");
   const errors = [];
 
-  createSchemaReadyServiceApp({
+  const app = createSchemaReadyServiceApp({
     router: express.Router(),
     waitUntilReady: () => Promise.reject(failure),
     loggerImpl: {
@@ -79,9 +83,13 @@ test("createSchemaReadyServiceApp logs readiness failures", async () => {
       },
     },
     readinessFailureMessage: "Custom readiness failure",
+    autoStartReadiness: false,
   });
 
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await app.startReadiness();
 
   assert.deepStrictEqual(errors, ["Custom readiness failure: boom"]);
 });
+
+
+

@@ -9,7 +9,7 @@ import {
 } from "shared/gateway-usage.js";
 
 import { deleteGuardrailById, listGuardrails, reconcileGuardrails } from "./core/guardrails.js";
-import { runModel, runEmbedding } from "./core/inference.js";
+import { runEmbedding, runModel } from "./core/inference.js";
 
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
@@ -28,9 +28,9 @@ async function getModelRecord(modelValue) {
   return modelRecord || null;
 }
 
-async function getRateLimitResponse(userID) {
-  if (!userID) return null;
-  const [user] = await db.select().from(User).where(eq(User.id, userID)).limit(1);
+async function getRateLimitResponse(userId) {
+  if (!userId) return null;
+  const [user] = await db.select().from(User).where(eq(User.id, userId)).limit(1);
   if (!isRateLimitedUser(user)) return null;
 
   return {
@@ -38,10 +38,6 @@ async function getRateLimitResponse(userID) {
     status: 429,
     code: "GATEWAY_RATE_LIMITED",
   };
-}
-
-function resolveGatewayUserId(userId, userID) {
-  return userId ?? userID ?? null;
 }
 
 export function createGatewayApplication({
@@ -57,13 +53,13 @@ export function createGatewayApplication({
     throw new Error("usageTracker is required");
   }
 
-  async function requirePreflight({ userID, model }) {
+  async function requirePreflight({ userId, model }) {
     const modelRecord = await getModelRecord(model);
     if (!modelRecord) {
       throw createGatewayError(404, "Model not found", "GATEWAY_MODEL_NOT_FOUND");
     }
 
-    const limited = await getRateLimitResponse(userID);
+    const limited = await getRateLimitResponse(userId);
     if (limited) {
       return { limited, modelRecord };
     }
@@ -74,7 +70,6 @@ export function createGatewayApplication({
   return {
     async invoke({
       userId,
-      userID,
       model,
       type,
       messages,
@@ -88,15 +83,14 @@ export function createGatewayApplication({
       purpose,
       guardrailConfig,
     }) {
-      userID = resolveGatewayUserId(userId, userID);
-      const { limited, modelRecord } = await requirePreflight({ userID, model });
+      const { limited, modelRecord } = await requirePreflight({ userId, model });
       if (limited) return limited;
 
       if (modelRecord.type === "embedding") {
         const result = await embeddingInvoker({ model, content, purpose });
-        if (userID && result.usage) {
+        if (userId && result.usage) {
           const usageItems = normalizeEmbeddingUsageItems(result.usage);
-          await usageTracker(userID, model, usageItems, {
+          await usageTracker(userId, model, usageItems, {
             type: type || "embedding",
             requestId,
           });
@@ -116,8 +110,8 @@ export function createGatewayApplication({
       });
 
       if (!result?.stream) {
-        if (userID) {
-          await modelUsageTracker(userID, model, result.usage, {
+        if (userId) {
+          await modelUsageTracker(userId, model, result.usage, {
             type,
             requestId,
             trace: result.trace,
@@ -129,8 +123,8 @@ export function createGatewayApplication({
       return {
         stream: (async function* () {
           for await (const message of result.stream) {
-            if (message.metadata && userID) {
-              await modelUsageTracker(userID, model, message.metadata.usage, {
+            if (message.metadata && userId) {
+              await modelUsageTracker(userId, model, message.metadata.usage, {
                 type,
                 requestId,
                 trace: message.metadata.trace,
@@ -142,15 +136,14 @@ export function createGatewayApplication({
       };
     },
 
-    async embed({ userId, userID, model, content, purpose, type, requestId }) {
-      userID = resolveGatewayUserId(userId, userID);
-      const { limited } = await requirePreflight({ userID, model });
+    async embed({ userId, model, content, purpose, type, requestId }) {
+      const { limited } = await requirePreflight({ userId, model });
       if (limited) return limited;
 
       const result = await embeddingInvoker({ model, content, purpose });
-      if (userID && result.usage) {
+      if (userId && result.usage) {
         const usageItems = normalizeEmbeddingUsageItems(result.usage);
-        await usageTracker(userID, model, usageItems, {
+        await usageTracker(userId, model, usageItems, {
           type: type || "embedding",
           requestId,
         });
@@ -158,12 +151,12 @@ export function createGatewayApplication({
       return result;
     },
 
-    async trackUsage(userID, model, usageItems, options) {
-      return usageTracker(userID, model, usageItems, options);
+    async trackUsage(userId, model, usageItems, options) {
+      return usageTracker(userId, model, usageItems, options);
     },
 
-    async trackModelUsage(userID, model, usageData, options) {
-      return modelUsageTracker(userID, model, usageData, options);
+    async trackModelUsage(userId, model, usageData, options) {
+      return modelUsageTracker(userId, model, usageData, options);
     },
 
     listModels({ type } = {}) {

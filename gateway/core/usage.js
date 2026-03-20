@@ -56,13 +56,13 @@ export function createUsageTracker({ recordUsage }) {
   }
 
   return async function trackUsage(
-    userID,
+    userId,
     modelValue,
     usageItems,
-    { type, agentID, messageID, requestId } = {}
+    { type, agentId, messageId, requestId } = {}
   ) {
     try {
-      if (!userID || !usageItems?.length || !modelValue) return;
+      if (!userId || !usageItems?.length || !modelValue) return;
 
       const [model] = await db
         .select()
@@ -79,12 +79,12 @@ export function createUsageTracker({ recordUsage }) {
         const unitCost = usageUnitCost ?? pricing[unit] ?? 0;
         const cost = quantity * unitCost;
         rows.push({
-          userID,
+          userID: userId,
           modelID: model.id,
           requestId: requestId ?? null,
           type: type ?? null,
-          agentID: agentID ?? null,
-          messageID: messageID ?? null,
+          agentID: agentId ?? null,
+          messageID: messageId ?? null,
           quantity,
           unit,
           unitCost,
@@ -94,7 +94,7 @@ export function createUsageTracker({ recordUsage }) {
 
       if (!rows.length) return;
 
-      return recordUsage(userID, rows);
+      return recordUsage(userId, rows);
     } catch (error) {
       console.error("Error tracking usage:", error);
     }
@@ -107,10 +107,10 @@ export function createModelUsageTracker({ trackUsage }) {
   }
 
   return async function trackModelUsage(
-    userID,
+    userId,
     modelValue,
     usageData,
-    { type, agentID, messageID, requestId, trace } = {}
+    { type, agentId, messageId, requestId, trace } = {}
   ) {
     const usageItems = [];
     if (usageData?.inputTokens) {
@@ -129,10 +129,10 @@ export function createModelUsageTracker({ trackUsage }) {
     const records = [];
 
     if (usageItems.length) {
-      const modelRecords = await trackUsage(userID, modelValue, usageItems, {
+      const modelRecords = await trackUsage(userId, modelValue, usageItems, {
         type,
-        agentID,
-        messageID,
+        agentId,
+        messageId,
         requestId,
       });
       if (modelRecords?.length) records.push(...modelRecords);
@@ -140,10 +140,10 @@ export function createModelUsageTracker({ trackUsage }) {
 
     const guardrailItems = normalizeGuardrailUsageItems(trace);
     if (guardrailItems.length) {
-      const guardrailRecords = await trackUsage(userID, AWS_GUARDRAILS_MODEL, guardrailItems, {
+      const guardrailRecords = await trackUsage(userId, AWS_GUARDRAILS_MODEL, guardrailItems, {
         type: "guardrail",
-        agentID,
-        messageID,
+        agentId,
+        messageId,
         requestId,
       });
       if (guardrailRecords?.length) records.push(...guardrailRecords);

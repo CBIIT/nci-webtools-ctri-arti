@@ -1,24 +1,5 @@
 import { createRequestContext } from "shared/request-context.js";
 
-function createAppError(statusCode, message) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  return error;
-}
-
-function normalizeConversationPage(result, { limit = 20, offset = 0 } = {}) {
-  if (result?.data !== undefined) return result;
-
-  return {
-    data: result?.rows || [],
-    meta: {
-      total: result?.count || 0,
-      limit,
-      offset,
-    },
-  };
-}
-
 export function createCmsApplication({ service, source = "direct" } = {}) {
   if (!service) {
     throw new Error("cms service is required");
@@ -30,17 +11,6 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
 
   function getUserId(context) {
     return normalizeContext(context).userId;
-  }
-
-  async function requireEditableAgent(context, agentId) {
-    const existingAgent = await service.getAgent(context.userId, agentId);
-    if (!existingAgent) {
-      throw createAppError(404, "Agent not found");
-    }
-    if (existingAgent.userID === null) {
-      throw createAppError(403, "Cannot modify global agent");
-    }
-    return existingAgent;
   }
 
   return {
@@ -56,31 +26,20 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
       return service.getAgent(getUserId(context), agentId);
     },
 
-    async updateAgent(context, agentId, updates) {
-      const requestContext = normalizeContext(context);
-      await requireEditableAgent(requestContext, agentId);
-      return service.updateAgent(requestContext.userId, agentId, updates);
+    updateAgent(context, agentId, updates) {
+      return service.updateAgent(getUserId(context), agentId, updates);
     },
 
-    async deleteAgent(context, agentId) {
-      const requestContext = normalizeContext(context);
-      const existingAgent = await service.getAgent(requestContext.userId, agentId);
-      if (!existingAgent) return 0;
-      if (existingAgent.userID === null) {
-        throw createAppError(403, "Cannot modify global agent");
-      }
-      return service.deleteAgent(requestContext.userId, agentId);
+    deleteAgent(context, agentId) {
+      return service.deleteAgent(getUserId(context), agentId);
     },
 
     createConversation(context, data) {
       return service.createConversation(getUserId(context), data);
     },
 
-    async getConversations(context, options = {}) {
-      const requestContext = normalizeContext(context);
-      const { limit = 20, offset = 0 } = options;
-      const result = await service.getConversations(requestContext.userId, { limit, offset });
-      return normalizeConversationPage(result, { limit, offset });
+    getConversations(context, options = {}) {
+      return service.getConversations(getUserId(context), options);
     },
 
     getConversation(context, conversationId) {
@@ -109,18 +68,6 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
 
     appendConversationMessage(context, data) {
       return service.appendConversationMessage(getUserId(context), data);
-    },
-
-    appendUserMessage(context, data) {
-      return service.appendUserMessage(getUserId(context), data);
-    },
-
-    appendAssistantMessage(context, data) {
-      return service.appendAssistantMessage(getUserId(context), data);
-    },
-
-    appendToolResultsMessage(context, data) {
-      return service.appendToolResultsMessage(getUserId(context), data);
     },
 
     getMessages(context, conversationId) {
@@ -167,8 +114,8 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
       return service.getPrompt(promptId);
     },
 
-    getPrompts(options) {
-      return service.getPrompts(options);
+    getPrompts() {
+      return service.getPrompts();
     },
 
     updatePrompt(promptId, updates) {

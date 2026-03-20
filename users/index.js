@@ -1,5 +1,6 @@
 import http from "http";
 
+import express from "express";
 import logger from "shared/logger.js";
 
 import { createSchemaReadyServiceApp } from "../shared/service-app.js";
@@ -9,9 +10,10 @@ import { createUsersRouter } from "./http.js";
 
 const { PORT = 3004 } = process.env;
 const application = createUsersApplication();
+const router = express.Router();
+router.use("/api", createUsersRouter({ application }));
 const app = createSchemaReadyServiceApp({
-  router: createUsersRouter({ application }),
-  mountPath: "/api",
+  router,
   readinessFailureMessage: "Users schema readiness failed",
 });
 

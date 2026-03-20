@@ -25,13 +25,6 @@ describe("runAgentLoop", () => {
   function createMockCms(agent = {}) {
     const messages = [];
     const resources = [];
-    const appendMessage =
-      (role) =>
-      async (_userId, { content }) => {
-        const message = { role, content };
-        messages.push(message);
-        return message;
-      };
     return {
       getAgent: async () => ({
         name: "TestAgent",
@@ -53,9 +46,6 @@ describe("runAgentLoop", () => {
         messages.push(message);
         return message;
       },
-      appendUserMessage: appendMessage("user"),
-      appendAssistantMessage: appendMessage("assistant"),
-      appendToolResultsMessage: appendMessage("user"),
       storeConversationResource: async (_userId, resource) => {
         resources.push(resource);
         return resource;
@@ -660,5 +650,4 @@ describe("runAgentLoop", () => {
     );
   });
 });
-
 

@@ -70,7 +70,7 @@ export class ConversationService {
     return prompt || null;
   }
 
-  async getPrompts(_options = {}) {
+  async getPrompts() {
     return db.select().from(Prompt).orderBy(asc(Prompt.name), desc(Prompt.version));
   }
 
@@ -98,9 +98,3 @@ Object.assign(
   resourceMethods,
   searchMethods
 );
-
-
-
-
-
-

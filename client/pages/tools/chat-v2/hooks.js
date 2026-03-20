@@ -143,7 +143,7 @@ export function useAgent({ agentId, conversationId }) {
         setAgent("conversation", "name", "Untitled");
         const conv = await api("/conversations", {
           method: "POST",
-          body: JSON.stringify({ title: "Untitled", agentID: agentId }),
+          body: JSON.stringify({ title: "Untitled", agentId }),
         });
         currentConversationId = conv.id;
         setParams("conversationId", currentConversationId);

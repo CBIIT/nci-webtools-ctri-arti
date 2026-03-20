@@ -87,19 +87,19 @@ export function createGatewayRemote({ baseUrl, fetchImpl = fetch }) {
       return requestGateway(`/api/v1/guardrails/${id}`, { method: "DELETE" });
     },
 
-    async trackUsage(userID, model, usageItems, options) {
+    async trackUsage(userId, model, usageItems, options) {
       return requestGateway("/api/v1/usage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: { userID, model, usageItems, options },
+        body: { userId, model, usageItems, options },
       });
     },
 
-    async trackModelUsage(userID, model, usageData, options) {
+    async trackModelUsage(userId, model, usageData, options) {
       return requestGateway("/api/v1/model-usage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: { userID, model, usageData, options },
+        body: { userId, model, usageData, options },
       });
     },
   };

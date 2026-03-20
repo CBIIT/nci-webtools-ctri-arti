@@ -1,11 +1,24 @@
-import { json, Router } from "express";
+import { Router } from "express";
 
 import {
-  JSON_UPLOAD_LIMIT,
   parseEmbeddingQuery,
   readRequestContext,
   withResolvedContext,
 } from "./helpers.js";
+
+function readOptionalNumber(value) {
+  if (value === undefined || value === null || value === "") return undefined;
+  return Number(value);
+}
+
+function normalizeVectorSearchInput(query = {}) {
+  return {
+    toolId: readOptionalNumber(query.toolId),
+    conversationId: readOptionalNumber(query.conversationId),
+    embedding: parseEmbeddingQuery(query.embedding),
+    topN: readOptionalNumber(query.topN),
+  };
+}
 
 export function createCmsSearchRouter({ application, resolveContext = readRequestContext } = {}) {
   if (!application) {
@@ -13,18 +26,6 @@ export function createCmsSearchRouter({ application, resolveContext = readReques
   }
 
   const api = Router();
-  api.use(json({ limit: JSON_UPLOAD_LIMIT }));
-
-  api.post(
-    "/vectors",
-    withResolvedContext(resolveContext, async (req, res) => {
-      const vectors = await application.storeConversationVectors(req.context, {
-        ...req.body,
-        conversationId: req.body?.conversationId ?? req.body?.conversationID,
-      });
-      res.status(201).json(vectors);
-    })
-  );
 
   api.get(
     "/resources/:resourceId/vectors",
@@ -39,12 +40,7 @@ export function createCmsSearchRouter({ application, resolveContext = readReques
     withResolvedContext(
       resolveContext,
       async (req, res) => {
-        const vectors = await application.searchVectors({
-          toolID: req.query.toolID ? Number(req.query.toolID) : undefined,
-          conversationID: req.query.conversationID ? Number(req.query.conversationID) : undefined,
-          embedding: parseEmbeddingQuery(req.query.embedding),
-          topN: req.query.topN ? Number(req.query.topN) : undefined,
-        });
+        const vectors = await application.searchVectors(normalizeVectorSearchInput(req.query));
         res.json(vectors);
       },
       { required: false }
@@ -93,5 +89,3 @@ export function createCmsSearchRouter({ application, resolveContext = readReques
 
   return api;
 }
-
-

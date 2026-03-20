@@ -14,7 +14,9 @@
     "./parsers.js": "./parsers.js",
     "./s3.js": "./s3.js",
     "./embedder.js": "./embedder.js",
-    "./chunker.js": "./chunker.js"
+    "./chunker.js": "./chunker.js",
+    "./http-limits.js": "./http-limits.js",
+    "./token-estimation.js": "./token-estimation.js"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",

@@ -1,6 +1,7 @@
 import db, { Agent, Conversation, Message, Model, Resource } from "database";
 
 import { and, asc, count, desc, eq, gte, inArray } from "drizzle-orm";
+import { estimateMessageTokensAccurate } from "shared/token-estimation.js";
 
 import {
   getMutationCount,
@@ -12,31 +13,6 @@ import {
 
 const summarizingConversationIds = new Set();
 const CONVERSATION_SUMMARY_TOKEN = "[Conversation Summary]";
-
-function estimateMessageTokens(messages) {
-  let tokens = 0;
-  for (const message of messages) {
-    for (const contentBlock of message.content || []) {
-      if (contentBlock.text) tokens += Math.ceil(contentBlock.text.length / 8);
-      if (contentBlock.document?.source?.text) {
-        tokens += Math.ceil(contentBlock.document.source.text.length / 8);
-      }
-      if (contentBlock.document?.source?.bytes) {
-        tokens += Math.ceil(contentBlock.document.source.bytes.length / 3);
-      }
-      if (contentBlock.image?.source?.bytes) {
-        tokens += Math.ceil(contentBlock.image.source.bytes.length / 3);
-      }
-      if (contentBlock.toolUse) {
-        tokens += Math.ceil(JSON.stringify(contentBlock.toolUse).length / 8);
-      }
-      if (contentBlock.toolResult) {
-        tokens += Math.ceil(JSON.stringify(contentBlock.toolResult).length / 8);
-      }
-    }
-  }
-  return tokens;
-}
 
 async function getSummarizationModel(conversation) {
   if (conversation.agentID) {
@@ -70,6 +46,26 @@ async function getConversationMessages(conversationId, { summaryMessageId = null
     .orderBy(asc(Message.id));
 }
 
+async function countConversationTokens(messages) {
+  return estimateMessageTokensAccurate(messages);
+}
+
+function normalizeConversationWrite(data = {}) {
+  return {
+    agentID: data.agentId ?? null,
+    title: data.title || "",
+  };
+}
+
+function normalizeConversationUpdates(updates = {}) {
+  const { agentId, ...rest } = updates;
+  const nextUpdates = { ...rest };
+  if (agentId !== undefined) {
+    nextUpdates.agentID = agentId;
+  }
+  return nextUpdates;
+}
+
 export const conversationMethods = {
   async checkSummarizationNeeded(userId, conversationId) {
     if (summarizingConversationIds.has(conversationId)) return null;
@@ -94,7 +90,7 @@ export const conversationMethods = {
       messages = await getConversationMessages(conversationId);
     }
 
-    const estimated = estimateMessageTokens(messages);
+    const estimated = await countConversationTokens(messages);
     if (estimated < model.maxContext * 0.8) return null;
 
     return {
@@ -132,12 +128,12 @@ export const conversationMethods = {
   },
 
   async createConversation(userId, data) {
+    const conversationData = normalizeConversationWrite(data);
     const [conversation] = await db
       .insert(Conversation)
       .values({
         userID: userId,
-        agentID: data.agentID || null,
-        title: data.title || "",
+        ...conversationData,
       })
       .returning();
     return conversation;
@@ -169,13 +165,21 @@ export const conversationMethods = {
       db.select({ value: count() }).from(Conversation).where(where),
     ]);
 
-    return { count: countValue, rows };
+    return {
+      data: rows,
+      meta: {
+        total: countValue,
+        limit,
+        offset,
+      },
+    };
   },
 
   async updateConversation(userId, conversationId, updates) {
+    const conversationUpdates = normalizeConversationUpdates(updates);
     const result = await db
       .update(Conversation)
-      .set(stripAutoFields(updates))
+      .set(stripAutoFields(conversationUpdates))
       .where(
         and(
           eq(Conversation.id, conversationId),
@@ -245,33 +249,6 @@ export const conversationMethods = {
       })
       .returning();
     return message;
-  },
-
-  async appendUserMessage(userId, { conversationId, content, parentID = null }) {
-    return this.appendConversationMessage(userId, {
-      conversationId,
-      role: "user",
-      content,
-      parentID,
-    });
-  },
-
-  async appendAssistantMessage(userId, { conversationId, content, parentID = null }) {
-    return this.appendConversationMessage(userId, {
-      conversationId,
-      role: "assistant",
-      content,
-      parentID,
-    });
-  },
-
-  async appendToolResultsMessage(userId, { conversationId, content, parentID = null }) {
-    return this.appendConversationMessage(userId, {
-      conversationId,
-      role: "user",
-      content,
-      parentID,
-    });
   },
 
   async *summarize(

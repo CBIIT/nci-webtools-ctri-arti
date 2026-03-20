@@ -1,6 +1,6 @@
-import { json, Router } from "express";
+import { Router } from "express";
 
-import { JSON_UPLOAD_LIMIT, readRequestContext, sendNotFound, withResolvedContext } from "./helpers.js";
+import { readRequestContext, sendNotFound, withResolvedContext } from "./helpers.js";
 
 export function createCmsToolsRouter({ application, resolveContext = readRequestContext } = {}) {
   if (!application) {
@@ -8,7 +8,6 @@ export function createCmsToolsRouter({ application, resolveContext = readRequest
   }
 
   const api = Router();
-  api.use(json({ limit: JSON_UPLOAD_LIMIT }));
 
   api.post(
     "/tools",
@@ -89,7 +88,7 @@ export function createCmsToolsRouter({ application, resolveContext = readRequest
     withResolvedContext(
       resolveContext,
       async (req, res) => {
-        const prompts = await application.getPrompts(req.query);
+        const prompts = await application.getPrompts();
         res.json(prompts);
       },
       { required: false }
@@ -136,5 +135,4 @@ export function createCmsToolsRouter({ application, resolveContext = readRequest
 
   return api;
 }
-
 

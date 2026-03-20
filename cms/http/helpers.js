@@ -1,8 +1,6 @@
 import { readInternalRequestContext } from "shared/request-context.js";
 import { routeHandler } from "shared/utils.js";
 
-export const JSON_UPLOAD_LIMIT = 1024 ** 3;
-
 const TEXT_DOWNLOAD_FORMATS = new Set(["txt", "md", "html", "htm", "csv", "json", "xml"]);
 const RESOURCE_MIME_TYPES = {
   txt: "text/plain; charset=utf-8",

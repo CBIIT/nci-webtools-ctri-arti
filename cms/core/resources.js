@@ -12,6 +12,7 @@ import {
 } from "shared/embeddings.js";
 
 import {
+  assertNoLegacyFields,
   createNotFoundError,
   getMutationCount,
   hasOwn,
@@ -44,17 +45,40 @@ async function requireOwnedResource(service, userId, resourceId) {
   return resource;
 }
 
+function normalizeResourceLinkIds(data = {}) {
+  assertNoLegacyFields(data, ["agentID", "conversationID", "messageID"], "Resource input");
+  return {
+    agentId: data.agentId ?? null,
+    conversationId: data.conversationId ?? null,
+    messageId: data.messageId ?? null,
+  };
+}
+
+function resourceRecordToWriteInput(resource = {}) {
+  return {
+    agentId: resource.agentID ?? null,
+    conversationId: resource.conversationID ?? null,
+    messageId: resource.messageID ?? null,
+    name: resource.name,
+    type: resource.type,
+    content: resource.content,
+    s3Uri: resource.s3Uri ?? null,
+    metadata: resource.metadata ?? {},
+  };
+}
+
 async function normalizeResourceWrite(service, userId, data) {
+  const { agentId, conversationId, messageId } = normalizeResourceLinkIds(data);
   const resourceData = {
     userID: userId || null,
-    agentID: data.agentID || null,
-    conversationID: data.conversationID || null,
-    messageID: data.messageID || null,
+    agentID: agentId,
+    conversationID: conversationId,
+    messageID: messageId,
     name: data.name,
     type: data.type,
     content: data.content,
-    s3Uri: data.s3Uri || null,
-    metadata: data.metadata || {},
+    s3Uri: data.s3Uri ?? null,
+    metadata: data.metadata ?? {},
   };
 
   if (resourceData.messageID) {
@@ -199,7 +223,7 @@ export const resourceMethods = {
 
     const resourceUpdates = stripAutoFields(updates);
     const nextResource = await normalizeResourceWrite(this, userId, {
-      ...existing,
+      ...resourceRecordToWriteInput(existing),
       ...resourceUpdates,
     });
     const shouldReindex = shouldReindexResource(existing, nextResource);
@@ -319,10 +343,10 @@ export const resourceMethods = {
       .orderBy(asc(Vector.order));
   },
 
-  async searchVectors({ toolID, conversationID, embedding, topN = 10 }) {
+  async searchVectors({ toolId, conversationId, embedding, topN = 10 }) {
     const conditions = [];
-    if (toolID) conditions.push(eq(Vector.toolID, toolID));
-    if (conversationID) conditions.push(eq(Vector.conversationID, conversationID));
+    if (toolId) conditions.push(eq(Vector.toolID, toolId));
+    if (conversationId) conditions.push(eq(Vector.conversationID, conversationId));
     conditions.push(isNotNull(Vector.embedding));
 
     if (!embedding) {
@@ -367,3 +391,4 @@ export const resourceMethods = {
     return getMutationCount(result);
   },
 };
+

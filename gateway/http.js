@@ -1,4 +1,5 @@
 import { json, Router } from "express";
+import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 import logger from "shared/logger.js";
 import { logErrors, logRequests } from "shared/middleware.js";
 import { resolveRequestId } from "shared/request-context.js";
@@ -11,11 +12,12 @@ function sendGatewayError(res, error) {
 }
 
 function resolveGatewayInvokeInput(req) {
-  const { userId, userID, ...body } = req.body || {};
+  const body = req.body || {};
+  const { userId: _userId, ...invokeBody } = body;
   return {
-    ...body,
-    userId: userId ?? userID ?? null,
-    requestId: resolveRequestId(body?.requestId, req.headers["x-request-id"]),
+    ...invokeBody,
+    userId: body.userId ?? null,
+    requestId: resolveRequestId(invokeBody?.requestId, req.headers["x-request-id"]),
   };
 }
 
@@ -59,8 +61,6 @@ async function streamGatewayResponse(res, stream) {
 
 export function createGatewayModelRouter({
   application,
-  invokePath = "/model/invoke",
-  listPath = "/model/list",
   resolveInvokeInput = resolveGatewayInvokeInput,
 } = {}) {
   if (!application) {
@@ -68,9 +68,8 @@ export function createGatewayModelRouter({
   }
 
   const api = Router();
-  api.use(json({ limit: 1024 ** 3 })); // 1GB
 
-  api.post(invokePath, async (req, res, next) => {
+  api.post("/model/invoke", async (req, res, next) => {
     try {
       const result = await application.invoke(resolveInvokeInput(req));
 
@@ -94,7 +93,7 @@ export function createGatewayModelRouter({
     }
   });
 
-  api.get(listPath, async (req, res, next) => {
+  api.get("/model/list", async (req, res, next) => {
     try {
       const results = await application.listModels({ type: req.query.type });
       res.json(results);
@@ -115,6 +114,7 @@ export function createGatewayRouter({ application } = {}) {
 
   const api = Router();
 
+  api.use(json({ limit: JSON_BODY_LIMIT }));
   api.use(logRequests());
   api.use(createGatewayModelRouter({ application }));
 
@@ -152,7 +152,7 @@ export function createGatewayRouter({ application } = {}) {
   api.post("/usage", async (req, res, next) => {
     try {
       const result = await application.trackUsage(
-        req.body?.userID,
+        req.body?.userId ?? null,
         req.body?.model,
         req.body?.usageItems,
         req.body?.options
@@ -166,7 +166,7 @@ export function createGatewayRouter({ application } = {}) {
   api.post("/model-usage", async (req, res, next) => {
     try {
       const result = await application.trackModelUsage(
-        req.body?.userID,
+        req.body?.userId ?? null,
         req.body?.model,
         req.body?.usageData,
         req.body?.options
