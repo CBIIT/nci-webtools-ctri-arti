@@ -10,6 +10,7 @@
     "./remote.js": "./remote.js",
     "./service.js": "./service.js",
     "./providers/bedrock.js": "./providers/bedrock.js",
+    "./providers/databricks.js": "./providers/databricks.js",
     "./providers/gemini.js": "./providers/gemini.js",
     "./providers/mock.js": "./providers/mock.js",
     "./core/guardrails.js": "./core/guardrails.js",
@@ -29,3 +30,4 @@
     "shared": "*"
   }
 }
+

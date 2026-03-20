@@ -39,12 +39,61 @@ import { useAgent } from "./hooks.js";
 import Message from "./message.js";
 
 const MAX_TITLE_LENGTH = 30;
-const ADMIN_MODEL_OPTIONS = [
-  { value: MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6, label: "Opus" },
-  { value: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6, label: "Sonnet" },
-  { value: MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5, label: "Haiku" },
+const STATIC_ADMIN_MODEL_GROUPS = [
+  {
+    label: "Bedrock",
+    options: [
+      { value: MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6, label: "Opus 4.6" },
+      { value: MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6, label: "Sonnet 4.6" },
+      { value: MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5, label: "Haiku 4.5" },
+    ],
+  },
+  {
+    label: "Databricks",
+    options: [
+      { value: MODEL_OPTIONS.DATABRICKS.CLAUDE.OPUS.v4_6, label: "Opus 4.6 (via IDP)" },
+      { value: MODEL_OPTIONS.DATABRICKS.CLAUDE.SONNET.v4_6, label: "Sonnet 4.6 (via IDP)" },
+    ],
+  },
 ];
 const DEFAULT_ADMIN_MODEL = MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6;
+
+function normalizeProviderGroupLabel(providerName) {
+  if (providerName === "databricks") {
+    return "Databricks";
+  }
+  if (providerName === "bedrock") {
+    return "Bedrock";
+  }
+  return providerName || "Other";
+}
+
+function toAdminModelOption(model) {
+  if (!model?.internalName) {
+    return null;
+  }
+
+  return {
+    value: model.internalName,
+    label: model.name || model.internalName,
+    providerName: model.providerName || null,
+  };
+}
+
+async function fetchChatModels() {
+  try {
+    const response = await fetch("/api/v1/model/list?type=chat");
+    if (!response.ok) {
+      return [];
+    }
+
+    const models = await response.json();
+    return Array.isArray(models) ? models : [];
+  } catch (error) {
+    console.warn("Failed to load chat models:", error);
+    return [];
+  }
+}
 
 // =================================================================================
 // EXPORTED PAGE COMPONENT (for router)
@@ -81,6 +130,7 @@ function ChatApp() {
     return response.json();
   };
   const [agents] = createResource(fetchAgents);
+  const [availableModels] = createResource(fetchChatModels);
 
   // UI State
   const [toggles, setToggles] = createSignal({ conversations: true });
@@ -112,9 +162,38 @@ function ChatApp() {
       params.conversationId || agent.conversation?.id || (params.agentId ? "new" : null)
     )
   );
+  const adminModelGroups = createMemo(() => {
+    const options = [];
+    const seen = new Set();
+
+    for (const model of availableModels() || []) {
+      const option = toAdminModelOption(model);
+      if (!option || seen.has(option.value)) {
+        continue;
+      }
+
+      seen.add(option.value);
+      options.push(option);
+    }
+
+    if (options.length === 0) {
+      return STATIC_ADMIN_MODEL_GROUPS;
+    }
+
+    return Object.values(
+      options.reduce((groups, option) => {
+        const label = normalizeProviderGroupLabel(option.providerName);
+        groups[label] ||= { label, options: [] };
+        groups[label].options.push({ value: option.value, label: option.label });
+        return groups;
+      }, {})
+    );
+  });
   const selectedAdminModelId = createMemo(() => {
     const activeValue = selectedModelId() || agent.modelId || DEFAULT_ADMIN_MODEL;
-    return ADMIN_MODEL_OPTIONS.some((option) => option.value === activeValue)
+    return adminModelGroups().some((group) =>
+      group.options.some((option) => option.value === activeValue)
+    )
       ? activeValue
       : DEFAULT_ADMIN_MODEL;
   });
@@ -812,14 +891,20 @@ function ChatApp() {
                             onInput=${handleModelChange}
                             required
                           >
-                            <${For} each=${ADMIN_MODEL_OPTIONS}>
-                              ${(option) => html`
-                                <option
-                                  value=${option.value}
-                                  selected=${() => selectedAdminModelId() === option.value}
-                                >
-                                  ${option.label}
-                                </option>
+                            <${For} each=${adminModelGroups()}>
+                              ${(group) => html`
+                                <optgroup label=${group.label}>
+                                  <${For} each=${group.options}>
+                                    ${(option) => html`
+                                      <option
+                                        value=${option.value}
+                                        selected=${() => selectedAdminModelId() === option.value}
+                                      >
+                                        ${option.label}
+                                      </option>
+                                    `}
+                                  <//>
+                                </optgroup>
                               `}
                             <//>
                           </select>
@@ -860,3 +945,4 @@ function ChatApp() {
     </div>
   `;
 }
+

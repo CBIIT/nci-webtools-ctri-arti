@@ -689,6 +689,12 @@ export default function Page() {
                             Sonnet 4.6
                           </option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
+                          <option value=${MODEL_OPTIONS.DATABRICKS.CLAUDE.OPUS.v4_6}>
+                            Opus 4.6 (via IDP)
+                          </option>
+                          <option value=${MODEL_OPTIONS.DATABRICKS.CLAUDE.SONNET.v4_6}>
+                            Sonnet 4.6 (via IDP)
+                          </option>
                         </select>
                       <//>
 

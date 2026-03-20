@@ -130,6 +130,10 @@ def load_config() -> tuple[Config, str, str]:
         "DATA_GOV_API_KEY": get_env("DATA_GOV_API_KEY"),
         "CONGRESS_GOV_API_KEY": get_env("CONGRESS_GOV_API_KEY"),
         "GEMINI_API_KEY": get_env("GEMINI_API_KEY"),
+        "AZURE_TENANT_ID": get_env("AZURE_TENANT_ID"),
+        "AZURE_CLIENT_ID": get_env("AZURE_CLIENT_ID"),
+        "AZURE_CLIENT_SECRET": get_env("AZURE_CLIENT_SECRET"),
+        "DATABRICKS_HOST": get_env("DATABRICKS_HOST"),
     }
 
     # Service URLs via Service Connect DNS names
@@ -199,3 +203,4 @@ def load_config() -> tuple[Config, str, str]:
     }
 
     return config, prefix, tier
+

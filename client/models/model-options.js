@@ -24,6 +24,16 @@ export const MODEL_OPTIONS = Object.freeze({
       v4_0_17b: "us.meta.llama4-scout-17b-instruct-v1:0",
     },
   },
+  DATABRICKS: {
+    CLAUDE: {
+      SONNET: {
+        v4_6: "databricks-claude-sonnet-4-6",
+      },
+      OPUS: {
+        v4_6: "databricks-claude-opus-4-6",
+      },
+    },
+  },
   GOOGLE: {
     GEMINI: {
       v2_5_PRO: "gemini-2.5-pro-preview-06-05",

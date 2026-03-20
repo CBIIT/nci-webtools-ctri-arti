@@ -666,6 +666,12 @@ export default function Page() {
                         >
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus 4.6</option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6}>Sonnet 4.6</option>
+                          <option value=${MODEL_OPTIONS.DATABRICKS.CLAUDE.OPUS.v4_6}>
+                            Opus 4.6 (via IDP)
+                          </option>
+                          <option value=${MODEL_OPTIONS.DATABRICKS.CLAUDE.SONNET.v4_6}>
+                            Sonnet 4.6 (via IDP)
+                          </option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v3_7}>Sonnet 3.7</option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.MAVERICK.v4_0_17b}>

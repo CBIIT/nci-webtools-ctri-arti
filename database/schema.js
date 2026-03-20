@@ -567,7 +567,11 @@ export async function seedDatabase(db) {
   const roles = loadCsv(resolve(dataDir, "roles.csv"));
   const policies = loadCsv(resolve(dataDir, "policies.csv"));
   const rolePolicies = loadCsv(resolve(dataDir, "role-policies.csv"));
-  const providers = loadCsv(resolve(dataDir, "providers.csv"));
+  const providers = loadCsv(resolve(dataDir, "providers.csv")).map((row) => ({
+    ...row,
+    apiKey:
+      row.apiKey && typeof row.apiKey === "object" ? JSON.stringify(row.apiKey) : row.apiKey,
+  }));
   const modelRows = loadCsv(resolve(dataDir, "models.csv"));
   const prompts = loadCsv(resolve(dataDir, "prompts.csv"));
   const guardrails = loadCsv(resolve(dataDir, "guardrails.csv"));
@@ -579,11 +583,24 @@ export async function seedDatabase(db) {
   async function upsert(table, rows, conflictTarget, updateCols) {
     if (!rows.length) return;
     const now = new Date();
-    const rowsWithTimestamps = rows.map((row) => ({
-      ...row,
-      createdAt: row.createdAt || now,
-      updatedAt: now,
-    }));
+
+    // Get json columns for this table
+    const jsonCols = new Set(
+      Object.entries(table)
+        .filter(([, col]) => col?.columnType === "PgJson" || col?.columnType === "PgJsonb")
+        .map(([key]) => key)
+    );
+
+    const rowsWithTimestamps = rows.map((row) => {
+      const prepared = { ...row };
+      for (const [key, val] of Object.entries(prepared)) {
+        if (val !== null && typeof val === "object" && !jsonCols.has(key)) {
+          prepared[key] = JSON.stringify(val);
+        }
+      }
+      return { ...prepared, createdAt: prepared.createdAt || now, updatedAt: now };
+    });
+
     const setObj = {};
     for (const col of updateCols) {
       setObj[col] = sql.raw(`excluded."${col}"`);
@@ -597,7 +614,7 @@ export async function seedDatabase(db) {
   await upsert(T.Role, roles, T.Role.id, ["name", "displayOrder"]);
   await upsert(T.Policy, policies, T.Policy.id, ["name", "resource", "action"]);
   await upsert(T.RolePolicy, rolePolicies, T.RolePolicy.id, ["roleID", "policyID"]);
-  await upsert(T.Provider, providers, T.Provider.id, ["name"]);
+  await upsert(T.Provider, providers, T.Provider.id, ["name", "apiKey", "endpoint"]);
   await upsert(T.Model, modelRows, T.Model.id, [
     "providerID",
     "name",
@@ -654,3 +671,4 @@ export async function seedDatabase(db) {
     }
   }
 }
+

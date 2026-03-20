@@ -1,6 +1,6 @@
-import db, { Model, User } from "database";
+import db, { Model, Provider, User } from "database";
 
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, or } from "drizzle-orm";
 import { describeCron } from "shared/cron.js";
 import {
   buildRateLimitMessage,
@@ -160,7 +160,7 @@ export function createGatewayApplication({
     },
 
     listModels({ type } = {}) {
-      const where = [eq(Model.providerID, 1)];
+      const where = [or(eq(Model.providerID, 1), eq(Model.providerID, 3))];
       if (type) where.push(eq(Model.type, type));
 
       return db
@@ -171,9 +171,13 @@ export function createGatewayApplication({
           maxContext: Model.maxContext,
           maxOutput: Model.maxOutput,
           maxReasoning: Model.maxReasoning,
+          providerID: Model.providerID,
+          providerName: Provider.name,
         })
         .from(Model)
-        .where(and(...where));
+        .leftJoin(Provider, eq(Model.providerID, Provider.id))
+        .where(and(...where))
+        .orderBy(asc(Model.providerID), asc(Model.id));
     },
 
     listGuardrails({ ids } = {}) {
@@ -189,3 +193,4 @@ export function createGatewayApplication({
     },
   };
 }
+

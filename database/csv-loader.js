@@ -115,7 +115,7 @@ function castValue(raw, baseDir) {
   // JSON object or array
   if ((trimmed.startsWith("{") || trimmed.startsWith("[")) && trimmed.length > 1) {
     try {
-      return JSON.parse(trimmed);
+      return resolveEnvValues(JSON.parse(trimmed));
     } catch {
       return trimmed;
     }
@@ -127,4 +127,21 @@ function castValue(raw, baseDir) {
   }
 
   return trimmed;
+}
+
+/**
+ * Recursively walks a parsed JSON object/array and replaces any string values starting with "env:"
+ * with the corresponding environment variable.
+ */
+function resolveEnvValues(value) {
+  if (Array.isArray(value)) {
+    return value.map(resolveEnvValues);
+  }
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, resolveEnvValues(v)]));
+  }
+  if (typeof value === "string" && value.startsWith("env:")) {
+    return process.env[value.slice(4)] ?? null;
+  }
+  return value;
 }

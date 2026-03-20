@@ -9,18 +9,21 @@ import {
 } from "shared/token-estimation.js";
 
 import bedrock from "../providers/bedrock.js";
+import databricks from "../providers/databricks.js";
 import gemini from "../providers/gemini.js";
 import mock from "../providers/mock.js";
 
 import { validateInlineMessages } from "./upload-limits.js";
 
 export async function getModelProvider(value) {
-  const providers = { bedrock, gemini, mock };
+  const providers = { bedrock, databricks, gemini, mock };
   const result = await db.query.Model.findFirst({
     where: eq(Model.internalName, value),
     with: { Provider: true },
   });
-  const provider = new providers[result?.Provider?.name]();
+  const providerName = result?.Provider?.name;
+  const ProviderClass = providers[providerName];
+  const provider = ProviderClass ? new ProviderClass(result.Provider) : null;
   return { model: result, provider };
 }
 
@@ -365,3 +368,5 @@ export async function runEmbedding({ model, content, purpose = "GENERIC_INDEX" }
 
 // Export helper functions for testing
 export { estimateContentTokens, calculateCacheBoundaries, addCachePointsToMessages };
+
+
