@@ -22,10 +22,10 @@ Standalone CMS mounts its routes under `/api/v1`.
 Route families:
 
 - agents: `/agents`
-- conversations and summaries: `/conversations`, `/summarize`
+- conversations and summaries: `/conversations`, `/conversations/:id/summarize`
 - messages: `/conversations/:conversationId/messages`, `/messages/:id`
 - resources: `/resources`, `/agents/:agentId/resources`, `/conversations/:conversationId/resources`
-- vectors and search: `/vectors`, `/resources/:resourceId/vectors`, `/search/messages`, `/search/vectors`, `/search/chunks`
+- vectors and search: `/conversations/:conversationId/vectors`, `/resources/:resourceId/vectors`, `/vectors/search`, `/search/messages`, `/search/vectors`, `/search/chunks`
 - tools and prompts: `/tools`, `/prompts`
 
 `server` mounts the same shared CMS routers for the public API, with browser/session-aware request context in front of them.
@@ -63,3 +63,5 @@ The standalone service defaults to port `3002`.
 - The old root-level `conversation.js` shim is gone. The underlying service implementation now lives at [core/conversation-service.js](core/conversation-service.js).
 - `cms/http.js` is only the composition root now; the actual route families live in [http/](http/).
 - If docs drift again, trust [http.js](http.js), [core/conversation-service.js](core/conversation-service.js), and the route tests under [server/test/routes](../server/test/routes/).
+
+
