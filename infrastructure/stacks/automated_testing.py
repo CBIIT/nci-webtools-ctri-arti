@@ -8,6 +8,7 @@ from aws_cdk import (
     aws_dynamodb,
     aws_kms,
     aws_s3,
+    aws_iam,
 )
 
 from common.retention_base import (
@@ -55,6 +56,29 @@ class BucketsStack(Stack):
             # cors_rule_list=[cors_rule],
         )
 
+        # ### Allow CodeBuild service read-write access to the bucket
+        # self.etl_data_sets_bucket.add_to_resource_policy(
+        #     aws_iam.PolicyStatement(
+        #         sid="AllowCodeBuildReadWriteAccess",
+        #         effect=aws_iam.Effect.ALLOW,
+        #         principals=[aws_iam.ServicePrincipal("codebuild.amazonaws.com")],  # type: ignore
+        #         actions=[
+        #             "s3:GetObject*",
+        #             "s3:PutObject*",
+        #             "s3:DeleteObject*",
+        #             "s3:ListBucket",
+        #             "s3:ListBucketVersions",
+        #             "s3:GetBucketLocation",
+        #             "s3:AbortMultipartUpload",
+        #             "s3:ListMultipartUploadParts",
+        #         ],
+        #         resources=[
+        #             self.etl_data_sets_bucket.bucket_arn,
+        #             f"{self.etl_data_sets_bucket.bucket_arn}/*"
+        #         ],
+        #     )
+        # )
+
 ### ----------------------
 
 class DynamoDBTableStack(Stack):
@@ -92,5 +116,25 @@ class DynamoDBTableStack(Stack):
             #     sort_key=aws_dynamodb.Attribute(name="aws_request_id", type=aws_dynamodb.AttributeType.STRING))
             # ],
         )
+
+        # ### Allow CodeBuild service read-write access to the DynamoDB table
+        # self.process_status_table.grant(
+        #     aws_iam.ServicePrincipal("codebuild.amazonaws.com"),
+        #     "dynamodb:PutItem",
+        #     "dynamodb:GetItem",
+        #     "dynamodb:UpdateItem",
+        #     "dynamodb:DeleteItem",
+        #     "dynamodb:Query",
+        #     "dynamodb:Scan",
+        #     "dynamodb:BatchWriteItem",
+        #     "dynamodb:BatchGetItem",
+        #     "dynamodb:DescribeTable",
+        #     "dynamodb:DescribeTimeToLive",
+        #     "dynamodb:UpdateTimeToLive",
+        #     "dynamodb:PartiQLSelect",
+        #     "dynamodb:PartiQLInsert",
+        #     "dynamodb:PartiQLUpdate",
+        #     "dynamodb:PartiQLDelete",
+        # )
 
 ### EoF
