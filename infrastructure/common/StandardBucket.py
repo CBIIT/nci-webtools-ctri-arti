@@ -15,6 +15,7 @@ from aws_cdk import (
     RemovalPolicy,
     aws_s3,
     aws_kms,
+    aws_iam,
 )
 
 from config import KMSKeyAliasName_S3
@@ -41,11 +42,17 @@ def _int_to_duration(i: int) -> Optional[Duration]:
 
 ### ----------------------------------------------------------------
 """ Standardized naming for BUCKETS """
-def gen_bucket_name( tier :str, simple_bucket_name :str, component_name :Optional[str] = None ) -> str:
+def gen_bucket_name( tier :Optional[str], simple_bucket_name :str, component_name :Optional[str] = None ) -> str:
     if component_name:
-        return f"NCI-CTRI-{component_name}-{tier}-{simple_bucket_name}".lower()
+        if tier:
+            return f"NCI-CTRI-{component_name}-{tier}-{simple_bucket_name}".lower()
+        else:
+            return f"NCI-CTRI-{component_name}-{simple_bucket_name}".lower()
     else:
-        return f"NCI-CTRI-{tier}-{simple_bucket_name}".lower()
+        if tier:
+            return f"NCI-CTRI-{tier}-{simple_bucket_name}".lower()
+        else:
+            return f"NCI-CTRI-{simple_bucket_name}".lower()
 
 ### ======================================================================================================
 ### ******************************************************************************************************
@@ -201,6 +208,25 @@ def create_std_bucket(
     )
     if bucket_name:
         Tags.of(newbkt).add(key="ResourceName", value = bucket_name)
+
+    # Add bucket policy to enforce SSL/TLS (S3_BUCKET_SSL_REQUESTS_ONLY)
+    newbkt.add_to_resource_policy(
+        aws_iam.PolicyStatement(
+            effect=aws_iam.Effect.DENY,
+            principals=[aws_iam.StarPrincipal()],  # type: ignore
+            actions=["s3:*"],
+            resources=[
+                newbkt.bucket_arn,
+                f"{newbkt.bucket_arn}/*"
+            ],
+            conditions={
+                "Bool": {
+                    "aws:SecureTransport": "false"
+                }
+            }
+        )
+    )
+
     return newbkt
 
 

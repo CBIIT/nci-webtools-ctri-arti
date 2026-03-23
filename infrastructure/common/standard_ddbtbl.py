@@ -86,7 +86,8 @@ def standard_dynamodb_table(
         dynamo_stream = ddbstream_type,
         **kwargs,
     )
-    Tags.of(newtbl).add(key="ResourceName", value = f"{stk.stack_name}-DynamoDBTbl-{ddbtbl_name}" )
+    Tags.of(newtbl).add(key="ResourceName", value = f"DynamoDBTbl-{ddbtbl_name}" )
+    # Tags.of(newtbl).add(key="ResourceName", value = f"{stk.stack_name}-DynamoDBTbl-{ddbtbl_name}" )
 
     return newtbl
 

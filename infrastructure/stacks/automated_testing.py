@@ -40,8 +40,8 @@ class BucketsStack(Stack):
             data_classification_type=data_classification_type, enabled=True
         )
 
-        bucket_name = gen_bucket_name( tier=tier,
-                                      simple_bucket_name="test-automation",
+        bucket_name = gen_bucket_name( tier=None, ### <--- common bucket to ALL tiers in one aws-account.
+                                      simple_bucket_name="test-data",
                                       component_name="Research-Optimizer",
                                       ).lower()
         self.etl_data_sets_bucket: aws_s3.Bucket = create_std_bucket(
@@ -73,7 +73,8 @@ class DynamoDBTableStack(Stack):
             scope=self,
             id='test-automation-logs',
             tier = tier,
-            ddbtbl_name = f"{tier}-test-automation-logs",
+            ddbtbl_name = f"ResearchOptimizer-test-suites",
+            # ddbtbl_name = f"{tier}-test-suites",
             # ddbtbl_name = f"{stk.stack_name}-test-automation-logs",
             # ddbtbl_name=aws_names.gen_dynamo_table_name(tier, 'fact_process_status'),
             partition_key=aws_dynamodb.Attribute(name="execution_id", type=aws_dynamodb.AttributeType.STRING),
