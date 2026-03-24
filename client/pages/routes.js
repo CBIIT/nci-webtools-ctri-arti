@@ -24,6 +24,7 @@ export default function getRoutes() {
   const { user } = useAuthContext();
 
   const hasRole = (roleIds) => user?.() && roleIds.includes(user?.()?.Role?.id);
+  const isAdminSuperUser = user?.() && (user?.()?.Role?.name === "admin" || user?.()?.Role?.name === "super user");
 
   return [
     {
@@ -46,6 +47,7 @@ export default function getRoutes() {
           path: "chat",
           title: "Chat",
           component: Chat,
+          isAdminSuperUser,
         },
         {
           path: "chat-v2",

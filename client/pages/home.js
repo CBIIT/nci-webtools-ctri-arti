@@ -5,6 +5,8 @@ import { useAuthContext } from "../contexts/auth-context.js";
 
 export default function Page() {
   const { user } = useAuthContext();
+  const isAdminSuperUser =
+    user?.() && (user?.()?.Role?.name === "admin" || user?.()?.Role?.name === "super user");
 
   const links = [
     {
@@ -33,6 +35,16 @@ export default function Page() {
       icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="New Tools Icon" />`,
     },
   ];
+
+  const filteredLinks = links.filter((link) => {
+    if (link.title === "Chat") {
+      return isAdminSuperUser; // Show Chat only for non-admin/super users
+    }
+    if (link.title === "ConsentCrafter" || link.title === "Translator") {
+      return true; // Show ConsentCrafter and Translator for all users
+    }
+    return true; // Show other links by default
+  });
 
   return html`
     <div class="container h-100 d-flex flex-column justify-content-center font-smooth">
@@ -76,7 +88,7 @@ export default function Page() {
         </div>
         <div class="col-lg-4 offset-lg-3">
           <div class="py-3 d-flex flex-column justify-content-center h-100">
-            <${For} each=${links}>
+            <${For} each=${filteredLinks}>
               ${(link) => html`
                 <a
                   class="d-flex align-items-center my-3 text-decoration-none link-primary"
