@@ -24,7 +24,13 @@ export default function getRoutes() {
   const { user } = useAuthContext();
 
   const hasRole = (roleIds) => user?.() && roleIds.includes(user?.()?.Role?.id);
-  const isAdminSuperUser = user?.() && (user?.()?.Role?.name === "admin" || user?.()?.Role?.name === "super user");
+  /* 
+  id, name,       displayOrder
+  1,  admin,      2
+  2,  super user, 1
+  3,  user,       0
+  */
+  const isAdminSuperUser = user?.() && (user?.()?.Role?.id === 1 || user?.()?.Role?.id === 2);
 
   return [
     {
