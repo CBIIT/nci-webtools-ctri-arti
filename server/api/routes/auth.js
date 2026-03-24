@@ -1,3 +1,5 @@
+import db, { AppToolSetting } from "database";
+
 import { json, Router } from "express";
 import { createAnonymousRequestContext } from "shared/request-context.js";
 
@@ -69,13 +71,16 @@ export function createAuthRouter({ modules } = {}) {
 
   api.get("/config", async (_req, res) => {
     const anonymousContext = createAnonymousRequestContext({ source: "server" });
-    const [usersConfig, agentList] = await Promise.all([
+    const [usersConfig, agentList, appToolSettings] = await Promise.all([
       users.getConfig(),
       cms
         .getAgents(anonymousContext)
         .then((rows) =>
           (Array.isArray(rows) ? rows : rows?.data || []).map((r) => r.name).filter(Boolean)
         ),
+      db
+        .select({ name: AppToolSetting.name, enabled: AppToolSetting.enabled })
+        .from(AppToolSetting),
     ]);
 
     const usageTypes = [...new Set([...COMMON_USAGE_TYPES, ...agentList])].sort();
@@ -83,6 +88,7 @@ export function createAuthRouter({ modules } = {}) {
     res.json({
       ...usersConfig,
       usageTypes,
+      appToolSettings,
     });
   });
 

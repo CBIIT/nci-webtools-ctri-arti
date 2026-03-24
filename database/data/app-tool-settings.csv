@@ -1,0 +1,6 @@
+id,name,enabled
+1,chat,true
+2,chat-v2,true
+3,consent-crafter,true
+4,translator,true
+5,export-conversations,true

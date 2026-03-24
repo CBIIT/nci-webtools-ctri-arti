@@ -2,27 +2,38 @@ import { For, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { useAuthContext } from "../contexts/auth-context.js";
+import { appToolSettings } from "../utils/app-tool-settings.js";
 
 export default function Page() {
   const { user } = useAuthContext();
 
-  const links = [
+  const isToolEnabled = (toolPath) => {
+    const settings = appToolSettings();
+    if (!settings) return true;
+    const setting = settings.find((s) => s.name === toolPath);
+    return setting ? setting.enabled : true;
+  };
+
+  const allLinks = [
     {
       title: "Chat",
       description: "Develop with workspace and chat tools",
       href: "/tools/chat",
+      toolPath: "chat",
       icon: html`<img src="/assets/images/icon-agents.svg" height="60" alt="Chat Icon" />`,
     },
     {
       title: "ConsentCrafter",
       description: "Process and translate protocols and consent forms",
       href: "/tools/consent-crafter",
+      toolPath: "consent-crafter",
       icon: html`<img src="/assets/images/icon-pen.svg" height="60" alt="ConsentCrafter Icon" />`,
     },
     {
       title: "Translator",
       description: "Accurately translate your documents into multiple languages",
       href: "/tools/translator",
+      toolPath: "translator",
       icon: html`<img src="/assets/images/icon-translate.svg" height="60" alt="Translator Icon" />`,
     },
     {
@@ -33,6 +44,8 @@ export default function Page() {
       icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="New Tools Icon" />`,
     },
   ];
+
+  const links = () => allLinks.filter((link) => !link.toolPath || isToolEnabled(link.toolPath));
 
   return html`
     <div class="container h-100 d-flex flex-column justify-content-center font-smooth">

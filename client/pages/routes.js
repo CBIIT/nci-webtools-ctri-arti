@@ -1,4 +1,5 @@
 import { useAuthContext } from "../contexts/auth-context.js";
+import { appToolSettings } from "../utils/app-tool-settings.js";
 
 import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
@@ -23,6 +24,13 @@ const UserUsage = AuthorizedImport({ path: "./users/user-usage.js", roles: [1] }
 export default function getRoutes() {
   const { user } = useAuthContext();
 
+  const isToolDisabled = (toolPath) => {
+    const settings = appToolSettings();
+    if (!settings) return false;
+    const setting = settings.find((s) => s.name === toolPath);
+    return setting ? !setting.enabled : false;
+  };
+
   const hasRole = (roleIds) => user?.() && roleIds.includes(user?.()?.Role?.id);
 
   return [
@@ -46,6 +54,7 @@ export default function getRoutes() {
           path: "chat",
           title: "Chat",
           component: Chat,
+          hidden: isToolDisabled("chat"),
         },
         {
           path: "chat-v2",
@@ -57,11 +66,13 @@ export default function getRoutes() {
           path: "consent-crafter",
           title: "ConsentCrafter",
           component: ConsentCrafterV2,
+          hidden: isToolDisabled("consent-crafter"),
         },
         {
           path: "translator",
           title: "Translator",
           component: Translate,
+          hidden: isToolDisabled("translator"),
         },
         {
           path: "semantic-search",

@@ -121,8 +121,12 @@ function castValue(raw, baseDir) {
     }
   }
 
+  // Boolean
+  if (trimmed === "true") return true;
+  if (trimmed === "false") return false;
+
   // Numeric
-  if (trimmed !== "" && !isNaN(trimmed) && trimmed !== "true" && trimmed !== "false") {
+  if (trimmed !== "" && !isNaN(trimmed)) {
     return Number(trimmed);
   }
 

@@ -392,6 +392,20 @@ export const AgentTool = pgTable(
   (t) => [uniqueIndex("AgentTool_toolID_agentID_idx").on(t.toolID, t.agentID)]
 );
 
+export const AppToolSetting = pgTable(
+  "AppToolSetting",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    enabled: boolean("enabled").default(true).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [uniqueIndex("AppToolSetting_name_idx").on(t.name)]
+);
+
 export const Session = pgTable(
   "session",
   {
@@ -540,6 +554,7 @@ export const tables = {
   UserAgent,
   UserTool,
   AgentTool,
+  AppToolSetting,
 };
 
 // ===== Seed database =====
@@ -561,6 +576,7 @@ export async function seedDatabase(db) {
     Agent,
     Tool,
     AgentTool,
+    AppToolSetting,
     User,
   };
 
@@ -574,6 +590,7 @@ export async function seedDatabase(db) {
   const agents = loadCsv(resolve(dataDir, "agents.csv"));
   const tools = loadCsv(resolve(dataDir, "tools.csv"));
   const agentTools = loadCsv(resolve(dataDir, "agent-tools.csv"));
+  const appToolSettings = loadCsv(resolve(dataDir, "app-tool-settings.csv"));
 
   // Helper: upsert rows by inserting and updating on conflict
   async function upsert(table, rows, conflictTarget, updateCols) {
@@ -623,6 +640,7 @@ export async function seedDatabase(db) {
   await upsert(T.Agent, agents, T.Agent.id, ["name", "modelID", "promptID", "guardrailID"]);
   await upsert(T.Tool, tools, T.Tool.id, ["name", "description", "type"]);
   await upsert(T.AgentTool, agentTools, T.AgentTool.id, ["agentID", "toolID"]);
+  await upsert(T.AppToolSetting, appToolSettings, T.AppToolSetting.id, ["name"]);
 
   // Reset serial sequences to max(id) so auto-increment works after explicit-ID inserts
   for (const [name, table] of Object.entries(T)) {
