@@ -25,7 +25,7 @@ export default function getRoutes() {
   const { user } = useAuthContext();
 
   const hasRole = (roleIds) => user?.() && roleIds.includes(user?.()?.Role?.id);
-  const adminSuperUser = isAdminSuperUser(user)
+  const adminSuperUser = isAdminSuperUser(user);
 
   return [
     {
@@ -48,7 +48,7 @@ export default function getRoutes() {
           path: "chat",
           title: "Chat",
           component: Chat,
-          adminSuperUser,
+          hidden: !adminSuperUser,
         },
         {
           path: "chat-v2",
@@ -65,7 +65,7 @@ export default function getRoutes() {
           path: "translator",
           title: "Translator",
           component: Translate,
-          adminSuperUser,
+          hidden: !adminSuperUser,
         },
         {
           path: "semantic-search",
