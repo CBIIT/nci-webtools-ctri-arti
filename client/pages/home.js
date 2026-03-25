@@ -87,7 +87,7 @@ export default function Page() {
           </div>
         </div>
         <div class="col-lg-4 offset-lg-3">
-          <div class="py-3 d-flex flex-column justify-content-center h-100">
+          <div id="side-nav-icon-container" class="py-3 d-flex flex-column justify-content-center h-100">
             <${For} each=${filteredLinks}>
               ${(link) => html`
                 <a
