@@ -25,7 +25,7 @@ export async function getAuthorizedUser(props) {
   } else if (props.roles && !props.roles.includes(user.Role?.id)) {
     location.href = "/";
   } else {
-    if (pathToCheck.includes(location.pathname) && !isAdminSuperUser(() =>user)) {
+    if (pathToCheck.includes(location.pathname) && !isAdminSuperUser(() => user)) {
       //location.href = "/";
       navigate("/");
       return null;
