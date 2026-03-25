@@ -14,7 +14,7 @@ export default function Nav(props) {
   onCleanup(() => document.removeEventListener("click", handleClickOutside, true));
 
   const filteredRoutes = (route) => {
-    return route.children.filter((c) => {
+    return route.children?.filter((c) => {
       if (c.hidden) {
         return;
       }
