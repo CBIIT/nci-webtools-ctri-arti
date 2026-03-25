@@ -30,7 +30,7 @@ export default function getRoutes() {
   2,  super user, 1
   3,  user,       0
   */
-  const isAdminSuperUser = user?.() && (user?.()?.Role?.id === 1 || user?.()?.Role?.id === 2);
+  const isAdminSuperUser = user?.() ? (user?.()?.Role?.id === 1 || user?.()?.Role?.id === 2) : false;
 
   return [
     {
@@ -70,6 +70,7 @@ export default function getRoutes() {
           path: "translator",
           title: "Translator",
           component: Translate,
+          isAdminSuperUser,
         },
         {
           path: "semantic-search",

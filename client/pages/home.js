@@ -37,10 +37,10 @@ export default function Page() {
   ];
 
   const filteredLinks = links.filter((link) => {
-    if (link.title === "Chat") {
+    if (link.title === "Chat" || link.title === "Translator") {
       return isAdminSuperUser; // Show Chat only for admin/super users
     }
-    if (link.title === "ConsentCrafter" || link.title === "Translator") {
+    if (link.title === "ConsentCrafter") {
       return true; // Show ConsentCrafter and Translator for all users
     }
     return true; // Show other links by default
