@@ -17,16 +17,17 @@ export async function getAuthorizedUser(props) {
   const headers = apiKey ? { "x-api-key": apiKey } : undefined;
   const session = await fetch("/api/v1/session", { headers }).then((r) => r.json());
   const { user } = session;
+  const pathToCheck = ["/tools/translator", "/tools/chat"];
   if (!user) {
     location.href =
       "/api/v1/login?destination=" + encodeURIComponent(location.pathname + location.search);
   } else if (props.roles && !props.roles.includes(user.Role?.id)) {
     location.href = "/";
   } else {
-    if ((location.pathname === "/tools/chat" || location.pathname === "/tools/translator") && (user.Role?.id !== 1 && user.Role?.id !== 2)) {
+    if (pathToCheck.includes(location.pathname) && (user.Role?.id !== 1 && user.Role?.id !== 2)) {
       //location.href = "/";
       navigate("/");
-      return null
+      return null;
     }
   }
   return user;

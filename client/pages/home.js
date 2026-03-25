@@ -1,12 +1,12 @@
 import { For, Show } from "solid-js";
 import html from "solid-js/html";
+import { isAdminSuperUse } from "../utils/roleCheck.js";
 
 import { useAuthContext } from "../contexts/auth-context.js";
 
 export default function Page() {
   const { user } = useAuthContext();
-  const isAdminSuperUser =
-    user?.() && (user?.()?.Role?.name === "admin" || user?.()?.Role?.name === "super user");
+  const isAdminSuperUser = isAdminSuperUse(user);
 
   const links = [
     {
@@ -41,7 +41,7 @@ export default function Page() {
       return isAdminSuperUser; // Show Chat only for admin/super users
     }
     if (link.title === "ConsentCrafter") {
-      return true; // Show ConsentCrafter and Translator for all users
+      return true; // Show ConsentCrafter for all users
     }
     return true; // Show other links by default
   });

@@ -14,14 +14,15 @@ export default function Nav(props) {
   onCleanup(() => document.removeEventListener("click", handleClickOutside, true));
 
   const filteredRoutes = (route) => {
-    return route.children?.filter((c) => {
-      return !c.hidden;
-    }).filter((c) => {
+    return route.children.filter((c) => {
+      if (c.hidden) {
+        return;
+      }
       if (c.isAdminSuperUser !== undefined) {
         return c.isAdminSuperUser;
-      } else {
-        return true;
       }
+
+      return true;
     });
   }
   return html`

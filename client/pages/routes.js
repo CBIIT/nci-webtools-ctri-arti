@@ -2,6 +2,7 @@ import { useAuthContext } from "../contexts/auth-context.js";
 
 import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
+import { isAdminSuperUse } from "../utils/roleCheck.js";
 
 const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
 const ChatV2 = AuthorizedImport({ path: "./tools/chat-v2/index.js" });
@@ -24,13 +25,7 @@ export default function getRoutes() {
   const { user } = useAuthContext();
 
   const hasRole = (roleIds) => user?.() && roleIds.includes(user?.()?.Role?.id);
-  /* 
-  id, name,       displayOrder
-  1,  admin,      2
-  2,  super user, 1
-  3,  user,       0
-  */
-  const isAdminSuperUser = user?.() ? (user?.()?.Role?.id === 1 || user?.()?.Role?.id === 2) : false;
+  const isAdminSuperUser = isAdminSuperUse(user)
 
   return [
     {
