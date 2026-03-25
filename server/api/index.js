@@ -1,5 +1,9 @@
 import { createAgentsChatRouter } from "agents/http.js";
-import { createCmsAgentsRouter, createCmsConversationsRouter } from "cms/http.js";
+import {
+  createCmsAgentsRouter,
+  createCmsConversationsRouter,
+  createCmsTemplatesRouter,
+} from "cms/http.js";
 import { json, Router } from "express";
 import { createGatewayModelRouter } from "gateway/http.js";
 import { logRequests } from "shared/middleware.js";
@@ -64,6 +68,11 @@ export function createServerApi({ modules } = {}) {
           requestId,
         };
       },
+    })
+  );
+  api.use(
+    createCmsTemplatesRouter({
+      application: modules.cms,
     })
   );
   api.use(createToolsRouter({ modules }));

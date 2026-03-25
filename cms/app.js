@@ -238,5 +238,13 @@ export function createCmsApplication({ service, source = "direct" } = {}) {
     searchChunks(context, params) {
       return service.searchChunks(getUserId(context), params);
     },
+
+    getTemplates() {
+      return service.getTemplates();
+    },
+
+    getTemplate(templateId) {
+      return service.getTemplate(templateId);
+    },
   };
 }

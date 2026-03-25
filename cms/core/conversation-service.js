@@ -7,6 +7,7 @@ import { conversationMethods } from "./conversations.js";
 import { resourceMethods } from "./resources.js";
 import { searchMethods } from "./search.js";
 import { getMutationCount, stripAutoFields } from "./shared.js";
+import { templateMethods } from "./templates.js";
 
 async function missingEmbedDependency() {
   throw new Error("ConversationService embed dependency is required");
@@ -96,11 +97,6 @@ Object.assign(
   agentMethods,
   conversationMethods,
   resourceMethods,
-  searchMethods
+  searchMethods,
+  templateMethods
 );
-
-
-
-
-
-

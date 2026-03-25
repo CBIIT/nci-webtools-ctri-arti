@@ -4,10 +4,12 @@ import { logErrors, logRequests } from "shared/middleware.js";
 import { createCmsAgentsRouter } from "./http/agents.js";
 import { createCmsConversationsRouter } from "./http/conversations.js";
 import { createCmsSearchRouter } from "./http/search.js";
+import { createCmsTemplatesRouter } from "./http/templates.js";
 import { createCmsToolsRouter } from "./http/tools.js";
 
 export { createCmsAgentsRouter } from "./http/agents.js";
 export { createCmsConversationsRouter } from "./http/conversations.js";
+export { createCmsTemplatesRouter } from "./http/templates.js";
 
 export function createCmsRouter({ application } = {}) {
   if (!application) {
@@ -18,6 +20,7 @@ export function createCmsRouter({ application } = {}) {
   v1.use(logRequests());
   v1.use(createCmsAgentsRouter({ application }));
   v1.use(createCmsConversationsRouter({ application }));
+  v1.use(createCmsTemplatesRouter({ application }));
   v1.use(createCmsToolsRouter({ application }));
   v1.use(createCmsSearchRouter({ application }));
   v1.use(logErrors());
