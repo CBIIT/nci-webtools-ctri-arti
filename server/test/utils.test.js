@@ -160,6 +160,25 @@ test("getDateRange", async (t) => {
     assert.ok(evening >= startDate, "evening timestamp should be after startDate");
     assert.ok(evening <= endDate, "evening timestamp should be before endDate");
   });
+
+  await t.test("preserves exact UTC timestamp bounds", () => {
+    const { startDate, endDate } = getDateRange(
+      "2026-03-09T08:30:00.000Z",
+      "2026-03-09T20:41:57.123Z"
+    );
+    assert.strictEqual(startDate.toISOString(), "2026-03-09T08:30:00.000Z");
+    assert.strictEqual(endDate.toISOString(), "2026-03-09T20:41:57.123Z");
+  });
+
+  await t.test("supports mixed date-only and UTC timestamp bounds", () => {
+    const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09T20:41:57.123Z");
+    assert.strictEqual(startDate.getFullYear(), 2026);
+    assert.strictEqual(startDate.getMonth(), 2);
+    assert.strictEqual(startDate.getDate(), 9);
+    assert.strictEqual(startDate.getHours(), 0);
+    assert.strictEqual(startDate.getMinutes(), 0);
+    assert.strictEqual(endDate.toISOString(), "2026-03-09T20:41:57.123Z");
+  });
 });
 
 test("createCertificate", async (t) => {

@@ -1102,24 +1102,6 @@ paths:
         "200":
           description: User deleted
 
-  /api/admin/users/{id}/usage:
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-    get:
-      operationId: getUserUsage
-      summary: Get usage history for a user
-      tags: [Admin]
-      security:
-        - sessionCookie: []
-        - apiKey: []
-      responses:
-        "200":
-          description: Usage records
-
   /api/admin/users/{id}/reset-limit:
     parameters:
       - name: id
@@ -1174,6 +1156,53 @@ paths:
         "200":
           description: List of roles
 
+  /api/admin/users/{id}/usage:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getUserUsage
+      summary: Get usage records for a single user
+      tags: [Admin]
+      security:
+        - sessionCookie: []
+        - apiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+          description: >
+            Accepts either a calendar date (`YYYY-MM-DD`) or a full UTC timestamp
+            (`YYYY-MM-DDTHH:mm:ss.sssZ`). Date-only values expand to the full UTC
+            day; timestamp values are treated as exact bounds.
+        - name: endDate
+          in: query
+          schema:
+            type: string
+          description: >
+            Accepts either a calendar date (`YYYY-MM-DD`) or a full UTC timestamp
+            (`YYYY-MM-DDTHH:mm:ss.sssZ`). Date-only values expand to the full UTC
+            day; timestamp values are treated as exact bounds.
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Usage records for the requested user
+
   /api/admin/usage:
     get:
       operationId: getAllUsage
@@ -1182,6 +1211,39 @@ paths:
       security:
         - sessionCookie: []
         - apiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+          description: >
+            Accepts either a calendar date (`YYYY-MM-DD`) or a full UTC timestamp
+            (`YYYY-MM-DDTHH:mm:ss.sssZ`). Date-only values expand to the full UTC
+            day; timestamp values are treated as exact bounds.
+        - name: endDate
+          in: query
+          schema:
+            type: string
+          description: >
+            Accepts either a calendar date (`YYYY-MM-DD`) or a full UTC timestamp
+            (`YYYY-MM-DDTHH:mm:ss.sssZ`). Date-only values expand to the full UTC
+            day; timestamp values are treated as exact bounds.
+        - name: userId
+          in: query
+          schema:
+            type: integer
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
       responses:
         "200":
           description: Usage records
@@ -1211,12 +1273,18 @@ paths:
           in: query
           schema:
             type: string
-            format: date
+          description: >
+            Accepts either a calendar date (`YYYY-MM-DD`) or a full UTC timestamp
+            (`YYYY-MM-DDTHH:mm:ss.sssZ`). Date-only values expand to the full UTC
+            day; timestamp values are treated as exact bounds.
         - name: endDate
           in: query
           schema:
             type: string
-            format: date
+          description: >
+            Accepts either a calendar date (`YYYY-MM-DD`) or a full UTC timestamp
+            (`YYYY-MM-DDTHH:mm:ss.sssZ`). Date-only values expand to the full UTC
+            day; timestamp values are treated as exact bounds.
         - name: groupBy
           in: query
           schema:

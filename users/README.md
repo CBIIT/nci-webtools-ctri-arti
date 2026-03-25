@@ -24,6 +24,12 @@ Route families:
 - budgets: `/v1/budgets/reset`, `/v1/users/:id/budget/reset`
 - config: `/v1/config`
 
+Usage and analytics date filters:
+
+- `startDate` and `endDate` accept either `YYYY-MM-DD` or a full UTC timestamp like `2026-03-09T08:30:00.000Z`.
+- Date-only values expand to the full UTC day.
+- Full UTC timestamps are treated as exact bounds.
+
 `server` does not mirror these routes directly. Instead, edge-owned admin and auth routes call the users module in-process or through `users/remote.js`.
 
 ## Runtime Modes

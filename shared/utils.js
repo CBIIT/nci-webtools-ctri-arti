@@ -33,16 +33,22 @@ function parseDateOnly(value) {
   return new Date(Number(year), Number(month) - 1, Number(day));
 }
 
+function parseDateParam(value) {
+  const dateOnly = parseDateOnly(value);
+  if (dateOnly) return { date: dateOnly, isDateOnly: true };
+
+  const parsed = new Date(value);
+  return { date: parsed, isDateOnly: false };
+}
+
 export function getDateRange(startDateParam, endDateParam) {
   const now = new Date();
-  const start = startDateParam
-    ? parseDateOnly(startDateParam) || new Date(startDateParam)
-    : new Date(now);
-  if (!startDateParam) start.setDate(start.getDate() - 30);
-  start.setHours(0, 0, 0, 0);
+  const start = startDateParam ? parseDateParam(startDateParam) : { date: new Date(now), isDateOnly: true };
+  if (!startDateParam) start.date.setDate(start.date.getDate() - 30);
+  if (start.isDateOnly) start.date.setHours(0, 0, 0, 0);
 
-  const end = endDateParam ? parseDateOnly(endDateParam) || new Date(endDateParam) : new Date(now);
-  end.setHours(23, 59, 59, 999);
+  const end = endDateParam ? parseDateParam(endDateParam) : { date: new Date(now), isDateOnly: true };
+  if (end.isDateOnly) end.date.setHours(23, 59, 59, 999);
 
-  return { startDate: start, endDate: end };
+  return { startDate: start.date, endDate: end.date };
 }
