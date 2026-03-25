@@ -156,6 +156,8 @@ export const {
   AppToolSetting,
   Usage,
   Session,
+  Template,
+  TemplateSection,
 } = schema;
 
 /**

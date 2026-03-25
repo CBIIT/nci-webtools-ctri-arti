@@ -1,3 +1,4 @@
+import { readFileSync, readdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -406,6 +407,44 @@ export const AppToolSetting = pgTable(
   (t) => [uniqueIndex("AppToolSetting_name_idx").on(t.name)]
 );
 
+export const Template = pgTable(
+  "Template",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    version: text("version"),
+    sourceFile: text("sourceFile"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [uniqueIndex("Template_name_idx").on(t.name)]
+);
+
+export const TemplateSection = pgTable(
+  "TemplateSection",
+  {
+    id: serial("id").primaryKey(),
+    templateID: integer("templateID")
+      .notNull()
+      .references(() => Template.id, { onDelete: "cascade" }),
+    sectionNumber: integer("sectionNumber").notNull(),
+    level: integer("level").notNull().default(0),
+    title: text("title").notNull(),
+    content: text("content"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    index("TemplateSection_templateID_idx").on(t.templateID),
+    uniqueIndex("TemplateSection_templateID_sectionNumber_idx").on(t.templateID, t.sectionNumber),
+  ]
+);
+
 export const Session = pgTable(
   "session",
   {
@@ -533,6 +572,14 @@ export const agentToolRelations = relations(AgentTool, ({ one }) => ({
   Tool: one(Tool, { fields: [AgentTool.toolID], references: [Tool.id] }),
 }));
 
+export const templateRelations = relations(Template, ({ many }) => ({
+  Sections: many(TemplateSection),
+}));
+
+export const templateSectionRelations = relations(TemplateSection, ({ one }) => ({
+  Template: one(Template, { fields: [TemplateSection.templateID], references: [Template.id] }),
+}));
+
 // ===== All tables (for iteration) =====
 
 export const tables = {
@@ -555,6 +602,8 @@ export const tables = {
   UserTool,
   AgentTool,
   AppToolSetting,
+  Template,
+  TemplateSection,
 };
 
 // ===== Seed database =====
@@ -577,6 +626,8 @@ export async function seedDatabase(db) {
     Tool,
     AgentTool,
     AppToolSetting,
+    Template,
+    TemplateSection,
     User,
   };
 
@@ -641,6 +692,22 @@ export async function seedDatabase(db) {
   await upsert(T.Tool, tools, T.Tool.id, ["name", "description", "type"]);
   await upsert(T.AgentTool, agentTools, T.AgentTool.id, ["agentID", "toolID"]);
   await upsert(T.AppToolSetting, appToolSettings, T.AppToolSetting.id, ["name"]);
+
+  const templates = loadCsv(resolve(dataDir, "templates.csv"));
+  const templateSections = loadCsv(resolve(dataDir, "template-sections.csv"));
+  await upsert(T.Template, templates, T.Template.id, [
+    "name",
+    "description",
+    "version",
+    "sourceFile",
+  ]);
+  await upsert(T.TemplateSection, templateSections, T.TemplateSection.id, [
+    "templateID",
+    "sectionNumber",
+    "level",
+    "title",
+    "content",
+  ]);
 
   // Reset serial sequences to max(id) so auto-increment works after explicit-ID inserts
   for (const [name, table] of Object.entries(T)) {
