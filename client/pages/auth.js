@@ -1,6 +1,7 @@
 import { createResource, lazy, Show } from "solid-js";
 import html from "solid-js/html";
 import { useNavigate } from "@solidjs/router";
+import { isAdminSuperUser } from "../utils/roleCheck.js";
 
 export default function AuthorizedImport(props) {
   return () => html`<${Authorized} ...${props}>${lazy(() => import(props.path))}<//>`;
@@ -24,7 +25,7 @@ export async function getAuthorizedUser(props) {
   } else if (props.roles && !props.roles.includes(user.Role?.id)) {
     location.href = "/";
   } else {
-    if (pathToCheck.includes(location.pathname) && (user.Role?.id !== 1 && user.Role?.id !== 2)) {
+    if (pathToCheck.includes(location.pathname) && !isAdminSuperUser(() =>user)) {
       //location.href = "/";
       navigate("/");
       return null;

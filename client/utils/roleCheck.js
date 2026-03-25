@@ -1,4 +1,4 @@
-export function isAdminSuperUse(user) {
+export function isAdminSuperUser(user) {
   /* 
   id, name,       displayOrder
   1,  admin,      2

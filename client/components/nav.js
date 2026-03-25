@@ -18,8 +18,8 @@ export default function Nav(props) {
       if (c.hidden) {
         return;
       }
-      if (c.isAdminSuperUser !== undefined) {
-        return c.isAdminSuperUser;
+      if (c.adminSuperUser !== undefined) {
+        return c.adminSuperUser;
       }
 
       return true;
