@@ -48,6 +48,21 @@ export USERS_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:users-latest
 export SERVER_IMAGE=$MAIN_IMAGE
 export SERVER_IMAGE_LATEST=$MAIN_IMAGE_LATEST
 
+# set trivy scan
+scan_image() {
+  if [ "${TRIVY_SCAN:-false}" != "true" ]; then
+    return
+  fi
+
+  if ! command -v trivy >/dev/null 2>&1; then
+    printf 'TRIVY_SCAN=true but trivy is not installed.\n' >&2
+    exit 1
+  fi
+
+  log "Scanning $1 with Trivy"
+  trivy image --severity "${TRIVY_SEVERITY:-HIGH,CRITICAL}" --ignore-unfixed --exit-code 1 "$1"
+}
+
 cd infrastructure
 pip install -r requirements.txt
 cdk deploy $PREFIX-ecr-repository --require-approval never
@@ -58,6 +73,7 @@ aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --
 
 # Build and push main image first
 docker build -t $MAIN_IMAGE -t $MAIN_IMAGE_LATEST -f Dockerfile .
+scan_image "$MAIN_IMAGE"
 docker push $MAIN_IMAGE
 docker push $MAIN_IMAGE_LATEST
 
