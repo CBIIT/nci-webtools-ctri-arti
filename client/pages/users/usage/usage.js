@@ -319,7 +319,7 @@ function UsersList() {
       }}
     >
       <div
-        class="w-100 overflow-hidden font-inter"
+        class="w-100 overflow-hidden font-inter font-smooth"
         style="background: linear-gradient(180deg, #000E26 0%, #7EA4EE 55%, #FFFFFF 100%);"
       >
         <div

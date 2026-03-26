@@ -724,7 +724,7 @@ ul {
 }
 
 .usage-view-details-btn {
-  border: 1px solid #036ac5;
+  border: 1px solid var(--Blue-Blue-1, #036AC5) !important;
   color: #343434;
   background-color: #ffffff;
   height: 33px;
