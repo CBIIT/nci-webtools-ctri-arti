@@ -77,39 +77,42 @@ test("transport parity", async (t) => {
     }
   });
 
-  await t.test("CMS conversation writes use the same canonical input in direct and HTTP mode", async () => {
-    const cmsServer = await startServer(cmsApi, "/api/v1");
-    const [user] = await db.select().from(User).where(eq(User.email, "test@test.com")).limit(1);
-    assert.ok(user, "test user should exist");
+  await t.test(
+    "CMS conversation writes use the same canonical input in direct and HTTP mode",
+    async () => {
+      const cmsServer = await startServer(cmsApi, "/api/v1");
+      const [user] = await db.select().from(User).where(eq(User.email, "test@test.com")).limit(1);
+      assert.ok(user, "test user should exist");
 
-    const svc = new ConversationService();
-    const agent = await svc.createAgent(user.id, {
-      name: "Parity canonical input agent " + Date.now(),
-    });
+      const svc = new ConversationService();
+      const agent = await svc.createAgent(user.id, {
+        name: "Parity canonical input agent " + Date.now(),
+      });
 
-    try {
-      const context = createUserRequestContext(user.id, { source: "direct" });
-      const directClient = createCmsService({ source: "direct" });
-      const httpClient = createCmsRemote({ baseUrl: cmsServer.url });
+      try {
+        const context = createUserRequestContext(user.id, { source: "direct" });
+        const directClient = createCmsService({ source: "direct" });
+        const httpClient = createCmsRemote({ baseUrl: cmsServer.url });
 
-      const [directConversation, httpConversation] = await Promise.all([
-        directClient.createConversation(context, {
-          title: "Direct canonical conversation",
-          agentId: agent.id,
-        }),
-        httpClient.createConversation(context, {
-          title: "HTTP canonical conversation",
-          agentId: agent.id,
-        }),
-      ]);
+        const [directConversation, httpConversation] = await Promise.all([
+          directClient.createConversation(context, {
+            title: "Direct canonical conversation",
+            agentId: agent.id,
+          }),
+          httpClient.createConversation(context, {
+            title: "HTTP canonical conversation",
+            agentId: agent.id,
+          }),
+        ]);
 
-      assert.equal(directConversation.agentID, agent.id);
-      assert.equal(httpConversation.agentID, agent.id);
-    } finally {
-      await svc.deleteAgent(user.id, agent.id);
-      await cmsServer.close();
+        assert.equal(directConversation.agentID, agent.id);
+        assert.equal(httpConversation.agentID, agent.id);
+      } finally {
+        await svc.deleteAgent(user.id, agent.id);
+        await cmsServer.close();
+      }
     }
-  });
+  );
 
   await t.test("Users getUserByEmail matches in direct and HTTP mode", async () => {
     const usersServer = await startServer(usersApi, "/api");
@@ -670,6 +673,3 @@ test("transport parity", async (t) => {
     }
   });
 });
-
-
-

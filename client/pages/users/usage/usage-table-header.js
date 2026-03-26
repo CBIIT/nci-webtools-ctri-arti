@@ -7,12 +7,10 @@ import { VALID_DATE_RANGES, USER_SEARCH_PLACEHOLDER } from "../../constants.js";
 export function usageTableHeader(props) {
   return html`
     <div style="display: flex; flex-direction: column; gap: 20px;">
-      <div
-        style="display: grid; gap: 1rem; grid-template-columns: repeat(5, minmax(0, 1fr));"
-      >
+      <div style="display: grid; gap: 1rem; grid-template-columns: repeat(5, minmax(0, 1fr));">
         <!-- User Filter -->
-        <div class="form-header-input-group" style="grid-column: span 2;">          
-        <label for="search-filter" class="form-header-label">User</label>
+        <div class="form-header-input-group" style="grid-column: span 2;">
+          <label for="search-filter" class="form-header-label">User</label>
           <input
             type="text"
             class="form-control data-form-field usage-search-input-icon search-placeholder"
@@ -24,7 +22,7 @@ export function usageTableHeader(props) {
         </div>
 
         <!-- Role Filter -->
-        <div class="form-header-input-group"> 
+        <div class="form-header-input-group">
           <label for="role-filter" class="form-header-label">Role</label>
           <select
             class="form-select data-form-field form-header-input-label"
@@ -40,7 +38,7 @@ export function usageTableHeader(props) {
         </div>
 
         <!-- Status Filter -->
-        <div class="form-header-input-group"> 
+        <div class="form-header-input-group">
           <label for="status-filter" class="form-header-label">Status</label>
           <select
             class="form-select data-form-field form-header-input-label"
@@ -59,7 +57,7 @@ export function usageTableHeader(props) {
         </div>
 
         <!-- Tool Filter -->
-        <div class="form-header-input-group"> 
+        <div class="form-header-input-group">
           <label for="tool-filter" class="form-header-label">Tool</label>
           <select
             class="form-select data-form-field form-header-input-label"
@@ -77,7 +75,7 @@ export function usageTableHeader(props) {
 
       <!-- Type Filter -->
       <div style="display: grid; gap: 1rem; grid-template-columns: repeat(4, minmax(0, 1fr));">
-        <div class="form-header-input-group"> 
+        <div class="form-header-input-group">
           <label for="type-filter" class="form-header-label">Type</label>
           <select
             class="form-select data-form-field form-header-input-label"
@@ -93,7 +91,7 @@ export function usageTableHeader(props) {
         </div>
 
         <!-- Date Range Filter -->
-        <div class="form-header-input-group"> 
+        <div class="form-header-input-group">
           <label for="date-range-filter" class="form-header-label">Date Range</label>
           <select
             class="form-select data-form-field form-header-input-label"
@@ -121,7 +119,7 @@ export function usageTableHeader(props) {
                 props.setCustomDates((prev) => ({ ...prev, startDate: e.target.value }))}
             />
           </div>
-        <div class="form-header-input-group">
+          <div class="form-header-input-group">
             <label for="custom-endDate" class="form-header-label">End Date</label>
             <input
               type="date"

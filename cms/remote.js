@@ -233,12 +233,9 @@ export function createCmsRemote({ baseUrl, fetchImpl = fetch }) {
         context
       ),
     searchVectors: (params) => {
-      const query = buildQueryString(
-        params,
-        {
-          serializeValue: (key, value) => (key === "embedding" ? JSON.stringify(value) : value),
-        }
-      );
+      const query = buildQueryString(params, {
+        serializeValue: (key, value) => (key === "embedding" ? JSON.stringify(value) : value),
+      });
       return httpRequest(
         fetchImpl,
         baseUrl,
@@ -275,4 +272,3 @@ export function createCmsRemote({ baseUrl, fetchImpl = fetch }) {
       httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/search/chunks", params, context),
   };
 }
-

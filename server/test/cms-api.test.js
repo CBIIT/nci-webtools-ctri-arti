@@ -104,16 +104,13 @@ describe("CMS API", () => {
       content: [{ text: "Foreign message" }],
     });
 
-    const res = await request(app)
-      .post("/resources")
-      .set("X-User-Id", String(user.id))
-      .send({
-        conversationId: conversation.id,
-        messageId: message.id,
-        name: "foreign.txt",
-        type: "text/plain",
-        content: "Should not persist",
-      });
+    const res = await request(app).post("/resources").set("X-User-Id", String(user.id)).send({
+      conversationId: conversation.id,
+      messageId: message.id,
+      name: "foreign.txt",
+      type: "text/plain",
+      content: "Should not persist",
+    });
 
     assert.equal(res.status, 404);
     assert.equal(res.body.error, `Message not found: ${message.id}`);
@@ -126,13 +123,10 @@ describe("CMS API", () => {
     const agent = await svc.createAgent(user.id, { name: `Legacy alias agent ${Date.now()}` });
 
     try {
-      const res = await request(app)
-        .post("/conversations")
-        .set("X-User-Id", String(user.id))
-        .send({
-          title: "Canonical conversation",
-          agentId: agent.id,
-        });
+      const res = await request(app).post("/conversations").set("X-User-Id", String(user.id)).send({
+        title: "Canonical conversation",
+        agentId: agent.id,
+      });
 
       assert.equal(res.status, 201);
       assert.equal(res.body.title, "Canonical conversation");

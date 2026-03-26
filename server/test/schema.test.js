@@ -246,6 +246,3 @@ test("getResultRows", async (t) => {
     assert.deepStrictEqual(getResultRows(rows), rows);
   });
 });
-
-
-

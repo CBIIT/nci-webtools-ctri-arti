@@ -2,7 +2,6 @@ import { Database, Download } from "lucide-solid";
 import { For, Show } from "solid-js";
 import html from "solid-js/html";
 
-
 import { getToolResult } from "../../utils/tools.js";
 import Tooltip from "../tooltip.js";
 
@@ -114,13 +113,17 @@ export default function DataTool(props) {
             <${Show}
               when=${isListing}
               fallback=${() => html`
-                <pre class="p-2 m-0 small text-wrap" style="max-height: 300px; overflow: auto;">${contentPreview}</pre>
+                <pre class="p-2 m-0 small text-wrap" style="max-height: 300px; overflow: auto;">
+${contentPreview}</pre
+                >
               `}
             >
               <div class="list-group list-group-flush">
                 <${For} each=${result}>
                   ${(file) => html`
-                    <div class="list-group-item d-flex align-items-center gap-2 py-1 px-2 border-0 small">
+                    <div
+                      class="list-group-item d-flex align-items-center gap-2 py-1 px-2 border-0 small"
+                    >
                       <span class="text-muted">📄</span>
                       <span class="text-truncate">${file}</span>
                     </div>

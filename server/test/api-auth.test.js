@@ -67,6 +67,3 @@ test("server auth posture keeps public routes explicit", async (t) => {
     assert.equal(logRes.status, 401);
   });
 });
-
-
-

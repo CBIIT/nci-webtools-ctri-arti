@@ -391,4 +391,3 @@ export const resourceMethods = {
     return getMutationCount(result);
   },
 };
-

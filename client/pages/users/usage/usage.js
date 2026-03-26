@@ -9,7 +9,6 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-import { formatDate } from "../date-utils.js";
 
 import { AlertContainer } from "../../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../../utils/alerts.js";
@@ -18,8 +17,10 @@ import {
   unregisterErrorDataCollector,
 } from "../../../utils/global-error-handler.js";
 import { USAGE_TOOL_NAMES, USAGE_TYPE_NAMES, VALID_DATE_RANGES } from "../../constants.js";
-import { usageTable } from "./usage-table.js";
+import { formatDate } from "../date-utils.js";
+
 import { usageTableHeader } from "./usage-table-header.js";
+import { usageTable } from "./usage-table.js";
 
 const fetchConfig = () => fetch("/api/config").then((r) => r.json());
 

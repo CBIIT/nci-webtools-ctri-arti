@@ -275,7 +275,6 @@ a.disabled-link {
   padding-right: 5px !important;
 }
 
-
 .usage-container {
   display: flex;
   padding: 30px 41px 40px 41px !important;
@@ -283,17 +282,17 @@ a.disabled-link {
   align-items: flex-start;
   gap: 20px;
   border-radius: 20px;
-  border: 3px solid var(--Blue-Blue-3, #2595DF);
-  background: #FFF;
+  border: 3px solid var(--Blue-Blue-3, #2595df);
+  background: #fff;
   box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.25);
 }
 
 .form-header-input-group {
   display: flex;
   height: 75px;
-  flex-direction:column;
+  flex-direction: column;
   align-items: start;
-  gap:5px !important;
+  gap: 5px !important;
 }
 
 .form-header-input-label {
@@ -747,8 +746,8 @@ ul {
   align-items: flex-start;
   gap: 20px !important;
   border-radius: 20px !important;
-  border: 3px solid var(--Blue-Blue-3, #2595DF) !important;
-  background: #FFF !important;
+  border: 3px solid var(--Blue-Blue-3, #2595df) !important;
+  background: #fff !important;
   box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.25) !important;
 }
 

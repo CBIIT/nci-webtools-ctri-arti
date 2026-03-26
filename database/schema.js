@@ -569,8 +569,7 @@ export async function seedDatabase(db) {
   const rolePolicies = loadCsv(resolve(dataDir, "role-policies.csv"));
   const providers = loadCsv(resolve(dataDir, "providers.csv")).map((row) => ({
     ...row,
-    apiKey:
-      row.apiKey && typeof row.apiKey === "object" ? JSON.stringify(row.apiKey) : row.apiKey,
+    apiKey: row.apiKey && typeof row.apiKey === "object" ? JSON.stringify(row.apiKey) : row.apiKey,
   }));
   const modelRows = loadCsv(resolve(dataDir, "models.csv"));
   const prompts = loadCsv(resolve(dataDir, "prompts.csv"));
@@ -671,4 +670,3 @@ export async function seedDatabase(db) {
     }
   }
 }
-

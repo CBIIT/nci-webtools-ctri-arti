@@ -1,6 +1,7 @@
 import html from "solid-js/html";
 
 import { DataTable } from "../../../components/table.js";
+
 export function usageTable(props) {
   const columns = [
     {

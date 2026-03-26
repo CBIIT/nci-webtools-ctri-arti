@@ -508,6 +508,3 @@ test("UserService deleteUser cascades owned chat and billing rows", async () => 
   assert.equal(userToolRows.length, 0);
   assert.equal(userAgentRows.length, 0);
 });
-
-
-

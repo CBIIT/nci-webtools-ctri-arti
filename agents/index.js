@@ -1,8 +1,8 @@
 import http from "http";
 
-import express from "express";
 import { createCmsRemote } from "cms/remote.js";
 import { createCmsService } from "cms/service.js";
+import express from "express";
 import { createGatewayRemote } from "gateway/remote.js";
 import { createGatewayService } from "gateway/service.js";
 import logger from "shared/logger.js";

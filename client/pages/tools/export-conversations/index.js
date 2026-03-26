@@ -782,9 +782,7 @@ export default function ExportConversations() {
           </div>
           <div class="export-filter-actions">
             <${Show} when=${() => dateFrom() || dateTo()}>
-              <button class="export-filter-reset" onClick=${resetFilters}>
-                Clear dates
-              </button>
+              <button class="export-filter-reset" onClick=${resetFilters}>Clear dates</button>
             <//>
           </div>
         </div>
@@ -860,19 +858,24 @@ export default function ExportConversations() {
                 </tr>
               </thead>
               <tbody>
-                <${Show} when=${() => filtered().length} fallback=${html`
-                  <tr>
-                    <td colspan="5">
-                      <div class="export-empty">
-                        <div class="export-empty-icon" innerHTML=${ArchiveIcon}></div>
-                        <div class="export-empty-text">${tableEmptyMessage}</div>
-                        <${Show} when=${() => allConversations().length && !loadError()}>
-                          <div class="export-empty-hint">Try adjusting or clearing the date filters.</div>
-                        <//>
-                      </div>
-                    </td>
-                  </tr>
-                `}>
+                <${Show}
+                  when=${() => filtered().length}
+                  fallback=${html`
+                    <tr>
+                      <td colspan="5">
+                        <div class="export-empty">
+                          <div class="export-empty-icon" innerHTML=${ArchiveIcon}></div>
+                          <div class="export-empty-text">${tableEmptyMessage}</div>
+                          <${Show} when=${() => allConversations().length && !loadError()}>
+                            <div class="export-empty-hint">
+                              Try adjusting or clearing the date filters.
+                            </div>
+                          <//>
+                        </div>
+                      </td>
+                    </tr>
+                  `}
+                >
                   <${For} each=${filtered}>
                     ${(conv) => {
                       const isSelected = () => selected().has(conv.id);

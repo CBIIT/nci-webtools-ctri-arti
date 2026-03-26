@@ -6,7 +6,7 @@ import { Portal } from "solid-js/web";
 /**
  * Floating element component using Floating UI (successor to Popper.js)
  * This is a basis for tooltips, dropdowns, popovers, etc.
- * 
+ *
  * @param {any} props - object with reactive getters for the following properties (don't destructure):
  * @param {string} props.class - CSS class for the floating element
  * @param {string} props.arrowClass - CSS class for the arrow element
@@ -106,7 +106,7 @@ export function Dropdown(props) {
     >
       ${props.children}
     <//>
-  `;  
+  `;
 }
 
 /**
@@ -170,5 +170,5 @@ export function Popover(props) {
     >
       ${props.children}
     <//>
-  `;  
+  `;
 }
