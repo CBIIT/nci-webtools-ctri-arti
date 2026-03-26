@@ -160,6 +160,9 @@
 
       const CONVERSATION_SUMMARY_TOKEN = "[Conversation Summary]";
       const DEFAULT_MODEL_ID = "us.anthropic.claude-haiku-4-5-20251001-v1:0";
+      const GEMINI_PRO_MODEL_ID = "gemini-3.1-pro-preview";
+      const GEMINI_FLASH_LITE_MODEL_ID = "gemini-3.1-flash-lite-preview";
+      const GEMINI_MAX_CONTEXT = 1_048_576;
       const TOOL_GUIDES = [
         {
           name: "code",
@@ -221,10 +224,10 @@ The \`resources\` API is available for file operations:
           ],
         },
         {
-          label: "Google Vertex",
+          label: "Google Gemini",
           options: [
-            { value: "gemini-3-pro-preview", label: "Gemini 3 Pro" },
-            { value: "gemini-3-flash-preview", label: "Gemini 3 Flash" },
+            { value: GEMINI_PRO_MODEL_ID, label: "Gemini 3.1 Pro" },
+            { value: GEMINI_FLASH_LITE_MODEL_ID, label: "Gemini 3.1 Flash Lite" },
           ],
         },
         {
@@ -236,8 +239,26 @@ The \`resources\` API is available for file operations:
         "us.anthropic.claude-opus-4-6-v1": 1000000,
         "us.anthropic.claude-sonnet-4-6": 1000000,
         "us.anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
-        "gemini-3-pro-preview": 1000000,
-        "gemini-3-flash-preview": 1000000,
+        [GEMINI_PRO_MODEL_ID]: GEMINI_MAX_CONTEXT,
+        [GEMINI_FLASH_LITE_MODEL_ID]: GEMINI_MAX_CONTEXT,
+      };
+      const MODEL_MAX_OUTPUT = {
+        [GEMINI_PRO_MODEL_ID]: 64_000,
+        [GEMINI_FLASH_LITE_MODEL_ID]: 65_536,
+      };
+      const MODEL_PRICING = {
+        [GEMINI_PRO_MODEL_ID]: {
+          input_tokens: 0.000002,
+          output_tokens: 0.000012,
+          cache_read_tokens: 0.0000002,
+          cache_write_tokens: 0.000002,
+        },
+        [GEMINI_FLASH_LITE_MODEL_ID]: {
+          input_tokens: 0.00000025,
+          output_tokens: 0.0000015,
+          cache_read_tokens: 0.000000025,
+          cache_write_tokens: 0.00000025,
+        },
       };
       const FRONTEND_DESIGN_SKILL_PATH = "skills/frontend-design.md";
       const FRONTEND_DESIGN_SKILL_CONTENT = `---
@@ -1980,7 +2001,8 @@ You may be called as a subagent from Chat, but do not delegate further unless ex
         const toolUseId = () => c().toolUse?.toolUseId;
         const toolResult = () => props.findToolResult?.(toolUseId())?.content?.[0]?.json?.result;
         const toolInput = () => parseJSON(c().toolUse?.input || "{}");
-        const isReasoning = () => c().reasoningContent || toolName() === "think";
+        const reasoningText = () => c().reasoningContent?.reasoningText?.text;
+        const isReasoning = () => Boolean(reasoningText()) || toolName() === "think";
         const builtInResult = () =>
           renderBuiltInToolResult({ toolName: toolName(), toolInput, toolResult, toolUseId });
 
@@ -1989,9 +2011,7 @@ You may be called as a subagent from Chat, but do not delegate further unless ex
             <${Match} when=${isReasoning}>
               <details class="small rounded border p-2">
                 <summary class="cursor-pointer text-dark">View Reasoning</summary>
-                <p class="my-2 text-muted">
-                  ${() => c().reasoningContent?.reasoningText?.text || toolInput()?.thought}
-                </p>
+                <p class="my-2 text-muted">${() => reasoningText() || toolInput()?.thought}</p>
               </details>
             <//>
             <${Match} when=${builtInResult}> ${builtInResult} <//>
@@ -2363,8 +2383,8 @@ ${() => result().logs.join("\n")}</pre
                     : JSON.stringify(result || {}, null, 2).slice(0, 200);
                 return `Result: ${preview}${preview.length >= 200 ? "..." : ""}`;
               }
-              if (c.reasoningContent)
-                return `[Thinking...] ${(c.reasoningContent.reasoningText?.text || "").slice(0, 100)}...`;
+              if (c.reasoningContent?.reasoningText?.text)
+                return `[Thinking...] ${c.reasoningContent.reasoningText.text.slice(0, 100)}...`;
               return "";
             })
             .filter(Boolean)
@@ -3174,7 +3194,7 @@ ${() => result().logs.join("\n")}</pre
         const block = content[contentBlockIndex];
 
         if (delta.reasoningContent) appendReasoning(block, delta.reasoningContent);
-        else if (delta.text) block.text = (block.text || "") + delta.text;
+        else if (delta.text != null) block.text = (block.text || "") + delta.text;
         else if (delta.toolUse)
           block.toolUse.input = (block.toolUse.input || "") + delta.toolUse.input;
       }
@@ -3183,10 +3203,10 @@ ${() => result().logs.join("\n")}</pre
         block.reasoningContent ||= { reasoningText: {} };
         const t = block.reasoningContent;
         if (rc.text) t.reasoningText.text = (t.reasoningText.text || "") + rc.text;
-        else if (rc.signature)
+        if (rc.signature)
           t.reasoningText.signature = (t.reasoningText.signature || "") + rc.signature;
-        else if (rc.redactedContent)
-          t.redactedContent = (t.redactedContent || "") + rc.redactedContent;
+        if (rc.redactedContent) t.redactedContent = (t.redactedContent || "") + rc.redactedContent;
+        if (rc.provider) t.provider = rc.provider;
       }
 
       /** @returns {Promise<StreamingTurnResult>} */
@@ -3371,26 +3391,73 @@ ${() => result().logs.join("\n")}</pre
               };
             }
           };
+          const toGeminiParts = (content = []) => {
+            const parts = [];
+            let pendingSignature = null;
+            const flushPendingSignature = () => {
+              if (!pendingSignature) return;
+              parts.push({ text: "", thought: true, thoughtSignature: pendingSignature });
+              pendingSignature = null;
+            };
+            for (const b of content) {
+              if (b.reasoningContent) {
+                const reasoningText = b.reasoningContent.reasoningText || {};
+                const text = reasoningText.text || "";
+                const signature = reasoningText.signature;
+                if (b.reasoningContent.provider !== "google") continue;
+                if (!text && !b.reasoningContent.redactedContent && signature) {
+                  pendingSignature = signature;
+                  continue;
+                }
+                flushPendingSignature();
+                parts.push({
+                  text,
+                  thought: true,
+                  ...(signature ? { thoughtSignature: signature } : {}),
+                });
+                continue;
+              }
+              const part = toGeminiPart(b);
+              if (!part) continue;
+              if (pendingSignature) {
+                part.thoughtSignature = pendingSignature;
+                pendingSignature = null;
+              }
+              parts.push(part);
+            }
+            flushPendingSignature();
+            return parts;
+          };
+          const tools = input.toolConfig?.tools
+            ?.filter((t) => t.toolSpec)
+            .map((t) => ({
+              functionDeclarations: [
+                {
+                  name: t.toolSpec.name,
+                  description: t.toolSpec.description,
+                  parametersJsonSchema: t.toolSpec.inputSchema?.json,
+                },
+              ],
+            }));
+          const toolChoice = input.toolConfig?.toolChoice;
+          const functionCallingConfig = toolChoice?.any
+            ? { mode: "ANY" }
+            : toolChoice?.tool?.name
+              ? { mode: "ANY", allowedFunctionNames: [toolChoice.tool.name] }
+              : toolChoice?.auto
+                ? { mode: "AUTO" }
+                : null;
 
           const geminiReq = {
             model: input.modelId,
             contents: input.messages.map((m) => ({
               role: m.role === "assistant" ? "model" : "user",
-              parts: m.content.map(toGeminiPart).filter(Boolean),
+              parts: toGeminiParts(m.content),
             })),
             config: {
               systemInstruction: input.system?.find((s) => s.text)?.text,
-              tools: input.toolConfig?.tools
-                ?.filter((t) => t.toolSpec)
-                .map((t) => ({
-                  functionDeclarations: [
-                    {
-                      name: t.toolSpec.name,
-                      description: t.toolSpec.description,
-                      parametersJsonSchema: t.toolSpec.inputSchema?.json,
-                    },
-                  ],
-                })),
+              ...(tools?.length ? { tools } : {}),
+              ...(functionCallingConfig ? { toolConfig: { functionCallingConfig } } : {}),
               ...(input.additionalModelRequestFields?.thinking && {
                 thinkingConfig: {
                   thinkingBudget: input.additionalModelRequestFields.thinking.budget_tokens,
@@ -3410,19 +3477,39 @@ ${() => result().logs.join("\n")}</pre
           for await (const chunk of response) {
             const parts = chunk.candidates?.[0]?.content?.parts ?? [];
             const done = chunk.candidates?.[0]?.finishReason;
+            if (chunk.promptFeedback?.blockReason) {
+              if (active) yield { contentBlockStop: { contentBlockIndex: idx } };
+              yield { messageStop: { stopReason: "guardrail_intervened" } };
+              return;
+            }
 
             for (const p of parts) {
               let type, start, delta;
+              if (p.thoughtSignature && !p.thought) {
+                if (active) yield { contentBlockStop: { contentBlockIndex: idx++ } };
+                yield {
+                  contentBlockDelta: {
+                    contentBlockIndex: idx,
+                    delta: {
+                      reasoningContent: { signature: p.thoughtSignature, provider: "google" },
+                    },
+                  },
+                };
+                yield { contentBlockStop: { contentBlockIndex: idx } };
+                idx++;
+              }
 
-              if (p.thought && p.text != null) {
+              if (p.thought && (p.text != null || p.thoughtSignature)) {
                 type = "reasoning";
                 delta = {
                   reasoningContent: {
-                    text: p.text,
+                    provider: "google",
+                    ...(p.text != null ? { text: p.text } : {}),
                     ...(p.thoughtSignature && { signature: p.thoughtSignature }),
                   },
                 };
               } else if (p.text != null) {
+                if (p.text === "" && p.thoughtSignature) continue;
                 type = "text";
                 delta = { text: p.text };
               } else if (p.functionCall) {
@@ -3460,7 +3547,15 @@ ${() => result().logs.join("\n")}</pre
 
             if (done) {
               if (active) yield { contentBlockStop: { contentBlockIndex: idx } };
-              yield { messageStop: { stopReason: sawToolUse ? "tool_use" : "end_turn" } };
+              const stopReason =
+                sawToolUse && done === "STOP"
+                  ? "tool_use"
+                  : done === "MAX_TOKENS"
+                    ? "max_tokens"
+                    : ["SAFETY", "RECITATION", "LANGUAGE", "BLOCKLIST"].includes(done)
+                      ? "content_filtered"
+                      : "end_turn";
+              yield { messageStop: { stopReason } };
             }
           }
         }
@@ -3477,7 +3572,7 @@ ${() => result().logs.join("\n")}</pre
       }
 
       function getGoogleConfig(prompt = window.prompt) {
-        const apiKey = prompt("Google GenAI API Key:");
+        const apiKey = prompt("Gemini API Key:");
         return { apiKey };
       }
 
@@ -4813,6 +4908,40 @@ ${() => result().logs.join("\n")}</pre
             getModelMaxContext(DEFAULT_MODEL_ID) === 200000,
             "Haiku 4.5 should keep a 200k context window"
           );
+          assert(
+            MODEL_MAX_CONTEXT[GEMINI_PRO_MODEL_ID] === GEMINI_MAX_CONTEXT,
+            "Gemini 3.1 Pro should use the 1,048,576 token context window"
+          );
+          assert(
+            MODEL_MAX_CONTEXT[GEMINI_FLASH_LITE_MODEL_ID] === GEMINI_MAX_CONTEXT,
+            "Gemini 3.1 Flash Lite should use the 1,048,576 token context window"
+          );
+          assert(
+            MODEL_MAX_OUTPUT[GEMINI_PRO_MODEL_ID] === 64000,
+            "Gemini 3.1 Pro should use the 64k output limit"
+          );
+          assert(
+            MODEL_MAX_OUTPUT[GEMINI_FLASH_LITE_MODEL_ID] === 65536,
+            "Gemini 3.1 Flash Lite should use the 65,536 output limit"
+          );
+          assert(
+            eq(MODEL_PRICING[GEMINI_PRO_MODEL_ID], {
+              input_tokens: 0.000002,
+              output_tokens: 0.000012,
+              cache_read_tokens: 0.0000002,
+              cache_write_tokens: 0.000002,
+            }),
+            "Gemini 3.1 Pro pricing should match the <=200k tier"
+          );
+          assert(
+            eq(MODEL_PRICING[GEMINI_FLASH_LITE_MODEL_ID], {
+              input_tokens: 0.00000025,
+              output_tokens: 0.0000015,
+              cache_read_tokens: 0.000000025,
+              cache_write_tokens: 0.00000025,
+            }),
+            "Gemini 3.1 Flash Lite pricing should match the <=200k tier"
+          );
 
           assert(
             eq(getThinkingConfig("us.anthropic.claude-opus-4-6-v1"), {
@@ -4834,7 +4963,7 @@ ${() => result().logs.join("\n")}</pre
           );
           assert(getClientTypeForModel("echo") === "echo", "Echo should route to the echo client");
           assert(
-            getClientTypeForModel("gemini-3-flash-preview") === "google",
+            getClientTypeForModel(GEMINI_FLASH_LITE_MODEL_ID) === "google",
             "Gemini should route to the Google client"
           );
           assert(
@@ -5479,6 +5608,45 @@ ${() => result().logs.join("\n")}</pre
             assert(
               !container.textContent.includes(CONVERSATION_SUMMARY_TOKEN),
               "Summary token should be hidden in UI"
+            );
+          } finally {
+            container.remove();
+          }
+        }
+
+        async function testSignatureOnlyReasoningStaysHiddenInUi() {
+          const container = document.createElement("div");
+          document.body.appendChild(container);
+
+          const message = {
+            id: 1,
+            role: "assistant",
+            content: [
+              {
+                reasoningContent: {
+                  provider: "google",
+                  reasoningText: { signature: "sig-only" },
+                },
+              },
+            ],
+          };
+
+          try {
+            render(
+              () => html`
+                <${MessageContent}
+                  message=${message}
+                  content=${message.content[0]}
+                  allMessages=${[message]}
+                  editingId=${null}
+                />
+              `,
+              container
+            );
+
+            assert(
+              !container.textContent.includes("View Reasoning"),
+              "Signature-only reasoning blocks should stay hidden in the UI"
             );
           } finally {
             container.remove();
@@ -6151,7 +6319,7 @@ ${() => result().logs.join("\n")}</pre
           });
 
           const output = await client.send({
-            modelId: "gemini-3-flash-preview",
+            modelId: GEMINI_FLASH_LITE_MODEL_ID,
             messages: [
               {
                 role: "user",
@@ -6171,8 +6339,25 @@ ${() => result().logs.join("\n")}</pre
               },
             ],
             system: [{ text: "system" }],
-            toolConfig: { tools: [] },
-            additionalModelRequestFields: {},
+            toolConfig: {
+              tools: [
+                {
+                  toolSpec: {
+                    name: "editor",
+                    description: "View files",
+                    inputSchema: {
+                      json: {
+                        type: "object",
+                        properties: { path: { type: "string" } },
+                        required: ["path"],
+                      },
+                    },
+                  },
+                },
+              ],
+              toolChoice: { tool: { name: "editor" } },
+            },
+            additionalModelRequestFields: { thinking: { budget_tokens: 64 } },
           });
 
           await collectBlocks(output);
@@ -6193,6 +6378,213 @@ ${() => result().logs.join("\n")}</pre
           assert(
             parts[4].functionResponse.response.ok === true,
             "Gemini conversion should emit function responses"
+          );
+          assert(
+            request.config.systemInstruction === "system",
+            "Gemini conversion should preserve the system instruction"
+          );
+          assert(
+            request.config.tools[0].functionDeclarations[0].parametersJsonSchema.required[0] ===
+              "path",
+            "Gemini conversion should preserve tool schemas"
+          );
+          assert(
+            request.config.toolConfig.functionCallingConfig.allowedFunctionNames[0] === "editor",
+            "Gemini conversion should map Bedrock tool choice"
+          );
+          assert(
+            request.config.thinkingConfig.thinkingBudget === 64,
+            "Gemini conversion should map Bedrock thinking config"
+          );
+        }
+
+        async function testGeminiStopReasonMapping() {
+          const output = await getGeminiClient({
+            models: {
+              async generateContentStream() {
+                return (async function* () {
+                  yield {
+                    candidates: [
+                      {
+                        content: { parts: [{ text: "partial" }] },
+                        finishReason: "MAX_TOKENS",
+                      },
+                    ],
+                  };
+                })();
+              },
+            },
+          }).send({ modelId: GEMINI_FLASH_LITE_MODEL_ID, messages: [], toolConfig: { tools: [] } });
+
+          const blocks = await collectBlocks(output);
+          assert(
+            blocks.find((block) => block.messageStop?.stopReason === "max_tokens"),
+            "Gemini finish reasons should map to Bedrock stop reasons"
+          );
+        }
+
+        async function testGeminiFunctionCallThoughtSignatureRoundTrip() {
+          const requests = [];
+          let callCount = 0;
+          const client = getGeminiClient({
+            models: {
+              async generateContentStream(input) {
+                requests.push(structuredClone(input));
+                callCount++;
+                if (callCount === 1) {
+                  return (async function* () {
+                    yield {
+                      candidates: [
+                        {
+                          content: {
+                            parts: [
+                              {
+                                functionCall: {
+                                  name: "editor",
+                                  args: { command: "view", path: "/" },
+                                  id: "tool-42",
+                                },
+                                thoughtSignature: "sig-tool",
+                              },
+                            ],
+                          },
+                          finishReason: "STOP",
+                        },
+                      ],
+                    };
+                  })();
+                }
+                return (async function* () {
+                  yield {
+                    candidates: [{ content: { parts: [{ text: "done" }] }, finishReason: "STOP" }],
+                  };
+                })();
+              },
+            },
+          });
+
+          const firstTurn = await runStreamingTurn({
+            client,
+            input: {
+              modelId: GEMINI_FLASH_LITE_MODEL_ID,
+              messages: [{ role: "user", content: [{ text: "hello" }] }],
+              toolConfig: { tools: [] },
+            },
+          });
+          assert(
+            firstTurn.assistantMsg.content[0].reasoningContent?.reasoningText?.signature ===
+              "sig-tool",
+            "Gemini tool call signatures should map into Bedrock reasoning signatures"
+          );
+          assert(
+            firstTurn.assistantMsg.content[1].toolUse?.toolUseId === "tool-42",
+            "Gemini tool calls should still map to Bedrock tool use blocks"
+          );
+
+          const secondOutput = await client.send({
+            modelId: GEMINI_FLASH_LITE_MODEL_ID,
+            messages: [
+              { role: "user", content: [{ text: "hello" }] },
+              firstTurn.assistantMsg,
+              {
+                role: "user",
+                content: [
+                  { toolResult: { toolUseId: "tool-42", content: [{ json: { ok: true } }] } },
+                ],
+              },
+            ],
+            toolConfig: { tools: [] },
+          });
+          await collectBlocks(secondOutput);
+
+          assert(
+            requests[1].contents[1].parts[0].functionCall.name === "editor",
+            "Gemini round-trip should preserve the tool call part"
+          );
+          assert(
+            requests[1].contents[1].parts[0].thoughtSignature === "sig-tool",
+            "Gemini round-trip should reattach the reasoning signature to the function call"
+          );
+        }
+
+        async function testGeminiThoughtBlockRoundTrip() {
+          const requests = [];
+          let callCount = 0;
+          const client = getGeminiClient({
+            models: {
+              async generateContentStream(input) {
+                requests.push(structuredClone(input));
+                callCount++;
+                if (callCount === 1) {
+                  return (async function* () {
+                    yield {
+                      candidates: [
+                        {
+                          content: {
+                            parts: [
+                              {
+                                thought: true,
+                                text: "step one",
+                                thoughtSignature: "sig-thought",
+                              },
+                              { text: "answer" },
+                            ],
+                          },
+                          finishReason: "STOP",
+                        },
+                      ],
+                    };
+                  })();
+                }
+                return (async function* () {
+                  yield {
+                    candidates: [{ content: { parts: [{ text: "done" }] }, finishReason: "STOP" }],
+                  };
+                })();
+              },
+            },
+          });
+
+          const firstTurn = await runStreamingTurn({
+            client,
+            input: {
+              modelId: GEMINI_FLASH_LITE_MODEL_ID,
+              messages: [{ role: "user", content: [{ text: "hello" }] }],
+              toolConfig: { tools: [] },
+            },
+          });
+          assert(
+            firstTurn.assistantMsg.content[0].reasoningContent?.reasoningText?.text === "step one",
+            "Gemini thought parts should map into Bedrock reasoning text"
+          );
+          assert(
+            firstTurn.assistantMsg.content[0].reasoningContent?.reasoningText?.signature ===
+              "sig-thought",
+            "Gemini thought signatures should be stored on the Bedrock reasoning block"
+          );
+
+          const secondOutput = await client.send({
+            modelId: GEMINI_FLASH_LITE_MODEL_ID,
+            messages: [
+              { role: "user", content: [{ text: "hello" }] },
+              firstTurn.assistantMsg,
+              { role: "user", content: [{ text: "follow up" }] },
+            ],
+            toolConfig: { tools: [] },
+          });
+          await collectBlocks(secondOutput);
+
+          assert(
+            requests[1].contents[1].parts[0].thought === true,
+            "Gemini reasoning blocks should round-trip back as thought parts"
+          );
+          assert(
+            requests[1].contents[1].parts[0].text === "step one",
+            "Gemini reasoning text should survive the round trip"
+          );
+          assert(
+            requests[1].contents[1].parts[0].thoughtSignature === "sig-thought",
+            "Gemini reasoning signatures should survive the round trip"
           );
         }
 
@@ -7511,7 +7903,7 @@ ${() => result().logs.join("\n")}</pre
                 };
               },
             },
-          }).send({ modelId: "gemini-3-flash-preview", messages: [], toolConfig: { tools: [] } });
+          }).send({ modelId: GEMINI_FLASH_LITE_MODEL_ID, messages: [], toolConfig: { tools: [] } });
 
           const blocks = await collectBlocks(output);
           const toolStarts = blocks.filter((block) => block.contentBlockStart?.start?.toolUse);
@@ -7634,6 +8026,7 @@ ${() => result().logs.join("\n")}</pre
           testAgentEditorModalToolToggle,
           testSummarizeBranchIfNeeded,
           testSummaryMessageRendering,
+          testSignatureOnlyReasoningStaysHiddenInUi,
           testHtmlPreviewResizes,
 
           // Echo client tests
@@ -7690,6 +8083,9 @@ ${() => result().logs.join("\n")}</pre
           testEditorResultDownload,
           testWithStorageCachesResult,
           testGeminiRequestConversion,
+          testGeminiStopReasonMapping,
+          testGeminiFunctionCallThoughtSignatureRoundTrip,
+          testGeminiThoughtBlockRoundTrip,
 
           // Story tests - demonstrate WHY the app exists through complete user workflows
           storyAUserStartsAConversation,
