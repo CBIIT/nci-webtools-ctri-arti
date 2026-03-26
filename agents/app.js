@@ -1,6 +1,7 @@
 import { createCmsService } from "cms/service.js";
 import { createGatewayService } from "gateway/service.js";
 import { requireUserRequestContext } from "shared/request-context.js";
+import { createUsersApplication } from "users/app.js";
 
 import { runAgentLoop } from "./core/loop.js";
 
@@ -14,6 +15,7 @@ export function createAgentsApplication({
   runLoop = runAgentLoop,
   gateway = createGatewayService(),
   cms,
+  users = createUsersApplication(),
   source = "direct",
 } = {}) {
   const cmsModule = cms ?? createCmsService({ gateway, source });
@@ -44,6 +46,7 @@ export function createAgentsApplication({
         thoughtBudget: thoughtBudget || 0,
         gateway,
         cms: cmsModule,
+        users,
       });
     },
   };

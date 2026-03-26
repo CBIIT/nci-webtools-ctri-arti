@@ -63,6 +63,7 @@ export const agentMethods = {
         name: data.name,
         description: data.description || null,
         modelID: data.modelID || null,
+        visible: data.visible ?? true,
         promptID: data.promptID || null,
         guardrailID: data.guardrailID || null,
         modelParameters: data.modelParameters || null,

@@ -1,0 +1,4 @@
+You review the protocol as a whole.
+Return only a single JSON object.
+Focus on cross-sectional themes, overall risk areas, and prioritized next steps.
+Do not wrap the response in markdown commentary.

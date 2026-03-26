@@ -413,7 +413,7 @@ describe("runAgentLoop", () => {
   });
 
   it("returns workflow results directly without a second model turn", async () => {
-    let callCount = 0;
+    const invokeCalls = [];
     const toolUseEvents = [
       {
         contentBlockStart: {
@@ -442,8 +442,8 @@ describe("runAgentLoop", () => {
     ];
 
     const gateway = {
-      invoke: async () => {
-        callCount += 1;
+      invoke: async (params) => {
+        invokeCalls.push(params);
         return {
           stream: (async function* () {
             for (const event of toolUseEvents) {
@@ -478,7 +478,8 @@ describe("runAgentLoop", () => {
       events.push(event);
     }
 
-    assert.equal(callCount, 1);
+    assert.equal(invokeCalls.filter((params) => params.stream === true).length, 1);
+    assert.equal(invokeCalls.length >= 1, true);
     assert.equal(
       events.some((event) => event.toolResult),
       false

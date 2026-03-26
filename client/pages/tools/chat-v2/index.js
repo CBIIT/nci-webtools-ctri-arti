@@ -127,7 +127,8 @@ function ChatApp() {
   const fetchAgents = async () => {
     const response = await fetch("/api/v1/agents");
     if (!response.ok) return [];
-    return response.json();
+    const records = await response.json();
+    return (Array.isArray(records) ? records : []).filter((agent) => agent?.visible !== false);
   };
   const [agents] = createResource(fetchAgents);
   const [availableModels] = createResource(fetchChatModels);

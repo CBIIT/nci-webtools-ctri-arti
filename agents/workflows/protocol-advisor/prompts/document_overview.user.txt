@@ -1,0 +1,7 @@
+Review this protocol at the whole-document level.
+
+Return JSON with this shape:
+{{output_json_example}}
+
+Input:
+{{input_json}}

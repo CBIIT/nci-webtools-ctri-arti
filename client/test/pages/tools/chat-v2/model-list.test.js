@@ -19,7 +19,10 @@ test("Chat-V2 model selector uses /model/list", async () => {
     }
 
     if (url.pathname === "/api/v1/agents" && request.method === "GET") {
-      return jsonResponse([{ id: 1, name: "Research Agent" }]);
+      return jsonResponse([
+        { id: 1, name: "Research Agent", visible: true },
+        { id: 2, name: "Protocol Advisor", visible: false },
+      ]);
     }
 
     if (url.pathname === "/api/v1/agents/1" && request.method === "GET") {
@@ -104,6 +107,10 @@ test("Chat-V2 model selector uses /model/list", async () => {
       modelSelect.value,
       "us.anthropic.claude-sonnet-4-6",
       "chat-v2 should keep the agent's current model selected"
+    );
+    assert.ok(
+      !container.textContent.includes("Protocol Advisor"),
+      "chat-v2 should keep hidden agents out of the picker UI"
     );
     assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((error) => error.message)}`);
   } finally {

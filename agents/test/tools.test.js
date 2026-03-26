@@ -413,9 +413,10 @@ describe("tools", () => {
       });
 
       assert.equal(result.workflow, "protocol_advisor");
-      assert.equal(result.output.status, "deterministic_review");
+      assert.equal(result.output.status, "review_plan_ready");
       assert.equal(result.output.template.templateId, "interventional");
       assert.equal(result.nodeResults.validateInput.status, "completed");
+      assert.equal(result.nodeResults.buildReviewPlan.status, "completed");
       assert.equal(result.nodeResults.aggregateReport.status, "completed");
     });
   });
