@@ -4,6 +4,7 @@ import { requireUserRequestContext } from "shared/request-context.js";
 import { createUsersApplication } from "users/app.js";
 
 import { runAgentLoop } from "./core/loop.js";
+import { validateUserMessageContent } from "./validation.js";
 
 function createAppError(statusCode, message) {
   const error = new Error(message);
@@ -35,6 +36,7 @@ export function createAgentsApplication({
       if (!message?.content) {
         throw createAppError(400, "Message content required");
       }
+      validateUserMessageContent(message.content);
 
       yield* runLoop({
         userId: requestContext.userId,

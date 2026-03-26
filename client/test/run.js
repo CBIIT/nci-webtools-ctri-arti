@@ -159,6 +159,7 @@ const tests = [
   "./pages/tools/export-conversations.test.js",
   "./pages/tools/translate.test.js",
   "./pages/tools/chat-v2/uploads.test.js",
+  "./pages/tools/chat-v2/request-message.test.js",
   "./pages/tools/chat-v2/model-list.test.js",
   "./pages/tools/chat-v2/alerts.test.js",
 ];

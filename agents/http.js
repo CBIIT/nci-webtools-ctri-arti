@@ -1,6 +1,8 @@
 import { json, Router } from "express";
 import { readHttpRequestContext } from "shared/request-context.js";
 
+import { validateUserMessageContent } from "./validation.js";
+
 export function getAgentRequestContext(req) {
   return readHttpRequestContext(req, {
     allowInternalHeader: true,
@@ -37,6 +39,11 @@ async function handleChatRequest(req, res, { application, resolveContext, conver
 
   if (!message?.content) {
     return res.status(400).json({ error: "Message content required" });
+  }
+  try {
+    validateUserMessageContent(message.content);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ error: error.message });
   }
 
   const stream = application.chat({

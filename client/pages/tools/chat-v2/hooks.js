@@ -172,7 +172,7 @@ export function useAgent({ agentId, conversationId }) {
         void generateTitle(text, currentConversationId);
       }
 
-      await streamChat(agent, setAgent, params.agentId, currentConversationId);
+      await streamChat(agent, setAgent, params.agentId, currentConversationId, userMessage);
     } finally {
       setAgent("loading", false);
     }
@@ -269,8 +269,12 @@ async function* streamResponse(response) {
   }
 }
 
-async function streamChat(store, setStore, agentId, conversationId) {
-  const userMessage = store.messages.at(-1);
+export function getAgentRequestMessage(store, requestMessage = null) {
+  return requestMessage || store?.messages?.at(-1) || null;
+}
+
+async function streamChat(store, setStore, agentId, conversationId, requestMessage = null) {
+  const userMessage = getAgentRequestMessage(store, requestMessage);
   const thoughtBudget = store.reasoningMode ? 32000 : 0;
 
   const response = await fetch(`/api/v1/agents/${agentId}/conversations/${conversationId}/chat`, {
@@ -388,7 +392,13 @@ async function streamChat(store, setStore, agentId, conversationId) {
     const messageIndex = ensureToolResultsMessage();
     setStore(produce((s) => s.messages[messageIndex].content.push(...content)));
 
-    return await streamChat(store, setStore, agentId, conversationId);
+    return await streamChat(
+      store,
+      setStore,
+      agentId,
+      conversationId,
+      getAgentRequestMessage(store, store.messages[messageIndex])
+    );
   }
 }
 

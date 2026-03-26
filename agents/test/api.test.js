@@ -58,6 +58,20 @@ describe("Agents API request context", () => {
     assert.deepStrictEqual(res.body, { error: "Message content required" });
   });
 
+  it("rejects user messages that contain tool uses", async () => {
+    const res = await request(app)
+      .post("/agents/1/conversations/1/chat")
+      .set("X-User-Id", "1")
+      .send({
+        message: {
+          content: [{ toolUse: { toolUseId: "tu_1", name: "search", input: { query: "nci" } } }],
+        },
+      });
+
+    assert.equal(res.status, 400);
+    assert.deepStrictEqual(res.body, { error: "User messages cannot contain tool uses" });
+  });
+
   it("supports an ephemeral chat route without conversationId", async () => {
     const ephemeralApp = buildApp({
       async *chat({ conversationId, message }) {
