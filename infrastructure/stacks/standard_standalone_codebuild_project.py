@@ -14,6 +14,7 @@ from enum import Enum
 from typing import Dict, Optional, List
 from pathlib import Path
 import yaml
+import json
 
 from constructs import Construct
 from aws_cdk import (
@@ -32,10 +33,11 @@ from aws_cdk import (
 # CDK_APP_NAME constant - matches project structure
 CDK_APP_NAME = "nci-CTRI-ARTI-webtools"
 
-BUILDSPEC_FILE_PATH = "buildspec.yaml"
+BUILDSPEC_FILE_PATH = Path(__file__).parent.parent.parent / "test" / "buildspec.yaml"
+print("Using buildspec file at: ", BUILDSPEC_FILE_PATH)
 BUILDSPEC_MAX_INLINE_SIZE = 25600  # CodeBuild inline buildspec limit in bytes
 
-class CodeBuildProjects(Enum):
+class CodeBuildProjectNames(Enum):
     """Enum for different CodeBuild project types."""
     AUTOMATED_TESTING = "auto-testing"
     # GATEWAY = "gateway"
@@ -51,7 +53,7 @@ class CdkCodeBuildStackProps:
         self,
         tier: str,
         aws_env: str,
-        vpc_id: str,
+        vpc_name: str,
         subnets: list[str],
         dmz_subnets: Optional[list[str]] = None,
         webapp_subnets: Optional[list[str]] = None,
@@ -60,7 +62,7 @@ class CdkCodeBuildStackProps:
     ):
         self.tier = tier
         self.aws_env = aws_env
-        self.vpc_id = vpc_id
+        self.vpc_name = vpc_name
         self.subnets = subnets
         ### optional properties
         self.dmz_subnets = dmz_subnets
@@ -75,7 +77,7 @@ def get_codebuild_env_vars(
     stk: Stack,
     props: CdkCodeBuildStackProps,
     vpc: aws_ec2.IVpc,
-    which_codebuild_project: CodeBuildProjects,
+    which_codebuild_project: CodeBuildProjectNames,
 ) -> Dict[str, aws_codebuild.BuildEnvironmentVariable]:
     """
     Get environment variables for CodeBuild project.
@@ -111,7 +113,7 @@ def get_codebuild_env_vars(
     overrides = load_env_vars_from_file(stk, which_codebuild_project)
 
     # Build environment variables based on project type
-    if which_codebuild_project == CodeBuildProjects.AUTOMATED_TESTING:
+    if which_codebuild_project == CodeBuildProjectNames.AUTOMATED_TESTING:
         env_vars = {
             "TIER": aws_codebuild.BuildEnvironmentVariable(value=props.tier),
             "AWS_ENV": aws_codebuild.BuildEnvironmentVariable(value=props.aws_env),
@@ -125,8 +127,8 @@ def get_codebuild_env_vars(
 
             "AWS_ACCOUNT_ID": aws_codebuild.BuildEnvironmentVariable(value=stk.account),
             "AWS_REGION": aws_codebuild.BuildEnvironmentVariable(value=stk.region),
-            "VPC_ID": aws_codebuild.BuildEnvironmentVariable(value=props.vpc_id),
-            "AVAILABILITY_ZONES": aws_codebuild.BuildEnvironmentVariable( value=",".join(vpc.availability_zones) ),
+            # "VPC_ID": aws_codebuild.BuildEnvironmentVariable(value=props.vpc_id),
+            # "AVAILABILITY_ZONES": aws_codebuild.BuildEnvironmentVariable( value=",".join(vpc.availability_zones) ),
             "SECURITY_GROUP": aws_codebuild.BuildEnvironmentVariable(value=props.security_group),
             "SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.subnets)),
             "DMZ_SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.dmz_subnets) if props.dmz_subnets else ",".join(props.subnets)),
@@ -155,7 +157,7 @@ def get_codebuild_env_vars(
 ### ======================================================================================================
 
 
-class CdkCodeBuildStack(Stack):
+class CodeBuildProjects(Construct):
     """
     CDK Stack for creating CodeBuild projects.
 
@@ -166,8 +168,7 @@ class CdkCodeBuildStack(Stack):
     - AWS_ACCOUNT_ID
     - AWS_REGION
     - APP_ENV
-    - VPC_ID
-    - AVAILABILITY_ZONES
+    - VPC_NAME
     - SECURITY_GROUP
     - PUBLIC_SUBNETS
     - PRIVATE_SUBNETS
@@ -179,19 +180,23 @@ class CdkCodeBuildStack(Stack):
         scope: Construct,
         id: str,
         props: CdkCodeBuildStackProps,
-        **kvargs,
     ) -> None:
-        super().__init__(scope, id, **kvargs)
+        super().__init__(scope, id)
+        stk = Stack.of(self)
 
-        vpc = aws_ec2.Vpc.from_lookup(self, "Vpc", vpc_id=props.vpc_id)
+        print(f"Creating CodeBuild stack with props:")
+        print( json.dumps(props.__dict__, indent=4) )
+        if props.vpc_name == None:
+            props.vpc_name = f"vpc-{props.tier}-{stk.region}"
+        print(f"Using VPC name: '{props.vpc_name}'")
+        vpc = aws_ec2.Vpc.from_lookup(self, "Vpc", vpc_name=props.vpc_name, is_default=False)
 
         # Create one CodeBuild project for each project type
-        for buildspec_type in CodeBuildProjects:
-            buildspec_filepath = f"config/{props.tier}-{buildspec_type.value}-{BUILDSPEC_FILE_PATH}"
+        for buildspec_type in CodeBuildProjectNames:
             self._create_single_codebuild(
                 buildspec_type,
                 vpc,
-                buildspec_filepath,
+                str(BUILDSPEC_FILE_PATH),
                 props,
             )
 
@@ -199,12 +204,13 @@ class CdkCodeBuildStack(Stack):
 
     def _create_single_codebuild(
         self,
-        which_codebuild_project: CodeBuildProjects,
+        which_codebuild_project: CodeBuildProjectNames,
         vpc: aws_ec2.IVpc,
         buildspec_filepath: str,
         props: CdkCodeBuildStackProps,
     ) -> None:
         """Create a single CodeBuild project with standard permissions."""
+        stk = Stack.of(self)
 
         git_repo_name = f"{CDK_APP_NAME}-{which_codebuild_project.value}"
         project_name = f"{git_repo_name}-{props.tier}-build"
@@ -231,7 +237,7 @@ class CdkCodeBuildStack(Stack):
             environment=aws_codebuild.BuildEnvironment(
                 build_image=aws_codebuild.LinuxBuildImage.STANDARD_7_0,
                 environment_variables=get_codebuild_env_vars(
-                    self, props, vpc, which_codebuild_project
+                    stk, props, vpc, which_codebuild_project
                 ),
             ),
             logging=aws_codebuild.LoggingOptions(
@@ -253,6 +259,7 @@ class CdkCodeBuildStack(Stack):
 
     def _add_iam_permissions(self, cbproj: aws_codebuild.Project) -> None:
         """Add standard IAM permissions to CodeBuild project role."""
+        stk = Stack.of(self)
 
         ### Secrets Manager access
         cbproj.add_to_role_policy(
@@ -260,7 +267,7 @@ class CdkCodeBuildStack(Stack):
                 sid="AccesstoQdrantSecret",
                 actions=["secretsmanager:GetSecretValue"],
                 resources=[
-                    f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:*",
+                    f"arn:aws:secretsmanager:{stk.region}:{stk.account}:secret:*",
                 ],
             )
         )
@@ -289,8 +296,8 @@ class CdkCodeBuildStack(Stack):
                 sid="AccessToCDKAssetsBucket",
                 actions=["s3:*"],
                 resources=[
-                    f"arn:aws:s3:::cdk-*-assets-{self.account}-{self.region}",
-                    f"arn:aws:s3:::cdk-*-assets-{self.account}-{self.region}/*",
+                    f"arn:aws:s3:::cdk-*-assets-{stk.account}-{stk.region}",
+                    f"arn:aws:s3:::cdk-*-assets-{stk.account}-{stk.region}/*",
                 ],
             )
         )
@@ -301,9 +308,9 @@ class CdkCodeBuildStack(Stack):
                 sid="AccessToCDKStandardRoles",
                 actions=["sts:AssumeRole"],
                 resources=[
-                    f"arn:aws:iam::{self.account}:role/cdk-*-deploy-role-{self.account}-{self.region}",
-                    f"arn:aws:iam::{self.account}:role/cdk-*-file-publishing-role-{self.account}-{self.region}",
-                    f"arn:aws:iam::{self.account}:role/cdk-*-image-publishing-role-{self.account}-{self.region}",
+                    f"arn:aws:iam::{stk.account}:role/cdk-*-deploy-role-{stk.account}-{stk.region}",
+                    f"arn:aws:iam::{stk.account}:role/cdk-*-file-publishing-role-{stk.account}-{stk.region}",
+                    f"arn:aws:iam::{stk.account}:role/cdk-*-image-publishing-role-{stk.account}-{stk.region}",
                 ],
             )
         )
@@ -341,8 +348,8 @@ class CdkCodeBuildStack(Stack):
                     "sts:GetServiceBearerToken",
                 ],
                 resources=[
-                    f"arn:aws:codeartifact:{self.region}:{self.account}:domain/veridix",
-                    f"arn:aws:codeartifact:{self.region}:{self.account}:repository/veridix/*",
+                    f"arn:aws:codeartifact:{stk.region}:{stk.account}:domain/veridix",
+                    f"arn:aws:codeartifact:{stk.region}:{stk.account}:repository/veridix/*",
                 ],
             )
         )
@@ -380,7 +387,7 @@ class CdkCodeBuildStack(Stack):
                     "ecr:CompleteLayerUpload",
                 ],
                 resources=[
-                    f"arn:aws:ecr:{self.region}:{self.account}:repository/*",
+                    f"arn:aws:ecr:{stk.region}:{stk.account}:repository/*",
                 ],
             )
         )
@@ -416,7 +423,7 @@ class CdkCodeBuildStack(Stack):
 
 def load_env_vars_from_file(
     stk: Stack,
-    which_codebuild_project: CodeBuildProjects,
+    which_codebuild_project: CodeBuildProjectNames,
 ) -> Dict[str, str]:
     """
     UTILITY Function !!

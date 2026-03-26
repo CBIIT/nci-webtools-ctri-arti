@@ -23,7 +23,7 @@ from common.retention_base import (
 
 from common.StandardBucket import create_std_bucket, gen_bucket_name, gen_bucket_lifecycle, S3_LIFECYCLE_RULES
 from common.standard_ddbtbl import standard_dynamodb_table
-from stacks.standard_standalone_codebuild_project import CdkCodeBuildStack, CdkCodeBuildStackProps
+from stacks.standard_standalone_codebuild_project import CodeBuildProjects, CdkCodeBuildStackProps
 
 from config import Config
 
@@ -38,11 +38,11 @@ class CodeBuildStack(Stack):
     ) -> None:
         super().__init__(scope=scope, id=id_, stack_name=id_, **kwargs)
 
-        CdkCodeBuildStack( self, 'test-automation-codebuild-project',
+        CodeBuildProjects( self, 'test-automation-codebuild-project',
             props = CdkCodeBuildStackProps(
                 tier=tier,
                 aws_env=aws_env,
-                vpc_id=config["automated_testing"]["vpc"],
+                vpc_name=config["automated_testing"]["vpc_name"],
                 security_group=config["automated_testing"]["security_group"],
                 subnets=config["automated_testing"]["subnets"],
             ),

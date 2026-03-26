@@ -79,7 +79,7 @@ class EnvConfig(TypedDict):
 
 
 class AutomatedTestingConfig(TypedDict):
-    vpc: str
+    vpc_name: str
     subnets: List[str]
     security_group: Optional[str]
 
@@ -212,7 +212,7 @@ def load_config() -> tuple[Config, str, str]:
             ],
         },
         "automated_testing": {
-            "vpc": vpc,
+            "vpc_name": vpc,
             "subnets": subnets,
             "security_group": codebuild_SG,
         },

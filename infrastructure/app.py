@@ -90,7 +90,7 @@ def main():
     # )
     ### For Automated-Testing ONLY.
     CodeBuildStack( app,
-        f"{prefix}-dynamodb-tables",
+        f"{prefix}-autotest-codebuild",
         tier=tier,
         aws_env=config["tags"]["aws_env"],
         config=config,
