@@ -1,3 +1,4 @@
+import { createTemplatesRouter } from "agents/http/templates.js";
 import { createAgentsChatRouter } from "agents/http.js";
 import { createCmsAgentsRouter, createCmsConversationsRouter } from "cms/http.js";
 import { json, Router } from "express";
@@ -67,6 +68,7 @@ export function createServerApi({ modules } = {}) {
       },
     })
   );
+  api.use(createTemplatesRouter());
   api.use(createToolsRouter({ modules }));
   api.use(logErrors());
 
