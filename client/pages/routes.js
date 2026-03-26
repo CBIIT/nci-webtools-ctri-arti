@@ -2,6 +2,7 @@ import { useAuthContext } from "../contexts/auth-context.js";
 
 import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
+import { isAdminSuperUser } from "../utils/roleCheck.js";
 
 const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
 const ChatV2 = AuthorizedImport({ path: "./tools/chat-v2/index.js" });
@@ -24,6 +25,7 @@ export default function getRoutes() {
   const { user } = useAuthContext();
 
   const hasRole = (roleIds) => user?.() && roleIds.includes(user?.()?.Role?.id);
+  const adminSuperUser = isAdminSuperUser(user);
 
   return [
     {
@@ -46,6 +48,7 @@ export default function getRoutes() {
           path: "chat",
           title: "Chat",
           component: Chat,
+          hidden: !adminSuperUser,
         },
         {
           path: "chat-v2",
@@ -62,6 +65,7 @@ export default function getRoutes() {
           path: "translator",
           title: "Translator",
           component: Translate,
+          hidden: !adminSuperUser,
         },
         {
           path: "semantic-search",
