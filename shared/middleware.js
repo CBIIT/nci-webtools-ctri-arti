@@ -43,3 +43,16 @@ export function nocache(req, res, next) {
   });
   next();
 }
+
+export function securityHeaders(req, res, next) {
+  const headers = {
+    "X-Content-Type-Options": "nosniff",
+  };
+
+  if (req.secure) {
+    headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+  }
+
+  res.set(headers);
+  next();
+}

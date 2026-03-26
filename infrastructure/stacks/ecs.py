@@ -128,6 +128,8 @@ class EcsServiceStack(Stack):
             retention=logs.RetentionDays.ONE_MONTH,
         )
 
+        # TLS policy is owned by the existing ALB listener configuration.
+        # This stack only attaches host-based routing rules to that listener.
         listener = elbv2.ApplicationListener.from_lookup(
             self,
             "ecs-service-listener",
