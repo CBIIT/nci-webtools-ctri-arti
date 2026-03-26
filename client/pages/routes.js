@@ -1,15 +1,14 @@
+import html from "solid-js/html";
+
 import { useAuthContext } from "../contexts/auth-context.js";
-import { APP_NAMES, isAppDisabled } from "../utils/app-config.js";
 
 import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
 
-const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
-const ChatV2 = AuthorizedImport({ path: "./tools/chat-v2/index.js" });
-const ConsentCrafterV2 = AuthorizedImport({
-  path: "./tools/consent-crafter-v2/index.js",
-});
-const Translate = AuthorizedImport({ path: "./tools/translate/index.js" });
+const Chat = AuthorizedImport({ path: "./tools/chat/index.js", roles: [1, 2] });
+const ChatV2 = AuthorizedImport({ path: "./tools/chat-v2/index.js", roles: [1, 2] });
+const ConsentCrafter = AuthorizedImport({ path: "./tools/consent-crafter/index.js", roles: [1, 2] });
+const Translate = AuthorizedImport({ path: "./tools/translate/index.js", roles: [1, 2] });
 const SemanticSearch = AuthorizedImport({ path: "./tools/semantic-search.js" });
 const ExportConversations = AuthorizedImport({ path: "./tools/export-conversations/index.js" });
 const Users = AuthorizedImport({ path: "./users/index.js", roles: [1] });
@@ -24,10 +23,9 @@ const UserUsage = AuthorizedImport({ path: "./users/user-usage.js", roles: [1] }
  * @returns {Array} - Array of route configurations
  */
 export default function getRoutes() {
-  const { user, config } = useAuthContext();
+  const { user } = useAuthContext();
 
-  const hasRole = (roleIds) => user?.() && roleIds.includes(user?.()?.Role?.id);
-  const hiddenWhenDisabled = (appName) => isAppDisabled(config?.(), appName);
+  const hasAnyRole = (roleIds) => user?.() && roleIds.includes(user?.()?.Role?.id);
 
   return [
     {
@@ -50,25 +48,25 @@ export default function getRoutes() {
           path: "chat",
           title: "Chat",
           component: Chat,
-          hidden: hiddenWhenDisabled(APP_NAMES.CHAT),
+          hidden: !hasAnyRole([1, 2]),
         },
         {
           path: "chat-v2",
-          title: "Chat v2",
+          title: html`<span>Chat<sup class="text-warning">v2</sup></span>`,
           component: ChatV2,
-          hidden: true,
+          hidden: !hasAnyRole([1, 2]),
         },
         {
           path: "consent-crafter",
           title: "ConsentCrafter",
-          component: ConsentCrafterV2,
-          hidden: hiddenWhenDisabled(APP_NAMES.CONSENT_CRAFTER),
+          component: ConsentCrafter,
+          hidden: false,
         },
         {
           path: "translator",
           title: "Translator",
           component: Translate,
-          hidden: hiddenWhenDisabled(APP_NAMES.TRANSLATE),
+          hidden: !hasAnyRole([1, 2]),
         },
         {
           path: "semantic-search",
@@ -82,48 +80,50 @@ export default function getRoutes() {
           component: ExportConversations,
           hidden: true,
         },
-      ],
+      ].filter((route) => !route.hidden),
     },
     {
       path: "/_",
       rawPath: !user?.() ? "/api/v1/login" : undefined,
       title: user?.() ? user?.().firstName || "User" : "Login",
       class: "ms-lg-auto",
-      children: user?.()?.id && [
-        {
-          path: "profile",
-          title: "My Profile",
-          component: UserProfile,
-        },
-        {
-          path: "users",
-          title: "Manage Users",
-          component: Users,
-          hidden: !hasRole([1]),
-        },
-        {
-          path: "users/:id",
-          title: "Edit User",
-          component: UserEdit,
-          hidden: true,
-        },
-        {
-          path: "usage",
-          title: "AI Usage Dashboard",
-          component: Usage,
-          hidden: !hasRole([1]),
-        },
-        {
-          path: "users/:id/usage",
-          title: "User Usage",
-          component: UserUsage,
-          hidden: true,
-        },
-        {
-          rawPath: "/api/v1/logout",
-          title: "Logout",
-        },
-      ],
+      children:
+        user?.()?.id &&
+        [
+          {
+            path: "profile",
+            title: "My Profile",
+            component: UserProfile,
+          },
+          {
+            path: "users",
+            title: "Manage Users",
+            component: Users,
+            hidden: !hasAnyRole([1]),
+          },
+          {
+            path: "users/:id",
+            title: "Edit User",
+            component: UserEdit,
+            hidden: true,
+          },
+          {
+            path: "usage",
+            title: "AI Usage Dashboard",
+            component: Usage,
+            hidden: !hasAnyRole([1]),
+          },
+          {
+            path: "users/:id/usage",
+            title: "User Usage",
+            component: UserUsage,
+            hidden: true,
+          },
+          {
+            rawPath: "/api/v1/logout",
+            title: "Logout",
+          },
+        ].filter((route) => !route.hidden),
     },
   ];
 }
