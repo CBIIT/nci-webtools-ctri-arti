@@ -25,7 +25,7 @@ import ScrollTo from "../../../components/scroll-to.js";
 import Tooltip from "../../../components/tooltip.js";
 import { useAuthContext } from "../../../contexts/auth-context.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
-import { alerts, clearAlert } from "../../../utils/alerts.js";
+import { alerts, clearAlert, handleError } from "../../../utils/alerts.js";
 
 import DeleteConversation from "./delete-conversation.js";
 import {
@@ -398,7 +398,7 @@ function ChatApp() {
       }
     } catch (error) {
       saveDraftPatch({ message: text, files }, scope);
-      throw error;
+      handleError(error, "Chat Error");
     } finally {
       setIsStreaming(false);
     }
@@ -945,4 +945,3 @@ function ChatApp() {
     </div>
   `;
 }
-
