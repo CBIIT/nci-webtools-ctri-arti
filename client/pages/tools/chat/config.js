@@ -163,8 +163,7 @@ export const tools = [
             },
             key: {
               type: "string",
-              description:
-                "The file path to fetch. Omit to list all available files.",
+              description: "The file path to fetch. Omit to list all available files.",
             },
           },
           required: ["bucket"],
@@ -176,15 +175,14 @@ export const tools = [
     toolSpec: {
       name: "docxTemplate",
       description:
-        "Fill out DOCX documents by finding and replacing text in blocks. Without replacements: returns the document's text as numbered blocks (paragraphs and table cells) with style info and row/col for cells. With replacements: use text-based keys (\"original text\": \"new text\") or index-based keys (\"@0\": \"replacement for block 0\") to fill in content.",
+        'Fill out DOCX documents by finding and replacing text in blocks. Without replacements: returns the document\'s text as numbered blocks (paragraphs and table cells) with style info and row/col for cells. With replacements: use text-based keys ("original text": "new text") or index-based keys ("@0": "replacement for block 0") to fill in content.',
       inputSchema: {
         json: {
           type: "object",
           properties: {
             docxUrl: {
               type: "string",
-              description:
-                "URL to the DOCX document. Supports s3://bucket/key or https:// URLs.",
+              description: "URL to the DOCX document. Supports s3://bucket/key or https:// URLs.",
             },
             replacements: {
               type: "object",

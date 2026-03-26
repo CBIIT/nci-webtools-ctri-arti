@@ -37,7 +37,9 @@ function estimateStructuredTokens(value, bytesPerToken = TOOL_JSON_BYTES_PER_TOK
 }
 
 function normalizeDocumentFormat(format) {
-  return String(format || "").trim().toLowerCase();
+  return String(format || "")
+    .trim()
+    .toLowerCase();
 }
 
 function normalizeBytes(bytes) {
@@ -72,7 +74,10 @@ function decodeTextDocumentBytes(bytes, format) {
 
 function estimateTextAttachmentTokens(text) {
   if (!text) return 0;
-  return TEXT_ATTACHMENT_FIXED_OVERHEAD + Math.ceil(estimateUtf8Tokens(text) * TEXT_ATTACHMENT_MULTIPLIER);
+  return (
+    TEXT_ATTACHMENT_FIXED_OVERHEAD +
+    Math.ceil(estimateUtf8Tokens(text) * TEXT_ATTACHMENT_MULTIPLIER)
+  );
 }
 
 function estimateDocumentTextPayloadTokens(document = {}) {
@@ -117,10 +122,8 @@ function readImageDimensions(format, bytes) {
 
   if (imageFormat === "png" && bytes.length >= 24) {
     return {
-      width:
-        (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19],
-      height:
-        (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23],
+      width: (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19],
+      height: (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23],
     };
   }
 
@@ -338,7 +341,10 @@ async function estimateDocumentBytesTokensAccurate(document = {}) {
   if (format === "docx") {
     const parsedText = await extractParsedDocumentText(document);
     if (parsedText) {
-      return Math.max(estimateUtf8Tokens(parsedText), Math.ceil(bytes.length / DOCX_BYTES_PER_TOKEN));
+      return Math.max(
+        estimateUtf8Tokens(parsedText),
+        Math.ceil(bytes.length / DOCX_BYTES_PER_TOKEN)
+      );
     }
   }
 

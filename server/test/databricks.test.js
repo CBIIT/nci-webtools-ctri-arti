@@ -69,7 +69,9 @@ test("DatabricksProvider maps Bedrock requests and responses through chat comple
             content: [
               {
                 type: "reasoning",
-                summary: [{ type: "summary_text", text: "Checking references", signature: "sig-1" }],
+                summary: [
+                  { type: "summary_text", text: "Checking references", signature: "sig-1" },
+                ],
               },
               { type: "text", text: "Looking that up now." },
             ],
@@ -137,7 +139,9 @@ test("DatabricksProvider maps Bedrock requests and responses through chat comple
         },
         {
           role: "user",
-          content: [{ toolResult: { toolUseId: "tool_1", content: [{ json: { city: "Paris" } }] } }],
+          content: [
+            { toolResult: { toolUseId: "tool_1", content: [{ json: { city: "Paris" } }] } },
+          ],
         },
       ],
       toolConfig: {
@@ -240,10 +244,7 @@ test("DatabricksProvider keeps token caches per provider instance", async () => 
       messages: [{ role: "user", content: [{ text: "hello" }] }],
     });
 
-    assert.deepStrictEqual(authHeaders, [
-      "Bearer token-for-client-a",
-      "Bearer token-for-client-b",
-    ]);
+    assert.deepStrictEqual(authHeaders, ["Bearer token-for-client-a", "Bearer token-for-client-b"]);
   } finally {
     global.fetch = originalFetch;
   }

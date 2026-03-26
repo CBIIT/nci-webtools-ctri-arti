@@ -90,6 +90,3 @@ test("createSchemaReadyServiceApp logs readiness failures", async () => {
 
   assert.deepStrictEqual(errors, ["Custom readiness failure: boom"]);
 });
-
-
-

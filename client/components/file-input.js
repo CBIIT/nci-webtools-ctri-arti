@@ -1,11 +1,11 @@
-import { createEffect, splitProps } from "solid-js"
+import { createEffect, splitProps } from "solid-js";
 import html from "solid-js/html";
 
 export default function FileInput(props) {
   let fileInput;
   const [local, rest] = splitProps(props, ["value"]);
-  createEffect(() => fileInput.files = asFileList(local.value));
-  return html`<input type="file" ref=${(el) => fileInput = el} ...${rest} />`;
+  createEffect(() => (fileInput.files = asFileList(local.value)));
+  return html`<input type="file" ref=${(el) => (fileInput = el)} ...${rest} />`;
 }
 
 /**

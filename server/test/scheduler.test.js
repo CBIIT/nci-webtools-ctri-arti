@@ -8,5 +8,5 @@ test("resetUsageLimits returns the users reset result", async () => {
   const result = await resetUsageLimits();
 
   assert.equal(result.success, true);
-assert.equal(typeof result.updatedUsers, "number");
+  assert.equal(typeof result.updatedUsers, "number");
 });

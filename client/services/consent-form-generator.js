@@ -60,7 +60,10 @@ export async function generateConsentForm({
 }) {
   // Step 1: Filter consent library to relevant sections
   console.log("[consent-form] Step 1: Filtering consent library...");
-  onProgress?.({ status: "filtering", message: "Filtering consent library to relevant sections..." });
+  onProgress?.({
+    status: "filtering",
+    message: "Filtering consent library to relevant sections...",
+  });
 
   const filterResult = await filterConsentLibrary({
     protocolText,

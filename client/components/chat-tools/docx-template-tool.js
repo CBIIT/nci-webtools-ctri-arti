@@ -2,7 +2,6 @@ import { Download, FileText } from "lucide-solid";
 import { Show, For } from "solid-js";
 import html from "solid-js/html";
 
-
 import { downloadDocxTemplate, getToolResult } from "../../utils/tools.js";
 import Tooltip from "../tooltip.js";
 
@@ -122,7 +121,7 @@ export default function DocxTemplateTool(props) {
                     ${(item) => html`
                       <div class="py-1 border-bottom">
                         <code class="text-danger">${item.find}</code>
-                        <span class="mx-1">\u2192</span>
+                        <span class="mx-1">→</span>
                         <span class="text-success">${item.replace}</span>
                       </div>
                     `}
@@ -153,9 +152,16 @@ export default function DocxTemplateTool(props) {
               <${For} each=${documentBlocks}>
                 ${(block) => html`
                   <div class="p-2 border-bottom d-flex gap-2 align-items-start">
-                    <span class="badge bg-secondary font-monospace" title="Block index">@${block.index}</span>
-                    <span class="badge ${block.type === 'cell' ? 'bg-info' : 'bg-primary'}" title="Block type">
-                      ${block.type === 'cell' ? `${block.type} [${block.row},${block.col}]` : block.type}
+                    <span class="badge bg-secondary font-monospace" title="Block index"
+                      >@${block.index}</span
+                    >
+                    <span
+                      class="badge ${block.type === "cell" ? "bg-info" : "bg-primary"}"
+                      title="Block type"
+                    >
+                      ${block.type === "cell"
+                        ? `${block.type} [${block.row},${block.col}]`
+                        : block.type}
                     </span>
                     <span class="badge bg-warning text-dark" title="Style">${block.style}</span>
                     <span class="text-break flex-grow-1" style="word-break: break-word;">

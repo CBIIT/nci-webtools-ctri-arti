@@ -1,10 +1,6 @@
 import { Router } from "express";
 
-import {
-  parseEmbeddingQuery,
-  readRequestContext,
-  withResolvedContext,
-} from "./helpers.js";
+import { parseEmbeddingQuery, readRequestContext, withResolvedContext } from "./helpers.js";
 
 function readOptionalNumber(value) {
   if (value === undefined || value === null || value === "") return undefined;

@@ -219,4 +219,3 @@ export function rawSql(strings, ...values) {
 }
 
 export default db;
-

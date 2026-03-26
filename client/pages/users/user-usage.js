@@ -5,8 +5,8 @@ import html from "solid-js/html";
 import { AlertContainer } from "../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../utils/alerts.js";
 
-import { formatDateInputForDisplay, formatUtcTimestampToLocal } from "./date-utils.js";
-import { calculateDateRange, formatDate, getDefaultStartDate, validateDateRange } from "./usage.js";
+import { formatDate, formatDateInputForDisplay, formatUtcTimestampToLocal } from "./date-utils.js";
+import { calculateDateRange, getDefaultStartDate, validateDateRange } from "./usage/usage.js";
 
 function UserUsage() {
   const params = useParams();

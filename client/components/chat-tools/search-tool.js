@@ -2,7 +2,6 @@ import { Search } from "lucide-solid";
 import { For } from "solid-js";
 import html from "solid-js/html";
 
-
 import { getSearchResults, getToolResult } from "../../utils/tools.js";
 
 import ToolHeader from "./tool-header.js";

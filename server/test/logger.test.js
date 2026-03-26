@@ -64,6 +64,3 @@ test("createLogger", async (t) => {
     assert.strictEqual(logger.level, "debug");
   });
 });
-
-
-
