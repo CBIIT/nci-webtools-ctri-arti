@@ -160,6 +160,7 @@ const tests = [
   "./pages/tools/translate.test.js",
   "./pages/tools/chat-v2/uploads.test.js",
   "./pages/tools/chat-v2/model-list.test.js",
+  "./pages/tools/chat-v2/alerts.test.js",
 ];
 
 if (includeSlow) {
