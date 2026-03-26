@@ -18,6 +18,16 @@ const COMMON_USAGE_TYPES = [
   "translate",
 ];
 
+function getDisabledApps(user, value = process.env.DISABLED_APPS) {
+  const roleId = user?.Role?.id ?? user?.roleID;
+  if (roleId === 1 || roleId === 2) return [];
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((app) => app.trim())
+    .filter(Boolean);
+}
+
 export function createAuthRouter({ modules } = {}) {
   if (!modules?.cms || !modules?.users) {
     throw new Error("cms and users modules are required");
@@ -68,7 +78,12 @@ export function createAuthRouter({ modules } = {}) {
     res.json({ user, expires: session.cookie.expires });
   });
 
-  api.get("/config", async (_req, res) => {
+  api.get("/config", async (req, res) => {
+    const apiKey = req.headers["x-api-key"];
+    const user = await users.resolveIdentity({
+      sessionUserId: req.session?.user?.id,
+      apiKey,
+    });
     const anonymousContext = createAnonymousRequestContext({ source: "server" });
     const [usersConfig, agentList] = await Promise.all([
       users.getConfig(),
@@ -80,9 +95,11 @@ export function createAuthRouter({ modules } = {}) {
     ]);
 
     const usageTypes = [...new Set([...COMMON_USAGE_TYPES, ...agentList])].sort();
+    const disabled = getDisabledApps(user);
 
     res.json({
       ...usersConfig,
+      disabled,
       usageTypes,
     });
   });

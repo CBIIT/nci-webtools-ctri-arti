@@ -1,7 +1,15 @@
-import { createContext, createEffect, createMemo, onCleanup, useContext } from "solid-js";
+import {
+  createContext,
+  createEffect,
+  createMemo,
+  createResource,
+  onCleanup,
+  useContext,
+} from "solid-js";
 import html from "solid-js/html";
 import { createStore, reconcile } from "solid-js/store";
 
+import { DEFAULT_CLIENT_CONFIG, fetchClientConfig } from "../utils/app-config.js";
 import { safeParseJson } from "../utils/parsers.js";
 
 export const Status = {
@@ -75,6 +83,7 @@ export const AuthProvider = (props) => {
     : null;
 
   const [state, setState] = createStore(cachedState || initialState());
+  const [config] = createResource(fetchClientConfig);
   const initialResolvedAuthState = cachedState?.isLoggedIn ?? false;
   let hasResolvedInitialSession = false;
   let lastResolvedAuthState = initialResolvedAuthState;
@@ -250,6 +259,7 @@ export const AuthProvider = (props) => {
     isLoggedIn: () => state.isLoggedIn,
     user: () => state.user,
     expires: () => state.expires,
+    config: () => config() || DEFAULT_CLIENT_CONFIG,
     logout: () => logout(),
     setData: (data) => setData(data),
     checkSession: () => checkSession(),

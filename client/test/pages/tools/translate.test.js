@@ -1,3 +1,5 @@
+import { AUTH_STATE_STORAGE_KEY } from "../../../contexts/auth-context.js";
+import { clearCachedData } from "../../../utils/static-data.js";
 import assert from "../../assert.js";
 import {
   installMockFetch,
@@ -9,6 +11,9 @@ import {
 import test from "../../test.js";
 
 test("Translator Page Tests", async (t) => {
+  clearCachedData();
+  localStorage.removeItem("userDetails");
+  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
   const restoreFetch = installMockFetch(({ url }) => {
     if (url.pathname === "/api/v1/session") {
       return jsonResponse({
@@ -20,6 +25,9 @@ test("Translator Page Tests", async (t) => {
           Role: { id: 1, name: "admin" },
         },
       });
+    }
+    if (url.pathname === "/api/config") {
+      return jsonResponse({ disabled: [] });
     }
     return null;
   });

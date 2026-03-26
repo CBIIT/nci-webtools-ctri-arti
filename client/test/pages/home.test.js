@@ -1,4 +1,5 @@
 import { AUTH_STATE_STORAGE_KEY, authSync } from "../../contexts/auth-context.js";
+import { clearCachedData } from "../../utils/static-data.js";
 import assert from "../assert.js";
 import {
   installMockFetch,
@@ -36,6 +37,9 @@ function clearPrivacyNoticeAccepted() {
 }
 
 test("Home Page Tests", async (t) => {
+  clearCachedData();
+  localStorage.removeItem("userDetails");
+  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
   const restoreFetch = installMockFetch(({ url }) => {
     if (url.pathname === "/api/v1/session") {
       return jsonResponse({
@@ -47,6 +51,9 @@ test("Home Page Tests", async (t) => {
           Role: { id: 1, name: "admin" },
         },
       });
+    }
+    if (url.pathname === "/api/config") {
+      return jsonResponse({ disabled: [] });
     }
     return null;
   });
@@ -65,6 +72,15 @@ test("Home Page Tests", async (t) => {
     });
 
     await t.test("/ renders all 4 tool cards", async () => {
+      await waitForCondition(
+        () => {
+          const links = container.querySelectorAll("a.d-flex.align-items-center.my-3");
+          return links.length === 4;
+        },
+        5000,
+        "home links loaded"
+      );
+
       const links = container.querySelectorAll("a.d-flex.align-items-center.my-3");
       assert.strictEqual(links.length, 4, `Expected 4 tool cards, got ${links.length}`);
 
@@ -79,6 +95,21 @@ test("Home Page Tests", async (t) => {
     });
 
     await t.test("/ tool card links point to correct URLs", async () => {
+      await waitForCondition(
+        () => {
+          const hrefs = Array.from(
+            container.querySelectorAll("a.d-flex.align-items-center.my-3")
+          ).map((link) => link.getAttribute("href"));
+          return (
+            hrefs.includes("/tools/chat") &&
+            hrefs.includes("/tools/consent-crafter") &&
+            hrefs.includes("/tools/translator")
+          );
+        },
+        5000,
+        "home link hrefs loaded"
+      );
+
       const links = container.querySelectorAll("a.d-flex.align-items-center.my-3");
       const hrefs = Array.from(links).map((link) => link.getAttribute("href"));
       assert.ok(hrefs.includes("/tools/chat"), "Should have /tools/chat link");
@@ -112,6 +143,70 @@ test("Home Page Tests", async (t) => {
 
       const loginLink = container.querySelector('a[href="/api/v1/login"]');
       assert.ok(!loginLink, "Login button should be hidden when user is authenticated");
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    });
+  } finally {
+    restoreFetch();
+    dispose();
+    if (container.parentNode === document.body) {
+      document.body.removeChild(container);
+    }
+  }
+});
+
+test("Home Page Disabled Apps Tests", async (t) => {
+  clearCachedData();
+  localStorage.removeItem("userDetails");
+  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+  const restoreFetch = installMockFetch(({ url }) => {
+    if (url.pathname === "/api/v1/session") {
+      return jsonResponse({
+        user: {
+          id: 3,
+          email: "integration@example.org",
+          firstName: "Integration",
+          lastName: "Tester",
+          Role: { id: 3, name: "user" },
+        },
+      });
+    }
+    if (url.pathname === "/api/config") {
+      return jsonResponse({ disabled: ["Chat", "Translate"] });
+    }
+    return null;
+  });
+
+  const { container, errors, dispose } = mountApp("/");
+
+  try {
+    await waitForElement(container, "h1", (el) => el.textContent.includes("Research Optimizer"));
+
+    await t.test("/ hides disabled tool cards from config", async () => {
+      await waitForCondition(
+        () => {
+          const titles = Array.from(
+            container.querySelectorAll("a.d-flex.align-items-center.my-3")
+          ).map((link) => link.querySelector(".font-title")?.textContent?.trim());
+          return (
+            !titles.includes("Chat") &&
+            titles.includes("ConsentCrafter") &&
+            !titles.includes("Translator") &&
+            titles.includes("New Tools")
+          );
+        },
+        5000,
+        "home disabled apps applied"
+      );
+
+      const links = container.querySelectorAll("a.d-flex.align-items-center.my-3");
+      const titles = Array.from(links).map((link) =>
+        link.querySelector(".font-title")?.textContent?.trim()
+      );
+
+      assert.ok(!titles.includes("Chat"), "Should hide Chat card");
+      assert.ok(titles.includes("ConsentCrafter"), "Should keep ConsentCrafter card");
+      assert.ok(!titles.includes("Translator"), "Should hide Translator card");
+      assert.ok(titles.includes("New Tools"), "Should keep New Tools card");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
   } finally {
