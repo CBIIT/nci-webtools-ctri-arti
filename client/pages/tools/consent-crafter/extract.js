@@ -134,14 +134,7 @@ const CONCAT_FIELDS = new Set(["references", "reasoning"]);
  * @param {string} [fieldDescriptions] - Optional field descriptions from schema
  * @returns {string} Fully assembled system prompt
  */
-function buildSystemPrompt(
-  promptTemplate,
-  protocolText,
-  consentLibrary,
-  fullSchema,
-  templateAnalysis,
-  fieldDescriptions
-) {
+function buildSystemPrompt(promptTemplate, protocolText, consentLibrary, fullSchema, templateAnalysis, fieldDescriptions) {
   const today = new Date();
   const todayStr = `${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}/${today.getFullYear()}`;
   const schemaJson = JSON.stringify(fullSchema, null, 2);
@@ -182,14 +175,7 @@ export async function runFieldExtraction({
   templateAnalysis,
   fieldDescriptions,
 }) {
-  const system = buildSystemPrompt(
-    promptTemplate,
-    protocolText,
-    consentLibrary || "",
-    fullSchema,
-    templateAnalysis,
-    fieldDescriptions
-  );
+  const system = buildSystemPrompt(promptTemplate, protocolText, consentLibrary || "", fullSchema, templateAnalysis, fieldDescriptions);
   const totalChunks = SCHEMA_CHUNKS.length;
 
   const merged = {};
@@ -247,10 +233,9 @@ export async function runFieldExtraction({
     try {
       data = JSON.parse(jsonText);
     } catch (e) {
-      throw new Error(
-        `Failed to parse JSON for chunk "${chunk.label}": ${e.message}\nResponse preview: ${responseText.slice(0, 500)}`,
-        { cause: e }
-      );
+      throw new Error(`Failed to parse JSON for chunk "${chunk.label}": ${e.message}\nResponse preview: ${responseText.slice(0, 500)}`, {
+        cause: e,
+      });
     }
 
     // Merge: concatenate array fields (references, reasoning), overwrite others
@@ -288,13 +273,7 @@ export async function runFieldExtraction({
  * @param {Function} [options.onProgress] - Progress callback
  * @returns {Promise<Object>} Extracted fields as JSON
  */
-export async function runSimpleExtraction({
-  protocolText,
-  promptTemplate,
-  model,
-  runModelFn,
-  onProgress,
-}) {
+export async function runSimpleExtraction({ protocolText, promptTemplate, model, runModelFn, onProgress }) {
   const system = promptTemplate.replaceAll("${protocol}", protocolText);
 
   onProgress?.({ status: "extracting", completed: 0, total: 1, message: "Extracting fields..." });
@@ -330,10 +309,9 @@ export async function runSimpleExtraction({
   try {
     parsed = JSON.parse(jsonText);
   } catch (e) {
-    throw new Error(
-      `Failed to parse JSON from simple extraction: ${e.message}\nResponse preview: ${responseText.slice(0, 500)}`,
-      { cause: e }
-    );
+    throw new Error(`Failed to parse JSON from simple extraction: ${e.message}\nResponse preview: ${responseText.slice(0, 500)}`, {
+      cause: e,
+    });
   }
 
   onProgress?.({ status: "applying", completed: 1, total: 1, message: "Generating document..." });

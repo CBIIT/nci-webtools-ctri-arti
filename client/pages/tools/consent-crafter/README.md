@@ -19,12 +19,12 @@ Generates informed consent documents from research protocols using AI-powered bl
 
 Unlike simple placeholder filling, this tool uses formatting-aware block processing. Template formatting indicates how to handle each text segment:
 
-| Template Formatting | Meaning |
-|---------------------|---------|
-| Blue text (`0070C0`, `2E74B5`) | Required NIH language - preserve verbatim in output |
-| Yellow highlight | Label for template users - omit from output entirely |
-| Italic text (non-blue) | Instructions to follow - generate replacement content |
-| Bold text | Emphasis - preserve formatting |
+| Template Formatting            | Meaning                                               |
+| ------------------------------ | ----------------------------------------------------- |
+| Blue text (`0070C0`, `2E74B5`) | Required NIH language - preserve verbatim in output   |
+| Yellow highlight               | Label for template users - omit from output entirely  |
+| Italic text (non-blue)         | Instructions to follow - generate replacement content |
+| Bold text                      | Emphasis - preserve formatting                        |
 
 The AI assigns each block one of four actions based on overall formatting:
 
@@ -36,12 +36,14 @@ The AI assigns each block one of four actions based on overall formatting:
 ## Use Cases
 
 ### NIH Clinical Center Consent Forms
+
 - Adult affected patient consent
 - Adult healthy volunteer consent
 - Adult family member consent
 - Child/cognitive impairment assent (coming soon)
 
 ### Lay Person Abstracts
+
 - Patient-friendly study summaries
 - Multiple cohort types supported
 
