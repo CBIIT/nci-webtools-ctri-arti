@@ -15,7 +15,6 @@ env:
         TIER: ${TIER}
         AWS_ENV: ${AWS_ENV}
         GitBranch: ${GIT_BRANCH}
-        FrontendStkName: ${FrontendStkName}
 
 phases:
     install:

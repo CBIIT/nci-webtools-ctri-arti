@@ -31,7 +31,8 @@ from aws_cdk import (
 ### ======================================================================================================
 
 # CDK_APP_NAME constant - matches project structure
-CDK_APP_NAME = "nci-CTRI-ARTI-webtools"
+CDK_APP_NAME = "research-optimizer"
+# CDK_APP_NAME = "CTRI-webtools"
 
 BUILDSPEC_FILE_PATH = Path(__file__).parent.parent.parent / "test" / "buildspec.yaml"
 print("Using buildspec file at: ", BUILDSPEC_FILE_PATH)
@@ -59,6 +60,7 @@ class CdkCodeBuildStackProps:
         webapp_subnets: Optional[list[str]] = None,
         db_subnets: Optional[list[str]] = None,
         security_group: Optional[str] = None,
+        # ecr_repository : str,
     ):
         self.tier = tier
         self.aws_env = aws_env
@@ -69,6 +71,9 @@ class CdkCodeBuildStackProps:
         self.webapp_subnets = webapp_subnets
         self.db_subnets = db_subnets
         self.security_group = security_group
+
+        # ecr_repository = f"{CDK_APP_NAME}-{which_codebuild_project.value}-repo"
+
 
 ### ======================================================================================================
 
@@ -91,9 +96,6 @@ def get_codebuild_env_vars(
     Returns:
         Dictionary of environment variables for CodeBuild
     """
-
-    git_repo_name = f"{CDK_APP_NAME}-{which_codebuild_project.value}"
-    ecr_repository = f"{git_repo_name}-repo"
 
     ### Since CloudOne aws-acct has -NO- concept of public-subnet !!
     # public_subnets = ",".join([
@@ -118,9 +120,6 @@ def get_codebuild_env_vars(
             "TIER": aws_codebuild.BuildEnvironmentVariable(value=props.tier),
             "AWS_ENV": aws_codebuild.BuildEnvironmentVariable(value=props.aws_env),
             "GIT_BRANCH": aws_codebuild.BuildEnvironmentVariable( value=overrides.get("GIT_BRANCH", "main") ),
-            "FrontendStkName": aws_codebuild.BuildEnvironmentVariable(
-                value=overrides.get("FrontendStkName", f"{CDK_APP_NAME}-{props.tier}-frontend")
-            ),
             "AppUrl": aws_codebuild.BuildEnvironmentVariable(
                 value=overrides.get("AppUrl", overrides.get("DOMAIN_NAME", "https://example.com"))
             ),
@@ -212,8 +211,7 @@ class CodeBuildProjects(Construct):
         """Create a single CodeBuild project with standard permissions."""
         stk = Stack.of(self)
 
-        git_repo_name = f"{CDK_APP_NAME}-{which_codebuild_project.value}"
-        project_name = f"{git_repo_name}-{props.tier}-build"
+        project_name = f"{CDK_APP_NAME}-{props.tier}-{which_codebuild_project.value}"
 
         ### Get CodeBuild's buildspec from a file.
         full_path = Path(__file__).parent.parent / buildspec_filepath # Path relative to infrastructure directory
