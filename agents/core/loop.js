@@ -1,5 +1,5 @@
 import { getToolFn } from "../tools/index.js";
-import { getToolSpecs } from "../tools/specs.js";
+import { getToolSpec, getToolSpecs } from "../tools/specs.js";
 
 import { buildSystemPrompt } from "./prompt.js";
 import { accumulateContent, parseToolUseInputs } from "./streaming.js";
@@ -32,9 +32,12 @@ async function loadAgentSession({ userId, agentId, conversationId, modelOverride
   const toolSpecs = getToolSpecs(toolNames);
   const tools = toolSpecs.map(({ toolSpec }) => ({ toolSpec }));
 
-  const conversation = await cms.getConversation(userId, conversationId);
-  if (!conversation) {
-    throw new Error(`Conversation not found: ${conversationId}`);
+  let conversation = null;
+  if (conversationId != null) {
+    conversation = await cms.getConversation(userId, conversationId);
+    if (!conversation) {
+      throw new Error(`Conversation not found: ${conversationId}`);
+    }
   }
 
   return { agent, conversation, effectiveModel, tools };
@@ -74,7 +77,7 @@ function buildConversationMessages(context, userMessage) {
   const existingMessages = context?.messages || [];
   const messages = existingMessages.map(({ role, content }) => ({ role, content }));
 
-  if (messages.length && messages.at(-1).role !== "user") {
+  if (!messages.length || messages.at(-1).role !== "user") {
     messages.push({ role: "user", content: userMessage.content });
   }
 
@@ -102,8 +105,23 @@ async function createToolResultEvent(toolUse, toolContext) {
   }
 }
 
+function getToolExecution(toolName) {
+  return getToolSpec(toolName)?.execution || null;
+}
+
+async function executeDirectToolUse(toolUse, toolContext) {
+  const toolFn = getToolFn(toolUse.name);
+
+  if (!toolFn) {
+    throw new Error(`Direct-return tool is not implemented server-side: ${toolUse.name}`);
+  }
+
+  return await toolFn(toolUse.input, toolContext);
+}
+
 async function executeToolUses(toolUses, toolContext) {
   const hasClientTools = toolUses.some((toolUse) => !getToolFn(toolUse.name));
+  const directToolUse = toolUses.find((toolUse) => getToolExecution(toolUse.name)?.returnDirect);
 
   if (hasClientTools) {
     const clientRequests = toolUses
@@ -123,6 +141,26 @@ async function executeToolUses(toolUses, toolContext) {
     }
 
     return { done: true, clientRequests, serverResults, toolResultsMessage: null };
+  }
+
+  if (directToolUse) {
+    if (toolUses.length !== 1) {
+      throw new Error(
+        `Direct-return tool "${directToolUse.name}" must be the only tool use in a turn`
+      );
+    }
+
+    const result = await executeDirectToolUse(directToolUse, toolContext);
+    return {
+      done: true,
+      clientRequests: [],
+      serverResults: [],
+      toolResultsMessage: null,
+      directResult: {
+        toolName: directToolUse.name,
+        result,
+      },
+    };
   }
 
   const serverResults = [];
@@ -172,13 +210,16 @@ export async function* runAgentLoop({
     cms,
   });
 
-  await processUploads(userMessage, { userId, agentId, conversationId, cms });
-  await cms.appendConversationMessage(userId, {
-    conversationId,
-    role: "user",
-    content: userMessage.content,
-    parentID: userMessage.parentID || null,
-  });
+  const persisted = conversationId != null;
+  if (persisted) {
+    await processUploads(userMessage, { userId, agentId, conversationId, cms });
+    await cms.appendConversationMessage(userId, {
+      conversationId,
+      role: "user",
+      content: userMessage.content,
+      parentID: userMessage.parentID || null,
+    });
+  }
 
   const system = await buildSystemPrompt({ agent, conversation, userId, agentId, cms });
   const userText =
@@ -187,20 +228,24 @@ export async function* runAgentLoop({
       .map((contentBlock) => contentBlock.text)
       .join("\n") || "";
 
-  for await (const event of streamConversationSummary(cms, {
-    userId,
-    conversationId,
-    model: effectiveModel,
-    system,
-    tools,
-    thoughtBudget,
-    userText,
-    requestId,
-  })) {
-    yield event;
+  if (persisted) {
+    for await (const event of streamConversationSummary(cms, {
+      userId,
+      conversationId,
+      model: effectiveModel,
+      system,
+      tools,
+      thoughtBudget,
+      userText,
+      requestId,
+    })) {
+      yield event;
+    }
   }
 
-  const context = await cms.getContext(userId, conversationId, { compressed: true });
+  const context = persisted
+    ? await cms.getContext(userId, conversationId, { compressed: true })
+    : null;
   const messages = buildConversationMessages(context, userMessage);
   const toolContext = { userId, requestId, agentId, conversationId, gateway, cms };
 
@@ -239,11 +284,13 @@ export async function* runAgentLoop({
     parseToolUseInputs(assistantContent);
 
     const assistantMessage = { role: "assistant", content: assistantContent };
-    await cms.appendConversationMessage(userId, {
-      conversationId,
-      role: "assistant",
-      content: assistantMessage.content,
-    });
+    if (persisted) {
+      await cms.appendConversationMessage(userId, {
+        conversationId,
+        role: "assistant",
+        content: assistantMessage.content,
+      });
+    }
     messages.push(assistantMessage);
 
     if (!stopReason || TERMINAL_STOP_REASONS.has(stopReason)) {
@@ -263,6 +310,7 @@ export async function* runAgentLoop({
       serverResults,
       toolResultsMessage,
       done: toolExecutionDone,
+      directResult,
     } = await executeToolUses(toolUses, toolContext);
 
     for (const event of clientRequests) {
@@ -271,13 +319,18 @@ export async function* runAgentLoop({
     for (const event of serverResults) {
       yield event;
     }
+    if (directResult) {
+      yield { workflowResult: directResult.result };
+    }
 
     if (toolResultsMessage) {
-      await cms.appendConversationMessage(userId, {
-        conversationId,
-        role: "user",
-        content: toolResultsMessage.content,
-      });
+      if (persisted) {
+        await cms.appendConversationMessage(userId, {
+          conversationId,
+          role: "user",
+          content: toolResultsMessage.content,
+        });
+      }
       messages.push(toolResultsMessage);
     }
 

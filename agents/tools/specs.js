@@ -156,6 +156,37 @@ memories/ and skills/ persist across conversations. All other files are conversa
       },
     },
   },
+  workflow: {
+    toolSpec: {
+      name: "workflow",
+      description:
+        "Run a backend-owned workflow inside the agents service. Use this for deterministic multi-step products where the workflow logic must stay in code instead of being improvised by the model.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            workflow: {
+              type: "string",
+              description: "Registered workflow name, for example protocol_advisor.",
+            },
+            input: {
+              type: "object",
+              description: "Structured workflow input payload.",
+            },
+            options: {
+              type: "object",
+              description: "Optional runtime options such as mode or delivery preferences.",
+            },
+          },
+          required: ["workflow", "input"],
+        },
+      },
+    },
+    execution: {
+      mode: "workflow",
+      returnDirect: true,
+    },
+  },
   code: {
     toolSpec: {
       name: "code",
@@ -238,6 +269,10 @@ memories/ and skills/ persist across conversations. All other files are conversa
     },
   },
 };
+
+export function getToolSpec(name) {
+  return specs[name];
+}
 
 export function getToolSpecs(toolNames) {
   if (!toolNames) return Object.values(specs);

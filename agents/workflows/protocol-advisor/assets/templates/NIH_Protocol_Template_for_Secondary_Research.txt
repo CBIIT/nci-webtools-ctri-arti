@@ -1,0 +1,647 @@
+header: PAGE   \* MERGEFORMAT 69
+Abbreviated Title:
+Version Date:
+footer: Secondary Research Template v8 02.04.2025
+
+PROTOCOL TEMPLATE FOR SECONDARY RESEARCH WITH BIOSPECIMENS, DATA AND/OR MEDICAL RECORDS ONLY 
+
+This preface contains clarification about the protocol template and its supporting materials.  Remove the preface before finalizing and submitting the protocol for review. 
+
+The term "protocol" is defined as a complete written description of, and scientific rationale for, a research activity involving human subjects. The protocol document serves as a free-standing document which clearly directs the conduct of the research.  It is the “recipe” followed by the investigators and study team in performing the research activities.
+
+Thus, "protocol" means both the written description of the research activity and the activity itself.
+
+The format and information below are provided as a guideline to assist in writing a protocol (study design) for secondary research* using existing, identifiable biospecimens, data or records for new research.
+
+*Secondary Research means the research use of information and biospecimens that were collected through interaction or intervention with living individuals for some other “primary” or “initial” purpose (e.g., a clinical purpose or a different research protocol).  In other words, the materials were not collected from humans for the purpose of the specific proposed study.
+
+The NIH Intramural IRB allows for the submission of various protocol formats.  For investigator-initiated studies, this template should be used. 
+
+If an NIH Investigator is not the author of the study, then an NIH Protocol Addendum is required and should be uploaded separately in PROTECT as a WORD document.  See the template for the Addendum on the OHSRP website.
+
+Style Guidelines:
+
+12-point font (Times, Times New Roman or Arial) and single line spacing for the protocol document. The decimal system (i.e. 1.0; 1.1; etc.) should be used to subdivide the various sections. Margins should be 1 inch on all sides.  This document is already formatted using headings in the styles.
+
+If a section is not applicable to your protocol, do not delete it; rather indicate that the section is not applicable.
+
+Duplication of information in the protocol document should be avoided. Please reference appropriate sections where the detailed information can be located. 
+
+Instruction/explanatory text is indicated by italics and should be deleted prior to finalizing the protocol. This text provides information on the content that should be included in the protocol. 
+
+
+
+Example text is included to further aid in protocol writing and should be modified to suit the study, or it may be deleted if it is not relevant. Example text is indicated in [regular font].  Within example text, a need for insertion of specific information is notated by <angle brackets>. 
+
+Version control is important to track protocol development, revisions, and modifications. It is also necessary to ensure that the most recently updated and IRB approved version of a protocol is used by all staff conducting the study. With each revision, the version date located in the header of each page should be updated.
+
+
+
+Abbreviated Title: (not to exceed 30 characters)
+
+NIH IRB #: IRB number that is in PROTECT. 
+
+Version Date: (updated with all subsequent modifications)
+
+The date that all editing of the document was completed, or date editing began—be sure it is consistent throughout the protocol document. 
+
+Title: (not to exceed 250 characters)
+
+Principal Investigator:
+
+Note: All Study Team Members (associate investigators, etc.) who are engaged in human subjects research (HSR) at the NIH site(s)) should be listed separately in PROTECT.
+
+List the affiliation, address, and contact information to include telephone and email for the PI.
+
+NIH Principal Investigator:
+
+XXX Branch
+
+XXX Institute
+
+Building 10, Rm XXXX
+
+9000 Rockville Pike
+
+Bethesda, MD 20892
+
+Phone: XXXX
+
+E-mail: XXXX
+
+Multi-institutional protocols are protocols in which non-exempt human subjects research is taking place at more than one site.  For multi-institutional protocols in which the intramural NIH IC is the Coordinating Center and/or Sponsor:
+
+Provide name of the Coordinating Center
+
+If NIH will be the Coordinating Center and a Participating Site (pSite) will NOT be relying on the NIH IRB, identify them in Q. 8 of the Basic Study Information section found in the PROTECT smart form. Do NOT list these sites in the table below.
+
+
+
+If NIH will be the Reviewing IRB for a Participating Site (pSite), insert the table below and provide the name of each planned or existing relying site and the pSite Principal Investigator (PI). 
+
+
+
+Participating Sites (pSites)
+
+List of all pSites and pSite PIs that will be/are relying on the NIH IRB
+
+pSite Name:
+
+pSite PI:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TABLE OF CONTENTS 
+
+TABLE OF CONTENTS	5
+
+STATEMENT OF COMPLIANCE	7
+
+1	PROTOCOL SUMMARY	8
+
+2	INTRODUCTION	8
+
+2.1	Background and Rationale	8
+
+2.2	Objectives	8
+
+3	BIOSPECIMENS AND/OR DATA	8
+
+3.1	Study Population, Type and Source of Biospecimens/Data	8
+
+4	STUDY DESIGN	9
+
+4.1	Return of Secondary Genomic Research Results	10
+
+4.1.1	Genetic counseling	11
+
+5	STATISTICAL CONSIDERATIONS	12
+
+5.1	Statistical Hypothesis	12
+
+5.2	Sample Size Determination	12
+
+5.3	Statistical Analyses	12
+
+6	REGULATORY AND OPERATIONAL CONSIDERATIONS	13
+
+6.1	Risk/Benefit Assessment	13
+
+6.1.1	Risks	13
+
+6.1.2	Benefits	13
+
+6.2	Informed Consent	13
+
+6.2.1	Prior Informed Consent Consideration	13
+
+6.2.2	Waiver of Informed Consent	14
+
+6.2.3	Consent/Assent Procedures and Documentation	15
+
+6.3	Privacy and Confidentiality	16
+
+6.4	Biospecimen and Data Management	18
+
+6.4.1	Access	18
+
+6.4.2	Storage	18
+
+6.4.3	Disposition and Study Records Retention	18
+
+6.5	Unanticipated Problems	18
+
+6.5.1	Definition of Unanticipated Problems (UP)	18
+
+6.5.2	Unanticipated Problem Reporting	19
+
+6.6	Protocol Deviations and Non-Compliance	19
+
+6.6.1	NIH Definition of Protocol Deviation	19
+
+6.7	Human Data Sharing, including Genomic Data Sharing, and Publication	19
+
+6.7.1	NIH Data Management and Sharing Policy and NIH Genomic Data Sharing Policy Compliance	20
+
+6.7.2	NIH Public Access Policy Compliance	20
+
+6.8	Collaborations	20
+
+7	REFERENCES	20
+
+
+
+
+
+STATEMENT OF COMPLIANCE
+
+Provide a statement that the study will be conducted in compliance with the protocol, International Council for Harmonisation Good Clinical Practice (ICH GCP) and applicable state, local and federal regulatory requirements. Each engaged institution must have a current Federal-Wide Assurance (FWA) issued by the Office for Human Research Protections (OHRP) and must provide this protocol and the associated informed consent documents, when applicable, for review and approval by an appropriate Institutional Review Board (IRB) or Ethics Committee (EC) registered with OHRP. Any modifications to the protocol or consent materials must also be approved before implementation. Suggested language: 
+
+The study will be carried out in accordance with International Council for Harmonisation Good Clinical Practice (ICH GCP) and the following: United States (US) Code of Federal Regulations (CFR) applicable to human subjects research (45 CFR Part 46)
+
+National Institutes of Health (NIH)-funded investigators and study staff who are responsible for the conduct, management, or oversight of NIH-funded research have completed Human Subjects Protection and ICH GCP Training.
+
+The protocol and informed consent form(s), when applicable, will be submitted to the Institutional Review Board (IRB) for review and approval.  Approval of both the protocol and the consent form must be obtained before the research begins.  Any modification to the protocol will require review and approval by the IRB before the changes are implemented to the study.  In addition, all changes to the consent form will be IRB-approved; an IRB determination will be made regarding whether a new consent needs to be obtained from participants who provided consent, using a previously approved consent form.
+
+
+
+PROTOCOL SUMMARY
+
+Title:
+
+<Full title>
+
+
+
+Study Description:
+
+Provide a short description of the protocol, including a brief statement of the study hypothesis. This should be only a few sentences in length. 
+
+
+
+Objectives:
+
+
+
+Include the primary and secondary objectives. These objectives should be the same as the objectives contained in the body of the protocol.
+
+
+
+Primary Objective:  
+
+
+
+
+
+Secondary Objectives: 
+
+
+
+Study Population and Source of Specimens and Data:
+
+If there are specific criteria for inclusion in the study, such as a individuals with a particular disease or condition state that here. Describe the source of the data and specimens being used in this analysis.    If the specimens were collected under another protocol, briefly describe that here.
+
+
+
+Description of Sites/Facilities conducting research:
+
+List the sites at which the research will be conducted, as well as those that will be working with identifiable data/specimens or coded data/specimens and will have access to the code key. Include sites outside the United States, if applicable
+
+INTRODUCTION
+
+Background and Rationale
+
+This section should include: 
+
+The rationale for this research.
+
+Discussion of the relevant current context of the study and gaps in current knowledge.
+
+Discussion of important literature and data that are relevant to the research and that provide background for the research (reference citations should be listed in Section 0, References) 
+
+Importance of the study and any relevant issues or controversies 
+
+Objectives
+
+Describe the purpose, specific aims, or primary and secondary objectives. State the hypothesis to be tested or the research questions that will guide the study.  If the research is purely exploratory and/or hypotheses-generating, state this.
+
+BIOSPECIMENS AND/OR DATA
+
+Study Population, Type and Source of Biospecimens/Data
+
+In this section, include the following information:
+
+Any specific inclusion criteria (age, disease status, sex, etc.)
+
+The source of the specimens and/or data that will be analyzed (e.g. another NIH PI, Hospital A medical records, Department of Radiology images, Medical Records—CRIS, BTRIS, etc., CMS Database a public or privately held Database or Biorepository, a commercial entity)
+
+If collected under a different protocol, the IRB # for each protocol from which data/biospecimen was or will be collected.
+
+If collected for non-research purposes, describe the source.
+
+Whether all data/biospecimens are existing at the time of protocol submission (retrospective only) or whether data/biospecimen collection will be prospective.
+
+Indicate the period of time (duration) during which the biospecimens/data were originally collected (mm/dd/yyyy to mm/dd/yyyy) or if there will be prospective collection (mm/dd/yyyy to mm/dd/yyyy; no end date). Please note that if biospecimens or data are being prospectively collected, they would need to be being collected for clinical purposes or under another research protocol initially to be used as part of this protocol.  See the definition of "Secondary Research" above. 
+
+Describe the types of biospecimens and data, and format of data and/or information (paper, digital, image (specify), audio or visual recordings) which will be used for the research. If the study will involve images, describe the subject of the images, e.g. specific organ or organ systems.
+
+Describe how many subject’s data/biospecimens will be analyzed.
+
+Discuss how the research team has access to these materials, e.g. served as investigators on the previous protocol or seeking access from another investigator, etc.
+
+For studies in which you intend to review medical charts or data sets, include a copy of the data abstraction sheet reflecting all the data elements you plan to abstract from each database as an appendix.
+
+Provide a list of the identifiers which will be used to meet the purpose of the study. 
+
+The data you propose to collect must be relevant to the aims & objectives of the research and the minimum necessary to accomplish it. If applicable, explain when and how identifiers will be removed from the data collected. 
+
+STUDY DESIGN
+
+Provide an overview of the design of the study, including the research methods you plan to employ to meet your study objective.  Describe in general terms how you will accomplish you research objectives. You do not need to describe each specific assay that will be performed on the biospecimens.
+
+Indicate if this study will involve the use of identifiable biospecimens, data, or results at multiple sites, i.e., the study is multi-site. Multi-site study is defined as the same as the same protocol used to conduct non-exempt human subjects research at more than one site.  If single site, identify at which NIH location the research activity will occur.  If multi-site, specify which research activities are taking place at each location involved. Refer to NIH HRPP Polices 105 and 109 for guidance on multi-site studies.
+
+Return of Secondary Genomic Research Results
+
+The IRB expects investigators to describe a plan for returning to participants certain secondary genomic findings obtained during their participation in NIH intramural research studies, unless there is a strong justification not to do so. For a detailed description of the scope and applicability of this requirement, as well as the elements required to be addressed in the plan, see IRB Guidance for Return of Secondary Genomic Results in the NIH Intramural Program. Once approved by the IRB, the Principal Investigator is expected to adhere to all aspects of this plan.
+
+No return
+
+Provide justification for why secondary genomic findings will not be returned to participants. 
+
+Return
+
+Describe which service you have engaged to analyze and return secondary findings, or whether the primary research team will perform this analysis.
+
+Describe which findings will be sought. 
+
+At a minimum, the ACMG list of actionable findings that is current at the time the analysis is performed should be returned.
+
+Additional genes may also be included if they are generally agreed upon by the expert community to be clinically important to the subject and are actionable.  These should be described in the protocol.
+
+If the protocol involves multiple cohorts of participants that have different levels of clinical engagement with the study team, then describe whether and how the return of secondary genomic results will vary based on cohort group.  [Note: Consent forms for these cohorts should reflect these differences.]
+
+If the original research sample collection and sequencing will not be performed in a CLIA certified laboratory, address the process for obtaining confirmation of the secondary finding(s) in CLIA certified laboratory at no cost to the participant.
+
+Include a description of the anticipated timing of the analysis and subject notification, relative to sample collection. If it known that the analysis and notification will not happen for an extended period after sample collection, this should be stated.
+
+Discuss if you will only perform a single analysis for secondary findings, or if you will perform a repeat analysis periodically.  A one-time analysis is acceptable; however, other approaches are allowable but must be described in the protocol.
+
+Discuss how findings will be returned:
+
+How will subjects be notified of the need for an additional sample collection or to return results (written communication, secure email, or telephone)?
+
+Discuss whether secondary findings will be returned to participants at an in person visit, for example at the Clinical Center, or whether alternative methods (e.g., telemedicine, telephone) will be utilized. Describe if their will any additional costs incurred by the participant if they must return for a visit.
+
+Describe who will do the genetic counseling and how it will be conducted. The process of identifying and disclosing research results should involve professionals with the appropriate expertise required to provide the participant with sufficient interpretive information and opportunity to ask questions and have any concerns addressed.
+
+Identify to whom the secondary findings will be returned.
+
+Secondary findings may only be returned to the research participant or to their legally authorized representative (LAR), unless there is a valid release of medical information request identifying another individual as authorized to receive this information.
+
+Results obtained from a participant who is deceased at the time the secondary findings become known may be released to next of kin upon confirmation of their identity and relationship to the subject, consistent with Clinical Center Health Information Management and/or IC Privacy Office policies
+
+Example language:
+
+The study will utilize the <specify the service being used for secondary analysis or whether the primary study team will perform this role> to conduct the analysis for clinically actionable secondary results from genomic sequence data generated under this study.  
+
+Clinically actionable findings for the purpose of this study are defined as disorders appearing in the American College of Medical Genetics and Genomics (ACMG) recommendations for the return of incidental findings that is current at the time the analysis is performed. (Expanded lists are permissible; any findings that will be sought in addition to the ACMG’s recommended list must be specified.)
+
+Subjects will be contacted <describe how contact will be made> by the primary study team <or relevant party> if a clinically actionable variant is identified to provide an additional blood or saliva specimen to allow for confirmation in a CLIA certified laboratory, if necessary.  If the research findings are verified in the CLIA certified lab, then subject will be offered the opportunity to come to NIH or to schedule a telemedicine visit (at our expense) to have a genetic counseling session with <specify who will provide this genetic education and counseling associated with the return of results> to explain this result. If the subject does not want to come to NIH or have a telemedicine visit, a referral to a local genetic healthcare provider may be provided to receive this result (at their expense).
+
+We anticipate that the analysis for secondary findings will occur within <specify expected time frame> of specimen collection.  This is the only time during the course of the study that secondary findings will be returned. No additional interrogation regarding secondary actionable findings will be made after the initial analysis.
+
+Genetic counseling
+
+Describe who will do the genetic counseling, would counseling happen in person, and how it will be conducted. The process of identifying and disclosing research results should involve professionals with the appropriate expertise required to provide the participant with sufficient interpretive information. The research team should provide an option for this to be obtained at no cost to the subject.
+
+STATISTICAL CONSIDERATIONS
+
+The following subsections should describe the statistical tests and analysis plans for the protocol. They should indicate how the study will answer the most important questions with precision and a minimum of bias, while remaining feasible.
+
+If the study is exploratory or hypothesis generating with no planned statistical analysis, state this here and mark the following sections as n/a.
+
+Statistical Hypothesis
+
+State the formal and testable null and alternative hypotheses for primary and key secondary endpoints, specifying the type of comparison (e.g., superiority, equivalence or non-inferiority, dose response) and time period for which each endpoint will be analyzed.
+
+Primary Endpoint(s): 
+
+Secondary Endpoint(s):
+
+Sample Size Determination
+
+Include number of participants (or number of biospecimens and amount of data) whose biospecimens or data will be used in order to have adequate power to test the key hypotheses for the study. Provide all information needed to validate your calculations.
+
+Further, present calculations from a suitable range of assumptions to gauge the robustness of the proposed sample size. The total study duration should be discussed.
+
+Discuss whether the sample size provides sufficient power for addressing secondary endpoints or exploratory analyses. 
+
+Statistical Analyses
+
+As a guide, the following should be addressed, as appropriate:
+
+For descriptive statistics, describe how categorical and continuous data will be presented (e.g., percentages, means with standard deviations, median, range). 
+
+For inferential tests, indicate the p-value and confidence intervals for statistical significance (Type I error) and whether one or two-tailed.
+
+Indicate whether covariates will be pre-specified in the sections below or later in an SAP.
+
+State whether checks of assumptions (e.g., normality) underlying statistical procedures will be performed and whether any corrective procedures will be applied (e.g., transformation or nonparametric tests).
+
+REGULATORY AND OPERATIONAL CONSIDERATIONS
+
+Risk/Benefit Assessment
+
+Risks
+
+Discuss the reasonably foreseeable risks of harm to subjects should a breach of confidentiality occur as a result of loss, theft or mismanagement of data or biospecimens. Consider psychological, genetic, social, legal, economic, and privacy/confidentiality risks of harm.  Example text provided as a guide; customization will be required:
+
+This study will only include biospecimens and data that were already obtained or that will be obtained in the future under other research protocols or for clinical purposes, and these materials will have already received clinical interpretation with results provided to subjects, when included as part of the original consent forms.  We anticipate that the only risk to subjects would be a breach of confidentiality. A breach of confidentiality could lead to loss of privacy and other harms.
+
+Benefits
+
+Discuss the possible direct benefits for inclusion of a subject in the research. If there are no possible direct benefits, state no direct benefit to subjects. In most cases, using existing biospecimens/data for research offers no benefit to subjects. Do not include benefits to society or others.
+
+Informed Consent
+
+Prior Informed Consent Consideration
+
+The expectation is that you will review all previous versions of the informed consent signed by the research subjects.  In this section, you must summarize the previous consent language about future research and sharing, based on what materials are necessary for the new protocols and what investigators will be involved in the new protocol. See example text below.
+
+If the biospecimens and/or data were previously collected under a research protocol, summarize the language about future research included in the applicable signed consent forms. If the new protocol only involves data, then consent language about future use of biospecimens is not relevant.  You can simply say that the consent form was silent on future use of data. 
+
+If there is no overlap between the investigators named on this protocol and those named on the original protocol(s), it is important to discuss what the previous consent forms said about sharing with other researchers. Otherwise consent for sharing is not relevant and doesn’t need to be addressed. 
+
+Pay close attention to any limitations to future use or sharing, e.g. if the consent says that the data or biospecimens will only be used for certain kinds of research or will never be shared outside of the original research team.  
+
+The following guidelines should be considered regarding the language in the original consent forms signed by the research subjects:
+
+The proposed research or sharing plan in this study must be consistent with the terms of the original informed consent language regarding future research or sharing.  If that is not the case, the team cannot utilize the materials collected by any subjects who signed that version of the consent form, unless you now plan to obtain consent.
+
+The original informed consent must not have included language about the destruction of biospecimens or data at the end of the study.  If this language was ever included, the team cannot utilize the materials collected by any subjects who signed that version of the consent form.  
+
+Below is example text that you might be able to use in this section (only include content applicable to your specific situation):
+
+I have reviewed the informed consents under which the <biospecimens or data or images>were collected. The <biospecimens or data or images> were collected under <insert protocol number(s)>. 
+
+The consent for <insert protocol number(s)> from <mm/dd/yyyy>to <mm/dd/yyyy> does not have language regarding <future use or sharing>of <biospecimens or data or images], but there was no language which conflicts with the proposed activities in this study. 
+
+The consents from <mm/dd/yyyy> to <mm/dd/yyyy> have language regarding <future use or sharing> of <biospecimens or data or images>, consistent with the proposed research described in this study. 
+
+The consent for <insert protocol number(s)> from <mm/dd/yyyy> onward has language about <future use or sharing> consistent with the proposed research described in this study but has opt in and out option. 
+
+We will exclude data from subjects who provided consent on <insert protocol number(s)> and who declined or opted out of allowing their <biospecimens or data or images> to be used for future research. 
+
+All versions of the consent used with protocol <insert protocol number(s)> included language regarding <future use or sharing of biospecimens> but was silent on the topic of <future use or sharing data>. There was no language which conflicts with the proposed <research and/or sharing> plan described in this study.
+
+Protocol <insert protocol number(s)> was secondary research using <biospecimens or data or images> with approval of a waiver of consent, and we have no access to the original consent forms used to collect the original materials. 
+
+Waiver of Informed Consent
+
+The use of identifiable biospecimens or identifiable data for secondary research typically requires IRB approval of a new informed consent document or a waiver of informed consent. Please note that if the prior informed consent document(s) explicitly restricted or precluded any activity that is planned in this protocol, you cannot request a waiver of consent to be able to move forward with the activity, e.g., use of identifiers, sharing or a specific type of research. If requesting a waiver of informed consent for the planned research, please address the following:
+
+Describe why the research could not practicably be carried out without the requested waiver, For example:
+
+We have no ongoing interactions with the subject for the purposes of this research.
+
+The required sample size is so large, including only those subjects’ specimens or data who we are able to reach and obtain new consent from might bias the sample.
+
+The original protocol was conducted a number of years ago, and we have no contact with the previous subjects <or many of the subjects are lost to follow-up>.  
+
+If this were required, given the sheer number of subjects whose material we wish to use, and the amount of staffing and time required to accomplish this, the research could not be accomplished.
+
+
+
+Describe why the research could not practicably be carried out without using the information or biospecimens in an identifiable format; For example:
+
+The identifiable information is required in order to collect the corresponding data that links to the biospecimens (or images) from other databases. 
+
+Describe why the waiver will not adversely affect the rights and welfare of the subjects; and
+
+For example:
+
+The research is minimal risk secondary research, and the only risk is a breach of confidentiality. The research team is experienced with ensuring procedures to protect the confidentiality of patient data. 
+
+Describe if appropriate, how the subjects or legally authorized representatives will be provided with additional pertinent information after participation. For example:
+
+We do not intend to have any contact with the subjects whose biospecimens or data we will use in this study to share the findings of this research. 
+
+Consent/Assent Procedures and Documentation
+
+If you are requesting a waiver of consent for all subjects, indicate N/A for this section.
+
+If you plan to consent or re-consent individuals from whom the biospecimens or data derive, describe the procedures for obtaining and documenting informed consent.  Please note that certain types of sensitive research might require new consent, e.g. the use of biospecimens for whole genome or whole exome sequencing, when consent for future genetic research was not previously obtained. In obtaining and documenting informed consent, the investigator must comply with applicable regulatory requirements (e.g., 45 CFR Part 46) (Refer to NIH HRPP Policy 301). Provide a detailed description of the consent process, including the following, as applicable:
+
+Where and when will consent be obtained?
+
+Describe how the privacy of subjects will be protected during the informed consent procedure, (e.g., informed consent will be conducted in a quiet room with a closed door with only relevant parties present, to protect the privacy of the subject).
+
+Who is authorized to obtain consent?
+
+How will coercion or undue influence be minimized?
+
+Will consent be done in person, or by telephone/videoconference?  Describe the process.
+
+Will the consent be provided electronically or in hard copy? 
+
+Will the consent be provided in advance of your discussion?
+
+How much time will the potential subject be provided to consider their participation?
+
+Who will answer questions from the participant?
+
+Will the potential participant be provided the opportunity to consult with others (family, friends, private physician, etc.) prior to providing consent?
+
+If you wish to consent subjects over the telephone or using videoconferencing technology; waive documentation of consent; obtain consent from  minors/children (under 18 years of age); adults who lack decision-making capacity to consent to research participation, or, NIH Staff and family members of study team members, be sure to describe your planned procedures for doing so and address all of the relevant regulatory and policy requirements (Refer to NIH HRPP Policy 301,  and NIH HRPP Policy 402 (children), NIH HRPP Policy 403 (adults who lack decision-making capacity to consent to research) & NIH HRPP Policy 404 (NIH staff and their family members). 
+
+If you are using an electronic platform to document signatures, you must describe how you will document consent via the electronic platform, specifically:
+
+Name the electronic platform you plan to use (e.g. iMed, DocuSign, Adobe, etc.), and state if it is 21CFR Part 11 compliant.
+
+Describe how the signature of both the subject and investigator will be obtained (paint the picture of the process: will both be looking at the same screen? Is the consent signature obtained synchronously or asynchronously?)
+
+Describe if you plan to use a true electronic signature or whether signature will be obtained using a stylus/mouse/finger.
+
+If you are obtaining a true electronic signature for this protocol, describe the process of how you will verify the identity of the subject prior to obtaining consent. 
+
+Privacy and Confidentiality
+
+In the context of conducting human subjects research, privacy refers to a person having control over the extent, timing, and circumstances of sharing oneself (physically, behaviorally, or intellectually) with others and to the right of individuals to limit access to/about themselves from/by others, especially information shared with researchers.  In the context of conducting human subjects research, confidentiality pertains to the treatment of information that a participant has disclosed in a relationship of trust and with the expectation that it will not be divulged to others without permission. This section should describe the planned protections for maintaining participant privacy (if you intend to interact with subjects as part of the study) and for maintaining the confidentiality of identifiable biospecimens and data, including, but not limited to forms, records, and biospecimens (locked drawers, locked offices, password-protected database or server, other, etc.). Refer to NIH HRPP Policy 107 for specific policy requirements.
+
+Clarify approaches to ensure privacy of study participants, e.g. during the consent process.
+
+Describe whether identifiers will be attached to biospecimens or data or whether they will be coded:
+
+If coded, but additional information of the subjects (e.g., age, ethnicity, sex, diagnosis) is available, discuss whether this might make specific individuals or families identifiable.
+
+If coded, describe how access to the “key” for the code will be limited.  Include description of security measures (password-protected database, locked drawer, other, etc.).  List names or positions of persons with access to the key.
+
+Include a discussion of the circumstances in which biospecimens or data will be shared with other researchers for this protocol.
+
+If materials will be shared with collaborators, including at other institutions, address whether collaborators will have access to identifiers or not.  
+
+Include a discussion of plans to publish participant’s family pedigrees, with a description of measures to minimize the chance of identifying specific families.
+
+Describe any other situations in which personally identifiable information will be released to third parties:
+
+Address if funding institutions, representatives of the NIH Institute or Center (IC), or other individuals, who are not on the study team, will have access to research records.  
+
+Discuss any additional features to protect confidentiality.
+
+Example text provided as a guide; customization will be required to address all aspects that should be included in this section: 
+
+Participant confidentiality and privacy is strictly held in trust by the participating investigators, and their staff. This confidentiality is extended to cover the storage of biological samples and genetic information in addition to the clinical information relating to participants. Therefore, the study protocol, documentation, data, and all other information generated will be held in strict confidence. No information concerning the study, nor the data, will be released to any unauthorized third party without prior written approval. 
+
+All consenting activities will be conducted in as private a setting as possible.
+
+Representatives of the Institutional Review Board (IRB), and/or regulatory agencies may inspect all documents and records required to be maintained by the investigator for the participants in this study. The study site will permit access to such records.
+
+The study participant’s identifiers will be securely stored at each site for internal use during the study. At the end of the study, all records will continue to be kept in a secure location for as long a period as dictated by the reviewing IRB, or Institutional policies.
+
+Individual participants and their research data will be identified by a unique study identification number. The study data entry and study management systems used by sites will be secured and password protected. 
+
+To further protect the privacy of study participants, a Certificate of Confidentiality has been issued by the National Institutes of Health (NIH).  This certificate protects identifiable research information from forced disclosure. It allows the investigator and others who have access to research records to refuse to disclose identifying information on research participation in any civil, criminal, administrative, legislative, or other proceeding, whether at the federal, state, or local level. By protecting researchers and institutions from being compelled to disclose information that would identify research participants, Certificates of Confidentiality help achieve the research objectives and promote participation in studies by helping assure confidentiality and privacy to participants.
+
+Biospecimen and Data Management
+
+Describe how biospecimens and data will be handled study wide.
+
+Access
+
+Who, which investigators and research staff, will have access to biospecimens and data?
+
+How will access be controlled?
+
+Who is responsible for receipt or transmission of the biospecimens and data?
+
+Storage
+
+Discuss where and how the biospecimens and data will be stored and managed (e.g., password protection, encryption, physical controls, separation of identifiers from the specimens and data, etc.). 
+
+Disposition and Study Records Retention
+
+Specify the length of time for the investigator to maintain all biospecimens and records pertaining to this study.  The investigator should use the most conservative rules for biospecimens and document retention i.e., retention should follow the rule that has the longest period. If you wish to retain biospecimens and data indefinitely for future research, please state this.
+
+Indicate whether permission is required (and from whom) prior to destruction of biospecimens or records. 
+
+Example text provided as a guide, customize as needed: 
+
+Biospecimens will be retained indefinitely.  Study documents will be retained for < x > years as per the NIH Intramural Records Retention Schedule. 
+
+Unanticipated Problems
+
+Definition of Unanticipated Problems (UP)
+
+Any incident, experience, or outcome that meets all of the following criteria:
+
+Unexpected in terms of nature, severity, or frequency given (a) the research procedures that are described in the protocol-related documents, such as the Institutional Review Board (IRB)-approved research protocol and informed consent document; and (b) the characteristics of the participant population being studied; and
+
+Related or possibly related to participation in the research (“possibly related” means there is a reasonable possibility that the incident, experience, or outcome may have been caused by the procedures involved in the research); and
+
+Suggests that the research places participants or others (which many include research staff, family members or other individuals not directly participating in the research) at a greater risk of harm (including physical, psychological, economic, or social harm) than was previously known or expected.
+
+Unanticipated Problem Reporting 
+
+The investigator will report unanticipated problems (UPs) to the NIH Institutional Review Board (IRB) as per Policy 801.
+
+Protocol Deviations and Non-Compliance
+
+Plans for detecting, reviewing, and reporting deviations from the protocol and non-compliance should be described. A statement should be included to indicate that deviations are not allowed, unless a statement is included in the investigator agreement. 
+
+Example text provided as a guide, customize as needed: 
+
+It is the responsibility of the investigator to use continuous vigilance to identify and report deviations and/or non-compliance to the NIH Institutional Review Board as per Policy 801.  The investigator is responsible for knowing and adhering to the reviewing IRB requirements.
+
+NIH Definition of Protocol Deviation
+
+A protocol deviation is any changed, divergence, or departure from the IRB-approved research protocol. 
+
+Major deviations: Deviations from the IRB approved protocol that have, or may have the potential to, negatively impact the rights, welfare or safety of the subject, or to substantially negatively impact the scientific integrity or validity of the study.
+
+Minor deviations: Deviations that do not have the potential to negatively impact the rights, safety or welfare of subjects or others, or the scientific integrity or validity of the study.
+
+Human Data Sharing, including Genomic Data Sharing, and Publication
+
+Per the 2023 NIH Data Management and Sharing (DMS) Policy, effective January 25, 2023, all NIH IRP protocols are required to have a Data Management & Sharing (DMS) Plan using the IRP DMS Plan template. For more information about the required elements, please review Writing a Data Management & Sharing Plan. The plan should not be included in the protocol. Plans for sharing genomic data research that is subject to the NIH Genomic Data Sharing (GDS) Policy should now be incorporated as part of the protocol’s overall DMS Plan. For protocols submitted for Initial Scientific Review on or after January 25, 2023, the DMS plan must be submitted into the NIDB (if they are associated with a ZIA) and then as a separate attachment as part of the Scientific Review Process. 
+
+Investigators who are required to comply with these policies must ensure that the sharing and future research language in their consent forms is consistent with their DMS Plan.  For more information about complying with the DMS Policy in the IRP, please review 2023 NIH Data Management and Sharing Policy in the Sourcebook. 
+
+Those who must comply with the GDS Policy, must ensure that the Institutional Certification(s) are complete and approved by their SD or designee prior to starting the research. Please contact your IC’s GPA for help. For more information about complying with the GDS Policy in the IRP, please review Implementing the GDS Policy in the IRP.
+
+NIH Data Management and Sharing Policy and NIH Genomic Data Sharing Policy Compliance
+
+Below is sample text that can be used in the protocol, as applicable.  Please delete the sections below that are not relevant to your research:
+
+This study will comply with the NIH Data Management and Sharing (DMS) Policy, which applies to all new and ongoing NIH-funded research in the IRP, as of January 25, 2023, that is associated with a ZIA, with a clinical protocol that undergoes scientific review and/or will involve genomic data sharing. 
+
+If the study must comply with the NIH Genomic Data Sharing (GDS) Policy include the following language and ensure that the consent form addresses sharing via repository and the applicable genomic summary results language, as applicable:
+
+This study will comply with the NIH Genomic Data Sharing (GDS) Policy, which applies to all new and ongoing NIH IRP-funded research, as of August 31, 2015, that generates large-scale human or non-human genomic data, as well as the use of these data for subsequent research. Large-scale data include genome-wide association studies (GWAS), single nucleotide polymorphisms (SNP) arrays, and genome sequence, transcriptomic, epigenomic, and gene expression data.
+
+NIH Public Access Policy Compliance
+
+Below is sample text that can be used in the protocol, as applicable.  Please delete this text and write N/A if it is not relevant to your protocol:
+
+This study will comply with the NIH Public Access Policy, which ensures that the public has access to the published results of NIH funded research. It requires scientists to submit final peer-reviewed journal manuscripts that arise from NIH funds to the digital archive PubMed Central upon acceptance for publication.  
+
+Collaborations
+
+Only include this section if applicable. Investigators in the NIH intramural program may participate in multi-site collaborations under which biospecimens or data are transferred from the intramural program to another site for research that is part of the approved protocol. Each institution participating in the study is bound by the terms of the protocol and their obligations under the statutes and regulations. Intramural protocols are cleared by the IC Clinical Director. 
+
+Explain any collaborations involved in the protocol. 
+
+Explain whether identifiers will be shared and describe the mechanism for IRB review at the other site(s), if applicable. For studies that include the conduct of human subjects research for this protocol being carried out at more than one institution, please contact the IRBO for guidance on requirements/procedures for use of a Single IRB and appropriate agreements.
+
+REFERENCES 
+
+Include a list of relevant literature and citations for all publications referenced in the text of the protocol.  Use a consistent, standard, modern format, which might be dependent upon the required format for the anticipated journal for publication (e.g., N Engl J Med, JAMA, etc.).  The preferred format is International Committee of Medical Journal Editors (ICMJE). Include citations to product information such as manufacturer’s IB, package insert, and device labeling. 
+
