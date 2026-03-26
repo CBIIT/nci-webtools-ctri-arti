@@ -42,3 +42,5 @@ jobs:
       - run: echo "${{ secrets.ENV_FILE }}" > infrastructure/.env
       - run: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
       - run: bash infrastructure/deploy.sh
+        env:
+          TRIVY_SCAN: "true"
