@@ -12,6 +12,16 @@ export default function Nav(props) {
     !menuRef()?.contains(event.target) && setActiveDropdown(null);
   onMount(() => document.addEventListener("click", handleClickOutside, true));
   onCleanup(() => document.removeEventListener("click", handleClickOutside, true));
+
+  const filteredRoutes = (route) => {
+    return route.children?.filter((c) => {
+      if (c.hidden) {
+        return;
+      }
+
+      return true;
+    });
+  }
   return html`
     <nav class="navbar navbar-expand-lg font-title z-3">
       <div class="container">
@@ -56,7 +66,7 @@ export default function Nav(props) {
                     <${Portal} mount=${menuRef}>
                       <div class="container" hidden=${() => !(activeDropdown() === route.path)}>
                         <div class="row">
-                          <${For} each=${route.children?.filter((c) => !c.hidden)}>
+                          <${For} each=${() => filteredRoutes(route)}>
                             ${(child) => html`
                               <div class="col">
                                 <${A}
