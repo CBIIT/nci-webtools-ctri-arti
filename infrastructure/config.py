@@ -48,29 +48,29 @@ class ServiceDefinition(TypedDict, total=False):
     mountPoints: List[ContainerMountPoint]
 
 
-class EcsConfig(TypedDict, total=False):
+class EcsConfig(TypedDict):
     vpc: str
     subnets: List[str]
     domainName: str
-    altDomainName: str
     priority: int
     secrets: dict[str, str | List[str]]
     services: List[ServiceDefinition]
+    altDomainName: Optional[str]
 
 
 class EcrConfig(TypedDict):
     repositoryName: str
 
 
-class RdsConfig(TypedDict, total=False):
+class RdsConfig(TypedDict):
     vpc: str
     subnets: List[str]
     clusterIdentifier: str
-    databaseName: str
-    minCapacity: float
-    maxCapacity: float
-    secondsUntilAutoPause: int
-    backupRetentionPeriod: int
+    databaseName: Optional[str]
+    minCapacity: Optional[float]
+    maxCapacity: Optional[float]
+    secondsUntilAutoPause: Optional[int]
+    backupRetentionPeriod: Optional[int]
 
 
 class EnvConfig(TypedDict):
@@ -78,11 +78,18 @@ class EnvConfig(TypedDict):
     region: str
 
 
+class AutomatedTestingConfig(TypedDict):
+    vpc: str
+    subnets: List[str]
+    security_group: Optional[str]
+
+
 class Config(TypedDict):
     env: EnvConfig
     ecr: EcrConfig
     ecs: EcsConfig
     rds: RdsConfig
+    automated_testing: AutomatedTestingConfig
     tags: dict[str, str]
 
 
@@ -105,6 +112,7 @@ def load_config() -> tuple[Config, str, str]:
     region = get_env("CDK_DEFAULT_REGION") or get_env("AWS_REGION")
     vpc = get_env("VPC")
     subnets = get_env_list("SUBNETS")
+    codebuild_SG = get_env("SG_CODEBUILD")
     namespace = get_env("NAMESPACE")
     application = get_env("APPLICATION")
     tier = get_env("TIER")
@@ -148,7 +156,7 @@ def load_config() -> tuple[Config, str, str]:
         "USERS_URL": "http://users:3004",
     }
 
-    def build_service(name, port):
+    def build_service(name: str, port: int) -> ServiceDefinition:
         is_main = name == "main"
         image = get_env(f"{name.upper()}_IMAGE")
         if is_main and not image:
@@ -202,6 +210,11 @@ def load_config() -> tuple[Config, str, str]:
                 build_service("agents", 3003),
                 build_service("users", 3004),
             ],
+        },
+        "automated_testing": {
+            "vpc": vpc,
+            "subnets": subnets,
+            "security_group": codebuild_SG,
         },
         "tags": {
             "namespace": namespace,
