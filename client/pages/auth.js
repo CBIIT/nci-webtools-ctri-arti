@@ -1,3 +1,4 @@
+import { useNavigate } from "@solidjs/router";
 import { createMemo, createRenderEffect, lazy, Show } from "solid-js";
 import html from "solid-js/html";
 
@@ -9,6 +10,7 @@ export default function AuthorizedImport(props) {
 
 export function Authorized(props) {
   const auth = useAuthContext();
+  const navigate = useNavigate();
 
   const authorized = createMemo(() => {
     if (auth.status() !== Status.LOADED) return false;
@@ -21,12 +23,11 @@ export function Authorized(props) {
   createRenderEffect(() => {
     if (auth.status() !== Status.LOADED) return;
     if (!auth.user()) {
-      location.href =
-        "/api/v1/login?destination=" + encodeURIComponent(location.pathname + location.search);
+      location.href = "/api/v1/login?destination=" + encodeURIComponent(location.pathname + location.search);
       return;
     }
     if (props.roles && !props.roles.includes(auth.user()?.Role?.id)) {
-      location.href = "/";
+      navigate("/", { replace: true });
       return;
     }
   });
