@@ -605,7 +605,9 @@ export default class DatabricksProvider {
 
   async converseStream(input) {
     const startedAt = Date.now();
-    const response = await this.fetchChatCompletions(this.buildRequestBody({ ...input, stream: true }));
+    const response = await this.fetchChatCompletions(
+      this.buildRequestBody({ ...input, stream: true })
+    );
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Databricks stream failed [${response.status}]: ${text}`);

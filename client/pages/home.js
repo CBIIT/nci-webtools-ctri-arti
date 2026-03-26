@@ -1,27 +1,29 @@
 import { For, Show } from "solid-js";
 import html from "solid-js/html";
-import { isAdminSuperUser } from "../utils/roleCheck.js";
 
 import { useAuthContext } from "../contexts/auth-context.js";
+import { APP_NAMES, isAppDisabled } from "../utils/app-config.js";
 
 export default function Page() {
-  const { user } = useAuthContext();
-  const adminSuperUser = isAdminSuperUser(user);
+  const { user, config } = useAuthContext();
 
   const links = [
     {
+      appName: APP_NAMES.CHAT,
       title: "Chat",
       description: "Develop with workspace and chat tools",
       href: "/tools/chat",
       icon: html`<img src="/assets/images/icon-agents.svg" height="60" alt="Chat Icon" />`,
     },
     {
+      appName: APP_NAMES.CONSENT_CRAFTER,
       title: "ConsentCrafter",
       description: "Process and translate protocols and consent forms",
       href: "/tools/consent-crafter",
       icon: html`<img src="/assets/images/icon-pen.svg" height="60" alt="ConsentCrafter Icon" />`,
     },
     {
+      appName: APP_NAMES.TRANSLATE,
       title: "Translator",
       description: "Accurately translate your documents into multiple languages",
       href: "/tools/translator",
@@ -36,15 +38,8 @@ export default function Page() {
     },
   ];
 
-  const filteredLinks = links.filter((link) => {
-    if (link.title === "Chat" || link.title === "Translator") {
-      return adminSuperUser; // Show Chat only for admin/super users
-    }
-    if (link.title === "ConsentCrafter") {
-      return true; // Show ConsentCrafter for all users
-    }
-    return true; // Show other links by default
-  });
+  const filteredLinks = () =>
+    links.filter((link) => !link.appName || !isAppDisabled(config?.(), link.appName));
 
   return html`
     <div class="container h-100 d-flex flex-column justify-content-center font-smooth">
@@ -87,7 +82,10 @@ export default function Page() {
           </div>
         </div>
         <div class="col-lg-4 offset-lg-3">
-          <div id="side-nav-icon-container" class="py-3 d-flex flex-column justify-content-center h-100">
+          <div
+            id="side-nav-icon-container"
+            class="py-3 d-flex flex-column justify-content-center h-100"
+          >
             <${For} each=${filteredLinks}>
               ${(link) => html`
                 <a

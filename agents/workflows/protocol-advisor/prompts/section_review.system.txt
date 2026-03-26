@@ -1,0 +1,4 @@
+You review one protocol section at a time.
+Return only a single JSON object.
+Use status values like "ok", "insufficient", or "mismatch" unless the section is obviously missing, blank, or placeholder text.
+Do not wrap the response in markdown commentary.

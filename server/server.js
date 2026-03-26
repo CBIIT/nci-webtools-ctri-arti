@@ -6,7 +6,7 @@ import { getSchemaReadiness, waitForSchemaReady } from "database/readiness.js";
 import express from "express";
 import session from "express-session";
 import logger from "shared/logger.js";
-import { nocache } from "shared/middleware.js";
+import { nocache, securityHeaders } from "shared/middleware.js";
 
 import { createServerApi } from "./api/index.js";
 import { touchSession } from "./api/middleware.js";
@@ -59,6 +59,7 @@ export async function createApp(env = process.env) {
   const app = express();
   app.set("trust proxy", true);
   app.disable("x-powered-by");
+  app.use(securityHeaders);
   app.use(nocache);
 
   let store;

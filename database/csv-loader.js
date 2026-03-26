@@ -112,6 +112,9 @@ function castValue(raw, baseDir) {
     return process.env[trimmed.slice(4)] ?? null;
   }
 
+  if (trimmed === "true") return true;
+  if (trimmed === "false") return false;
+
   // JSON object or array
   if ((trimmed.startsWith("{") || trimmed.startsWith("[")) && trimmed.length > 1) {
     try {

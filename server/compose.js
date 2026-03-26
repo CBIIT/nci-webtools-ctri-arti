@@ -42,17 +42,17 @@ function createCmsModule({ gateway }) {
     : createCmsService({ gateway, source: "server" });
 }
 
-function createAgentsModule({ gateway, cms }) {
+function createAgentsModule({ gateway, cms, users }) {
   return AGENTS_URL
     ? createAgentsRemote({ baseUrl: AGENTS_URL })
-    : createAgentsApplication({ gateway, cms, source: "server" });
+    : createAgentsApplication({ gateway, cms, users, source: "server" });
 }
 
 async function createServerModules() {
   const users = createUsersModule();
   const gateway = await createGatewayModule({ users });
   const cms = createCmsModule({ gateway });
-  const agents = createAgentsModule({ gateway, cms });
+  const agents = createAgentsModule({ gateway, cms, users });
 
   return { users, gateway, cms, agents };
 }

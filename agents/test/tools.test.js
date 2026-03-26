@@ -17,6 +17,7 @@ describe("tools", () => {
       assert.equal(typeof getToolFn("data"), "function");
       assert.equal(typeof getToolFn("editor"), "function");
       assert.equal(typeof getToolFn("think"), "function");
+      assert.equal(typeof getToolFn("workflow"), "function");
       assert.equal(typeof getToolFn("docxTemplate"), "function");
       assert.equal(typeof getToolFn("recall"), "function");
     });
@@ -29,7 +30,16 @@ describe("tools", () => {
 
   describe("toolImplementations", () => {
     it("has all expected tools", () => {
-      const expected = ["search", "browse", "data", "editor", "think", "docxTemplate", "recall"];
+      const expected = [
+        "search",
+        "browse",
+        "data",
+        "editor",
+        "think",
+        "workflow",
+        "docxTemplate",
+        "recall",
+      ];
       for (const name of expected) {
         assert.ok(toolImplementations[name], `should have ${name}`);
         assert.equal(typeof toolImplementations[name], "function");
@@ -389,6 +399,25 @@ describe("tools", () => {
     it("returns thinking complete without side effects", async () => {
       const result = await toolImplementations.think({ thought: "This is a test thought" });
       assert.equal(result, "Thinking complete.");
+    });
+  });
+
+  describe("workflow tool", () => {
+    it("runs the protocol_advisor workflow through the workflow registry", async () => {
+      const result = await toolImplementations.workflow({
+        workflow: "protocol_advisor",
+        input: {
+          templateId: "interventional",
+          protocolText: "1 PROTOCOL SUMMARY\nProtocol body",
+        },
+      });
+
+      assert.equal(result.workflow, "protocol_advisor");
+      assert.equal(result.output.status, "review_plan_ready");
+      assert.equal(result.output.template.templateId, "interventional");
+      assert.equal(result.nodeResults.validateInput.status, "completed");
+      assert.equal(result.nodeResults.buildReviewPlan.status, "completed");
+      assert.equal(result.nodeResults.aggregateReport.status, "completed");
     });
   });
 });

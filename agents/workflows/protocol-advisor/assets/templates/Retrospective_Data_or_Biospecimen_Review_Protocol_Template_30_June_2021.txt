@@ -1,0 +1,80 @@
+header: 1
+Version Date: 
+footer: Retrospective Review Template v. 7, 30 June 2021	
+
+PROTOCOL TEMPLATE FOR A RETROSPECTIVE DATA OR BIOSPECIMEN REVIEW (REQUEST FOR AN EXEMPTION) 
+
+This preface contains clarification about the protocol template and required supporting materials.  Remove the preface before finalizing the protocol. 
+To be eligible of an exemption from IRB review for a retrospective review at NIH, you must be using identifiable biospecimens and/or data, but not recording or retaining any identifiers to be used for the analyses (Exemption Category 4).  For guidance on identifiability and a list of identifiers, please see Guidance for Determining Whether Data Constitutes Individually Identifiable Information under 45 CFR 46 on the OHSRP website. The use of these materials must be secondary research rather than primary. Secondary Research is the research use of information or biospecimens collected for research studies other than the proposed research, or for non-research purposes. Please note that if your project involves data from prisoners, it is not eligible for an exemption.  
+
+This type of submission also requires a blank data collection sheet be created and submitted as a part of the application as well. The data collection sheet must show every data point that you will record and maintain for use as part of the analysis.  Projects that are submitted without the data collection sheet will not be reviewed. 
+
+If personal identifiers or links to identifiers will be accessible to the research team throughout the research project, an exemption from IRB review is likely not possible. One exception is if the biospecimens and/or data meet the definition of publicly available or the project only involves government-generated or government-collected information that was obtained for non-research activities. 
+
+If the biospecimens and/or data that you plan to use for the project do not currently contain personal identifiers and the research team will have no way to link back to identifiers or if the human sources of the materials are all confirmed to be deceased, submission of a request for an exemption from IRB review is likely not necessary.
+
+If the purpose of the project is only to conduct quality assessment (QA), quality improvement (QI), a program evaluation or evidence-based practice (EBP) and not also to conduct research or is to create a single case report (i.e. discussing the clinical trajectory of one patient), submission of a protocol for a determination of "exempt from IRB review" is not required.  If you wish, you can request a determination of “Not Research” through submission of the Not Human Subjects Research Application form.
+
+Use of CRIS
+
+If you are conducting a retrospective chart review and wish to use CRIS (the electronic medical record) for your project, you are expected to first contact the Office of Biomedical Translational Research Informatics (BTRS) team (BTRISSupport@nih.gov) to determine whether it would be possible to conduct the study using de-identified data in BTRIS or if the BTRIS staff can help obtain and de-identify data for the study team. Once you determine that CRIS is your only option: If the subjects whose data you will access are a part of known IRB-approved protocols, you will need to contact the PIs and explain that you plan to access data from their protocols and ensure that they have no concerns.  Please email the PI(s) and ask them to respond to your email confirming their knowledge and approval of your planned project.  Then save the response email(s) as PDF(s) and upload them as correspondence into your iRIS submission. Please note that after receiving your exemption you also will have to submit documentation to the medical records department (HIMD), prior to moving forward with your project.  Please review and complete the “Access to CRIS for Exempt Research” form which can be found on the IRBO website.
+
+If it is determined that your study does not meet the review level of exempt, you will need to submit a protocol or an amendment to a protocol for IRB review and approval.  Accordingly, additional protocol elements (not addressed below) may be required. 
+
+If you have any questions about the information above, please consult the NIH IRB.
+
+Be sure to address all the topics and sub-topics mentioned below. Italicized or bolded font has been used to emphasize certain information. Do not simply leave in the instructional language and write answers under the questions.  Please delete all instructional language within this document, so the remaining content reads like a narrative. 
+ 
+
+Title:
+
+Principal Investigator: [Must be an NIH FTE.]
+
+Other NIH Investigators: [Please include the name all individuals conducting research activities for this project at NIH sites.] 
+
+
+Non-NIH Collaborators: [Please include the name and affiliations of any non-NIH collaborators as defined below.] 
+
+If your project will involve contractors, students, fellows (not NIH FTEs), external collaborators, or contracts with companies who will conduct activities outside of NIH for this project, be sure to address the roles of these individuals (vs. NIH’s role) under every section of the protocol.  Depending on their roles, they may be required to have separate IRB review and approval or an exemption for what they are doing.
+
+1.	Background:
+•	Background information on the topic to be studied.
+•	What is the justification and rationale for the proposed study?  If known, provide a summary of prior experience and/or previous studies looking at the same question or topic.  Include what has been looked at to this point with any relevant literature citations, gaps in the literature, inconsistencies, and variations from what you will be proposing.
+
+2.	Study Objectives, Including Specific Aims and/or Hypotheses:
+•	What is the purpose of the study? State the study objectives and include any hypotheses, if applicable. 
+3.	Biospecimens and/or Data to be Used for the Research:
+•	Describe the type of biospecimens (e.g. tissue (specify if fetal tissue), blood or blood products, DNA, RNA, human cell lines) and/or data (e.g. research data (including survey or interview data), clinical data, genomic data, imaging data, audio or video recordings)
+
+•	Describe the source (e.g. open or closed IRB approved protocol; clinical biospecimens; medical records; repository (on-line or not; open access, access via approval or restricted access) or other); and the provider, if applicable (belongs to a member of the research team; an NIH collaborator; an external collaborator at an academic institution, hospital or commercial entity; the NIH Lab of Pathology; or the NIH Laboratory of Medicine, etc.) 
+o	If you consider the biospecimens and/or data to be publicly available, please explain why.
+
+Please note: If the research team must complete a form or execute an MTA or DTA/DUA to obtain access to materials or access requires special authorization or permission or a password, e.g. to a website or on-line group, NIH would not consider the biospecimens and/or data to be publicly available.  If unsure, please consult the IRB. 
+
+•	Address whether the study team has routine access to the biospecimens and/or data as part of their current job or affiliation with an institution/program.
+o	If not, discuss how the study team will gain access to these biospecimens and/or data.
+
+•	Describe the original purpose of collection (research, clinical, QI/QA, public health surveillance, data collected by or on behalf of the federal government for non-research activities, or other)
+
+•	Address the identifiability of the biospecimens and/or data:
+o	Whether the biospecimens and/or data currently contain personal identifiers or are linked to identifiers and who has access to these identifiers (the NIH research team, any NIH collaborators, external provider of materials or collaborators) 
+o	Whether personal identifiers will need to be maintained throughout the analysis process or if information will be recorded in such a manner that the subjects will not be able to be identified, directly or through identifiers linked to the subjects (e.g. a code key)
+	If the materials are currently identifiable, but no personal identifiers will be utilized for the planned project, this plan should be described under section 4 below.
+
+•	Address whether the investigator will need to re-contact subjects or re-identify them in the future for any reason
+
+4.	Research Methods:
+•	Provide a detailed description of the planned research activities:
+o	Type of activities (e.g. retrospective chart review, analysis of data, laboratory assays, generating genomic data, etc.) 
+o	Address whether personal identifiers (e.g. names, medical records, dates of birth, etc.) will be used and maintained as part of this process as well as address whether the biospecimens and/or data might still be able to be re-identified based on previous knowledge or interaction with subjects.
+	Discuss any plans to review the biospecimens and/or data and either not record any identifiers or remove identifiers prior to analysis or other research activities.
+
+5.	Data Analysis Plan:
+•	Discuss the analysis plan, e.g. statistical methods that will be used to analyze the data.
+•	Explain who will conduct the analysis.
+
+6.	Storage and Confidentiality:
+•	Explain where will research biospecimens and/or data (including paper and electronic) be stored, how they will be maintained, the status of the biospecimens and/or data (e.g. anonymized, coded and linked to personal identifiers through a code key, with identifiers) and who will have access, including to the code key/master list/identifiers.  If certain sites will have access to only de-identified data, state that.
+o	If the NIH researchers or other collaborators will maintain biospecimens and/or data which is identifiable or linked to personal identifiers (or which could be re-identified), describe how you will protect the privacy of subjects and maintain the confidentiality of the biospecimens and/or data, e.g. coding biospecimens and/or data and using a code key, locked file cabinets behind locked doors, storage of electronic data on a network with firewall protection, password-protected computers or computer files, and access only to those involved in the study, etc.
+o	How long will the different types of biospecimens and/or data be maintained?  Will the code key ever be destroyed, and the materials still maintained?
+

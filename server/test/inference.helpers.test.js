@@ -111,9 +111,7 @@ test("estimateContentTokens", async (t) => {
   });
 
   await t.test("uses DOCX raw text instead of Mammoth HTML in the accurate path", async () => {
-    const bytes = fs
-      .readFileSync(SAMPLE_DOCX_PATH)
-      .toString("base64");
+    const bytes = fs.readFileSync(SAMPLE_DOCX_PATH).toString("base64");
     const tokens = await estimateMessageTokensAccurate([
       {
         role: "user",

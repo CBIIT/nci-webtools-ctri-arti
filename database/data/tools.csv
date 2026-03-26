@@ -7,3 +7,4 @@ id,name,description,type
 6,data,Data analysis,builtin
 7,docxTemplate,DOCX template generation,builtin
 8,recall,Search conversation history and resources,builtin
+9,workflow,Run a backend-owned workflow,builtin

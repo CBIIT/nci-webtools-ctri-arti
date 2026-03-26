@@ -86,7 +86,8 @@ test("Export Conversations Page Tests", async (t) => {
     try {
       await waitForElement(container, "table.export-table");
       await waitForCondition(
-        () => container.textContent.includes("Browser storage could not be loaded. Showing 0 records."),
+        () =>
+          container.textContent.includes("Browser storage could not be loaded. Showing 0 records."),
         5000,
         "failed export table message"
       );

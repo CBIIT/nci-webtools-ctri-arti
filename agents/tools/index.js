@@ -8,6 +8,7 @@ import { listFiles, getFile } from "shared/s3.js";
 import { search as searchWeb } from "shared/search.js";
 
 import { normalizeCmsResources } from "../resources.js";
+import { runWorkflow as executeWorkflow } from "../workflows/index.js";
 
 const { S3_BUCKETS } = process.env;
 
@@ -367,6 +368,27 @@ export async function think({ thought: _thought }) {
 }
 
 /**
+ * Workflow tool — execute a backend-owned workflow inside the agents service.
+ */
+export async function workflow({ workflow: workflowName, input = {}, options = {} }, context) {
+  if (!workflowName) {
+    throw new Error("workflow is required");
+  }
+
+  const result = await executeWorkflow(workflowName, input, {
+    options,
+    services: context,
+  });
+
+  return {
+    workflow: result.context.workflow.name,
+    runId: result.context.workflow.runId,
+    output: result.output,
+    nodeResults: result.context.nodeResults,
+  };
+}
+
+/**
  * DocxTemplate tool — fetch DOCX, extract blocks or apply replacements
  */
 export async function docxTemplate({ docxUrl, replacements }, _context) {
@@ -520,6 +542,7 @@ export const toolImplementations = {
   data,
   editor,
   think,
+  workflow,
   docxTemplate,
   recall,
 };

@@ -42,7 +42,9 @@ describe("gateway router", () => {
   it("parses JSON bodies for guardrail reconciliation at the parent router level", async () => {
     const app = buildApp();
 
-    const res = await request(app).post("/guardrails/reconcile").send({ ids: [1, 2, 3] });
+    const res = await request(app)
+      .post("/guardrails/reconcile")
+      .send({ ids: [1, 2, 3] });
 
     assert.equal(res.status, 200);
     assert.deepStrictEqual(res.body, {

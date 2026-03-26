@@ -25,7 +25,7 @@ import ScrollTo from "../../../components/scroll-to.js";
 import Tooltip from "../../../components/tooltip.js";
 import { useAuthContext } from "../../../contexts/auth-context.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
-import { alerts, clearAlert } from "../../../utils/alerts.js";
+import { alerts, clearAlert, handleError } from "../../../utils/alerts.js";
 
 import DeleteConversation from "./delete-conversation.js";
 import {
@@ -127,7 +127,8 @@ function ChatApp() {
   const fetchAgents = async () => {
     const response = await fetch("/api/v1/agents");
     if (!response.ok) return [];
-    return response.json();
+    const records = await response.json();
+    return (Array.isArray(records) ? records : []).filter((agent) => agent?.visible !== false);
   };
   const [agents] = createResource(fetchAgents);
   const [availableModels] = createResource(fetchChatModels);
@@ -398,7 +399,7 @@ function ChatApp() {
       }
     } catch (error) {
       saveDraftPatch({ message: text, files }, scope);
-      throw error;
+      handleError(error, "Chat Error");
     } finally {
       setIsStreaming(false);
     }
@@ -945,4 +946,3 @@ function ChatApp() {
     </div>
   `;
 }
-

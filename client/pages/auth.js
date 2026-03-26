@@ -1,35 +1,35 @@
-import { createResource, lazy, Show } from "solid-js";
+import { createMemo, createRenderEffect, lazy, Show } from "solid-js";
 import html from "solid-js/html";
-import { useNavigate } from "@solidjs/router";
-import { isAdminSuperUser } from "../utils/roleCheck.js";
+
+import { Status, useAuthContext } from "../contexts/auth-context.js";
 
 export default function AuthorizedImport(props) {
   return () => html`<${Authorized} ...${props}>${lazy(() => import(props.path))}<//>`;
 }
 
 export function Authorized(props) {
-  const [authorized] = createResource(() => getAuthorizedUser(props));
-  return html`<${Show} when=${authorized}>${props.children}<//>`;
-}
+  const auth = useAuthContext();
 
-export async function getAuthorizedUser(props) {
-  const navigate = useNavigate();
-  const apiKey = new URLSearchParams(location.search).get("apiKey");
-  const headers = apiKey ? { "x-api-key": apiKey } : undefined;
-  const session = await fetch("/api/v1/session", { headers }).then((r) => r.json());
-  const { user } = session;
-  const pathToCheck = ["/tools/translator", "/tools/chat"];
-  if (!user) {
-    location.href =
-      "/api/v1/login?destination=" + encodeURIComponent(location.pathname + location.search);
-  } else if (props.roles && !props.roles.includes(user.Role?.id)) {
-    location.href = "/";
-  } else {
-    if (pathToCheck.includes(location.pathname) && !isAdminSuperUser(() => user)) {
-      //location.href = "/";
-      navigate("/");
-      return null;
+  const authorized = createMemo(() => {
+    if (auth.status() !== Status.LOADED) return false;
+    const user = auth.user();
+    if (!user) return false;
+    if (props.roles && !props.roles.includes(user.Role?.id)) return false;
+    return true;
+  });
+
+  createRenderEffect(() => {
+    if (auth.status() !== Status.LOADED) return;
+    if (!auth.user()) {
+      location.href =
+        "/api/v1/login?destination=" + encodeURIComponent(location.pathname + location.search);
+      return;
     }
-  }
-  return user;
+    if (props.roles && !props.roles.includes(auth.user()?.Role?.id)) {
+      location.href = "/";
+      return;
+    }
+  });
+
+  return html`<${Show} when=${authorized}>${props.children}<//>`;
 }

@@ -1,19 +1,21 @@
 import { useAuthContext } from "../contexts/auth-context.js";
+import { APP_NAMES, isAppDisabled } from "../utils/app-config.js";
 
 import AuthorizedImport from "./auth.js";
 import Home from "./home.js";
-import { isAdminSuperUser } from "../utils/roleCheck.js";
 
 const Chat = AuthorizedImport({ path: "./tools/chat/index.js" });
 const ChatV2 = AuthorizedImport({ path: "./tools/chat-v2/index.js" });
-const ConsentCrafterV2 = AuthorizedImport({ path: "./tools/consent-crafter-v2/index.js" });
+const ConsentCrafterV2 = AuthorizedImport({
+  path: "./tools/consent-crafter-v2/index.js",
+});
 const Translate = AuthorizedImport({ path: "./tools/translate/index.js" });
 const SemanticSearch = AuthorizedImport({ path: "./tools/semantic-search.js" });
 const ExportConversations = AuthorizedImport({ path: "./tools/export-conversations/index.js" });
 const Users = AuthorizedImport({ path: "./users/index.js", roles: [1] });
 const UserEdit = AuthorizedImport({ path: "./users/edit.js", roles: [1] });
 const UserProfile = AuthorizedImport({ path: "./users/profile.js" });
-const Usage = AuthorizedImport({ path: "./users/usage.js", roles: [1] });
+const Usage = AuthorizedImport({ path: "./users/usage/usage.js", roles: [1] });
 const UserUsage = AuthorizedImport({ path: "./users/user-usage.js", roles: [1] });
 
 /**
@@ -22,10 +24,10 @@ const UserUsage = AuthorizedImport({ path: "./users/user-usage.js", roles: [1] }
  * @returns {Array} - Array of route configurations
  */
 export default function getRoutes() {
-  const { user } = useAuthContext();
+  const { user, config } = useAuthContext();
 
   const hasRole = (roleIds) => user?.() && roleIds.includes(user?.()?.Role?.id);
-  const adminSuperUser = isAdminSuperUser(user);
+  const hiddenWhenDisabled = (appName) => isAppDisabled(config?.(), appName);
 
   return [
     {
@@ -48,7 +50,7 @@ export default function getRoutes() {
           path: "chat",
           title: "Chat",
           component: Chat,
-          hidden: !adminSuperUser,
+          hidden: hiddenWhenDisabled(APP_NAMES.CHAT),
         },
         {
           path: "chat-v2",
@@ -60,12 +62,13 @@ export default function getRoutes() {
           path: "consent-crafter",
           title: "ConsentCrafter",
           component: ConsentCrafterV2,
+          hidden: hiddenWhenDisabled(APP_NAMES.CONSENT_CRAFTER),
         },
         {
           path: "translator",
           title: "Translator",
           component: Translate,
-          hidden: !adminSuperUser,
+          hidden: hiddenWhenDisabled(APP_NAMES.TRANSLATE),
         },
         {
           path: "semantic-search",

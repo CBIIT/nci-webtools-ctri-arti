@@ -154,6 +154,10 @@ def load_config() -> tuple[Config, str, str]:
             "PORT": str(port),
             **({"VERSION": get_env("GITHUB_SHA", "latest"), "TIER": tier} if is_main else {"DB_SKIP_SYNC": "true"}),
         }
+        if is_main:
+            disabled_apps = get_env("DISABLED_APPS")
+            if disabled_apps:
+                environment["DISABLED_APPS"] = disabled_apps
         return {
             "name": name,
             "image": image or "httpd",

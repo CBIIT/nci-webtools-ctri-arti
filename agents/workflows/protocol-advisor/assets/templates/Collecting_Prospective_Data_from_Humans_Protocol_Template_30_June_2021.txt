@@ -1,0 +1,106 @@
+header: Version Date:
+footer: Collecting Prospective Data from Humans Template v. 8, 30 June 2021
+
+PROTOCOL TEMPLATE FOR PROSPECTIVE DATA COLLECTION FROM HUMANS
+(REQUEST FOR AN EXEMPTION) 
+
+This preface contains clarification about the protocol template and required supporting materials.  Remove the preface before finalizing the protocol. 
+To be eligible of an exemption from IRB review for prospective data collection from humans, your project must only include the following research methods, these include educational research (Exemption Category 1); educational tests (cognitive, diagnostic, aptitude, achievement), survey or interview procedures, or observation of public behavior (Exemption Category 2); or benign behavioral interventions, such as the completion of certain types of tasks or exercises or exposure to certain conditions (Exemption Category 3).  In order for your project to fall within a specific exemption category, other specific criteria must be met.  It is possible that one project might be eligible for an exemption under more than one category based on the nature of the project and the activities that are involved. In addition, under the revised Common Rule (effective as of Jan. 21, 2019), you may collect both sensitive data and identifiers and receive an exemption, as long as the protocol includes a plan to protect the privacy of subjects and maintain the confidentiality of the data.
+
+For a project to be eligible for an exemption under the category of a benign behavioral intervention, the project can only involve adults. The intervention itself must be of brief duration, harmless, painless, not physically invasive, and not likely to have a significant adverse impact on subjects. In addition, the investigator must have no reason to think the subjects will find the intervention to be offensive or embarrassing. Information must only be collected through verbal [oral] or written responses or audiovisual recording. The subjects will have to prospectively agree to participating in the intervention and the collection of information. This exemption does not apply if the research involves deceiving subjects regarding the nature or purposes of the research unless the subject authorizes the deception through prospective agreement to be unaware of or misled regarding the nature or purposes of the research.
+
+Please note that if your project involves conducting surveys, interviews, focus groups, or benign behavioral interventions with children or research with prisoners, it is not eligible for an exemption.  
+
+A submission for an exemption from IRB review for a research project that involves prospective data collection from humans must include copies of all supporting materials including recruitment materials (email templates, flyers, scripts), screening questions, instructions to subjects, survey, interview, or focus group questions or scripts, instruments (including screen shots or mock ups of instructions for any tasks that must be completed), educational tests, and consent language (see section 5 below). Be sure that the content of the protocol and the supporting materials are consistent.  Incomplete or inconsistent submissions will be sent back for revision. 
+
+If it is determined that your study does not meet the review level of exempt, you will need to submit a protocol for IRB review and approval or amend an existing protocol to conduct the research.  Accordingly, additional protocol elements (not addressed below) may be required.  
+
+If the purpose of the project is only to conduct quality assessment (QA), quality improvement (QI), a program evaluation or evidence-based practice (EBP) and not also to conduct research, the submission of a protocol for a determination of "exempt from IRB review" is not required.  You can find more information about these activities and how they differ from research on the OHSRP website. If you wish, you can request a determination of “Not Research” through submission of the Not Human Subjects Research Application form.
+
+Be sure to address all the topics and sub-topics mentioned below. Italicized or bolded font has been used to emphasize certain information. Do not simply leave in the instructional language and write answers under the questions.  Please delete all instructional language within this document, so the remaining content reads like a narrative. 
+
+If you have any questions about the information above, please consult the NIH IRB, irb@od.nih.gov.
+
+ 
+Title:
+
+Principal Investigator: [Must be an NIH FTE.] 
+
+
+Other NIH Investigators: [Please include the name all individuals conducting research activities for this project at NIH sites.] 
+
+
+Non-NIH Collaborators: [Please include the name and affiliations of any non-NIH collaborators or companies conducting research activities, as defined below.] 
+
+If your project will involve contractors, students, fellows (not NIH FTEs), external collaborators, or contracts with companies who will conduct activities outside of NIH for this project, be sure to address the roles of these individuals (vs. NIH’s role) under every section of the protocol.  Research activities include recruitment, screening, enrollment, data collection, observing data collection, access to data (including transcripts, video recordings and audio recordings), data analysis or interpretation of data for manuscripts and presentations.  Depending on their role, these individuals may be required to have separate IRB review and approval, or an exemption for what they are doing.
+
+1.	Background:
+•	Background information on the topic to be studied.
+•	What is the justification and rationale for the proposed study?  If known, provide a summary of prior experience and/or previous studies looking at the same question or topic.  Include what has been looked at to this point with any relevant literature citations, gaps in the literature, inconsistencies, and variations from what you will be proposing.
+
+2.	Study Objectives, Including Specific Aims and/or Hypotheses:
+•	What is the purpose of the study? State the study objectives and include any hypotheses, if applicable. 
+3.	Study Population: Describe the target population.
+•	Number of subjects needed to conduct the study (ensure that the sample size is appropriate to achieve meaningful scientific and statistical results)
+•	Gender, racial or ethnic background and age range of subjects. Subject selection must be equitable or otherwise justified here (e.g. explain that recruitment involves a convenience sample and why).
+•	Any other inclusion and exclusion criteria that defines who will and who will not be eligible for the study (this should support the purpose of the study). 
+•	If vulnerable populations are included (e.g. children, NIH employees, persons unable to consent, prisoners), provide a justification for inclusion and any extra protections in place, e.g. employees – supervisors not involved in requesting participation.
+
+4.	Recruitment and Screening: When recruitment and/or screening will be conducted by an external company or organization, be sure to still include all the details of the recruitment plan and upload associated recruitment and screening documentation.  If the study will involve Amazon Mechanical Turk (MTurk) users, we suggest that you track subjects by worker ID # rather than Human Intelligence Tasks (HIT) completed. If you are tracking by HITs, this will allow the same subject to complete the survey or the same tasks multiple times leading to duplicate data.
+•	Explain the recruitment process and how subjects will initially be identified (e.g. flyers, emails, websites, telephone, mail, in-person, Amazon MTurk, another company's research panel). 
+o	Address whether the study team or subcontractor has routine access to the subjects being recruited, e.g. as part of their current job or relationship to an institution/program, an existing research panel, etc. If not, discuss how they will gain access to this population.
+•	Discuss the screening process, if applicable
+o	Describe how screening will be conducted (e.g. using an on-line survey, over the phone, in person).
+o	If the study involves specific inclusion and exclusion criteria, delineate the criteria and how eligibility will be determined (e.g. age, English fluency, etc.). 
+o	State whether personal identifiers (names, phone numbers, addresses, email addresses) will be collected as part of the screening data or linked to identifiers.
+o	If identifiable, explain who on the research team specifically (which NIH investigators? which collaborators?) will have access to the identifiable screening data or the code key.
+o	Clarify whether the screening data will be retained as part of the study data. 
+o	If each participant's screening data will be linked to identifiers or include identifiers and will be linked to his or her main study data, explain the process allowing linkage, e.g. if the NIH researchers do not intend to have access to identifiers, what is the process to ensure this?
+
+5.	Consent Process: Subjects must have the opportunity to prospectively agree to participate in the research (including deception, if applicable) before answering any questions or engaging in any activities.  Minimally they should be provided with the following information: 
+1) that the activity is being conducted for research purposes;
+2) the purpose of the research (i.e. the research questions) (IF THE PROJECT INVOLVES DECEPTION ABOUT THE NATURE OR PURPOSE OF THE RESEARCH, they must be informed that the study involves deception, i.e. they are being provided with some misleading information about the nature or purpose of the research);
+3) that participation is voluntary; 
+4) a description of the procedures involved (e.g. approximate time commitment; type of research procedures; type and number of questions being asked; any tasks, unique activities or interventions); 
+5) any provisions made to ensure the privacy of the participant while engaged in the activity and if applicable, the confidentiality of the data (see sections 10 & 11 below); 
+6) any compensation, if applicable; and
+7) the name and contact information for one of the researchers in case they have questions.
+
+There is no requirement to use a written consent document which meets all the regulatory requirements for informed consent or to obtain a signature or otherwise document consent.  This information can be communicated using any of the optional methods described below.  The participant should also have the opportunity to agree or decline after receiving this information.
+
+•	Describe the process for determining a subject’s willingness to participate, e.g. verbal (in person or over the phone) using a script; and/or via written communication in an email, by mail, a hand out, as part of the intro to an on-line or paper instrument, or a paper consent document. 
+•	Address whether the subject's agreement to participate will be documented and how, e.g. signature on a consent form, electronically, e.g. checking a box on an on-line form (This is optional.)
+
+6.	Research Methods: Please note that the collected data can include or be linked to identifiers if the study includes a plan to protect privacy of subjects and the confidentiality of the data (see sections 10 & 11).
+•	Provide a detailed description of all data collection activities:
+o	Explain who, on the research team, will conduct data collection, unless data collection will be solely collected through use of an on-line instrument. 
+o	Type of activities (e.g. educational tests, survey or interviews procedures, observation of public behavior, benign behavioral interventions, including completion of certain types of tasks or exercises or exposure to certain conditions).  See Benign Behavioral Interventions below.
+o	How data will be collected (e.g. on paper; on-line, using SurveyMonkey, Amazon MTurk, Qualtrics, or a home-grown application; through notetaking; audio-recordings; or video recordings)
+	If audio-recordings will be used, note whether they will be transcribed and who will be responsible for the transcription.
+o	Duration of the study, including any follow up activities. If the study involves more than one visit, provide a sequential description of each study visit including what will occur at each visit and how long each visit will take.
+o	Time requirement associated with each activity. Be sure that the consent information has consistent information about this.
+o	Location of study activities (e.g. on-line, in person (where), by telephone).
+o	Address whether personal identifiers (e.g. names, phone numbers, email addresses) will be included in, or linked to the research data (e.g. electronic data, paper records, notes, recordings, transcripts) and who on the research team (which NIH investigators? which collaborators?) will have access to the identifiable data or the code key. If the NIH researchers will not be able to directly link the data to identifiers, explain whether the NIH researchers might still be able to ascertain the identity of subjects when reviewing the data, based on their previous knowledge or interaction with subjects. 
+
+7.	Compensation: 
+•	State whether compensation (e.g., cash, gift card, Amazon MTurk payments) will be provided to subjects or not. 
+•	Explain who will provide compensation.
+•	Describe the process for providing compensation (e.g. in person, through the mail, email, etc.).
+o	Address whether the research data will be linked to codes or personal identifiers in order to determine who completed the study activity and whether identifiers will need to be maintained in order to facilitate payment. If so, state who specifically will have access to the identifiers or the code key.
+
+8.	Risks and Benefits of Participation: Research that is eligible for an exemption must hold out no more than minimal risk to subjects. Procedures to avoid breaches of confidentiality can be discussed under section 11 below. Compensation should not be described as a possible benefit here, or in the consent form.
+•	Risks:  Discuss any potential risks associated with the research activities and how risks will be minimized.  Risks can be physical, psychological, sociological, economical or legal, e.g. based on a breach of confidentiality. 
+•	Benefits:  Discuss any possible direct benefits to the subjects from participation in the research.  If there are no possible direct benefits, then state this. 
+
+9.	Data Analysis Plan:
+•	Discuss the analysis plan, e.g. statistical methods or qualitative software or methods that will be used to analyze the data.
+•	Explain who will conduct the analysis.
+
+10.	Privacy Interests of Participants:
+•	Describe how you will protect the privacy of subjects.  Address whether research activities will be conducted in a private setting. For example, will any human-to-human interaction occur over the telephone, in person, messaging, video chat, web ex with video.  If in person, will a private room with a closed door be available? Who might be privy to these communications? Explain any privacy/security measures that will be put in place to protect participants so that these communications are not accidently overheard or witnessed.
+
+11.	Data Storage and Confidentiality:
+•	Explain all the types of data that will be collected (e.g. paper data forms or electronic data, e.g. contact info, screening data, surveys or questionnaires, transcripts, consent forms, digital data, audiotapes, videotapes).  Explain where research data will be stored, how it will be maintained (e.g. anonymized, coded and linked to identifiers through a code key, with identifiers) and who will have access to the data, including to the code key/master list/identifiers.  If certain sites will have access to only de-identified data, state that. 
+o	If the NIH researchers or other collaborators will maintain data or receive data which includes identifiers or is linked to personal identifiers (or data which could be re-identified), describe how you will maintain the confidentiality of the data, e.g. coding data and using a code key, locked file cabinets behind locked doors, storage of electronic data on a network with firewall protection, password-protected computers or computer files, and access only to those involved in the study, etc. 
+o	How long will the different types of data be maintained?  Will the code key ever be destroyed yet data still maintained?
+

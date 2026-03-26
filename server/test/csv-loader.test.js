@@ -39,6 +39,12 @@ test("parseCsv", async (t) => {
     assert.strictEqual(result[0].rate, 3.14);
   });
 
+  await t.test("casts boolean values", () => {
+    const result = parseCsv("name,visible,hidden\nAlice,true,false\n");
+    assert.strictEqual(result[0].visible, true);
+    assert.strictEqual(result[0].hidden, false);
+  });
+
   await t.test("parses JSON values", () => {
     const result = parseCsv('name,data\nAlice,"[1,2,3]"\n');
     assert.deepStrictEqual(result[0].data, [1, 2, 3]);
@@ -71,7 +77,9 @@ test("parseCsv", async (t) => {
 
   await t.test("resolves nested env references inside JSON values", () => {
     process.env._CSV_JSON_ENV = "from-env";
-    const result = parseCsv("name,config\nAlice,\"{\"\"token\"\":\"\"env:_CSV_JSON_ENV\"\",\"\"nested\"\":{\"\"value\"\":\"\"env:_CSV_JSON_ENV\"\"}}\"\n");
+    const result = parseCsv(
+      'name,config\nAlice,"{""token"":""env:_CSV_JSON_ENV"",""nested"":{""value"":""env:_CSV_JSON_ENV""}}"\n'
+    );
     assert.deepStrictEqual(result[0].config, {
       token: "from-env",
       nested: { value: "from-env" },
@@ -84,10 +92,3 @@ test("parseCsv", async (t) => {
     assert.deepStrictEqual(result[0].config, { key: "value" });
   });
 });
-
-
-
-
-
-
-

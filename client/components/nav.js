@@ -3,7 +3,6 @@ import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import html from "solid-js/html";
 import { Portal } from "solid-js/web";
 
-
 export default function Nav(props) {
   const [menuRef, setMenuRef] = createSignal(null);
   const [activeDropdown, setActiveDropdown] = createSignal(null);

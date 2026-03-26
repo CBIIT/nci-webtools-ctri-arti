@@ -1,7 +1,6 @@
 import { marked } from "marked";
 import { createMemo } from "solid-js";
 
-
 import { TOOLS } from "./tools.js";
 
 // Re-export tools for backward compatibility
@@ -137,7 +136,7 @@ export function getMarked() {
     );
   };
   marked.use({ renderer });
-  
+
   return marked;
 }
 

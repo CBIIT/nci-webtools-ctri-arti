@@ -16,8 +16,10 @@ export default function ClassToggle(props) {
   let el = null;
   const resolved = children(() => props.children);
   const content = resolved().filter((child) => !child.hasAttribute?.("toggle"));
-  const toggle = () => !props.disabled && content.forEach((c) => c.classList.toggle(props.activeClass || "show"));
-  const hide = () => !props.disabled && content.forEach((c) => c.classList.remove(props.activeClass || "show"));
+  const toggle = () =>
+    !props.disabled && content.forEach((c) => c.classList.toggle(props.activeClass || "show"));
+  const hide = () =>
+    !props.disabled && content.forEach((c) => c.classList.remove(props.activeClass || "show"));
   const onMouseOver = () => props.event === "hover" && toggle();
   const onMouseOut = () => props.event === "hover" && hide();
   const onClickOutside = (event) => !el?.contains(event.target) && hide();

@@ -39,3 +39,8 @@ export function fetchCachedText(url, init) {
     return response.text();
   });
 }
+
+export function clearCachedData() {
+  jsonCache.clear();
+  textCache.clear();
+}

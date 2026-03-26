@@ -203,6 +203,7 @@ export const Agent = pgTable(
     modelID: integer("modelID").references(() => Model.id, { onDelete: "set null" }),
     name: text("name"),
     description: text("description"),
+    visible: boolean("visible").default(true),
     promptID: integer("promptID").references(() => Prompt.id, { onDelete: "set null" }),
     guardrailID: integer("guardrailID").references(() => Guardrail.id, { onDelete: "set null" }),
     modelParameters: json("modelParameters"),
@@ -569,8 +570,7 @@ export async function seedDatabase(db) {
   const rolePolicies = loadCsv(resolve(dataDir, "role-policies.csv"));
   const providers = loadCsv(resolve(dataDir, "providers.csv")).map((row) => ({
     ...row,
-    apiKey:
-      row.apiKey && typeof row.apiKey === "object" ? JSON.stringify(row.apiKey) : row.apiKey,
+    apiKey: row.apiKey && typeof row.apiKey === "object" ? JSON.stringify(row.apiKey) : row.apiKey,
   }));
   const modelRows = loadCsv(resolve(dataDir, "models.csv"));
   const prompts = loadCsv(resolve(dataDir, "prompts.csv"));
@@ -637,7 +637,13 @@ export async function seedDatabase(db) {
     "blockedOutputsMessaging",
     "policyConfig",
   ]);
-  await upsert(T.Agent, agents, T.Agent.id, ["name", "modelID", "promptID", "guardrailID"]);
+  await upsert(T.Agent, agents, T.Agent.id, [
+    "name",
+    "modelID",
+    "visible",
+    "promptID",
+    "guardrailID",
+  ]);
   await upsert(T.Tool, tools, T.Tool.id, ["name", "description", "type"]);
   await upsert(T.AgentTool, agentTools, T.AgentTool.id, ["agentID", "toolID"]);
 
@@ -671,4 +677,3 @@ export async function seedDatabase(db) {
     }
   }
 }
-

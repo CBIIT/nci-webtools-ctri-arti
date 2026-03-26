@@ -113,6 +113,12 @@ paths:
                     type: string
                     description: Human-readable reset description for error messages
                     example: "tomorrow at 12:00 AM"
+                  disabled:
+                    type: array
+                    description: App names disabled in the UI via the DISABLED_APPS environment variable.
+                    items:
+                      type: string
+                    example: ["Translate", "Consent Crafter"]
                   usageTypes:
                     type: array
                     description: Common usage type labels plus available agent names.

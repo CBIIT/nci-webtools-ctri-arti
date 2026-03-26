@@ -1,8 +1,10 @@
 import { createCmsService } from "cms/service.js";
 import { createGatewayService } from "gateway/service.js";
 import { requireUserRequestContext } from "shared/request-context.js";
+import { createUsersApplication } from "users/app.js";
 
 import { runAgentLoop } from "./core/loop.js";
+import { validateUserMessageContent } from "./validation.js";
 
 function createAppError(statusCode, message) {
   const error = new Error(message);
@@ -14,6 +16,7 @@ export function createAgentsApplication({
   runLoop = runAgentLoop,
   gateway = createGatewayService(),
   cms,
+  users = createUsersApplication(),
   source = "direct",
 } = {}) {
   const cmsModule = cms ?? createCmsService({ gateway, source });
@@ -33,6 +36,7 @@ export function createAgentsApplication({
       if (!message?.content) {
         throw createAppError(400, "Message content required");
       }
+      validateUserMessageContent(message.content);
 
       yield* runLoop({
         userId: requestContext.userId,
@@ -44,6 +48,7 @@ export function createAgentsApplication({
         thoughtBudget: thoughtBudget || 0,
         gateway,
         cms: cmsModule,
+        users,
       });
     },
   };

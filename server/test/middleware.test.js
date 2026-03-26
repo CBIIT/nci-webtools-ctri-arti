@@ -4,7 +4,7 @@ import assert from "node:assert";
 import { test } from "node:test";
 
 import { eq } from "drizzle-orm";
-import { logRequests, nocache } from "shared/middleware.js";
+import { logRequests, nocache, securityHeaders } from "shared/middleware.js";
 
 import { getOauthProviderIssuer, logErrors } from "../api/middleware.js";
 import { requireRole } from "../auth.js";
@@ -230,6 +230,31 @@ test("nocache", async (t) => {
   });
 });
 
+test("securityHeaders", async (t) => {
+  await t.test("sets nosniff on every response", () => {
+    const res = createMockRes();
+    let nextCalled = false;
+
+    securityHeaders(createMockReq(), res, () => {
+      nextCalled = true;
+    });
+
+    assert.strictEqual(res._headers["X-Content-Type-Options"], "nosniff");
+    assert.ok(nextCalled);
+  });
+
+  await t.test("sets hsts for secure requests", () => {
+    const res = createMockRes();
+
+    securityHeaders(createMockReq({ secure: true }), res, () => {});
+
+    assert.strictEqual(
+      res._headers["Strict-Transport-Security"],
+      "max-age=31536000; includeSubDomains"
+    );
+  });
+});
+
 test("getOauthProviderIssuer", async (t) => {
   await t.test("defaults to the request host", () => {
     const issuer = getOauthProviderIssuer({
@@ -259,5 +284,3 @@ test("getOauthProviderIssuer", async (t) => {
     delete process.env.OAUTH_PROVIDER_ISSUER;
   });
 });
-
-

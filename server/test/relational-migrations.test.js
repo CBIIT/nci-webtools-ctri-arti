@@ -47,7 +47,10 @@ test("relational migrations repair dirty historical rows before enforcing foreig
     await client.exec(initSql);
     await applyMigrations(
       client,
-      (file) => file <= "0009_vector_embeddings.sql" || file === "0013_guardrails.sql"
+      (file) =>
+        file <= "0009_vector_embeddings.sql" ||
+        file === "0013_guardrails.sql" ||
+        file === "0014_agent_visibility.sql"
     );
     await seedDatabase(db);
 
@@ -198,5 +201,3 @@ test("relational migrations repair dirty historical rows before enforcing foreig
     await client.close();
   }
 });
-
-

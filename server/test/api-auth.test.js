@@ -27,19 +27,50 @@ test("server auth posture keeps public routes explicit", async (t) => {
     assert.equal(logoutRes.status, 302);
   });
 
-  await t.test(
-    "config exposes supported usage types without internal schedule details",
-    async () => {
+  await t.test("config exposes env-disabled apps for non-admin config requests", async () => {
+    const previousDisabledApps = process.env.DISABLED_APPS;
+    process.env.DISABLED_APPS = "Translate, Consent Crafter";
+
+    try {
       const res = await request(app).get("/api/v1/config");
 
       assert.equal(res.status, 200);
       assert.ok(Array.isArray(res.body.usageTypes), "config should return usageTypes");
+      assert.ok(Array.isArray(res.body.disabled), "config should return disabled apps");
       assert.ok(res.body.usageTypes.includes("embedding"));
       assert.ok(res.body.usageTypes.includes("guardrail"));
       assert.ok(res.body.usageTypes.includes("chat-summary"));
+      assert.deepStrictEqual(res.body.disabled, ["Translate", "Consent Crafter"]);
       assert.equal("budgetResetSchedule" in res.body, false);
+    } finally {
+      if (previousDisabledApps === undefined) {
+        delete process.env.DISABLED_APPS;
+      } else {
+        process.env.DISABLED_APPS = previousDisabledApps;
+      }
     }
-  );
+  });
+
+  await t.test("config hides disabled apps from users with admin or super user roles", async () => {
+    const previousDisabledApps = process.env.DISABLED_APPS;
+    process.env.DISABLED_APPS = "Translate, Consent Crafter";
+
+    try {
+      const res = await request(app)
+        .get("/api/v1/config")
+        .set("X-API-Key", process.env.TEST_API_KEY);
+
+      assert.equal(res.status, 200);
+      assert.ok(Array.isArray(res.body.disabled), "config should return disabled apps");
+      assert.deepStrictEqual(res.body.disabled, []);
+    } finally {
+      if (previousDisabledApps === undefined) {
+        delete process.env.DISABLED_APPS;
+      } else {
+        process.env.DISABLED_APPS = previousDisabledApps;
+      }
+    }
+  });
 
   await t.test("session resolves an API-key-authenticated user for browser clients", async () => {
     const sessionRes = await request(app)
@@ -67,6 +98,3 @@ test("server auth posture keeps public routes explicit", async (t) => {
     assert.equal(logRes.status, 401);
   });
 });
-
-
-

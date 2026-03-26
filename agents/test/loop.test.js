@@ -412,6 +412,89 @@ describe("runAgentLoop", () => {
     assert.equal(cms._messages.length, 4);
   });
 
+  it("returns workflow results directly without a second model turn", async () => {
+    const invokeCalls = [];
+    const toolUseEvents = [
+      {
+        contentBlockStart: {
+          contentBlockIndex: 0,
+          start: { toolUse: { toolUseId: "tu_workflow", name: "workflow" } },
+        },
+      },
+      {
+        contentBlockDelta: {
+          contentBlockIndex: 0,
+          delta: {
+            toolUse: {
+              input: JSON.stringify({
+                workflow: "protocol_advisor",
+                input: {
+                  templateId: "interventional",
+                  protocolText: "1.0 TITLE\n\nProtocol body",
+                },
+              }),
+            },
+          },
+        },
+      },
+      { contentBlockStop: { contentBlockIndex: 0 } },
+      { messageStop: { stopReason: "tool_use" } },
+    ];
+
+    const gateway = {
+      invoke: async (params) => {
+        invokeCalls.push(params);
+        return {
+          stream: (async function* () {
+            for (const event of toolUseEvents) {
+              yield event;
+            }
+          })(),
+        };
+      },
+    };
+
+    const cms = createMockCms({
+      tools: ["workflow"],
+      runtime: {
+        model: "saved-runtime-model",
+        modelID: 77,
+        modelParameters: null,
+        tools: ["workflow"],
+      },
+    });
+
+    const events = [];
+    const loop = runAgentLoop({
+      userId: 1,
+      agentId: 1,
+      conversationId: null,
+      userMessage: { role: "user", content: [{ text: "Run the workflow" }] },
+      gateway,
+      cms,
+    });
+
+    for await (const event of loop) {
+      events.push(event);
+    }
+
+    assert.equal(invokeCalls.filter((params) => params.stream === true).length, 1);
+    assert.equal(invokeCalls.length >= 1, true);
+    assert.equal(
+      events.some((event) => event.toolResult),
+      false
+    );
+    assert.equal(
+      events.some((event) => event.workflowResult),
+      true
+    );
+    assert.equal(
+      events.find((event) => event.workflowResult).workflowResult.workflow,
+      "protocol_advisor"
+    );
+    assert.equal(cms._messages.length, 0);
+  });
+
   it("only emits summarizing events when summarize yields chunks", async () => {
     const streamEvents = [
       { messageStart: { role: "assistant" } },
@@ -648,5 +731,46 @@ describe("runAgentLoop", () => {
       invokedWith.messages[0].content[0].text.includes("[Conversation Summary]"),
       "Conversation summary should be passed through as the opening user turn"
     );
+  });
+
+  it("supports ephemeral runs without persisting conversation state", async () => {
+    let invokedMessages = null;
+    const gateway = createMockGateway(
+      [
+        { contentBlockStart: { contentBlockIndex: 0 } },
+        { contentBlockDelta: { contentBlockIndex: 0, delta: { text: "Ephemeral reply" } } },
+        { contentBlockStop: { contentBlockIndex: 0 } },
+        { messageStop: { stopReason: "end_turn" } },
+      ],
+      (params) => {
+        invokedMessages = params.messages.map((message) => ({
+          role: message.role,
+          content: structuredClone(message.content),
+        }));
+      }
+    );
+    const cms = createMockCms();
+
+    const events = [];
+    const loop = runAgentLoop({
+      userId: 1,
+      agentId: 1,
+      conversationId: null,
+      userMessage: { role: "user", content: [{ text: "Run ephemerally" }] },
+      model: "test-model",
+      gateway,
+      cms,
+    });
+
+    for await (const event of loop) {
+      events.push(event);
+    }
+
+    assert.equal(cms._messages.length, 0);
+    assert.equal(cms._resources.length, 0);
+    assert.equal(invokedMessages.length, 1);
+    assert.equal(invokedMessages[0].role, "user");
+    assert.equal(invokedMessages[0].content[0].text, "Run ephemerally");
+    assert.equal(events.at(-1).messageStop.stopReason, "end_turn");
   });
 });

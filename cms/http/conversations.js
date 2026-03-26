@@ -22,10 +22,7 @@ export function createCmsConversationsRouter({
   api.post(
     "/conversations",
     withResolvedContext(resolveContext, async (req, res) => {
-      const conversation = await application.createConversation(
-        req.context,
-        req.body
-      );
+      const conversation = await application.createConversation(req.context, req.body);
       res.status(201).json(conversation);
     })
   );
@@ -137,10 +134,7 @@ export function createCmsConversationsRouter({
   api.post(
     "/resources",
     withResolvedContext(resolveContext, async (req, res) => {
-      const resource = await application.storeConversationResource(
-        req.context,
-        req.body
-      );
+      const resource = await application.storeConversationResource(req.context, req.body);
       res.status(201).json(resource);
     })
   );
