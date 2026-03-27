@@ -135,6 +135,25 @@ test("transport parity", async (t) => {
     }
   });
 
+  await t.test("Users getAccessForRole matches in direct and HTTP mode", async () => {
+    const usersServer = await startServer(usersApi, "/api");
+
+    try {
+      const directClient = createUsersApplication();
+      const httpClient = createUsersRemote({ baseUrl: usersServer.url });
+
+      const [directAccess, httpAccess] = await Promise.all([
+        directClient.getAccessForRole("user"),
+        httpClient.getAccessForRole("user"),
+      ]);
+
+      assert.deepStrictEqual(httpAccess, directAccess);
+      assert.equal(httpAccess["/_/profile"]?.view, true);
+    } finally {
+      await usersServer.close();
+    }
+  });
+
   await t.test("Users budget reset responses match in direct and HTTP mode", async () => {
     const usersServer = await startServer(usersApi, "/api");
 

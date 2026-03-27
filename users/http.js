@@ -97,6 +97,14 @@ export function createUsersRouter({ application } = {}) {
     })
   );
 
+  api.get(
+    "/v1/roles/:roleIdentifier/access",
+    routeHandler(async (req, res) => {
+      const access = await application.getAccessForRole(req.params.roleIdentifier);
+      res.json(access);
+    })
+  );
+
   api.post(
     "/v1/usage",
     routeHandler(async (req, res) => {

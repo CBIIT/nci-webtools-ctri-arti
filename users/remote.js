@@ -46,6 +46,8 @@ export function createUsersRemote({ baseUrl, fetchImpl = fetch }) {
         body: data,
       }),
     getRoles: () => requestUsers("/api/v1/roles"),
+    getAccessForRole: (roleIdentifier) =>
+      requestUsers(`/api/v1/roles/${encodeURIComponent(roleIdentifier)}/access`),
     recordUsage: (userId, rows) =>
       requestUsers("/api/v1/usage", {
         method: "POST",
