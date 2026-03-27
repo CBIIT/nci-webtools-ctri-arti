@@ -47,8 +47,21 @@ test("server auth posture keeps public routes explicit", async (t) => {
     assert.equal(sessionRes.status, 200);
     assert.ok(sessionRes.body.user, "session should return a user when authenticated by API key");
     assert.equal(sessionRes.body.user.email, "test@test.com");
+    assert.ok(sessionRes.body.access, "session should return top-level access policies");
     assert.ok(sessionRes.body.user.access, "session user should include access policies");
+    assert.deepStrictEqual(sessionRes.body.access, sessionRes.body.user.access);
     assert.equal(sessionRes.body.user.access["*"]?.["*"], true);
+  });
+
+  await t.test("anonymous session returns top-level access for user-visible routes", async () => {
+    const sessionRes = await request(app).get("/api/v1/session");
+
+    assert.equal(sessionRes.status, 200);
+    assert.equal(sessionRes.body.user, null);
+    assert.ok(sessionRes.body.access, "anonymous session should include top-level access");
+    assert.equal(sessionRes.body.access["/tools/consent-crafter"]?.view, true);
+    assert.equal(sessionRes.body.access["/_/profile"]?.view, true);
+    assert.equal(sessionRes.body.access["/tools/chat"]?.view, undefined);
   });
 
   await t.test("protected routes reject unauthenticated access", async () => {

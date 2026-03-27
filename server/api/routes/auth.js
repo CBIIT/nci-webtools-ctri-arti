@@ -5,6 +5,7 @@ import { createAnonymousRequestContext } from "shared/request-context.js";
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
 
 const { OAUTH_PROVIDER_ENABLED } = process.env;
+const DEFAULT_ANONYMOUS_VISIBILITY_ROLE = "user";
 const COMMON_USAGE_TYPES = [
   "agent",
   "browse-query",
@@ -65,7 +66,10 @@ export function createAuthRouter({ modules } = {}) {
       session.user = user;
     }
 
-    res.json({ user, expires: session.cookie.expires });
+    const access =
+      user?.access || (await users.getAccessForRole(DEFAULT_ANONYMOUS_VISIBILITY_ROLE));
+
+    res.json({ user, access, expires: session.cookie.expires });
   });
 
   api.get("/config", async (req, res) => {

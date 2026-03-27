@@ -138,6 +138,19 @@ function userWithPolicies(where) {
   });
 }
 
+function roleWithPolicies(where) {
+  return db.query.Role.findFirst({
+    where,
+    with: {
+      RolePolicies: {
+        with: {
+          Policy: true,
+        },
+      },
+    },
+  });
+}
+
 export class UserService {
   // ===== Identity =====
 
@@ -151,6 +164,17 @@ export class UserService {
 
   async getUserByApiKey(apiKey) {
     return serializeUserAccess(await userWithPolicies(eq(User.apiKey, apiKey)));
+  }
+
+  async getAccessForRole(roleIdentifier) {
+    const roleName = String(roleIdentifier);
+    const where =
+      typeof roleIdentifier === "number" || /^\d+$/.test(roleName)
+        ? eq(Role.id, +roleIdentifier)
+        : eq(Role.name, roleName);
+
+    const role = await roleWithPolicies(where);
+    return buildAccessMap(role?.RolePolicies || []);
   }
 
   async findOrCreateUser({ email, firstName, lastName }) {

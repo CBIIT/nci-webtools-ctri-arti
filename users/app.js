@@ -58,6 +58,10 @@ export function createUsersApplication({ service = new UserService() } = {}) {
       return service.getRoles();
     },
 
+    getAccessForRole(roleIdentifier) {
+      return service.getAccessForRole(roleIdentifier);
+    },
+
     recordUsage(userId, rows) {
       return service.recordUsage(userId, rows);
     },
