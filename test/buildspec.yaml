@@ -9,11 +9,10 @@ env:
         AutoTestingUserPassword: ${AUTO_TESTING_USER_PASSWORD_SECRET_ARN}
 
     variables:
-        CTF_USERNAME_CCDI: test_user
         CHROME_VERSION: "139.0.7258.154-1"
         TIER: ${TIER}
         tier: ${TIER}
-        AWS_ENV: ${AWS_ENV}
+        AWS_ENV: ${AWS_ENV} ### non-prod vs. prod aws-accounts
         GitBranch: ${GIT_BRANCH}
 
 phases:
@@ -68,8 +67,8 @@ phases:
         commands:
           - echo "Build completed on `date`"
 
-reports:
-    cucumber_reports:
-        files: cucumber-output-chromeHeadless.json
-        base-directory: tests/bdd_tests/cucumber_results
-        file-format: CUCUMBERJSON
+# reports:
+#     cucumber_reports:
+#         files: cucumber-output-chromeHeadless.json
+#         base-directory: nci-ctri-arti-bddtests/bdd_tests/cucumber_results
+#         file-format: CUCUMBERJSON

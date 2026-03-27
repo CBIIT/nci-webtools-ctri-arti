@@ -113,13 +113,18 @@ def get_codebuild_env_vars(
 
     # Load overriding entries from .env file
     overrides = load_env_vars_from_file(stk, which_codebuild_project)
+    github_sha = stk.node.try_get_context("GITHUB_SHA")
+    print(f"Context variable GITHUB_SHA = '{github_sha}'")
+    github_branch = stk.node.try_get_context("GIT_BRANCH")
+    print(f"Context variable GIT_BRANCH = '{github_branch}'")
 
     # Build environment variables based on project type
     if which_codebuild_project == CodeBuildProjectNames.AUTOMATED_TESTING:
         env_vars = {
             "TIER": aws_codebuild.BuildEnvironmentVariable(value=props.tier),
             "AWS_ENV": aws_codebuild.BuildEnvironmentVariable(value=props.aws_env),
-            "GIT_BRANCH": aws_codebuild.BuildEnvironmentVariable( value=overrides.get("GIT_BRANCH", "main") ),
+            "GIT_BRANCH": aws_codebuild.BuildEnvironmentVariable( value=github_branch if github_branch else "ERROR-Missing-GitBranch" ),
+            "GITHUB_SHA": aws_codebuild.BuildEnvironmentVariable(value=github_sha if github_sha else "Missing-GitSha" ),
             "AppUrl": aws_codebuild.BuildEnvironmentVariable(
                 value=overrides.get("AppUrl", overrides.get("DOMAIN_NAME", "https://example.com"))
             ),
