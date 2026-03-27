@@ -1,4 +1,3 @@
-import { AUTH_STATE_STORAGE_KEY } from "../../../contexts/auth-context.js";
 import { dbFactory } from "../../../models/database.js";
 import { clearCachedData } from "../../../utils/static-data.js";
 import assert from "../../assert.js";
@@ -22,16 +21,12 @@ const sessionUser = {
   access: ADMIN_ACCESS,
 };
 
-function primeAuthenticatedBrowserState(user = sessionUser) {
+function primeAuthenticatedBrowserState() {
   clearCachedData();
-  localStorage.setItem("userDetails", JSON.stringify(user));
-  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
   document.cookie = "privacyNoticeAccepted=true; path=/";
 
   return () => {
     clearCachedData();
-    localStorage.removeItem("userDetails");
-    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
     document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
   };
 }
@@ -39,7 +34,11 @@ function primeAuthenticatedBrowserState(user = sessionUser) {
 function installSessionMock() {
   return installMockFetch(({ url }) => {
     if (url.pathname === "/api/v1/session") {
-      return jsonResponse({ user: sessionUser, expires: "2099-01-01T00:00:00.000Z" });
+      return jsonResponse({
+        user: sessionUser,
+        access: sessionUser.access,
+        expires: "2099-01-01T00:00:00.000Z",
+      });
     }
     if (url.pathname === "/api/config") {
       return jsonResponse({});

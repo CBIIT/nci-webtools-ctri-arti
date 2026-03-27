@@ -19,6 +19,7 @@ test("Profile Page Tests", async (t) => {
           Role: { id: 1, name: "admin" },
           access: ADMIN_ACCESS,
         },
+        access: ADMIN_ACCESS,
       });
     }
 

@@ -74,7 +74,11 @@ function createUsagePageHandler(overrideHandler) {
     }
 
     if (url.pathname === "/api/v1/session") {
-      return jsonResponse({ user: testUser, expires: "2099-01-01T00:00:00.000Z" });
+      return jsonResponse({
+        user: testUser,
+        access: testUser.access,
+        expires: "2099-01-01T00:00:00.000Z",
+      });
     }
 
     if (url.pathname === "/api/config") {
@@ -560,7 +564,11 @@ test("User Usage Detail Tests", async (t) => {
     };
     const page = mountUsagePage("/_/users/123/usage", ({ url }) => {
       if (url.pathname === "/api/v1/session") {
-        return jsonResponse({ user: usageTestUser, expires: "2099-01-01T00:00:00.000Z" });
+        return jsonResponse({
+          user: usageTestUser,
+          access: usageTestUser.access,
+          expires: "2099-01-01T00:00:00.000Z",
+        });
       }
 
       if (url.pathname === "/api/v1/admin/users/123") {

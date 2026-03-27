@@ -1,5 +1,4 @@
 import assert from "/test/assert.js";
-import { AUTH_STATE_STORAGE_KEY } from "/contexts/auth-context.js";
 import { installMockFetch, jsonResponse, mountApp, waitForElement } from "/test/helpers.js";
 import test from "/test/test.js";
 import { clearCachedData } from "/utils/static-data.js";
@@ -14,16 +13,12 @@ const sessionUser = {
   access: ADMIN_ACCESS,
 };
 
-function primeAuthenticatedBrowserState(user = sessionUser) {
+function primeAuthenticatedBrowserState() {
   clearCachedData();
-  localStorage.setItem("userDetails", JSON.stringify(user));
-  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
   document.cookie = "privacyNoticeAccepted=true; path=/";
 
   return () => {
     clearCachedData();
-    localStorage.removeItem("userDetails");
-    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
     document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
   };
 }
@@ -34,7 +29,7 @@ test("Chat-V2 model selector uses /model/list", async () => {
 
   const restoreFetch = installMockFetch(async ({ url, request }) => {
     if (url.pathname === "/api/v1/session") {
-      return jsonResponse({ user: sessionUser });
+      return jsonResponse({ user: sessionUser, access: sessionUser.access });
     }
 
     if (url.pathname === "/api/config") {

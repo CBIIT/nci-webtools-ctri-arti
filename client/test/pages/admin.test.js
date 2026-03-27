@@ -78,7 +78,11 @@ function installAdminMocks() {
 
   return installMockFetch(async ({ url, request, input, init, originalFetch }) => {
     if (url.pathname === "/api/v1/session") {
-      return jsonResponse({ user: currentUser, expires: "2099-01-01T00:00:00.000Z" });
+      return jsonResponse({
+        user: currentUser,
+        access: currentUser.access,
+        expires: "2099-01-01T00:00:00.000Z",
+      });
     }
 
     if (url.pathname === "/api/config") {

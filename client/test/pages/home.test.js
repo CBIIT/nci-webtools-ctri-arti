@@ -40,7 +40,6 @@ function clearPrivacyNoticeAccepted() {
 
 test("Home Page Tests", async (t) => {
   clearCachedData();
-  localStorage.removeItem("userDetails");
   localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
   const restoreFetch = installMockFetch(({ url }) => {
     if (url.pathname === "/api/v1/session") {
@@ -53,6 +52,7 @@ test("Home Page Tests", async (t) => {
           Role: { id: 1, name: "admin" },
           access: ADMIN_ACCESS,
         },
+        access: ADMIN_ACCESS,
       });
     }
     if (url.pathname === "/api/config") {
@@ -157,9 +157,147 @@ test("Home Page Tests", async (t) => {
   }
 });
 
+test("Home Page Access Tests", async (t) => {
+  clearCachedData();
+  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+
+  const restoreFetch = installMockFetch(({ url }) => {
+    if (url.pathname === "/api/v1/session") {
+      return jsonResponse({
+        user: {
+          id: 3,
+          email: "integration@example.org",
+          firstName: "Integration",
+          lastName: "Tester",
+          Role: { id: 3, name: "user" },
+          access: {
+            "/tools/consent-crafter": { view: true },
+            "/_/profile": { view: true },
+          },
+        },
+        access: {
+          "/tools/consent-crafter": { view: true },
+          "/_/profile": { view: true },
+        },
+      });
+    }
+    if (url.pathname === "/api/config") {
+      return jsonResponse({});
+    }
+    return null;
+  });
+
+  const { container, errors, dispose } = mountApp("/");
+
+  try {
+    await waitForCondition(
+      () => window.__authContext?.().status() === "LOADED",
+      5000,
+      "auth loaded"
+    );
+
+    await t.test("/ hides tools without policy access for regular users", async () => {
+      await waitForCondition(
+        () => {
+          const titles = Array.from(
+            container.querySelectorAll("a.d-flex.align-items-center.my-3")
+          ).map((link) => link.querySelector(".font-title")?.textContent?.trim());
+          return (
+            !titles.includes("Chat") &&
+            titles.includes("ConsentCrafter") &&
+            !titles.includes("Translator") &&
+            titles.includes("New Tools")
+          );
+        },
+        5000,
+        "home policy links applied"
+      );
+
+      const links = container.querySelectorAll("a.d-flex.align-items-center.my-3");
+      const titles = Array.from(links).map((link) =>
+        link.querySelector(".font-title")?.textContent?.trim()
+      );
+
+      assert.ok(!titles.includes("Chat"), "Should hide Chat card");
+      assert.ok(titles.includes("ConsentCrafter"), "Should keep ConsentCrafter card");
+      assert.ok(!titles.includes("Translator"), "Should hide Translator card");
+      assert.ok(titles.includes("New Tools"), "Should keep New Tools card");
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    });
+  } finally {
+    restoreFetch();
+    dispose();
+    if (container.parentNode === document.body) {
+      document.body.removeChild(container);
+    }
+  }
+});
+
+test("Protected Route Access Tests", async (t) => {
+  clearCachedData();
+  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+
+  const restoreFetch = installMockFetch(({ url }) => {
+    if (url.pathname === "/api/v1/session") {
+      return jsonResponse({
+        user: {
+          id: 3,
+          email: "integration@example.org",
+          firstName: "Integration",
+          lastName: "Tester",
+          Role: { id: 3, name: "user" },
+          access: {
+            "/tools/consent-crafter": { view: true },
+            "/_/profile": { view: true },
+          },
+        },
+        access: {
+          "/tools/consent-crafter": { view: true },
+          "/_/profile": { view: true },
+        },
+      });
+    }
+    if (url.pathname === "/api/config") {
+      return jsonResponse({});
+    }
+    return null;
+  });
+
+  const { container, errors, dispose } = mountApp("/tools/chat");
+
+  try {
+    await waitForCondition(
+      () => window.__authContext?.().status() === "LOADED",
+      5000,
+      "auth loaded"
+    );
+
+    await t.test("/tools/chat does not render for a user without access", async () => {
+      await waitForCondition(
+        () => container.querySelector("h1")?.textContent?.includes("Research Optimizer"),
+        5000,
+        "redirected home"
+      );
+
+      assert.ok(
+        !container.textContent.includes("Standard Chat"),
+        "Chat UI should not render without route access"
+      );
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    });
+  } finally {
+    clearCachedData();
+    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+    restoreFetch();
+    dispose();
+    if (container.parentNode === document.body) {
+      document.body.removeChild(container);
+    }
+  }
+});
+
 test("Auth Sync Tests", async (t) => {
   await t.test("authenticated tab reloads on logout event", async () => {
-    localStorage.removeItem("userDetails");
     localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
 
     const restoreFetch = installMockFetch(({ url }) => {
@@ -173,6 +311,7 @@ test("Auth Sync Tests", async (t) => {
             Role: { id: 1, name: "admin" },
             access: ADMIN_ACCESS,
           },
+          access: ADMIN_ACCESS,
         });
       }
       return null;
@@ -207,12 +346,18 @@ test("Auth Sync Tests", async (t) => {
   });
 
   await t.test("logged out tab reloads on login event", async () => {
-    localStorage.removeItem("userDetails");
     localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
 
     const restoreFetch = installMockFetch(({ url }) => {
       if (url.pathname === "/api/v1/session") {
-        return jsonResponse({ user: null, expires: null });
+        return jsonResponse({
+          user: null,
+          access: {
+            "/tools/consent-crafter": { view: true },
+            "/_/profile": { view: true },
+          },
+          expires: null,
+        });
       }
       return null;
     });
@@ -248,7 +393,6 @@ test("Auth Sync Tests", async (t) => {
 
 test("Inactivity Dialog Tests", async (t) => {
   await t.test("warning appears and Extend Session works", async () => {
-    localStorage.removeItem("userDetails");
     localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
     sessionStorage.removeItem("sessionTimedOut");
     setPrivacyNoticeAccepted("true");
@@ -270,6 +414,7 @@ test("Inactivity Dialog Tests", async (t) => {
       if (url.pathname === "/api/v1/session" && request.method === "GET") {
         return jsonResponse({
           user: sessionUser,
+          access: sessionUser.access,
           expires: shouldConfirmExpiringSession ? nearExpiry : initialExpiry,
         });
       }
@@ -277,6 +422,7 @@ test("Inactivity Dialog Tests", async (t) => {
       if (url.pathname === "/api/v1/session" && request.method === "POST") {
         return jsonResponse({
           user: sessionUser,
+          access: sessionUser.access,
           expires: farFutureExpiry,
         });
       }
@@ -340,7 +486,6 @@ test("Inactivity Dialog Tests", async (t) => {
   });
 
   await t.test("skips warning when server expiry was rolled forward", async () => {
-    localStorage.removeItem("userDetails");
     localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
     sessionStorage.removeItem("sessionTimedOut");
     setPrivacyNoticeAccepted("true");
@@ -363,6 +508,7 @@ test("Inactivity Dialog Tests", async (t) => {
       if (url.pathname === "/api/v1/session" && request.method === "GET") {
         return jsonResponse({
           user: sessionUser,
+          access: sessionUser.access,
           expires: shouldRollSessionForward ? farFutureExpiry : initialExpiry,
         });
       }

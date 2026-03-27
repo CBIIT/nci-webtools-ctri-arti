@@ -3,6 +3,7 @@ import { installMockFetch, jsonResponse, mountApp, waitForElement } from "/test/
 import test from "/test/test.js";
 
 import { clearAllAlerts } from "../../../../utils/alerts.js";
+import { clearCachedData } from "../../../../utils/static-data.js";
 
 const SUPER_USER_ACCESS = {
   "/tools/chat": { view: true },
@@ -14,8 +15,19 @@ const LIMIT_MESSAGE =
   "disabled and will reset tomorrow at 12:00 AM. If you need assistance or believe this is an " +
   "error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.";
 
+function primeAuthenticatedBrowserState() {
+  clearCachedData();
+  document.cookie = "privacyNoticeAccepted=true; path=/";
+
+  return () => {
+    clearCachedData();
+    document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
+  };
+}
+
 test("Chat-V2 shows an alert when the server rejects chat with a usage-limit error", async () => {
   clearAllAlerts();
+  const restoreBrowserState = primeAuthenticatedBrowserState();
 
   const restoreFetch = installMockFetch(async ({ url, request }) => {
     if (url.pathname === "/api/v1/session") {
@@ -28,7 +40,12 @@ test("Chat-V2 shows an alert when the server rejects chat with a usage-limit err
           Role: { id: 2, name: "user" },
           access: SUPER_USER_ACCESS,
         },
+        access: SUPER_USER_ACCESS,
       });
+    }
+
+    if (url.pathname === "/api/config") {
+      return jsonResponse({});
     }
 
     if (url.pathname === "/api/v1/agents" && request.method === "GET") {
@@ -96,6 +113,7 @@ test("Chat-V2 shows an alert when the server rejects chat with a usage-limit err
     assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((error) => error?.message)}`);
   } finally {
     clearAllAlerts();
+    restoreBrowserState();
     restoreFetch();
     dispose();
     if (container.parentNode === document.body) {
