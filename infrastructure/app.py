@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import json
-from typing import cast
 import aws_cdk as cdk
 
 from config import load_config
@@ -12,12 +11,10 @@ from stacks import EcrRepositoryStack, EcsServiceStack, RdsClusterStack, Buckets
 def main():
     config, prefix, tier = load_config()
     env = cdk.Environment(
-        # account=config["env"]["account"],
-        # region=config["env"]["region"],
-        account=os.environ["CDK_DEFAULT_ACCOUNT"],
-        region=os.environ["CDK_DEFAULT_REGION"],
-        # account=pipeline_account["account_id"],
-        # region=pipeline_account["region"]
+        account=config["env"]["account"],
+        region=config["env"]["region"],
+        # account=os.environ["CDK_DEFAULT_ACCOUNT"],
+        # region=os.environ["CDK_DEFAULT_REGION"],
     )
 
     print( "env = ", end="" )

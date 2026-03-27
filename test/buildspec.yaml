@@ -21,7 +21,7 @@ phases:
             nodejs: "22"
         commands:
           - pwd
-          - env
+        #   - env ### Warning! This will attempt to print ALL secrets !!
           - curl -s https://checkip.amazonaws.com
           - curl -s http://ipinfo.io/ip || true
           - npm i --include-dev

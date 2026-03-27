@@ -55,10 +55,10 @@ class CdkCodeBuildStackProps:
         tier: str,
         aws_env: str,
         vpc_name: str,
-        subnets: list[str],
-        dmz_subnets: Optional[list[str]] = None,
-        webapp_subnets: Optional[list[str]] = None,
-        db_subnets: Optional[list[str]] = None,
+        subnets: List[str],
+        dmz_subnets: Optional[List[str]] = None,
+        webapp_subnets: Optional[List[str]] = None,
+        db_subnets: Optional[List[str]] = None,
         security_group: Optional[str] = None,
         # ecr_repository : str,
     ):
@@ -113,10 +113,21 @@ def get_codebuild_env_vars(
 
     # Load overriding entries from .env file
     overrides = load_env_vars_from_file(stk, which_codebuild_project)
-    github_sha = stk.node.try_get_context("GITHUB_SHA")
-    print(f"Context variable GITHUB_SHA = '{github_sha}'")
+
     github_branch = stk.node.try_get_context("GIT_BRANCH")
     print(f"Context variable GIT_BRANCH = '{github_branch}'")
+    # github_sha = stk.node.try_get_context("GITHUB_SHA")
+    # print(f"Context variable GITHUB_SHA = '{github_sha}'")
+
+    # if ( props.subnets == None or len(props.subnets) == 0 ) and (props.dmz_subnets == None or len(props.dmz_subnets) == 0) and (props.webapp_subnets == None or len(props.webapp_subnets) == 0) and (props.db_subnets == None or len(props.db_subnets) == 0):
+    if ( props.subnets == None or len(props.subnets) == 0 ):
+        raise ValueError("!! ERROR !! Missing subnets (within CdkCodeBuildStackProps).  Must be defined in config.py!")
+    # if ( props.dmz_subnets == None or len(props.dmz_subnets) == 0 ):
+    #     raise ValueError("!! ERROR !! Missing dmz_subnets (within CdkCodeBuildStackProps).  Must be defined in config.py!")
+    # if ( props.webapp_subnets == None or len(props.webapp_subnets) == 0 ):
+    #     raise ValueError("!! ERROR !! Missing webapp_subnets (within CdkCodeBuildStackProps).  Must be defined in config.py!")
+    # if ( props.db_subnets == None or len(props.db_subnets) == 0 ):
+    #     raise ValueError("!! ERROR !! Missing db_subnets (within CdkCodeBuildStackProps).  Must be defined in config.py!")
 
     # Build environment variables based on project type
     if which_codebuild_project == CodeBuildProjectNames.AUTOMATED_TESTING:
@@ -125,20 +136,20 @@ def get_codebuild_env_vars(
             "AWS_ENV": aws_codebuild.BuildEnvironmentVariable(value=props.aws_env),
             "GIT_BRANCH": aws_codebuild.BuildEnvironmentVariable( value=github_branch if github_branch else "ERROR-Missing-GitBranch" ),
             "GITHUB_SHA": aws_codebuild.BuildEnvironmentVariable(value=github_sha if github_sha else "Missing-GitSha" ),
-            "AppUrl": aws_codebuild.BuildEnvironmentVariable(
-                value=overrides.get("AppUrl", overrides.get("DOMAIN_NAME", "https://example.com"))
-            ),
+            # "AppUrl": aws_codebuild.BuildEnvironmentVariable( value=overrides.get("AppUrl", overrides.get("DOMAIN_NAME")) ),
 
             "AWS_ACCOUNT_ID": aws_codebuild.BuildEnvironmentVariable(value=stk.account),
             "AWS_REGION": aws_codebuild.BuildEnvironmentVariable(value=stk.region),
             # "VPC_ID": aws_codebuild.BuildEnvironmentVariable(value=props.vpc_id),
             # "AVAILABILITY_ZONES": aws_codebuild.BuildEnvironmentVariable( value=",".join(vpc.availability_zones) ),
-            "SECURITY_GROUP": aws_codebuild.BuildEnvironmentVariable(value=props.security_group),
             "SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.subnets)),
             "DMZ_SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.dmz_subnets) if props.dmz_subnets else ",".join(props.subnets)),
-            "WEBAPP_SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.webapp_subnets) if props.webapp_subnets else ",".join(props.subnets)),
-            "DB_SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.db_subnets) if props.db_subnets else ",".join(props.subnets)),
+            # "WEBAPP_SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.webapp_subnets) if props.webapp_subnets else ",".join(props.subnets)),
+            # "DB_SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.db_subnets) if props.db_subnets else ",".join(props.subnets)),
         }
+        ### optional env-vars
+        if props.security_group:
+            env_vars["SECURITY_GROUP"] = aws_codebuild.BuildEnvironmentVariable(value=props.security_group)
 
         # Add Secrets Manager ARNs as plain env vars - these ARNs are used in buildspec's secrets-manager section
         # This way the actual secret values are only accessible via secrets-manager syntax, not as regular env vars
@@ -243,34 +254,41 @@ class CodeBuildProjects(Construct):
                     stk, props, vpc, which_codebuild_project
                 ),
             ),
+            vpc=vpc,
+            subnet_selection=aws_ec2.SubnetSelection(subnets=props.subnets), # type: ignore
+                    ### TODO -- switch above to `props.web_subnets` once we have those defined in config.py and in the env-vars for CodeBuild
             logging=aws_codebuild.LoggingOptions(
                 cloud_watch=aws_codebuild.CloudWatchLoggingOptions(
                     log_group=aws_logs.LogGroup(
                         self,
                         f"CodeBuildLogGroup-{which_codebuild_project.value}",
-                        retention=aws_logs.RetentionDays.THREE_MONTHS,
-                        removal_policy=RemovalPolicy.DESTROY,
+                        retention=aws_logs.RetentionDays.ONE_YEAR,
+                        removal_policy=RemovalPolicy.DESTROY if (props.tier in ["dev", "qa"]) else RemovalPolicy.RETAIN,
                     ),
                 ),
             ),
         )
 
         ### Add IAM permissions
-        self._add_iam_permissions(cbproj)
+        self._add_iam_permissions(props, cbproj)
 
     ### -------------------------------------------------------------------------
 
-    def _add_iam_permissions(self, cbproj: aws_codebuild.Project) -> None:
+    def _add_iam_permissions(self,
+        props: CdkCodeBuildStackProps,
+        cbproj: aws_codebuild.Project,
+    ) -> None:
         """Add standard IAM permissions to CodeBuild project role."""
         stk = Stack.of(self)
 
         ### Secrets Manager access
         cbproj.add_to_role_policy(
             aws_iam.PolicyStatement(
-                sid="AccesstoQdrantSecret",
+                sid="AccesstoCodeBuildSecrets",
                 actions=["secretsmanager:GetSecretValue"],
                 resources=[
-                    f"arn:aws:secretsmanager:{stk.region}:{stk.account}:secret:*",
+                    f"arn:aws:secretsmanager:{stk.region}:{stk.account}:secret:{props.tier}-*",
+                    f"arn:aws:secretsmanager:{stk.region}:{stk.account}:secret:ctri*",
                 ],
             )
         )
@@ -453,23 +471,23 @@ def load_env_vars_from_file(
     with open(env_path, "r") as f:
         env_content = f.read()
 
-    for line in env_content.split("\n"):
-        trimmed = line.strip()
-        if trimmed and not trimmed.startswith("#"):
-            parts = trimmed.split("=", 1)
-            if len(parts) == 2:
-                key = parts[0].strip()
-                value = parts[1].strip().strip('"').strip("'")
+        for line in env_content.split("\n"):
+            trimmed = line.strip()
+            if trimmed and not trimmed.startswith("#"):
+                parts = trimmed.split("=", 1)
+                if len(parts) == 2:
+                    key = parts[0].strip()
+                    value = parts[1].strip().strip('"').strip("'")
 
-                # Replace CDK property references
-                value = re.sub(r'\$\{stk\.partition\}', stk.partition, value)
-                value = re.sub(r'\$\{stk\.region\}', stk.region, value)
-                value = re.sub(r'\$\{stk\.account\}', stk.account, value)
-                value = re.sub(r'\$\{this\.partition\}', stk.partition, value)
-                value = re.sub(r'\$\{this\.region\}', stk.region, value)
-                value = re.sub(r'\$\{this\.account\}', stk.account, value)
+                    # Replace CDK property references
+                    value = re.sub(r'\$\{stk\.partition\}', stk.partition, value)
+                    value = re.sub(r'\$\{stk\.region\}', stk.region, value)
+                    value = re.sub(r'\$\{stk\.account\}', stk.account, value)
+                    value = re.sub(r'\$\{this\.partition\}', stk.partition, value)
+                    value = re.sub(r'\$\{this\.region\}', stk.region, value)
+                    value = re.sub(r'\$\{this\.account\}', stk.account, value)
 
-                env_vars[key] = value
+                    env_vars[key] = value
 
     return env_vars
 
