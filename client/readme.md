@@ -1,5 +1,11 @@
 # ARTI Platform Architecture & Development
 
+## Transport Parity
+
+The client depends on backend contracts that must behave the same in direct mode and HTTP mode.
+When a change affects backend methods, payloads, errors, auth/session shape, or route access,
+update every transport layer and its parity coverage in the same change.
+
 ## Project Structure
 
 ARTI is a conversational AI platform for biomedical research. Frontend uses SolidJS with no build step - just ES6 modules and CDN dependencies.

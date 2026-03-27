@@ -2,6 +2,12 @@
 
 Inference service for model execution, provider adapters, guardrails, and usage tracking.
 
+## Transport Parity
+
+Changes here must preserve parity between direct/in-process mode and HTTP mode. If behavior,
+inputs, outputs, errors, billing, or exported methods change, update the local service/app layer,
+HTTP routes, remote client, and parity coverage in the same change.
+
 ## Directory Shape
 
 - [index.js](index.js): standalone HTTP entrypoint

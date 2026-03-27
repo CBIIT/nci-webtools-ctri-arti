@@ -4,6 +4,12 @@ AWS CDK v2 deployment for the current service layout.
 
 This directory describes and deploys the ECS/Fargate shape of the app, not the direct local monolith. In AWS, the edge server still runs as the public entrypoint, but the backend services run as separate containers in the same ECS task.
 
+## Transport Parity
+
+Infrastructure changes must preserve the intended parity between direct mode and HTTP mode.
+When introducing or changing service boundaries, URLs, env wiring, or deploy topology, make sure
+the corresponding app, HTTP, remote, and parity-test layers stay aligned in the same change.
+
 ## Current Topology
 
 The deployed task currently includes five containers:

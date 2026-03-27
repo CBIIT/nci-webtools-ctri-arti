@@ -4,6 +4,12 @@ Shared database package for schema, migrations, readiness, seed data, and integr
 
 This package is imported by the running services. It is not a deployable service by itself.
 
+## Transport Parity
+
+Database-driven behavior must stay consistent across direct mode and HTTP mode. When a schema,
+seed, or query change affects service behavior, update every affected application surface,
+transport layer, and parity test in the same change.
+
 ## Directory Shape
 
 - [index.js](index.js): database bootstrap and primary exports

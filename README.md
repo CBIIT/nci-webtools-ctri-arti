@@ -2,6 +2,13 @@
 
 Choose one development mode.
 
+## Transport Parity
+
+Any behavior change that crosses a package boundary must match in direct mode and HTTP mode.
+When adding, removing, or changing methods, payloads, errors, or auth behavior, update the
+in-process implementation, HTTP route surface, remote client, composition wiring, and parity
+tests in the same change.
+
 ## Direct mode
 
 Fastest way to work on the app locally.

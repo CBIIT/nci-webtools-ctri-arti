@@ -2,6 +2,12 @@
 
 Chat orchestration service. It turns a user message into a streamed assistant response by coordinating CMS state, gateway inference, and tool execution.
 
+## Transport Parity
+
+Changes here must preserve parity between direct/in-process mode and HTTP mode. If behavior,
+inputs, outputs, errors, or exported methods change, update the local application interface,
+HTTP routes, remote client, and parity coverage in the same change.
+
 ## Directory Shape
 
 - [index.js](index.js): standalone HTTP entrypoint

@@ -2,6 +2,12 @@
 
 User and budget service. It owns identity records, roles, configuration, usage rows, analytics, and budget reset operations.
 
+## Transport Parity
+
+Changes here must preserve parity between direct/in-process mode and HTTP mode. If behavior,
+inputs, outputs, errors, auth data, or exported methods change, update the application interface,
+HTTP routes, remote client, and parity coverage in the same change.
+
 ## Directory Shape
 
 - [index.js](index.js): standalone HTTP entrypoint

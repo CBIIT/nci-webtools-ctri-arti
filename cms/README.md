@@ -2,6 +2,12 @@
 
 Conversation management service for agents, conversations, messages, resources, vectors, tools, prompts, and search.
 
+## Transport Parity
+
+Changes here must preserve parity between direct/in-process mode and HTTP mode. If behavior,
+inputs, outputs, errors, or exported methods change, update the local service/app layer, HTTP
+routes, remote client, and parity coverage in the same change.
+
 ## Directory Shape
 
 - [index.js](index.js): standalone HTTP entrypoint
@@ -63,5 +69,3 @@ The standalone service defaults to port `3002`.
 - The old root-level `conversation.js` shim is gone. The underlying service implementation now lives at [core/conversation-service.js](core/conversation-service.js).
 - `cms/http.js` is only the composition root now; the actual route families live in [http/](http/).
 - If docs drift again, trust [http.js](http.js), [core/conversation-service.js](core/conversation-service.js), and the route tests under [server/test/routes](../server/test/routes/).
-
-

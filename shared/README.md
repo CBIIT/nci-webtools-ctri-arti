@@ -4,6 +4,12 @@ Shared helpers used across the backend packages.
 
 This package is a utility workspace, not a service. It provides the common pieces that make the direct local mode and HTTP mode behave consistently.
 
+## Transport Parity
+
+Shared utilities must support both direct mode and HTTP mode consistently. When a shared helper
+change affects behavior, payloads, errors, auth, or routing, update the dependent transport layers
+and parity coverage in the same change.
+
 ## Directory Shape
 
 - [logger.js](logger.js): structured logging

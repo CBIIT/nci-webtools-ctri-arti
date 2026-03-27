@@ -2,6 +2,12 @@
 
 The edge application. It owns HTTPS, session/auth flows, static client serving, edge-only routes, and composition of the internal services.
 
+## Transport Parity
+
+`server` is the main place where direct mode and HTTP mode meet. Any change to composition,
+auth/session behavior, module contracts, payloads, or errors must be reflected in both paths and
+covered by parity tests in the same change.
+
 ## What Lives Here
 
 - [server.js](server.js): process entrypoint and HTTP/HTTPS server setup

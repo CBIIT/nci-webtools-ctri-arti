@@ -1,5 +1,11 @@
 # Consent Crafter v2
 
+## Transport Parity
+
+Any backend-facing change used by this tool must match in direct mode and HTTP mode. When its
+contracts, payloads, auth behavior, or errors change, update every affected transport layer and
+its parity coverage in the same change.
+
 ## What It Does
 
 Generates informed consent documents from research protocols using AI-powered block-based extraction. Upload a protocol document, select consent form templates, and receive completed consent documents with protocol-specific information filled in.
