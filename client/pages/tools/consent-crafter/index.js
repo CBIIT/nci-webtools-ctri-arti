@@ -649,7 +649,7 @@ export default function Page() {
                 </div>
 
                 <div class="d-flex flex-wrap justify-content-between align-items-center">
-                  <${Show} when=${() => canAccess(session()?.user, "/tools/consent-crafter")}>
+                  <${Show} when=${() => canAccess(session()?.access, "/tools/consent-crafter")}>
                     <details
                       class="small text-secondary mt-2"
                       open=${() => store.advancedOptionsOpen}

@@ -17,7 +17,7 @@ export function Authorized(props) {
     if (auth.status() !== Status.LOADED) return false;
     const user = auth.user();
     if (!user) return false;
-    if (props.policy && !canAccess(user, props.policy, props.action)) return false;
+    if (props.policy && !canAccess(auth.access(), props.policy, props.action)) return false;
     return true;
   });
 
@@ -28,7 +28,7 @@ export function Authorized(props) {
         "/api/v1/login?destination=" + encodeURIComponent(location.pathname + location.search);
       return;
     }
-    if (props.policy && !canAccess(auth.user(), props.policy, props.action)) {
+    if (props.policy && !canAccess(auth.access(), props.policy, props.action)) {
       navigate("/", { replace: true });
       return;
     }

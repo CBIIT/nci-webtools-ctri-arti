@@ -1,15 +1,15 @@
-export function getAccessMap(user) {
-  if (user?.access && typeof user.access === "object") {
-    return user.access;
+export function getAccessMap(access) {
+  if (access && typeof access === "object") {
+    return access;
   }
 
   return {};
 }
 
-export function canAccess(user, path, action = "view") {
-  const access = getAccessMap(user);
+export function canAccess(access, path, action = "view") {
+  const accessMap = getAccessMap(access);
 
-  return Object.entries(access).some(([prefix, actions]) => {
+  return Object.entries(accessMap).some(([prefix, actions]) => {
     if (!actions || typeof actions !== "object") return false;
 
     const prefixMatch =

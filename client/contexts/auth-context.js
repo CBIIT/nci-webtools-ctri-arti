@@ -10,7 +10,6 @@ import html from "solid-js/html";
 import { createStore, reconcile } from "solid-js/store";
 
 import { DEFAULT_CLIENT_CONFIG, fetchClientConfig } from "../utils/app-config.js";
-import { safeParseJson } from "../utils/parsers.js";
 
 export const Status = {
   LOADING: "LOADING", // Retrieving user data
@@ -36,6 +35,7 @@ const initialState = () => ({
   isLoggedIn: false,
   status: Status.LOADING,
   user: null,
+  access: {},
   expires: null,
 });
 
@@ -73,18 +73,9 @@ export const useAuthContext = () => {
  * @returns Auth context provider
  */
 export const AuthProvider = (props) => {
-  const cachedUser = safeParseJson(localStorage.getItem("userDetails"), null);
-  const cachedState = cachedUser
-    ? {
-        isLoggedIn: true,
-        status: Status.LOADED,
-        user: cachedUser,
-      }
-    : null;
-
-  const [state, setState] = createStore(cachedState || initialState());
+  const [state, setState] = createStore(initialState());
   const [config] = createResource(fetchClientConfig);
-  const initialResolvedAuthState = cachedState?.isLoggedIn ?? false;
+  const initialResolvedAuthState = false;
   let hasResolvedInitialSession = false;
   let lastResolvedAuthState = initialResolvedAuthState;
 
@@ -116,7 +107,7 @@ export const AuthProvider = (props) => {
     }
   };
 
-  const resetState = (status = Status.LOADING) => {
+  const resetState = (status = Status.LOADING, access = {}) => {
     if (state.isLoggedIn) {
       setState("isLoggedIn", false);
     }
@@ -126,14 +117,17 @@ export const AuthProvider = (props) => {
     if (state.user !== null) {
       setState("user", null);
     }
+    setState("access", reconcile(access));
     if (state.expires !== null) {
       setState("expires", null);
     }
   };
 
   const applySessionData = (data) => {
+    const access = data?.access && typeof data.access === "object" ? data.access : {};
+
     if (!data?.user) {
-      resetState(Status.LOADED);
+      resetState(Status.LOADED, access);
       return data;
     }
 
@@ -148,6 +142,7 @@ export const AuthProvider = (props) => {
     } else {
       setState("user", reconcile(data.user));
     }
+    setState("access", reconcile(access));
     if (state.expires !== data.expires) {
       setState("expires", data.expires ?? null);
     }
@@ -243,14 +238,6 @@ export const AuthProvider = (props) => {
     }
   });
 
-  createEffect(() => {
-    if (state.isLoggedIn && typeof state.user === "object") {
-      localStorage.setItem("userDetails", JSON.stringify(state.user));
-      return;
-    }
-
-    localStorage.removeItem("userDetails");
-  });
   window.addEventListener("storage", onStorage);
   onCleanup(() => window.removeEventListener("storage", onStorage));
 
@@ -258,6 +245,7 @@ export const AuthProvider = (props) => {
     status: () => state.status,
     isLoggedIn: () => state.isLoggedIn,
     user: () => state.user,
+    access: () => state.access,
     expires: () => state.expires,
     config: () => config() || DEFAULT_CLIENT_CONFIG,
     logout: () => logout(),

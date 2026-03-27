@@ -1,28 +1,32 @@
 import { For, Show } from "solid-js";
 import html from "solid-js/html";
 
-import { useAuthContext } from "../contexts/auth-context.js";
+import { Status, useAuthContext } from "../contexts/auth-context.js";
+import { canAccess } from "../utils/access.js";
 
 export default function Page() {
-  const { user } = useAuthContext();
+  const { access, status, user } = useAuthContext();
 
   const links = [
     {
       title: "Chat",
       description: "Develop with workspace and chat tools",
       href: "/tools/chat",
+      policy: "/tools/chat",
       icon: html`<img src="/assets/images/icon-agents.svg" height="60" alt="Chat Icon" />`,
     },
     {
       title: "ConsentCrafter",
       description: "Process and translate protocols and consent forms",
       href: "/tools/consent-crafter",
+      policy: "/tools/consent-crafter",
       icon: html`<img src="/assets/images/icon-pen.svg" height="60" alt="ConsentCrafter Icon" />`,
     },
     {
       title: "Translator",
       description: "Accurately translate your documents into multiple languages",
       href: "/tools/translator",
+      policy: "/tools/translator",
       icon: html`<img src="/assets/images/icon-translate.svg" height="60" alt="Translator Icon" />`,
     },
     {
@@ -33,6 +37,12 @@ export default function Page() {
       icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="New Tools Icon" />`,
     },
   ];
+
+  const visibleLinks = () =>
+    links.filter((link) => {
+      if (!link.policy) return true;
+      return status() === Status.LOADED && canAccess(access(), link.policy);
+    });
 
   return html`
     <div class="container h-100 d-flex flex-column justify-content-center font-smooth">
@@ -79,7 +89,7 @@ export default function Page() {
             id="side-nav-icon-container"
             class="py-3 d-flex flex-column justify-content-center h-100"
           >
-            <${For} each=${links}>
+            <${For} each=${visibleLinks}>
               ${(link) => html`
                 <a
                   class="d-flex align-items-center my-3 text-decoration-none link-primary"
