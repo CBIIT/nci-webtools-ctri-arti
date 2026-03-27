@@ -392,11 +392,6 @@ function ChatApp() {
 
     try {
       await sendMessage(text, files, modelId, reasoningMode);
-
-      // Generate title after first exchange
-      if (isFirstMessage) {
-        await generateTitle(MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5);
-      }
     } catch (error) {
       saveDraftPatch({ message: text, files }, scope);
       handleError(error, "Chat Error");

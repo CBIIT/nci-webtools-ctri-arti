@@ -157,8 +157,8 @@ export function useAgent({ agentId, conversationId }) {
       const record = await api(`/agents/${params.agentId}`);
       const modelOverride = modelId && modelId !== record.runtime?.model ? modelId : null;
       const effectiveModel = modelOverride || record.runtime?.model || null;
-
-      setAgent({
+      const nextAgentState = {
+        ...agent,
         id: record.id,
         conversation: { id: currentConversationId, name: agent.conversation.name },
         modelId: effectiveModel,
@@ -166,13 +166,21 @@ export function useAgent({ agentId, conversationId }) {
         reasoningMode,
         name: record.name,
         messages: agent.messages.concat([userMessage]),
-      });
+      };
+
+      setAgent(nextAgentState);
 
       if (shouldGenerateTitle) {
         void generateTitle(text, currentConversationId);
       }
 
-      await streamChat(agent, setAgent, params.agentId, currentConversationId, userMessage);
+      await streamChat(
+        nextAgentState,
+        setAgent,
+        params.agentId,
+        currentConversationId,
+        userMessage
+      );
     } finally {
       setAgent("loading", false);
     }
