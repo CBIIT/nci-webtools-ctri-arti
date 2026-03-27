@@ -1,4 +1,6 @@
+import { AUTH_STATE_STORAGE_KEY } from "../../../contexts/auth-context.js";
 import { dbFactory } from "../../../models/database.js";
+import { clearCachedData } from "../../../utils/static-data.js";
 import assert from "../../assert.js";
 import {
   installMockFetch,
@@ -9,18 +11,38 @@ import {
 } from "../../helpers.js";
 import test from "../../test.js";
 
+const ADMIN_ACCESS = { "*": { "*": true } };
+
 const sessionUser = {
   id: 1,
   email: "integration@example.org",
   firstName: "Integration",
   lastName: "Tester",
   Role: { id: 1, name: "admin" },
+  access: ADMIN_ACCESS,
 };
+
+function primeAuthenticatedBrowserState(user = sessionUser) {
+  clearCachedData();
+  localStorage.setItem("userDetails", JSON.stringify(user));
+  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+  document.cookie = "privacyNoticeAccepted=true; path=/";
+
+  return () => {
+    clearCachedData();
+    localStorage.removeItem("userDetails");
+    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+    document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
+  };
+}
 
 function installSessionMock() {
   return installMockFetch(({ url }) => {
     if (url.pathname === "/api/v1/session") {
       return jsonResponse({ user: sessionUser, expires: "2099-01-01T00:00:00.000Z" });
+    }
+    if (url.pathname === "/api/config") {
+      return jsonResponse({});
     }
     return null;
   });
@@ -37,6 +59,7 @@ function overrideDbFactory(getDBImpl) {
 
 test("Export Conversations Page Tests", async (t) => {
   await t.test("renders the export table with 0 records when IndexedDB is empty", async () => {
+    const restoreBrowserState = primeAuthenticatedBrowserState();
     const restoreFetch = installSessionMock();
     const restoreDbFactory = overrideDbFactory(async () => ({
       db: {
@@ -66,6 +89,7 @@ test("Export Conversations Page Tests", async (t) => {
       assert.ok(exportButton?.disabled, "Export button should be disabled with 0 records");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
+      restoreBrowserState();
       restoreDbFactory();
       restoreFetch();
       dispose();
@@ -76,6 +100,7 @@ test("Export Conversations Page Tests", async (t) => {
   });
 
   await t.test("renders the export table with 0 records when IndexedDB fails to load", async () => {
+    const restoreBrowserState = primeAuthenticatedBrowserState();
     const restoreFetch = installSessionMock();
     const restoreDbFactory = overrideDbFactory(async () => {
       throw new Error("IndexedDB unavailable");
@@ -96,6 +121,7 @@ test("Export Conversations Page Tests", async (t) => {
       assert.ok(exportButton?.disabled, "Export button should be disabled after DB load failure");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
+      restoreBrowserState();
       restoreDbFactory();
       restoreFetch();
       dispose();

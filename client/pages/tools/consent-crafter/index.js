@@ -19,6 +19,7 @@ import { AlertContainer } from "../../../components/alert.js";
 import FileInput from "../../../components/file-input.js";
 import Tooltip from "../../../components/tooltip.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
+import { canAccess } from "../../../utils/access.js";
 import { alerts, clearAlert } from "../../../utils/alerts.js";
 import { docxExtractTextBlocks } from "../../../utils/docx.js";
 import { createTimestamp, downloadBlob } from "../../../utils/files.js";
@@ -185,7 +186,9 @@ export default function Page() {
     if (sessionId) {
       await loadSession(sessionId);
 
-      const interruptedJobs = Object.entries(store.generatedDocuments).filter(([_id, job]) => job.status === "processing");
+      const interruptedJobs = Object.entries(store.generatedDocuments).filter(
+        ([_id, job]) => job.status === "processing"
+      );
 
       for (const [jobId] of interruptedJobs) {
         retryJob(jobId);
@@ -256,9 +259,10 @@ export default function Page() {
 
   // #region Effects
   createEffect(async () => {
-    const templateIds = [...store.selectedTemplates, store.templateSourceType === "predefined" && store.selectedPredefinedTemplate].filter(
-      Boolean
-    );
+    const templateIds = [
+      ...store.selectedTemplates,
+      store.templateSourceType === "predefined" && store.selectedPredefinedTemplate,
+    ].filter(Boolean);
 
     for (const templateId of templateIds) {
       try {
@@ -327,13 +331,16 @@ export default function Page() {
         }
       }
 
-      const promptText = store.promptCache[jobConfig.promptUrl] || (await fetchAndCachePrompt(jobConfig.templateId));
+      const promptText =
+        store.promptCache[jobConfig.promptUrl] || (await fetchAndCachePrompt(jobConfig.templateId));
 
       let extractedData;
 
       if (jobConfig.schemaUrl) {
         // Full 2-chunk extraction (consent forms)
-        const schema = store.schemaCache[jobConfig.schemaUrl] || (await fetchAndCacheSchema(jobConfig.templateId));
+        const schema =
+          store.schemaCache[jobConfig.schemaUrl] ||
+          (await fetchAndCacheSchema(jobConfig.templateId));
 
         const templateAnalysis = await analyzeTemplate(templateBuffer);
         const fieldDescriptions = getFieldDescriptions(schema);
@@ -385,7 +392,8 @@ export default function Page() {
 
       for (const variable of variables) {
         if (extractedData[variable.name] === undefined || extractedData[variable.name] === null) {
-          extractedData[variable.name] = variable.type === "array" ? [] : variable.type === "boolean" ? false : "";
+          extractedData[variable.name] =
+            variable.type === "array" ? [] : variable.type === "boolean" ? false : "";
         }
       }
 
@@ -433,7 +441,11 @@ export default function Page() {
 
     if (submitDisabled()) return;
 
-    const inputText = await parseDocument(await store.inputFile.arrayBuffer(), store.inputFile.type, store.inputFile.name);
+    const inputText = await parseDocument(
+      await store.inputFile.arrayBuffer(),
+      store.inputFile.type,
+      store.inputFile.name
+    );
 
     const jobs = [];
 
@@ -615,7 +627,9 @@ export default function Page() {
                                   checked=${() => store.selectedTemplates.includes(option.value)}
                                   onChange=${(e) =>
                                     setStore("selectedTemplates", (prev) =>
-                                      e.target.checked ? prev.concat([option.value]) : prev.filter((v) => v !== option.value)
+                                      e.target.checked
+                                        ? prev.concat([option.value])
+                                        : prev.filter((v) => v !== option.value)
                                     )}
                                 />
                                 <label
@@ -635,7 +649,7 @@ export default function Page() {
                 </div>
 
                 <div class="d-flex flex-wrap justify-content-between align-items-center">
-                  <${Show} when=${() => [1, 2].includes(session()?.user?.Role?.id)}>
+                  <${Show} when=${() => canAccess(session()?.user, "/tools/consent-crafter")}>
                     <details
                       class="small text-secondary mt-2"
                       open=${() => store.advancedOptionsOpen}
@@ -653,11 +667,17 @@ export default function Page() {
                         >
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.OPUS.v4_6}>Opus 4.6</option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v4_6}>Sonnet 4.6</option>
-                          <option value=${MODEL_OPTIONS.DATABRICKS.CLAUDE.OPUS.v4_6}>Opus 4.6 (via IDP)</option>
-                          <option value=${MODEL_OPTIONS.DATABRICKS.CLAUDE.SONNET.v4_6}>Sonnet 4.6 (via IDP)</option>
+                          <option value=${MODEL_OPTIONS.DATABRICKS.CLAUDE.OPUS.v4_6}>
+                            Opus 4.6 (via IDP)
+                          </option>
+                          <option value=${MODEL_OPTIONS.DATABRICKS.CLAUDE.SONNET.v4_6}>
+                            Sonnet 4.6 (via IDP)
+                          </option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.SONNET.v3_7}>Sonnet 3.7</option>
                           <option value=${MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5}>Haiku 4.5</option>
-                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.MAVERICK.v4_0_17b}>Maverick</option>
+                          <option value=${MODEL_OPTIONS.AWS_BEDROCK.MAVERICK.v4_0_17b}>
+                            Maverick
+                          </option>
                         </select>
 
                         <div class="d-flex justify-content-between">
@@ -673,7 +693,9 @@ export default function Page() {
                                 checked=${() => store.templateSourceType === "predefined"}
                                 onChange=${(e) => setStore("templateSourceType", e.target.value)}
                               />
-                              <label class="form-check-label" for="templateSourcePredefined"> Predefined template </label>
+                              <label class="form-check-label" for="templateSourcePredefined">
+                                Predefined template
+                              </label>
                             </div>
                             <div class="form-check form-check-inline">
                               <input
@@ -685,7 +707,9 @@ export default function Page() {
                                 checked=${() => store.templateSourceType === "custom"}
                                 onChange=${(e) => setStore("templateSourceType", e.target.value)}
                               />
-                              <label class="form-check-label" for="templateSourceCustom"> Custom template </label>
+                              <label class="form-check-label" for="templateSourceCustom">
+                                Custom template
+                              </label>
                             </div>
                           </div>
                         </div>
@@ -697,7 +721,8 @@ export default function Page() {
                               name="predefinedTemplate"
                               id="predefinedTemplate"
                               value=${() => store.selectedPredefinedTemplate}
-                              onChange=${(e) => setStore("selectedPredefinedTemplate", e.target.value)}
+                              onChange=${(e) =>
+                                setStore("selectedPredefinedTemplate", e.target.value)}
                             >
                               <option value="">[No Template]</option>
                               <${For} each=${getTemplateConfigsByCategory}>
@@ -705,8 +730,12 @@ export default function Page() {
                                   <optgroup label=${() => group.label}>
                                     <${For} each=${() => group.options}>
                                       ${(option) => html`
-                                        <option value=${() => option.value} disabled=${() => option.disabled}>
-                                          ${() => `${templateConfigs[option.value].prefix} - ${templateConfigs[option.value].label}`}
+                                        <option
+                                          value=${() => option.value}
+                                          disabled=${() => option.disabled}
+                                        >
+                                          ${() =>
+                                            `${templateConfigs[option.value].prefix} - ${templateConfigs[option.value].label}`}
                                         </option>
                                       `}
                                     <//>
@@ -720,7 +749,8 @@ export default function Page() {
                         <${Show} when=${() => store.templateSourceType === "custom"}>
                           <${FileInput}
                             value=${() => [store.customTemplateFile]}
-                            onChange=${(ev) => setStore("customTemplateFile", ev.target.files[0] || null)}
+                            onChange=${(ev) =>
+                              setStore("customTemplateFile", ev.target.files[0] || null)}
                             accept=".docx"
                             class="form-control form-control-sm mb-2"
                           />
@@ -740,27 +770,35 @@ export default function Page() {
               </div>
             </div>
             <div class="col-md-6 mb-2 d-flex flex-column flex-grow-1">
-              <div class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1 card-lg">
+              <div
+                class="d-flex flex-column bg-white shadow border rounded p-3 flex-grow-1 card-lg"
+              >
                 <${Show}
                   when=${() => Object.keys(store.generatedDocuments).length > 0}
                   fallback=${html`<div class="d-flex h-100 py-5">
                     <div class="text-center py-5">
                       <h1 class="text-info mb-3">Welcome to Consent Crafter</h1>
                       <div>
-                        To get started, upload your source document, select one or more form templates from the list, and click Generate to
-                        create tailored consent documents.
+                        To get started, upload your source document, select one or more form
+                        templates from the list, and click Generate to create tailored consent
+                        documents.
                       </div>
                     </div>
                   </div>`}
                 >
                   <div class="d-flex flex-column gap-2">
                     <div class="text-muted small fw-semibold">
-                      <${Show} when=${allJobsProcessed} fallback=${() => getProgressMessage(store.extractionProgress)}>
+                      <${Show}
+                        when=${allJobsProcessed}
+                        fallback=${() => getProgressMessage(store.extractionProgress)}
+                      >
                         All processing is complete. The generated forms are available for download.
                       <//>
                     </div>
                     <!-- Progress bar -->
-                    <${Show} when=${() => !allJobsProcessed() && store.extractionProgress.total > 0}>
+                    <${Show}
+                      when=${() => !allJobsProcessed() && store.extractionProgress.total > 0}
+                    >
                       <div class="progress" style="height: 6px;">
                         <div
                           class="progress-bar"
@@ -779,27 +817,44 @@ export default function Page() {
                         const job = () => store.generatedDocuments[jobId];
 
                         return html`
-                          <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                          <div
+                            class="d-flex justify-content-between align-items-center p-2 border rounded"
+                          >
                             <div class="flex-grow-1">
                               <div class="fw-medium">
                                 <span>${() => job().config?.displayInfo?.prefix || ""}</span>
-                                <span class="text-muted fw-normal"> : ${() => job().config?.displayInfo?.label || "Unknown"}</span>
+                                <span class="text-muted fw-normal">
+                                  : ${() => job().config?.displayInfo?.label || "Unknown"}</span
+                                >
                               </div>
                               <div class="small text-muted">
                                 ${() => job().config?.displayInfo?.filename || "document.docx"}
                                 <${Show} when=${() => job().data}>
-                                  <span class="ms-2"> (${() => Object.keys(job().data || {}).length} fields extracted) </span>
+                                  <span class="ms-2">
+                                    (${() => Object.keys(job().data || {}).length} fields extracted)
+                                  </span>
                                 <//>
                               </div>
                             </div>
                             <${Show} when=${() => job()?.status === "processing"}>
-                              <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                              <div
+                                class="spinner-border spinner-border-sm text-primary me-2"
+                                role="status"
+                              >
                                 <span class="visually-hidden">Processing...</span>
                               </div>
                             <//>
                             <${Show} when=${() => job()?.status === "completed"}>
-                              <button type="button" class="btn btn-outline-light" onClick=${() => downloadJob(jobId)}>
-                                <img src="/assets/images/icon-download.svg" height="16" alt="Download" />
+                              <button
+                                type="button"
+                                class="btn btn-outline-light"
+                                onClick=${() => downloadJob(jobId)}
+                              >
+                                <img
+                                  src="/assets/images/icon-download.svg"
+                                  height="16"
+                                  alt="Download"
+                                />
                               </button>
                             <//>
                             <${Show} when=${() => job()?.status === "error"}>
@@ -822,10 +877,21 @@ export default function Page() {
                   <${Show} when=${allJobsProcessed}>
                     <div class="h-100 d-flex flex-column justify-content-between">
                       <div class="text-end">
-                        <button type="button" class="btn btn-sm btn-link fw-semibold p-0" onClick=${downloadAll}>Download All</button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-link fw-semibold p-0"
+                          onClick=${downloadAll}
+                        >
+                          Download All
+                        </button>
                       </div>
                       <div class="mt-auto d-flex align-items-center">
-                        <img src="/assets/images/icon-star.svg" alt="Star" class="me-2" height="16" />
+                        <img
+                          src="/assets/images/icon-star.svg"
+                          alt="Star"
+                          class="me-2"
+                          height="16"
+                        />
                         <div>
                           <span class="me-1">We would love your feedback!</span>
                           <a href="https://www.cancer.gov/" target="_blank">Take a quick survey</a>
@@ -849,7 +915,14 @@ export default function Page() {
                   class="text-white bg-primary"
                   disableHoverListener=${() => !submitDisabled()}
                 >
-                  <button toggle type="submit" class="btn btn-wide px-3 py-3 btn-wide-primary" disabled=${submitDisabled}>Generate</button>
+                  <button
+                    toggle
+                    type="submit"
+                    class="btn btn-wide px-3 py-3 btn-wide-primary"
+                    disabled=${submitDisabled}
+                  >
+                    Generate
+                  </button>
                 <//>
               </div>
             </div>

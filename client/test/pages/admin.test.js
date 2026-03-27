@@ -9,6 +9,29 @@ import {
 } from "../helpers.js";
 import test from "../test.js";
 
+const ADMIN_ACCESS = { "*": { "*": true } };
+const SUPER_USER_ACCESS = {
+  "/tools/chat": { view: true },
+  "/tools/chat-v2": { view: true },
+  "/tools/consent-crafter": { view: true },
+  "/tools/translator": { view: true },
+  "/tools/semantic-search": { view: true },
+  "/tools/export-conversations": { view: true },
+  "/_/profile": { view: true },
+};
+const USER_ACCESS = {
+  "/tools/consent-crafter": { view: true },
+  "/tools/semantic-search": { view: true },
+  "/tools/export-conversations": { view: true },
+  "/_/profile": { view: true },
+};
+
+function accessForRole(roleID) {
+  if (roleID === 1) return ADMIN_ACCESS;
+  if (roleID === 2) return SUPER_USER_ACCESS;
+  return USER_ACCESS;
+}
+
 const baseUser = {
   id: 1,
   email: "integration@example.org",
@@ -19,6 +42,7 @@ const baseUser = {
   budget: 10,
   remaining: 9.59,
   Role: { id: 1, name: "admin" },
+  access: ADMIN_ACCESS,
 };
 
 const roles = [
@@ -84,6 +108,7 @@ function installAdminMocks() {
         id: currentUser.id,
         roleID: Number(body.roleID || currentUser.roleID),
         Role: { id: nextRole.id, name: nextRole.name },
+        access: accessForRole(nextRole.id),
       };
       return jsonResponse(currentUser);
     }

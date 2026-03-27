@@ -2,6 +2,8 @@ import assert from "../../assert.js";
 import { installMockFetch, jsonResponse, mountApp, waitForElement } from "../../helpers.js";
 import test from "../../test.js";
 
+const ADMIN_ACCESS = { "*": { "*": true } };
+
 test("Profile Page Tests", async (t) => {
   let capturedUsageRequest = null;
   const restoreFetch = installMockFetch(async ({ url, request }) => {
@@ -15,6 +17,7 @@ test("Profile Page Tests", async (t) => {
           status: "active",
           budget: 10,
           Role: { id: 1, name: "admin" },
+          access: ADMIN_ACCESS,
         },
       });
     }
@@ -33,6 +36,7 @@ test("Profile Page Tests", async (t) => {
         status: "active",
         budget: 10,
         Role: { id: 1, name: "admin" },
+        access: ADMIN_ACCESS,
       });
     }
 

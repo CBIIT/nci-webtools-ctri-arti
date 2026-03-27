@@ -1,21 +1,44 @@
 import assert from "/test/assert.js";
+import { AUTH_STATE_STORAGE_KEY } from "/contexts/auth-context.js";
 import { installMockFetch, jsonResponse, mountApp, waitForElement } from "/test/helpers.js";
 import test from "/test/test.js";
+import { clearCachedData } from "/utils/static-data.js";
+
+const ADMIN_ACCESS = { "*": { "*": true } };
+const sessionUser = {
+  id: 1,
+  email: "integration@example.org",
+  firstName: "Integration",
+  lastName: "Tester",
+  Role: { id: 1, name: "admin" },
+  access: ADMIN_ACCESS,
+};
+
+function primeAuthenticatedBrowserState(user = sessionUser) {
+  clearCachedData();
+  localStorage.setItem("userDetails", JSON.stringify(user));
+  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+  document.cookie = "privacyNoticeAccepted=true; path=/";
+
+  return () => {
+    clearCachedData();
+    localStorage.removeItem("userDetails");
+    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+    document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
+  };
+}
 
 test("Chat-V2 model selector uses /model/list", async () => {
   let requestedType = null;
+  const restoreBrowserState = primeAuthenticatedBrowserState();
 
   const restoreFetch = installMockFetch(async ({ url, request }) => {
     if (url.pathname === "/api/v1/session") {
-      return jsonResponse({
-        user: {
-          id: 1,
-          email: "integration@example.org",
-          firstName: "Integration",
-          lastName: "Tester",
-          Role: { id: 1, name: "admin" },
-        },
-      });
+      return jsonResponse({ user: sessionUser });
+    }
+
+    if (url.pathname === "/api/config") {
+      return jsonResponse({});
     }
 
     if (url.pathname === "/api/v1/agents" && request.method === "GET") {
@@ -114,6 +137,7 @@ test("Chat-V2 model selector uses /model/list", async () => {
     );
     assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((error) => error.message)}`);
   } finally {
+    restoreBrowserState();
     restoreFetch();
     dispose();
     if (container.parentNode === document.body) {

@@ -129,6 +129,7 @@ test("transport parity", async (t) => {
       assert.equal(httpUser.id, directUser.id);
       assert.equal(httpUser.email, directUser.email);
       assert.equal(httpUser.Role?.id, directUser.Role?.id);
+      assert.deepStrictEqual(httpUser.access, directUser.access);
     } finally {
       await usersServer.close();
     }

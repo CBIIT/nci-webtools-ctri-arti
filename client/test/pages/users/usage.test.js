@@ -15,6 +15,8 @@ import {
 } from "../../helpers.js";
 import test from "../../test.js";
 
+const ADMIN_ACCESS = { "*": { "*": true } };
+
 const testUser = {
   id: 1,
   email: "integration@example.org",
@@ -25,6 +27,7 @@ const testUser = {
   status: "active",
   roleID: 1,
   Role: { id: 1, name: "admin" },
+  access: ADMIN_ACCESS,
 };
 
 const usageRows = [

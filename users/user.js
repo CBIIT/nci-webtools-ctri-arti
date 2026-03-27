@@ -86,28 +86,71 @@ function normalizeBalanceFields(data, existing = null) {
   return next;
 }
 
+function buildAccessMap(rolePolicies = []) {
+  const access = {};
+
+  for (const rolePolicy of rolePolicies) {
+    const resource = rolePolicy?.Policy?.resource;
+    const action = rolePolicy?.Policy?.action;
+
+    if (!resource || !action) continue;
+
+    access[resource] ||= {};
+    access[resource][action] = true;
+  }
+
+  return access;
+}
+
+function serializeUserAccess(user) {
+  if (!user) return null;
+
+  const rolePolicies = user.Role?.RolePolicies || [];
+  const access = buildAccessMap(rolePolicies);
+
+  if (!user.Role?.RolePolicies) {
+    return { ...user, access };
+  }
+
+  const { RolePolicies, ...role } = user.Role;
+
+  return {
+    ...user,
+    Role: role,
+    access,
+  };
+}
+
+function userWithPolicies(where) {
+  return db.query.User.findFirst({
+    where,
+    with: {
+      Role: {
+        with: {
+          RolePolicies: {
+            with: {
+              Policy: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
 export class UserService {
   // ===== Identity =====
 
   async getUser(id) {
-    return db.query.User.findFirst({
-      where: eq(User.id, +id),
-      with: { Role: true },
-    });
+    return serializeUserAccess(await userWithPolicies(eq(User.id, +id)));
   }
 
   async getUserByEmail(email) {
-    return db.query.User.findFirst({
-      where: eq(User.email, email),
-      with: { Role: true },
-    });
+    return serializeUserAccess(await userWithPolicies(eq(User.email, email)));
   }
 
   async getUserByApiKey(apiKey) {
-    return db.query.User.findFirst({
-      where: eq(User.apiKey, apiKey),
-      with: { Role: true },
-    });
+    return serializeUserAccess(await userWithPolicies(eq(User.apiKey, apiKey)));
   }
 
   async findOrCreateUser({ email, firstName, lastName }) {

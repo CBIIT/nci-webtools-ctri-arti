@@ -4,6 +4,11 @@ import test from "/test/test.js";
 
 import { clearAllAlerts } from "../../../../utils/alerts.js";
 
+const SUPER_USER_ACCESS = {
+  "/tools/chat": { view: true },
+  "/tools/chat-v2": { view: true },
+};
+
 const LIMIT_MESSAGE =
   "You have reached your allocated usage limit. Your access to the chat tool is temporarily " +
   "disabled and will reset tomorrow at 12:00 AM. If you need assistance or believe this is an " +
@@ -21,6 +26,7 @@ test("Chat-V2 shows an alert when the server rejects chat with a usage-limit err
           firstName: "Integration",
           lastName: "Tester",
           Role: { id: 2, name: "user" },
+          access: SUPER_USER_ACCESS,
         },
       });
     }

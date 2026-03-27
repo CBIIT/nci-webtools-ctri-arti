@@ -10,6 +10,8 @@ import {
 } from "../helpers.js";
 import test from "../test.js";
 
+const ADMIN_ACCESS = { "*": { "*": true } };
+
 function stubReload() {
   const originalReload = authSync.reload;
   let count = 0;
@@ -49,11 +51,12 @@ test("Home Page Tests", async (t) => {
           firstName: "Integration",
           lastName: "Tester",
           Role: { id: 1, name: "admin" },
+          access: ADMIN_ACCESS,
         },
       });
     }
     if (url.pathname === "/api/config") {
-      return jsonResponse({ disabled: [] });
+      return jsonResponse({});
     }
     return null;
   });
@@ -154,70 +157,6 @@ test("Home Page Tests", async (t) => {
   }
 });
 
-test("Home Page Disabled Apps Tests", async (t) => {
-  clearCachedData();
-  localStorage.removeItem("userDetails");
-  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
-  const restoreFetch = installMockFetch(({ url }) => {
-    if (url.pathname === "/api/v1/session") {
-      return jsonResponse({
-        user: {
-          id: 3,
-          email: "integration@example.org",
-          firstName: "Integration",
-          lastName: "Tester",
-          Role: { id: 3, name: "user" },
-        },
-      });
-    }
-    if (url.pathname === "/api/config") {
-      return jsonResponse({ disabled: ["Chat", "Translate"] });
-    }
-    return null;
-  });
-
-  const { container, errors, dispose } = mountApp("/");
-
-  try {
-    await waitForElement(container, "h1", (el) => el.textContent.includes("Research Optimizer"));
-
-    await t.test("/ hides disabled tool cards from config", async () => {
-      await waitForCondition(
-        () => {
-          const titles = Array.from(
-            container.querySelectorAll("a.d-flex.align-items-center.my-3")
-          ).map((link) => link.querySelector(".font-title")?.textContent?.trim());
-          return (
-            !titles.includes("Chat") &&
-            titles.includes("ConsentCrafter") &&
-            !titles.includes("Translator") &&
-            titles.includes("New Tools")
-          );
-        },
-        5000,
-        "home disabled apps applied"
-      );
-
-      const links = container.querySelectorAll("a.d-flex.align-items-center.my-3");
-      const titles = Array.from(links).map((link) =>
-        link.querySelector(".font-title")?.textContent?.trim()
-      );
-
-      assert.ok(!titles.includes("Chat"), "Should hide Chat card");
-      assert.ok(titles.includes("ConsentCrafter"), "Should keep ConsentCrafter card");
-      assert.ok(!titles.includes("Translator"), "Should hide Translator card");
-      assert.ok(titles.includes("New Tools"), "Should keep New Tools card");
-      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
-    });
-  } finally {
-    restoreFetch();
-    dispose();
-    if (container.parentNode === document.body) {
-      document.body.removeChild(container);
-    }
-  }
-});
-
 test("Auth Sync Tests", async (t) => {
   await t.test("authenticated tab reloads on logout event", async () => {
     localStorage.removeItem("userDetails");
@@ -232,6 +171,7 @@ test("Auth Sync Tests", async (t) => {
             firstName: "Integration",
             lastName: "Tester",
             Role: { id: 1, name: "admin" },
+            access: ADMIN_ACCESS,
           },
         });
       }
@@ -322,6 +262,7 @@ test("Inactivity Dialog Tests", async (t) => {
       firstName: "Integration",
       lastName: "Tester",
       Role: { id: 1, name: "admin" },
+      access: ADMIN_ACCESS,
     };
     let shouldConfirmExpiringSession = false;
 
@@ -413,6 +354,7 @@ test("Inactivity Dialog Tests", async (t) => {
       firstName: "Integration",
       lastName: "Tester",
       Role: { id: 1, name: "admin" },
+      access: ADMIN_ACCESS,
     };
 
     let shouldRollSessionForward = false;
