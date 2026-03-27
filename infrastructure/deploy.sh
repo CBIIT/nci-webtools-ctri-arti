@@ -48,6 +48,10 @@ export USERS_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:users-latest
 export SERVER_IMAGE=$MAIN_IMAGE
 export SERVER_IMAGE_LATEST=$MAIN_IMAGE_LATEST
 
+log() {
+  printf '\n==> %s\n' "$1"
+}
+
 # set trivy scan
 scan_image() {
   if [ "${TRIVY_SCAN:-false}" != "true" ]; then
