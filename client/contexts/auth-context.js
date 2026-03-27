@@ -1,4 +1,5 @@
 import {
+  batch,
   createContext,
   createEffect,
   createMemo,
@@ -16,19 +17,6 @@ export const Status = {
   LOADED: "LOADED", // Successfully retrieved user data
   SAVING: "SAVING", // Saving user data updates
   ERROR: "ERROR", // Error retrieving user data
-};
-
-export const AUTH_STATE_STORAGE_KEY = "auth-state-sync";
-export const authSync = {
-  reload: () => window.location.reload(),
-  handleStorageEvent(event) {
-    if (event.key !== AUTH_STATE_STORAGE_KEY || !event.newValue) {
-      return false;
-    }
-
-    authSync.reload();
-    return true;
-  },
 };
 
 const initialState = () => ({
@@ -75,17 +63,10 @@ export const useAuthContext = () => {
 export const AuthProvider = (props) => {
   const [state, setState] = createStore(initialState());
   const [config] = createResource(fetchClientConfig);
-  const initialResolvedAuthState = false;
-  let hasResolvedInitialSession = false;
-  let lastResolvedAuthState = initialResolvedAuthState;
 
   const getSessionHeaders = () => {
     const apiKey = new URLSearchParams(location.search).get("apiKey");
     return apiKey ? { "x-api-key": apiKey } : undefined;
-  };
-
-  const broadcastAuthState = (isLoggedIn) => {
-    localStorage.setItem(AUTH_STATE_STORAGE_KEY, JSON.stringify({ isLoggedIn, at: Date.now() }));
   };
 
   const fetchSession = async ({ method = "GET", signal } = {}) => {
@@ -108,19 +89,21 @@ export const AuthProvider = (props) => {
   };
 
   const resetState = (status = Status.LOADING, access = {}) => {
-    if (state.isLoggedIn) {
-      setState("isLoggedIn", false);
-    }
-    if (state.status !== status) {
-      setState("status", status);
-    }
-    if (state.user !== null) {
-      setState("user", null);
-    }
-    setState("access", reconcile(access));
-    if (state.expires !== null) {
-      setState("expires", null);
-    }
+    batch(() => {
+      if (state.isLoggedIn) {
+        setState("isLoggedIn", false);
+      }
+      if (state.user !== null) {
+        setState("user", null);
+      }
+      setState("access", reconcile(access));
+      if (state.expires !== null) {
+        setState("expires", null);
+      }
+      if (state.status !== status) {
+        setState("status", status);
+      }
+    });
   };
 
   const applySessionData = (data) => {
@@ -131,21 +114,23 @@ export const AuthProvider = (props) => {
       return data;
     }
 
-    if (!state.isLoggedIn) {
-      setState("isLoggedIn", true);
-    }
-    if (state.status !== Status.LOADED) {
-      setState("status", Status.LOADED);
-    }
-    if (state.user === null) {
-      setState("user", data.user);
-    } else {
-      setState("user", reconcile(data.user));
-    }
-    setState("access", reconcile(access));
-    if (state.expires !== data.expires) {
-      setState("expires", data.expires ?? null);
-    }
+    batch(() => {
+      if (!state.isLoggedIn) {
+        setState("isLoggedIn", true);
+      }
+      if (state.user === null) {
+        setState("user", data.user);
+      } else {
+        setState("user", reconcile(data.user));
+      }
+      setState("access", reconcile(access));
+      if (state.expires !== data.expires) {
+        setState("expires", data.expires ?? null);
+      }
+      if (state.status !== Status.LOADED) {
+        setState("status", Status.LOADED);
+      }
+    });
 
     return data;
   };
@@ -155,7 +140,6 @@ export const AuthProvider = (props) => {
       return;
     }
 
-    broadcastAuthState(false);
     window.location.href = "/api/v1/logout";
 
     return;
@@ -192,10 +176,6 @@ export const AuthProvider = (props) => {
     }
   };
 
-  const onStorage = (event) => {
-    authSync.handleStorageEvent(event);
-  };
-
   createEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
@@ -217,29 +197,6 @@ export const AuthProvider = (props) => {
 
     onCleanup(() => controller.abort());
   });
-
-  createEffect(() => {
-    if (state.status !== Status.LOADED) {
-      return;
-    }
-
-    if (!hasResolvedInitialSession) {
-      hasResolvedInitialSession = true;
-      if (state.isLoggedIn !== initialResolvedAuthState) {
-        broadcastAuthState(state.isLoggedIn);
-      }
-      lastResolvedAuthState = state.isLoggedIn;
-      return;
-    }
-
-    if (state.isLoggedIn !== lastResolvedAuthState) {
-      broadcastAuthState(state.isLoggedIn);
-      lastResolvedAuthState = state.isLoggedIn;
-    }
-  });
-
-  window.addEventListener("storage", onStorage);
-  onCleanup(() => window.removeEventListener("storage", onStorage));
 
   const value = createMemo(() => ({
     status: () => state.status,

@@ -1,4 +1,3 @@
-import { AUTH_STATE_STORAGE_KEY, authSync } from "../../contexts/auth-context.js";
 import { clearCachedData } from "../../utils/static-data.js";
 import assert from "../assert.js";
 import {
@@ -12,24 +11,6 @@ import test from "../test.js";
 
 const ADMIN_ACCESS = { "*": { "*": true } };
 
-function stubReload() {
-  const originalReload = authSync.reload;
-  let count = 0;
-
-  authSync.reload = () => {
-    count++;
-  };
-
-  return {
-    get count() {
-      return count;
-    },
-    restore() {
-      authSync.reload = originalReload;
-    },
-  };
-}
-
 function setPrivacyNoticeAccepted(value) {
   document.cookie = `privacyNoticeAccepted=${value}; path=/`;
 }
@@ -40,7 +21,6 @@ function clearPrivacyNoticeAccepted() {
 
 test("Home Page Tests", async (t) => {
   clearCachedData();
-  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
   const restoreFetch = installMockFetch(({ url }) => {
     if (url.pathname === "/api/v1/session") {
       return jsonResponse({
@@ -159,7 +139,6 @@ test("Home Page Tests", async (t) => {
 
 test("Home Page Access Tests", async (t) => {
   clearCachedData();
-  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
 
   const restoreFetch = installMockFetch(({ url }) => {
     if (url.pathname === "/api/v1/session") {
@@ -235,7 +214,6 @@ test("Home Page Access Tests", async (t) => {
 
 test("Protected Route Access Tests", async (t) => {
   clearCachedData();
-  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
 
   const restoreFetch = installMockFetch(({ url }) => {
     if (url.pathname === "/api/v1/session") {
@@ -287,7 +265,6 @@ test("Protected Route Access Tests", async (t) => {
     });
   } finally {
     clearCachedData();
-    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
     restoreFetch();
     dispose();
     if (container.parentNode === document.body) {
@@ -296,104 +273,8 @@ test("Protected Route Access Tests", async (t) => {
   }
 });
 
-test("Auth Sync Tests", async (t) => {
-  await t.test("authenticated tab reloads on logout event", async () => {
-    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
-
-    const restoreFetch = installMockFetch(({ url }) => {
-      if (url.pathname === "/api/v1/session") {
-        return jsonResponse({
-          user: {
-            id: 1,
-            email: "integration@example.org",
-            firstName: "Integration",
-            lastName: "Tester",
-            Role: { id: 1, name: "admin" },
-            access: ADMIN_ACCESS,
-          },
-          access: ADMIN_ACCESS,
-        });
-      }
-      return null;
-    });
-
-    const reload = stubReload();
-    const { container, errors, dispose } = mountApp("/");
-
-    try {
-      await waitForCondition(
-        () =>
-          window.__authContext?.().status() === "LOADED" && window.__authContext?.().isLoggedIn(),
-        5000,
-        "authenticated auth loaded"
-      );
-
-      authSync.handleStorageEvent({
-        key: AUTH_STATE_STORAGE_KEY,
-        newValue: JSON.stringify({ isLoggedIn: false, at: Date.now() }),
-      });
-
-      await waitForCondition(() => reload.count === 1, 2000, "logout sync reload");
-      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
-    } finally {
-      reload.restore();
-      restoreFetch();
-      dispose();
-      if (container.parentNode === document.body) {
-        document.body.removeChild(container);
-      }
-    }
-  });
-
-  await t.test("logged out tab reloads on login event", async () => {
-    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
-
-    const restoreFetch = installMockFetch(({ url }) => {
-      if (url.pathname === "/api/v1/session") {
-        return jsonResponse({
-          user: null,
-          access: {
-            "/tools/consent-crafter": { view: true },
-            "/_/profile": { view: true },
-          },
-          expires: null,
-        });
-      }
-      return null;
-    });
-
-    const reload = stubReload();
-    const { container, errors, dispose } = mountApp("/");
-
-    try {
-      await waitForCondition(
-        () =>
-          window.__authContext?.().status() === "LOADED" && !window.__authContext?.().isLoggedIn(),
-        5000,
-        "logged out auth loaded"
-      );
-
-      authSync.handleStorageEvent({
-        key: AUTH_STATE_STORAGE_KEY,
-        newValue: JSON.stringify({ isLoggedIn: true, at: Date.now() }),
-      });
-
-      await waitForCondition(() => reload.count === 1, 2000, "login sync reload");
-      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
-    } finally {
-      reload.restore();
-      restoreFetch();
-      dispose();
-      if (container.parentNode === document.body) {
-        document.body.removeChild(container);
-      }
-    }
-  });
-});
-
 test("Inactivity Dialog Tests", async (t) => {
   await t.test("warning appears and Extend Session works", async () => {
-    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
     sessionStorage.removeItem("sessionTimedOut");
     setPrivacyNoticeAccepted("true");
 
@@ -486,7 +367,6 @@ test("Inactivity Dialog Tests", async (t) => {
   });
 
   await t.test("skips warning when server expiry was rolled forward", async () => {
-    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
     sessionStorage.removeItem("sessionTimedOut");
     setPrivacyNoticeAccepted("true");
 

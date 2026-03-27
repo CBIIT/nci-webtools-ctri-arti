@@ -3,7 +3,11 @@ import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import html from "solid-js/html";
 import { Portal } from "solid-js/web";
 
+import { Status, useAuthContext } from "../contexts/auth-context.js";
+import { canAccess } from "../utils/access.js";
+
 export default function Nav(props) {
+  const { access, status, user } = useAuthContext();
   const [menuRef, setMenuRef] = createSignal(null);
   const [activeDropdown, setActiveDropdown] = createSignal(null);
   const toggleActiveDropdown = (key) => setActiveDropdown((prev) => (key !== prev ? key : null));
@@ -12,15 +16,37 @@ export default function Nav(props) {
   onMount(() => document.addEventListener("click", handleClickOutside, true));
   onCleanup(() => document.removeEventListener("click", handleClickOutside, true));
 
-  const filteredRoutes = (route) => {
-    return route.children?.filter((c) => {
-      if (c.hidden) {
-        return;
-      }
+  const routes = () => (typeof props.routes === "function" ? props.routes() : props.routes || []);
+  const hasRouteAccess = (path, action = "view") =>
+    status() === Status.LOADED && canAccess(access(), path, action);
 
-      return true;
-    });
-  }
+  const isRouteVisible = (route) => {
+    if (route.hidden) return false;
+    if (route.navRequiresAuth && !user()) return false;
+    if (route.policy && !hasRouteAccess(route.policy)) return false;
+    if (route.children?.length) {
+      if (route.path === "/_" && !user()) return true;
+      return visibleChildren(route).length > 0;
+    }
+    return true;
+  };
+
+  const visibleChildren = (route) => route.children?.filter(isRouteVisible) || [];
+  const routeHref = (route) => {
+    if (route.path === "/_" && !user()) {
+      return "/api/v1/login";
+    }
+    return route.rawPath || route.path;
+  };
+  const routeTarget = (route) =>
+    route.rawPath || (route.path === "/_" && !user()) ? "_self" : undefined;
+  const routeTitle = (route) => {
+    if (route.path === "/_") {
+      return user() ? user()?.firstName || "User" : "Login";
+    }
+    return route.title;
+  };
+
   return html`
     <nav class="navbar navbar-expand-lg font-title z-3">
       <div class="container">
@@ -44,28 +70,34 @@ export default function Nav(props) {
           classList=${() => ({ show: activeDropdown() === "main" })}
         >
           <ul class="navbar-nav w-100">
-            <${For} each=${() => props.routes.filter((route) => !route.hidden)}>
+            <${For} each=${() => routes().filter(isRouteVisible)}>
               ${(route) => html`
-                <li class="nav-item" classList=${{ dropdown: route.children, [route.class]: true }}>
+                <li
+                  class="nav-item"
+                  classList=${() => ({
+                    dropdown: visibleChildren(route).length > 0,
+                    [route.class]: true,
+                  })}
+                >
                   <${A}
-                    href=${route.rawPath || route.path}
-                    end=${!route.children?.length}
+                    href=${() => routeHref(route)}
+                    end=${() => visibleChildren(route).length === 0}
                     activeClass="active"
-                    target=${() => route.rawPath && "_self"}
+                    target=${() => routeTarget(route)}
                     class="nav-link text-decoration-none"
-                    classList=${{ "dropdown-toggle": route.children }}
+                    classList=${() => ({ "dropdown-toggle": visibleChildren(route).length > 0 })}
                     onClick=${(ev) =>
-                      route.children
+                      visibleChildren(route).length > 0
                         ? (ev.preventDefault(), toggleActiveDropdown(route.path))
                         : setActiveDropdown(null)}
                   >
-                    ${route.title}
+                    ${() => routeTitle(route)}
                   <//>
-                  <${Show} when=${() => route.children}>
+                  <${Show} when=${() => visibleChildren(route).length > 0}>
                     <${Portal} mount=${menuRef}>
                       <div class="container" hidden=${() => !(activeDropdown() === route.path)}>
                         <div class="row">
-                          <${For} each=${() => filteredRoutes(route)}>
+                          <${For} each=${() => visibleChildren(route)}>
                             ${(child) => html`
                               <div class="col">
                                 <${A}
