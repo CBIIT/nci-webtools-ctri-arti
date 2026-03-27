@@ -98,7 +98,6 @@ Configuration is loaded from [config.py](config.py) and [`.env.example`](.env.ex
 
 - `ALT_DOMAIN_NAME`
 - `AWS_PROFILE`
-- `DISABLED_APPS`
 - `GITHUB_SHA`
 
 ### Image Overrides
