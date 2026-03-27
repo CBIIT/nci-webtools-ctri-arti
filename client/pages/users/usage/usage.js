@@ -9,7 +9,6 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-
 import { AlertContainer } from "../../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../../utils/alerts.js";
 import {
@@ -238,6 +237,8 @@ function UsersList() {
           (userStats.totalInputTokens || 0) + (userStats.totalOutputTokens || 0)
         ),
         costLimit: limitDisplay,
+        usageCost: parseFloat(Number(userStats.usageCost || 0).toFixed(2)),
+        guardrailCost: parseFloat(Number(userStats.guardrailCost || 0).toFixed(2)),
         estimatedCost: parseFloat(Number(userStats.totalCost || 0).toFixed(2)),
         totalRequests: userStats.totalRequests || 0,
       };

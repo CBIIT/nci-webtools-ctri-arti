@@ -391,11 +391,11 @@ function ChatApp() {
     setIsStreaming(true);
 
     try {
-      await sendMessage(text, files, modelId, reasoningMode);
+      const conversationId = await sendMessage(text, files, modelId, reasoningMode);
 
       // Generate title after first exchange
-      if (isFirstMessage) {
-        await generateTitle(MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5);
+      if (isFirstMessage && conversationId) {
+        await generateTitle(text, conversationId, MODEL_OPTIONS.AWS_BEDROCK.HAIKU.v4_5);
       }
     } catch (error) {
       saveDraftPatch({ message: text, files }, scope);

@@ -5,7 +5,7 @@ import { test } from "node:test";
 
 import Handlebars from "handlebars";
 
-import { sendJustificationEmail } from "../integrations/email.js";
+import { sendJustificationEmail, sendUsageLimitChangeEmail } from "../integrations/email.js";
 
 test("email template", async (t) => {
   const templatePath = new URL("../templates/error-log-report.hbs", import.meta.url);
@@ -86,5 +86,64 @@ test("email template", async (t) => {
         "Reason for Request:\n\nNeed more capacity\n\nPlease review this request and take the appropriate action.\n\n" +
         "Thank you,\nResearch Optimizer System",
     });
+  });
+
+  await t.test("sendUsageLimitChangeEmail formats the outgoing message", async () => {
+    let sent = null;
+    const env = {
+      EMAIL_ADMIN: "admin@test.com",
+      EMAIL_SENDER: "noreply@test.com",
+      TIER: "dev",
+    };
+
+    const result = await sendUsageLimitChangeEmail(
+      {
+        userName: "Test User",
+        userEmail: "user@test.com",
+        previousLimit: 100,
+        newLimit: 250,
+        effectiveAt: "2026-03-27T14:15:16.000Z",
+      },
+      env,
+      async (params) => {
+        sent = params;
+        return { messageId: "usage-limit-message-id" };
+      }
+    );
+
+    assert.deepStrictEqual(result, { messageId: "usage-limit-message-id" });
+    assert.equal(sent.from, "noreply@test.com");
+    assert.equal(sent.to, "user@test.com");
+    assert.equal(sent.subject, "[DEV] Your ResearchOptimizer AI Usage Limit Has Been Updated");
+    assert.match(sent.text, /^Dear Test User,/);
+    assert.match(sent.text, /Your AI daily usage limit has been increased from \$100 to \$250\./);
+    assert.match(sent.text, /New Daily Usage Limit: \$250/);
+    assert.match(sent.text, /Effective Date: March 27, 2026/);
+    assert.match(sent.text, /Please do not reply to this email\./);
+  });
+
+  await t.test("sendUsageLimitChangeEmail no-ops when the limit is unchanged", async () => {
+    let called = false;
+
+    const result = await sendUsageLimitChangeEmail(
+      {
+        userName: "Test User",
+        userEmail: "user@test.com",
+        previousLimit: 100,
+        newLimit: 100,
+        effectiveAt: "2026-03-27T14:15:16.000Z",
+      },
+      {
+        EMAIL_ADMIN: "admin@test.com",
+        EMAIL_SENDER: "noreply@test.com",
+      },
+      async () => {
+        called = true;
+        return { messageId: "should-not-send" };
+      }
+    );
+
+    assert.equal(result, null);
+    assert.equal(called, false);
   });
 });

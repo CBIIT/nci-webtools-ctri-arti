@@ -35,8 +35,32 @@ export function usageTable(props) {
       render: (user) => user.type || "Unavailable",
     },
     {
-      key: "estimatedCost",
+      key: "totalRequests",
+      title: "Requests",
+      cellClassName: "small",
+      render: (user) => String(user.totalRequests ?? 0),
+    },
+    {
+      key: "usageCost",
       title: "Usage Cost ($)",
+      cellClassName: "small",
+      render: (user) => `$${Number(user.usageCost || 0).toFixed(2)}`,
+    },
+    {
+      key: "guardrailCost",
+      title: "Guardrail Cost ($)",
+      cellClassName: "small",
+      render: (user) => `$${Number(user.guardrailCost || 0).toFixed(2)}`,
+    },
+    {
+      key: "costLimit",
+      title: "Cost Limit",
+      cellClassName: "small",
+      render: (user) => user.costLimit || "Unlimited",
+    },
+    {
+      key: "estimatedCost",
+      title: "Total Cost ($)",
       cellClassName: "small",
       render: (user) => `$${Number(user.estimatedCost || 0).toFixed(2)}`,
     },

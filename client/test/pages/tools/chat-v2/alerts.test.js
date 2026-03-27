@@ -1,8 +1,10 @@
 import assert from "/test/assert.js";
+import { AUTH_STATE_STORAGE_KEY } from "/contexts/auth-context.js";
 import { installMockFetch, jsonResponse, mountApp, waitForElement } from "/test/helpers.js";
 import test from "/test/test.js";
 
 import { clearAllAlerts } from "../../../../utils/alerts.js";
+import { clearCachedData } from "../../../../utils/static-data.js";
 
 const SUPER_USER_ACCESS = {
   "/tools/chat": { view: true },
@@ -14,21 +16,40 @@ const LIMIT_MESSAGE =
   "disabled and will reset tomorrow at 12:00 AM. If you need assistance or believe this is an " +
   "error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.";
 
+const sessionUser = {
+  id: 1,
+  email: "integration@example.org",
+  firstName: "Integration",
+  lastName: "Tester",
+  Role: { id: 2, name: "user" },
+  access: SUPER_USER_ACCESS,
+};
+
+function primeAuthenticatedBrowserState(user = sessionUser) {
+  clearCachedData();
+  localStorage.setItem("userDetails", JSON.stringify(user));
+  localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+  document.cookie = "privacyNoticeAccepted=true; path=/";
+
+  return () => {
+    clearCachedData();
+    localStorage.removeItem("userDetails");
+    localStorage.removeItem(AUTH_STATE_STORAGE_KEY);
+    document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
+  };
+}
+
 test("Chat-V2 shows an alert when the server rejects chat with a usage-limit error", async () => {
   clearAllAlerts();
+  const restoreBrowserState = primeAuthenticatedBrowserState();
 
   const restoreFetch = installMockFetch(async ({ url, request }) => {
     if (url.pathname === "/api/v1/session") {
-      return jsonResponse({
-        user: {
-          id: 1,
-          email: "integration@example.org",
-          firstName: "Integration",
-          lastName: "Tester",
-          Role: { id: 2, name: "user" },
-          access: SUPER_USER_ACCESS,
-        },
-      });
+      return jsonResponse({ user: sessionUser });
+    }
+
+    if (url.pathname === "/api/config") {
+      return jsonResponse({});
     }
 
     if (url.pathname === "/api/v1/agents" && request.method === "GET") {
@@ -96,6 +117,7 @@ test("Chat-V2 shows an alert when the server rejects chat with a usage-limit err
     assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((error) => error?.message)}`);
   } finally {
     clearAllAlerts();
+    restoreBrowserState();
     restoreFetch();
     dispose();
     if (container.parentNode === document.body) {

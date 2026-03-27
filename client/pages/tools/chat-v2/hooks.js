@@ -138,7 +138,6 @@ export function useAgent({ agentId, conversationId }) {
 
     try {
       let currentConversationId = params.conversationId;
-      const shouldGenerateTitle = !currentConversationId && agent.conversation.name === null;
       if (!currentConversationId) {
         setAgent("conversation", "name", "Untitled");
         const conv = await api("/conversations", {
@@ -168,11 +167,8 @@ export function useAgent({ agentId, conversationId }) {
         messages: agent.messages.concat([userMessage]),
       });
 
-      if (shouldGenerateTitle) {
-        void generateTitle(text, currentConversationId);
-      }
-
       await streamChat(agent, setAgent, params.agentId, currentConversationId, userMessage);
+      return currentConversationId;
     } finally {
       setAgent("loading", false);
     }
