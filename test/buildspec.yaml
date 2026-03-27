@@ -11,8 +11,8 @@ env:
     variables:
         CTF_USERNAME_CCDI: test_user
         CHROME_VERSION: "139.0.7258.154-1"
-        AutomatedTestingSubfolderPath: "test"
         TIER: ${TIER}
+        tier: ${TIER}
         AWS_ENV: ${AWS_ENV}
         GitBranch: ${GIT_BRANCH}
 
@@ -21,7 +21,6 @@ phases:
         runtime-versions:
             nodejs: "22"
         commands:
-          - cd ${AutomatedTestingSubfolderPath}
           - pwd
           - env
           - curl -s https://checkip.amazonaws.com
@@ -31,6 +30,7 @@ phases:
 
     build:
         commands:
+          - git clone https://github.com/CBIIT/nci-ctri-arti-bddtests
           - wget --no-verbose https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}_amd64.deb
           - apt-get update --quiet -y
           - apt-get install --quiet -y --allow-downgrades ./google-chrome*.deb
@@ -57,15 +57,12 @@ phases:
           - echo ${AppUrl}
 
           - echo ==============
-          - cd ${AutomatedTestingSubfolderPath}/bdd_tests
           - export PROJECT_ROOT=$(pwd)
           - echo $PROJECT_ROOT
           - echo "Actual automated-testing STARTED:"
           - date
-          - /bin/bash -c "source scripts/system_setup.sh && install_dependencies"
-          - ls -alt
-          - /bin/bash -c "source scripts/run_test.sh && db_warmup"
-          - /bin/bash -c "source scripts/run_test.sh && run_ccdi_bdd_tests"
+          - cd nci-ctri-arti-bddtests/
+          - /bin/bash -c "source my-init"
 
     post_build:
         commands:
