@@ -40,4 +40,9 @@ export const MODEL_OPTIONS = Object.freeze({
       v2_5_FLASH: "gemini-2.5-flash-preview-04-17",
     },
   },
+  NIH: {
+    SONNET: {
+      v4_6: "idp.us.anthropic.claude-sonnet-4-6",
+    },
+  },
 });
