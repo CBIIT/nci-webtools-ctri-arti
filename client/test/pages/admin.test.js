@@ -75,8 +75,9 @@ function buildUsersResponse(url, user) {
 
 function installAdminMocks() {
   let currentUser = structuredClone(baseUser);
+  const userListQueries = [];
 
-  return installMockFetch(async ({ url, request, input, init, originalFetch }) => {
+  const restoreFetch = installMockFetch(async ({ url, request, input, init, originalFetch }) => {
     if (url.pathname === "/api/v1/session") {
       return jsonResponse({
         user: currentUser,
@@ -94,6 +95,15 @@ function installAdminMocks() {
     }
 
     if (url.pathname === "/api/v1/admin/users" && request.method === "GET") {
+      userListQueries.push({
+        search: url.searchParams.get("search"),
+        status: url.searchParams.get("status"),
+        roleID: url.searchParams.get("roleID"),
+        sortBy: url.searchParams.get("sortBy"),
+        sortOrder: url.searchParams.get("sortOrder"),
+        limit: url.searchParams.get("limit"),
+        offset: url.searchParams.get("offset"),
+      });
       return jsonResponse(buildUsersResponse(url, currentUser));
     }
 
@@ -140,6 +150,13 @@ function installAdminMocks() {
 
     return originalFetch(input, init);
   });
+
+  restoreFetch.userListQueries = userListQueries;
+  restoreFetch.clearUserListQueries = () => {
+    userListQueries.length = 0;
+  };
+
+  return restoreFetch;
 }
 
 async function chooseInlineSelectOption(container, triggerSelector, label) {
@@ -316,6 +333,29 @@ test("Admin Page Tests", async (t) => {
         const hasIndicator =
           sortedTh.textContent.includes("↑") || sortedTh.textContent.includes("↓");
         assert.ok(hasIndicator, "Sort indicator should appear after clicking column header");
+        assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+      } finally {
+        dispose();
+        document.body.removeChild(container);
+      }
+    });
+
+    await t.test("/_/users: Name header sorts by lastName in the API request", async () => {
+      const { container, errors, dispose } = mountApp("/_/users");
+      try {
+        await waitForElement(container, "table");
+        restoreFetch.clearUserListQueries();
+
+        const thElements = container.querySelectorAll("table thead th");
+        assert.ok(thElements.length > 0, "Table should have header columns");
+
+        thElements[0].click();
+        await waitForNetworkIdle();
+
+        const lastQuery = restoreFetch.userListQueries.at(-1);
+        assert.ok(lastQuery, "Name sort should trigger a users API request");
+        assert.strictEqual(lastQuery.sortBy, "lastName");
+        assert.strictEqual(lastQuery.sortOrder, "desc");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
         dispose();

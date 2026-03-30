@@ -48,14 +48,12 @@ export function DataTable(props) {
         let valB = b[column];
 
         // Basic sorting
-        let comparison = 0;
-        if (typeof valA === "number" && typeof valB === "number") {
-          comparison = valA - valB;
-        } else {
-          const strA = String(valA || "").toLowerCase();
-          const strB = String(valB || "").toLowerCase();
-          comparison = strA.localeCompare(strB);
-        }
+        const comparison =
+          typeof valA === "number" && typeof valB === "number"
+            ? valA - valB
+            : String(valA || "")
+                .toLowerCase()
+                .localeCompare(String(valB || "").toLowerCase());
 
         return order === "asc" ? comparison : -comparison;
       });
@@ -86,6 +84,8 @@ export function DataTable(props) {
       return Math.ceil(data.length / rowsPerPage());
     }
   });
+
+  const getSortKey = (column) => column.sortKey || column.key;
 
   const handleSort = (columnKey) => {
     const newOrder = sortColumn() === columnKey ? (sortOrder() === "asc" ? "desc" : "asc") : "asc";
@@ -157,11 +157,12 @@ export function DataTable(props) {
                     "user-select-none": true,
                     [col.className]: !!col.className,
                   }}
-                  onClick=${() => (col.key ? handleSort(col.key) : null)}
-                  style=${{ cursor: col.key ? "pointer" : "default" }}
+                  onClick=${() => (getSortKey(col) ? handleSort(getSortKey(col)) : null)}
+                  style=${{ cursor: getSortKey(col) ? "pointer" : "default" }}
                 >
                   ${col.title}
-                  ${() => (sortColumn() === col.key ? (sortOrder() === "asc" ? " ↑" : " ↓") : "")}
+                  ${() =>
+                    sortColumn() === getSortKey(col) ? (sortOrder() === "asc" ? " ↑" : " ↓") : ""}
                 </th>
               `}
             <//>

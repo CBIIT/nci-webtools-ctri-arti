@@ -303,6 +303,7 @@ function UsersList() {
           columns=${[
             {
               key: "name",
+              sortKey: "lastName",
               title: "Name",
               className: "ps-4",
               cellClassName: "ps-4 small",
