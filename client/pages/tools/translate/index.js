@@ -391,7 +391,10 @@ export default function Page() {
     for (const file of sourceFiles()) {
       try {
         const bytes = await file.arrayBuffer();
-        const inputText = await parseDocument(bytes, file.type, file.name);
+
+        // Docx files use content instead of inputText
+        const isDocx = isDocxFile(file.type, file.name);
+        const inputText = isDocx ? "" : await parseDocument(bytes, file.type, file.name);
 
         for (const langCode of targetLanguages()) {
           const jobId = crypto.randomUUID();
