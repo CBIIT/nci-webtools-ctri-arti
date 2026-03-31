@@ -392,7 +392,6 @@ export default function Page() {
       try {
         const bytes = await file.arrayBuffer();
 
-        // Docx files use content instead of inputText
         const isDocx = isDocxFile(file.type, file.name);
         const inputText = isDocx ? "" : await parseDocument(bytes, file.type, file.name);
 
