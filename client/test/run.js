@@ -151,9 +151,12 @@ const tests = [
   // "./services/consent-form-generator.test.js",
   // "./pages/tools/consent-crafter-v2/index.test.js",
   // "./pages/tools/consent-crafter-v2/e2e.test.js", // disabled: too slow (real inference)
-  "./api/smoke.test.js",
+  "./api/core.smoke.test.js",
+  "./api/model-usage.smoke.test.js",
+  "./api/pages.smoke.test.js",
   "./pages/home.test.js",
-  "./pages/admin.test.js",
+  "./pages/admin-users.test.js",
+  "./pages/admin-usage.test.js",
   "./pages/users/profile.test.js",
   "./pages/users/usage.test.js",
   "./pages/tools/export-conversations.test.js",
@@ -162,11 +165,12 @@ const tests = [
   "./pages/tools/chat-v2/request-message.test.js",
   "./pages/tools/chat-v2/model-list.test.js",
   "./pages/tools/chat-v2/alerts.test.js",
+  "./pages/tools/chat-v2/e2e.test.js",
 ];
 
 if (includeSlow) {
-  tests.push("./api/agents-chat.test.js");
-  tests.push("./pages/tools/chat-v2/e2e.test.js");
+  // Slow browser tests are reserved for real inference paths.
+  // Consent-crafter inference coverage stays disabled by default above.
 }
 const selectors =
   testParam && testParam !== "1"
@@ -199,7 +203,9 @@ const { run } = await import("./test.js");
 for (const test of selectedTests) {
   try {
     window.__CURRENT_TEST_FILE__ = normalizeTestPath(test);
+    console.log(`Loading browser test file: ${window.__CURRENT_TEST_FILE__}`);
     await import(test);
+    console.log(`Loaded browser test file: ${window.__CURRENT_TEST_FILE__}`);
   } catch (error) {
     console.error(`Error loading test ${test}:`, error);
   } finally {
@@ -210,6 +216,7 @@ for (const test of selectedTests) {
 // Run all tests and await for completion before setting TESTS_DONE
 const summary = await run();
 reportMetrics();
+window.TESTS_DONE = true;
 if (summary.fail > 0) {
   throw new Error(`${summary.fail} browser test${summary.fail === 1 ? "" : "s"} failed`);
 }

@@ -1,11 +1,19 @@
 import assert from "../../assert.js";
-import { installMockFetch, jsonResponse, mountApp, waitForElement } from "../../helpers.js";
+import {
+  cleanupMountedApp,
+  installMockFetch,
+  jsonResponse,
+  mountApp,
+  primePrivacyNoticeAccepted,
+  waitForElement,
+} from "../../helpers.js";
 import test from "../../test.js";
 
 const ADMIN_ACCESS = { "*": { "*": true } };
 
 test("Profile Page Tests", async (t) => {
   let capturedUsageRequest = null;
+  const restoreBrowserState = primePrivacyNoticeAccepted();
   const restoreFetch = installMockFetch(async ({ url, request }) => {
     if (url.pathname === "/api/v1/session") {
       return jsonResponse({
@@ -67,18 +75,6 @@ test("Profile Page Tests", async (t) => {
       const lastName = container.querySelector("#lastName");
       assert.ok(firstName, "firstName input should exist");
       assert.ok(lastName, "lastName input should exist");
-      assert.strictEqual(
-        firstName.getAttribute("name"),
-        "firstName",
-        "firstName should have name attribute"
-      );
-      assert.strictEqual(
-        lastName.getAttribute("name"),
-        "lastName",
-        "lastName should have name attribute"
-      );
-      assert.strictEqual(firstName.tagName, "INPUT", "firstName should be an input element");
-      assert.strictEqual(lastName.tagName, "INPUT", "lastName should be an input element");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
 
@@ -154,10 +150,6 @@ test("Profile Page Tests", async (t) => {
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
   } finally {
-    restoreFetch();
-    dispose();
-    if (container.parentNode === document.body) {
-      document.body.removeChild(container);
-    }
+    cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
   }
 });

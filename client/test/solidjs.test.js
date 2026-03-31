@@ -5,6 +5,7 @@ import { createStore } from "solid-js/store";
 import { render } from "solid-js/web";
 
 import assert from "./assert.js";
+import { cleanupMountedApp } from "./helpers.js";
 import test from "./test.js";
 
 test("SolidJS README Patterns", async (t) => {
@@ -160,15 +161,16 @@ test("SolidJS README Patterns", async (t) => {
     }
 
     // we need to attach to the DOM to handle events
-    let container = document.createElement("div");
+    const container = document.createElement("div");
+    let dispose;
     try {
       document.body.appendChild(container);
-      render(() => html`<${ClickButton} />`, container);
+      dispose = render(() => html`<${ClickButton} />`, container);
       container.querySelector("button").click();
       assert.strictEqual(clickCount, 1);
       assert.ok(lastEvent);
     } finally {
-      document.body.removeChild(container);
+      cleanupMountedApp({ container, dispose });
     }
   });
 
@@ -212,9 +214,10 @@ test("SolidJS README Patterns", async (t) => {
 
     // we need to attach to the DOM to handle events
     const container = document.createElement("div");
+    let dispose;
     try {
       document.body.appendChild(container);
-      render(() => html`<${ReactiveCounter} />`, container);
+      dispose = render(() => html`<${ReactiveCounter} />`, container);
       const result = container.querySelector("div");
       const countSpan = result.querySelector(".count");
       const button = result.querySelector("button");
@@ -229,7 +232,7 @@ test("SolidJS README Patterns", async (t) => {
       button.click();
       assert.strictEqual(countSpan.textContent, "2");
     } finally {
-      document.body.removeChild(container);
+      cleanupMountedApp({ container, dispose });
     }
   });
 
@@ -252,9 +255,10 @@ test("SolidJS README Patterns", async (t) => {
 
     // we need to attach to the DOM to handle events
     const container = document.createElement("div");
+    let dispose;
     try {
       document.body.appendChild(container);
-      render(() => html`<${UserForm} />`, container);
+      dispose = render(() => html`<${UserForm} />`, container);
       const result = container.querySelector("div");
       const nameSpan = result.querySelector(".name");
       const button = result.querySelector("button");
@@ -265,7 +269,7 @@ test("SolidJS README Patterns", async (t) => {
       button.click();
       assert.strictEqual(nameSpan.textContent, "Jane");
     } finally {
-      document.body.removeChild(container);
+      cleanupMountedApp({ container, dispose });
     }
   });
 });

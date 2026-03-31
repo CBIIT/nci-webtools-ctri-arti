@@ -11,6 +11,9 @@ const onlySubtests = new Set(
     .filter(Boolean)
 );
 const testFilter = window.__TEST_FILTER__ || { enabled: false, selectors: [] };
+const DEFAULT_TEST_TIMEOUT_MS = Number(
+  new URLSearchParams(window.location.search).get("testTimeoutMs") || 15000
+);
 
 function normalizeTestPath(value = "") {
   return value.replace(/\\/g, "/").replace(/^\.\//, "");
@@ -127,13 +130,37 @@ class TAP {
 
     const start = Date.now();
     let err;
+    const timeoutMs =
+      typeof opts?.timeout === "number" && Number.isFinite(opts.timeout)
+        ? opts.timeout
+        : DEFAULT_TEST_TIMEOUT_MS;
+    const pathLabel = path.join(" > ");
+    const fileLabel = file || "<inline>";
+
+    console.log(
+      `# Running test: ${fileLabel}${pathLabel ? ` :: ${pathLabel}` : ""} (timeout ${timeoutMs}ms)`
+    );
+    window.__TEST_ACTIVE__ = { file: fileLabel, path: [...path], startedAt: start, timeoutMs };
 
     try {
       for (const h of ctx.hooks.before) await h();
-      await fn(ctx);
+      await Promise.race([
+        fn(ctx),
+        new Promise((_, reject) => {
+          window.setTimeout(() => {
+            reject(
+              new Error(
+                `Timed out after ${timeoutMs}ms in ${fileLabel}${pathLabel ? ` :: ${pathLabel}` : ""}`
+              )
+            );
+          }, timeoutMs);
+        }),
+      ]);
       for (const h of ctx.hooks.after) await h();
     } catch (e) {
       err = e;
+    } finally {
+      delete window.__TEST_ACTIVE__;
     }
 
     const ms = Date.now() - start;

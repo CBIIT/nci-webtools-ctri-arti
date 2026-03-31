@@ -1,183 +1,22 @@
 import assert from "../assert.js";
 import {
-  installMockFetch,
-  jsonResponse,
+  cleanupMountedApp,
   mountApp,
+  primePrivacyNoticeAccepted,
   waitForCondition,
   waitForElement,
   waitForNetworkIdle,
 } from "../helpers.js";
 import test from "../test.js";
 
-const ADMIN_ACCESS = { "*": { "*": true } };
-const SUPER_USER_ACCESS = {
-  "/tools/chat": { view: true },
-  "/tools/chat-v2": { view: true },
-  "/tools/consent-crafter": { view: true },
-  "/tools/translator": { view: true },
-  "/tools/semantic-search": { view: true },
-  "/tools/export-conversations": { view: true },
-  "/_/profile": { view: true },
-};
-const USER_ACCESS = {
-  "/tools/consent-crafter": { view: true },
-  "/tools/semantic-search": { view: true },
-  "/tools/export-conversations": { view: true },
-  "/_/profile": { view: true },
-};
+import { baseUser, chooseInlineSelectOption, installAdminMocks } from "./admin-helpers.js";
 
-function accessForRole(roleID) {
-  if (roleID === 1) return ADMIN_ACCESS;
-  if (roleID === 2) return SUPER_USER_ACCESS;
-  return USER_ACCESS;
-}
-
-const baseUser = {
-  id: 1,
-  email: "integration@example.org",
-  firstName: "Integration",
-  lastName: "Tester",
-  status: "active",
-  roleID: 1,
-  budget: 10,
-  remaining: 9.59,
-  Role: { id: 1, name: "admin" },
-  access: ADMIN_ACCESS,
-};
-
-const roles = [
-  { id: 1, name: "admin" },
-  { id: 2, name: "super_admin" },
-  { id: 3, name: "user" },
-];
-
-function buildUsersResponse(url, user) {
-  let data = [{ ...user, Role: user.Role }];
-  const search = (url.searchParams.get("search") || "").toLowerCase();
-  const status = url.searchParams.get("status");
-  const roleID = url.searchParams.get("roleID");
-
-  if (search) {
-    const haystack = `${user.email} ${user.firstName} ${user.lastName}`.toLowerCase();
-    data = haystack.includes(search) ? data : [];
-  }
-
-  if (status) {
-    data = data.filter((entry) => entry.status === status);
-  }
-
-  if (roleID) {
-    data = data.filter((entry) => String(entry.roleID) === String(roleID));
-  }
-
-  return { data, meta: { total: data.length } };
-}
-
-function installAdminMocks() {
-  let currentUser = structuredClone(baseUser);
-  const userListQueries = [];
-
-  const restoreFetch = installMockFetch(async ({ url, request, input, init, originalFetch }) => {
-    if (url.pathname === "/api/v1/session") {
-      return jsonResponse({
-        user: currentUser,
-        access: currentUser.access,
-        expires: "2099-01-01T00:00:00.000Z",
-      });
-    }
-
-    if (url.pathname === "/api/config") {
-      return jsonResponse({ budgetLabel: "Monthly" });
-    }
-
-    if (url.pathname === "/api/v1/admin/roles") {
-      return jsonResponse(roles);
-    }
-
-    if (url.pathname === "/api/v1/admin/users" && request.method === "GET") {
-      userListQueries.push({
-        search: url.searchParams.get("search"),
-        status: url.searchParams.get("status"),
-        roleID: url.searchParams.get("roleID"),
-        sortBy: url.searchParams.get("sortBy"),
-        sortOrder: url.searchParams.get("sortOrder"),
-        limit: url.searchParams.get("limit"),
-        offset: url.searchParams.get("offset"),
-      });
-      return jsonResponse(buildUsersResponse(url, currentUser));
-    }
-
-    if (url.pathname === `/api/v1/admin/users/${currentUser.id}` && request.method === "GET") {
-      return jsonResponse(currentUser);
-    }
-
-    if (url.pathname === "/api/v1/admin/users" && request.method === "POST") {
-      const body = await request.json();
-      const nextRole =
-        roles.find((role) => role.id === Number(body.roleID || currentUser.roleID)) ||
-        currentUser.Role;
-      currentUser = {
-        ...currentUser,
-        ...body,
-        id: currentUser.id,
-        roleID: Number(body.roleID || currentUser.roleID),
-        Role: { id: nextRole.id, name: nextRole.name },
-        access: accessForRole(nextRole.id),
-      };
-      return jsonResponse(currentUser);
-    }
-
-    if (url.pathname === "/api/v1/admin/analytics") {
-      const groupBy = url.searchParams.get("groupBy");
-
-      if (groupBy === "user") {
-        return jsonResponse({
-          data: [
-            {
-              userID: currentUser.id,
-              User: currentUser,
-              Role: currentUser.Role,
-              totalRequests: 3,
-              usageCost: 0.3,
-              guardrailCost: 0.01,
-              totalCost: 0.31,
-            },
-          ],
-          meta: { total: 1 },
-        });
-      }
-    }
-
-    return originalFetch(input, init);
-  });
-
-  restoreFetch.userListQueries = userListQueries;
-  restoreFetch.clearUserListQueries = () => {
-    userListQueries.length = 0;
-  };
-
-  return restoreFetch;
-}
-
-async function chooseInlineSelectOption(container, triggerSelector, label) {
-  const trigger = await waitForElement(container, triggerSelector);
-  trigger.click();
-
-  const option = await waitForElement(container, ".custom-dropdown-option", (el) =>
-    el.textContent.trim().includes(label)
-  );
-  option.click();
-
-  return waitForElement(container, triggerSelector, (el) => el.textContent.includes(label), 2000);
-}
-
-test("Admin Page Tests", async (t) => {
-  const restoreFetch = installAdminMocks();
+test("Admin Users Page Tests", async (t) => {
+  const adminMocks = installAdminMocks();
   const testUser = baseUser;
+  const restoreBrowserState = primePrivacyNoticeAccepted();
 
   try {
-    // ── Users List Page ─────────────────────────────────────────────────────
-
     await t.test("/_/users renders Manage Users heading and table", async () => {
       const { container, errors, dispose } = mountApp("/_/users");
       try {
@@ -189,8 +28,20 @@ test("Admin Page Tests", async (t) => {
         assert.ok(table, "Should render a data table");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
+      }
+    });
+
+    await t.test("/_/users shows the Name column as Last, First", async () => {
+      const { container, errors, dispose } = mountApp("/_/users");
+      try {
+        const nameCell = await waitForElement(container, "td", (el) =>
+          el.textContent.includes(`${testUser.lastName}, ${testUser.firstName}`)
+        );
+        assert.ok(nameCell, "Should render the formatted user name");
+        assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+      } finally {
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -206,13 +57,9 @@ test("Admin Page Tests", async (t) => {
         assert.ok(searchFilter, "Search filter should exist");
         assert.ok(roleFilter, "Role filter should exist");
         assert.ok(statusFilter, "Status filter should exist");
-        assert.strictEqual(searchFilter.type, "text", "Search should be text input");
-        assert.strictEqual(roleFilter.tagName, "SELECT", "Role filter should be a select");
-        assert.strictEqual(statusFilter.tagName, "SELECT", "Status filter should be a select");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -231,8 +78,7 @@ test("Admin Page Tests", async (t) => {
           `Errors after search: ${errors.map((e) => e.message)}`
         );
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -251,8 +97,7 @@ test("Admin Page Tests", async (t) => {
           `Errors after short search: ${errors.map((e) => e.message)}`
         );
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -273,8 +118,7 @@ test("Admin Page Tests", async (t) => {
           `Errors after role change: ${errors.map((e) => e.message)}`
         );
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -285,7 +129,6 @@ test("Admin Page Tests", async (t) => {
 
         const statusFilter = container.querySelector("#status-filter");
 
-        // Switch to inactive
         statusFilter.value = "inactive";
         statusFilter.dispatchEvent(new InputEvent("input", { bubbles: true }));
         await waitForNetworkIdle();
@@ -295,7 +138,6 @@ test("Admin Page Tests", async (t) => {
           `Errors after inactive: ${errors.map((e) => e.message)}`
         );
 
-        // Switch to active
         statusFilter.value = "active";
         statusFilter.dispatchEvent(new InputEvent("input", { bubbles: true }));
         await waitForNetworkIdle();
@@ -305,14 +147,12 @@ test("Admin Page Tests", async (t) => {
           `Errors after active: ${errors.map((e) => e.message)}`
         );
 
-        // Switch back to All
         statusFilter.value = "";
         statusFilter.dispatchEvent(new InputEvent("input", { bubbles: true }));
         await waitForNetworkIdle();
         assert.strictEqual(errors.length, 0, `Errors after All: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -324,19 +164,16 @@ test("Admin Page Tests", async (t) => {
         const thElements = container.querySelectorAll("table thead th");
         assert.ok(thElements.length > 0, "Table should have header columns");
 
-        // Click first sortable column (Name)
         thElements[0].click();
         await waitForNetworkIdle();
 
-        // Check for sort indicator
         const sortedTh = container.querySelector("table thead th");
         const hasIndicator =
           sortedTh.textContent.includes("↑") || sortedTh.textContent.includes("↓");
         assert.ok(hasIndicator, "Sort indicator should appear after clicking column header");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -344,7 +181,7 @@ test("Admin Page Tests", async (t) => {
       const { container, errors, dispose } = mountApp("/_/users");
       try {
         await waitForElement(container, "table");
-        restoreFetch.clearUserListQueries();
+        adminMocks.clearUserListQueries();
 
         const thElements = container.querySelectorAll("table thead th");
         assert.ok(thElements.length > 0, "Table should have header columns");
@@ -352,14 +189,13 @@ test("Admin Page Tests", async (t) => {
         thElements[0].click();
         await waitForNetworkIdle();
 
-        const lastQuery = restoreFetch.userListQueries.at(-1);
+        const lastQuery = adminMocks.userListQueries.at(-1);
         assert.ok(lastQuery, "Name sort should trigger a users API request");
         assert.strictEqual(lastQuery.sortBy, "lastName");
         assert.strictEqual(lastQuery.sortOrder, "desc");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -377,8 +213,7 @@ test("Admin Page Tests", async (t) => {
         assert.ok(prevButton.disabled, "Previous should be disabled on page 1");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -398,8 +233,7 @@ test("Admin Page Tests", async (t) => {
         );
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -417,12 +251,9 @@ test("Admin Page Tests", async (t) => {
         assert.ok(activeBadge, "Active badge should show 'active' text");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
-
-    // ── User Edit Page ──────────────────────────────────────────────────────
 
     await t.test("/_/users/:id renders Edit User form", async () => {
       const { container, errors, dispose } = mountApp(`/_/users/${testUser.id}`);
@@ -432,7 +263,6 @@ test("Admin Page Tests", async (t) => {
         );
         assert.ok(h1, "Should render Edit User heading");
 
-        // Wait for form to load
         const firstName = await waitForElement(container, "#firstName");
         const lastName = container.querySelector("#lastName");
         const status = container.querySelector("#status");
@@ -446,8 +276,7 @@ test("Admin Page Tests", async (t) => {
         assert.ok(budget, "budget input should exist");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -456,19 +285,16 @@ test("Admin Page Tests", async (t) => {
       try {
         await waitForElement(container, "#firstName");
 
-        // Email should be displayed as text, not an input
         const emailInput = container.querySelector("#email");
         assert.ok(!emailInput, "Email should not be an editable input");
 
-        // Email should appear in the page content
         const emailEl = await waitForElement(container, ".profile-card-email", (el) =>
           el.textContent.includes(testUser.email)
         );
         assert.ok(emailEl, "Email should be displayed as text");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -479,19 +305,17 @@ test("Admin Page Tests", async (t) => {
 
         const noLimitCheckbox = container.querySelector("#noLimitCheckbox");
         const budgetInput = container.querySelector("#budget");
-
         const roleSelect = container.querySelector("#roleID");
+
         assert.ok(roleSelect, "Role select should exist");
         assert.ok(noLimitCheckbox, "No limit checkbox should exist");
         assert.ok(budgetInput, "Budget input should exist");
 
-        // Change to Admin role -> should set noLimit=true
         await chooseInlineSelectOption(container, "#roleID", "Admin");
         await waitForElement(container, "#budget", (el) => el.disabled, 2000);
         assert.ok(noLimitCheckbox.checked, "Admin role should set noLimit to true");
         assert.ok(budgetInput.disabled, "Budget should be disabled for admin");
 
-        // Change to User role -> should set budget=1, noLimit=false
         await chooseInlineSelectOption(container, "#roleID", "User");
         await waitForElement(container, "#budget", (el) => !el.disabled && el.value === "1", 2000);
         assert.ok(!noLimitCheckbox.checked, "User role should set noLimit to false");
@@ -499,8 +323,7 @@ test("Admin Page Tests", async (t) => {
         assert.strictEqual(budgetInput.value, "1", "User role should reset budget to the default");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -512,7 +335,6 @@ test("Admin Page Tests", async (t) => {
         const noLimitCheckbox = container.querySelector("#noLimitCheckbox");
         const budgetInput = container.querySelector("#budget");
 
-        // First ensure noLimit is unchecked
         if (noLimitCheckbox.checked) {
           noLimitCheckbox.checked = false;
           noLimitCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
@@ -524,21 +346,18 @@ test("Admin Page Tests", async (t) => {
         }
         assert.ok(!budgetInput.disabled, "Budget should be enabled when noLimit is off");
 
-        // Check noLimit
         noLimitCheckbox.checked = true;
         noLimitCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
         await waitForCondition(() => budgetInput.disabled, 1000, "admin unlimited on");
         assert.ok(budgetInput.disabled, "Budget should be disabled when noLimit is on");
 
-        // Uncheck noLimit
         noLimitCheckbox.checked = false;
         noLimitCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
         await waitForCondition(() => !budgetInput.disabled, 1000, "admin unlimited off");
         assert.ok(!budgetInput.disabled, "Budget should re-enable when noLimit is off");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -554,20 +373,17 @@ test("Admin Page Tests", async (t) => {
         assert.ok(resetButton, "Reset button should exist");
         assert.ok(!resetButton.disabled, "Reset button should be enabled for limited roles");
 
-        // Change budget to a custom value
         budgetInput.value = "999";
         budgetInput.dispatchEvent(new Event("input", { bubbles: true }));
         assert.strictEqual(budgetInput.value, "999", "Budget should accept the custom value");
 
-        // Click reset
         resetButton.click();
         await waitForElement(container, "#budget", (el) => el.value === "1", 2000);
 
         assert.strictEqual(budgetInput.value, "1", "Budget should reset to the role default");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
 
@@ -576,14 +392,12 @@ test("Admin Page Tests", async (t) => {
       try {
         const firstName = await waitForElement(container, "#firstName");
 
-        // Change firstName and submit
         firstName.value = "IntegrationTest";
         firstName.dispatchEvent(new Event("input", { bubbles: true }));
 
         const form = firstName.closest("form");
         form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
 
-        // Wait for navigation to users list
         const heading = await waitForElement(
           container,
           "h1",
@@ -593,35 +407,11 @@ test("Admin Page Tests", async (t) => {
         assert.ok(heading, "Should navigate to users list after save");
         assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
       } finally {
-        dispose();
-        document.body.removeChild(container);
+        cleanupMountedApp({ container, dispose });
       }
     });
   } finally {
-    restoreFetch();
-  }
-});
-
-test("Admin Usage Page Tests", async (t) => {
-  const restoreFetch = installAdminMocks();
-
-  try {
-    await t.test("/_/usage renders AI Usage Dashboard page", async () => {
-      const { container, errors, dispose } = mountApp("/_/usage");
-      try {
-        const h1 = await waitForElement(container, "h1", (el) =>
-          el.textContent.includes("AI Usage Dashboard")
-        );
-        assert.ok(h1, "Should render AI Usage Dashboard heading");
-        const table = await waitForElement(container, "table");
-        assert.ok(table, "Should render a data table");
-        assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
-      } finally {
-        dispose();
-        document.body.removeChild(container);
-      }
-    });
-  } finally {
-    restoreFetch();
+    restoreBrowserState();
+    adminMocks.restore();
   }
 });

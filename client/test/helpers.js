@@ -18,6 +18,7 @@ export function mountApp(initialUrl) {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const errors = [];
+  const originalUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
   const onError = (e) => {
     errors.push(e.error || e);
@@ -32,6 +33,7 @@ export function mountApp(initialUrl) {
 
   const history = createMemoryHistory();
   history.set({ value: initialUrl });
+  window.history.replaceState({}, "", initialUrl);
   const _dispose = render(
     () =>
       html` <${ErrorBoundary}
@@ -55,6 +57,7 @@ export function mountApp(initialUrl) {
       _dispose();
       window.removeEventListener("error", onError);
       window.removeEventListener("unhandledrejection", onRejection);
+      window.history.replaceState({}, "", originalUrl);
     },
   };
 }
@@ -71,15 +74,62 @@ export function jsonResponse(body, init = {}) {
   });
 }
 
-export function installMockFetch(handler) {
-  const originalFetch = window.fetch.bind(window);
+export function ndjsonResponse(events, init = {}) {
+  const encoder = new TextEncoder();
 
-  window.fetch = async (input, init) => {
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        for (const event of events) {
+          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        }
+        controller.close();
+      },
+    }),
+    {
+      ...init,
+      headers: {
+        "Content-Type": "application/x-ndjson",
+        ...(init.headers || {}),
+      },
+    }
+  );
+}
+
+export function getTestApiKey() {
+  return new URLSearchParams(window.location.search).get("apiKey");
+}
+
+export function createApiHeaders(extra = {}) {
+  const headers = { "Content-Type": "application/json", ...extra };
+  const apiKey = getTestApiKey();
+  if (apiKey) {
+    headers["x-api-key"] = apiKey;
+  }
+  return headers;
+}
+
+export async function apiJson(method, path, body, { headers: extraHeaders } = {}) {
+  const options = {
+    method,
+    headers: createApiHeaders(extraHeaders),
+  };
+  if (body !== undefined) {
+    options.body = JSON.stringify(body);
+  }
+
+  const res = await fetch(`/api/v1${path}`, options);
+  const json = await res.json().catch(() => null);
+  return { status: res.status, json, res };
+}
+
+export function installMockFetch(handler) {
+  const previousFetch = window.fetch;
+  const originalFetch = previousFetch.bind(window);
+  const mockFetch = async (input, init) => {
     const request = new Request(input, init);
     const url = new URL(request.url, window.location.origin);
     const mockedResponse = await handler({
-      input,
-      init,
       request,
       url,
       originalFetch,
@@ -89,12 +139,36 @@ export function installMockFetch(handler) {
       return mockedResponse;
     }
 
-    return originalFetch(input, init);
+    return originalFetch(request);
   };
+  window.fetch = mockFetch;
 
   return () => {
-    window.fetch = originalFetch;
+    // Only restore if this wrapper is still active so the common nested-mock
+    // case does not clobber a newer fetch wrapper.
+    if (window.fetch === mockFetch) {
+      window.fetch = previousFetch;
+    }
   };
+}
+
+export function primePrivacyNoticeAccepted(reset) {
+  reset?.();
+  document.cookie = "privacyNoticeAccepted=true; path=/";
+
+  return () => {
+    reset?.();
+    document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
+  };
+}
+
+export function cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState } = {}) {
+  dispose?.();
+  restoreFetch?.();
+  restoreBrowserState?.();
+  if (container?.parentNode === document.body) {
+    document.body.removeChild(container);
+  }
 }
 
 export function waitForCondition(predicate, timeoutMs = 5000, label = "condition") {
