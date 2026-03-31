@@ -11,12 +11,12 @@ import {
 import bedrock from "../providers/bedrock.js";
 import databricks from "../providers/databricks.js";
 import gemini from "../providers/gemini.js";
-import mock from "../providers/mock.js";
+import scripted from "../providers/scripted.js";
 
 import { validateInlineMessages } from "./upload-limits.js";
 
 export async function getModelProvider(value) {
-  const providers = { bedrock, databricks, gemini, mock };
+  const providers = { bedrock, databricks, gemini, scripted };
   const result = await db.query.Model.findFirst({
     where: eq(Model.internalName, value),
     with: { Provider: true },

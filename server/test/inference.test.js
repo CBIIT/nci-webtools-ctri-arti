@@ -9,7 +9,7 @@ const HAIKU_MODEL = "us.anthropic.claude-3-5-haiku-20241022-v1:0";
 
 test("runModel returns stream wrapper for streaming responses", async () => {
   const result = await runModel({
-    model: "mock-model",
+    model: "scripted-model",
     messages: [{ role: "user", content: [{ text: "stream wrapper test" }] }],
     stream: true,
   });

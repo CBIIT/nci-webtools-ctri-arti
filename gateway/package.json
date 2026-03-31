@@ -12,6 +12,7 @@
     "./providers/bedrock.js": "./providers/bedrock.js",
     "./providers/databricks.js": "./providers/databricks.js",
     "./providers/gemini.js": "./providers/gemini.js",
+    "./providers/scripted.js": "./providers/scripted.js",
     "./providers/mock.js": "./providers/mock.js",
     "./core/guardrails.js": "./core/guardrails.js",
     "./core/inference.js": "./core/inference.js",

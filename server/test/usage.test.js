@@ -38,9 +38,9 @@ test("trackModelUsage", async (t) => {
     [testModel] = await db
       .select()
       .from(Model)
-      .where(eq(Model.internalName, "mock-model"))
+      .where(eq(Model.internalName, "scripted-model"))
       .limit(1);
-    assert.ok(testModel, "Mock model should exist from seed");
+    assert.ok(testModel, "Scripted model should exist from seed");
 
     [guardrailModel] = await db
       .select()
@@ -58,7 +58,7 @@ test("trackModelUsage", async (t) => {
       cacheWriteInputTokens: 0,
     };
 
-    const records = await trackModelUsage(testUser.id, "mock-model", usageData);
+    const records = await trackModelUsage(testUser.id, "scripted-model", usageData);
     assert.ok(records, "Should create usage records");
     assert.ok(Array.isArray(records), "Should return an array");
 
@@ -98,7 +98,7 @@ test("trackModelUsage", async (t) => {
       cacheWriteInputTokens: 0,
     };
 
-    await trackModelUsage(testUser.id, "mock-model", usageData);
+    await trackModelUsage(testUser.id, "scripted-model", usageData);
 
     const [userAfter] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
     assert.ok(userAfter.remaining <= balanceBefore, "Balance should decrease or stay same");
@@ -107,7 +107,7 @@ test("trackModelUsage", async (t) => {
   await t.test("records guardrail costs without reducing user budget", async () => {
     const [userBefore] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
 
-    const records = await trackModelUsage(testUser.id, "mock-model", null, {
+    const records = await trackModelUsage(testUser.id, "scripted-model", null, {
       requestId: `guardrail-${Date.now()}`,
       trace: {
         guardrail: {
@@ -158,7 +158,7 @@ test("trackModelUsage", async (t) => {
   });
 
   await t.test("handles missing userId gracefully", async () => {
-    const result = await trackModelUsage(null, "mock-model", { inputTokens: 10 });
+    const result = await trackModelUsage(null, "scripted-model", { inputTokens: 10 });
     assert.strictEqual(result, undefined);
   });
 
@@ -170,7 +170,7 @@ test("trackModelUsage", async (t) => {
   });
 
   await t.test("handles missing usageData gracefully", async () => {
-    const result = await trackModelUsage(testUser.id, "mock-model", null);
+    const result = await trackModelUsage(testUser.id, "scripted-model", null);
     assert.strictEqual(result, undefined);
   });
 });
@@ -186,9 +186,9 @@ test("trackUsage", async (t) => {
     [testModel] = await db
       .select()
       .from(Model)
-      .where(eq(Model.internalName, "mock-model"))
+      .where(eq(Model.internalName, "scripted-model"))
       .limit(1);
-    assert.ok(testModel, "Mock model should exist from seed");
+    assert.ok(testModel, "Scripted model should exist from seed");
   });
 
   await t.test("creates usage rows for multiple items", async () => {
@@ -197,7 +197,7 @@ test("trackUsage", async (t) => {
       { quantity: 100, unit: "output_tokens" },
     ];
     const requestId = `usage-${Date.now()}`;
-    const records = await trackUsage(testUser.id, "mock-model", usageItems, {
+    const records = await trackUsage(testUser.id, "scripted-model", usageItems, {
       type: "chat",
       requestId,
     });
@@ -216,7 +216,7 @@ test("trackUsage", async (t) => {
 
   await t.test("computes cost from model pricing JSON", async () => {
     const usageItems = [{ quantity: 1000, unit: "input_tokens" }];
-    const records = await trackUsage(testUser.id, "mock-model", usageItems, { type: "chat" });
+    const records = await trackUsage(testUser.id, "scripted-model", usageItems, { type: "chat" });
     assert.ok(records);
 
     const row = records[0];
@@ -237,7 +237,7 @@ test("trackUsage", async (t) => {
       { quantity: 500, unit: "input_tokens" },
       { quantity: 250, unit: "output_tokens" },
     ];
-    await trackUsage(testUser.id, "mock-model", usageItems, { type: "chat" });
+    await trackUsage(testUser.id, "scripted-model", usageItems, { type: "chat" });
 
     const [userAfter] = await db.select().from(User).where(eq(User.id, testUser.id)).limit(1);
     assert.ok(userAfter.remaining <= balanceBefore, "balance should decrease or stay same");
@@ -251,12 +251,12 @@ test("trackUsage", async (t) => {
   });
 
   await t.test("returns undefined for empty usageItems", async () => {
-    const result = await trackUsage(testUser.id, "mock-model", []);
+    const result = await trackUsage(testUser.id, "scripted-model", []);
     assert.strictEqual(result, undefined);
   });
 
   await t.test("returns undefined for null usageItems", async () => {
-    const result = await trackUsage(testUser.id, "mock-model", null);
+    const result = await trackUsage(testUser.id, "scripted-model", null);
     assert.strictEqual(result, undefined);
   });
 });

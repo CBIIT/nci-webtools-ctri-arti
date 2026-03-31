@@ -11,27 +11,24 @@
  *   4. Parse the NDJSON stream (like runAgentServer/streamResponse in hooks.js)
  *   5. Verify tool loop, message persistence, and multi-turn context
  *
- * Uses mock-model for deterministic testing + real Brave Search for tool execution.
+ * Uses scripted-model for deterministic testing + real tool execution.
  * Runs in-browser during integration tests via ?test=1&apiKey=...
  */
 import assert from "/test/assert.js";
+import { apiJson as api, createApiHeaders } from "/test/helpers.js";
 import test from "/test/test.js";
 
-const urlParams = new URLSearchParams(window.location.search);
-const TEST_API_KEY = urlParams.get("apiKey");
+const SCRIPTED_MODEL = "scripted-model";
+const SCRIPTED_TOOL_USE_ID = "scripted_tool_1";
 
-function headers(extra = {}) {
-  const h = { "Content-Type": "application/json", ...extra };
-  if (TEST_API_KEY) h["x-api-key"] = TEST_API_KEY;
-  return h;
-}
-
-async function api(method, path, body) {
-  const opts = { method, headers: headers() };
-  if (body !== undefined) opts.body = JSON.stringify(body);
-  const res = await fetch(`/api/v1${path}`, opts);
-  const json = await res.json().catch(() => null);
-  return { status: res.status, json, res };
+function scriptedToolUse(name, input, toolUseId = SCRIPTED_TOOL_USE_ID) {
+  return JSON.stringify({
+    toolUse: {
+      toolUseId,
+      name,
+      input,
+    },
+  });
 }
 
 /**
@@ -74,10 +71,10 @@ async function readNdjsonStream(response) {
  * Simulate what chat-v2 hooks.js runAgentServer() does:
  * POST to /agents/:id/conversations/:id/chat, then stream-parse NDJSON.
  */
-async function sendChatMessage(agentId, conversationId, text, model = "mock-model") {
+async function sendChatMessage(agentId, conversationId, text, model = SCRIPTED_MODEL) {
   const response = await fetch(`/api/v1/agents/${agentId}/conversations/${conversationId}/chat`, {
     method: "POST",
-    headers: headers(),
+    headers: createApiHeaders(),
     body: JSON.stringify({
       message: { role: "user", content: [{ text }] },
       model,
@@ -181,15 +178,11 @@ test("Agent Chat E2E Tests", async (t) => {
   });
 
   // ── Test 1: Full tool-use loop ─────────────────────────────────────────
-  // Mirrors: user types "Search for NCI cancer research" and clicks Send.
-  // mock-model sees tools → returns tool_use → server executes real search → model sees results → end_turn
+  // Mirrors an explicit scripted tool call so the test controls when the agent loop enters tool_use.
 
-  await t.test("full loop: mock-model calls search tool, gets results, responds", async () => {
-    const { response, events } = await sendChatMessage(
-      agentId,
-      toolConversationId,
-      "Search for NCI cancer research"
-    );
+  await t.test("full loop: scripted-model calls search tool, gets results, responds", async () => {
+    const scriptedPrompt = scriptedToolUse("search", { query: "NCI cancer research" });
+    const { response, events } = await sendChatMessage(agentId, toolConversationId, scriptedPrompt);
 
     assert.ok(response.ok, `agent chat failed: ${response.status}`);
     assert.ok(events.length > 0, "should receive NDJSON events");
@@ -207,7 +200,7 @@ test("Agent Chat E2E Tests", async (t) => {
     // Should have toolResult events between the two model turns
     const toolResults = events.filter((e) => e.toolResult);
     assert.ok(toolResults.length >= 1, "should have at least one toolResult event");
-    assert.strictEqual(toolResults[0].toolResult.toolUseId, "mock_tool_1");
+    assert.strictEqual(toolResults[0].toolResult.toolUseId, SCRIPTED_TOOL_USE_ID);
 
     // Tool result should contain actual search results (from real Brave Search)
     const resultContent = toolResults[0].toolResult.content;
@@ -226,6 +219,10 @@ test("Agent Chat E2E Tests", async (t) => {
     const toolUseBlock = firstAssistant?.content?.find((c) => c.toolUse);
     assert.ok(toolUseBlock, "first assistant message should contain toolUse");
     assert.strictEqual(toolUseBlock.toolUse.name, "search", "tool should be search");
+    assert.ok(
+      toolUseBlock.toolUse.input.includes("NCI cancer research"),
+      "tool input should preserve the scripted search query"
+    );
   });
 
   // ── Test 2: Messages persisted correctly (server-side persistence) ─────
@@ -259,7 +256,11 @@ test("Agent Chat E2E Tests", async (t) => {
       // Verify the user message content
       const userText = messages[0].content?.find((c) => c.text);
       assert.ok(userText, "user message should have text");
-      assert.strictEqual(userText.text, "Search for NCI cancer research");
+      assert.strictEqual(
+        userText.text,
+        scriptedToolUse("search", { query: "NCI cancer research" }),
+        "persisted user message should preserve the full scripted tool-use payload"
+      );
 
       // Verify assistant tool_use message
       const toolUseBlock = messages[1].content?.find((c) => c.toolUse);
@@ -289,9 +290,7 @@ test("Agent Chat E2E Tests", async (t) => {
     assert.ok(response.ok, `second chat failed: ${response.status}`);
     assert.ok(events.length > 0, "should receive events for follow-up");
 
-    // Verify messages grew: 4 from first round + at least 2 from second (user + assistant)
-    // Note: mock-model sees existing tool results in context, so it may skip tool_use on the
-    // second turn and go straight to end_turn (2 new messages instead of 4).
+    // Follow-up uses plain text, so the scripted model should deterministically echo end_turn.
     const { json: messages } = await api("GET", `/conversations/${toolConversationId}/messages`);
     assert.ok(
       messages.length >= 6,
@@ -299,6 +298,8 @@ test("Agent Chat E2E Tests", async (t) => {
     );
     // Last message should be from the second round
     assert.strictEqual(messages.at(-1).role, "assistant", "last message should be assistant");
+    const finalText = messages.at(-1)?.content?.find((content) => content.text !== undefined);
+    assert.strictEqual(finalText?.text, "Follow-up question about the results");
   });
 
   // ── Test 4: Agent without tools → single end_turn (no tool loop) ──────
@@ -352,8 +353,8 @@ test("Agent Chat E2E Tests", async (t) => {
   await t.test("POST without message content returns 400", async () => {
     const response = await fetch(`/api/v1/agents/${agentId}/conversations/${conversationId}/chat`, {
       method: "POST",
-      headers: headers(),
-      body: JSON.stringify({ model: "mock-model" }),
+      headers: createApiHeaders(),
+      body: JSON.stringify({ model: SCRIPTED_MODEL }),
     });
     assert.strictEqual(response.status, 400, "should reject missing message content");
   });
@@ -413,15 +414,14 @@ test("Agent Chat E2E Tests", async (t) => {
     });
     assert.strictEqual(agentStatus, 201, `create recall agent: expected 201, got ${agentStatus}`);
 
-    // 2. Create conversation A with searchable text
-    // mock-model always sends {"query":"mock test"} for recall tool, so seed text matching that
+    // 2. Create conversation A with searchable text for the scripted recall query
     const { json: convA } = await api("POST", "/conversations", {
       title: "__recall_e2e_source__",
       agentId: recallAgent.id,
     });
     assert.ok(convA.id);
 
-    const seedText = "This is a mock test message for recall verification";
+    const seedText = "This is a recall verification message for scripted recall testing";
     await api("POST", `/conversations/${convA.id}/messages`, {
       role: "user",
       content: [{ text: seedText }],
@@ -431,7 +431,7 @@ test("Agent Chat E2E Tests", async (t) => {
     const { json: seededMessages } = await api("GET", `/conversations/${convA.id}/messages`);
     assert.ok(seededMessages.length >= 1, "seeded message should be persisted");
     assert.ok(
-      seededMessages[0].content.some((c) => c.text?.includes("mock test")),
+      seededMessages[0].content.some((c) => c.text?.includes("recall verification")),
       "seeded message should contain searchable text"
     );
 
@@ -442,11 +442,11 @@ test("Agent Chat E2E Tests", async (t) => {
     });
     assert.ok(convB.id);
 
-    // 5. Send message asking to search (mock-model will call recall with {"query":"mock test"})
+    // 5. Send an explicit scripted recall tool call
     const { response, events } = await sendChatMessage(
       recallAgent.id,
       convB.id,
-      "Search my past conversations"
+      scriptedToolUse("recall", { query: "recall verification" })
     );
 
     assert.ok(response.ok, `recall chat failed: ${response.status}`);
@@ -471,7 +471,7 @@ test("Agent Chat E2E Tests", async (t) => {
     // Tool result is wrapped as { json: { results: <string> } }
     const resultText = JSON.stringify(resultContent);
     assert.ok(
-      resultText.includes("mock test") || resultText.includes("Conversation Messages"),
+      resultText.includes("recall verification") || resultText.includes("Conversation Messages"),
       `toolResult should contain seeded text or recall sections, got: ${resultText.slice(0, 300)}`
     );
 

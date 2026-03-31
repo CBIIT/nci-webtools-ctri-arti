@@ -61,7 +61,7 @@ describe("gateway router", () => {
       .post("/usage")
       .send({
         userId: 7,
-        model: "mock-model",
+        model: "scripted-model",
         usageItems: [{ quantity: 1, unit: "input_tokens" }],
         options: { requestId: "req-gateway-usage" },
       });
@@ -69,7 +69,7 @@ describe("gateway router", () => {
     assert.equal(res.status, 200);
     assert.deepStrictEqual(res.body, {
       userId: 7,
-      model: "mock-model",
+      model: "scripted-model",
       usageItems: [{ quantity: 1, unit: "input_tokens" }],
       options: { requestId: "req-gateway-usage" },
     });

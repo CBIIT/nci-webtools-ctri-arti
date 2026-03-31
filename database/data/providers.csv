@@ -2,4 +2,4 @@ id,name,apiKey
 1,bedrock,null
 2,google,env:GEMINI_API_KEY
 3,databricks,"{""tenantId"": ""env:AZURE_TENANT_ID"", ""clientId"": ""env:AZURE_CLIENT_ID"", ""clientSecret"": ""env:AZURE_CLIENT_SECRET"", ""databricksHost"": ""env:DATABRICKS_HOST""}"
-99,mock,null
+99,scripted,null

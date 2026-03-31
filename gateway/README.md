@@ -16,7 +16,7 @@ HTTP routes, remote client, and parity coverage in the same change.
 - [http.js](http.js): shared HTTP route definitions
 - [remote.js](remote.js): HTTP client used by `server` in remote mode
 - [core/](core/): inference, usage, guardrails, and upload-limit logic
-- [providers/](providers/): Bedrock, Gemini, and mock provider adapters
+- [providers/](providers/): Bedrock, Gemini, and scripted provider adapters
 
 The root shows the deployable boundary. The actual domain code lives under `core/` and `providers/`.
 
