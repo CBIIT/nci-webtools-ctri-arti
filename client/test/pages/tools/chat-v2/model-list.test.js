@@ -1,5 +1,12 @@
 import assert from "/test/assert.js";
-import { installMockFetch, jsonResponse, mountApp, waitForElement } from "/test/helpers.js";
+import {
+  cleanupMountedApp,
+  installMockFetch,
+  jsonResponse,
+  mountApp,
+  primePrivacyNoticeAccepted,
+  waitForElement,
+} from "/test/helpers.js";
 import test from "/test/test.js";
 import { clearCachedData } from "/utils/static-data.js";
 
@@ -13,19 +20,9 @@ const sessionUser = {
   access: ADMIN_ACCESS,
 };
 
-function primeAuthenticatedBrowserState() {
-  clearCachedData();
-  document.cookie = "privacyNoticeAccepted=true; path=/";
-
-  return () => {
-    clearCachedData();
-    document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
-  };
-}
-
 test("Chat-V2 model selector uses /model/list", async () => {
   let requestedType = null;
-  const restoreBrowserState = primeAuthenticatedBrowserState();
+  const restoreBrowserState = primePrivacyNoticeAccepted(() => clearCachedData());
 
   const restoreFetch = installMockFetch(async ({ url, request }) => {
     if (url.pathname === "/api/v1/session") {
@@ -132,11 +129,6 @@ test("Chat-V2 model selector uses /model/list", async () => {
     );
     assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((error) => error.message)}`);
   } finally {
-    restoreBrowserState();
-    restoreFetch();
-    dispose();
-    if (container.parentNode === document.body) {
-      document.body.removeChild(container);
-    }
+    cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
   }
 });

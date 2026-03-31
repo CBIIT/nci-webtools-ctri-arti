@@ -1,9 +1,11 @@
 import { clearCachedData } from "../../utils/static-data.js";
 import assert from "../assert.js";
 import {
+  cleanupMountedApp,
   installMockFetch,
   jsonResponse,
   mountApp,
+  primePrivacyNoticeAccepted,
   waitForCondition,
   waitForElement,
 } from "../helpers.js";
@@ -11,12 +13,12 @@ import test from "../test.js";
 
 const ADMIN_ACCESS = { "*": { "*": true } };
 
-function setPrivacyNoticeAccepted(value) {
-  document.cookie = `privacyNoticeAccepted=${value}; path=/`;
-}
-
-function clearPrivacyNoticeAccepted() {
-  document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
+function getHomeCards(container) {
+  return Array.from(container.querySelectorAll("a.d-flex.align-items-center.my-3")).map((link) => ({
+    link,
+    href: link.getAttribute("href"),
+    title: link.querySelector(".font-title")?.textContent?.trim(),
+  }));
 }
 
 test("Home Page Tests", async (t) => {
@@ -55,21 +57,12 @@ test("Home Page Tests", async (t) => {
     });
 
     await t.test("/ renders all 4 tool cards", async () => {
-      await waitForCondition(
-        () => {
-          const links = container.querySelectorAll("a.d-flex.align-items-center.my-3");
-          return links.length === 4;
-        },
-        5000,
-        "home links loaded"
-      );
+      await waitForCondition(() => getHomeCards(container).length === 4, 5000, "home links loaded");
 
-      const links = container.querySelectorAll("a.d-flex.align-items-center.my-3");
-      assert.strictEqual(links.length, 4, `Expected 4 tool cards, got ${links.length}`);
+      const cards = getHomeCards(container);
+      assert.strictEqual(cards.length, 4, `Expected 4 tool cards, got ${cards.length}`);
 
-      const titles = Array.from(links).map((link) =>
-        link.querySelector(".font-title")?.textContent?.trim()
-      );
+      const titles = cards.map((card) => card.title);
       assert.ok(titles.includes("Chat"), "Should have Chat card");
       assert.ok(titles.includes("ConsentCrafter"), "Should have ConsentCrafter card");
       assert.ok(titles.includes("Translator"), "Should have Translator card");
@@ -79,22 +72,15 @@ test("Home Page Tests", async (t) => {
 
     await t.test("/ tool card links point to correct URLs", async () => {
       await waitForCondition(
-        () => {
-          const hrefs = Array.from(
-            container.querySelectorAll("a.d-flex.align-items-center.my-3")
-          ).map((link) => link.getAttribute("href"));
-          return (
-            hrefs.includes("/tools/chat") &&
-            hrefs.includes("/tools/consent-crafter") &&
-            hrefs.includes("/tools/translator")
-          );
-        },
+        () =>
+          ["/tools/chat", "/tools/consent-crafter", "/tools/translator"].every((href) =>
+            getHomeCards(container).some((card) => card.href === href)
+          ),
         5000,
         "home link hrefs loaded"
       );
 
-      const links = container.querySelectorAll("a.d-flex.align-items-center.my-3");
-      const hrefs = Array.from(links).map((link) => link.getAttribute("href"));
+      const hrefs = getHomeCards(container).map((card) => card.href);
       assert.ok(hrefs.includes("/tools/chat"), "Should have /tools/chat link");
       assert.ok(
         hrefs.includes("/tools/consent-crafter"),
@@ -105,9 +91,8 @@ test("Home Page Tests", async (t) => {
     });
 
     await t.test("/ New Tools card has disabled state", async () => {
-      const newToolsLink = Array.from(
-        container.querySelectorAll("a.d-flex.align-items-center.my-3")
-      ).find((link) => link.querySelector(".font-title")?.textContent?.trim() === "New Tools");
+      const newToolsCard = getHomeCards(container).find((card) => card.title === "New Tools");
+      const newToolsLink = newToolsCard?.link;
 
       assert.ok(newToolsLink, "New Tools link should exist");
       assert.ok(
@@ -129,11 +114,7 @@ test("Home Page Tests", async (t) => {
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
   } finally {
-    restoreFetch();
-    dispose();
-    if (container.parentNode === document.body) {
-      document.body.removeChild(container);
-    }
+    cleanupMountedApp({ container, dispose, restoreFetch });
   }
 });
 
@@ -178,9 +159,7 @@ test("Home Page Access Tests", async (t) => {
     await t.test("/ hides tools without policy access for regular users", async () => {
       await waitForCondition(
         () => {
-          const titles = Array.from(
-            container.querySelectorAll("a.d-flex.align-items-center.my-3")
-          ).map((link) => link.querySelector(".font-title")?.textContent?.trim());
+          const titles = getHomeCards(container).map((card) => card.title);
           return (
             !titles.includes("Chat") &&
             titles.includes("ConsentCrafter") &&
@@ -192,10 +171,7 @@ test("Home Page Access Tests", async (t) => {
         "home policy links applied"
       );
 
-      const links = container.querySelectorAll("a.d-flex.align-items-center.my-3");
-      const titles = Array.from(links).map((link) =>
-        link.querySelector(".font-title")?.textContent?.trim()
-      );
+      const titles = getHomeCards(container).map((card) => card.title);
 
       assert.ok(!titles.includes("Chat"), "Should hide Chat card");
       assert.ok(titles.includes("ConsentCrafter"), "Should keep ConsentCrafter card");
@@ -204,11 +180,7 @@ test("Home Page Access Tests", async (t) => {
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
   } finally {
-    restoreFetch();
-    dispose();
-    if (container.parentNode === document.body) {
-      document.body.removeChild(container);
-    }
+    cleanupMountedApp({ container, dispose, restoreFetch });
   }
 });
 
@@ -265,18 +237,14 @@ test("Protected Route Access Tests", async (t) => {
     });
   } finally {
     clearCachedData();
-    restoreFetch();
-    dispose();
-    if (container.parentNode === document.body) {
-      document.body.removeChild(container);
-    }
+    cleanupMountedApp({ container, dispose, restoreFetch });
   }
 });
 
 test("Inactivity Dialog Tests", async (t) => {
   await t.test("warning appears and Extend Session works", async () => {
     sessionStorage.removeItem("sessionTimedOut");
-    setPrivacyNoticeAccepted("true");
+    const restoreBrowserState = primePrivacyNoticeAccepted();
 
     const nearExpiry = new Date(Date.now() + 10 * 1000).toISOString();
     const initialExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
@@ -357,18 +325,13 @@ test("Inactivity Dialog Tests", async (t) => {
       assert.strictEqual(authCtx.expires(), farFutureExpiry);
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      restoreFetch();
-      dispose();
-      if (container.parentNode === document.body) {
-        document.body.removeChild(container);
-      }
-      clearPrivacyNoticeAccepted();
+      cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
     }
   });
 
   await t.test("skips warning when server expiry was rolled forward", async () => {
     sessionStorage.removeItem("sessionTimedOut");
-    setPrivacyNoticeAccepted("true");
+    const restoreBrowserState = primePrivacyNoticeAccepted();
 
     const nearExpiry = new Date(Date.now() + 10 * 1000).toISOString();
     const initialExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
@@ -426,12 +389,7 @@ test("Inactivity Dialog Tests", async (t) => {
       );
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      restoreFetch();
-      dispose();
-      if (container.parentNode === document.body) {
-        document.body.removeChild(container);
-      }
-      clearPrivacyNoticeAccepted();
+      cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
     }
   });
 });

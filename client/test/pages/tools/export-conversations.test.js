@@ -2,9 +2,11 @@ import { dbFactory } from "../../../models/database.js";
 import { clearCachedData } from "../../../utils/static-data.js";
 import assert from "../../assert.js";
 import {
+  cleanupMountedApp,
   installMockFetch,
   jsonResponse,
   mountApp,
+  primePrivacyNoticeAccepted,
   waitForCondition,
   waitForElement,
 } from "../../helpers.js";
@@ -20,16 +22,6 @@ const sessionUser = {
   Role: { id: 1, name: "admin" },
   access: ADMIN_ACCESS,
 };
-
-function primeAuthenticatedBrowserState() {
-  clearCachedData();
-  document.cookie = "privacyNoticeAccepted=true; path=/";
-
-  return () => {
-    clearCachedData();
-    document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
-  };
-}
 
 function installSessionMock() {
   return installMockFetch(({ url }) => {
@@ -58,7 +50,7 @@ function overrideDbFactory(getDBImpl) {
 
 test("Export Conversations Page Tests", async (t) => {
   await t.test("renders the export table with 0 records when IndexedDB is empty", async () => {
-    const restoreBrowserState = primeAuthenticatedBrowserState();
+    const restoreBrowserState = primePrivacyNoticeAccepted(() => clearCachedData());
     const restoreFetch = installSessionMock();
     const restoreDbFactory = overrideDbFactory(async () => ({
       db: {
@@ -88,18 +80,13 @@ test("Export Conversations Page Tests", async (t) => {
       assert.ok(exportButton?.disabled, "Export button should be disabled with 0 records");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      restoreBrowserState();
       restoreDbFactory();
-      restoreFetch();
-      dispose();
-      if (container.parentNode === document.body) {
-        document.body.removeChild(container);
-      }
+      cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
     }
   });
 
   await t.test("renders the export table with 0 records when IndexedDB fails to load", async () => {
-    const restoreBrowserState = primeAuthenticatedBrowserState();
+    const restoreBrowserState = primePrivacyNoticeAccepted(() => clearCachedData());
     const restoreFetch = installSessionMock();
     const restoreDbFactory = overrideDbFactory(async () => {
       throw new Error("IndexedDB unavailable");
@@ -120,13 +107,8 @@ test("Export Conversations Page Tests", async (t) => {
       assert.ok(exportButton?.disabled, "Export button should be disabled after DB load failure");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     } finally {
-      restoreBrowserState();
       restoreDbFactory();
-      restoreFetch();
-      dispose();
-      if (container.parentNode === document.body) {
-        document.body.removeChild(container);
-      }
+      cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
     }
   });
 });

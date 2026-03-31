@@ -3,6 +3,7 @@ import { render } from "solid-js/web";
 
 import Message from "../../../../pages/tools/chat/message.js";
 import assert from "../../../assert.js";
+import { cleanupMountedApp } from "../../../helpers.js";
 import test from "../../../test.js";
 
 test("Chat Message Component Tests", async (t) => {
@@ -13,9 +14,10 @@ test("Chat Message Component Tests", async (t) => {
     };
 
     const container = document.createElement("div");
+    let dispose;
     try {
       document.body.appendChild(container);
-      render(
+      dispose = render(
         () => html`<${Message} message=${message} messages=${[message]} index=${0} />`,
         container
       );
@@ -24,7 +26,7 @@ test("Chat Message Component Tests", async (t) => {
       assert.ok(content.querySelector("ul"), "Should render markdown list");
       assert.ok(content.querySelector("code"), "Should render markdown code");
     } finally {
-      document.body.removeChild(container);
+      cleanupMountedApp({ container, dispose });
     }
   });
 
@@ -34,10 +36,11 @@ test("Chat Message Component Tests", async (t) => {
       content: [{ text: "Test message" }],
     };
 
-    let container = document.createElement("div");
+    const container = document.createElement("div");
+    let dispose;
     try {
       document.body.appendChild(container);
-      render(
+      dispose = render(
         () =>
           Message({
             message,
@@ -67,7 +70,7 @@ test("Chat Message Component Tests", async (t) => {
         "Dialog should be shown when feedback button is clicked"
       );
     } finally {
-      document.body.removeChild(container);
+      cleanupMountedApp({ container, dispose });
     }
   });
 

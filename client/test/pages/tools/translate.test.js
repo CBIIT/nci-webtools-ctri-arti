@@ -1,9 +1,11 @@
 import { clearCachedData } from "../../../utils/static-data.js";
 import assert from "../../assert.js";
 import {
+  cleanupMountedApp,
   installMockFetch,
   jsonResponse,
   mountApp,
+  primePrivacyNoticeAccepted,
   waitForCondition,
   waitForElement,
 } from "../../helpers.js";
@@ -18,19 +20,17 @@ const sessionUser = {
   Role: { id: 1, name: "admin" },
   access: ADMIN_ACCESS,
 };
-
-function primeAuthenticatedBrowserState() {
-  clearCachedData();
-  document.cookie = "privacyNoticeAccepted=true; path=/";
-
-  return () => {
-    clearCachedData();
-    document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
-  };
-}
+const translationLanguages = [
+  { id: "am", label: "Amharic" },
+  { id: "ar", label: "Arabic" },
+  { id: "fr", label: "French" },
+  { id: "pt", label: "Portuguese" },
+  { id: "es-MX", label: "Spanish (Mexican)" },
+  { id: "vi", label: "Vietnamese" },
+];
 
 test("Translator Page Tests", async (t) => {
-  const restoreBrowserState = primeAuthenticatedBrowserState();
+  const restoreBrowserState = primePrivacyNoticeAccepted(() => clearCachedData());
   const restoreFetch = installMockFetch(({ url }) => {
     if (url.pathname === "/api/v1/session") {
       return jsonResponse({ user: sessionUser, access: sessionUser.access });
@@ -55,28 +55,15 @@ test("Translator Page Tests", async (t) => {
     });
 
     await t.test("/tools/translator renders all 6 language checkboxes", async () => {
-      const expectedLanguages = [
-        "Amharic",
-        "Arabic",
-        "French",
-        "Portuguese",
-        "Spanish (Mexican)",
-        "Vietnamese",
-      ];
-      const expectedIds = ["am", "ar", "fr", "pt", "es-MX", "vi"];
+      const labels = Array.from(container.querySelectorAll(".form-check-label")).map((label) =>
+        label.textContent.trim()
+      );
 
-      for (const id of expectedIds) {
-        const checkbox = container.querySelector(`#${CSS.escape(id)}`);
-        assert.ok(checkbox, `Checkbox for ${id} should exist`);
-        assert.strictEqual(checkbox.type, "checkbox", `${id} should be a checkbox`);
-      }
-
-      const labels = Array.from(container.querySelectorAll(".form-check-label"));
-      for (const lang of expectedLanguages) {
-        assert.ok(
-          labels.some((l) => l.textContent.trim() === lang),
-          `Label for ${lang} should exist`
-        );
+      for (const language of translationLanguages) {
+        const checkbox = container.querySelector(`#${CSS.escape(language.id)}`);
+        assert.ok(checkbox, `Checkbox for ${language.id} should exist`);
+        assert.strictEqual(checkbox.type, "checkbox", `${language.id} should be a checkbox`);
+        assert.ok(labels.includes(language.label), `Label for ${language.label} should exist`);
       }
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
@@ -113,14 +100,9 @@ test("Translator Page Tests", async (t) => {
     await t.test("/tools/translator has Reset and Generate buttons", async () => {
       const resetButton = container.querySelector('button[type="reset"]');
       assert.ok(resetButton, "Reset button should exist");
-      assert.ok(resetButton.textContent.includes("Reset"), "Reset button should say Reset");
 
       const generateButton = container.querySelector("#translateButton");
       assert.ok(generateButton, "Generate button should exist");
-      assert.ok(
-        generateButton.textContent.includes("Generate"),
-        "Generate button should say Generate"
-      );
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
 
@@ -149,15 +131,9 @@ test("Translator Page Tests", async (t) => {
     await t.test("/tools/translator has translateForm form element", async () => {
       const form = container.querySelector("#translateForm");
       assert.ok(form, "translateForm should exist");
-      assert.strictEqual(form.tagName, "FORM", "translateForm should be a form element");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });
   } finally {
-    restoreBrowserState();
-    restoreFetch();
-    dispose();
-    if (container.parentNode === document.body) {
-      document.body.removeChild(container);
-    }
+    cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
   }
 });

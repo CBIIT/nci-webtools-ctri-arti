@@ -1,5 +1,13 @@
 import assert from "/test/assert.js";
-import { installMockFetch, jsonResponse, mountApp, waitForElement } from "/test/helpers.js";
+import {
+  cleanupMountedApp,
+  installMockFetch,
+  jsonResponse,
+  mountApp,
+  primePrivacyNoticeAccepted,
+  waitForCondition,
+  waitForElement,
+} from "/test/helpers.js";
 import test from "/test/test.js";
 
 import { clearAllAlerts } from "../../../../utils/alerts.js";
@@ -15,19 +23,11 @@ const LIMIT_MESSAGE =
   "disabled and will reset tomorrow at 12:00 AM. If you need assistance or believe this is an " +
   "error, please contact the Research Optimizer helpdesk at CTRIBResearchOptimizer@mail.nih.gov.";
 
-function primeAuthenticatedBrowserState() {
-  clearCachedData();
-  document.cookie = "privacyNoticeAccepted=true; path=/";
-
-  return () => {
-    clearCachedData();
-    document.cookie = "privacyNoticeAccepted=; max-age=0; path=/";
-  };
-}
-
 test("Chat-V2 shows an alert when the server rejects chat with a usage-limit error", async () => {
   clearAllAlerts();
-  const restoreBrowserState = primeAuthenticatedBrowserState();
+  const restoreBrowserState = primePrivacyNoticeAccepted(() => clearCachedData());
+  let titleUpdated = false;
+  let conversationsReloaded = false;
 
   const restoreFetch = installMockFetch(async ({ url, request }) => {
     if (url.pathname === "/api/v1/session") {
@@ -61,6 +61,9 @@ test("Chat-V2 shows an alert when the server rejects chat with a usage-limit err
     }
 
     if (url.pathname === "/api/v1/conversations" && request.method === "GET") {
+      if (titleUpdated) {
+        conversationsReloaded = true;
+      }
       return jsonResponse([]);
     }
 
@@ -76,8 +79,24 @@ test("Chat-V2 shows an alert when the server rejects chat with a usage-limit err
       return jsonResponse({ id: 101, title: "Untitled" });
     }
 
+    if (url.pathname === "/api/v1/conversations/101" && request.method === "PUT") {
+      titleUpdated = true;
+      return jsonResponse({ id: 101, title: "Usage Limit" });
+    }
+
     if (url.pathname === "/api/v1/model/list" && request.method === "GET") {
       return jsonResponse([]);
+    }
+
+    if (url.pathname === "/api/v1/model/invoke" && request.method === "POST") {
+      return jsonResponse({
+        output: {
+          message: {
+            role: "assistant",
+            content: [{ text: "Usage Limit" }],
+          },
+        },
+      });
     }
 
     if (url.pathname === "/api/v1/agents/1/conversations/101/chat" && request.method === "POST") {
@@ -111,13 +130,13 @@ test("Chat-V2 shows an alert when the server rejects chat with a usage-limit err
 
     assert.ok(alert, "expected the usage-limit alert to render");
     assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((error) => error?.message)}`);
+    await waitForCondition(
+      () => titleUpdated && conversationsReloaded,
+      1000,
+      "chat-v2 alert title update"
+    );
   } finally {
     clearAllAlerts();
-    restoreBrowserState();
-    restoreFetch();
-    dispose();
-    if (container.parentNode === document.body) {
-      document.body.removeChild(container);
-    }
+    cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
   }
 });
