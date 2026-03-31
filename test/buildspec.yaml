@@ -1,0 +1,74 @@
+version: 0.2
+
+env:
+    shell: bash
+
+    ### ARNs are provided via CDK as environment variables, referenced here
+    secrets-manager:
+        AutoTestingUserId: ${AUTO_TESTING_USER_ID_SECRET_ARN}
+        AutoTestingUserPassword: ${AUTO_TESTING_USER_PASSWORD_SECRET_ARN}
+
+    variables:
+        CHROME_VERSION: "139.0.7258.154-1"
+        TIER: ${TIER}
+        tier: ${TIER}
+        AWS_ENV: ${AWS_ENV} ### non-prod vs. prod aws-accounts
+        GitBranch: ${GIT_BRANCH}
+
+phases:
+    install:
+        runtime-versions:
+            nodejs: "22"
+        commands:
+          - pwd
+        #   - env ### Warning! This will attempt to print ALL secrets !!
+          - curl -s https://checkip.amazonaws.com
+          - curl -s http://ipinfo.io/ip || true
+          - npm i --include-dev
+          - npm --version; node --version; npx cdk --version
+
+    build:
+        commands:
+          - git clone https://github.com/CBIIT/nci-ctri-arti-bddtests
+          - wget --no-verbose https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}_amd64.deb
+          - apt-get update --quiet -y
+          - apt-get install --quiet -y --allow-downgrades ./google-chrome*.deb
+          - which google-chrome
+          - which google-chrome-stable
+
+          - echo ==============
+          - echo ==== STAGE ====
+          - export STAGE=${TIER}
+          - echo $STAGE
+          - echo ==== tier ====
+          - export TIER=${TIER}; export tier=${TIER} ### case-sensitive env vars
+          - echo TIER=$TIER
+          - echo tier=$tier
+          - echo ==== AWS-Environment ====
+          - export aws_env=${AWS_ENV}
+          - echo $aws_env
+          - echo ==== Git-branch ====
+          - export git_branch=${GIT_BRANCH}
+          - echo $git_branch
+
+          - echo ==== frontend urls ====
+          - echo 'The AppUrl is:'
+          - echo ${AppUrl}
+
+          - echo ==============
+          - export PROJECT_ROOT=$(pwd)
+          - echo $PROJECT_ROOT
+          - echo "Actual automated-testing STARTED:"
+          - date
+          - cd nci-ctri-arti-bddtests/
+          - /bin/bash -c "source my-init"
+
+    post_build:
+        commands:
+          - echo "Build completed on `date`"
+
+# reports:
+#     cucumber_reports:
+#         files: cucumber-output-chromeHeadless.json
+#         base-directory: nci-ctri-arti-bddtests/bdd_tests/cucumber_results
+#         file-format: CUCUMBERJSON

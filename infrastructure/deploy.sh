@@ -20,6 +20,8 @@ export TIER=${TIER:?TIER must be set}
 export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID:?AWS_ACCOUNT_ID must be set}
 export AWS_REGION=${AWS_REGION:?AWS_REGION must be set}
 export GITHUB_SHA=${GITHUB_SHA:-$(git rev-parse HEAD)}
+export GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+export GITHUB_REPOSITORY=$( git ls-remote --get-url | sed -e 's/..*github.com\/\(.*\)/\1/' )
 
 export PREFIX=ctri-research-optimizer-$TIER
 export ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
@@ -108,4 +110,4 @@ docker push $USERS_IMAGE
 docker push $USERS_IMAGE_LATEST
 
 cd infrastructure
-cdk deploy $PREFIX-ecs-service --require-approval never
+cdk deploy $PREFIX-ecs-service --require-approval never --context GIT_BRANCH="${GIT_BRANCH}"

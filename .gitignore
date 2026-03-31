@@ -2,6 +2,9 @@ node_modules
 venv
 *.pem
 *.env
+**/.env
+**/.env-*
+**/.env.sh
 **/*/cdk.context.json
 /postgres
 /tmp

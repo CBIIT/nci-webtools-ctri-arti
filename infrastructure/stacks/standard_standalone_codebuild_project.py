@@ -1,0 +1,496 @@
+"""
+CDK Stack for creating standalone CodeBuild projects for automated testing.
+
+This module creates CodeBuild projects with:
+- Standard build environments
+- IAM permissions for CDK deployments, ECR, CodeArtifact, etc.
+- CloudWatch logging
+- Environment variable configuration from .env files
+"""
+
+import os
+import re
+from enum import Enum
+from typing import Dict, Optional, List
+from pathlib import Path
+import yaml
+import json
+
+from constructs import Construct
+from aws_cdk import (
+    Stack,
+    StackProps,
+    RemovalPolicy,
+    Duration,
+    aws_iam,
+    aws_ec2,
+    aws_logs,
+    aws_codebuild,
+)
+
+### ======================================================================================================
+
+# CDK_APP_NAME constant - matches project structure
+CDK_APP_NAME = "research-optimizer"
+# CDK_APP_NAME = "CTRI-webtools"
+
+BUILDSPEC_FILE_PATH = Path(__file__).parent.parent.parent / "test" / "buildspec.yaml"
+print("Using buildspec file at: ", BUILDSPEC_FILE_PATH)
+BUILDSPEC_MAX_INLINE_SIZE = 25600  # CodeBuild inline buildspec limit in bytes
+
+class CodeBuildProjectNames(Enum):
+    """Enum for different CodeBuild project types."""
+    AUTOMATED_TESTING = "auto-testing"
+    # GATEWAY = "gateway"
+    # CMS = "cms"
+    # CLIENT = "client"
+
+### ===================================
+
+class CdkCodeBuildStackProps:
+    """Properties for CdkCodeBuildStack."""
+
+    def __init__(
+        self,
+        tier: str,
+        aws_env: str,
+        vpc_name: str,
+        subnets: List[str],
+        dmz_subnets: Optional[List[str]] = None,
+        webapp_subnets: Optional[List[str]] = None,
+        db_subnets: Optional[List[str]] = None,
+        security_group: Optional[str] = None,
+        # ecr_repository : str,
+    ):
+        self.tier = tier
+        self.aws_env = aws_env
+        self.vpc_name = vpc_name
+        self.subnets = subnets
+        ### optional properties
+        self.dmz_subnets = dmz_subnets
+        self.webapp_subnets = webapp_subnets
+        self.db_subnets = db_subnets
+        self.security_group = security_group
+
+        # ecr_repository = f"{CDK_APP_NAME}-{which_codebuild_project.value}-repo"
+
+
+### ======================================================================================================
+
+
+def get_codebuild_env_vars(
+    stk: Stack,
+    props: CdkCodeBuildStackProps,
+    vpc: aws_ec2.IVpc,
+    which_codebuild_project: CodeBuildProjectNames,
+) -> Dict[str, aws_codebuild.BuildEnvironmentVariable]:
+    """
+    Get environment variables for CodeBuild project.
+
+    Args:
+        stk: CDK Stack instance
+        props: Stack properties
+        vpc: VPC for the CodeBuild project
+        which_codebuild_project: Type of CodeBuild project
+
+    Returns:
+        Dictionary of environment variables for CodeBuild
+    """
+
+    ### Since CloudOne aws-acct has -NO- concept of public-subnet !!
+    # public_subnets = ",".join([
+    #     subnet.subnet_id
+    #     for subnet in vpc.public_subnets   ### Public !
+    #     if subnet.availability_zone in vpc.availability_zones
+    # ])
+
+    ### Since CloudOne aws-acct has 3 types of "egress" subnets.. we have to explicitly specify them!
+    # private_subnets = ",".join([
+    #     subnet.subnet_id
+    #     for subnet in vpc.private_subnets   ### Private !!
+    #     if subnet.availability_zone in vpc.availability_zones
+    # ])
+
+    # Load overriding entries from .env file
+    overrides = load_env_vars_from_file(stk, which_codebuild_project)
+
+    github_branch = stk.node.try_get_context("GIT_BRANCH")
+    print(f"Context variable GIT_BRANCH = '{github_branch}'")
+    # github_sha = stk.node.try_get_context("GITHUB_SHA")
+    # print(f"Context variable GITHUB_SHA = '{github_sha}'")
+
+    # if ( props.subnets == None or len(props.subnets) == 0 ) and (props.dmz_subnets == None or len(props.dmz_subnets) == 0) and (props.webapp_subnets == None or len(props.webapp_subnets) == 0) and (props.db_subnets == None or len(props.db_subnets) == 0):
+    if ( props.subnets == None or len(props.subnets) == 0 ):
+        raise ValueError("!! ERROR !! Missing subnets (within CdkCodeBuildStackProps).  Must be defined in config.py!")
+    # if ( props.dmz_subnets == None or len(props.dmz_subnets) == 0 ):
+    #     raise ValueError("!! ERROR !! Missing dmz_subnets (within CdkCodeBuildStackProps).  Must be defined in config.py!")
+    # if ( props.webapp_subnets == None or len(props.webapp_subnets) == 0 ):
+    #     raise ValueError("!! ERROR !! Missing webapp_subnets (within CdkCodeBuildStackProps).  Must be defined in config.py!")
+    # if ( props.db_subnets == None or len(props.db_subnets) == 0 ):
+    #     raise ValueError("!! ERROR !! Missing db_subnets (within CdkCodeBuildStackProps).  Must be defined in config.py!")
+
+    # Build environment variables based on project type
+    if which_codebuild_project == CodeBuildProjectNames.AUTOMATED_TESTING:
+        env_vars = {
+            "TIER": aws_codebuild.BuildEnvironmentVariable(value=props.tier),
+            "AWS_ENV": aws_codebuild.BuildEnvironmentVariable(value=props.aws_env),
+            "GIT_BRANCH": aws_codebuild.BuildEnvironmentVariable( value=github_branch if github_branch else "ERROR-Missing-GitBranch" ),
+            # "GITHUB_SHA": aws_codebuild.BuildEnvironmentVariable(value=github_sha if github_sha else "Missing-GitSha" ),
+            # "AppUrl": aws_codebuild.BuildEnvironmentVariable( value=overrides.get("AppUrl", overrides.get("DOMAIN_NAME")) ),
+
+            "AWS_ACCOUNT_ID": aws_codebuild.BuildEnvironmentVariable(value=stk.account),
+            "AWS_REGION": aws_codebuild.BuildEnvironmentVariable(value=stk.region),
+            # "VPC_ID": aws_codebuild.BuildEnvironmentVariable(value=props.vpc_id),
+            # "AVAILABILITY_ZONES": aws_codebuild.BuildEnvironmentVariable( value=",".join(vpc.availability_zones) ),
+            "SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.subnets)),
+            "DMZ_SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.dmz_subnets) if props.dmz_subnets else ",".join(props.subnets)),
+            # "WEBAPP_SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.webapp_subnets) if props.webapp_subnets else ",".join(props.subnets)),
+            # "DB_SUBNETS": aws_codebuild.BuildEnvironmentVariable(value=",".join(props.db_subnets) if props.db_subnets else ",".join(props.subnets)),
+        }
+        ### optional env-vars
+        if props.security_group:
+            env_vars["SECURITY_GROUP"] = aws_codebuild.BuildEnvironmentVariable(value=props.security_group)
+
+        # Add Secrets Manager ARNs as plain env vars - these ARNs are used in buildspec's secrets-manager section
+        # This way the actual secret values are only accessible via secrets-manager syntax, not as regular env vars
+        if "AUTO_TESTING_USER_ID_SECRET_ARN" in overrides:
+            env_vars["AUTO_TESTING_USER_ID_SECRET_ARN"] = aws_codebuild.BuildEnvironmentVariable(
+                value=overrides["AUTO_TESTING_USER_ID_SECRET_ARN"]
+            )
+
+        if "AUTO_TESTING_USER_PASSWORD_SECRET_ARN" in overrides:
+            env_vars["AUTO_TESTING_USER_PASSWORD_SECRET_ARN"] = aws_codebuild.BuildEnvironmentVariable(
+                value=overrides["AUTO_TESTING_USER_PASSWORD_SECRET_ARN"]
+            )
+
+        return env_vars
+
+    return {}
+
+
+
+### ======================================================================================================
+
+
+class CodeBuildProjects(Construct):
+    """
+    CDK Stack for creating CodeBuild projects.
+
+    Want to add Env-Vars to it? Use a `.env` file at top of project.
+    In that `.env` file you can use `${this.<property>}` to reference CDK properties like account, region, etc.
+
+    In addition to what is in `.env`, the CodeBuild-project will automatically have the following ENV-VARS:
+    - AWS_ACCOUNT_ID
+    - AWS_REGION
+    - APP_ENV
+    - VPC_NAME
+    - SECURITY_GROUP
+    - PUBLIC_SUBNETS
+    - PRIVATE_SUBNETS
+    - ECR_REPOSITORY
+    """
+
+    def __init__(
+        self,
+        scope: Construct,
+        id: str,
+        props: CdkCodeBuildStackProps,
+    ) -> None:
+        super().__init__(scope, id)
+        stk = Stack.of(self)
+
+        print(f"Creating CodeBuild stack with props:")
+        print( json.dumps(props.__dict__, indent=4) )
+        if props.vpc_name == None:
+            props.vpc_name = f"vpc-{props.tier}-{stk.region}"
+        print(f"Using VPC name: '{props.vpc_name}'")
+        vpc = aws_ec2.Vpc.from_lookup(self, "Vpc", vpc_name=props.vpc_name, is_default=False)
+
+        # Create one CodeBuild project for each project type
+        for buildspec_type in CodeBuildProjectNames:
+            self._create_single_codebuild(
+                buildspec_type,
+                vpc,
+                str(BUILDSPEC_FILE_PATH),
+                props,
+            )
+
+    ### -------------------------------------------------------------------------
+
+    def _create_single_codebuild(
+        self,
+        which_codebuild_project: CodeBuildProjectNames,
+        vpc: aws_ec2.IVpc,
+        buildspec_filepath: str,
+        props: CdkCodeBuildStackProps,
+    ) -> None:
+        """Create a single CodeBuild project with standard permissions."""
+        stk = Stack.of(self)
+
+        project_name = f"{CDK_APP_NAME}-{props.tier}-{which_codebuild_project.value}"
+
+        ### Get CodeBuild's buildspec from a file.
+        full_path = Path(__file__).parent.parent / buildspec_filepath # Path relative to infrastructure directory
+        if full_path.exists():
+            stats = full_path.stat()
+            if stats.st_size <= BUILDSPEC_MAX_INLINE_SIZE:
+                with open(full_path, "r") as f:
+                    content = yaml.safe_load(f)
+                build_spec = aws_codebuild.BuildSpec.from_object(content)
+            else:
+                build_spec = aws_codebuild.BuildSpec.from_asset(buildspec_filepath)
+        else:
+            raise FileNotFoundError(f"Buildspec file not found: {full_path}")
+
+        ### Create CodeBuild project
+        cbproj = aws_codebuild.Project(
+            self,
+            f"CodeBuildProject={which_codebuild_project.value}",
+            project_name=project_name,
+            build_spec=build_spec,
+            environment=aws_codebuild.BuildEnvironment(
+                build_image=aws_codebuild.LinuxBuildImage.STANDARD_7_0,
+                environment_variables=get_codebuild_env_vars(
+                    stk, props, vpc, which_codebuild_project
+                ),
+            ),
+            vpc=vpc,
+            subnet_selection=aws_ec2.SubnetSelection(subnets=props.subnets), # type: ignore
+                    ### TODO -- switch above to `props.web_subnets` once we have those defined in config.py and in the env-vars for CodeBuild
+            logging=aws_codebuild.LoggingOptions(
+                cloud_watch=aws_codebuild.CloudWatchLoggingOptions(
+                    log_group=aws_logs.LogGroup(
+                        self,
+                        f"CodeBuildLogGroup-{which_codebuild_project.value}",
+                        retention=aws_logs.RetentionDays.ONE_YEAR,
+                        removal_policy=RemovalPolicy.DESTROY if (props.tier in ["dev", "qa"]) else RemovalPolicy.RETAIN,
+                    ),
+                ),
+            ),
+        )
+
+        ### Add IAM permissions
+        self._add_iam_permissions(props, cbproj)
+
+    ### -------------------------------------------------------------------------
+
+    def _add_iam_permissions(self,
+        props: CdkCodeBuildStackProps,
+        cbproj: aws_codebuild.Project,
+    ) -> None:
+        """Add standard IAM permissions to CodeBuild project role."""
+        stk = Stack.of(self)
+
+        ### Secrets Manager access
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccesstoCodeBuildSecrets",
+                actions=["secretsmanager:GetSecretValue"],
+                resources=[
+                    f"arn:aws:secretsmanager:{stk.region}:{stk.account}:secret:{props.tier}-*",
+                    f"arn:aws:secretsmanager:{stk.region}:{stk.account}:secret:ctri*",
+                ],
+            )
+        )
+
+        ### CloudFormation permissions
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccessToCloudFormation",
+                actions=["cloudformation:*"],
+                resources=["*"],
+            )
+        )
+
+        ### SSM and CloudFormation
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="TODOAllowSSMActions",
+                actions=["ssm:*", "cloudformation:*"],
+                resources=["*"],
+            )
+        )
+
+        ### S3 permissions for CDK assets
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccessToCDKAssetsBucket",
+                actions=["s3:*"],
+                resources=[
+                    f"arn:aws:s3:::cdk-*-assets-{stk.account}-{stk.region}",
+                    f"arn:aws:s3:::cdk-*-assets-{stk.account}-{stk.region}/*",
+                ],
+            )
+        )
+
+        ### Permissions to assume CDK bootstrap roles
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccessToCDKStandardRoles",
+                actions=["sts:AssumeRole"],
+                resources=[
+                    f"arn:aws:iam::{stk.account}:role/cdk-*-deploy-role-{stk.account}-{stk.region}",
+                    f"arn:aws:iam::{stk.account}:role/cdk-*-file-publishing-role-{stk.account}-{stk.region}",
+                    f"arn:aws:iam::{stk.account}:role/cdk-*-image-publishing-role-{stk.account}-{stk.region}",
+                ],
+            )
+        )
+
+        ### CodeArtifact bearer token
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccessToCodeArtifactBearerToken",
+                actions=["sts:GetServiceBearerToken"],
+                resources=["*"],
+                conditions={
+                    "StringEquals": {"sts:AWSServiceName": "codeartifact.amazonaws.com"}
+                },
+            )
+        )
+
+        ### CodeArtifact authorization token
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccessToCodeArtifactToken",
+                actions=["codeartifact:GetAuthorizationToken"],
+                resources=["*"],
+            )
+        )
+
+        ### CodeArtifact access
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccessToCodeArtifact",
+                actions=[
+                    "codeartifact:List*",
+                    "codeartifact:Describe*",
+                    "codeartifact:Get*",
+                    "codeartifact:Read*",
+                    "sts:GetServiceBearerToken",
+                ],
+                resources=[
+                    f"arn:aws:codeartifact:{stk.region}:{stk.account}:domain/veridix",
+                    f"arn:aws:codeartifact:{stk.region}:{stk.account}:repository/veridix/*",
+                ],
+            )
+        )
+
+        ### ECR token access
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccessToECRToken",
+                actions=[
+                    "ecr:GetAuthorizationToken",
+                    "ecr:DescribeRepositories",
+                    "ecr:CreateRepository",
+                    "ecr:SetRepositoryPolicy",
+                    "ecr:TagResource",
+                ],
+                resources=["*"],
+            )
+        )
+
+        ### ECR repository images
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccessToECRepoImages",
+                actions=[
+                    "ecr:GetAuthorizationToken",
+                    "ecr:DescribeRepositories",
+                    "ecr:CreateRepository",
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage",
+                    "ecr:DescribeImages",
+                    "ecr:PutImage",
+                    "ecr:InitiateLayerUpload",
+                    "ecr:UploadLayerPart",
+                    "ecr:CompleteLayerUpload",
+                ],
+                resources=[
+                    f"arn:aws:ecr:{stk.region}:{stk.account}:repository/*",
+                ],
+            )
+        )
+
+        ### Route53 DNS access
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccessToDNS",
+                actions=["route53:Get*", "route53:List*"],
+                resources=["*"],
+            )
+        )
+
+        ### CloudFront access
+        cbproj.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                sid="AccessToCloudFront",
+                actions=[
+                    "cloudfront:Get*",
+                    "cloudfront:List*",
+                    # "cloudfront:Create*",
+                    # "cloudfront:Update*",
+                    # "cloudfront:Delete*",
+                    # "cloudfront:Tag*",
+                ],
+                resources=["*"],
+            )
+        )
+
+
+### ======================================================================================================
+
+
+def load_env_vars_from_file(
+    stk: Stack,
+    which_codebuild_project: CodeBuildProjectNames,
+) -> Dict[str, str]:
+    """
+    UTILITY Function !!
+    To help test this CDK-code locally on GFE.  Simulates env-vars specified in GH-Actions.
+
+    Loads environment variables from `.env***` files.
+    NOTE: Each CodeBuild-project will need have its --OWN--  `./.env-<project-type>` file !!
+
+    Some values can be sensitive information, can override the hardcoded/placeholder CodeBuild env variables.
+
+    Args:
+        stk: CDK Stack instance
+        which_codebuild_project: Type of CodeBuild project
+
+    Returns:
+        Dictionary of environment variable overrides
+    """
+    env_path = Path(__file__).parent.parent / f".env-{which_codebuild_project.value}"
+    env_vars: Dict[str, str] = {}
+
+    if not env_path.exists():
+        return env_vars
+
+    with open(env_path, "r") as f:
+        env_content = f.read()
+
+        for line in env_content.split("\n"):
+            trimmed = line.strip()
+            if trimmed and not trimmed.startswith("#"):
+                parts = trimmed.split("=", 1)
+                if len(parts) == 2:
+                    key = parts[0].strip()
+                    value = parts[1].strip().strip('"').strip("'")
+
+                    # Replace CDK property references
+                    value = re.sub(r'\$\{stk\.partition\}', stk.partition, value)
+                    value = re.sub(r'\$\{stk\.region\}', stk.region, value)
+                    value = re.sub(r'\$\{stk\.account\}', stk.account, value)
+                    value = re.sub(r'\$\{this\.partition\}', stk.partition, value)
+                    value = re.sub(r'\$\{this\.region\}', stk.region, value)
+                    value = re.sub(r'\$\{this\.account\}', stk.account, value)
+
+                    env_vars[key] = value
+
+    return env_vars
+
+
+### ======================================================================================================
+### EoF
