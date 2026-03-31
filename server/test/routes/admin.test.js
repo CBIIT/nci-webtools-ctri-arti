@@ -128,6 +128,53 @@ describe("budget admin routes", () => {
     const [updated] = await db.select().from(User).where(eq(User.id, user.id)).limit(1);
     assert.equal(updated.remaining, updated.budget);
   });
+
+  it("sends a usage limit change email when an admin updates a user's budget", async () => {
+    const sentEmails = [];
+    const appWithEmailSpy = express();
+    appWithEmailSpy.use(express.json());
+    appWithEmailSpy.use((req, _res, next) => {
+      req.session = {};
+      next();
+    });
+    appWithEmailSpy.use(
+      createAdminRouter({
+        modules: { users: createUsersApplication() },
+        now: () => new Date("2026-03-27T14:15:16.000Z"),
+        sendUsageLimitChangeEmailImpl: async (data) => {
+          sentEmails.push(data);
+          return { messageId: "sent" };
+        },
+      })
+    );
+
+    const [user] = await db
+      .insert(User)
+      .values({
+        email: `admin-limit-email-${Date.now()}@test.com`,
+        firstName: "Budget",
+        lastName: "Notify",
+        status: "active",
+        roleID: 3,
+        budget: 4,
+        remaining: 4,
+      })
+      .returning();
+
+    const res = await request(appWithEmailSpy)
+      .post("/admin/users")
+      .set("X-API-Key", TEST_API_KEY)
+      .send({ id: user.id, budget: 9, remaining: 9 });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.budget, 9);
+    assert.equal(sentEmails.length, 1);
+    assert.equal(sentEmails[0].userName, "Budget Notify");
+    assert.equal(sentEmails[0].userEmail, user.email);
+    assert.equal(sentEmails[0].previousLimit, 4);
+    assert.equal(sentEmails[0].newLimit, 9);
+    assert.equal(new Date(sentEmails[0].effectiveAt).toISOString(), res.body.updatedAt);
+  });
 });
 
 describe("usage admin routes", () => {
