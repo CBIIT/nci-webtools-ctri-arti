@@ -1,5 +1,6 @@
 import html from "solid-js/html";
 
+import DeactivatedGate from "../components/deactivated-gate.js";
 import Footer from "../components/footer.js";
 import Header from "../components/header.js";
 import InactivityDialog from "../components/inactivity-dialog.js";
@@ -10,6 +11,7 @@ import getRoutes from "./routes.js";
 
 export default function Layout(props) {
   return html`
+    <${DeactivatedGate} />
     <div class="shadow position-relative z-3">
       <${Header} />
       <${Nav} routes=${getRoutes} />
