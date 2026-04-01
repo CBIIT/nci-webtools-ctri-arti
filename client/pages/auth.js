@@ -23,6 +23,10 @@ export function Authorized(props) {
 
   createRenderEffect(() => {
     if (auth.status() !== Status.LOADED) return;
+    if (!auth.user() && auth.accountDeactivated?.()) {
+      navigate("/", { replace: true });
+      return;
+    }
     if (!auth.user()) {
       location.href =
         "/api/v1/login?destination=" + encodeURIComponent(location.pathname + location.search);
