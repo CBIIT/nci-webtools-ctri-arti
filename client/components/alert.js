@@ -96,7 +96,7 @@ export default function Alert(props) {
           <//>
           <${Match} when=${() => reportStatus() === null || reportStatus() === "loading"}>
             <div>${() => props.message}</div>
-            <${Show} when=${props.type === "danger"}>
+            <${Show} when=${props.type === "danger" && props.reportable !== false}>
               <div class="mt-2">
                 <button
                   type="button"
