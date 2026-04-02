@@ -122,7 +122,7 @@ export const AuthProvider = (props) => {
         setState("accountDeactivated", true);
       });
 
-      return data;
+      return { ...data, user: null };
     }
 
     batch(() => {
