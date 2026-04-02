@@ -1,9 +1,15 @@
 import { Router } from "express";
+import logger from "shared/logger.js";
 
 import { requireRole } from "../../auth.js";
+import { sendUsageLimitChangeEmail } from "../../integrations/email.js";
 import { getAuthenticatedUser, routeHandler } from "../utils.js";
 
-export function createAdminRouter({ modules } = {}) {
+export function createAdminRouter({
+  modules,
+  sendUsageLimitChangeEmailImpl = sendUsageLimitChangeEmail,
+  now = () => new Date(),
+} = {}) {
   if (!modules?.users) {
     throw new Error("users module is required");
   }
@@ -54,8 +60,32 @@ export function createAdminRouter({ modules } = {}) {
     requireRole("admin"),
     routeHandler(async (req, res) => {
       const { id } = req.body;
+      const existingUser = id ? await users.getUser(id) : null;
       const user = id ? await users.updateUser(id, req.body) : await users.createUser(req.body);
       if (!user) return res.status(404).json({ error: "User not found" });
+
+      const budgetChanged = id && existingUser && existingUser.budget !== user.budget;
+      if (budgetChanged && user.email) {
+        const userName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "User";
+        const effectiveAt = user.updatedAt || now();
+
+        try {
+          await sendUsageLimitChangeEmailImpl({
+            userName,
+            userEmail: user.email,
+            previousLimit: existingUser.budget,
+            newLimit: user.budget,
+            effectiveAt,
+          });
+        } catch (error) {
+          logger.error({
+            message: "Failed to send usage limit change email",
+            userId: user.id,
+            error,
+          });
+        }
+      }
+
       res.json(user);
     })
   );

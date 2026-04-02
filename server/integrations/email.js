@@ -79,6 +79,76 @@ export async function sendJustificationEmail(
   );
 }
 
+function formatUsageLimit(limit) {
+  if (limit === null || limit === undefined) return "Unlimited";
+  return `$${Number(limit).toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatEffectiveDateTime(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZoneName: "short",
+  }).format(date);
+}
+
+function describeLimitChange(previousLimit, newLimit) {
+  if (previousLimit === null || previousLimit === undefined) {
+    return `Your AI daily usage limit has been updated from Unlimited to ${formatUsageLimit(newLimit)}.`;
+  }
+
+  if (newLimit === null || newLimit === undefined) {
+    return `Your AI daily usage limit has been updated from ${formatUsageLimit(previousLimit)} to Unlimited.`;
+  }
+
+  const direction = newLimit > previousLimit ? "increased" : "decreased";
+  return `Your AI daily usage limit has been ${direction} from ${formatUsageLimit(previousLimit)} to ${formatUsageLimit(newLimit)}.`;
+}
+
+export async function sendUsageLimitChangeEmail(
+  { userName, userEmail, previousLimit, newLimit, effectiveAt },
+  env = process.env,
+  send = sendEmail
+) {
+  if (previousLimit === newLimit) {
+    return null;
+  }
+
+  const { EMAIL_ADMIN, EMAIL_SENDER, TIER } = env;
+  const tierPrefix = TIER && TIER.toUpperCase() !== "PROD" ? `[${TIER.toUpperCase()}] ` : "";
+  const recipientName = userName || "User";
+  const text =
+    `Dear ${recipientName},\n\n` +
+    `${describeLimitChange(previousLimit, newLimit)}\n\n` +
+    `New Daily Usage Limit: ${formatUsageLimit(newLimit)}\n` +
+    `Effective Date: ${formatEffectiveDateTime(effectiveAt)}\n\n` +
+    "You can now continue using the platform with your updated limit. No further action is required.\n\n" +
+    "If you have any questions or need additional adjustments, please contact the ResearchOptimizer support team via CTRIBResearchOptimizer@mail.nih.gov.\n\n" +
+    "Thank you,\n" +
+    "ResearchOptimizer Team\n\n" +
+    "Please do not reply to this email.";
+
+  return await send(
+    {
+      from: (EMAIL_SENDER || EMAIL_ADMIN)?.split(",")?.[0]?.trim(),
+      to: userEmail,
+      subject: `${tierPrefix}Your ResearchOptimizer AI Usage Limit Has Been Updated`,
+      text,
+    },
+    env
+  );
+}
+
 function formatMetadataForTemplate(metadata) {
   if (!Array.isArray(metadata)) {
     return null;
