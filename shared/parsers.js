@@ -60,6 +60,36 @@ export async function parseDocxText(buffer) {
   return contents?.value || "No text found in DOCX";
 }
 
+function extractPageLines(items) {
+  const lines = [];
+  let currentLine = "";
+  let lastY = null;
+
+  for (const item of items) {
+    const y = item.transform[5];
+
+    if (lastY !== null && Math.abs(y - lastY) > 2) {
+      lines.push(currentLine.trim());
+      currentLine = "";
+    }
+
+    currentLine += item.str;
+    lastY = y;
+
+    if (item.hasEOL) {
+      lines.push(currentLine.trim());
+      currentLine = "";
+      lastY = null;
+    }
+  }
+
+  if (currentLine.trim()) {
+    lines.push(currentLine.trim());
+  }
+
+  return lines.filter(Boolean);
+}
+
 /**
  * Extracts text from a PDF buffer
  * @param {ArrayBuffer} buffer
@@ -71,8 +101,7 @@ export async function parsePdf(buffer) {
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
     const page = await pdf.getPage(pageNumber);
     const textContent = await page.getTextContent();
-    const pageText = textContent.items.map((item) => item.str).join(" ");
-    pagesText.push(`Page ${pageNumber}: ${pageText}`);
+    pagesText.push(extractPageLines(textContent.items).join("\n"));
   }
   const content = pagesText.join("\n\n")?.trim();
   return content || "No text found in PDF";

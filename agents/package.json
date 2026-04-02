@@ -8,7 +8,9 @@
     "./http.js": "./http.js",
     "./remote.js": "./remote.js",
     "./app.js": "./app.js",
-    "./core/loop.js": "./core/loop.js"
+    "./core/loop.js": "./core/loop.js",
+    "./http/templates.js": "./http/templates.js",
+    "./workflows/index.js": "./workflows/index.js"
   },
   "scripts": {
     "start": "node --env-file .env index.js",

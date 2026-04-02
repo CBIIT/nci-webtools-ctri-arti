@@ -1,3 +1,4 @@
+import { createTemplatesRouter } from "agents/http/templates.js";
 import { createAgentsChatRouter } from "agents/http.js";
 import { createCmsAgentsRouter, createCmsConversationsRouter } from "cms/http.js";
 import { json, Router } from "express";
@@ -10,6 +11,7 @@ import { requireRole } from "../auth.js";
 import { logErrors } from "./middleware.js";
 import { createAdminRouter } from "./routes/admin.js";
 import { createAuthRouter } from "./routes/auth.js";
+import { createProtocolAdvisorRouter } from "./routes/protocol-advisor.js";
 import { createToolsRouter } from "./routes/tools.js";
 import { getRequestContext } from "./utils.js";
 
@@ -67,6 +69,8 @@ export function createServerApi({ modules } = {}) {
       },
     })
   );
+  api.use(createProtocolAdvisorRouter({ modules }));
+  api.use(createTemplatesRouter());
   api.use(createToolsRouter({ modules }));
   api.use(logErrors());
 
