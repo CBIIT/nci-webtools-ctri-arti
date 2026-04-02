@@ -1,5 +1,5 @@
 import { useNavigate } from "@solidjs/router";
-import { createMemo, createRenderEffect, lazy, Show } from "solid-js";
+import { createMemo, createRenderEffect, lazy, onMount, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { Status, useAuthContext } from "../contexts/auth-context.js";
@@ -13,6 +13,10 @@ export function Authorized(props) {
   const auth = useAuthContext();
   const navigate = useNavigate();
 
+  onMount(() => {
+    auth.checkSession();
+  });
+
   const authorized = createMemo(() => {
     if (auth.status() !== Status.LOADED) return false;
     const user = auth.user();
@@ -23,6 +27,10 @@ export function Authorized(props) {
 
   createRenderEffect(() => {
     if (auth.status() !== Status.LOADED) return;
+    if (!auth.user() && auth.accountDeactivated?.()) {
+      navigate("/", { replace: true });
+      return;
+    }
     if (!auth.user()) {
       location.href =
         "/api/v1/login?destination=" + encodeURIComponent(location.pathname + location.search);

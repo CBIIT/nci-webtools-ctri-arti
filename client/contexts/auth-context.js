@@ -25,6 +25,7 @@ const initialState = () => ({
   user: null,
   access: {},
   expires: null,
+  accountDeactivated: false,
 });
 
 /**
@@ -106,12 +107,22 @@ export const AuthProvider = (props) => {
     });
   };
 
-  const applySessionData = (data) => {
+  const applySessionData = async (data) => {
     const access = data?.access && typeof data.access === "object" ? data.access : {};
 
     if (!data?.user) {
       resetState(Status.LOADED, access);
       return data;
+    }
+
+    if (data.user?.status === "inactive") {
+      await fetch("/api/v1/logout", { redirect: "manual" }).catch(() => {});
+      batch(() => {
+        resetState(Status.LOADED, {});
+        setState("accountDeactivated", true);
+      });
+
+      return { ...data, user: null };
     }
 
     batch(() => {
@@ -192,11 +203,13 @@ export const AuthProvider = (props) => {
         return;
       }
 
-      applySessionData(data);
+      await applySessionData(data);
     })();
 
     onCleanup(() => controller.abort());
   });
+
+  const clearDeactivated = () => setState("accountDeactivated", false);
 
   const value = createMemo(() => ({
     status: () => state.status,
@@ -204,12 +217,14 @@ export const AuthProvider = (props) => {
     user: () => state.user,
     access: () => state.access,
     expires: () => state.expires,
+    accountDeactivated: () => state.accountDeactivated,
     config: () => config() || DEFAULT_CLIENT_CONFIG,
     logout: () => logout(),
     setData: (data) => setData(data),
     checkSession: () => checkSession(),
     refreshSession: () => refreshSession(),
     updateExpires: (expires) => updateExpires(expires),
+    clearDeactivated: () => clearDeactivated(),
   }));
 
   // Expose auth context for integration tests
