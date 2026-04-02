@@ -1,5 +1,5 @@
 import { useNavigate } from "@solidjs/router";
-import { createMemo, createRenderEffect, lazy, Show } from "solid-js";
+import { createMemo, createRenderEffect, lazy, onMount, Show } from "solid-js";
 import html from "solid-js/html";
 
 import { Status, useAuthContext } from "../contexts/auth-context.js";
@@ -12,6 +12,10 @@ export default function AuthorizedImport(props) {
 export function Authorized(props) {
   const auth = useAuthContext();
   const navigate = useNavigate();
+
+  onMount(() => {
+    auth.checkSession();
+  });
 
   const authorized = createMemo(() => {
     if (auth.status() !== Status.LOADED) return false;
