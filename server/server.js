@@ -75,8 +75,12 @@ export async function createApp(env = process.env) {
 
   app.use(
     session({
-      cookie: { maxAge: sessionMaxAge },
+      cookie: {
+        maxAge: sessionMaxAge,
+        secure: "auto",
+      },
       rolling: false,
+      proxy: true,
       resave: false,
       saveUninitialized: false,
       secret: SESSION_SECRET,

@@ -50,7 +50,7 @@ export function securityHeaders(req, res, next) {
   };
 
   if (req.secure) {
-    headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+    headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload";
   }
 
   res.set(headers);
