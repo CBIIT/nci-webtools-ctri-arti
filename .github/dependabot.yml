@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directories:
+      - "**/*"
+    schedule:
+      interval: "daily"
+    target-branch: "dev"
+
+  - package-ecosystem: "pip"
+    directories: 
+      - "/infrastructure"
+    schedule:
+      interval: "daily"
+    target-branch: "dev"
+
+  - package-ecosystem: "docker"
+    directories:
+      - "**/*"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
