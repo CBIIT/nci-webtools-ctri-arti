@@ -243,6 +243,7 @@ export function touchSession({ except } = {}) {
       return next();
     }
     req.session?.touch();
+    if (req.session) req.session.expires = req.session.cookie.expires;
     next();
   };
 }

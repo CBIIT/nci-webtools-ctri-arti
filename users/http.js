@@ -119,6 +119,7 @@ export function createUsersRouter({ application } = {}) {
       const result = await application.getUserUsage(+req.params.id, {
         startDate: req.query.startDate,
         endDate: req.query.endDate,
+        tz: req.query.tz,
         type: req.query.type,
         limit: req.query.limit ? +req.query.limit : undefined,
         offset: req.query.offset ? +req.query.offset : undefined,
@@ -134,6 +135,7 @@ export function createUsersRouter({ application } = {}) {
       const result = await application.getUsage({
         startDate: req.query.startDate,
         endDate: req.query.endDate,
+        tz: req.query.tz,
         userId: req.query.userId,
         type: req.query.type,
         limit: req.query.limit ? +req.query.limit : undefined,
@@ -149,6 +151,7 @@ export function createUsersRouter({ application } = {}) {
       const result = await application.getAnalytics({
         startDate: req.query.startDate,
         endDate: req.query.endDate,
+        tz: req.query.tz,
         groupBy: req.query.groupBy,
         userId: req.query.userId,
         type: req.query.type,

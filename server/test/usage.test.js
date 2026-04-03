@@ -421,6 +421,73 @@ test("UserService billing lifecycle", async (t) => {
     assert.ok(result.data.some((row) => row.type === "chat"));
     assert.ok(result.data.some((row) => row.type === "guardrail"));
   });
+
+  await t.test("timezone-aware date-only filters use the requested local day", async () => {
+    const analyticsUser = await service.createUser({
+      email: `analytics-tz-${Date.now()}-${Math.random()}@test.com`,
+      firstName: "Analytics",
+      lastName: "Timezone",
+      status: "active",
+      roleID: 3,
+      budget: 5,
+    });
+    const usageType = `analytics-tz-${Date.now()}`;
+
+    await service.recordUsage(analyticsUser.id, [
+      {
+        userID: analyticsUser.id,
+        modelID: 99,
+        requestId: `${usageType}-outside`,
+        type: usageType,
+        quantity: 1,
+        unit: "input_tokens",
+        unitCost: 0.01,
+        cost: 0.01,
+        createdAt: new Date("2026-03-09T03:30:00.000Z"),
+        updatedAt: new Date("2026-03-09T03:30:00.000Z"),
+      },
+      {
+        userID: analyticsUser.id,
+        modelID: 99,
+        requestId: `${usageType}-inside`,
+        type: usageType,
+        quantity: 2,
+        unit: "input_tokens",
+        unitCost: 0.01,
+        cost: 0.02,
+        createdAt: new Date("2026-03-09T04:30:00.000Z"),
+        updatedAt: new Date("2026-03-09T04:30:00.000Z"),
+      },
+    ]);
+
+    const usage = await service.getUsage({
+      userId: analyticsUser.id,
+      type: usageType,
+      startDate: "2026-03-09",
+      endDate: "2026-03-09",
+      tz: "America/New_York",
+    });
+
+    assert.strictEqual(usage.meta.timeZone, "America/New_York");
+    assert.strictEqual(usage.meta.total, 1);
+    assert.strictEqual(usage.data.length, 1);
+    assert.strictEqual(usage.data[0].requestId, `${usageType}-inside`);
+
+    const analytics = await service.getAnalytics({
+      groupBy: "day",
+      userId: analyticsUser.id,
+      type: usageType,
+      startDate: "2026-03-09",
+      endDate: "2026-03-09",
+      tz: "America/New_York",
+    });
+
+    assert.strictEqual(analytics.meta.timeZone, "America/New_York");
+    assert.strictEqual(analytics.data.length, 1);
+    assert.strictEqual(analytics.data[0].period, "2026-03-09T00:00:00");
+    assert.strictEqual(analytics.data[0].totalRequests, 1);
+    assert.strictEqual(Number(analytics.data[0].totalCost), 0.02);
+  });
 });
 
 test("UserService deleteUser cascades owned chat and billing rows", async () => {

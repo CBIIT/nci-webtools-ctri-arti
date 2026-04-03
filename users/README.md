@@ -33,8 +33,10 @@ Route families:
 Usage and analytics date filters:
 
 - `startDate` and `endDate` accept either `YYYY-MM-DD` or a full UTC timestamp like `2026-03-09T08:30:00.000Z`.
-- Date-only values expand to the full UTC day.
+- Optional `tz` accepts an IANA timezone like `America/New_York` and defaults to `America/New_York`.
+- Date-only values expand to the full day in `tz`.
 - Full UTC timestamps are treated as exact bounds.
+- Full timestamps without an explicit timezone are normalized as UTC.
 
 `server` does not mirror these routes directly. Instead, edge-owned admin and auth routes call the users module in-process or through `users/remote.js`.
 

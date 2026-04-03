@@ -262,4 +262,89 @@ describe("usage admin routes", () => {
       mockedSessionUserId = null;
     }
   });
+
+  it("uses tz for date-only usage and analytics queries", async () => {
+    try {
+      const [adminUser] = await db
+        .insert(User)
+        .values({
+          email: `admin-route-tz-${Date.now()}@test.com`,
+          firstName: "Admin",
+          lastName: "TZ",
+          status: "active",
+          roleID: 1,
+        })
+        .returning();
+      mockedSessionUserId = adminUser.id;
+
+      const [user] = await db
+        .insert(User)
+        .values({
+          email: `usage-query-tz-${Date.now()}@test.com`,
+          firstName: "Usage",
+          lastName: "Timezone",
+          status: "active",
+          roleID: 3,
+        })
+        .returning();
+      const usageType = `admin-usage-tz-${Date.now()}`;
+
+      await db.insert(Usage).values([
+        {
+          userID: user.id,
+          requestId: `${usageType}-outside`,
+          type: usageType,
+          quantity: 1,
+          unit: "input_tokens",
+          unitCost: 0.01,
+          cost: 0.01,
+          createdAt: new Date("2026-03-09T03:30:00.000Z"),
+          updatedAt: new Date("2026-03-09T03:30:00.000Z"),
+        },
+        {
+          userID: user.id,
+          requestId: `${usageType}-inside`,
+          type: usageType,
+          quantity: 2,
+          unit: "input_tokens",
+          unitCost: 0.01,
+          cost: 0.02,
+          createdAt: new Date("2026-03-09T04:30:00.000Z"),
+          updatedAt: new Date("2026-03-09T04:30:00.000Z"),
+        },
+      ]);
+
+      const query =
+        `/admin/usage?userId=${user.id}` +
+        `&type=${encodeURIComponent(usageType)}` +
+        "&startDate=2026-03-09&endDate=2026-03-09" +
+        `&tz=${encodeURIComponent("America/New_York")}` +
+        "&limit=20";
+
+      const usageRes = await request(app).get(query);
+
+      assert.equal(usageRes.status, 200);
+      assert.equal(usageRes.body.meta.total, 1);
+      assert.equal(usageRes.body.meta.timeZone, "America/New_York");
+      assert.equal(usageRes.body.data.length, 1);
+      assert.equal(usageRes.body.data[0].requestId, `${usageType}-inside`);
+
+      const analyticsQuery =
+        `/admin/analytics?groupBy=day&userId=${user.id}` +
+        `&type=${encodeURIComponent(usageType)}` +
+        "&startDate=2026-03-09&endDate=2026-03-09" +
+        `&tz=${encodeURIComponent("America/New_York")}`;
+
+      const analyticsRes = await request(app).get(analyticsQuery);
+
+      assert.equal(analyticsRes.status, 200);
+      assert.equal(analyticsRes.body.meta.timeZone, "America/New_York");
+      assert.equal(analyticsRes.body.data.length, 1);
+      assert.equal(analyticsRes.body.data[0].period, "2026-03-09T00:00:00");
+      assert.equal(analyticsRes.body.data[0].totalRequests, 1);
+      assert.equal(Number(analyticsRes.body.data[0].totalCost), 0.02);
+    } finally {
+      mockedSessionUserId = null;
+    }
+  });
 });

@@ -85,6 +85,7 @@ api.get(
     const result = await getUserUsage(+req.params.id, {
       startDate: req.query.startDate,
       endDate: req.query.endDate,
+      tz: req.query.tz,
       type: req.query.type,
       limit: req.query.limit ? +req.query.limit : undefined,
       offset: req.query.offset ? +req.query.offset : undefined,
@@ -110,6 +111,7 @@ api.get(
     const result = await getUsage({
       startDate: req.query.startDate,
       endDate: req.query.endDate,
+      tz: req.query.tz,
       userId: req.query.userId,
       type: req.query.type,
       limit: req.query.limit ? +req.query.limit : undefined,
@@ -145,6 +147,7 @@ api.get(
     const result = await getAnalytics({
       startDate: req.query.startDate,
       endDate: req.query.endDate,
+      tz: req.query.tz,
       groupBy: req.query.groupBy,
       userId: req.query.userId,
       type: req.query.type,

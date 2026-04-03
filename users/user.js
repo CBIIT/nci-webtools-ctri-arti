@@ -15,7 +15,7 @@ import {
   isNotNull,
 } from "drizzle-orm";
 import { describeCron } from "shared/cron.js";
-import { getDateRange } from "shared/utils.js";
+import { getDateRange, normalizeTimeZone } from "shared/utils.js";
 
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 
@@ -42,16 +42,22 @@ function buildSearchConditions(search) {
   );
 }
 
-function getGroupColumn(groupBy) {
+function getSqlStringLiteral(value) {
+  return sql.raw(`'${String(value).replace(/'/g, "''")}'`);
+}
+
+function getGroupColumn(groupBy, timeZone) {
+  const zonedCreatedAt = sql`timezone(${getSqlStringLiteral(timeZone)}, ${Usage.createdAt})`;
+
   switch (groupBy) {
     case "hour":
-      return sql`to_char(date_trunc('hour', timezone('UTC', ${Usage.createdAt})), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
+      return sql`to_char(date_trunc('hour', ${zonedCreatedAt}), 'YYYY-MM-DD"T"HH24:MI:SS')`;
     case "day":
-      return sql`to_char(date_trunc('day', timezone('UTC', ${Usage.createdAt})), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
+      return sql`to_char(date_trunc('day', ${zonedCreatedAt}), 'YYYY-MM-DD"T"HH24:MI:SS')`;
     case "week":
-      return sql`to_char(${Usage.createdAt}, 'IYYY-IW')`;
+      return sql`to_char(${zonedCreatedAt}, 'IYYY-IW')`;
     case "month":
-      return sql`to_char(${Usage.createdAt}, 'YYYY-MM')`;
+      return sql`to_char(${zonedCreatedAt}, 'YYYY-MM')`;
     case "user":
       return Usage.userID;
     case "model":
@@ -59,7 +65,7 @@ function getGroupColumn(groupBy) {
     case "type":
       return sql`COALESCE(${Usage.type}, 'unknown')`;
     default:
-      return sql`to_char(date_trunc('day', timezone('UTC', ${Usage.createdAt})), 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
+      return sql`to_char(date_trunc('day', ${zonedCreatedAt}), 'YYYY-MM-DD"T"HH24:MI:SS')`;
   }
 }
 
@@ -345,12 +351,21 @@ export class UserService {
 
   async getUserUsage(
     userId,
-    { startDate: startDateParam, endDate: endDateParam, type, limit = 100, offset = 0 } = {}
+    {
+      startDate: startDateParam,
+      endDate: endDateParam,
+      type,
+      limit = 100,
+      offset = 0,
+      timeZone: timeZoneParam,
+      tz,
+    } = {}
   ) {
     const [user] = await db.select().from(User).where(eq(User.id, +userId)).limit(1);
     if (!user) return null;
 
-    const { startDate, endDate } = getDateRange(startDateParam, endDateParam);
+    const timeZone = normalizeTimeZone(tz || timeZoneParam);
+    const { startDate, endDate } = getDateRange(startDateParam, endDateParam, timeZone);
 
     const conditions = [eq(Usage.userID, +userId), between(Usage.createdAt, startDate, endDate)];
     if (type) conditions.push(eq(Usage.type, type));
@@ -384,6 +399,7 @@ export class UserService {
         total,
         limit,
         offset,
+        timeZone,
         user: {
           id: user.id,
           email: user.email,
@@ -403,8 +419,11 @@ export class UserService {
     type,
     limit = 100,
     offset = 0,
+    timeZone: timeZoneParam,
+    tz,
   } = {}) {
-    const { startDate, endDate } = getDateRange(startDateParam, endDateParam);
+    const timeZone = normalizeTimeZone(tz || timeZoneParam);
+    const { startDate, endDate } = getDateRange(startDateParam, endDateParam, timeZone);
 
     const conditions = [between(Usage.createdAt, startDate, endDate)];
     if (userId) conditions.push(eq(Usage.userID, +userId));
@@ -457,7 +476,7 @@ export class UserService {
           role: usage.User.Role?.name,
         },
       })),
-      meta: { total, limit, offset },
+      meta: { total, limit, offset, timeZone },
     };
   }
 
@@ -474,9 +493,12 @@ export class UserService {
     role: roleFilter,
     status: statusFilter,
     type,
+    timeZone: timeZoneParam,
+    tz,
   } = {}) {
-    const { startDate, endDate } = getDateRange(startDateParam, endDateParam);
-    const groupCol = getGroupColumn(groupBy);
+    const timeZone = normalizeTimeZone(tz || timeZoneParam);
+    const { startDate, endDate } = getDateRange(startDateParam, endDateParam, timeZone);
+    const groupCol = getGroupColumn(groupBy, timeZone);
     const requestKey = buildRequestKeySql();
     const guardrailCostSum = sql`SUM(CASE WHEN ${Usage.type} = 'guardrail' THEN ${Usage.cost} ELSE 0 END)`;
     const usageCostSum = sql`SUM(CASE WHEN ${Usage.type} = 'guardrail' THEN 0 ELSE ${Usage.cost} END)`;
@@ -576,6 +598,7 @@ export class UserService {
           sortOrder,
           role: roleFilter,
           total: totalCount,
+          timeZone,
         },
       };
     }
@@ -604,7 +627,7 @@ export class UserService {
         .groupBy(Usage.modelID, Model.id, Model.name)
         .orderBy(desc(sum(Usage.cost)));
 
-      return { data, meta: { groupBy } };
+      return { data, meta: { groupBy, timeZone } };
     }
 
     if (groupBy === "type") {
@@ -622,7 +645,7 @@ export class UserService {
         .groupBy(groupCol)
         .orderBy(desc(sum(Usage.cost)));
 
-      return { data, meta: { groupBy, type } };
+      return { data, meta: { groupBy, type, timeZone } };
     }
 
     // Time-based grouping (hour, day, week, month)
@@ -647,7 +670,7 @@ export class UserService {
       .groupBy(groupCol)
       .orderBy(desc(groupCol));
 
-    return { data, meta: { groupBy } };
+    return { data, meta: { groupBy, timeZone } };
   }
 
   // ===== Budget =====
