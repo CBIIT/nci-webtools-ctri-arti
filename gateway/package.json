@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock": "^3.1011.0",
-    "@aws-sdk/client-bedrock-runtime": "^3.1011.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1023.0",
     "@google/genai": "^1.46.0",
     "database": "*",
     "express": "^5.2.1",
