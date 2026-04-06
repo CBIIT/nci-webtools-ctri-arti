@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { getWorkflow, listWorkflows, runWorkflow } from "../workflows/index.js";
+import { loadProtocolAdvisorAssets } from "../workflows/protocol-advisor/load-assets.js";
 import { getTopologicalOrder } from "../workflows/runtime/graph.js";
 import { runWorkflowDefinition } from "../workflows/runtime/runner.js";
 
@@ -107,6 +108,24 @@ describe("workflows", () => {
     assert.equal(result.context.workflow.name, "protocol_advisor");
   });
 
+  it("includes all seeded protocol advisor template families", async () => {
+    const assets = await loadProtocolAdvisorAssets({
+      input: {
+        templateId: "secondary_research",
+      },
+    });
+
+    assert.deepEqual(assets.templateIds.sort(), [
+      "behavioral_social_science",
+      "interventional",
+      "natural_history_observational",
+      "prospective_data_collection",
+      "repository",
+      "retrospective_review",
+      "secondary_research",
+    ]);
+  });
+
   it("extracts template sections and marks missing protocol sections", async () => {
     const result = await runWorkflow("protocol_advisor", {
       templateId: "secondary_research",
@@ -124,6 +143,19 @@ describe("workflows", () => {
     assert.equal(protocolSummary.review.mode, "model_required");
     assert.equal(biospecimens.status, "missing");
     assert.equal(biospecimens.review.mode, "deterministic");
+    assert.equal(result.output.summary.templateCompleteness.missingSectionCount > 0, true);
+    assert.ok(
+      result.output.summary.templateCompleteness.requiredSections.some(
+        (section) =>
+          section.sectionName === "BIOSPECIMENS AND/OR DATA" && section.status === "Missing"
+      )
+    );
+    assert.ok(
+      result.output.summary.templateCompleteness.findings.some(
+        (finding) =>
+          finding.sectionName === "BIOSPECIMENS AND/OR DATA" && finding.issueType === "missing"
+      )
+    );
     assert.ok(
       result.output.promptPlan.some(
         (task) =>
@@ -169,6 +201,12 @@ describe("workflows", () => {
     assert.equal(biospecimens.matchStatus, "matched");
     assert.equal(biospecimens.status, "placeholder");
     assert.equal(biospecimens.review.mode, "deterministic");
+    assert.ok(
+      result.output.summary.templateCompleteness.findings.some(
+        (finding) =>
+          finding.sectionName === "BIOSPECIMENS AND/OR DATA" && finding.issueType === "placeholder"
+      )
+    );
     assert.ok(Array.isArray(result.output.focusAreas));
   });
 
@@ -184,6 +222,44 @@ describe("workflows", () => {
 
     assert.equal(protocolSummary.status, "blank");
     assert.equal(protocolSummary.review.mode, "deterministic");
+    assert.ok(
+      result.output.summary.templateCompleteness.findings.some(
+        (finding) => finding.sectionName === "PROTOCOL SUMMARY" && finding.issueType === "blank"
+      )
+    );
+  });
+
+  it("excludes optional template sections from missing-deficiency reporting", async () => {
+    const result = await runWorkflow("protocol_advisor", {
+      templateId: "interventional",
+      protocolText: "1 PROTOCOL SUMMARY\nShort summary text",
+    });
+
+    const optionalSection = result.output.sections.find(
+      (section) => section.templateSectionRequired === false
+    );
+
+    assert.ok(optionalSection, "Expected at least one optional section in the template");
+    assert.equal(optionalSection.templateSectionRequired, false);
+    assert.equal(optionalSection.status, "optional");
+    assert.equal(
+      result.output.summary.templateCompleteness.requiredSections.some(
+        (section) => section.sectionName === optionalSection.templateSectionTitle
+      ),
+      false
+    );
+    assert.equal(
+      result.output.summary.templateCompleteness.findings.some(
+        (finding) => finding.sectionName === optionalSection.templateSectionTitle
+      ),
+      false
+    );
+    assert.equal(
+      result.output.summary.missingSections.some(
+        (section) => section.templateSectionTitle === optionalSection.templateSectionTitle
+      ),
+      false
+    );
   });
 
   it("executes section review prompts through the gateway when available", async () => {
@@ -305,6 +381,11 @@ describe("workflows", () => {
     assert.equal(calls[1].model, "us.anthropic.claude-haiku-4-5-20251001-v1:0");
     assert.match(calls[0].system, /Return only a single JSON object/);
     assert.match(calls[0].messages[0].content[0].text, /Return JSON with this shape:/);
+    assert.match(calls[0].messages[0].content[0].text, /templateSectionGuidanceText/);
+    assert.match(
+      calls[0].messages[0].content[0].text,
+      /Provide a short description of the protocol/
+    );
     assert.match(calls[1].system, /review the protocol as a whole/i);
     assert.match(
       calls[1].messages[0].content[0].text,
@@ -314,6 +395,12 @@ describe("workflows", () => {
     assert.equal(sectionReview.output.status, "insufficient");
     assert.match(sectionReview.output.feedback, /Add more detail/);
     assert.deepEqual(sectionReview.output.focusAreas, ["risk_benefit_assessment"]);
+    assert.ok(
+      result.output.summary.templateCompleteness.findings.some(
+        (finding) =>
+          finding.sectionName === "PROTOCOL SUMMARY" && finding.issueType === "insufficient"
+      )
+    );
     assert.equal(documentOverview.status, "completed");
     assert.match(documentOverview.output.overallSummary, /one reviewed section/);
     assert.equal(result.output.focusAreas.length, 6);

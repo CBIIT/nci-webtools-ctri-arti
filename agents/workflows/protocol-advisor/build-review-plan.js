@@ -14,6 +14,15 @@ function buildDeterministicFeedback(section) {
 }
 
 function buildReviewDecision(section) {
+  if (section.templateSectionRequired === false) {
+    return {
+      mode: "skipped",
+      action: "not_required",
+      reason: "optional",
+      feedback: "Optional sections are excluded from template completeness checks.",
+    };
+  }
+
   if (
     section.status === "missing" ||
     section.status === "blank" ||
@@ -40,16 +49,17 @@ function buildSectionReviewShell(section) {
   const review = buildReviewDecision(section);
 
   return {
-    templateSectionKey: section.templateSectionKey,
     templateSectionId: section.templateSectionId,
     templateSectionTitle: section.templateSectionTitle,
+    templateSectionGuidanceText: section.templateSectionGuidanceText,
+    templateSectionRequired: section.templateSectionRequired,
     matchStatus: section.matchStatus,
     matchedProtocolSectionId: section.matchedProtocolSectionId,
     matchedProtocolSectionTitle: section.matchedProtocolSectionTitle,
     matchedProtocolSectionContent: section.matchedProtocolSectionContent,
     matchedProtocolSourceOrder: section.matchedProtocolSourceOrder,
     status: section.status,
-    issues: section.issues,
+    issues: section.templateSectionRequired === false ? [] : section.issues,
     citations: [],
     feedback: review.feedback,
     rationale: section.rationale,
@@ -72,9 +82,10 @@ function buildPromptTask({ definition, ctx, section = null, sections = [] }) {
         : {},
     section: section
       ? {
-          templateSectionKey: section.templateSectionKey,
           templateSectionId: section.templateSectionId,
           templateSectionTitle: section.templateSectionTitle,
+          templateSectionGuidanceText: section.templateSectionGuidanceText,
+          templateSectionRequired: section.templateSectionRequired,
           matchedProtocolSectionTitle: section.matchedProtocolSectionTitle,
         }
       : null,

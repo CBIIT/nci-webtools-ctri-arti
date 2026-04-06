@@ -11,6 +11,17 @@ function toLines(report) {
       ([status, count]) => `- ${status}: ${count}`
     ),
     ``,
+    `Template Completeness:`,
+    `- required sections: ${report.summary.templateCompleteness.requiredSectionCount}`,
+    `- present sections: ${report.summary.templateCompleteness.presentSectionCount}`,
+    `- missing sections: ${report.summary.templateCompleteness.missingSectionCount}`,
+    ...report.summary.templateCompleteness.findings
+      .slice(0, 10)
+      .map(
+        (finding) =>
+          `- ${finding.sectionName}: ${finding.issueType} (${finding.requirementReference}) ${finding.description}`
+      ),
+    ``,
     `Top missing sections:`,
     ...report.summary.missingSections.map(
       (section) => `- ${section.templateSectionId || "(no id)"} ${section.templateSectionTitle}`

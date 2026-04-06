@@ -38,6 +38,12 @@ function parseSectionReviewOutput(raw) {
       message:
         typeof issue?.message === "string" ? issue.message : "Issue identified during review.",
       requiredContent: typeof issue?.requiredContent === "string" ? issue.requiredContent : null,
+      requirementReference:
+        typeof issue?.requirementReference === "string"
+          ? issue.requirementReference
+          : typeof issue?.templateRequirementReference === "string"
+            ? issue.templateRequirementReference
+            : null,
       citations: normalizeArray(issue?.citations),
     })),
     citations: normalizeArray(parsed.citations),
@@ -89,6 +95,8 @@ export const protocolAdvisorPromptDefinitions = [
         template: {
           templateId: ctx.steps.loadAssets.selectedTemplate.templateId,
           displayName: ctx.steps.loadAssets.selectedTemplate.displayName,
+          canonicalID: ctx.steps.loadAssets.selectedTemplate.canonicalID,
+          version: ctx.steps.loadAssets.selectedTemplate.version,
         },
         protocol: {
           source: ctx.steps.parseProtocol.source,
@@ -96,9 +104,10 @@ export const protocolAdvisorPromptDefinitions = [
         },
         allowedFocusAreas: PROTOCOL_ADVISOR_FOCUS_AREAS,
         section: {
-          templateSectionKey: section.templateSectionKey,
           templateSectionId: section.templateSectionId,
           templateSectionTitle: section.templateSectionTitle,
+          templateSectionGuidanceText: section.templateSectionGuidanceText,
+          templateSectionRequired: section.templateSectionRequired,
           matchedProtocolSectionId: section.matchedProtocolSectionId,
           matchedProtocolSectionTitle: section.matchedProtocolSectionTitle,
           matchedProtocolSectionContent: section.matchedProtocolSectionContent,
@@ -121,6 +130,7 @@ export const protocolAdvisorPromptDefinitions = [
                 type: "insufficient",
                 message: "What is missing or weak",
                 requiredContent: "What should be added or clarified",
+                requirementReference: "1.0",
                 citations: [],
               },
             ],
@@ -154,6 +164,8 @@ export const protocolAdvisorPromptDefinitions = [
         template: {
           templateId: ctx.steps.loadAssets.selectedTemplate.templateId,
           displayName: ctx.steps.loadAssets.selectedTemplate.displayName,
+          canonicalID: ctx.steps.loadAssets.selectedTemplate.canonicalID,
+          version: ctx.steps.loadAssets.selectedTemplate.version,
         },
         protocol: {
           source: ctx.steps.parseProtocol.source,

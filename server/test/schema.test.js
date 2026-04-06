@@ -22,6 +22,8 @@ test("schema exports", async (t) => {
       "Model",
       "Usage",
       "Prompt",
+      "Template",
+      "TemplateSection",
       "Guardrail",
       "Agent",
       "Conversation",
@@ -43,108 +45,157 @@ test("schema exports", async (t) => {
     assert.ok(schema.userRelations, "Missing userRelations");
     assert.ok(schema.roleRelations, "Missing roleRelations");
     assert.ok(schema.agentRelations, "Missing agentRelations");
+    assert.ok(schema.templateRelations, "Missing templateRelations");
   });
 
   await t.test("exports tables object", () => {
     assert.ok(schema.tables, "Missing tables object");
-    assert.ok(Object.keys(schema.tables).length >= 18);
+    assert.ok(Object.keys(schema.tables).length >= 20);
   });
 });
 
 test("createTestDb", async (t) => {
   await t.test("creates database with all tables", async () => {
-    const { db, schema: s, close } = await createTestDb();
+    const { db, schema: s } = await createTestDb();
     // Should be able to select from every table without error
     const tables = Object.values(s.tables || {});
     for (const table of tables) {
       const rows = await db.select().from(table);
       assert.ok(Array.isArray(rows));
     }
-    close();
   });
 });
 
 test("seedDatabase", async (t) => {
   await t.test("seeds roles", async () => {
-    const { db, schema: s, close } = await createSeededTestDb();
+    const { db, schema: s } = await createSeededTestDb();
     const roles = await db.select().from(s.Role);
     assert.ok(roles.length >= 3, `Expected at least 3 roles, got ${roles.length}`);
     const roleNames = roles.map((r) => r.name);
     assert.ok(roleNames.includes("admin"));
     assert.ok(roleNames.includes("user"));
-    close();
   });
 
   await t.test("seeds providers", async () => {
-    const { db, schema: s, close } = await createSeededTestDb();
+    const { db, schema: s } = await createSeededTestDb();
     const providers = await db.select().from(s.Provider);
     assert.ok(providers.length >= 1, `Expected at least 1 provider, got ${providers.length}`);
-    close();
   });
 
   await t.test("seeds models", async () => {
-    const { db, schema: s, close } = await createSeededTestDb();
+    const { db, schema: s } = await createSeededTestDb();
     const allModels = await db.select().from(s.Model);
     assert.ok(allModels.length >= 1, `Expected at least 1 model, got ${allModels.length}`);
-    close();
   });
 
   await t.test("seeds prompts", async () => {
-    const { db, schema: s, close } = await createSeededTestDb();
+    const { db, schema: s } = await createSeededTestDb();
     const prompts = await db.select().from(s.Prompt);
     assert.ok(prompts.length >= 1, `Expected at least 1 prompt, got ${prompts.length}`);
-    close();
+  });
+
+  await t.test("seeds templates", async () => {
+    const { db, schema: s } = await createSeededTestDb();
+    const templates = await db.select().from(s.Template);
+    const templateSections = await db.select().from(s.TemplateSection);
+    const templatesByCanonicalID = new Map(
+      templates.map((template) => [template.canonicalID, template])
+    );
+    const sectionsByTemplateId = new Map();
+    for (const section of templateSections) {
+      const sections = sectionsByTemplateId.get(section.templateID) || [];
+      sections.push(section);
+      sectionsByTemplateId.set(section.templateID, sections);
+    }
+
+    assert.ok(templates.length >= 1, `Expected at least 1 template, got ${templates.length}`);
+    assert.equal(
+      templateSections.length,
+      25,
+      `Expected 25 template sections, got ${templateSections.length}`
+    );
+    assert.ok(
+      templateSections.every((section) => String(section.guidanceText || "").trim().length > 0),
+      "Expected every seeded template section to have guidance text"
+    );
+    assert.equal("canonicalID" in templateSections[0], false);
+    assert.equal("sectionKey" in templateSections[0], false);
+    for (const template of templates) {
+      assert.ok(
+        (sectionsByTemplateId.get(template.id) || []).length >= 1,
+        `Expected at least one section for template ${template.canonicalID}`
+      );
+    }
+    assert.ok(
+      (sectionsByTemplateId.get(templatesByCanonicalID.get("secondary_research").id) || []).some(
+        (section) => section.name === "PROTOCOL SUMMARY" && section.required === true
+      ),
+      "Expected the secondary research template to include PROTOCOL SUMMARY"
+    );
+    assert.ok(
+      (sectionsByTemplateId.get(templatesByCanonicalID.get("secondary_research").id) || []).some(
+        (section) => section.name === "STATEMENT OF COMPLIANCE" && section.required === true
+      ),
+      "Expected the secondary research template to include STATEMENT OF COMPLIANCE"
+    );
+    assert.ok(
+      (sectionsByTemplateId.get(templatesByCanonicalID.get("interventional").id) || []).some(
+        (section) => section.name === "Synopsis" && section.required === true
+      ),
+      "Expected the interventional template to include Synopsis"
+    );
+    assert.equal(
+      templateSections.some((section) =>
+        /out of|that the activity is being conducted for research purposes/i.test(section.name)
+      ),
+      false,
+      "Template seed data should not include parser artifacts"
+    );
   });
 
   await t.test("seeds guardrails", async () => {
-    const { db, schema: s, close } = await createSeededTestDb();
+    const { db, schema: s } = await createSeededTestDb();
     const guardrails = await db.select().from(s.Guardrail);
     assert.ok(guardrails.length >= 1, `Expected at least 1 guardrail, got ${guardrails.length}`);
-    close();
   });
 
   await t.test("seeds agents", async () => {
-    const { db, schema: s, close } = await createSeededTestDb();
+    const { db, schema: s } = await createSeededTestDb();
     const agents = await db.select().from(s.Agent);
     assert.ok(agents.length >= 1, `Expected at least 1 agent, got ${agents.length}`);
-    close();
   });
 
   await t.test("seeds policies", async () => {
-    const { db, schema: s, close } = await createSeededTestDb();
+    const { db, schema: s } = await createSeededTestDb();
     const policies = await db.select().from(s.Policy);
     assert.ok(policies.length >= 1, `Expected at least 1 policy, got ${policies.length}`);
-    close();
   });
 
   await t.test("seeds tools", async () => {
-    const { db, schema: s, close } = await createSeededTestDb();
+    const { db, schema: s } = await createSeededTestDb();
     const tools = await db.select().from(s.Tool);
     assert.ok(tools.length >= 7, `Expected at least 7 tools, got ${tools.length}`);
-    close();
   });
 
   await t.test("seeds role-policies", async () => {
-    const { db, schema: s, close } = await createSeededTestDb();
+    const { db, schema: s } = await createSeededTestDb();
     const rolePolicies = await db.select().from(s.RolePolicy);
     assert.ok(
       rolePolicies.length >= 1,
       `Expected at least 1 role-policy, got ${rolePolicies.length}`
     );
-    close();
   });
 
   await t.test("seeds agent-tools", async () => {
-    const { db, schema: s, close } = await createSeededTestDb();
+    const { db, schema: s } = await createSeededTestDb();
     const agentTools = await db.select().from(s.AgentTool);
     assert.ok(agentTools.length >= 1, `Expected at least 1 agent-tool, got ${agentTools.length}`);
-    close();
   });
 });
 
 test("relational audit", async (t) => {
   await t.test("reports a clean relational graph on the migrated schema", async () => {
-    const { db, close } = await createSeededTestDb();
+    const { db } = await createSeededTestDb();
     const audit = await auditRelationalIntegrity(db);
 
     assert.equal(
@@ -162,12 +213,10 @@ test("relational audit", async (t) => {
       [],
       "seeded fixtures should satisfy the required-column rules"
     );
-
-    await close();
   });
 
   await t.test("rejects new orphaned rows after the foreign keys land", async () => {
-    const { db, schema: s, close } = await createTestDb();
+    const { db, schema: s } = await createTestDb();
     await assert.rejects(
       db.insert(s.Message).values({
         conversationID: 999999,
@@ -176,8 +225,6 @@ test("relational audit", async (t) => {
       }),
       /Failed query/i
     );
-
-    await close();
   });
 });
 

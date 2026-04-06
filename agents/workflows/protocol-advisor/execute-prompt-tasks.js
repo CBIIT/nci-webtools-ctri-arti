@@ -13,7 +13,6 @@ async function runSectionReviewTask(task) {
     scope: task.scope,
     status: "pending_model_review",
     target: {
-      templateSectionKey: task.section?.templateSectionKey || null,
       templateSectionId: task.section?.templateSectionId || null,
       templateSectionTitle: task.section?.templateSectionTitle || null,
     },

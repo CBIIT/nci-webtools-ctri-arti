@@ -1,4 +1,4 @@
-Review this protocol section against the selected template section.
+Review this protocol section against the selected template requirement, using the requirement guidance and section metadata in the input.
 
 Return JSON with this shape:
 {{output_json_example}}

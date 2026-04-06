@@ -11,6 +11,72 @@ function countByStatus(results) {
   }, {});
 }
 
+function normalizeIssueType(status) {
+  if (
+    status === "missing" ||
+    status === "blank" ||
+    status === "placeholder" ||
+    status === "insufficient"
+  ) {
+    return status;
+  }
+
+  if (status === "mismatch") {
+    return "insufficient";
+  }
+
+  return null;
+}
+
+function getRequirementReference(section) {
+  return section.templateSectionId || section.templateSectionTitle;
+}
+
+function getReviewResultKey(result) {
+  return result?.target?.templateSectionId || result?.target?.templateSectionTitle || null;
+}
+
+function mergeSectionResults(sections, promptExecution) {
+  const reviewResults = new Map(
+    promptExecution.results
+      .filter((result) => result.promptId === "section_review")
+      .map((result) => [getReviewResultKey(result), result])
+      .filter(([key]) => Boolean(key))
+  );
+
+  return sections.map((section) => {
+    const reviewResult = reviewResults.get(
+      section.templateSectionId || section.templateSectionTitle
+    );
+    const reviewOutput = reviewResult?.status === "completed" ? reviewResult.output : null;
+    const reviewStatus = normalizeIssueType(reviewOutput?.status);
+    const mergedIssues = [...section.issues];
+
+    if (Array.isArray(reviewOutput?.issues)) {
+      mergedIssues.push(
+        ...reviewOutput.issues.map((issue) => ({
+          ...issue,
+          requirementReference: issue.requirementReference || getRequirementReference(section),
+        }))
+      );
+    }
+
+    const finalStatus = reviewStatus || section.status;
+
+    return {
+      ...section,
+      status: finalStatus,
+      issues: mergedIssues,
+      reviewExecution: reviewResult
+        ? {
+            status: reviewResult.status,
+            output: reviewOutput,
+          }
+        : null,
+    };
+  });
+}
+
 function inferFocusAreaIdsFromSection(section) {
   const title =
     `${section.templateSectionTitle} ${section.matchedProtocolSectionTitle || ""}`.toLowerCase();
@@ -36,6 +102,50 @@ function inferFocusAreaIdsFromSection(section) {
   }
 
   return Array.from(areaIds);
+}
+
+function buildTemplateCompletenessSummary(sections) {
+  const requiredSections = sections.filter((section) => section.templateSectionRequired !== false);
+
+  const requiredSectionStatuses = requiredSections.map((section) => ({
+    sectionName: section.templateSectionTitle,
+    requirementReference: getRequirementReference(section),
+    status: section.status === "missing" ? "Missing" : "Present",
+  }));
+
+  const findings = requiredSections.flatMap((section) => {
+    const issueType = normalizeIssueType(section.status);
+    if (!issueType) {
+      return [];
+    }
+
+    const issues = section.issues.length
+      ? section.issues
+      : [
+          {
+            message:
+              section.reviewExecution?.output?.feedback ||
+              "This required section does not meet the template requirement.",
+          },
+        ];
+
+    return issues.map((issue) => ({
+      sectionName: section.templateSectionTitle,
+      description: issue.message,
+      issueType,
+      requirementReference: issue.requirementReference || getRequirementReference(section),
+    }));
+  });
+
+  return {
+    requiredSectionCount: requiredSections.length,
+    presentSectionCount: requiredSectionStatuses.filter((section) => section.status === "Present")
+      .length,
+    missingSectionCount: requiredSectionStatuses.filter((section) => section.status === "Missing")
+      .length,
+    requiredSections: requiredSectionStatuses,
+    findings,
+  };
 }
 
 function buildDefaultFocusAreas(sections) {
@@ -86,7 +196,10 @@ function buildFocusAreas(promptExecution, sections) {
 }
 
 export function aggregateProtocolAdvisorReport(ctx) {
-  const sections = ctx.steps.buildReviewPlan.sections;
+  const sections = mergeSectionResults(
+    ctx.steps.buildReviewPlan.sections,
+    ctx.steps.executePromptTasks
+  );
   const parseProtocol = ctx.steps.parseProtocol;
   const selectedTemplate = ctx.steps.loadAssets.selectedTemplate;
   const countsByStatus = countByStatus(sections);
@@ -116,7 +229,9 @@ export function aggregateProtocolAdvisorReport(ctx) {
     focusAreas: buildFocusAreas(promptExecution, sections),
     summary: {
       countsByStatus,
+      templateCompleteness: buildTemplateCompletenessSummary(sections),
       missingSections: sections
+        .filter((section) => section.templateSectionRequired !== false)
         .filter((section) => section.status === "missing")
         .map((section) => ({
           templateSectionId: section.templateSectionId,
@@ -124,6 +239,7 @@ export function aggregateProtocolAdvisorReport(ctx) {
         }))
         .slice(0, 10),
       placeholderSections: sections
+        .filter((section) => section.templateSectionRequired !== false)
         .filter((section) => section.status === "placeholder")
         .map((section) => ({
           templateSectionId: section.templateSectionId,
