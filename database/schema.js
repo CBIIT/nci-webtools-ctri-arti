@@ -170,6 +170,31 @@ export const Prompt = pgTable(
   ]
 );
 
+export const Template = pgTable(
+  "Template",
+  {
+    id: serial("id").primaryKey(),
+    version: integer("version").notNull(),
+    title: text("title").notNull(),
+    canonicalID: text("canonicalID").notNull(),
+  },
+  (t) => [uniqueIndex("Template_canonicalID_version_idx").on(t.canonicalID, t.version)]
+);
+
+export const TemplateSection = pgTable(
+  "TemplateSection",
+  {
+    id: serial("id").primaryKey(),
+    templateID: integer("templateID")
+      .notNull()
+      .references(() => Template.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    guidanceText: text("guidanceText").notNull(),
+    required: boolean("required").notNull().default(true),
+  },
+  (t) => [index("TemplateSection_templateID_idx").on(t.templateID)]
+);
+
 export const Guardrail = pgTable(
   "Guardrail",
   {
@@ -448,6 +473,14 @@ export const promptRelations = relations(Prompt, ({ many }) => ({
   Agents: many(Agent),
 }));
 
+export const templateRelations = relations(Template, ({ many }) => ({
+  Sections: many(TemplateSection),
+}));
+
+export const templateSectionRelations = relations(TemplateSection, ({ one }) => ({
+  Template: one(Template, { fields: [TemplateSection.templateID], references: [Template.id] }),
+}));
+
 export const guardrailRelations = relations(Guardrail, ({ many }) => ({
   Agents: many(Agent),
 }));
@@ -531,6 +564,8 @@ export const tables = {
   Model,
   Usage,
   Prompt,
+  Template,
+  TemplateSection,
   Guardrail,
   Agent,
   Tool,
@@ -542,6 +577,13 @@ export const tables = {
   UserTool,
   AgentTool,
 };
+
+function loadTemplateSeedData() {
+  const templates = loadCsv(resolve(dataDir, "templates.csv"));
+  const sections = loadCsv(resolve(dataDir, "templatesections.csv"));
+
+  return { templates, sections };
+}
 
 // ===== Seed database =====
 
@@ -558,6 +600,8 @@ export async function seedDatabase(db) {
     Provider,
     Model,
     Prompt,
+    Template,
+    TemplateSection,
     Guardrail,
     Agent,
     Tool,
@@ -578,6 +622,7 @@ export async function seedDatabase(db) {
   const agents = loadCsv(resolve(dataDir, "agents.csv"));
   const tools = loadCsv(resolve(dataDir, "tools.csv"));
   const agentTools = loadCsv(resolve(dataDir, "agent-tools.csv"));
+  const { templates, sections } = loadTemplateSeedData();
 
   // Helper: upsert rows by inserting and updating on conflict
   async function upsert(table, rows, conflictTarget, updateCols) {
@@ -630,6 +675,13 @@ export async function seedDatabase(db) {
     "maxReasoning",
   ]);
   await upsert(T.Prompt, prompts, T.Prompt.id, ["name", "version", "content"]);
+  await upsert(T.Template, templates, T.Template.id, ["version", "title", "canonicalID"]);
+  await upsert(T.TemplateSection, sections, T.TemplateSection.id, [
+    "templateID",
+    "name",
+    "guidanceText",
+    "required",
+  ]);
   await upsert(T.Guardrail, guardrails, T.Guardrail.id, [
     "name",
     "description",

@@ -1,6 +1,9 @@
 import { fileURLToPath } from "node:url";
 
 import { loadCsv } from "database/csv-loader.js";
+import { desc, eq } from "drizzle-orm";
+
+import { normalizeHeading } from "./split-sections.js";
 
 function resolveAssetPath(relativePath) {
   return fileURLToPath(new URL(relativePath, import.meta.url));
@@ -111,12 +114,27 @@ function createTemplateRecord(row) {
   };
 }
 
+function normalizeTemplateSection(section, titleAliases = {}) {
+  const normalizedTitle = normalizeHeading(section.name);
+
+  return {
+    templateSectionId: section.id,
+    templateSectionTitle: section.name,
+    templateSectionGuidanceText: section.guidanceText,
+    templateSectionRequired: Boolean(section.required),
+    normalizedTitle,
+    aliases: titleAliases[normalizedTitle] || [],
+    instructionText: section.guidanceText,
+    headingKind: "database",
+  };
+}
+
 function buildAssets() {
   const rows = loadCsv(SOURCE_CSV_PATH);
   const templates = rows
     .filter((row) => row.purpose === "protocol template")
     .map(createTemplateRecord)
-    .filter(Boolean);
+    .filter((template) => template && template.supported);
 
   const byId = Object.fromEntries(templates.map((template) => [template.templateId, template]));
   const references = rows
@@ -135,6 +153,35 @@ function buildAssets() {
   };
 }
 
+async function loadTemplateRequirements(templateId, titleAliases = {}) {
+  const { default: db } = await import("database");
+  const { Template, TemplateSection } = await import("database/schema.js");
+  const [template] = await db
+    .select()
+    .from(Template)
+    .where(eq(Template.canonicalID, templateId))
+    .orderBy(desc(Template.version))
+    .limit(1);
+
+  if (!template) {
+    return null;
+  }
+
+  const sections = await db
+    .select()
+    .from(TemplateSection)
+    .where(eq(TemplateSection.templateID, template.id))
+    .orderBy(TemplateSection.id);
+
+  return {
+    templateDbId: template.id,
+    canonicalID: template.canonicalID,
+    version: template.version,
+    title: template.title,
+    sections: sections.map((section) => normalizeTemplateSection(section, titleAliases)),
+  };
+}
+
 export async function loadProtocolAdvisorAssets(ctx) {
   cachedAssets ||= buildAssets();
 
@@ -143,8 +190,21 @@ export async function loadProtocolAdvisorAssets(ctx) {
     throw new Error(`Unsupported protocol_advisor templateId: ${ctx.input.templateId}`);
   }
 
+  const templateRequirements = await loadTemplateRequirements(
+    selectedTemplate.templateId,
+    selectedTemplate.titleAliases
+  );
+  if (!templateRequirements) {
+    throw new Error(
+      `Missing Template requirements for protocol_advisor templateId: ${ctx.input.templateId}`
+    );
+  }
+
   return {
     ...cachedAssets,
-    selectedTemplate,
+    selectedTemplate: {
+      ...selectedTemplate,
+      ...templateRequirements,
+    },
   };
 }

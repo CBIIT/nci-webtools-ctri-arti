@@ -14,20 +14,6 @@ function normalizeText(value = "") {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function findSectionById(templateSection, protocolSections, usedSourceOrders) {
-  if (!templateSection.templateSectionId) {
-    return null;
-  }
-
-  return (
-    protocolSections.find(
-      (section) =>
-        !usedSourceOrders.has(section.sourceOrder) &&
-        section.detectedSectionId === templateSection.templateSectionId
-    ) || null
-  );
-}
-
 function findSectionByTitle(templateSection, protocolSections, usedSourceOrders) {
   return (
     protocolSections.find(
@@ -114,11 +100,29 @@ function classifyMatchedSection(match) {
   };
 }
 
-function buildMissingResult(templateSection) {
+function buildOptionalResult(templateSection, match = null) {
   return {
-    templateSectionKey: templateSection.templateSectionKey,
     templateSectionId: templateSection.templateSectionId,
     templateSectionTitle: templateSection.templateSectionTitle,
+    templateSectionGuidanceText: templateSection.templateSectionGuidanceText || "",
+    templateSectionRequired: false,
+    matchStatus: match ? "matched" : "optional",
+    matchedProtocolSectionId: match?.detectedSectionId || null,
+    matchedProtocolSectionTitle: match?.detectedTitle || null,
+    matchedProtocolSectionContent: match?.rawContent || null,
+    matchedProtocolSourceOrder: match?.sourceOrder || null,
+    status: "optional",
+    issues: [],
+    rationale: match ? "optional-match" : "optional-missing",
+  };
+}
+
+function buildMissingResult(templateSection) {
+  return {
+    templateSectionId: templateSection.templateSectionId,
+    templateSectionTitle: templateSection.templateSectionTitle,
+    templateSectionGuidanceText: templateSection.templateSectionGuidanceText || "",
+    templateSectionRequired: Boolean(templateSection.templateSectionRequired),
     matchStatus: "missing",
     matchedProtocolSectionId: null,
     matchedProtocolSectionTitle: null,
@@ -139,9 +143,10 @@ function buildMatchedResult(templateSection, match, rationale) {
   const classification = classifyMatchedSection(match);
 
   return {
-    templateSectionKey: templateSection.templateSectionKey,
     templateSectionId: templateSection.templateSectionId,
     templateSectionTitle: templateSection.templateSectionTitle,
+    templateSectionGuidanceText: templateSection.templateSectionGuidanceText || "",
+    templateSectionRequired: Boolean(templateSection.templateSectionRequired),
     matchStatus: "matched",
     matchedProtocolSectionId: match.detectedSectionId,
     matchedProtocolSectionTitle: match.detectedTitle,
@@ -159,21 +164,21 @@ export function matchProtocolSections(ctx) {
   const usedSourceOrders = new Set();
 
   return templateSections.map((templateSection) => {
-    const byId = findSectionById(templateSection, protocolSections, usedSourceOrders);
-    if (byId) {
-      usedSourceOrders.add(byId.sourceOrder);
-      return buildMatchedResult(templateSection, byId, "section-id");
-    }
-
     const byTitle = findSectionByTitle(templateSection, protocolSections, usedSourceOrders);
     if (byTitle) {
       usedSourceOrders.add(byTitle.sourceOrder);
+      if (templateSection.templateSectionRequired === false) {
+        return buildOptionalResult(templateSection, byTitle);
+      }
       return buildMatchedResult(templateSection, byTitle, "title");
     }
 
     const byAlias = findSectionByAlias(templateSection, protocolSections, usedSourceOrders);
     if (byAlias) {
       usedSourceOrders.add(byAlias.sourceOrder);
+      if (templateSection.templateSectionRequired === false) {
+        return buildOptionalResult(templateSection, byAlias);
+      }
       return buildMatchedResult(templateSection, byAlias, "alias");
     }
 
@@ -184,7 +189,14 @@ export function matchProtocolSections(ctx) {
     );
     if (byFuzzyTitle) {
       usedSourceOrders.add(byFuzzyTitle.sourceOrder);
+      if (templateSection.templateSectionRequired === false) {
+        return buildOptionalResult(templateSection, byFuzzyTitle);
+      }
       return buildMatchedResult(templateSection, byFuzzyTitle, "fuzzy-title");
+    }
+
+    if (templateSection.templateSectionRequired === false) {
+      return buildOptionalResult(templateSection);
     }
 
     return buildMissingResult(templateSection);

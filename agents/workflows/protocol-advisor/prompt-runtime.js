@@ -18,7 +18,6 @@ function extractTextFromInvokeResult(result) {
 
 function buildPromptTarget(task) {
   return {
-    templateSectionKey: task.section?.templateSectionKey || null,
     templateSectionId: task.section?.templateSectionId || null,
     templateSectionTitle: task.section?.templateSectionTitle || null,
   };

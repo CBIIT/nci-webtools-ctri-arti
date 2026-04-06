@@ -1,0 +1,26 @@
+id,templateID,name,guidanceText,required
+1,2,PROTOCOL SUMMARY,"Provide a short description of the protocol, including a brief statement of the study hypothesis. This should be only a few sentences in length. Include the study summary required by the NIH template for this section.",true
+2,2,Synopsis,"Provide a study-specific synopsis that summarizes the protocol requirements for this section.",true
+3,2,Schema,"Provide a study-specific schema or diagram that gives a quick snapshot of the study.",true
+4,2,Schedule of Activities (SOA),"Provide the schedule of activities and assessments required by this section.",true
+5,2,INTRODUCTION,"Provide the background, rationale, and context required by the NIH template for this section.",true
+6,2,OBJECTIVES AND ENDPOINTS,"Provide the study objectives and endpoints required by the NIH template for this section.",true
+7,2,STUDY DESIGN,"Provide the overall study design and methods required by the NIH template for this section.",true
+8,2,Study Rationale,"Provide a study-specific rationale for conducting the clinical trial.",true
+9,2,Background,"Provide the background information and relevant literature required by the NIH template for this section.",true
+10,2,Risk/Benefit Assessment,"Provide the assessment of risks and benefits required by the NIH template for this section.",true
+11,2,Known Potential Risks,"Provide the known potential risks required by the NIH template for this section.",true
+12,2,Assessment of Potential Risks and Benefits,"Provide the assessment of potential risks and benefits required by the NIH template for this section.",true
+13,2,Scientific Rationale for Study Design,"Provide the rationale for the chosen study design required by the NIH template for this section.",true
+14,2,STUDY POPULATION,"Provide the study population details required by the NIH template for this section.",true
+15,2,Lifestyle Considerations,"Provide the lifestyle considerations required by the NIH template for this section.",false
+16,7,STATEMENT OF COMPLIANCE,"Provide the statement of compliance required by the NIH template for this section.",true
+17,7,PROTOCOL SUMMARY,"Provide a short description of the protocol, including a brief statement of the study hypothesis. This should be only a few sentences in length.",true
+18,7,INTRODUCTION,"Provide the background and rationale required by the NIH template for this section.",true
+19,7,Background and Rationale,"Provide the background, rationale, and context required by the NIH template for this section.",true
+20,7,BIOSPECIMENS AND/OR DATA,"Provide the specimens and/or data details required by the NIH template for this section.",true
+21,1,Study Overview,"Provide a concise overview of the behavioral and social science protocol and its purpose.",true
+22,3,Study Design,"Describe the observational design and how participants or records will be followed.",true
+23,4,Data Collection Procedures,"Describe how prospective data will be collected and by whom.",true
+24,5,Repository Contents,"Describe the materials or data that will be stored in the repository.",true
+25,6,Source Materials,"Describe the records or specimens that will be reviewed retrospectively.",true
