@@ -3,6 +3,7 @@ import html from "solid-js/html";
 
 import { capitalize } from "../../../utils/utils.js";
 import { VALID_DATE_RANGES, USER_SEARCH_PLACEHOLDER } from "../../constants.js";
+import { toDateInputValue } from "../date-utils.js";
 
 export function usageTableHeader(props) {
   return html`
@@ -113,8 +114,8 @@ export function usageTableHeader(props) {
               type="date"
               id="custom-startDate"
               class="form-control data-form-field form-header-input-label"
-              value=${() => props.customDates.startDate}
-              max=${() => props.customDates.endDate}
+              value=${() => toDateInputValue(props.customDates.startDate)}
+              max=${() => toDateInputValue(props.customDates.endDate)}
               onChange=${(e) =>
                 props.setCustomDates((prev) => ({ ...prev, startDate: e.target.value }))}
             />
@@ -125,8 +126,8 @@ export function usageTableHeader(props) {
               type="date"
               id="custom-endDate"
               class="form-control data-form-field form-header-input-label"
-              value=${() => props.customDates.endDate}
-              min=${() => props.customDates.startDate}
+              value=${() => toDateInputValue(props.customDates.endDate)}
+              min=${() => toDateInputValue(props.customDates.startDate)}
               max=${props.maxDate}
               onChange=${(e) =>
                 props.setCustomDates((prev) => ({ ...prev, endDate: e.target.value }))}

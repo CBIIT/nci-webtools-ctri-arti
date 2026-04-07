@@ -724,7 +724,7 @@ ul {
 }
 
 .usage-view-details-btn {
-  border: 1px solid var(--Blue-Blue-1, #036AC5) !important;
+  border: 1px solid var(--Blue-Blue-1, #036ac5) !important;
   color: #343434;
   background-color: #ffffff;
   height: 33px;
@@ -778,6 +778,36 @@ ul {
 .usage-users-table tbody > tr > td {
   border-color: #d9e2f5;
   height: 48px;
+}
+
+.usage-user-name {
+  color: var(--Neutral-Black, #343434);
+  font-family: Poppins;
+  font-size: 20px !important;
+  font-style: normal;
+  font-weight: 600 !important;
+  line-height: 27px;
+}
+
+.usage-user-email {color: var(--Neutral-Gray-1, #62666D);
+  font-family: Inter;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.usage-overview-card {
+  display: flex;
+  padding: 15px 17px 12px 17px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 15px;
+  align-self: stretch;
+  border-radius: 5px !important;
+  border: 1px solid var(--Neutral-Gray-2, #A5A5A5);
+  background: #FFF;
 }
 
 .users-table .btn {
@@ -1669,12 +1699,19 @@ dialog .close-btn {
 
 /* Page header with background image */
 .page-header-bg {
-  background: linear-gradient(180deg, #000E26 0%, #7EA4EE 55%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #000e26 0%, #7ea4ee 55%, #ffffff 100%);
 }
 
 .page-header-banner {
-  background: url('/assets/images/users/user_banner.png') center top / cover no-repeat;
+  background: url("/assets/images/users/user_banner.png") center top / cover no-repeat;
   min-height: 200px;
+}
+
+.page-header-text {
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 40px;
+  padding: 0 0 0 44px;
 }
 
 .page-content-card {
@@ -1687,18 +1724,22 @@ dialog .close-btn {
 
 /* Usage statistic section cards */
 .usage-section-card {
-  border: 1px solid #A5A5A5;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+  width: 100%;
   border-radius: 5px;
+  border: 1px solid var(--Neutral-Gray-2, #A5A5A5);
   overflow: hidden;
-  margin-bottom: 1.5rem;
 }
 
 .return-btn-color {
-  color: #CEEBFF;
+  color: #ceebff;
 }
 
 .usage-section-card .card-header {
-  background: #6573AF;
+  background: var(--Purple-Purple-2, #6573AF);
   color: #ffffff;
   border-bottom: none;
   border-radius: 4px 4px 0 0;
@@ -1714,9 +1755,57 @@ dialog .close-btn {
   font-size: 14px;
 }
 
+.usage-table thead th {
+  padding: 0 !important;
+  color: var(--Neutral-Black, #343434);
+  font-family: Inter;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.usage-table tbody td {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Usage summary: scope layout + metrics under outer .usage-summary */
+.usage-summary > .card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+  width: 100%;
+  padding: 12px 16px;
+}
+
+.usage-summary > .card-body .usage-metric-card {
+  min-height: 75px;
+  height: 100%;
+}
+
+.usage-summary .usage-metric-value--requests {
+  color: #1075fd;
+}
+
+.usage-summary .usage-metric-value--usage {
+  color: #9534e5;
+}
+
+.usage-summary .usage-metric-value--guardrail {
+  color: #a438bf;
+}
+
+.usage-summary .usage-metric-value--total {
+  color: #3848bf;
+}
+
 .usage-section-card .card-header .card-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  margin-bottom: 0;
-  gap: 25px;
+  font-family: Poppins !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: 22.5px !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 0 !important;
 }

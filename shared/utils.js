@@ -117,8 +117,20 @@ function getDatePartsInTimeZone(date, timeZone) {
   return { year, month, day };
 }
 
-function zonedDateTimeToUtc(dateParts, timeZone, { hour = 0, minute = 0, second = 0, millisecond = 0 } = {}) {
-  let guessMs = Date.UTC(dateParts.year, dateParts.month - 1, dateParts.day, hour, minute, second, 0);
+function zonedDateTimeToUtc(
+  dateParts,
+  timeZone,
+  { hour = 0, minute = 0, second = 0, millisecond = 0 } = {}
+) {
+  let guessMs = Date.UTC(
+    dateParts.year,
+    dateParts.month - 1,
+    dateParts.day,
+    hour,
+    minute,
+    second,
+    0
+  );
   const targetWallClockMs = Date.UTC(
     dateParts.year,
     dateParts.month - 1,

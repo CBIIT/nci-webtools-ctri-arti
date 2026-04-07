@@ -1,21 +1,38 @@
 import { useParams, useSearchParams } from "@solidjs/router";
-import { createMemo, createResource, createSignal, ErrorBoundary, Show } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  ErrorBoundary,
+  Show,
+} from "solid-js";
 import html from "solid-js/html";
 
 import { AlertContainer } from "../../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../../utils/alerts.js";
-import { formatCurrency, formatNumber, formatTypeLabel, formatUnitLabel, normalizeRequestId, normalizeModelGroupKey } from "../../../utils/utils.js";
-import { formatUtcTimestampToLocal, formatUTCTimestampToLocalDate } from "../date-utils.js";
-import { formatDate } from "../date-utils.js";
-import { Overview } from "./overview.js";
-import { UsageSummary } from "./usage-summary.js";
-import { DailyUsage } from "./daily-usage.js";
-import { RequestHistory } from "./request-history.js";
+import {
+  formatCurrency,
+  formatNumber,
+  formatTypeLabel,
+  formatUnitLabel,
+  normalizeRequestId,
+  normalizeModelGroupKey,
+} from "../../../utils/utils.js";
+import { DEFAULT_TIMEZONE } from "../../constants.js";
 import {
   calculateDateRange,
   getDefaultStartDate,
+  normalizeLocalTimestamp,
+  formatDate,
+  toDateInputValue,
   validateDateRange,
-} from "../usage/usage.js";
+} from "../date-utils.js";
+
+import { DailyUsage } from "./daily-usage.js";
+import { Overview } from "./overview.js";
+import { RequestHistory } from "./request-history.js";
+import { UsageSummary } from "./usage-summary.js";
 
 function UserUsage() {
   const params = useParams();
@@ -25,7 +42,7 @@ function UserUsage() {
   // Initialize from URL params or default
   const initialDateRange = searchParams.dateRange || "Last 30 Days";
   const initialStartDate = searchParams.startDate || getDefaultStartDate();
-  const initialEndDate = searchParams.endDate || formatDate(new Date());
+  const initialEndDate = searchParams.endDate || new Date().toISOString();
 
   // Validate the initial date range exists in options
   const validDateRange = validateDateRange(initialDateRange, "Last 30 Days");
@@ -42,6 +59,14 @@ function UserUsage() {
       return customDates();
     }
     return calculateDateRange(selectedDateRange());
+  });
+
+  const [requestHistoryDayOverride, setRequestHistoryDayOverride] = createSignal(null);
+
+  createEffect(() => {
+    selectedDateRange();
+    customDates();
+    setRequestHistoryDayOverride(null);
   });
 
   // Create resources for fetching data
@@ -63,23 +88,21 @@ function UserUsage() {
 
   // Fetch user usage details
   const [userUsageDetails] = createResource(async () => {
-      try {
-        const response = await fetch(`/api/v1/admin/users/${userId}/usage`);
-        if(!response.ok) {
-          await handleHttpError(response, "fetching user usage details");
-          return { data: [] };
-        }
-        console.log("daily analytics", response.json());
-
-        return response.json(); 
-      } catch (err) {
-        const error = new Error("Something went wrong while retrieving user usage details.");
-        error.cause = err;
-        handleError(error, "User Usage Details API Error");
+    try {
+      const response = await fetch(`/api/v1/admin/users/${userId}/usage`);
+      if (!response.ok) {
+        await handleHttpError(response, "fetching user usage details");
         return { data: [] };
       }
+
+      return response.json();
+    } catch (err) {
+      const error = new Error("Something went wrong while retrieving user usage details.");
+      error.cause = err;
+      handleError(error, "User Usage Details API Error");
+      return { data: [] };
     }
-  );
+  });
 
   const [analyticsData] = createResource(
     () => currentDateRange(),
@@ -108,7 +131,7 @@ function UserUsage() {
     async ({ startDate, endDate }) => {
       try {
         const response = await fetch(
-          `/api/v1/admin/analytics?groupBy=day&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
+          `/api/v1/admin/analytics?groupBy=day&startDate=${startDate}&endDate=${endDate}&userId=${userId}&tz=${DEFAULT_TIMEZONE}`
         );
         if (!response.ok) {
           await handleHttpError(response, "fetching daily analytics");
@@ -126,27 +149,27 @@ function UserUsage() {
     }
   );
 
-  const [modelAnalytics] = createResource(
-    () => currentDateRange(),
-    async ({ startDate, endDate }) => {
-      try {
-        const response = await fetch(
-          `/api/v1/admin/analytics?groupBy=model&startDate=${startDate}&endDate=${endDate}&userId=${userId}`
-        );
-        if (!response.ok) {
-          await handleHttpError(response, "fetching model analytics");
-          return { data: [] };
-        }
-        return response.json();
-      } catch (err) {
-        const error = new Error("Something went wrong while retrieving model analytics.");
-        error.cause = err;
-        error.dateRange = `${startDate} to ${endDate}`;
-        handleError(error, "Model Analytics API Error");
-        return { data: [] };
-      }
-    }
-  );
+  // `dailyAnalytics.data` is expected to be pre-sorted; first row drives the request-history window.
+  const mostRecentDateInRange = createMemo(() => {
+    const data = dailyAnalytics()?.data;
+    if (!data || data.length === 0) return null;
+    const first = data[0];
+    const recentDate = normalizeLocalTimestamp(first.period);
+    return { startDate: recentDate, endDate: recentDate };
+  });
+
+  /** Single-day window for `/admin/usage` (daily-table override or default first row). */
+  const requestHistoryDateRange = createMemo(() => {
+    const override = requestHistoryDayOverride();
+    if (override) return override;
+    return mostRecentDateInRange();
+  });
+
+  const onSelectDailyUsageDay = (period) => {
+    const ymd = normalizeLocalTimestamp(period); // the period is always at local timezone
+    if (!ymd) return;
+    setRequestHistoryDayOverride({ startDate: ymd, endDate: ymd });
+  };
 
   const [typeAnalytics] = createResource(
     () => currentDateRange(),
@@ -171,7 +194,7 @@ function UserUsage() {
   );
 
   const [rawUsageData] = createResource(
-    () => currentDateRange(),
+    () => requestHistoryDateRange(),
     async ({ startDate, endDate }) => {
       try {
         const response = await fetch(
@@ -294,18 +317,22 @@ function UserUsage() {
         return null;
       }}
     >
-      <div class="page-header-bg overflow-hidden" style="font-family: system-ui;">
-        <div class="page-header-banner pt-3 pb-5">
-          <div class="container">
-            <a href="/_/usage" class="text-decoration-none d-inline-flex align-items-center mb-2 return-btn-color">
+      <div class="page-header-bg overflow-hidden font-inter font-smooth">
+        <div class="page-header-banner">
+          <div class="container d-flex flex-column" style="gap: 40px;">
+            <a
+              href="/_/usage"
+              class="text-decoration-none d-inline-flex align-items-center return-btn-color"
+              style="padding: 10px 0 0 44px;"
+            >
               <span class="me-1">&larr;</span> Back to AI Usage Dashboard
             </a>
-            <h1 class="fs-1 mb-0 mt-3 text-white">Usage Statistics</h1>
+            <h1 class="text-white font-poppins page-header-text">Usage Statistics</h1>
           </div>
         </div>
-        <div class="container pb-4">
-          <div class="card shadow rounded-4 overflow-hidden page-content-card">
-            <div class="card-body p-4">
+        <div class="container pb-4" style="margin-top: -36px; position: relative">
+          <div class="usage-card-body">
+            <div class="usage-card-body-inner">
               <!-- Error Alert -->
               <${Show} when=${() => analyticsData.error || userResource.error}>
                 <div class="alert alert-danger" role="alert">
@@ -327,7 +354,6 @@ function UserUsage() {
 
               <${Overview}
                 userResource=${() => userResource()}
-                formatCurrency=${formatCurrency}
                 selectedDateRange=${selectedDateRange}
                 setSelectedDateRange=${setSelectedDateRange}
                 customDates=${customDates}
@@ -337,23 +363,14 @@ function UserUsage() {
 
               <!-- Usage Summary -->
               <${Show} when=${() => !analyticsData.loading && userStats()}>
-                <${UsageSummary}
-                  userStats=${() => userStats()}
-                  formatNumber=${formatNumber}
-                  formatCurrency=${formatCurrency}
-                />
+                <${UsageSummary} userStats=${() => userStats()} />
                 <${DailyUsage}
                   dailyAnalytics=${() => dailyAnalytics()}
-                  userUsageDetails=${() => userUsageDetails()}
-                  formatUTCTimestampToLocalDate=${formatUTCTimestampToLocalDate}
-                  formatNumber=${formatNumber}
-                  formatCurrency=${formatCurrency}
+                  onSelectDailyUsageDay=${onSelectDailyUsageDay}
                 />
                 <${RequestHistory}
+                  dateRange=${() => requestHistoryDateRange()}
                   groupedUsageData=${() => groupedUsageData()}
-                  formatUtcTimestampToLocal=${formatUtcTimestampToLocal}
-                  formatNumber=${formatNumber}
-                  formatCurrency=${formatCurrency}
                 />
               <//>
 

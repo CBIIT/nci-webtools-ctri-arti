@@ -14,3 +14,9 @@ export const USAGE_TYPE_NAMES = ["All", "User", "Guardrail"];
 export const ROWS_PER_PAGE_OPTIONS = [10, 20, 50];
 
 export const USER_SEARCH_PLACEHOLDER = "Search by name or email (min 3 characters)";
+
+export const DEFAULT_TIMEZONE = "America/New_York";
+
+export const LOCALES = {
+  en_US: "en-US",
+};

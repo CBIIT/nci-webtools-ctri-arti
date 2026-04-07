@@ -1,17 +1,20 @@
 import html from "solid-js/html";
 
+import { formatCurrency } from "../../../utils/utils.js";
+import { formatUtcTimestampToLocal } from "../date-utils.js";
+
 export function RequestHistory(props) {
   return html`
     <div class="card usage-section-card">
       <div class="card-header">
-        <h5 class="card-title">Requests History</h5>
+        <h5 class="card-title">Requests History - ${() => props.dateRange?.startDate ?? "—"}</h5>
       </div>
       <div class="card-body">
         ${() =>
           props.groupedUsageData?.length > 0
             ? html`
                 <div class="table-responsive">
-                  <table class="table table-sm table-hover">
+                  <table class="table table-hover usage-table">
                     <thead>
                       <tr>
                         <th>Date</th>
@@ -27,20 +30,16 @@ export function RequestHistory(props) {
                         props.groupedUsageData.map(
                           (entry) => html`
                             <tr>
-                              <td>${props.formatUtcTimestampToLocal(entry.createdAt)}</td>
+                              <td>${formatUtcTimestampToLocal(entry.createdAt)}</td>
                               <td>${entry.typeLabel}</td>
                               <td>${entry.modelName || "Unknown"}</td>
                               <td class="text-end">
                                 <span title=${entry.usageTitle || "No usage items"}>
-                                  ${props.formatCurrency(entry.usageCost || 0)}
+                                  ${formatCurrency(entry.usageCost || 0)}
                                 </span>
                               </td>
-                              <td class="text-end">
-                                ${props.formatCurrency(entry.guardrailCost || 0)}
-                              </td>
-                              <td class="text-end">
-                                ${props.formatCurrency(entry.totalCost || 0)}
-                              </td>
+                              <td class="text-end">${formatCurrency(entry.guardrailCost || 0)}</td>
+                              <td class="text-end">${formatCurrency(entry.totalCost || 0)}</td>
                             </tr>
                           `
                         )}
