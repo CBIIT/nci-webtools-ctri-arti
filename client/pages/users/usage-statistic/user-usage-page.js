@@ -46,7 +46,7 @@ function UserUsage() {
   // Validate the initial date range exists in options
   const validDateRange = validateDateRange(initialDateRange, VALID_DATE_RANGES[0]);
 
-  const [selectedDateRange, setSelectedDateRange] = createSignal(initialDateRange);
+  const [selectedDateRange, setSelectedDateRange] = createSignal(validDateRange);
   const [customDates, setCustomDates] = createSignal({
     startDate: initialStartDate,
     endDate: initialEndDate,
@@ -82,24 +82,6 @@ function UserUsage() {
       error.cause = err;
       handleError(error, "User Data API Error");
       return null;
-    }
-  });
-
-  // Fetch user usage details
-  const [userUsageDetails] = createResource(async () => {
-    try {
-      const response = await fetch(`/api/v1/admin/users/${userId}/usage`);
-      if (!response.ok) {
-        await handleHttpError(response, "fetching user usage details");
-        return { data: [] };
-      }
-
-      return response.json();
-    } catch (err) {
-      const error = new Error("Something went wrong while retrieving user usage details.");
-      error.cause = err;
-      handleError(error, "User Usage Details API Error");
-      return { data: [] };
     }
   });
 
@@ -362,24 +344,24 @@ function UserUsage() {
               <//>
 
               <${Overview}
-                userResource=${() => userResource()}
+                userResource=${userResource}
                 selectedDateRange=${selectedDateRange}
                 setSelectedDateRange=${setSelectedDateRange}
                 customDates=${customDates}
                 setCustomDates=${setCustomDates}
                 maxDate=${formatDate(new Date())}
               />
-              <${UsageSummary} userStats=${() => userStats()} />
+              <${UsageSummary} userStats=${userStats} />
 
               <!-- Usage Summary -->
               <${Show} when=${() => !analyticsData.loading && userStats()}>
                 <${DailyUsage}
-                  dailyAnalytics=${() => dailyAnalytics()}
+                  dailyAnalytics=${dailyAnalytics}
                   onSelectDailyUsageDay=${onSelectDailyUsageDay}
                 />
                 <${RequestHistory}
-                  dateRange=${() => requestHistoryDateRange()}
-                  groupedUsageData=${() => groupedUsageData()}
+                  dateRange=${requestHistoryDateRange}
+                  groupedUsageData=${groupedUsageData}
                 />
               <//>
 

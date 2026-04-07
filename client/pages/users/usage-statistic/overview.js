@@ -10,25 +10,27 @@ import {
 } from "../date-utils.js";
 
 export function Overview(props) {
+  const userResource = () => props.userResource;
+  const startDate = () => props.customDates?.startDate;
+  const endDate = () => props.customDates?.endDate;
+
   return html`
     <div class="card d-flex flex-column" style="padding: 15px 17px 12px 17px; gap: 15px;">
       <div class="d-flex flex-column">
         <h5 class="usage-user-name mb-0">
           ${() =>
-            props.userResource
-              ? `${props.userResource.firstName || ""} ${props.userResource.lastName || ""}`
-              : ""}
+            userResource() ? `${userResource()?.firstName || ""} ${userResource()?.lastName || ""}` : ""}
         </h5>
         <div class="d-flex flex-row flex-wrap align-items-baseline" style="gap: 15px;">
           <p class="usage-user-email mb-0">
-            ${() => props.userResource?.email || "Email not found"}
+            ${() => userResource()?.email || "Email not found"}
           </p>
           <div class="d-flex flex-row align-items-baseline" style="gap: 8px;">
             <span class="fw-bold">Limit:</span>
             ${() =>
-              props.userResource?.budget === null
+              userResource()?.budget === null
                 ? "Unlimited"
-                : formatCurrency(props.userResource?.budget || 0)}
+                : formatCurrency(userResource()?.budget || 0)}
           </div>
         </div>
       </div>
@@ -38,7 +40,7 @@ export function Overview(props) {
           <select
             class="form-select form-header-input-label"
             id="date-range-filter"
-            value=${() => props.selectedDateRange}
+            value=${props.selectedDateRange}
             onInput=${(e) => props.setSelectedDateRange(e.target.value)}
           >
             <${For} each=${VALID_DATE_RANGES}>
@@ -54,8 +56,8 @@ export function Overview(props) {
               type="date"
               id="custom-startDate"
               class="form-control form-header-input-label"
-              value=${() => toDateInputValue(props.customDates.startDate)}
-              max=${() => toDateInputValue(props.customDates.endDate)}
+              value=${() => toDateInputValue(startDate())}
+              max=${() => toDateInputValue(endDate())}
               onInput=${(e) =>
                 props.setCustomDates((prev) => ({
                   ...prev,
@@ -69,8 +71,8 @@ export function Overview(props) {
               type="date"
               id="custom-endDate"
               class="form-control form-header-input-label"
-              value=${() => toDateInputValue(props.customDates.endDate)}
-              min=${() => toDateInputValue(props.customDates.startDate)}
+              value=${() => toDateInputValue(endDate())}
+              min=${() => toDateInputValue(startDate())}
               max=${props.maxDate}
               onInput=${(e) =>
                 props.setCustomDates((prev) => ({
