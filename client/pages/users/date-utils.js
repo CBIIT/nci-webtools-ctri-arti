@@ -94,14 +94,6 @@ export function calculateDateRange(preset) {
   let startDate, endDate;
 
   switch (preset) {
-    case "This Week": {
-      startDate = new Date(now);
-      const day = startDate.getDay();
-      const diff = day;
-      startDate.setDate(startDate.getDate() - diff);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-    }
     case "Last 30 Days": {
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 30);
@@ -145,7 +137,7 @@ export function calculateDateRange(preset) {
 }
 
 // Validate date range from URL params
-export function validateDateRange(dateRange, defaultRange = "Last 30 Days") {
+export function validateDateRange(dateRange, defaultRange = VALID_DATE_RANGES[0]) {
   return VALID_DATE_RANGES.includes(dateRange) ? dateRange : defaultRange;
 }
 

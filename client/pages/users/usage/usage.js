@@ -15,7 +15,7 @@ import {
   registerErrorDataCollector,
   unregisterErrorDataCollector,
 } from "../../../utils/global-error-handler.js";
-import { USAGE_TOOL_NAMES, USAGE_TYPE_NAMES } from "../../constants.js";
+import { USAGE_TOOL_NAMES, USAGE_TYPE_NAMES, VALID_DATE_RANGES } from "../../constants.js";
 import { formatDate, calculateDateRange, getDefaultStartDate } from "../date-utils.js";
 
 import { usageTableHeader } from "./usage-table-header.js";
@@ -24,7 +24,7 @@ import { usageTable } from "./usage-table.js";
 const fetchConfig = () => fetch("/api/config").then((r) => r.json());
 
 function UsersList() {
-  const [selectedDateRange, setSelectedDateRange] = createSignal("This Week");
+  const [selectedDateRange, setSelectedDateRange] = createSignal(VALID_DATE_RANGES[0]);
   const [customDates, setCustomDates] = createSignal({
     startDate: getDefaultStartDate(),
     endDate: new Date().toISOString(),

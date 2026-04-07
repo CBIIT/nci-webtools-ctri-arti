@@ -789,7 +789,8 @@ ul {
   line-height: 27px;
 }
 
-.usage-user-email {color: var(--Neutral-Gray-1, #62666D);
+.usage-user-email {
+  color: var(--Neutral-Gray-1, #62666d);
   font-family: Inter;
   font-size: 16px;
   font-style: normal;
@@ -806,8 +807,8 @@ ul {
   gap: 15px;
   align-self: stretch;
   border-radius: 5px !important;
-  border: 1px solid var(--Neutral-Gray-2, #A5A5A5);
-  background: #FFF;
+  border: 1px solid var(--Neutral-Gray-2, #a5a5a5);
+  background: #fff;
 }
 
 .users-table .btn {
@@ -1730,7 +1731,7 @@ dialog .close-btn {
   align-self: stretch;
   width: 100%;
   border-radius: 5px;
-  border: 1px solid var(--Neutral-Gray-2, #A5A5A5);
+  border: 1px solid var(--Neutral-Gray-2, #a5a5a5);
   overflow: hidden;
 }
 
@@ -1739,7 +1740,7 @@ dialog .close-btn {
 }
 
 .usage-section-card .card-header {
-  background: var(--Purple-Purple-2, #6573AF);
+  background: var(--Purple-Purple-2, #6573af);
   color: #ffffff;
   border-bottom: none;
   border-radius: 4px 4px 0 0;
@@ -1808,4 +1809,17 @@ dialog .close-btn {
   line-height: 22.5px !important;
   letter-spacing: 0.5px !important;
   margin-bottom: 0 !important;
+}
+
+.usage-summary-details {
+  display: flex;
+  padding: 16px 0 3px 0;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0;
+  align-self: stretch;
+  grid-row: 1 / span 1;
+  grid-column: 2 / span 1;
+  justify-self: stretch;
 }

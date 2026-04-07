@@ -19,13 +19,12 @@ import {
   normalizeRequestId,
   normalizeModelGroupKey,
 } from "../../../utils/utils.js";
-import { DEFAULT_TIMEZONE } from "../../constants.js";
+import { DEFAULT_TIMEZONE, NO_DATA_MESSAGE, VALID_DATE_RANGES } from "../../constants.js";
 import {
   calculateDateRange,
   getDefaultStartDate,
   normalizeLocalTimestamp,
   formatDate,
-  toDateInputValue,
   validateDateRange,
 } from "../date-utils.js";
 
@@ -39,15 +38,15 @@ function UserUsage() {
   const userId = params.id;
   const [searchParams] = useSearchParams();
 
-  // Initialize from URL params or default
-  const initialDateRange = searchParams.dateRange || "Last 30 Days";
+  // Default start date: Last 30 days
+  const initialDateRange = searchParams.dateRange || VALID_DATE_RANGES[0];
   const initialStartDate = searchParams.startDate || getDefaultStartDate();
   const initialEndDate = searchParams.endDate || new Date().toISOString();
 
   // Validate the initial date range exists in options
-  const validDateRange = validateDateRange(initialDateRange, "Last 30 Days");
+  const validDateRange = validateDateRange(initialDateRange, VALID_DATE_RANGES[0]);
 
-  const [selectedDateRange, setSelectedDateRange] = createSignal(validDateRange);
+  const [selectedDateRange, setSelectedDateRange] = createSignal(initialDateRange);
   const [customDates, setCustomDates] = createSignal({
     startDate: initialStartDate,
     endDate: initialEndDate,
@@ -323,9 +322,19 @@ function UserUsage() {
             <a
               href="/_/usage"
               class="text-decoration-none d-inline-flex align-items-center return-btn-color"
-              style="padding: 10px 0 0 44px;"
+              style="padding: 20px 0 0 44px;"
             >
-              <span class="me-1">&larr;</span> Back to AI Usage Dashboard
+              <div class="d-flex align-items-center" style="gap: 20px;">
+                <img
+                  src="/assets/images/icon-vector.svg"
+                  alt=""
+                  width="21"
+                  height="18"
+                  class="me-1"
+                  aria-hidden="true"
+                />
+                Back to AI Usage Dashboard
+              </div>
             </a>
             <h1 class="text-white font-poppins page-header-text">Usage Statistics</h1>
           </div>
@@ -360,10 +369,10 @@ function UserUsage() {
                 setCustomDates=${setCustomDates}
                 maxDate=${formatDate(new Date())}
               />
+              <${UsageSummary} userStats=${() => userStats()} />
 
               <!-- Usage Summary -->
               <${Show} when=${() => !analyticsData.loading && userStats()}>
-                <${UsageSummary} userStats=${() => userStats()} />
                 <${DailyUsage}
                   dailyAnalytics=${() => dailyAnalytics()}
                   onSelectDailyUsageDay=${onSelectDailyUsageDay}
@@ -376,9 +385,7 @@ function UserUsage() {
 
               <!-- No Data Message -->
               <${Show} when=${() => !analyticsData.loading && !userStats()}>
-                <div class="alert alert-info">
-                  No usage data found for this user in the selected date range.
-                </div>
+                <div class="alert alert-info">${NO_DATA_MESSAGE}</div>
               <//>
             </div>
           </div>

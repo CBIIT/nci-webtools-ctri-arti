@@ -1,7 +1,7 @@
 import html from "solid-js/html";
 
 import { formatCurrency } from "../../../utils/utils.js";
-import { formatUtcTimestampToLocal } from "../date-utils.js";
+import { formatUtcTimestampToDefaultTimezone } from "../date-utils.js";
 
 export function RequestHistory(props) {
   return html`
@@ -30,7 +30,7 @@ export function RequestHistory(props) {
                         props.groupedUsageData.map(
                           (entry) => html`
                             <tr>
-                              <td>${formatUtcTimestampToLocal(entry.createdAt)}</td>
+                              <td>${formatUtcTimestampToDefaultTimezone(entry.createdAt)}</td>
                               <td>${entry.typeLabel}</td>
                               <td>${entry.modelName || "Unknown"}</td>
                               <td class="text-end">
