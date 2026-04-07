@@ -1,0 +1,105 @@
+#translator-page.bg {
+  background-color: #1E3664;
+}
+#translator-page a {
+  text-decoration: underline;
+}
+#translator-page .container {
+  font-family: Inter;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 24px; /* 150% */
+}
+#translator-page h1 {
+  font-size: 45px;
+  line-height: 45px;
+  letter-spacing: 0.9px;
+  position: relative;
+}
+#translator-page h1:after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 3px;
+  background-color: #ffffff;
+  position: absolute;
+  bottom: -50px;
+} 
+#translator-page .panel-title,
+#translator-page .form-label {
+  font-family: Poppins;
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 25px; /* 113.636% */
+  text-transform: capitalize;
+  margin-bottom: 5px;
+  color: #FFFFFF;
+}
+#translator-page .form-text {
+  font-family: Inter;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 22px;
+  color: #FFFFFF;
+}
+#translator-page .custom-dropdown-trigger {
+  background: transparent;
+  color: #FFFFFF;
+}
+#translator-page .custom-dropdown-trigger::after {
+  content: url(images/icon-chevron-down-white.svg)
+}
+#translator-page .mt-25 {
+  margin-top: 25px;
+}
+#translator-page .mt-45 {
+  margin-top: 45px;
+}
+#translator-page .mt-55 {
+  margin-top: 55px;
+}
+#translator-page .btn-wide-primary {
+  background: linear-gradient(90deg, #9534E5 0%, #007BFF 100%), #2e4d7b;
+  color: #FFFFFF;
+}
+#translator-right-panel {
+  padding: 35px 24px;
+  color: #FFFFFF;
+  border-radius: 10px;
+  border: 1px solid #CFCFCF;
+  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.25);
+}
+#translator-right-panel ol {
+  margin-top: 25px;
+  padding-left: 20px;
+}
+#translator-page input[type="file"] {
+  background: transparent;
+  color: #FFFFFF;
+}
+#translator-page input[type="file"]::file-selector-button {
+  padding: 0.2em 30px 0.2em 0.4em;
+  border-radius: 0.2em;
+  cursor: pointer;
+  transition: background 0.3s;
+  background: transparent;
+  color: #FFFFFF;
+}
+#translator-page input[type="file"]::after {
+  content: url(images/icon-paperclip-white.svg);
+  position: absolute;
+  top: 38px;
+  left: 98px;
+  width: 16px;
+}
+
+#translator-page input[type="file"]::file-selector-button:hover {
+  background-color: #81ecec;
+}
+#translator-page .btn-wide-info.btn-outline {
+  background: transparent;
+  color: #FFFFFF;
+}
