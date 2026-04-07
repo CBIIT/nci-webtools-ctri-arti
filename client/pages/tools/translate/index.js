@@ -538,7 +538,7 @@ export default function Page() {
                   <div class="position-relative w-100 mt-4">
                     <div>
                       <div class="row">
-                        <div class="col-sm-12 mb-2">
+                        <div class="col-sm-12">
                           <label for="fileInput" class="form-label required"
                             >Source Documents</label
                           >
@@ -550,7 +550,7 @@ export default function Page() {
                             accept=".txt, .docx, .html"
                             class="form-control form-control-sm mb-1"
                           />
-                          <div class="form-text">PDF or DOCX (max 25 MB)</div>
+                          <!-- <div class="form-text">PDF or DOCX (max 25 MB)</div> -->
                         </div>
 
                         <div class="col-sm-12 mt-25">
@@ -667,63 +667,67 @@ export default function Page() {
                             >
                           <//>
                         </div>
-
-                        <${For} each=${() => Object.keys(store.generatedDocuments)}>
-                          ${(jobId) => {
-                            const job = () => store.generatedDocuments[jobId];
-                            return html`
-                              <div
-                                class="d-flex justify-content-between align-items-center p-2 border rounded"
-                              >
-                                <div class="flex-grow-1">
-                                  <div class="fw-medium">
-                                    <span
-                                      >${() => job().config?.displayInfo?.label || "Unknown"}</span
+                        <div class="mt-25">
+                          <${For} each=${() => Object.keys(store.generatedDocuments)}>
+                            ${(jobId) => {
+                              const job = () => store.generatedDocuments[jobId];
+                              return html`
+                                <div
+                                  class="d-flex justify-content-between align-items-center p-2 border rounded"
+                                >
+                                  <div class="flex-grow-1">
+                                    <div class="fw-medium">
+                                      <span
+                                        >${() =>
+                                          job().config?.displayInfo?.label || "Unknown"}</span
+                                      >
+                                    </div>
+                                    <div class="small text-white">
+                                      ${() =>
+                                        job().config?.displayInfo?.filename ||
+                                        "translated_text.txt"}
+                                    </div>
+                                  </div>
+                                  <${Show} when=${() => job()?.status === "processing"}>
+                                    <div
+                                      class="spinner-border spinner-border-sm text-white me-2"
+                                      role="status"
                                     >
-                                  </div>
-                                  <div class="small text-white">
-                                    ${() =>
-                                      job().config?.displayInfo?.filename || "translated_text.txt"}
-                                  </div>
-                                </div>
-                                <${Show} when=${() => job()?.status === "processing"}>
-                                  <div
-                                    class="spinner-border spinner-border-sm text-white me-2"
-                                    role="status"
-                                  >
-                                    <span class="visually-hidden">Processing...</span>
-                                  </div>
-                                <//>
-                                <${Show} when=${() => job()?.status === "completed"}>
-                                  <button
-                                    type="button"
-                                    class="btn"
-                                    onClick=${() => downloadJob(jobId)}
-                                  >
-                                    <img
-                                      src="/assets/images/icon-download-white.svg"
-                                      height="24"
-                                      alt="Download"
-                                    />
-                                  </button>
-                                <//>
-                                <${Show} when=${() => job()?.status === "error"}>
-                                  <div class="d-flex align-items-center gap-2">
+                                      <span class="visually-hidden">Processing...</span>
+                                    </div>
+                                  <//>
+                                  <${Show} when=${() => job()?.status === "completed"}>
                                     <button
                                       type="button"
-                                      class="btn btn-sm btn-outline-light"
-                                      title=${() => job().error}
-                                      onClick=${() => retryJob(jobId)}
+                                      class="btn"
+                                      onClick=${() => downloadJob(jobId)}
                                     >
-                                      Retry
+                                      <img
+                                        src="/assets/images/icon-download-white.svg"
+                                        height="24"
+                                        alt="Download"
+                                      />
                                     </button>
-                                  </div>
-                                <//>
-                              </div>
-                            `;
-                          }}
-                        <//>
+                                  <//>
+                                  <${Show} when=${() => job()?.status === "error"}>
+                                    <div class="d-flex align-items-center gap-2">
+                                      <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-light"
+                                        title=${() => job().error}
+                                        onClick=${() => retryJob(jobId)}
+                                      >
+                                        Retry
+                                      </button>
+                                    </div>
+                                  <//>
+                                </div>
+                              `;
+                            }}
+                          <//>
+                        </div>
                       </div>
+
                       <${Show} when=${allJobsProcessed}>
                         <div
                           class="h-100 d-flex flex-column justify-content-between align-items-center"

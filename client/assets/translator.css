@@ -1,5 +1,5 @@
 #translator-page.bg {
-  background-color: #1E3664;
+  background-color: #1e3664;
 }
 #translator-page a {
   text-decoration: underline;
@@ -25,7 +25,7 @@
   background-color: #ffffff;
   position: absolute;
   bottom: -50px;
-} 
+}
 #translator-page .panel-title,
 #translator-page .form-label {
   font-family: Poppins;
@@ -35,7 +35,7 @@
   line-height: 25px; /* 113.636% */
   text-transform: capitalize;
   margin-bottom: 5px;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 #translator-page .form-text {
   font-family: Inter;
@@ -43,17 +43,20 @@
   font-style: normal;
   font-weight: 400;
   line-height: 22px;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 #translator-page .custom-dropdown-trigger {
   background: transparent;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 #translator-page .custom-dropdown-trigger::after {
-  content: url(images/icon-chevron-down-white.svg)
+  content: url(images/icon-chevron-down-white.svg);
 }
 #translator-page .mt-25 {
   margin-top: 25px;
+}
+#translator-page .mb-25 {
+  margin-bottom: 45px;
 }
 #translator-page .mt-45 {
   margin-top: 45px;
@@ -62,14 +65,14 @@
   margin-top: 55px;
 }
 #translator-page .btn-wide-primary {
-  background: linear-gradient(90deg, #9534E5 0%, #007BFF 100%), #2e4d7b;
-  color: #FFFFFF;
+  background: linear-gradient(90deg, #9534e5 0%, #007bff 100%), #2e4d7b;
+  color: #ffffff;
 }
 #translator-right-panel {
   padding: 35px 24px;
-  color: #FFFFFF;
+  color: #ffffff;
   border-radius: 10px;
-  border: 1px solid #CFCFCF;
+  border: 1px solid #cfcfcf;
   box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.25);
 }
 #translator-right-panel ol {
@@ -78,7 +81,7 @@
 }
 #translator-page input[type="file"] {
   background: transparent;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 #translator-page input[type="file"]::file-selector-button {
   padding: 0.2em 30px 0.2em 0.4em;
@@ -86,7 +89,7 @@
   cursor: pointer;
   transition: background 0.3s;
   background: transparent;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 #translator-page input[type="file"]::after {
   content: url(images/icon-paperclip-white.svg);
@@ -101,5 +104,5 @@
 }
 #translator-page .btn-wide-info.btn-outline {
   background: transparent;
-  color: #FFFFFF;
+  color: #ffffff;
 }
