@@ -23,7 +23,7 @@
     "@aws-sdk/client-translate": "^3.1011.0",
     "cms": "*",
     "database": "*",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "gateway": "*",
