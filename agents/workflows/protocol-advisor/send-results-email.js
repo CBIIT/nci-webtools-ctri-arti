@@ -1,3 +1,54 @@
+import { createRequire } from "node:module";
+
+const DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+const require = createRequire(import.meta.url);
+
+async function buildProtocolAdvisorSkeletonDocx() {
+  // The docx package checks globalThis.localStorage via a deprecation helper.
+  // Node's test runner exposes a localStorage getter that warns unless configured,
+  // so provide a harmless stub before loading the library.
+  Object.defineProperty(globalThis, "localStorage", {
+    value: {},
+    configurable: true,
+  });
+
+  const { Document, HeadingLevel, Packer, Paragraph } = require("docx");
+  const doc = new Document({
+    creator: "Protocol Advisor",
+    title: "Protocol Advisor Summary Report",
+    description: "Protocol Advisor summary report skeleton",
+    sections: [
+      {
+        children: [
+          new Paragraph({
+            text: "EXECUTIVE SUMMARY: IRB REGULATORY COMPLIANCE REVIEW",
+            heading: HeadingLevel.HEADING_1,
+          }),
+          new Paragraph({
+            text: "This review was conducted according to the standards established in 45 CFR 46.111 and related federal regulations governing human subjects research. The analysis reflects current regulatory requirements as of June 2025.",
+          }),
+          new Paragraph({ text: "" }),
+          new Paragraph({
+            text: "STUDY OVERVIEW",
+            heading: HeadingLevel.HEADING_1,
+          }),
+          new Paragraph({ text: "" }),
+          new Paragraph({
+            text: "Immediate Priorities:",
+            heading: HeadingLevel.HEADING_2,
+          }),
+          new Paragraph({ text: "1. Regulatory Status Clarification:" }),
+          new Paragraph({ text: "2. Risk Management Enhancement:" }),
+          new Paragraph({ text: "3. Selection Criteria Review:" }),
+        ],
+      },
+    ],
+  });
+
+  return Packer.toBuffer(doc);
+}
+
 function toLines(report) {
   return [
     `Protocol Advisor Results`,
@@ -62,11 +113,19 @@ export async function sendProtocolAdvisorResultsEmail(ctx, services) {
 
   const subject = `Protocol Advisor Results: ${report.template.displayName}`;
   const text = toLines(report);
+  const docxBuffer = await buildProtocolAdvisorSkeletonDocx();
   await services.sendEmail({
     to: recipient,
     subject,
     text,
     report,
+    attachments: [
+      {
+        filename: "protocol-advisor-summary-report.docx",
+        content: docxBuffer,
+        contentType: DOCX_MIME_TYPE,
+      },
+    ],
   });
 
   return {
