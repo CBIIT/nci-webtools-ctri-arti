@@ -137,3 +137,83 @@ test("Translator Page Tests", async (t) => {
     cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
   }
 });
+
+test("Translator request form visibility follows role", async (t) => {
+  await t.test("admin does not see the Spanish translation request text", async () => {
+    clearCachedData();
+    const restoreBrowserState = primePrivacyNoticeAccepted(() => clearCachedData());
+    const restoreFetch = installMockFetch(({ url }) => {
+      if (url.pathname === "/api/v1/session") {
+        return jsonResponse({ user: sessionUser, access: sessionUser.access });
+      }
+      if (url.pathname === "/api/config") {
+        return jsonResponse({});
+      }
+      return null;
+    });
+
+    const { container, errors, dispose } = mountApp("/tools/translator");
+
+    try {
+      await waitForCondition(
+        () => window.__authContext?.().status() === "LOADED",
+        5000,
+        "translator auth loaded for admin"
+      );
+
+      assert.ok(
+        !container.textContent.includes("Request Consent Spanish Translation"),
+        "Admin users should not see the Spanish request text"
+      );
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    } finally {
+      cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
+    }
+  });
+
+  await t.test("normal users do see the Spanish translation request text", async () => {
+    clearCachedData();
+    const restoreBrowserState = primePrivacyNoticeAccepted(() => clearCachedData());
+    const restoreFetch = installMockFetch(({ url }) => {
+      if (url.pathname === "/api/v1/session") {
+        return jsonResponse({
+          user: {
+            id: 2,
+            email: "user@example.org",
+            firstName: "Normal",
+            lastName: "User",
+            Role: { id: 3, name: "user" },
+            access: { "/tools/translator": { view: true } },
+          },
+          access: { "/tools/translator": { view: true } },
+        });
+      }
+      if (url.pathname === "/api/config") {
+        return jsonResponse({});
+      }
+      return null;
+    });
+
+    const { container, errors, dispose } = mountApp("/tools/translator");
+
+    try {
+      await waitForCondition(
+        () => window.__authContext?.().status() === "LOADED",
+        5000,
+        "translator auth loaded for normal user"
+      );
+
+      assert.ok(
+        container.textContent.includes("Request Consent Spanish Translation"),
+        "Normal users should see the Spanish request text"
+      );
+      assert.ok(
+        container.textContent.includes("Spanish Translation Request Form"),
+        "Normal users should see the request form link text"
+      );
+      assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
+    } finally {
+      cleanupMountedApp({ container, dispose, restoreFetch, restoreBrowserState });
+    }
+  });
+});

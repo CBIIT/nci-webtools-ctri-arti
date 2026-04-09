@@ -4,6 +4,7 @@ import { createStore, reconcile } from "solid-js/store";
 
 import { AlertContainer } from "../../../components/alert.js";
 import FileInput from "../../../components/file-input.js";
+import { InlineSelect } from "../../../components/inline-select.js";
 import { useAuthContext } from "../../../contexts/auth-context.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert, handleError } from "../../../utils/alerts.js";
@@ -14,8 +15,8 @@ import {
   unregisterErrorDataCollector,
 } from "../../../utils/global-error-handler.js";
 import { parseDocument } from "../../../utils/parsers.js";
+import { isAdminSuperUser } from "../../../utils/roleCheck.js";
 import { useSessionPersistence } from "../translate/hooks.js";
-import { InlineSelect } from "../../../components/inline-select.js";
 
 // #region Constants
 const AUTO_LANGUAGE = { value: "auto", label: "Auto" };
@@ -269,9 +270,8 @@ export default function Page() {
   const [engine, setEngine] = createSignal("aws");
   const [store, setStore] = createStore(structuredClone(defaultStore));
 
-  const showHiddenContent = () => {
-    return user()?.Role?.name === "admin" || user()?.Role.name === "super user";
-  };
+  const showAdminContent = () => isAdminSuperUser(user);
+  const showTranslationRequest = () => Boolean(user?.()?.Role?.name === "user");
 
   onMount(() => {
     registerErrorDataCollector("translate", collectAdditionalErrorData);
@@ -522,19 +522,21 @@ export default function Page() {
           >
             <div class="d-flex align-items-stretch column-gap-5">
               <div class="col-md-6 mb-2">
-                <div class="text-white">
-                  <h2 class="panel-title">Request Consent Spanish Translation</h2>
-                  <p>
-                    To request for Spanish translation of your consent documents submit the <br />
-                    <a
-                      class="text-white"
-                      href="https://nih.sharepoint.com/:l:/s/NCI-CBIIT-ARTI/JADA1-ffrVT_T6akgYWsKhD7Aa23tlMmwVqNpg2zVKZ30lQ?nav=ZTA3NDEzMTYtY2U2Zi00YTkwLWEwMDQtMmZkZGMzYmI1NDdj"
-                      target="_blank"
-                      >Spanish Translation Request Form</a
-                    >.
-                  </p>
-                </div>
-                <${Show} when=${showHiddenContent}>
+                <${Show} when=${showTranslationRequest}>
+                  <div class="text-white">
+                    <h2 class="panel-title">Request Consent Spanish Translation</h2>
+                    <p>
+                      To request for Spanish translation of your consent documents submit the <br />
+                      <a
+                        class="text-white"
+                        href="https://nih.sharepoint.com/:l:/s/NCI-CBIIT-ARTI/JADA1-ffrVT_T6akgYWsKhD7Aa23tlMmwVqNpg2zVKZ30lQ?nav=ZTA3NDEzMTYtY2U2Zi00YTkwLWEwMDQtMmZkZGMzYmI1NDdj"
+                        target="_blank"
+                        >Spanish Translation Request Form</a
+                      >.
+                    </p>
+                  </div>
+                <//>
+                <${Show} when=${showAdminContent}>
                   <div class="position-relative w-100 mt-4">
                     <div>
                       <div class="row">
@@ -635,7 +637,7 @@ export default function Page() {
                 <//>
               </div>
 
-              <${Show} when=${showHiddenContent}>
+              <${Show} when=${showAdminContent}>
                 <div
                   id="translator-right-panel"
                   class="col-md-6 d-flex"

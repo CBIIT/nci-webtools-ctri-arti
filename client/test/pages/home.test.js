@@ -132,11 +132,13 @@ test("Home Page Access Tests", async (t) => {
           Role: { id: 3, name: "user" },
           access: {
             "/tools/consent-crafter": { view: true },
+            "/tools/translator": { view: true },
             "/_/profile": { view: true },
           },
         },
         access: {
           "/tools/consent-crafter": { view: true },
+          "/tools/translator": { view: true },
           "/_/profile": { view: true },
         },
       });
@@ -156,14 +158,14 @@ test("Home Page Access Tests", async (t) => {
       "auth loaded"
     );
 
-    await t.test("/ hides tools without policy access for regular users", async () => {
+    await t.test("/ shows translator for regular users with policy access", async () => {
       await waitForCondition(
         () => {
           const titles = getHomeCards(container).map((card) => card.title);
           return (
             !titles.includes("Chat") &&
             titles.includes("ConsentCrafter") &&
-            !titles.includes("Translator") &&
+            titles.includes("Translator") &&
             titles.includes("New Tools")
           );
         },
@@ -175,7 +177,7 @@ test("Home Page Access Tests", async (t) => {
 
       assert.ok(!titles.includes("Chat"), "Should hide Chat card");
       assert.ok(titles.includes("ConsentCrafter"), "Should keep ConsentCrafter card");
-      assert.ok(!titles.includes("Translator"), "Should hide Translator card");
+      assert.ok(titles.includes("Translator"), "Should show Translator card");
       assert.ok(titles.includes("New Tools"), "Should keep New Tools card");
       assert.strictEqual(errors.length, 0, `Page errors: ${errors.map((e) => e.message)}`);
     });

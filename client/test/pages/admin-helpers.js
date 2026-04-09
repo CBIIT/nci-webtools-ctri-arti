@@ -12,6 +12,7 @@ const SUPER_USER_ACCESS = {
 };
 const USER_ACCESS = {
   "/tools/consent-crafter": { view: true },
+  "/tools/translator": { view: true },
   "/tools/semantic-search": { view: true },
   "/tools/export-conversations": { view: true },
   "/_/profile": { view: true },
