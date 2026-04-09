@@ -17,6 +17,7 @@
   "dependencies": {
     "cms": "*",
     "database": "*",
+    "docx": "^9.6.1",
     "express": "^5.2.1",
     "gateway": "*",
     "mammoth": "^1.12.0",

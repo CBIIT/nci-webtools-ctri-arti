@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import JSZip from "jszip";
+
 import { getWorkflow, listWorkflows, runWorkflow } from "../workflows/index.js";
 import { loadProtocolAdvisorAssets } from "../workflows/protocol-advisor/load-assets.js";
 import { getTopologicalOrder } from "../workflows/runtime/graph.js";
@@ -437,6 +439,21 @@ describe("workflows", () => {
     assert.equal(sent.length, 1);
     assert.equal(sent[0].to, "reviewer@example.org");
     assert.match(sent[0].subject, /Protocol Advisor Results/);
+    assert.equal(sent[0].attachments?.length, 1);
+    assert.equal(sent[0].attachments[0].filename, "protocol-advisor-summary-report.docx");
+    assert.equal(
+      sent[0].attachments[0].contentType,
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+
+    const zip = await JSZip.loadAsync(sent[0].attachments[0].content);
+    const documentXml = await zip.file("word/document.xml").async("string");
+    assert.match(documentXml, /EXECUTIVE SUMMARY: IRB REGULATORY COMPLIANCE REVIEW/);
+    assert.match(documentXml, /STUDY OVERVIEW/);
+    assert.match(documentXml, /Immediate Priorities:/);
+    assert.match(documentXml, /Regulatory Status Clarification:/);
+    assert.match(documentXml, /Risk Management Enhancement:/);
+    assert.match(documentXml, /Selection Criteria Review:/);
     assert.equal(result.output.delivery.status, "sent");
     assert.equal(result.output.delivery.recipient, "reviewer@example.org");
   });
