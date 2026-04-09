@@ -2,8 +2,16 @@ function hasProtocolText(input = {}) {
   return typeof input.protocolText === "string" && input.protocolText.trim().length > 0;
 }
 
-function hasDocumentBytes(input = {}) {
-  return !!input.document?.bytes;
+function hasDocumentBytes(document = {}) {
+  return !!document?.bytes;
+}
+
+function hasSingleDocument(input = {}) {
+  return hasDocumentBytes(input.document);
+}
+
+function hasMultipleDocuments(input = {}) {
+  return Array.isArray(input.documents) && input.documents.some((item) => hasDocumentBytes(item));
 }
 
 export function validateProtocolAdvisorInput(input = {}) {
@@ -15,13 +23,26 @@ export function validateProtocolAdvisorInput(input = {}) {
     throw new Error("protocol_advisor requires templateId");
   }
 
-  if (!hasProtocolText(input) && !hasDocumentBytes(input)) {
-    throw new Error("protocol_advisor requires protocolText or document.bytes");
+  const documents = Array.isArray(input.documents) ? input.documents.filter(Boolean) : [];
+  if (input.documents && documents.length === 0) {
+    throw new Error("protocol_advisor documents must contain at least one file when provided");
+  }
+  if (documents.some((document) => !hasDocumentBytes(document))) {
+    throw new Error("Each protocol_advisor document must include bytes");
+  }
+
+  if (!hasProtocolText(input) && !hasSingleDocument(input) && !hasMultipleDocuments(input)) {
+    throw new Error(
+      "protocol_advisor requires protocolText, document.bytes, or documents[].bytes"
+    );
   }
 
   return {
     templateId: input.templateId.trim(),
+    model: typeof input.model === "string" ? input.model.trim() || null : null,
     hasProtocolText: hasProtocolText(input),
-    hasDocument: hasDocumentBytes(input),
+    hasDocument: hasSingleDocument(input),
+    hasDocuments: hasMultipleDocuments(input),
+    documentCount: documents.length + (hasSingleDocument(input) ? 1 : 0),
   };
 }
