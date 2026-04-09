@@ -17,6 +17,7 @@ export function createAgentsApplication({
   gateway = createGatewayService(),
   cms,
   users = createUsersApplication(),
+  sendEmail = null,
   source = "direct",
 } = {}) {
   const cmsModule = cms ?? createCmsService({ gateway, source });
@@ -49,6 +50,7 @@ export function createAgentsApplication({
         gateway,
         cms: cmsModule,
         users,
+        sendEmail,
       });
     },
   };

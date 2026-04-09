@@ -87,212 +87,164 @@ describe("workflows", () => {
     assert.equal(result.context.nodeResults.maybe.status, "skipped");
   });
 
-  it("registers protocol_advisor in the workflow registry", async () => {
+  it("registers protocol_advisor in the workflow registry", () => {
     assert.ok(listWorkflows().includes("protocol_advisor"));
     assert.ok(getWorkflow("protocol_advisor"));
-
-    const result = await runWorkflow("protocol_advisor", {
-      templateId: "interventional",
-      protocolText: "1 PROTOCOL SUMMARY\nIntro text\n\n3 OBJECTIVES AND ENDPOINTS\nObjective text",
-    });
-
-    assert.equal(result.output.status, "review_plan_ready");
-    assert.equal(result.output.template.templateId, "interventional");
-    assert.ok(result.output.protocol.candidateSectionCount >= 2);
-    assert.ok(result.output.sections.length > 10);
-    assert.ok(result.output.summary.countsByStatus.missing > 0);
-    assert.ok(result.output.reviewPlan.modelReviewSectionCount > 0);
-    assert.ok(result.output.reviewPlan.promptTaskCount > 0);
-    assert.ok(result.output.promptPlan.some((task) => task.scope === "document"));
-    assert.ok(result.output.promptExecution.summary.countsByStatus.pending_model_review > 0);
-    assert.equal(result.output.focusAreas.length, 6);
-    assert.equal(result.output.delivery.status, "recipient_unavailable");
-    assert.equal(result.context.workflow.name, "protocol_advisor");
   });
 
-  it("includes all seeded protocol advisor template families", async () => {
+  it("loads the protocol advisor reference corpus and selected template", async () => {
     const assets = await loadProtocolAdvisorAssets({
       input: {
         templateId: "secondary_research",
       },
+      options: {},
     });
 
-    assert.deepEqual(assets.templateIds.sort(), [
-      "behavioral_social_science",
-      "interventional",
-      "natural_history_observational",
-      "prospective_data_collection",
-      "repository",
-      "retrospective_review",
-      "secondary_research",
-    ]);
+    assert.equal(assets.selectedTemplate.id, "secondary_research");
+    assert.equal(assets.sources.length, 29);
+    assert.ok(assets.sources.some((source) => source.id === "45-cfr-part-46"));
+    assert.ok(assets.sources.some((source) => source.id === "secondary_research"));
+    assert.ok(assets.prompts.system.includes("You are Protocol Advisor"));
+    assert.ok(assets.prompts.sourceReviewSchema.includes("\"task_type\""));
   });
 
-  it("extracts template sections and marks missing protocol sections", async () => {
-    const result = await runWorkflow("protocol_advisor", {
-      templateId: "secondary_research",
-      protocolText: "1 PROTOCOL SUMMARY\nStudy summary",
-    });
-
-    const protocolSummary = result.output.sections.find(
-      (section) => section.templateSectionTitle === "PROTOCOL SUMMARY"
-    );
-    const biospecimens = result.output.sections.find(
-      (section) => section.templateSectionTitle === "BIOSPECIMENS AND/OR DATA"
-    );
-
-    assert.equal(protocolSummary.status, "ok");
-    assert.equal(protocolSummary.review.mode, "model_required");
-    assert.equal(biospecimens.status, "missing");
-    assert.equal(biospecimens.review.mode, "deterministic");
-    assert.equal(result.output.summary.templateCompleteness.missingSectionCount > 0, true);
-    assert.ok(
-      result.output.summary.templateCompleteness.requiredSections.some(
-        (section) =>
-          section.sectionName === "BIOSPECIMENS AND/OR DATA" && section.status === "Missing"
-      )
-    );
-    assert.ok(
-      result.output.summary.templateCompleteness.findings.some(
-        (finding) =>
-          finding.sectionName === "BIOSPECIMENS AND/OR DATA" && finding.issueType === "missing"
-      )
-    );
-    assert.ok(
-      result.output.promptPlan.some(
-        (task) =>
-          task.scope === "section" &&
-          task.section?.templateSectionTitle === "PROTOCOL SUMMARY" &&
-          task.promptId === "section_review"
-      )
-    );
-    assert.ok(
-      result.output.promptExecution.results.some(
-        (result) =>
-          result.promptId === "section_review" &&
-          result.status === "pending_model_review" &&
-          result.target?.templateSectionTitle === "PROTOCOL SUMMARY"
-      )
-    );
-    assert.equal(
-      result.output.promptPlan.some(
-        (task) =>
-          task.scope === "section" &&
-          task.section?.templateSectionTitle === "BIOSPECIMENS AND/OR DATA"
-      ),
-      false
-    );
-  });
-
-  it("matches known title aliases and flags placeholders", async () => {
-    const result = await runWorkflow("protocol_advisor", {
-      templateId: "secondary_research",
-      protocolText: [
-        "PROTOCOL SUMMARY",
-        "Completed summary text",
-        "",
-        "BIOSPECIMENS AND DATA",
-        "TBD",
-      ].join("\n"),
-    });
-
-    const biospecimens = result.output.sections.find(
-      (section) => section.templateSectionTitle === "BIOSPECIMENS AND/OR DATA"
-    );
-
-    assert.equal(biospecimens.matchStatus, "matched");
-    assert.equal(biospecimens.status, "placeholder");
-    assert.equal(biospecimens.review.mode, "deterministic");
-    assert.ok(
-      result.output.summary.templateCompleteness.findings.some(
-        (finding) =>
-          finding.sectionName === "BIOSPECIMENS AND/OR DATA" && finding.issueType === "placeholder"
-      )
-    );
-    assert.ok(Array.isArray(result.output.focusAreas));
-  });
-
-  it("flags blank matched sections", async () => {
-    const result = await runWorkflow("protocol_advisor", {
-      templateId: "secondary_research",
-      protocolText: ["PROTOCOL SUMMARY", "", "2 INTRODUCTION", "Background text"].join("\n"),
-    });
-
-    const protocolSummary = result.output.sections.find(
-      (section) => section.templateSectionTitle === "PROTOCOL SUMMARY"
-    );
-
-    assert.equal(protocolSummary.status, "blank");
-    assert.equal(protocolSummary.review.mode, "deterministic");
-    assert.ok(
-      result.output.summary.templateCompleteness.findings.some(
-        (finding) => finding.sectionName === "PROTOCOL SUMMARY" && finding.issueType === "blank"
-      )
-    );
-  });
-
-  it("excludes optional template sections from missing-deficiency reporting", async () => {
-    const result = await runWorkflow("protocol_advisor", {
-      templateId: "interventional",
-      protocolText: "1 PROTOCOL SUMMARY\nShort summary text",
-    });
-
-    const optionalSection = result.output.sections.find(
-      (section) => section.templateSectionRequired === false
-    );
-
-    assert.ok(optionalSection, "Expected at least one optional section in the template");
-    assert.equal(optionalSection.templateSectionRequired, false);
-    assert.equal(optionalSection.status, "optional");
-    assert.equal(
-      result.output.summary.templateCompleteness.requiredSections.some(
-        (section) => section.sectionName === optionalSection.templateSectionTitle
-      ),
-      false
-    );
-    assert.equal(
-      result.output.summary.templateCompleteness.findings.some(
-        (finding) => finding.sectionName === optionalSection.templateSectionTitle
-      ),
-      false
-    );
-    assert.equal(
-      result.output.summary.missingSections.some(
-        (section) => section.templateSectionTitle === optionalSection.templateSectionTitle
-      ),
-      false
-    );
-  });
-
-  it("executes section review prompts through the gateway when available", async () => {
+  it("runs the protocol advisor workflow end to end and emails a final DOCX report", async () => {
     const calls = [];
+    const sent = [];
+
     const gateway = {
       invoke: async (params) => {
         calls.push(params);
-        if (params.type === "workflow-section_review") {
+
+        if (params.type === "workflow-protocol_advisor-final_report") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: [
+                      "# EXECUTIVE SUMMARY: IRB REGULATORY COMPLIANCE REVIEW",
+                      "",
+                      "**Protocol:** Synthetic protocol",
+                      "**Sponsor:** Test sponsor",
+                      "**Overall Disposition:** clarification_required",
+                      "",
+                      "## STUDY OVERVIEW",
+                      "",
+                      "Synthetic study overview.",
+                      "",
+                      "## REGULATORY COMPLIANCE ASSESSMENT",
+                      "",
+                      "Short assessment.",
+                      "",
+                      "## KEY FINDINGS",
+                      "",
+                      "- Missing consent detail.",
+                      "",
+                      "## COMPLIANCE CATEGORY ANALYSIS",
+                      "",
+                      "Consent issues are the main concern.",
+                      "",
+                      "## RECOMMENDATIONS FOR PROTOCOL ENHANCEMENT",
+                      "",
+                      "- Expand consent procedures.",
+                      "",
+                      "## CONCLUSION",
+                      "",
+                      "Clarification required.",
+                      "",
+                      "## COMPREHENSIVE DEFICIENCY ANALYSIS",
+                      "",
+                      "### Tier 1",
+                      "",
+                      "- **Consent detail missing**",
+                    ].join("\n"),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 10, outputTokens: 10 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
+        const userText = params.messages[0].content[0].text;
+
+        if (userText.includes("REFERENCE SOURCE\n- id: 45-cfr-part-46")) {
           return {
             output: {
               message: {
                 content: [
                   {
                     text: JSON.stringify({
-                      status: "insufficient",
-                      feedback: "Add more detail about the protocol summary.",
-                      issues: [
-                        {
-                          type: "insufficient",
-                          message: "Summary is too short.",
-                          requiredContent: "Add design, objectives, and endpoints.",
-                          citations: [],
-                        },
-                      ],
-                      focusAreas: ["risk_benefit_assessment"],
-                      citations: [],
+                      task_type: "source_review",
+                      summary: "Consent detail is incomplete.",
+                      source_review: {
+                        applies: true,
+                        applicability_reason: "Applies to human subjects research.",
+                        review_basis: "mixed",
+                        review_basis_reason: "Federal review with current-gap framing.",
+                        verdict: "insufficient_evidence",
+                        findings: [
+                          {
+                            finding_id: "finding-1",
+                            category_id: "consent_and_documentation",
+                            citation: "45 CFR 46.116",
+                            status: "insufficient_evidence",
+                            issue_title: "Consent detail missing",
+                            source_excerpt: "Informed consent must include required elements.",
+                            subject_evidence: "The protocol mentions consent but omits procedural detail.",
+                            analysis: "The protocol does not clearly describe the consent process.",
+                            required_action: "Add explicit consent-process detail and timing.",
+                          },
+                        ],
+                      },
                     }),
                   },
                 ],
               },
             },
+            usage: { inputTokens: 10, outputTokens: 10 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
+        if (userText.includes("REFERENCE SOURCE\n- id: secondary_research")) {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      task_type: "source_review",
+                      summary: "Template content is thin.",
+                      source_review: {
+                        applies: true,
+                        applicability_reason: "Selected template for this run.",
+                        review_basis: "current_gap",
+                        review_basis_reason: "Template completeness benchmark.",
+                        verdict: "conditional_gap",
+                        findings: [
+                          {
+                            finding_id: "finding-2",
+                            category_id: "template_completeness",
+                            citation: "Template section on data use",
+                            status: "conditional_gap",
+                            issue_title: "Template detail weak",
+                            source_excerpt: "Describe data and specimen handling.",
+                            subject_evidence: "Only brief data language is present.",
+                            analysis: "The protocol is thin relative to the selected template.",
+                            required_action: "Expand the data/specimen handling section.",
+                          },
+                        ],
+                      },
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 10, outputTokens: 10 },
+            metrics: { latencyMs: 1 },
           };
         }
 
@@ -302,54 +254,23 @@ describe("workflows", () => {
               content: [
                 {
                   text: JSON.stringify({
-                    overallSummary:
-                      "The protocol has one reviewed section and several missing sections.",
-                    prioritizedNextSteps: ["Complete the remaining required sections."],
-                    groupedThemes: [
-                      {
-                        title: "Coverage Gaps",
-                        summary: "Several required sections are still missing.",
-                        sectionTitles: ["BIOSPECIMENS AND/OR DATA"],
-                      },
-                    ],
-                    focusAreas: [
-                      {
-                        id: "risk_minimization",
-                        summary: "Safety and risk controls need strengthening.",
-                        sectionTitles: ["STUDY DESIGN"],
-                      },
-                      {
-                        id: "risk_benefit_assessment",
-                        summary: "Benefits and burden should be rebalanced.",
-                        sectionTitles: ["PROTOCOL SUMMARY"],
-                      },
-                      {
-                        id: "equitable_selection",
-                        summary: "Selection criteria need more justification.",
-                        sectionTitles: ["STUDY POPULATION"],
-                      },
-                      {
-                        id: "informed_consent",
-                        summary: "Consent details need clarification.",
-                        sectionTitles: ["INFORMED CONSENT"],
-                      },
-                      {
-                        id: "privacy_confidentiality",
-                        summary: "Data handling protections need clarification.",
-                        sectionTitles: ["BIOSPECIMENS AND/OR DATA"],
-                      },
-                      {
-                        id: "vulnerable_population_safeguards",
-                        summary: "Safeguards for vulnerable groups need strengthening.",
-                        sectionTitles: ["STUDY POPULATION"],
-                      },
-                    ],
-                    citations: [],
+                    task_type: "source_review",
+                    summary: "Source not applicable.",
+                    source_review: {
+                      applies: false,
+                      applicability_reason: "Not implicated by the protocol.",
+                      review_basis: "mixed",
+                      review_basis_reason: "No triggered obligations.",
+                      verdict: "not_applicable",
+                      findings: [],
+                    },
                   }),
                 },
               ],
             },
           },
+          usage: { inputTokens: 10, outputTokens: 10 },
+          metrics: { latencyMs: 1 },
         };
       },
     };
@@ -358,71 +279,13 @@ describe("workflows", () => {
       "protocol_advisor",
       {
         templateId: "secondary_research",
-        protocolText: "1 PROTOCOL SUMMARY\nShort summary text",
+        protocolText: "1 PROTOCOL SUMMARY\nSynthetic protocol text",
       },
       {
         services: {
           gateway,
-          userId: 1,
-          requestId: "req-test-1",
-        },
-      }
-    );
-
-    const sectionReview = result.output.promptExecution.results.find(
-      (promptResult) =>
-        promptResult.promptId === "section_review" &&
-        promptResult.target?.templateSectionTitle === "PROTOCOL SUMMARY"
-    );
-    const documentOverview = result.output.promptExecution.results.find(
-      (promptResult) => promptResult.promptId === "document_overview"
-    );
-
-    assert.equal(calls.length, 2);
-    assert.equal(calls[0].model, "us.anthropic.claude-haiku-4-5-20251001-v1:0");
-    assert.equal(calls[1].model, "us.anthropic.claude-haiku-4-5-20251001-v1:0");
-    assert.match(calls[0].system, /Return only a single JSON object/);
-    assert.match(calls[0].messages[0].content[0].text, /Return JSON with this shape:/);
-    assert.match(calls[0].messages[0].content[0].text, /templateSectionGuidanceText/);
-    assert.match(
-      calls[0].messages[0].content[0].text,
-      /Provide a short description of the protocol/
-    );
-    assert.match(calls[1].system, /review the protocol as a whole/i);
-    assert.match(
-      calls[1].messages[0].content[0].text,
-      /Review this protocol at the whole-document level/
-    );
-    assert.equal(sectionReview.status, "completed");
-    assert.equal(sectionReview.output.status, "insufficient");
-    assert.match(sectionReview.output.feedback, /Add more detail/);
-    assert.deepEqual(sectionReview.output.focusAreas, ["risk_benefit_assessment"]);
-    assert.ok(
-      result.output.summary.templateCompleteness.findings.some(
-        (finding) =>
-          finding.sectionName === "PROTOCOL SUMMARY" && finding.issueType === "insufficient"
-      )
-    );
-    assert.equal(documentOverview.status, "completed");
-    assert.match(documentOverview.output.overallSummary, /one reviewed section/);
-    assert.equal(result.output.focusAreas.length, 6);
-    assert.match(
-      result.output.focusAreas.find((area) => area.id === "risk_minimization").summary,
-      /Safety and risk controls/
-    );
-  });
-
-  it("sends delivery metadata to the authenticated requester account", async () => {
-    const sent = [];
-    const result = await runWorkflow(
-      "protocol_advisor",
-      {
-        templateId: "secondary_research",
-        protocolText: "1 PROTOCOL SUMMARY\nShort summary text",
-      },
-      {
-        services: {
           userId: 42,
+          requestId: "req-test-1",
           users: {
             getUser: async (userId) => ({
               id: userId,
@@ -436,25 +299,101 @@ describe("workflows", () => {
       }
     );
 
+    assert.equal(calls.filter((call) => call.type === "workflow-protocol_advisor-source_review").length, 29);
+    assert.equal(calls.filter((call) => call.type === "workflow-protocol_advisor-final_report").length, 1);
+    assert.equal(result.output.delivery.status, "sent");
+    assert.equal(result.output.delivery.recipient, "reviewer@example.org");
+    assert.equal(result.output.status, "clarification_required");
+    assert.equal(result.output.mergedReview.overall_disposition.code, "clarification_required");
     assert.equal(sent.length, 1);
-    assert.equal(sent[0].to, "reviewer@example.org");
-    assert.match(sent[0].subject, /Protocol Advisor Results/);
-    assert.equal(sent[0].attachments?.length, 1);
-    assert.equal(sent[0].attachments[0].filename, "protocol-advisor-summary-report.docx");
-    assert.equal(
-      sent[0].attachments[0].contentType,
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
+    assert.equal(sent[0].attachments.length, 1);
+    assert.match(sent[0].attachments[0].filename, /\.docx$/);
 
     const zip = await JSZip.loadAsync(sent[0].attachments[0].content);
     const documentXml = await zip.file("word/document.xml").async("string");
     assert.match(documentXml, /EXECUTIVE SUMMARY: IRB REGULATORY COMPLIANCE REVIEW/);
-    assert.match(documentXml, /STUDY OVERVIEW/);
-    assert.match(documentXml, /Immediate Priorities:/);
-    assert.match(documentXml, /Regulatory Status Clarification:/);
-    assert.match(documentXml, /Risk Management Enhancement:/);
-    assert.match(documentXml, /Selection Criteria Review:/);
-    assert.equal(result.output.delivery.status, "sent");
-    assert.equal(result.output.delivery.recipient, "reviewer@example.org");
+    assert.match(documentXml, /Protocol:/);
+    assert.match(documentXml, /Overall Disposition:/);
+    assert.match(documentXml, /Consent detail missing/);
+  });
+
+  it("merges multiple input files into one cached protocol body", async () => {
+    let firstSystemPrompt = null;
+
+    const gateway = {
+      invoke: async (params) => {
+        if (params.type === "workflow-protocol_advisor-source_review" && !firstSystemPrompt) {
+          firstSystemPrompt = params.system;
+        }
+
+        if (params.type === "workflow-protocol_advisor-final_report") {
+          return {
+            output: {
+              message: {
+                content: [{ text: "# EXECUTIVE SUMMARY: IRB REGULATORY COMPLIANCE REVIEW\n" }],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
+        return {
+          output: {
+            message: {
+              content: [
+                {
+                  text: JSON.stringify({
+                    task_type: "source_review",
+                    summary: "Source not applicable.",
+                    source_review: {
+                      applies: false,
+                      applicability_reason: "Not implicated by the protocol.",
+                      review_basis: "mixed",
+                      review_basis_reason: "No triggered obligations.",
+                      verdict: "not_applicable",
+                      findings: [],
+                    },
+                  }),
+                },
+              ],
+            },
+          },
+          usage: { inputTokens: 1, outputTokens: 1 },
+          metrics: { latencyMs: 1 },
+        };
+      },
+    };
+
+    const result = await runWorkflow(
+      "protocol_advisor",
+      {
+        templateId: "repository",
+        documents: [
+          {
+            name: "first.txt",
+            bytes: Buffer.from("First file body", "utf8").toString("base64"),
+            contentType: "text/plain",
+          },
+          {
+            name: "second.txt",
+            bytes: Buffer.from("Second file body", "utf8").toString("base64"),
+            contentType: "text/plain",
+          },
+        ],
+      },
+      {
+        services: {
+          gateway,
+        },
+      }
+    );
+
+    assert.match(firstSystemPrompt, /FILE 1: first\.txt/);
+    assert.match(firstSystemPrompt, /First file body/);
+    assert.match(firstSystemPrompt, /FILE 2: second\.txt/);
+    assert.match(firstSystemPrompt, /Second file body/);
+    assert.equal(result.output.protocol.files.length, 2);
+    assert.equal(result.output.delivery.status, "recipient_unavailable");
   });
 });

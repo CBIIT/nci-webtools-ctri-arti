@@ -202,6 +202,7 @@ export async function* runAgentLoop({
   gateway,
   cms,
   users,
+  sendEmail,
 }) {
   const { agent, conversation, effectiveModel, tools } = await loadAgentSession({
     userId,
@@ -248,7 +249,16 @@ export async function* runAgentLoop({
     ? await cms.getContext(userId, conversationId, { compressed: true })
     : null;
   const messages = buildConversationMessages(context, userMessage);
-  const toolContext = { userId, requestId, agentId, conversationId, gateway, cms, users };
+  const toolContext = {
+    userId,
+    requestId,
+    agentId,
+    conversationId,
+    gateway,
+    cms,
+    users,
+    sendEmail,
+  };
 
   let done = false;
   while (!done) {

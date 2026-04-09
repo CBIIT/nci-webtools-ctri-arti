@@ -444,6 +444,39 @@ describe("runAgentLoop", () => {
     const gateway = {
       invoke: async (params) => {
         invokeCalls.push(params);
+        if (params.type === "workflow-protocol_advisor-source_review") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      task_type: "source_review",
+                      summary: "Source not applicable.",
+                      source_review: {
+                        applies: false,
+                        applicability_reason: "Not implicated by the protocol.",
+                        review_basis: "mixed",
+                        review_basis_reason: "No triggered obligations.",
+                        verdict: "not_applicable",
+                        findings: [],
+                      },
+                    }),
+                  },
+                ],
+              },
+            },
+          };
+        }
+        if (params.type === "workflow-protocol_advisor-final_report") {
+          return {
+            output: {
+              message: {
+                content: [{ text: "# EXECUTIVE SUMMARY: IRB REGULATORY COMPLIANCE REVIEW\n" }],
+              },
+            },
+          };
+        }
         return {
           stream: (async function* () {
             for (const event of toolUseEvents) {

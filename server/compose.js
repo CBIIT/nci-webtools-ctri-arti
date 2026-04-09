@@ -6,6 +6,7 @@ import { createGatewayRemote } from "gateway/remote.js";
 import { createGatewayService } from "gateway/service.js";
 import { createUsersApplication } from "users/app.js";
 import { createUsersRemote } from "users/remote.js";
+import { sendEmail } from "./integrations/email.js";
 
 const { USERS_URL, GATEWAY_URL, CMS_URL, AGENTS_URL } = process.env;
 
@@ -45,7 +46,7 @@ function createCmsModule({ gateway }) {
 function createAgentsModule({ gateway, cms, users }) {
   return AGENTS_URL
     ? createAgentsRemote({ baseUrl: AGENTS_URL })
-    : createAgentsApplication({ gateway, cms, users, source: "server" });
+    : createAgentsApplication({ gateway, cms, users, sendEmail, source: "server" });
 }
 
 async function createServerModules() {

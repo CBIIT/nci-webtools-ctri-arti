@@ -8,6 +8,7 @@ import { createGatewayService } from "gateway/service.js";
 import logger from "shared/logger.js";
 import { createUsersApplication } from "users/app.js";
 import { createUsersRemote } from "users/remote.js";
+import { sendEmail } from "server/integrations/email.js";
 
 import { createSchemaReadyServiceApp } from "../shared/service-app.js";
 
@@ -22,7 +23,13 @@ const cms = CMS_URL
   ? createCmsRemote({ baseUrl: CMS_URL })
   : createCmsService({ gateway, source: "direct" });
 const users = USERS_URL ? createUsersRemote({ baseUrl: USERS_URL }) : createUsersApplication();
-const application = createAgentsApplication({ gateway, cms, users, source: "internal-http" });
+const application = createAgentsApplication({
+  gateway,
+  cms,
+  users,
+  sendEmail,
+  source: "internal-http",
+});
 const router = express.Router();
 router.use("/api/v1", createAgentsRouter({ application }));
 const app = createSchemaReadyServiceApp({

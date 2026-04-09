@@ -404,19 +404,59 @@ describe("tools", () => {
 
   describe("workflow tool", () => {
     it("runs the protocol_advisor workflow through the workflow registry", async () => {
-      const result = await toolImplementations.workflow({
-        workflow: "protocol_advisor",
-        input: {
-          templateId: "interventional",
-          protocolText: "1 PROTOCOL SUMMARY\nProtocol body",
+      const gateway = {
+        invoke: async (params) => {
+          if (params.type === "workflow-protocol_advisor-final_report") {
+            return {
+              output: {
+                message: {
+                  content: [{ text: "# EXECUTIVE SUMMARY: IRB REGULATORY COMPLIANCE REVIEW\n" }],
+                },
+              },
+            };
+          }
+
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      task_type: "source_review",
+                      summary: "Source not applicable.",
+                      source_review: {
+                        applies: false,
+                        applicability_reason: "Not implicated by the protocol.",
+                        review_basis: "mixed",
+                        review_basis_reason: "No triggered obligations.",
+                        verdict: "not_applicable",
+                        findings: [],
+                      },
+                    }),
+                  },
+                ],
+              },
+            },
+          };
         },
-      });
+      };
+
+      const result = await toolImplementations.workflow(
+        {
+          workflow: "protocol_advisor",
+          input: {
+            templateId: "interventional",
+            protocolText: "1 PROTOCOL SUMMARY\nProtocol body",
+          },
+        },
+        { gateway }
+      );
 
       assert.equal(result.workflow, "protocol_advisor");
-      assert.equal(result.output.status, "review_plan_ready");
+      assert.equal(result.output.status, "no_material_gaps_identified");
       assert.equal(result.output.template.templateId, "interventional");
       assert.equal(result.nodeResults.validateInput.status, "completed");
-      assert.equal(result.nodeResults.buildReviewPlan.status, "completed");
+      assert.equal(result.nodeResults.executeSourceReviews.status, "completed");
       assert.equal(result.nodeResults.aggregateReport.status, "completed");
     });
   });
