@@ -1,0 +1,98 @@
+Name: NIH Policy 3014
+Purpose: reference
+Description: Umbrella NIH Intramural Human Research Protection Program chapter that indexes the core HRPP policy family.
+URL: https://policymanual.nih.gov/3014
+Selection Rule: (none)
+Token Count: 2347
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 14
+
+---
+
+## 3014 - NIH Intramural Human Research Protection Program
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Issuing Office Email:** [\[email protected\]](/cdn-cgi/l/email-protection#84edf6e6c4ebe0aaeaedecaae3ebf2bbf7f1e6eee1e7f0b9c9c7a4b7b4b5b0a4a9a4cacdcca4cdeaf0f6e5e9f1f6e5e8a4ccf1e9e5eaa4d6e1f7e1e5f6e7eca4d4f6ebf0e1e7f0edebeaa4d4f6ebe3f6e5e9a4)
+
+**Issuing Office Website:** [https://irbo.nih.gov/confluence/display/IRBO/OHSRP](https://irbo.nih.gov/confluence/display/IRBO/OHSRP)
+
+**Release Date:** 10/08/2020 [?](javascript:void\(0\);) **Technical Revision Date:** 5/25/2021 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** Chapters and Appendices within NIH Policy Manual 3014, NIH Human Research Protection Program (HRPP), establish responsibilities and requirements for protecting the rights and safeguarding the welfare of human subjects who participate in research conducted or supported by the Intramural Research Program (IRP) of the National Institutes of Health (NIH).  The Office of Human Subjects Research Protections (OHSRP) is the lead office for the NIH HRPP. The OHSRP has updated all applicable policies to adhere to the revised DHHS Common Rule (45 CFR 46). Effective December 2019, the NIH HRPP completed a reorganization and consolidation resulting in the centralization of Institutional Review Board (IRB) operations and transition to a centralized and flexible IRB system. HRPP Policies have been revised to reflect recent regulatory changes, as well as the reorganization and consolidation described above. 
+
+**NOTE**:  Please see NIH Policy Manual 3014-100 which describes the structure and components of the NIH HRPP and OHSRP. Taken together with the HRPP Policies, Policy Manual 3014-100 will fully supersede Manual Chapter 3014, dated 5/17/2005. Until the revised policies are fully implemented, the remaining HRPP Standard Operating Procedures (SOPs) remain in effect until superseded. The current policies, SOPs, and supplemental information can be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).This policy establishes responsibilities and procedures for protecting the rights and safeguarding the welfare of human subjects who participate in research conducted or supported by the Intramural Research Program (IRP) of the National Institutes of Health (NIH).
+
+2.  **Filing Instructions:**
+
+-   Remove: NIH Manual Chapter 3014, dated 5/17/2005.
+-   Insert: NIH Manual Chapter 3014, dated 10/08/2020.
+
+3.  **PLEASE NOTE:** 
+    
+
+-   For information about this chapter, and its subcomponents please contact the issuing office above.
+-   For information regarding the NIH Policy Manual, go to [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx) 
+
+### HRPP Policy Development Requirements
+
+-   [3014-001 – NIH Human Research Protection Program (HRPP) Policy Development](https://policymanual.nih.gov/3014-001)
+
+### 3014-100 Series – Institutional Authorities and Requirements
+
+-   [3014-100 – NIH Intramural Research Program’s Human Research Protection Program](https://policymanual.nih.gov/3014-100)
+-   [3014-101 – Organizational Structure of the OHSRP](https://policymanual.nih.gov/3014-101)
+-   [3014-102 – Institutional and Investigator Financial Conflict of Interest in Human Subjects Research](https://policymanual.nih.gov/3014-102)
+-   [3014-103 – Education Program](https://policymanual.nih.gov/3014-103)
+-   [3014-104 – Managing Research-Related Complaints from Research Subjects](https://policymanual.nih.gov/3014-104)
+-   [3014-105 – IRB Reliance and Collaborative Research](https://policymanual.nih.gov/3014-105)
+-   [3014-106 – Ancillary Reviews](https://policymanual.nih.gov/3014-106)
+-   [3014-107 – Privacy and Confidentiality](https://policymanual.nih.gov/3014-107)
+-   [3014-108 – Quality Assurance and Quality Improvement Program for the NIH IRB](https://policymanual.nih.gov/3014-108)
+-   [3014-109 – Coverage Under the NIH Federalwide Assurance](https://policymanual.nih.gov/3014-109)
+
+### 3014-200 Series – IRB Authorities and Requirements
+
+-   [3014-200 – IRB Scope and Authority](https://policymanual.nih.gov/3014-200)
+-   [3014-201 – IRB Membership and Composition](https://policymanual.nih.gov/3014-201)
+-   [3014-202 – Board Member Financial Conflict of Interest](https://policymanual.nih.gov/3014-202)
+-   [3014-203 – Support of IRB Operations](https://policymanual.nih.gov/3014-203)
+-   [3014-204 – Levels of IRB Review and Criteria for IRB Approval of Research](https://policymanual.nih.gov/3014-204)
+-   [3014-205 – Requirements for IRB Submissions](https://policymanual.nih.gov/3014-205)
+-   [3014-206 – Maintenance of Records](https://policymanual.nih.gov/3014-206)
+-   [3014-207 – Public Health Emergency Research Review Board (PHERRB)](https://policymanual.nih.gov/3014-207)
+
+### 3014-300 Series – Investigator Responsibilities
+
+-   [3014-300 – Investigator Responsibilities](https://policymanual.nih.gov/3014-300)
+-   [3014-301 – Informed Consent](https://policymanual.nih.gov/3014-301)
+-   [3014-302 – Subject Recruitment and Compensation](https://policymanual.nih.gov/3014-302)
+-   [3014-303 - Intramural Research Program Telehealth Requirements](https://policymanual.nih.gov/3014-303)
+
+### 3014-400 Series – Regulatory Protections for Vulnerable Populations
+
+-   [3014-400 – Research Involving Pregnant Women, Human Fetuses and Neonates](https://policymanual.nih.gov/3014-400)
+-   [3014-401 – Research Involving Prisoners](https://policymanual.nih.gov/3014-401)
+-   [3014-402 – Research Involving Children](https://policymanual.nih.gov/3014-402)
+-   [3014-403 – Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation](https://policymanual.nih.gov/3014-403)
+-   [3014-404 – Research Involving NIH Staff as Subjects](https://policymanual.nih.gov/3014-404)
+
+### 3014-500 Series – FDA Requirements for Human Subjects Research and Data and Safety Monitoring
+
+-   [3014-500 – Research Involving Drugs, Biological, and Nutritional Products](https://policymanual.nih.gov/3014-500)
+-   [3014-501 – Research Involving FDA Regulated Devices](https://policymanual.nih.gov/3014-501)
+-   [3014-502 – Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles)](https://policymanual.nih.gov/3014-502)
+-   [3014-503 – Data and Safety Monitoring](https://policymanual.nih.gov/3014-503)
+
+### 3014-700 Series – International Research Requirements
+
+-   [3014-700 – International Research](https://policymanual.nih.gov/3014-700)
+
+### 3014-800 Series – Compliance and Research Event Reporting Requirements
+
+-   [3014-801 – Reporting Research Events](https://policymanual.nih.gov/3014-801)
+-   [3014-802 – Non-Compliance in Human Subjects Research](https://policymanual.nih.gov/3014-802)

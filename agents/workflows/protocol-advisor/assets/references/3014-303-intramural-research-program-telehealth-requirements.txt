@@ -1,0 +1,190 @@
+Name: 3014-303 - Intramural Research Program Telehealth Requirements
+Source URL: https://policymanual.nih.gov/3014-303
+Fetched At: 2026-04-03T18:46:11.639Z
+Source Type: html
+
+---
+
+## 3014-303 - Intramural Research Program Telehealth Requirements
+
+Issuing Office: OD/OIR/OHSRP
+Phone:
+(301) 402-3713
+
+Release Date: 4/20/2021
+Technical Revision Date: 9/05/2025 ?
+
+Transmittal Notice
+
+- Explanation of Material Transmitted: This policy describes the requirements for, and limitations on, utilizing telehealth/telemedicine modalities during the conduct of human subjects research by NIH Intramural Research Program (IRP) clinical researchers.
+- Filing Instructions:Insert: NIH Manual Chapter 3014-301, dated 4/20/2021
+- Implementation Date: 05/03/2021
+
+- PLEASE NOTE: For information on:The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+- Content of this chapter, contact the issuing office listed above.
+- NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+Describe the requirements for, and limitations on, utilizing telehealth/telemedicine modalities during the conduct of human subjects research by NIH Intramural Research Program (IRP) clinical researchers.
+
+### B. Scope
+
+- This policy applies to NIH investigators conducting research with human subjects when the encounter is remote and utilizes synchronous audio-video technology. This includes all research activities, including but not limited to obtaining informed consent, screening, and conducting study visits.
+
+- This policy applies to Clinical Directors and other Institute/Center (IC) leadership in their oversight of NIH investigators.
+
+- This policy applies to the NIH IRB when it is the Reviewing IRB.
+
+- This policy does not: Specify the requirements for electronic documentation of informed consent.
+
+- Cover asynchronous telehealth/telemedicine.
+
+- Cover the delivery of clinical care, outside that care which is required to implement the IRB-approved research protocol.
+
+- Apply to telephone conversations, electronic mail messages or facsimile transmissions between the NIH investigator and research subject.
+
+### C. Policy
+
+- The use of telehealth during the conduct of human subjects research is only permissible when the activity is conducted in a manner that ensures the safety and privacy of subjects, and the confidentiality of research data.
+- The use of telehealth to conduct human subjects research will be described in the IRB approved protocol.
+- Research activities conducted via telehealth will meet the same safety and quality standards as those required during an in-person encounter.
+- Research activities conducted via telehealth are subject to the same regulatory and policy requirements, including NIH policy requirements, as in-person encounters.
+- Research encounters conducted via telehealth must be conducted only by NIH investigators who:Are appropriately credentialed or authorized (i.e., credentialled by their usual clinical site (e.g., NIH duty station) or, if there is no clinical site, then through IC authorization);
+- Credentialing or authorization requirements for telehealth can be no different than the clinic or IC requirements for in-person encounters;
+- Have the necessary supervisory approvals to utilize telemedicine; and
+- Have an appropriate license (or, where applicable, certification) that does not explicitly prohibit the utilization of telemedicine.
+
+- NIH Investigators must continue to practice within the scope of their license or certification, as applicable.
+- Research encounters conducted via telehealth may only include interventions or interactions that have been determined by the IRB to be minimal risk.
+- Research encounters conducted via telehealth can only include research subjects who are physically located in the United States.
+- Telehealth may not be used to provide clinical care outside of care that is required to implement the IRB-approved research protocol.Controlled substances may not be prescribed during a telehealth encounter.
+
+- Telehealth/Telemedicine for research subjects who are registered as patients in the Clinical Center must be conducted in a manner compliant with MAS policy M20-1 Utilization of Telehealth/Telemedicine by NIH Healthcare Providers for NIH Clinical Center Patients. Other applicable hospital or clinic policy on utilization of telehealth/telemedicine where the patient is registered also continues to apply.
+- Telehealth encounters must be conducted utilizing Information Technology (IT) platforms that have been determined by appropriately qualified NIH information technology personnel to be compliant with all necessary information security standards.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below. The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+Definitions demarcated with (Pre-2018 Common Rule definition) apply to research approved (or deemed to be exempt or for which no IRB review was required under the regulations) prior to the effective date of the 2018 Common Rule (January 21, 2019).
+
+Definitions demarcated with (2018 Common Rule definition) apply to all research approved by an IRB (or deemed to be exempt or for which no IRB review was required under the regulations) on or after January 21, 2019 and to research transitioned to the 2018 requirements in accordance with Human Research Protection Program (HRPP) policy.
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+- [Asynchronous (store-and-forward)](https://policymanual.nih.gov/3014-001#A)
+- [Minimal risk](https://policymanual.nih.gov/3014-001#M)
+- [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+- [Synchronous (real-time interactive services)](https://policymanual.nih.gov/3014-001#S)
+- [Telehealth (for the purposes of Policy 3014-303)](https://policymanual.nih.gov/3014-001#T) Telemedicine (a subset of Telehealth)
+
+### E. Responsibilities and Requirements
+
+- NIH Principal Investigators (PIs) are responsible for:Ensuring that the planned use of telehealth to conduct research is described in the IRB approved protocol. The protocol should include the following information regarding a telehealth encounter:A description of the activities that will be performed during the encounter.
+- Measures that will be taken to ensure the privacy of the subject and confidentiality of data, including an assurance that only platforms that meet required information security standards will be utilized.
+- Precautions taken to ensure the safety and welfare of the subject.
+
+- If telehealth is to be used to obtain informed consent for participation in research, all requirements of Policy 3014-301 Informed Consent must be met. The protocol must clearly describe the process for obtaining consent including, but not limited to, the following information:Whether the informed consent document will be provided to the potential subject in advance of the telehealth encounter and if it will be provided in hard copy or electronic format.
+- The method by which the subject will be requested to sign the informed consent document (e.g., hand signature on a printed document, stylus or mouse signature on an electronic document, or electronic signature).
+- If an electronic signature is to be used and the research is subject to FDA regulation:The NIH Investigator must describe in the protocol the method by which identity of the participant will be verified prior to obtaining consent in accordance with applicable FDA regulations and guidance, and
+- The platform must be certified as compliant with 21 CFR Part 11.
+
+- Should an unplanned telehealth visit be required in a protocol that is not approved for such a visit, the NIH PI must submit a request to the IRB which must be approved prior to conducting the visit, unless the visit is urgently required to prevent an immediate apparent harm to the subject. In such a case, this must be reported to the IRB consistent with Policy 3014-801 Reporting Research Events.
+- Ensuring that telehealth encounters are conducted with the same safety and quality standards as an equivalent in-person encounter.
+- Ensuring that only IT platforms that meet required NIH security and privacy standards are used to conduct telehealth encounters.
+
+- All NIH Investigators are responsible for:Ensuring that appropriate measures are in place to protect the privacy of subjects, both in terms of the setting in which the NIH Investigator is conducting the encounter and the research subject’s setting, as well as protecting the confidentiality of data (See also Policy 3014-107 Privacy and Confidentiality.)The encounter must be conducted in a private space with, if possible, a closed door. No items with Personal Identifiable Information (PII) or other confidential information are permitted within the view of the participant.
+- The participant should be instructed to conduct the encounter in a similarly private environment, free of distraction.
+
+- Documenting all relevant information in the research record to the same extent as an in-person encounter and include a notation in the record that the visit occurred as a telehealth encounter.
+- Ensuring that the provision of clinical care is not provided as part of the telehealth encounter unless required to implement the IRB-approved research protocol.
+- If clinical care is performed as described above, it must occur in a manner that is compliant with applicable hospital or clinic policy (e.g., for research subjects who are registered as patients in the Clinical Center, MAS policy M20-1 Utilization of Telehealth/Telemedicine by NIH Healthcare Providers for NIH Clinical Center Patients). Maintaining appropriate licensure or certification.
+
+- Clinical Directors are responsible for:Assuring IC oversight of telehealth utilized by their NIH Investigators.
+- Ensuring that NIH Investigators are aware of any policies and/or restrictions governing the use of telehealth.
+- Ensuring that NIH Investigators do not use telehealth for the independent practice of medicine (e.g., examination, diagnosis, treatment), meaning clinical activities that are outside the scope of those required for the implementation of the IRB approved protocol.Ensuring that if clinical care is performed as described above, it must occur in a manner that is compliant with applicable hospital or clinic policy (e.g., for research subjects who are registered as patients in the Clinical Center, MAS policy M20-1 Utilization of Telehealth/Telemedicine by NIH Healthcare Providers for NIH Clinical Center Patients).
+
+- Ensuring that only appropriately credentialed or IC-authorized NIH Investigators conduct research activities via telehealth.Authorization by an IC includes assuring the NIH investigator holds appropriate licensure or certification.
+
+- When IC contractors are being considered for participation in telehealth, working with the IC contracts office to assure:The contract permits telemedicine-related activities;
+- The contractor/contracting organization/company ensures licensure portability and liability insurance coverage; and
+- The contract organization/company allows the contractor to participate in telemedicine.
+
+- Ensuring that NIH Investigators are aware of what IT platforms are permitted for use in telehealth encounters.
+
+- NIH IRB is responsible for:​​​​​​​Reviewing any proposed use of telehealth encounters described in the protocol to ensure that the use of this modality does not adversely impact the rights, welfare or safety of research subjects.
+- Requiring any additional measures, such as increased privacy and confidentiality protections, (consistent with Policy 3014-107 Privacy and Confidentiality) deemed necessary to protect the rights, welfare and safety of research subjects.
+- Ensuring that telehealth encounters described in the protocol include only minimal risk interventions.
+
+### F. References
+
+- Federal Regulation
+
+[45 CFR 46](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML)
+
+21 CFR parts [11](https://www.ecfr.gov/cgi-bin/text-idx?SID=b9e85604c8bc6ee12747cddcbbf99f28&mc=true&node=pt21.1.11&rgn=div5), [50](https://www.ecfr.gov/cgi-bin/text-idx?SID=b9e85604c8bc6ee12747cddcbbf99f28&mc=true&node=pt21.1.50&rgn=div5) and [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=b9e85604c8bc6ee12747cddcbbf99f28&mc=true&node=pt21.1.56&rgn=div5)
+
+- NIH Policies
+
+[MAS policy M20-1 Utilization of Telehealth/Telemedicine by NIH Healthcare Providers for NIH Clinical Center Patients](https://cc-internal2.cc.nih.gov/policies/PDF/M20-1.pdf)
+
+[Policy 3014-107 Privacy and Confidentiality](https://policymanual.nih.gov/3014-107)
+
+[Policy 3014- 301 Informed Consent](https://irbo.nih.gov/confluence/download/attachments/36241835/301%20-%20Policy%20-%20Informed%20Consent.pdf?version=1&modificationDate=1612819587875&api=v2)
+
+[Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)
+
+- Guidance
+
+[FDA guidance on Part 11, Electronic Records; Electronic Signatures- -Scope and Application](https://www.fda.gov/media/75414/download)
+
+Add Section
+
+###### * If you require a 508 compliant PDF version of a chapter please contact [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#b292c2dddedbd1cbdfd3dcc7d3def2dcdbda9cd5ddc4)
+
+|
+
+Type of Publish
+
+|
+|
+
+Release Date
+
+|
+
+| |
+| |
+
+Add Your Note (optional):
+
+Office of Management Assessment, National Institutes of Health, 6705 Rockledge Dr. Suite 601 Bethesda, MD 20892
+
+Phone: (301) 496-4606 Email: [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#fd8d9291949e84909c93889c91bd939495d39a928b)
+
+- [Resources](https://oma.od.nih.gov/dms/pages/manual-chapters-links.aspx)
+
+- [About](https://oma.od.nih.gov/dms/pages/manual-chapters.aspx)
+
+- [Contacts](https://oma.od.nih.gov/dms/pages/manual-chapters-manual-system-contacts.aspx)
+
+- [Web Policies and Notices](https://www.nih.gov/web-policies-notices)
+
+- [HHS Vulnerability Disclosure](https://www.hhs.gov/vulnerability-disclosure-policy/index.html)
+
+- [FOIA](https://www.nih.gov/icd/od/foia/index.htm)
+
+- [No Fear Act](https://www.edi.nih.gov/no-fear-act)
+
+- [Office of Management](https://om.od.nih.gov/)
+
+- [National Institutes of Health](https://www.nih.gov/)
+
+- [U.S. Department of Health and Human Services](https://www.hhs.gov/)
+
+- [USA.Gov - Government Made Easy](https://www.usa.gov/)
+
+NIH... Turning Discovery into Health(r)
+
+Arrow UpBack to Top

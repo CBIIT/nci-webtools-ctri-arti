@@ -1,0 +1,194 @@
+Name: NIH Policy 3014-105
+Purpose: reference
+Description: Requirements for IRB reliance and collaborative or multi-site research when NIH is the reviewing IRB or a relying institution.
+URL: https://policymanual.nih.gov/3014-105
+Selection Rule: (none)
+Token Count: 7231
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 16
+
+---
+
+## 3014-105 - IRB Reliance and Collaborative Research
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Release Date:** 5/15/2020 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 2/13/2025 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 1/11/2023 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:**  This policy describes the requirements for IRB reliance, collaborative research and multi-site research that requires Single IRB review.  This policy fully supersedes the following Standard Operating Procedures (SOPs): SOP 20 – NIH HRPP Requirements for Collaborative Research, SOP 20A – Obtaining a Reliance (Authorization) Agreement at the NIH, SOP 20B – NIH IRB Responsibilities When Reviewing Local Context Considerations for Offsite Research and SOP 20C – Responsibilities When the NIH Intramural Research Program Serves as a Coordinating Center for a Multisite Trial or as the IRB of Record for a Non-NIH Coordinating Center. **Partial Revision 2/13/2025**: These revisions include minor clarifications for consistency with the eIRB system and for multisite research studies consistent with current practice. This revision also reminds NIH Investigators to submit to IRBO external IRB approvals and approved documentation no later than 2 weeks following receipt of the approval letter.
+2.  **Filing Instructions:**
+    -   **Insert:** NIH Manual Chapter 3014-105, dated 05/15/2020
+    -   **Implementation Date:** 07/06/2020
+3.  **PLEASE NOTE:** For information on:
+    -   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+    -   Content of this chapter, contact the issuing office listed above.
+    -   NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx "link to the NIH Policy Manual home page")
+
+### A. Purpose
+
+1.  This policy establishes when the NIH Intramural Research Program (IRP) may rely on a non-NIH Institutional Review Board (IRB) (external IRB).
+2.  This policy establishes when the NIH IRB may serve as the reviewing IRB for another institution.
+
+### B. Scope
+
+1.  This policy applies to:
+    1.  NIH investigators when relying on a non-NIH IRB for the oversight of human subjects research.
+    2.  NIH and non-NIH investigators conducting human subjects research when the NIH IRB is the reviewing IRB for multi-site research.
+    3.  The NIH IRB when serving as the reviewing IRB for human subjects research that is subject to a reliance agreement.
+    4.  The Office of Human Subjects Research Protections (OHSRP), and its offices and staff when establishing, maintaining or executing reliance or similar agreements, or when reviewing multi-site research protocols on behalf of the NIH IRB.
+    5.  The NIH Institutional Official (IO)  
+
+### C. Policy
+
+1.  The OHSRP Office of IRB Operations (IRBO) will evaluate multi-site (also referred to as cooperative research) proposals and determine whether single IRB (sIRB) review is required by federal regulation (45 CFR 46 and 21 CFR 56, as applicable) or by NIH policy (NIH Single IRB Policy).
+    1.  When sIRB review is not required by federal regulation or by NIH policy, and utilization of an sIRB is requested, the OHSRP Director, IRBO Director or designee, will consider this request on a case-by-case basis.
+    2.  Exception requests by NIH Principal Investigators (PIs) to the HHS cooperative research provisions (45 CFR 46 of the 2018 Common Rule), or the NIH Single IRB Policy, must be made through the IRBO.
+2.  In accordance with federal regulation, when the NIH IRB is serving as the reviewing IRB for a non-NIH institution, or OHSRP has permitted reliance upon an external IRB for non-exempt human subjects research, a reliance agreement will be established (45 CFR 46.103(e) of the 2018 Common Rule).
+    1.  Generally, in order to rely upon the NIH IRB, the relying institution must hold an active HHS FWA. (45 CFR 46.103)
+3.  When establishing a reliance agreement on behalf of the NIH, OHSRP will ensure that the agreement sets forth the authorities, roles, and responsibilities of the reviewing IRB and the relying institution.
+4.  The NIH will only cede review to external IRBs that have undergone or initiated an assessment of its quality within the past 5 years.  The assessment may be accomplished through accreditation by an external organization or through OHRP’s Quality Assessment Program, or other equivalent approach.
+    1.  The OHSRP Director may waive this requirement if s/he determines that for a given study it is in the interest of the NIH that an IRB serve as reviewing IRB that has not undergone such a quality assessment, and that s/he determines that there are no significant outstanding regulatory actions or determinations against the reviewing IRB.
+5.  The authority to execute reliance agreements on behalf of the NIH, is delegated to the OHSRP Director, from the DDIR.
+6.  NIH investigators do not have the authority to sign or otherwise commit to any reliance agreement.
+7.  The NIH IO retains the ultimate authority for the oversight of research conducted on behalf of the NIH IRP, even when approved by an external IRB, including the authority to disapprove, place on administrative hold, or formally close the research. Except that the NIH IO may not approve research that has been disapproved by an IRB, including an external IRB.
+8.  When research involves an executed reliance agreement NIH investigators will comply with the terms of the executed agreement in addition to applicable federal regulation and policy, including applicable NIH policy.
+9.  When the NIH is relying on an external IRB, the NIH PI/NIH Lead Site Investigator (referred to as the NIH PI):
+    1.  Will ensure that all NIH requirements for the conduct of research are met, including all applicable institutional and ancillary reviews (e.g., scientific review, radiation safety committee review, etc.).
+        1.  Deputy Ethics Counselor (DEC) clearance of Covered Research Protocols (CRPs) (e.g., for Initial Reviews (IRs)s, Continuing Reviews (CRs) or addition of investigators) must be completed before IRBO can finalize its administrative review.
+    2.  Will submit all required materials to IRBO for local institutional review prior to the initial submission to the external IRB. (Local institutional review is an administrative review of required material before submission to the external IRB, and after the external IRB has approved NIH as a site.)
+        1.  The NIH PI may not make an initial submission to the external IRB for review, until after IRBO  provides clearance via the NIH Institutional Review Memorandum (Memo) indicating that the required materials can be submitted to the external IRB.
+        2.  Once the external IRB has approved NIH as a site, the NIH PI must submit all materials approved by the external IRB to IRBO for post-review before the study can open at the NIH.
+    3.  Will submit all required materials related to subsequent submissions (e.g., modifications, CRs, and study closures) to IRBO for administrative review, after those actions have been reviewed and approved by the external IRB. These submissions to the IRBO will be made promptly, but no later than 2 weeks after the NIH Study team has received the external IRB approval letter. (See E.2.a.VII. below for additional information about these submissions.)
+    4.  Will not commence research until all required NIH ancillary committee and IRB approvals have been received. (See _Policy 3014-106 Ancillary Reviews_.)
+10.  When relying on an external IRB, NIH investigators must comply with the applicable reviewing IRB policies and requirements as well as all applicable NIH policies, including Human Research Protection Program (HRPP) policies.
+11.  When the NIH IRB is the reviewing IRB for another institution, it will comply with federal regulation and policy, including NIH policy, and the terms of the executed reliance agreement.
+12.  The IRBO will not forward for review, and the NIH IRB will not review, research submitted by relying institutions until it has received the following confirmations:
+     1.  Notification from the relying institution that the institutional requirements of the relying institution have been met; and
+     2.  Local context information provided has been approved by the relying institution's HRPP/IRB. (See _Policy 3014-205 Requirements for IRB Submissions_.)
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+**Note**: There _may be more than one definition per term_, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized. 
+
+1.  [Collaboration](https://policymanual.nih.gov/3014-001#C)
+2.  [Cooperative Research](https://policymanual.nih.gov/3014-001#C)
+3.  [Covered Research Protocol](https://policymanual.nih.gov/3014-001#C)
+4.  [Federal Employee](https://policymanual.nih.gov/3014-001#F)
+5.  [Federalwide Assurance (FWA)](https://policymanual.nih.gov/3014-001#F)
+6.  [Lead Site Investigator](https://policymanual.nih.gov/3014-001#L)
+7.  [Local Context](https://policymanual.nih.gov/3014-001#L)
+8.  [Multi-site Research](https://policymanual.nih.gov/3014-001#M)
+9.  [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+10.  [NIH Single IRB Policy (sIRB)](https://policymanual.nih.gov/3014-001#N)
+11.  [Participating Site](https://policymanual.nih.gov/3014-001#P)
+12.  [Reliance (Authorization) Agreement](https://policymanual.nih.gov/3014-001#R)
+13.  [Relying Institution](https://policymanual.nih.gov/3014-001#R)
+14.  [Reviewing IRB](https://policymanual.nih.gov/3014-001#R)
+
+### E. Responsibilities and Requirements
+
+1.  **The responsibilities of the OHSRP and its offices**
+    1.  The OHSRP Director, in consultation with the IRBO Director and/or Executive Chair of the IRB, is responsible for deciding whether the NIH will enter into an agreement to serve as the reviewing IRB for another institution, or whether the NIH will cede review to an external IRB.
+    2.  The OHSRP Director is responsible for executing any reliance agreements on behalf of the NIH, as delegated by the DDIR.
+    3.  The IRBO is responsible for:
+        1.  Determining if a proposed NIH research protocol is subject to the cooperative research provisions of the Common Rule (45 CFR 46) or the NIH Single IRB Policy.
+        2.  Negotiating the terms of the reliance agreement consistent with federal regulation and policy, including NIH policy, for the conduct of human subjects research.
+        3.  Establishing procedures to ensure compliance with the terms of reliance agreements by the NIH IRB when the NIH IRB is serving as the reviewing IRB.
+        4.  Ensuring, that the NIH IRB will only approve the addition of a participating site after it has received confirmation that:
+            1.  The institutional requirements of the relying institution have been met; and
+            2.  The local context information provided has been approved by the relying institution's HRPP/IRB.
+        5.  Reviewing, preparing, and submitting requests for exceptions to the cooperative research provisions of the 2018 Common Rule or the NIH Single IRB Policy.
+        6.  Maintaining records related to reliance agreements and exception requests consistent with _Policy 3014-206 Maintenance of Records_.
+        7.  The following activities when the NIH is relying on an external IRB:
+            1.  Conducting administrative reviews of research protocols and consents to ensure compliance with NIH requirements (e.g., ancillary committee reviews or conflict of interest requirements), consistent with federal regulation and policy, including NIH policy, for the conduct of human subjects research, when the NIH is relying on an external IRB.
+                -   The IRBO will issue the "NIH Institutional Review Memo" to the NIH PI, once it is satisfied that institutional requirements have been met (e.g., all applicable ancillary approvals have been initiated and/or completed).
+            2.  Providing institutional context information and approving the local context information provided to the external IRB.
+            3.  Ensuring that institutional requirements continued to be followed throughout the life of the study, consistent with _Policy 3014-205 Requirements for IRB Submission_.
+2.  **Responsibilities of NIH Principal Investigators (PIs)**
+    1.  NIH PIs are responsible for:
+        1.  Informing the IRBO, as early as possible, of the intent to rely upon an external IRB, or requesting that the NIH IRB serve as the reviewing IRB for multi-site research.
+        2.  Working with IC leadership to ensure payment for IRB services when IRBO has granted permission for the PI to use an NIH-approved commercial IRB.
+        3.  Obtaining confirmation from IRBO that the NIH is willing to cede IRB review, or that the NIH IRB is willing to be the reviewing IRB for the research, before initiating a request to execute a reliance agreement.
+        4.  Working collaboratively with IRBO to facilitate the execution of any necessary reliance agreements.
+            1.  NIH PIs are reminded that they are not permitted to sign or execute reliance agreements (see [_C.6._](#C.6) above).
+        5.  Retaining records related to reliance and IRB approvals consistent with _Policy 3014-300 Investigator Responsibilities_.
+        6.  When relying on an external IRB, informing the IRBO when:
+            1.  The NIH is initially approved as a site by the external IRB;
+            2.  There is a change in the NIH PI;
+            3.  There are any changes to the research; or
+            4.  The study has closed (either at the NIH site or overall).
+        7.  Ensuring, when the NIH is relying on an external IRB:
+            1.  Compliance with federal regulation and policy, including applicable NIH policy and the terms of executed reliance agreements.
+            2.  Review of, and compliance with, the policies and requirements of the reviewing IRB (e.g., the timely reporting of all reportable events to the reviewing IRB, modifications and, when required, continuing review).
+            3.  That all NIH ancillary committee approvals have been completed.
+            4.  That the following have been submitted to the IRBO for administrative review, including:
+                -   Protocol and protocol addendum;
+                -   Consent(s)/assent(s) (NIH and model templates, where applicable);
+                -   Any applicable ancillary committee reviews;
+                -   Recruitment materials;
+                -   Study instruments; and
+                -   Any other information as requested by the IRBO.
+            5.  That submission to the external IRB will not take place until the NIH PI has received the NIH Institutional Review Memo and, if the external IRB requests, the approved local context information from IRBO.
+            6.  That all reportable events that occur at an NIH site, are reported to the external IRB and the NIH, consistent with the requirements specified in _Policy 3014-801 Reporting Research Events_.
+            7.  Submit CRs to the external IRB with sufficient time to allow the external IRB to conduct its review and approval, and for the IRBO to complete its administrative review prior to the study expiration date in the NIH eIRB system.
+                -   In cases where the external IRB has not approved the CR by the expiration date, the study will be considered to have lapsed in IRB approval.
+                -   All research activities must stop upon lapse at the NIH site until the CR is approved, unless the external IRB has given permission for the research with already enrolled subjects to continue because it is in the best interests of these subjects. (See Policy 204 Levels of IRB Review and Criteria for IRB Approval of Research for more information.)
+            8.  Submit to IRBO promptly but no later than 2 weeks from study team receipt, all external IRB approval letters for modifications, CRs, and study closures including the corresponding external IRB-approved documents (e.g., protocol, protocol addendum and consents).
+                -   In the absence of an informative external IRB letter, NIH PI may provide additional documentation (e.g., a screenshot of page in the external IRB system, or email exchange with the external IRB) that IRBO can use to verify that the submission has been reviewed and approved by the external IRB.
+                -   Note the submissions for study team changes (excluding NIH PI changes) may not include an approval letter if the external IRB does not review and approve Relying Site study team changes.
+            9.  That no research activities commence/continue until all required NIH and applicable external IRB approvals have been received.
+        8.  Ensuring, when the NIH IRB is the reviewing IRB for multi-site research:
+            1.  Submissions to the NIH IRB must comply with the requirements specified in _Policy 3014-205 Requirements for IRB Submissions._
+            2.  Submission to the NIH IRB of a plan for monitoring the oversight of non-NIH site(s). This monitoring plan must:
+                -   Outline the specific research activities that will occur at the non-NIH site(s);
+                -   Describe the steps to ensure study and regulatory compliance by external PIs; and
+                -   Specify how the NIH PI will notify external PIs, in writing of the NIH IRB's review determinations.
+                -   Be either submitted as a modification to an already approved protocol or be included with the initial protocol submission.
+            3.  That a participating site relying on the NIH IRB is not added until a reliance agreement is executed, and the NIH PI has distributed the IRB-approved materials to the participating site.
+            4.  When non-NIH investigators will conduct research at a NIH site, that all related approvals are secured prior to commencing any research at an NIH facility.
+            5.  That all participating sites relying on the NIH IRB are provided with the relevant policies and procedures of the NIH IRB or where to find such materials.
+            6.  Communicate to all participating sites regarding the outcome of all site-relevant NIH IRB determinations.
+            7.  Communication with all participating sites to ensure the timely submission of all required materials to the NIH IRB.
+3.  **Responsibilities of the NIH IRB**
+    1.  When serving as the reviewing IRB, the NIH IRB is responsible for:
+        1.  Complying with federal regulation and policy, including NIH policy, and the terms of any executed reliance agreements.
+        2.  Considering local context in the initial and on-going review of research, as applicable.
+            1.  The NIH IRB will not approve the addition of a new relying institutions until it has received the following confirmations:
+                -   Notification from the relying institution indicating that its institutional requirements have been met; and
+                -   Local context information provided has been approved by the relying institution's HRPP/IRB. (See _Policy 3014-205 Requirements for IRB Submissions_.)
+        3.  Notifying the non-NIH relying PIs, in writing, of IRB review determinations, either via the NIH PI or directly, as applicable.
+            1.  Written IRB review determinations will include a point of contact for the relying investigators to contact the NIH IRB to address questions or concerns.
+
+### F. References
+
+1.  **Regulations:**
+
+HHS: [45 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)
+
+FDA: [21 CFR 56](https://www.ecfr.gov/cgi-bin/text-idx?SID=ca4a5f74c759c5fcdbcb3d69bdd20d17&mc=true&node=pt21.1.56&rgn=div5) [50](https://www.ecfr.gov/cgi-bin/text-idx?SID=a318d7938db00e42e614c35fb1a1c0c7&mc=true&node=pt21.1.50&rgn=div5), [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=ca4a5f74c759c5fcdbcb3d69bdd20d17&mc=true&node=pt21.1.56&rgn=div5), [312](https://www.ecfr.gov/cgi-bin/text-idx?SID=a318d7938db00e42e614c35fb1a1c0c7&mc=true&node=pt21.5.312&rgn=div5) and [812](https://www.ecfr.gov/cgi-bin/text-idx?SID=a318d7938db00e42e614c35fb1a1c0c7&mc=true&node=pt21.8.812&rgn=div5)
+
+2.  N**IH Policy:**
+
+[Policy 3014-106 Ancillary Reviews](https://policymanual.nih.gov/3014-106)
+
+[Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research](https://policymanual.nih.gov/3014-204)
+
+[Policy 3014-205 Requirements for IRB Submissions](https://policymanual.nih.gov/3014-205)
+
+[Policy 3014-206 Maintenance of Records](https://policymanual.nih.gov/3014-206)
+
+[Policy 3014-300 Investigator Responsibilities](https://policymanual.nih.gov/3014-300)
+
+[Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)
+
+[NIH Single IRB Policy](https://grants.nih.gov/policy/humansubjects/single-irb-policy-multi-site-research.htm)
+
+3.  **Guidance:** NA

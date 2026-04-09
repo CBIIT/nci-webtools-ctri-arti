@@ -1,0 +1,202 @@
+Name: NIH Policy 3014-501
+Purpose: reference
+Description: NIH requirements for FDA-regulated research involving investigational or regulated devices.
+URL: https://policymanual.nih.gov/3014-501
+Selection Rule: (none)
+Token Count: 7240
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 28
+
+---
+
+## 3014-501 - Research Involving FDA Regulated Devices
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Release Date:** 4/20/2020 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 6/03/2021 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 9/05/2025 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the requirements for NIH investigators, non-NIH investigators, NIH sponsors and the NIH Institutional Review Board (IRB) when conducting or reviewing human subjects research that involves the use of devices regulated by the Food and Drug Administration (FDA) and the Department of Health and Human Services (HHS). **Partial Revision  6/3/2021:** This revision specifies the requirement for NIH PIs to report any and all FDA Form 483s to the OHSRP Office of Compliance and Training consistent with Policy 3014-801 Reporting Research Events_._
+2.  **Filing Instructions:** 
+
+-   **Insert:** NIH Manual Chapter 3014-501, dated 04/20/2020, Partial Revision: 6/3/2021
+    
+-   **Implementation Date:** 10/26/2020
+    
+
+3.  **PLEASE NOTE:** For information on:
+
+-   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+    
+-   Content of this chapter, contact the issuing office listed above.
+    
+-   NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL:  [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx "link to the NIH Policy Manual home page")
+    
+
+### A. Purpose
+
+1.  Describes the responsibilities of NIH investigators, non-NIH investigators, NIH sponsors and the NIH Institutional Review Board (IRB) when conducting or reviewing human subjects research that involves the use of devices regulated by the Food and Drug Administration (FDA) and the Department of Health and Human Services (HHS).
+
+### B. Scope
+
+1.  This policy applies to NIH investigators when conducting FDA-regulated research involving the use of devices.
+2.  This policy applies to non-NIH investigators when conducting FDA-regulated research involving the use of devices when the NIH IRB is the Reviewing IRB.
+3.  This policy applies to Institutes and Centers (ICs) when serving as the Sponsor for investigational devices.
+4.  This policy applies to the NIH IRB when it is the Reviewing IRB. 
+
+### C. Policy
+
+1.  NIH Principal Investigators (PIs) and NIH investigators conducting human subjects research involving investigational device(s) must comply with applicable FDA regulations including, but not limited to, 21 CFR parts 50, 56, 809, 812, and 814 as applicable, as well as those set forth in HHS regulations at 45 CFR part 46.
+2.  When reviewing and approving research involving investigational devices, the NIH IRB must apply the applicable FDA regulations including, but not limited to, 21 CFR parts 50, 56, 809, 812, and 814 as applicable, as well as those set forth in HHS regulations at 45 CFR part 46.
+3.  By NIH policy, NIH investigators may not be Sponsors, effective January 15, 2018. However, investigators may have sponsor responsibilities when required by regulation. (See [E.2.](#E.2.) below for additional information.)
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below. The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+Definitions demarcated with (Pre-2018 Common Rule) apply to research approved by an IRB (or deemed to be exempt, or for which no Institutional Review Board (IRB) review was required under the regulations) prior to the effective date of the 2018 Common Rule (January 21, 2019).
+
+Definitions demarcated with (2018 Common Rule) apply to all research approved by an IRB (or deemed to be exempt, or for which no IRB review was required under the regulations) on or after January 21, 2019 and to research transitioned to the 2018 requirements in accordance with NIH Human Research Protection Program (HRPP) policy.
+
+1.  [Device](https://policymanual.nih.gov/3014-001#D)
+2.  [Exempt Investigational Device Study](https://policymanual.nih.gov/3014-001#E)
+3.  [Human Subject (2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#H)
+    
+
+(2)   Intervention
+
+(3)   Interaction
+
+(4)   Private Information
+
+(5)   Identifiable private information
+
+(6)   Identifiable biospecimen
+
+1.  [Human Subject (Pre-2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#H)
+    
+    1.  Intervention
+    2.  Private Information
+2.  [Humanitarian Device Exemption (HDE)](https://policymanual.nih.gov/3014-001#H)
+3.  [Humanitarian Use Device (HUD)](https://policymanual.nih.gov/3014-001#H)
+4.  [Implant](https://policymanual.nih.gov/3014-001#I)
+5.  [Investigation (Clinical investigation of a device)](https://policymanual.nih.gov/3014-001#I)
+6.  [Investigational Device](https://policymanual.nih.gov/3014-001#I)
+7.  [In vitro diagnostic (IVD) products](https://policymanual.nih.gov/3014-001#I)
+8.  [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+9.  [Non-Significant Risk (NSR) Device](https://policymanual.nih.gov/3014-001#N)
+10.  [Significant Risk (SR) Device](https://policymanual.nih.gov/3014-001#S)
+11.  [Sponsor (for devices)](https://policymanual.nih.gov/3014-001#S)
+12.  [Sponsor-Investigator (for devices)](https://policymanual.nih.gov/3014-001#S)
+13.  [Subject (FDA for study of investigational devices)](https://policymanual.nih.gov/3014-001#S)
+14.  [Transitional Device](https://policymanual.nih.gov/3014-001#T)
+15.  [Unanticipated adverse device effect (UADE)](https://policymanual.nih.gov/3014-001#U)
+
+### E. Responsibilities and Requirements
+
+1.  **Principal Investigator Responsibilities**
+    1.  When the research involves the study of the safety or efficacy of an investigational device, the Principal Investigator (PI) will provide documentation supporting the sponsor’s assessment of whether the device is exempt (21 CFR 812.2(c)), non-significant risk (NSR) or significant risk (SR) to the reviewing IRB.
+        1.  If a determination by the FDA has already been made as to whether the device is exempt, NSR or SR, documentation from the FDA must be provided to the reviewing IRB.
+        2.  The IRB or IRBO may require the PI to submit to the FDA for a determination prior to reviewing any device study.  FDA is the final arbiter as to whether a device study is Exempt, SR or NSR.
+        3.  The PI will submit the report of prior investigations (or device labeling information) to the IRB for review.
+    2.  The PI must confirm that there is IRB and FDA approval, when required, prior to enrolling subjects in the protocol.
+    3.  The PI is responsible for:
+        1.  Conducting the investigation according to the signed agreement with the sponsor, the investigational plan, and applicable FDA regulations. (21 CFR 812 subpart E).
+        2.  Ensuring requirements for obtaining informed consent are met.
+        3.  Storing, controlling, and accounting of the investigational device.
+        4.  Limiting investigational device use to only subjects under the investigator's supervision.
+        5.  Disclosing to the sponsor sufficient accurate financial information to allow the sponsor to submit complete and accurate certification or disclosure statements required under 21 CFR part 54 and promptly updating this information if any relevant changes occur during the course of the investigation and for one (1) year following completion of the study.
+        6.  Reporting Unanticipated Adverse Device Events (UADEs) promptly to the sponsor, to the reviewing IRB if required, and performing evaluation/investigation for all UADEs. (_See_ _Policy 3014-801 Reporting Research Events_.)
+        7.  Keeping accurate, complete and current records as specified in 21 CFR 812.140.
+        8.  Returning to the sponsor any remaining supply of the device or otherwise disposing of the device as the sponsor directs when the investigation is completed or terminated.
+        9.  Submitting complete, accurate, and timely reports as specified in 21 CFR 812.150.
+    4.  The PI must cooperate with Sponsor monitoring and audits.
+    5.  The PI must cooperate with FDA inspections: Permit authorized FDA employees, at reasonable times and in a reasonable manner to:
+        1.  Enter and inspect any establishment where devices are held;
+        2.  Inspect and copy all records relating to an investigation;
+        3.  Inspect and copy records that identify subjects, upon notice that FDA has reason to suspect that adequate informed consent was not obtained, if required by the IRB, or that reports required to be submitted by the investigator to the sponsor or IRB have not been submitted or are incomplete, inaccurate, false, or misleading.
+    6.  The PI must provide to the OHSRP office of Compliance and Training a copy of any and all FDA Form 483s issued regarding an NIH research study, consistent with _Policy 3014-801 Reporting Research Events._
+2.  **Sponsor Responsibilities (when the sponsor is the NIH or an NIH investigator)**
+    1.  The Sponsor is responsible for:
+        1.  Submitting an IDE application to the FDA, when applicable.
+        2.  Selecting qualified investigators and providing them with the information they need to conduct the investigation properly, including providing the investigational plan and reports of prior investigations. (21 CFR 812 subpart C and 21 CFR 812.27)
+        3.  Obtaining signed sponsor agreements from each investigator that included the information as noted in 21 CFR 812.43(c).
+        4.  Providing the IRB with a risk assessment and the rationale used in making its SR, NSR or exempt determination (See [E.1.a.](#E.1.a) above);
+            1.  If an IRB determines that a device is a significant risk device, and the sponsor has proposed that the IRB consider the device not to be a significant risk device, the sponsor shall submit to FDA a report of the IRB's determination within 5 working days after the sponsor first learns of the IRB's determination.(21 CFR 812.150(b)(9))
+        5.  Ensuring that IRB and, as applicable, FDA review and approval are obtained prior to beginning an investigation.
+        6.  Ensuring requirements for obtaining informed consent are met.
+        7.  Maintaining control of the device: Ship investigational devices only to qualified investigators participating in the investigation.
+        8.  Ensuring proper monitoring of the investigation by qualified individuals.
+        9.  Ensuring that any reviewing IRB and the FDA are promptly informed of significant new information about an investigation.
+        10.  Conducting evaluation of any Unanticipated Adverse Device Events (UADEs):
+             1.  If a UADE presents an unreasonable risk to subjects, the sponsor shall terminate all investigations or parts of investigations presenting that risk as soon as possible.
+             2.  Termination shall occur not later than 5 working days after the sponsor makes this determination and not later than 15 working days after the sponsor first received notice of the effect.
+             3.  If the device is a significant risk device, a sponsor may not resume a terminated investigation without IRB and FDA approval.
+             4.  If the device is not a significant risk device, a sponsor may not resume a terminated investigation without IRB approval and, if the investigation was terminated under E.2.a.X.i. above, without FDA approval.
+        11.  Maintaining accurate, complete, and current records relating to an investigation as required by 21 CFR 812.140:
+        12.  Submitting complete, accurate, and timely reports as required by 21 CFR 812.150.
+3.  **Sponsor Investigator**
+    1.  By NIH policy, IDEs shall be held by the IC, rather than by the NIH Principal Investigator on the clinical protocol.
+        1.  Investigators may serve as the sponsor for expanded access protocols or when the device has been determined to be non-significant risk.
+    2.  When a PI holds the IDE (Sponsor-Investigator), s/he assumes all responsibilities of both the Investigator (see [E.1.](#E.1) above) as well as the Sponsor (see [E.2.](#E.2.) above). (_See_ 21 CFR 812 subpart E and 21 CFR 812 subpart C.) (_See_ _Policy 3014-502 Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles)_.)
+4.  **IRB Responsibilities**
+    1.  When the NIH IRB is the Reviewing IRB, the NIH IRB is responsible for the review and approval of research involving devices under 21 CFR 812 subpart D and according to _Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research._
+    2.  Prior to considering whether the research may be approved, the office of IRB Operations (IRBO) will first review the IRB application to confirm that one of the following is true:
+        1.  The study is an exempt investigational device study.
+        2.  The study has an approved IDE issued by the FDA.
+        3.  The study Sponsor has provided sufficient justification that the investigation is an NSR device study.
+    3.  If the IRBO determines that none of the above conditions are met (_see_ _E.4.b._ above), the study will be returned to the PI, to ensure these requirements are met.
+    4.  During the pre-review of the research, the IRBO will evaluate the Sponsor’s justification.  If the Director, IRBO, the Director, OHSRP or the Executive Chair of the IRB, disagree with the Sponsor’s assessment that a study is exempt or NSR, they may require submission to the FDA prior to further review of the research.
+    5.  When the neither the Sponsor, nor the FDA has provided an assessment that the investigational device is exempt, an NSR or an SR, then only the convened IRB may make and document the SR or NSR determination by reviewing relevant information including:
+        1.  Description of the device;
+        2.  Reports of prior investigations conducted with the device;
+        3.  Proposed investigational plan including the proposed use of the device in the study, not just the device alone;
+        4.  As well as any protocol related procedures and tests (e.g., surgery for an implant), and any potential for serious risk to the health, safety or welfare of the subject; and
+        5.  Subject selection criteria.
+    6.  If the FDA has already determined that the investigation is an NSR or an SR device study, then the IRB does not need to make a determination, and the FDA determination is final.
+    7.  If the IRB determines the study is NSR or is an exempt device investigation, and the IRB otherwise approves the study, the study may begin without submission to the FDA.
+    8.  If the IRB disagrees with the Sponsor’s initial NSR assessment and decides the study is SR, the IRB must tell the clinical investigator and the Sponsor (decision may be conveyed via investigator to the sponsor), and an IDE application must be submitted and approved by the FDA before research may commence.
+5.  **General Requirements for Humanitarian Use Devices:**
+    1.  Before use of a Humanitarian Use Device (HUD) in the course of routine clinical care to treat or diagnose patients at the NIH, IRB approval must be obtained. (21 CFR 814.124)
+    2.  Initial review of a HUD will be performed by the convened NIH IRB.  Subsequent reviews may be conducted by expedited procedures.
+        1.  The IRB may require either informed consent from the patient or require that the treating physician provide the patient with a patient information sheet describing the HUD.
+        2.  An IRB does not have to make a SR/NSR determination when it receives a request to review a clinical investigation of a HUD (e.g., collection of safety and effectiveness data) when that clinical investigation concerns the HDE-approved indication(s) only. FDA does not consider such investigations to require an IDE under 21 CFR part 812. (_See Humanitarian Device Exemption (HDE) Program – Guidance for Industry and Food and Drug Administration Staff._)
+    3.  The Humanitarian Device Exemption (HDE) holder is responsible for ensuring that a (HUD) under an HDE is administered only in facilities having IRB oversight in accordance with the Agency’s regulation governing IRBs. (21 CFR 814 subpart H)
+    4.  The HDE holder shall notify FDA of any withdrawal of approval for the use of a HUD by a reviewing IRB within 5 working days after being notified of the withdrawal of approval.
+    5.  Emergency use: If a physician in an emergency situation determines that IRB approval for the use of the HUD at the facility cannot be obtained in time to prevent serious harm or death to a patient, a HUD may be used without prior approval. In this situation:
+        1.  The HDE holder may ship the HUD, based on the physician’s certification of the emergent need.
+        2.  FDA regulations require that physicians provide such notification to the chairperson of the IRB in writing within 5 days of the emergency use of the device.  Such written notification shall include the identification of the patient involved, the date on which the device was used, and the reason for the use.
+    6.  The HDE holder is required to submit annual reports, including the applicant’s clinical experience with the device and the number of devices shipped or sold. (21 CFR 814.126(b))
+    7.  When used in a clinical investigation evaluating the safety or effectiveness of a HUD for an indication other than the approved HDE, the investigation is subject to all applicable investigational device and human subjects protections regulations.
+    8.  Off-label clinical or treatment use of a HUD, where no safety and effectiveness data is collected, does not require IRB review.
+
+### F. References
+
+1.  **Federal Regulations**
+
+-   [HHS: 45 CFR part 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)
+-   FDA: 21 CFR parts [50](https://www.ecfr.gov/cgi-bin/text-idx?SID=2fd22034d7039b800a72780a6865d4f1&mc=true&tpl=/ecfrbrowse/Title21/21cfr50_main_02.tpl), [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=2fd22034d7039b800a72780a6865d4f1&mc=true&tpl=/ecfrbrowse/Title21/21cfr56_main_02.tpl), [809](https://www.ecfr.gov/cgi-bin/text-idx?SID=2fd22034d7039b800a72780a6865d4f1&mc=true&tpl=/ecfrbrowse/Title21/21cfr809_main_02.tpl), [812](https://www.ecfr.gov/cgi-bin/text-idx?SID=2fd22034d7039b800a72780a6865d4f1&mc=true&tpl=/ecfrbrowse/Title21/21cfr812_main_02.tpl) (including Subparts [C](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-H/part-812/subpart-C), [D](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-H/part-812/subpart-D) and [E](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-H/part-812/subpart-E)) and [814](https://www.ecfr.gov/cgi-bin/text-idx?SID=2fd22034d7039b800a72780a6865d4f1&mc=true&tpl=/ecfrbrowse/Title21/21cfr814_main_02.tpl)  
+
+2.  **NIH Policy**
+
+-   [Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research](https://policymanual.nih.gov/3014-204)
+-   [Policy 3014-502 Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles)](https://policymanual.nih.gov/3014-502)
+-   [Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)
+
+3.  **Guidance**
+
+-   [Information Sheet Guidance For IRBs, Clinical Investigators, and Sponsors Significant Risk and Nonsignificant Risk Medical Device Studies (January 2006)](https://www.fda.gov/media/75459/download)
+-   [Factors to Consider When Making Benefit-Risk Determinations for Medical Device Investigational Device Exemptions Guidance for Investigational Device Exemption Sponsors, Sponsor-Investigators and Food and Drug Administration Staff (Document issued on January 13, 2017)](https://www.fda.gov/media/92427/download)
+-   [Decisions for Investigational Device Exemption Clinical Investigations Guidance for Sponsors, Clinical Investigators, Institutional Review Boards, and Food and Drug Administration Staff (August 19, 2014)](https://www.fda.gov/media/81792/download)
+-   [Information Sheet Guidance For IRBs, Clinical Investigators, and Sponsors Frequently Asked Questions About Medical Devices (January 2006)](https://www.fda.gov/media/75381/download)
+-   [Guidance for Industry and FDA Staff In Vitro Diagnostic (IVD) Device Studies -Frequently Asked Questions (Document issued on: June 25, 2010)](https://www.fda.gov/media/71075/download)
+-   [Overview of IVD Regulation (Content current as of 9/16/2019)](https://www.fda.gov/medical-devices/ivd-regulatory-assistance/overview-ivd-regulation)
+-   Robert ‘Skip’ Nelson, MD PhD - [IRB Oversight of Humanitarian Use Devices (2.4.3.3: What’s an IRB to do?) (January 8, 2014)](https://www.fda.gov/media/89051/download)
+-   [Guidance for HDE Holders, Institutional Review Boards (IRBs), Clinical Investigators, and Food and Drug Administration Staff: Humanitarian Use Device (HUD) Designations (Document issued on: January 24, 2013)](https://www.fda.gov/media/85356/download)

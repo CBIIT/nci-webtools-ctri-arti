@@ -1,0 +1,122 @@
+Name: NIH Policy 3014-402
+Purpose: reference
+Description: Additional protections for research involving children, including assent and parental permission rules.
+URL: https://policymanual.nih.gov/3014-402
+Selection Rule: (none)
+Token Count: 4979
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 24
+
+---
+
+## 3014-402 - Research Involving Children
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Release Date:** 7/27/2020 [?](javascript:void\(0\);) **Technical Revision Date:** 12/22/2025 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the regulatory and policy requirements that apply when the NIH Institutional Review Board (IRB) is reviewing, or when an NIH investigator seeks to perform, research involving children. This policy partially supersedes the SOP 14A Research Involving Vulnerable Subjects (General Considerations) and fully supersedes SOP 14D Research Involving Children.
+2.  **Filing Instructions:**
+    -   **Insert:** NIH Manual Chapter 3014-402, dated 07/27/2020
+    -   **Implementation Date:** 09/14/2020
+3.  **PLEASE NOTE:** For information on:
+    -   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+    -   Content of this chapter, contact the issuing office listed above.
+    -   NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+1.  Describe regulatory and policy requirements that apply when an NIH Institutional Review Board (IRB) is reviewing, or when an NIH investigator seeks to perform, research involving children.
+
+### B. Scope
+
+1.  This policy applies to all research involving children reviewed by the NIH IRB
+2.  This policy applies to NIH investigators when conducting research at an NIH site, whether the reviewing IRB is the NIH IRB or an external IRB.
+3.  This policy applies to non-NIH investigators, including Lead Site Investigators, when the NIH IRB is the reviewing IRB.
+4.  This policy applies to the Office of Human Subjects Research Protections (OHSRP) and its offices.
+
+### C. Policy
+
+1.  The protection of the rights, welfare and safety of children that are research subjects is of paramount importance to the NIH Human Research Protection Program (HRPP). Therefore, the NIH Principal Investigator (PI)/Lead Site Investigator will not initiate or conduct research (e.g., screen, enroll or perform research procedures) that involves children without IRB approval for the inclusion of children.
+2.  The NIH IRB will only approve research that permits the participation of children if it has determined and documented that the research meets the requirements of 45 CFR 46, including Subpart D - _Additional Protections for Children Involved as Subjects in Research_ and, as applicable, 21 CFR 50 Subpart D, in addition to all other applicable regulatory and policy requirements.
+3.  Human subjects research that is subject to 45 CFR 46 Subpart D  generally may be exempt research under 45 CFR 46.101(b) of the pre-2018 Common Rule but is subject to the following restriction:
+    1.  The exemption at 45 CFR 46.101(b)(2), for research involving survey or interview procedures or observation of public behavior, does not apply to research with children (45 CFR Subpart D), except for research involving observations of public behavior when the investigator(s) do not participate in the activities being observed. (45 CFR 46.101(i) of the pre-2018 Common Rule)
+4.  Human subjects research that is subject to 45 CFR 46 subpart D may be exempt research under 45 CFR 46.104 of the 2018 Common Rule, as follows:
+    1.  Exemptions may be applied to the categories found at 45 CFR 46.104(d)(1), (4), (5), (6), (7), and (8), if the conditions of the exemption are met. (45 CFR 46.104(b)(3) of the 2018 Common Rule)
+    2.  Exemptions may be applied to the category found at 45 CFR 46.104(d)(2)(i) and (ii)), only when the research involves educational tests or the observation of public behavior when the investigator(s) does not participate in the activities being observed.
+    3.  As written in the 2018 Common Rule, the exemption category found at 45 CFR 46.104(d)(3)) applies only to adults. Further, the exemption category found at 45 CFR 46. 104(d)(2)(iii) cannot be applied or utilized.  
+5.  When the research involves children, no child may be enrolled, screened, or have research procedures initiated, unless parental permission and child assent is obtained consistent with 45 CFR 46.408 and, if applicable, 21 CFR 50.55, unless waived by the IRB. (45 CFR 46.116(f) of the 2018 Common Rule and 45 CFR 46.116(d) of the pre-2018 Common Rule)
+    1.  For research conducted by NIH investigators taking place at an NIH site, and in cases where parents share joint legal custody for medical decision-making of a child (e.g., by a custody agreement or court order[1](#Footnote1)), both parents must give their permission regardless of the risk level of the research. Exceptions may include if one parent has since died, become incompetent, or is not reasonably available.
+    2.  The Secretarial waiver of informed consent in certain emergency research may be applicable to research involving children. (45 CFR 46.101(a) and 46.401(a)(2))
+6.  For the purpose of consent when research is conducted at an NIH site, an adult is anyone 18 years or older.
+    1.  For the purposes of the research, children who are legally emancipated are considered adults and the requirements of this policy do not apply.
+    2.  Children that reach the age of majority during the period of the research, must provide consent in order to continue participation in the research, unless consent is not required (e.g., for certain exempt research) or if waived by the IRB.
+    3.  If the child who has reached the age of majority lacks the capacity to consent to the research, the NIH investigator will follow the requirements in _Policy 3014-403 Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation,_ unless the IRB has waived consent consistent with 45 CFR 46.116(f)(3) of the 2018 Common Rule and 45 CFR 46.116(d) of the pre-2018 Common Rule.
+
+1\. Research team questions regarding the legal decisionmaker for a child enrolling in a research protocol can be directed to the NIH Office of the General Counsel, as needed.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below. The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+1.  [Advocate](https://policymanual.nih.gov/3014-001#A)
+2.  [Assent](https://policymanual.nih.gov/3014-001#A)
+3.  [Children](https://policymanual.nih.gov/3014-001#C)
+4.  [Guardian](https://policymanual.nih.gov/3014-001#G)
+5.  [Minimal Risk](https://policymanual.nih.gov/3014-001#M)
+6.  [Parent](https://policymanual.nih.gov/3014-001#P)
+7.  [Permission](https://policymanual.nih.gov/3014-001#P)
+8.  [Ward](https://policymanual.nih.gov/3014-001#W)
+
+### E. Responsibilities and Requirements
+
+1.  **Responsibilities of  Investigators:**
+    1.  The NIH Principal Investigator (PI)/Lead site investigator may not initiate or conduct research that involves children unless IRB approval has been obtained in accordance with this policy.
+    2.  The NIH Principal Investigator (PI)/Lead Site Investigator is responsible for determining if it is scientifically and ethically appropriate to enroll children in the research protocol and must document this rationale in the protocol.
+    3.  In addition to the requirements for informed consent described in 45 CFR 46 Subpart A, when the research involves children, the consent requirements at 45 CFR 46 Subpart D must also be met.
+        1.  When the research involves children, the NIH PI/Lead Site Investigator must provide a plan in the protocol for obtaining parental permission as well as assent from the child, as applicable, or they must provide a justification for requesting a waiver of parental permission and/or assent (consistent with [_C.5._](#C.5) above).
+        2.  All investigators are responsible for complying with the Reviewing IRB requirements for obtaining and documenting parental permission and assent, and consistent with [_C.4._](#C.4) and [_C.5._](#C.5) above, as applicable. (45 CFR 46.408(d) and (e))
+        3.  When child subjects reach the age of majority, investigators must seek legally effective informed consent from the now-adult subject, consistent with [_C.6._](#C.6.) above, or withdraw the subject from the research. (See _Policy 301 Informed Consent_.)
+            1.  Alternatively, the investigator may request a waiver of consent from the IRB for the subjects continued participation if the ongoing research meets the criteria for a waiver specified in 45 CFR 46.116(f)(3) of the 2018 Common Rule and 45 CFR 46.116(d) of the pre-2018 Common Rule. For example, a request may be to continue to use tissue specimens collected when the participant was a minor.
+            2.  If the now-adult subject is unable to provide legally effective informed consent, the requirements of _Policy 3014-403 Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation_ must be followed.
+2.  **Responsibilities of the NIH IRB:**
+    1.  When reviewing research involving children, the IRB shall only approve research that satisfies all applicable sections of  45 CFR 46 Subpart D and the other applicable regulatory and policy requirements as described in [_Section C_](#C) above. (45 CFR 46.403 and, as applicable, 21 CFR 50.50)
+    2.  The NIH IRB is responsible for making and documenting in the minutes, the appropriate risk benefit ratio, consistent with 45 CFR 46.404, 45 CFR 46.405 or 45 CFR 46.406 and, as applicable, 21 CFR 50.51, 50.52, or 50.53. The NIH IRB is responsible for making and documenting in the minutes, the other required determinations consistent with 45 CFR Subparts A and D, and, as applicable, 21 CFR parts 50 and 56.
+    3.  If the IRB does not believe the research meets the requirements of 45 CFR 46.404, 46.405, or 46.406, but presents an opportunity to understand, prevent, or alleviate a serious problem affecting the health or welfare of children, then the requirements of 45 CFR 46.407 and, as applicable, 21 CFR 50.54 must be satisfied prior to review by the Secretary of HHS. In this case, the IRB must determine and document in the meeting minutes that the research presents a reasonable opportunity to further the understanding, prevention, or alleviation of a serious problem affecting the health or welfare of children.  
+    4.  The NIH IRB is responsible for determining the parental permission and signature requirements, consistent with 45 CFR 46.116, 45 CFR 46.117, and 45 CFR 46.408 and, as applicable, 21 CFR 50.55. The IRB will ensure that adequate provisions are made for soliciting the permission of each child's parents or guardian, unless waived by the IRB consistent with the regulations.
+        1.  In cases where parents share joint legal custody for medical decision-making of a child (e.g., by a custody agreement or court order), NIH policy requires that NIH Investigators at NIH sites seek permission from both parents regardless of the risk level of the research. Exceptions may include if one parent has since died, become incompetent, or is not reasonably available.
+    5.  The IRB will determine that adequate provisions are made for soliciting the assent of children capable of assenting as described in 45 CFR 46.408(a) and consistent with applicable provisions of 45 CFR 46.116.
+        1.  When the IRB determines that assent is required, it shall determine whether and how assent must be documented.  The assent process may be either verbal or written. (45 CFR 46.408(e)).
+        2.  The IRB may only waive assent of the child if it determines that the conditions of  45 CFR 46.116, and 45 CFR 46.408 and, as applicable, 21 CFR 50.55 are met.
+    6.  If the proposed research will involve wards, the IRB may only approve the research when consistent with the requirements at 45 CFR 46.409, and, as applicable 21 CFR 50.56.
+        1.  When the IRB reviews research involving wards, the IRB shall require appointment of an advocate for each child who is a ward, in addition to any other individual acting on behalf of the child as guardian or _in loco parentis_, and consistent with the requirements at 45 CFR 46.409(b), and, as applicable 21 CFR 50.56(b).
+3.  **Responsibilities of OHSRP:**
+    1.  When proposed research has been determined by the IRB to satisfy the requirements at 45 CFR 46.407, and, as applicable, 21 CFR 50.54, OHSRP is responsible for providing the research protocol and other relevant documents, e.g., the IRB minutes, to the HHS Office for Human Research Protections (OHRP) for review by the Secretary in accordance with 45 CFR 46.407; and, as applicable, to the Food and Drug Administration, for review by the Commissioner of Food and Drugs in accordance with 21 CFR 50.54.
+
+### F. References
+
+1.  Federal Regulations
+
+HHS: [45 CFR 46](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML) and  [45 CFR 46 Subpart D](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML#sp45.1.46.d)
+
+FDA: 21 CFR parts [50](https://www.ecfr.gov/cgi-bin/text-idx?SID=70032124423c039a7eaa4a17e720a74f&mc=true&node=pt21.1.50&rgn=div5), [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=70032124423c039a7eaa4a17e720a74f&mc=true&node=pt21.1.56&rgn=div5) and [21 CFR 50 Subpart D](https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?CFRPart=50&showFR=1&subpartNode=21:1.0.1.1.20.4)
+
+1.  NIH Policies
+
+[Policy 3014-301 Informed Consent](https://policymanual.nih.gov/3014-301)
+
+[Policy 3014-403 Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation](https://policymanual.nih.gov/3014-403)
+
+1.  Guidance
+
+[OHRP Research with Children FAQs](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/faq/children-research/index.html):
+
+[OHRP Special Protections for Children as Research Subjects](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/special-protections-for-children/index.html):
+
+[OHRP Children as Research Subjects and the HHS "407" Process](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/guidance-on-407-review-process/index.html):

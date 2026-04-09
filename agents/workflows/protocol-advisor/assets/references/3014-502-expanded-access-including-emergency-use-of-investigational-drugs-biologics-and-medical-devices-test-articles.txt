@@ -1,0 +1,221 @@
+Name: 3014-502 - Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles)
+Source URL: https://policymanual.nih.gov/3014-502
+Fetched At: 2026-04-03T18:46:13.160Z
+Source Type: html
+
+---
+
+## 3014-502 - Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles)
+
+Issuing Office: OD/OIR/OHSRP
+Phone:
+(301) 402-3713
+
+Approving Official(s): DDIR
+
+Release Date: 4/20/2020
+
+Partial Revision Date: 9/10/2024 ?
+
+Technical Revision Date: 3/19/2025 ?
+
+Transmittal Notice
+
+- Explanation of Material Transmitted: This policy describes the requirements for NIH investigators for expanded access to, including emergency use of, investigational drugs, biologics and medical devices (test articles), and to the NIH IRB when it is reviewing expanded access and emergency use submissions. This policy partially supersedes the following HRPP Standard Operating Procedure (SOP), SOP 15A - Research Regulated by the Food and Drug Administration (FDA): Information and Policies Specific to Research Involving Investigational New Drugs (Including Biological Products and partially supersedes SOP 15B Research Regulated by the Food and Drug Administration (FDA): Information and Policies for Investigational Device Exemption (IDE) Applications. Partial Revision 09/10/2024: To clarify ancillary reviews are required by policy for intermediate-size patient population and treatment IND expanded access protocols.
+- Filing Instructions:Insert: NIH Manual Chapter 3014-502, dated 4/20/2020; Partial Revision: 09/10/2024
+- Implementation Date: 10/26/2020
+
+PLEASE NOTE: For information on:
+
+- The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+- Content of this chapter, contact the issuing office listed above.
+- NIH Policy Manual, contact the Division of Compliance Management, DCM, on 301-496-4606 or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+- Describe the responsibilities of NIH investigators, NIH sponsors and the NIH Institutional Review Board (IRB) when conducting or reviewing expanded access use protocols of a drug, biologic or medical device.
+
+### B. Scope
+
+- This policy applies to NIH investigators when providing treatment to NIH subjects involving expanded access use of drugs, biologics or medical devices (test articles) subject to Food and Drug Administration (FDA) requirements at 21 CFR parts 50, 56, 312 and 812.
+
+- This policy applies to the NIH IRB as the Reviewing IRB.
+
+### C. Policy
+
+- NIH investigators must comply with the requirements set forth in FDA regulations at 21 CFR parts 50, 56, 312 and 812, as applicable, when treating patients under an expanded access protocol using a drug, biologic or medical device. Only persons enrolled in an NIH research protocol may be treated using an expanded access protocol.
+
+- Expanded access use of a drug, biologic or medical device is not research. NIH Investigators may not perform research interventions or collect or analyze data for research purposes under an expanded access protocol.
+
+- When reviewing protocols of expanded access use of drugs, biologics or medical devices (test articles), the NIH IRB must apply the applicable HHS and FDA regulations including, but not limited to, 21 CFR parts 50, 56, 312, and 812.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below. The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c).
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+- [Clinical Investigation (for FDA regulated research)](https://policymanual.nih.gov/3014-001#C)
+
+- [Emergency Use](https://policymanual.nih.gov/3014-001#E)
+
+- [Expanded access](https://policymanual.nih.gov/3014-001#E)
+
+- [Immediately life-threatening disease or condition](https://policymanual.nih.gov/3014-001#I)
+
+- [Investigational New Drug (IND)](https://policymanual.nih.gov/3014-001#I)
+
+- [Legally Authorized Representative](https://policymanual.nih.gov/3014-001#L)
+
+- [Letter of Authorization (LOA)](https://policymanual.nih.gov/3014-001#L)
+
+- [Serious disease or condition](https://policymanual.nih.gov/3014-001#S)
+
+- [Sponsor (for FDA regulated research)](https://policymanual.nih.gov/3014-001#S)
+
+- [Sponsor-Investigator (for FDA regulated research)](https://policymanual.nih.gov/3014-001#S)
+
+- [Test article (for FDA regulated research)](https://policymanual.nih.gov/3014-001#T)
+
+### E. Responsibilities and Requirements
+
+- General Requirements for Expanded Access for NIH Principal Investigators/NIH SponsorsExpanded access refers to the use of an investigational drug, biologic, or device product (test article) when the primary purpose is to diagnose, monitor, or treat a patient's disease or condition rather than to obtain the kind of information about the drug that is generally derived from clinical trials. The regulations are intended to facilitate access to investigational drugs for treatment use for patients with serious or immediately life-threatening diseases or conditions who lack therapeutic alternatives.Expanded access use of a test article must be conducted in accordance with applicable federal regulations, including, but not limited to:21 CFR parts 50 and 56 for all test articles;
+- 21 CFR 312 subpart I for investigational drugs; and
+- 21 CFR 812.36 for treatment use of investigational devices.
+
+- In order for a patient to be eligible for expanded use, the NIH Principal Investigator (PI) must determine and document (e.g. in the medical record, submission to the FDA, etc.) that the following criteria are met:Patient(s) must have a serious or immediately life-threatening disease or condition, and there is no comparable or satisfactory alternative therapy to diagnose, monitor, or treat the disease or condition;
+- The potential patient benefit justifies the potential risks of the treatment and the potential risks are not unreasonable in the context of the disease or condition to be treated; and
+- The expanded use of the investigational test article for the requested treatment will not interfere with the initiation, conduct, or completion of clinical investigations that could support marketing approval of the product.
+- The patient must be a subject enrolled on an NIH research study.
+
+- The NIH PI must ensure the following, before administration of the test article under expanded access use:A Letter of Authorization[1] (LoA) has been obtained from the Sponsor to cross reference the IND. The NIH PI must include the LoA in the expanded access submission to the FDA.
+- FDA approval has been obtained as required. (See FDA guidance document, Individual Patient Expanded Access Applications: Form FDA 3926 (October 2017) and Expanded Access for Medical Devices.)For non-emergency expanded access applications of a drug, the IND will take effect at the end of the 30-day waiting period (after the FDA has received the request), unless notified by the FDA earlier.
+- For emergency expanded access requests for drugs and biologics, the authorization may be received by telephone. See E.2.B.II.ii. below for additional requirements.
+- For emergency expanded access use of a medical device (treatment IDE), if an IDE exists, the treating physician must notify the sponsor who must notify the FDA.If no IDE exists, the treating physician must notify the FDA of the emergency use and provide a summary of the conditions constituting the emergency, patient protection measures that were followed and patient outcome information. (For more information on emergency use of investigational devices, see 21 CFR 812.36.)
+
+- For treatment IDEs, treatment use may begin 30 days after the FDA received the treatment IDE submission, unless the FDA notifies the sponsor in writing earlier. (21 CFR 812.36(d))
+
+- For intermediate-size patient population and treatment INDs expanded access protocols, ancillary reviews may be required, consistent with Policy 3014-106 Ancillary Reviews.
+- For expanded access protocols, prospective IRB review and approval must be obtained, except in certain cases of individual patient use of investigational drugs or biologics as noted below.A physician submitting a new individual patient expanded access IND may request a waiver from the FDA, regarding full IRB review. Such a waiver is appropriate when the physician obtains concurrence by the IRB chairperson before treatment use begins. This option is available only for single patient non-emergency and single patient emergency use. (For emergency use requirements for an individual patient, see E.2. below, and for waiver requirements, see FDA Guidance - Individual Patient Expanded Access Applications: Form FDA 3926, June 2016 (updated October 2017).)
+
+- Informed consent must be obtained from the subject or legally authorized representative (LAR), unless the requirements at 21 CFR 50.23(a) have been met. (21 CFR part 50, 312.305(c)(4), and 21 CFR 812.36(e))
+
+- The NIH PI or the NIH Sponsor, as applicable, has the additional responsibilities for expanded access use of a test article (non-emergency and emergency) including:Required reporting to the FDA as follows:Follow-up and progress reports;
+- Initial and follow-ups safety reports;
+- Annual Reports (for INDs) and semi-annual reports (for IDEs); and
+- At the completion of treatment, the Final report. ​(21 CFR 312.64, 812.36(f), and 812.150
+
+- Submission of ​​​​​​reportable events to the NIH IRB consistent with Policy 3014-801 Reporting Research Events which describes in more detail which categories of expanded access protocols require event reporting to the NIH IRB.
+- For expanded access use involving devices, establishing an appropriate schedule for monitoring the patient(s), taking into consideration nature of the test article and specific needs of the patient. The patient(s) should be monitored to detect any possible problems arising from the use of the test article.
+- Ensuring ongoing IRB review and approval for expanded access protocols that will exceed a 12-month period (i.e. Continuing Review), except in cases of emergency use, and notifying the IRB when treatment is complete.
+- The NIH PI is responsible for maintaining:Drug disposition records;
+- Accurate case history; and
+- Records consistent with 21 CFR 312.62. (21 CFR 312.305(c)(4) and 812.36)
+
+- General Requirements for Individual-Patient Emergency Use of a Test Article under Expanded Access for NIH Principal Investigators/NIH SponsorsThe treating physician may request emergency use of the test article (e.g. from the Sponsor and FDA) when, in their judgment, the use is needed to prevent death or serious morbidity and there is not sufficient time to obtain prospective IRB approval. (See Emergency Use of an Investigational Drug or Biologic or Expanded Access for Medical Devices.) The following are required for emergency use of a test article:In order for a patient to be eligible for emergency use of a test article, the NIH PI must determine and document that the following criteria are met:The patient has a serious or immediately life-threatening disease or condition;
+- There are no comparable or satisfactory alternative treatment options to treat the patient's condition;
+- The potential benefit justifies the potential risks of the treatment use and those potential risks are not unreasonable in the context of the disease or condition to be treated;
+- The condition requires immediate intervention before review at a convened IRB meeting is possible, or to avoid major irreversible morbidity. (21 CFR part 50, 312.305(c)(4), and 21 CFR 812.36(e));
+- For drugs and biologics the criteria of 312.305(a) have been met, and for devices the criteria at 812.36(a) have been satisfied.
+- The patient must be a subject enrolled on an NIH research study.
+
+- The NIH PI must ensure the following, before administration of the test article under expanded access use:Sponsor authorization has been obtained.For drugs or biologics: The NIH PI must secure a LoA to cross reference the IND and include the LoA in the expanded access submission). (21 CFR 312.310(d))
+- For devices: Sponsor authorization has been obtained consistent with the requirements at 21 CFR 812.36(b)(4).
+
+- FDA approval has been obtained.For drugs or biologics: The NIH PI may choose to use the FDA Form 3926 (April 30, 2019). (See FDA guidance document Individual Patient Expanded Access Applications: Form FDA 3926 (June 2016 updated October 2017), Expanded Access How to submit a Request (Forms) and to download FDA Form 3926 Instructional Supplement.)Emergency use for individual patient under an existing IND can be requested and authorized by a rapid means of communication (e.g. telephone, etc.) and may start immediately upon FDA authorization.
+
+- In this case, the NH PI or sponsor must submit an IND amendment within 15 working days of the initial authorization (21 CFR 312.310(d)(2)).
+- For devices: FDA approval has been obtained consistent with the application requirements outlined in 21 CFR 812.36(c).
+
+- IRB Chair concurrence should be obtained prior to use unless the immediate use is required to preserve the life of the patient or to prevent serious morbidity.If IRB Chair concurrence was not obtained prior to the administration of the test article, the PI must notify the NIH IRB within 5 working days of the emergency use; andAny subsequent use of the test article at the institution is subject to IRB review. (21 CFR 56.104(c))
+
+- Informed consent must be obtained from the subject or LAR, unless the following requirements have been met:Both the NIH PI and a physician who is not otherwise participating in the clinical investigation certify in writing (within 5 working days after the use of the article) all of the following:The patient is confronted by a life-threatening situation necessitating the use of the test article;
+- Informed consent cannot be obtained from the patient because of an inability to communicate with, or legally effective consent cannot be obtained, from the patient;
+- Time is not sufficient to obtain consent from the subject's LAR; and
+- There is available no alternative method of approved or generally recognized therapy that provides an equal or greater likelihood of saving the life of the subject. (21 CFR 50.23(a))
+
+- The NIH PI or the sponsor responsible for submitting an emergency use application has the same "Investigator Responsibilities" as a sponsor of clinical investigations. (For drugs, see 21 CFR 312 subparts D, E, and F and 312.305(c)(4), and for devices, see 21 CFR parts 812.36.(f) and 812.150.)
+
+- NIH IRB ResponsibilitiesThe NIH IRB will evaluate the submission to determine whether the use complies with regulatory requirements described in E.1. and E.2. above.
+- The NIH IRB will review the expanded access use request at a convened IRB meeting, unless a waiver for full IRB review has been granted by the FDA. (21 CFR 56.104)Under emergency conditions, the NIH IRB Chair can review and concur with the request, if appropriate, and consistent with E.2.b.II.ii. above. Concurrence of the IRB Chair is not IRB approval.
+- For individual patient non-emergency use of a test article, IRB Chair concurrence may be provided in lieu of IRB approval if requested by the investigator on FDA form 3926 or a waiver of IRB review is otherwise granted by the FDA.
+
+[1] The manufacturer or sponsor must be willing to provide the test article and either 1) sponsor will submit the expanded access application, 2) provide a LOA for the FDA to cross-reference to the existing IND/IDE application, or 3) provide the sponsor-investigator the necessary test article product information to submit to the FDA as part of the expanded access application. However, the sponsor or manufacturer of the test article can decline to be the sponsor of the expanded access application. They can also decline the use of the test article or may charge for use of test article. The sponsor of the test article may prefer that the PI submit to the FDA a separate individual application, or submit an application against an existing IND/IDE submission.
+
+### F. References
+
+- Federal Regulations FDA: 21 CFR parts [50](https://www.ecfr.gov/cgi-bin/text-idx?tpl=/ecfrbrowse/Title21/21cfr50_main_02.tpl), [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=3a808b5a9aa6dae6b7758b7963740029&mc=true&tpl=/ecfrbrowse/Title21/21cfr56_main_02.tpl), [312](https://www.ecfr.gov/cgi-bin/text-idx?SID=89083ed7486c909d2d507e21627a5da6&mc=true&node=pt21.5.312&rgn=div5), [812](https://www.ecfr.gov/cgi-bin/text-idx?SID=89083ed7486c909d2d507e21627a5da6&mc=true&node=pt21.8.812&rgn=div5)
+
+- NIH Policy [Policy 3014-106 Ancillary Reviews](https://policymanual.nih.gov/3014-106)
+
+- [Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)
+
+- Guidance and Tools [FDA Form 3926](https://www.fda.gov/media/98616/download) (April 30, 2019)
+
+- [FDA Form 3926 Instructional Supplement](https://www.fda.gov/media/98627/download)
+
+- [Individual Patient Expanded Access Applications: Form FDA 3926 (June 2016, updated October 2017)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/individual-patient-expanded-access-applications-form-fda-3926)
+
+- [Expanded Access to Investigational Drugs for Treatment use - Questions and Answers (June 2016, updated October 2017)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/expanded-access-investigational-drugs-treatment-use-questions-and-answers)
+
+- [Emergency Use of an Investigational Drug or Biologic (January 1998, Content current as of 07/12/2018)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/emergency-use-investigational-drug-or-biologic)
+
+- [Expanded Access Categories for Drugs (Including Biologics) (Content current as of 01/04/2018)](https://www.fda.gov/news-events/expanded-access/expanded-access-categories-drugs-including-biologics)
+
+- [Expanded Access for Medical Devices (Content current as of 6/21/2019)](https://www.fda.gov/medical-devices/device-advice-investigational-device-exemption-ide/expanded-access-medical-devices)
+
+- [Expanded Access to Experimental Biologics (Content current as of 09/16/2019)](https://www.fda.gov/vaccines-blood-biologics/development-approval-process-cber/expanded-access-experimental-biologics)
+
+- [IND Applications for Clinical Treatment: Treatment of a Group of Patients in Non-emergency Setting" (Content current as of 10/08/2015)](https://www.fda.gov/drugs/investigational-new-drug-ind-application/ind-applications-clinical-treatment-treatment-group-patients-non-emergency-setting)
+
+- [IDE Reports (Content current as of 09/05/2018)](https://www.fda.gov/medical-devices/device-advice-investigational-device-exemption-ide/ide-reports)
+
+Add Section
+
+###### * If you require a 508 compliant PDF version of a chapter please contact [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#1838687774717b617579766d797458767170367f776e)
+
+|
+
+Type of Publish
+
+|
+|
+
+Release Date
+
+|
+
+| |
+| |
+
+Add Your Note (optional):
+
+Office of Management Assessment, National Institutes of Health, 6705 Rockledge Dr. Suite 601 Bethesda, MD 20892
+
+Phone: (301) 496-4606 Email: [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#96e6f9fafff5effbf7f8e3f7fad6f8fffeb8f1f9e0)
+
+- [Resources](https://oma.od.nih.gov/dms/pages/manual-chapters-links.aspx)
+
+- [About](https://oma.od.nih.gov/dms/pages/manual-chapters.aspx)
+
+- [Contacts](https://oma.od.nih.gov/dms/pages/manual-chapters-manual-system-contacts.aspx)
+
+- [Web Policies and Notices](https://www.nih.gov/web-policies-notices)
+
+- [HHS Vulnerability Disclosure](https://www.hhs.gov/vulnerability-disclosure-policy/index.html)
+
+- [FOIA](https://www.nih.gov/icd/od/foia/index.htm)
+
+- [No Fear Act](https://www.edi.nih.gov/no-fear-act)
+
+- [Office of Management](https://om.od.nih.gov/)
+
+- [National Institutes of Health](https://www.nih.gov/)
+
+- [U.S. Department of Health and Human Services](https://www.hhs.gov/)
+
+- [USA.Gov - Government Made Easy](https://www.usa.gov/)
+
+NIH... Turning Discovery into Health(r)
+
+Arrow UpBack to Top

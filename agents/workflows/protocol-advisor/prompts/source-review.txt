@@ -1,0 +1,38 @@
+Review the cached subject {{subject_label}} against exactly one reference source.
+
+WORKFLOW
+- id: {{workflow_id}}
+- name: {{workflow_name}}
+
+ALLOWED CATEGORY IDS
+{{allowed_category_ids}}
+
+REFERENCE SOURCE
+- id: {{source_id}}
+- title: {{source_title}}
+- path: {{source_path}}
+- default_category: {{default_category}}
+
+SOURCE-SPECIFIC REVIEW INSTRUCTION
+{{source_instruction}}
+
+TEMPORAL REVIEW POLICY
+- `historical_only`: use when this source should be judged only as it applied when the subject was written
+- `current_gap`: use when this source is being used to identify present-day remediation needs
+- `mixed`: use when both original-era requirements and current-gap considerations matter
+- do not call a finding `non_compliant` if it is only a modern gap that post-dates the document; use `conditional_gap` instead
+- do not call a finding `non_compliant` when the reviewed source is being used only as a benchmark, interpretive aid, template, or NIH-internal policy that does not directly bind the subject; use `conditional_gap` or `insufficient_evidence` unless the underlying binding rule is independently triggered and clearly violated by the subject
+- if the reference source is a modern template, treat template-format or template-structure differences as `conditional_gap` unless the omission is a clear substantive failure that would have mattered when the document was written
+- return no more than 8 findings unless there are more than 8 clearly distinct high-signal issues
+- the source-level `verdict` must match the highest-severity returned finding; if all findings are compliant, use `compliant`
+
+REFERENCE SOURCE TEXT
+{{source_text}}
+
+Return:
+- `task_type = "source_review"`
+- `summary`
+- `source_review`
+
+Every `category_id` must be one of the allowed category ids.
+If no category is clearly better, use `{{default_category}}`.

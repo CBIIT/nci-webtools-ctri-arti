@@ -1,0 +1,295 @@
+Name: NIH Policy 3014-204
+Purpose: reference
+Description: Levels of IRB review and criteria for IRB approval of research.
+URL: https://policymanual.nih.gov/3014-204
+Selection Rule: (none)
+Token Count: 14426
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 18
+
+---
+
+## 3014-204 - Levels of IRB Review and Criteria for IRB Approval of Research
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 10/01/2020 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 11/29/2022 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 2/05/2025 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the levels of ethical review and criteria for approval of human subjects research by the National Institutes of Health (NIH) Institutional Review Board (IRB) (i.e., review by the convened IRB, expedited procedures, limited IRB procedures, or exempt procedures). **Partial Revision 1/04/2022:** This policy has been revised to remove the requirements for a fixed anniversary date for NIH IRB-approved protocols, consistent with IRBO practice, and provides examples of when the NIH IRB may require continuing review more often than annually. **Partial Revision:** 11/30/2022 These revisions update terminology to comport with the implementation of Huron PROTECT electronic IRB system.
+2.  **Filing Instructions:**
+    -   **Insert:** NIH Manual Chapter 3014-204, dated 10/01/2020 **Partial Revision Dated:** 01/04/2022, **Partial Revision Dated:** 11/30/2022
+    -   **Implementation Date:** 10/12/2020
+3.  **PLEASE NOTE:** For information on:
+    -   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+    -   Content of this chapter, contact the issuing office listed above.
+    -   NIH Policy Manual, contact the Division of Compliance Management, DCM, on 301-496-4606 or enter this URL:   [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)  
+
+### A. Purpose
+
+1.  Describes the levels of ethical review and criteria for approval of human subjects research by the National Institutes of Health (NIH) Intramural Research Program (IRP) Institutional Review Board (IRB) (i.e., review by the convened IRB, expedited procedures, limited IRB procedures, or exempt procedures).
+    
+2.  Describes the criteria for approval of non-exempt human subjects research reviewed by the convened IRB or by a designated reviewer using expedited procedures when the NIH IRB is the reviewing IRB.
+    
+3.  Describes the criteria for approval by limited IRB review for certain categories of research determined to be exempt under the 2018 Common Rule at 45 CFR 46.104.
+    
+4.  Describes the criteria used for exemption determinations by designated reviewers evaluating human subjects research proposed by NIH investigators.
+5.  Describes investigator responsibilities when submitting research to, or interacting with, the NIH IRB.
+
+### B. Scope
+
+1.  This policy applies to:
+    1.  NIH investigators when the NIH IRB is the reviewing IRB or when the human subjects research may be exempt from IRB review.
+    2.  Non-NIH investigators when the NIH IRB is the reviewing IRB.
+        
+    3.  The NIH IRB, including those experienced IRB members designated to conduct expedited review and limited IRB review (referred to as designated reviewers).
+        1.  Note that certain Office of IRB Operations (IRBO) staff members are also IRB members. These include:
+            1.  IRBO staff designated as reviewers to conduct expedited or limited IRB review.
+            2.  IRBO staff designated as reviewers to review research that is possibly exempt under 45 CFR 46.101 (Pre-2018 Common Rule) or 45 CFR 46.104 (2018 Common Rule).
+                
+2.  For information about NIH requirements when NIH relies on an external Reviewing IRB, see _Policy 3014-105 IRB Reliance and Collaborative Research_.
+    
+
+### C. Policy
+
+1.  **Application of the DHHS Common Rule (45 CFR 46)**
+    1.  Research initially approved by the IRB, or for which IRB review was waived or determined to be exempt prior to January 21, 2019, is subject to the requirements of the pre-2018 Common Rule;
+    2.  Research initially approved by the IRB, or for which IRB review was waived or determined to be exempt on or after January 21, 2019, is subject to the requirements of the 2018 Common Rule;
+    3.  Research subject to the pre-2018 Common Rule may only be transitioned to the 2018 Common Rule if it is determined and documented that transition will occur and that it satisfies the 2018 Common Rule requirements (e.g., as related to exempt research).
+2.  **General Requirements**
+    1.  All review of exempt and non-exempt human subjects research will be conducted in accordance with federal regulations and policies.
+    2.  NIH investigators may not commence research activities until all required approvals have been obtained (e.g., institutional approvals, as applicable, and approvals from IRB, and ancillary committees).
+    3.  The convened IRB or designated reviewer (conducting expedited, limited IRB, or exempt reviews) will review the submission materials in order to determine that the regulatory and policy requirements for approval of research are met. (See _Policy 3014-205 Requirements for IRB Submissions__._)
+        
+    4.  Non-exempt human subjects research may be approved by the NIH IRB only when all required regulatory and policy criteria are met, (e.g., 45 CFR 46.109 and 46.111 of the pre-2018 Common Rule or the 2018 Common Rule, and, when applicable, 21 CFR 56.111).
+        
+    5.  The designated reviewer (conducting expedited limited IRB or exempt reviews), may refer any protocol for review by the convened IRB.
+    6.  When the NIH IRB is the reviewing IRB, it will notify the NIH PI in writing of its decision to approve or disapprove the proposed research, or of any modifications required to secure IRB approval of the research. (45 CFR 46.109)
+        
+        1.  The designated reviewer conducting expedited, limited IRB, or exempt review, will convey to the NIH PI in writing any determination of approval or referral to the convened IRB.
+    7.  When the NIH IRB is the reviewing IRB, the period of IRB approval for non-exempt human subjects research is as follows:
+        1.  For new protocols subject to review by the convened IRB, the period of approval begins on the day research is approved by the convened IRB and continues through a specified date according to continuing review (CR) requirements (see [C.2.i.](#C.2.h.) below).
+        2.  For new protocols eligible for review by expedited procedures, the period of approval begins on the day research is approved by the designated reviewer and continues until the date the study is closed or through a specified date according to CR requirements (see [C.2.i.](#C.2.h.)below).
+        3.  When CR is not required, the approval period will continue until the date the study is closed.
+    8.  For non-exempt human subjects research, PIs will submit protocols for CR at an interval established by the IRB, unless not required by the IRB for research subject to the 2018 Common Rule requirements.
+    9.  For research subject to either the pre-2018, or the 2018 Common Rule requirements, the convened IRB will conduct CR at an interval established by the IRB (not less than once per year). The IRB must determine which projects require review more often than annually (e.g., due to the nature of the research or level of risk). However, if the protocol is subject to the 2018 Common Rule and meets the requirements thereof, then CR is not required. The IRB will document the frequency of review in all cases where CR is required.
+        1.  When CR is required, the IRB must determine which projects need verification from sources other than the investigators to ensure that no material changes have occurred since previous IRB review. (45 CFR 46.108)
+        2.  When CR is required, Office for Human Research Protections (OHRP) guidance, Continuing Review Guidance (2010), and NIH policy does not provide for any grace period extending the conduct of research beyond the expiration date of IRB approval. Therefore, CR and re-approval of research, with or without modifications required to secure approval/conditions, must occur by midnight of the date when IRB approval expires.
+        3.  All research subject to Food and Drug Administration (FDA) regulation will undergo CR at intervals of not less than once per year, regardless of whether the research is subject to the pre-2018 or 2018 Common Rule.
+        4.  Unless the convened IRB or designated reviewer determines and documents otherwise, CR is not required in the following circumstances for research subject to the 2018 Common Rule:
+            1.  Research eligible for expedited review;
+            2.  Research reviewed by limited IRB review;
+            3.  Research that has progressed to the point that it involves only one or both of the following:
+                -   Data analysis of identifiable information and/or identifiable biospecimens;
+                -   Access to follow-up clinical data from procedures that subjects would undergo as part of clinical care.
+        5.  For protocols in which CR is not required, all other requirements still apply after initial approval, e.g., submitting modifications to previously approved research, submitting reportable events to the IRB, and obtaining other ancillary reviews, as applicable. (See Policy 3014-205 Requirements for IRB Submissions, Policy 106 Ancillary Reviews and Policy 3014-801 Reporting Research Events.)
+        6.  If a study has lapsed due to the PI's failure to obtain timely CR, the IRB may elect not to review other active or new studies submitted by the PI until the CR is resolved. If no reply is received from the PI, IRBO may close the study administratively.
+    10.  The PI will submit changes to previously approved research (referred to as "modifications") for review and approval by the IRB, before these changes are implemented, except when necessary to eliminate apparent immediate hazards to a subject. (45 CFR 46.108)
+    11.  For any non-exempt human subjects research suspended by the IRB, the PI will comply with IRB requirements.
+    12.  For non-exempt human subjects research, once all activities involving human subjects have been completed, and analysis of identifiable private information or identifiable biospecimens is complete, consistent with the analyses described in the protocol, the PI will close the research.
+         1.  Once the research is closed, all research activities will cease.
+         2.  Once the study is closed, any analyses using the identifiable private information or identifiable biospecimens from the study, will require prospective IRB review and approval.
+    13.  The PI, Sponsor or IC may seek premature closure of the research. In addition, the IRB can suspend or terminate the research.
+3.  **The convened IRB**
+    1.  The convened IRB has the authority to approve or require modification of the protocol in order to secure IRB approval of non-exempt human subjects research. (See Policy 3014-200 IRB Scope and Authority.)
+    2.  Only the convened IRB may disapprove research.
+        1.  The IRB will document the rationale for disapproval in the minutes.
+        2.  When the convened IRB disapproves the research, it will include in the written notification to the PI, a statement providing the reason(s) for its decision and give the PI an opportunity to respond in person or in writing. (45 CFR 46.109(d))
+    3.  The convened IRB may make determinations regarding research that is otherwise eligible for expedited review and/or limited IRB review.
+    4.  The convened IRB has the authority to suspend or terminate IRB approval of research that is not being conducted in accordance with the IRB's requirements, federal regulation or NIH policy, or that has been associated with unexpected serious harm to subjects. (See Policy 3014-200 IRB Scope and Authority.)
+    5.  The convened IRB will document its determinations in the minutes of the meeting consistent with the requirements at 45 CFR 46.115.
+4.  **Expedited Procedures**
+    1.  Expedited procedures may be performed by an IRB Chair or the Chair may designate reviewers to perform expedited reviews, in consultation with the IRBO as needed.
+    2.  The designated reviewer may use expedited procedures for the following categories of human subjects research:
+        1.  Research appearing in the Secretary's List of Categories specified at 45 CFR 46.110(a) and satisfying 45 CFR 46.110(b)(1)(i) of the 2018 Common Rule and 45 CFR 46.110(b)(1) of the pre-2018 Common Rule; or
+        2.  Minor changes in previously approved research during the period for which approval is authorized (45 CFR 46.110(b)(1)(ii) of the 2018 Common Rule and 45 CFR 46.110(b)(2) of the pre-2018 Common Rule;); or
+        3.  Research subject to the 2018 Common Rule for which limited IRB review is a condition of exemption. (45 CFR 46.110(b)(1)(iii) of the 2018 Common Rule).
+        4.  The designated reviewer will document that the criteria for approval at 45 CFR 46.111 have been met, and which of the criteria in [_C.4.b.I_](#C.4.b.I)_\-_[_C.4.b.III_](#C.4.b.III)_._ above were met when approving research by expedited procedures.
+        5.  The prepared agenda of the IRB will advise IRB members of research proposals that have been approved by expedited procedures.
+5.  **Exempt Research**
+    1.  At the NIH, the IRBO Director or designee has the exclusive authority to determine that human subjects research is exempt under 45 CFR 46. (See 45 CFR 46.104 of the 2018 Common Rule and 45 CFR 46.101(b) of the pre-2018 Common Rule.)
+        1.  Only designated reviewers may make determinations that human subjects research is exempt under 45 CFR 46.
+        2.  Investigators do not have the authority to determine that human subjects research is exempt.
+    2.  The designated reviewer will document the exemption category under which the approval was granted.
+6.  **Exempt Research Requiring Limited IRB Review**
+    1.  In order to be exempt, certain human subjects research subject to the 2018 Common Rule may require limited IRB review. Limited IRB review may be conducted by a designated reviewer using expedited procedures.
+    2.  Research that may be exempt, for which limited IRB review may be used, includes:
+        1.  Research that only includes interactions involving educational tests, survey procedures, interview procedures, or observation of public behavior, when the information obtained is recorded by the investigator in such a manner that the identity of the human subjects can readily be ascertained directly or through identifiers linked to the subjects (45 CFR 46.104(d)(2)(iii));
+        2.  Research involving benign behavioral interventions in conjunction with the collection of information through verbal or written responses or audiovisual recordings, if the subject prospectively agrees to the intervention and information collection, and when the information obtained is recorded by the investigator in such a manner that the identity of the human subjects can readily be ascertained, directly or through identifiers linked to the subjects (45 CFR 46.104(d)(3)(i)(C)); or
+        3.  Certain storage, maintenance or use of identifiable private information or identifiable biospecimens for secondary research for which broad consent is required (45 CFR 46.104(d)(7), and (d)(8)).[\[1\]](#_ftn1)
+        4.  The designated reviewer will document the exemption category under which the limited IRB approval was granted.
+        5.  The prepared agenda of the IRB will advise IRB members of research proposals that have been approved by limited IRB procedures.
+7.  Review of Research Involving Vulnerable Populations
+    1.  When reviewing research subject to 45 CFR 46 subparts B, C and/or D (e.g., that includes federally defined vulnerable populations (such as fetuses/neonates, prisoners, or children), the convened IRB or, designated reviewer, (using expedited, limited IRB, or exempt procedures), must make all required determinations as specified under 45 CFR 46 subparts B, C and/or D, as well as 21 CFR 50 subpart D, and will consider whether adequate provisions have been made to protect the safety, rights, and welfare of the subjects and to minimize research risks unique to the population. These determinations must be consistent with both regulation and NIH policy. (See Policies 3014-402 Research Involving Children, 3014-400 Research Involving Pregnant Women, Human Fetuses and Neonates and 3014-401 Research Involving Prisoners_._)
+    2.  Research subject to 45 CFR 46 subpart [B](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML#sp45.1.46.b), [C](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML#sp45.1.46.c) and/or [D](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML#sp45.1.46.d) may not be eligible for exemption due to restricting regulation or policy. (See Policies 3014-402 Research Involving Children, 3014-400 Research Involving Pregnant Women, Human Fetuses and Neonates and 3014-401 Research Involving Prisoners)
+    3.  When reviewing research that includes other populations determined by NIH policy as vulnerable, such as decisionally impaired adults or NIH staff participating in research, the convened IRB or expedited reviewer must assure that additional NIH policy requirements are met consistent with Policy 3014-403 Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation and Policy 3014-404 Research Involving NIH Staff as Subjects.
+    4.  Additionally, when some or all of the subjects are likely to be vulnerable to coercion or undue influence, such as economically or educationally disadvantaged persons, additional safeguards may be required by the IRB. 
+        
+        ---
+        
+        [\[1\]](#_ftnref1) Exemptions related to broad consent for the maintenance, storage and secondary use of identifiable private information or identifiable biospecimens at 45 CFR 46.104(d)(7) or (8) are not being implemented in the NIH IRP at this time.
+        
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c).
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+Definitions demarcated with (_Pre-2018 Common Rule definition_) apply to research approved (or deemed to be exempt or for which no IRB review was required under the regulations) prior to the effective date of the 2018 Common Rule (January 21, 2019).  Definitions demarcated with (_2018 Common Rule definition_) apply to all research approved by an IRB (or deemed to be exempt or for which no IRB review was required under the regulations) on or after January 21, 2019 and to research transitioned to the 2018 requirements in accordance with HRPP policy.
+
+1.  [Amendment](https://policymanual.nih.gov/3014-001#A) (See Modification).  
+2.  [Continuing review requirements (Pre-2018 Common Rule)](https://policymanual.nih.gov/3014-001#C).
+3.  [Continuing review requirements (2018 Common Rule)](https://policymanual.nih.gov/3014-001#C)
+4.  [Convened IRB](https://policymanual.nih.gov/3014-001#C)
+5.  [Experienced IRB member](https://policymanual.nih.gov/3014-001#E)
+6.  [Expiration Date](https://policymanual.nih.gov/3014-001#E)
+7.  [Human Subject (Pre-2018 Common Rule)](https://policymanual.nih.gov/3014-001#H)
+8.  [Human Subject (2018 Common Rule)](https://policymanual.nih.gov/3014-001#H)
+9.  [Initial Review](https://policymanual.nih.gov/3014-001#I) 
+10.  [Limited IRB Review (2018 Common Rule)](https://policymanual.nih.gov/3014-001#L)
+11.  [Minimal Risk (for Prisoner Research under Subpart C)](https://policymanual.nih.gov/3014-001#M)
+12.  [Modification (previously referred to as an Amendment)](https://policymanual.nih.gov/3014-001#M)
+13.  [Research (Pre\-2018 Common Rule)](https://policymanual.nih.gov/3014-001#R)
+14.  [Reviewing IRB](https://policymanual.nih.gov/3014-001#R)
+15.  [Study Closure](https://policymanual.nih.gov/3014-001#S)
+
+### E. Responsibilities and Requirements
+
+1.  **Principal Investigator Responsibilities and Requirements**
+    1.  NIH Principal Investigators (PIs) are responsible for being knowledgeable as to whether their research activities meet the definition of human subjects research (see Definitions above) and whether the research is eligible for an exempt determination (see [C.4](#C.4). above and [E.4](#E.4). below) or requires IRB review.
+    2.  NIH PIs are responsible for submitting all exempt and non-exempt human subjects research for review as specified in Policy 3014-205 Requirements for IRB Submissions.
+    3.  NIH PIs are responsible for assuring all submissions are entered into the NIH electronic IRB system for routing to the NIH IRB, whether evaluated by the convened IRB, expedited reviewer, exempt reviewer, or by the limited IRB. (See Policy 3014-205 Requirements for IRB Submissions.)
+    4.  For multi-site research when the NIH IRB is the Reviewing IRB, the NIH PI is responsible for communicating IRB determinations and approvals to the PI/Lead Site Investigator of the ceding institution consistent with Policy 3014-105 IRB Reliance and Collaborative Research.
+    5.  When the NIH is relying on an external Reviewing IRB, the NIH PI must first submit the protocol for review and confirmation of compliance with institutional requirements in the NIH electronic IRB system, prior to submitting to the external Reviewing IRB. (See Policy 3014-105 IRB Reliance and Collaborative Research.)
+        1.  In addition, the PI must also follow the submission requirements of the external Reviewing IRB. (See Policy 3014-105 IRB Reliance and Collaborative Research.)
+    6.  NIH PIs must ensure that human subjects research is not initiated until notice of IRB approval or exempt determination, as applicable, is received.
+    7.  For non-exempt human subjects research, when CR is required, it is the PI’s responsibility to obtain CR prior to expiration to avoid lapse in IRB approval.  The PI must provide the IRB with the information through the NIH electronic IRB system, in sufficient time to allow the IRB to perform the CR, and no later than 6 weeks prior to the expiration date of the study.  Failure to allow sufficient time for IRB review may result in a lapse in approval.
+        1.  If CR and approval has not occurred by the study expiration date, the study will be considered to have a lapse in IRB approval.
+            1.  All research activities must stop upon lapse of IRB approval (including recruitment enrollment, interventions, interactions and data analysis) – even if no notice of lapse of IRB approval is received.
+            2.  However, when it is in the best interests of already enrolled subjects to continue in the research during the period of lapse in IRB approval, the IRB has the authority to, or the PI may request from the IRB permission to, continue the participation of already enrolled subjects during this period.
+            3.  When a study has lapsed due to the PI’s failure to obtain timely CR (e.g., submit a CR form, or failure to respond to questions regarding the CR or modifications required to secure approval), the IRB will not review other or new studies submitted by the PI until the CR is resolved.
+            4.  If a study has lapsed for longer than 45 days (see [C.2.f.VI.](#_If_a_study) above), the PI must submit a new initial review in order to continue the research.
+        2.  For protocols for which the IRB has determined that CR is not required, PIs are required to comply with all other requirements after initial approval, e.g., submitting modifications to previously approved research, submitting reportable events to the IRB, and obtaining other ancillary reviews, as applicable. Once research is complete, the PI must close the protocol (see [E.1.j.](#link to E.1.j) below). (See Policy 3014-205 Requirements for IRB Submissions, Policy 3014-106 Ancillary Reviews and Policy 3014-801 Reporting Research Events.)
+    8.  NIH PIs must ensure that all changes (modifications) to previously approved research are submitted for IRB review and approval prior to instituting any change, unless that change is required to prevent an immediate risk of harm to subjects, (see C.2.j. above).
+        1.  When the PI has taken an action to eliminate an immediate hazard to a subject, the PI will notify the IRB within 7 days of such a change. Such an action is considered a “major deviation” for the purposes of reporting. (See Policy 3014-801 Reporting Research Events.)
+        2.  For research that has previously been determined to be exempt, PI’s must submit modifications for review and approval prior to instituting any changes.
+    9.  When the research has been suspended, if subjects are enrolled on the research, the PI must provide a plan to the IRB for its consideration that takes into account the continued rights, safety and welfare of enrolled subjects during the period of suspension.
+        1.  The NIH investigator must obtain IRB approval before the research may be restarted.
+    10.  For non-exempt human subjects research, the NIH PI will close the research when all subjects have completed research interactions and interventions and primary data analysis is complete. This includes analysis of identifiable private information or identifiable biospecimens, consistent with the analyses described in the protocol (see [C.2.k.](#C.2.k.) above).
+         1.  When studies are closed because all study activities are complete, they may be closed as follows:
+             1.  Studies for which CR is required, the PI may submit the study closure form at any time during the approval period, but no later than the expiration date of the study.
+             2.  Studies for which CR is not a requirement; the PI must submit the study closure form when all human subjects research activities are complete.
+         2.  When the PI, Sponsor, or the IC prematurely closes the research, the PI must notify the IRB that the study will be closed prematurely.
+             1.  Studies for which CR is required, the PI may submit the study closure form at any time during the approval period, but no later than the expiration date of the study.
+             2.  Studies for which CR is not a requirement; the PI must submit the study closure form when all human subjects research activities are complete.
+         3.  The PI is responsible for maintaining study records after study closure consistent with Policy 3014-300 Investigator Responsibilities. In most cases, to determine how long to retain study records, the PI should use the closure date provided by the IRB. The closure date is the date of the closure letter to the PI and serves as the starting point for this requirement. The letter confirms that the IRB has reviewed the study completion form.
+2.  **General Requirements for IRB Approval of Research**
+    1.  The IRBO must review all human subjects research submitted via the NIH electronic IRB system to determine the appropriate level of review.
+    2.  When conducting its review, the convened IRB or designated reviewer (using expedited, limited IRB, or exempt procedures) must review the submission materials in order to determine that the regulatory and policy requirements for approval of research are met, or whether more information is needed to make a determination. (See Policy 3014-205 Requirements for IRB Submissions.)
+    3.  The convened IRB must review research referred to it by the designated reviewer who conducted expedited, limited IRB, or exempt review, or by the IRBO Director.
+    4.  The convened IRB or designated reviewer (using expedited procedures) conducts a general assessment of the project’s research design to assess if the research is of sound design and scientific validity. (45 CFR 46.111(a)(1) of the pre-2018 Common Rule, 45 CFR 46.111(a)(1) of the 2018 Common Rule, and, when applicable, 21 CFR 56.111(a)(1))
+        1.  The primary responsibility for this type of assessment (referred to as “Scientific Review”), however, belongs to the submitting Principal Investigator’s (PI’s) Institute/Center (IC). The IC generally does this by considering the purpose of the research, statistical design and power, data analysis, clinical and data monitoring plan, qualifications of the research personnel, and adequacy of resources to conduct the research consistent with the requirements of the Policy for Scientific Review of Clinical Protocols Utilizing the NIH Intramural Program. (See Policy 3014-106 Ancillary Reviews).
+    5.  For all human subjects research, the convened IRB or designated reviewer (using expedited or the limited IRB procedures) must determine and document whether the research presents only minimal risk or greater than minimal risk.
+    6.  For non-exempt human subjects research, the convened IRB or designated reviewer (using expedited procedures), must determine and document whether there is prospect of benefit, if any, that may result from participation in the research, consistent with 45 CFR 46.111 of both the pre-2018 Common Rule or the 2018 Common Rule, and, when applicable, 21 CFR 56.111.
+    7.  Non-exempt human subjects research may be approved by the NIH IRB or designated reviewer only when all required regulatory and policy criteria are met, (e.g., 45 CFR 46.109 and 46.111 of the pre-2018 Common Rule or the 2018 Common Rule, and, when applicable, 21 CFR 56.111).
+    8.  The convened IRB must conduct CR at an interval established by the IRB (but not less than once per year), unless the protocol is subject to the 2018 Common Rule and meets the requirements of 45 CFR 109(e) and (f), and CR is not required (see [C.2.i.](#C.2.h.) above).
+    9.  When CR is required, the IRB must:
+        1.  Determine which projects require review more often than annually; and
+        2.  Document the frequency of review; and
+        3.  Determine which projects need verification from sources other than the investigators that no material changes have occurred since previous IRB review. (45 CFR 46.108).
+    10.  The IRBO will notify the PI when IRB approval is approaching expiration and the research is due for CR in order to avoid a lapse in IRB approval.
+         1.  The new expiration date will be no more than 12 months from IRB reapproval of the protocol.
+    11.  At the time of continuing review or modification, as applicable, the IRB must document any significant new findings from review that will result in notification to, and reconsent of, subjects.
+         1.  Such notifications to subjects must be approved by the IRB consistent with Policy 3014-301 Informed Consent and §46.116(c)(5).
+    12.  If CR is not required by regulation, but the IRB in its discretion decides to require CR, it will inform the PI of the reasons why CR is required. (45 CFR 46.109(f) of the 2018 Common Rule.)
+    13.  When CR is not required, the IRB will inform the PI, at the time of approval, that:  
+         1.  All other institutional and regulatory requirements continue to apply, (e.g., the requirement to obtain ancillary reviews, to report research events, and to submit modifications.); and
+         2.  The IRB's approval will continue until the date the study is closed.
+    14.  When research subject to 45 CFR 46 subpart B, C and/or D (e.g., involves federally defined vulnerable populations such as fetuses, children or prisoners), the convened IRB or designated reviewer must make and document the required risk/benefit determinations as specified under 45 CFR 46 subpart B, C and/or D, as well as 21 CFR 50 subpart D when applicable. (See Policies 402 Research Involving Children, 400 Research Involving Pregnant Women, Human Fetuses and Neonates and 401 Research Involving Prisoners)
+    15.  For research involving adults who lack decision-making capacity to consent to research participation, the convened IRB or designated reviewer (using expedited procedures) must make, and document, risk and benefit determinations consistent with Policy 3014-403 Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation.
+    16.  For research involving NIH staff as subjects, the convened IRB or designated reviewer (using expedited procedures) must make, and document, risk and benefit determinations consistent with Policy 3014-404 Research Involving NIH Staff as Subjects.
+    17.  The IRB will set the period of approval for non-exempt human subject research consistent with the requirements outlined in [C.2.f.](#C.2.f.) above.
+    18.  The convened IRB or designated reviewer (using expedited or limited IRB procedures) must make and document one of the following determinations:
+         1.  Approve as submitted – Approval of a research study by the convened IRB or by the designated reviewer.
+         2.  Approve with modifications – Approval of a research study by the convened IRB or by the designated reviewer which is contingent on modifications required to secure approval.
+    19.  The IRBO must ensure that IRB members will receive a report of research approved by expedited procedures (see  [C.4.b.](#C.4.b.) above), including by limited IRB review (see [C.6.b.V.](#C.6.b.V.) above), that occur between convened meetings.
+    20.  Only the convened IRB can take the following actions:
+         1.  Defer - An action taken by the convened IRB on a research study requiring resolution of one or more criteria for approval, or other substantive issues have been identified (e.g., risks have not been identified, risks are significant and have not been adequately minimized, or the safety monitoring plan is not adequate). When such an action is taken, the IRB may stipulate substantive modifications to the research study. Deferred actions must be reviewed by the convened IRB in order to be approved.
+         2.  Disapprove - An action taken by the convened IRB on a research study that cannot be approved in its present form or is inappropriate based on its present design (e.g., for reasons such as subject safety or scientific validity).
+    21.  The convened IRB may suspend research activities or terminate IRB approval for previously approved research (including research approved by limited IRB review, expedited procedures, or research previously determined to be exempt). (45 CFR 46.113)
+         1.  When research is suspended or terminated, the IRB must document the rationale for this action, and promptly notify the PI and institutional leadership.
+         2.  In such cases, the PI must work with the IRB to establish a plan to ensure the continued rights, safety and welfare of any subjects actively enrolled on the protocol.
+         3.  These actions will be reported by OHSRP to OHRP and the FDA consistent with the requirements in Policy 3014-801 Reporting Research Events.
+3.  **Review of Research by Expedited Procedures**
+    1.  Human subjects research reviewed and approved by expedited procedures must satisfy the applicable regulatory requirements (e.g., 46.109, 46.110, and 46.111 of the pre-2018 Common Rule or the 2018 Common Rule and, when applicable, 21 CFR 56.110 and 56.111).
+    2.  The designated reviewer may require additional information in order to determine whether the study may be approved using expedited procedures or requires referral to the convened IRB.
+    3.  The designated reviewer is responsible for determining and documenting that the applicable regulatory requirements are satisfied for research in which expedited review is available and when approving research (initial or continuing review) or modifications to previously approved research.
+    4.  At the time of continuing review or modification, as applicable, the designated reviewer must document any significant new findings from review that will result in notification to, and reconsent of, subjects.
+        1.  Such notifications to subjects must be approved by the IRB consistent with Policy 3014-301 Informed Consent and §46.116(c)(5).
+    5.  When the research is subject to the 2018 Common Rule requirements, if the designated reviewer determines that the proposed research activities appear on the _List of Categories_ but are more than minimal risk, the reviewer must document a rationale for this determination, and refer the submission for review by the convened IRB. (45 CFR 46.110(b)(1)(i) of the 2018 Common Rule).
+    6.  Expedited Review procedures will not be used for research involving prisoners. (401 Research Involving Prisoners).
+    7.  Research may only be disapproved by full board procedures. (45 CFR 46.108(b), 46.109(a) and 46.110(b)(2) of the pre-2018 and 2018 versions of the Common Rule).
+4.  **Exempt Research**
+    1.  Research reviewed and determined to be exempt by designated reviewers must satisfy the applicable regulatory requirements (e.g., 45 CFR 46.101(b) of the pre-2018 Common Rule, or 45 CFR 46.104 of the 2018 Common Rule).
+    2.  The designated reviewer must review the protocol and all materials provided in the submission to determine and document whether the regulatory and policy requirements for exempt research are satisfied, consistent with Policy 3014-205 Requirements for IRB Submissions.
+    3.  When evaluating exempt research, the designated reviewer is responsible for determining and documenting that the research satisfies the criteria for exemption as follows:
+        1.  For research initially determined to be exempt on or after January 21, 2019 (including research subject to the pre-2018 Common Rule and later transitioned to an exempt category of the 2018 Common Rule), the determination will be made based upon the 2018 Common Rule criteria specified at 45 CFR 46.104 and, as applicable, 45 CFR 46.110(b) and/or that the criteria for approval at 45 CFR 46.111(a)(7) and/or (a)(8) are met.
+        2.  For research initially approved on or before January 20, 2019, or for which IRB review was waived or determined to be exempt, the pre-2018 Common Rule criteria at 45 CFR 46.101(b) will apply.
+    4.  Designated reviewers cannot disapprove research activities proposed under the exempt framework. Research may only be disapproved by full board procedures. (45 CFR 46.109(a) of the pre-2018 and 2018 versions of the Common Rule).
+    5.  Research subject to 45 CFR 46 B, C and/or D and policy may not be eligible for exemption. (See Policies 402 Research Involving Children, 400 Research Involving Pregnant Women, Human Fetuses and Neonates, and 401 Research Involving Prisoners.)
+5.  **Exempt Research Requiring Limited IRB Review**
+    1.  This research may be approved as exempt when the designated reviewer determines that the limited IRB review criteria specified at 45 CFR 46.104(d) categories 2, 3, 7 and/or 8 and the criteria specified at 45 CFR 46.111(a)(7) and/or (a)(8) are met.
+    2.  The designated reviewer must make and document limited IRB review determinations consistent with C.6.b.IV. above.  The designated reviewer will review the protocol and all other submitted materials to determine that the regulatory requirements for exempt research subject to limited IRB review are satisfied consistent with Policy 3014-205 Requirements for IRB Submissions.
+    3.  The designated reviewer may use expedited review procedures to satisfy limited IRB requirements.
+    4.  The designated reviewer can approve, or require modifications to secure approval of, research activities proposed under the limited IRB review framework. (45 CFR 46.109(a) of the 2018 Common Rule)
+    5.  The designated reviewer cannot disapprove the research activities proposed under the limited IRB review framework. Research may only be disapproved by full board procedures. (45 CFR 46.108(b) and 46.109(a) of the 2018 Common Rule).
+
+### F. References
+
+1.  **Federal Regulations**
+
+HHS: 45 CFR 46, Secretary’s List of Categories at 45 CFR 46.110(a): [https://www.hhs.gov/ohrp/regulations-and-policy/guidance/categories-of-research-expedited-review-procedure-1998/index.html](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/categories-of-research-expedited-review-procedure-1998/index.html)
+
+FDA: 21 CFR parts 50[:](FDA:%2021%20CFR%20parts%2050:%20) [https://www.ecfr.gov/cgi-bin/text-idx?SID=093516d4904769f3d9c8e9ee097a2a23&mc=true&tpl=/ecfrbrowse/Title21/21cfr50\_main\_02.tpl](https://www.ecfr.gov/cgi-bin/text-idx?SID=093516d4904769f3d9c8e9ee097a2a23&mc=true&tpl=/ecfrbrowse/Title21/21cfr50_main_02.tpl)) and 56 ([https://www.ecfr.gov/cgi-bin/text-idx?SID=093516d4904769f3d9c8e9ee097a2a23&mc=true&node=pt21.1.56&rgn=div5](https://www.ecfr.gov/cgi-bin/text-idx?SID=093516d4904769f3d9c8e9ee097a2a23&mc=true&node=pt21.1.56&rgn=div5)
+
+1.  **NIH Policy**
+
+[Policy 3014-105 IRB Reliance](https://policymanual.nih.gov/3014-105)
+
+[Policy 3014-106 Ancillary Reviews](https://policymanual.nih.gov/3014-106)
+
+[Policy 3014-200 IRB Scope and Authority](https://policymanual.nih.gov/3014-200)
+
+[Policy 3014-201 IRB Membership and Composition](https://policymanual.nih.gov/3014-201)
+
+[Policy 3014-205 Requirements for IRB Submissions](https://policymanual.nih.gov/3014-205)
+
+[_Policy 3014-300 Investigator Responsibilities_](https://policymanual.nih.gov/3014-300)
+
+[Policy 3014-301 Informed Consent](https://policymanual.nih.gov/3014-301)
+
+[Policy 3014-400 Research Involving Pregnant Women, Human Fetuses and Neonates](https://policymanual.nih.gov/3014-400)
+
+[Policy 3014-401 Research Involving Prisoners](https://policymanual.nih.gov/3014-401)
+
+[Policy 3014-402 Research Involving Children](https://policymanual.nih.gov/3014-402)
+
+[Policy 3014-403 Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation](https://policymanual.nih.gov/3014-403)
+
+[Policy 3014-404 Research Involving NIH Staff as Subjects](https://policymanual.nih.gov/3014-404)
+
+[Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)
+
+[Policy for Scientific Review of Clinical Protocols Utilizing the NIH Intramural Program](https://oir.nih.gov/sites/default/files/uploads/sourcebook/documents/review_science/policy-scientific_review_clinical_protocols.pdf)
+
+1.  **Guidance**
+
+OHRP guidance, [_Continuing Review Guidance_](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/guidance-on-continuing-review-2010/index.html#section-h) _(2010)_

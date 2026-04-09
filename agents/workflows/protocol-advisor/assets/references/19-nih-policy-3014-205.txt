@@ -1,0 +1,196 @@
+Name: NIH Policy 3014-205
+Purpose: reference
+Description: Required materials and protocol content for IRB submissions.
+URL: https://policymanual.nih.gov/3014-205
+Selection Rule: (none)
+Token Count: 7064
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 19
+
+---
+
+## 3014-205 - Requirements for IRB Submissions
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 10/01/2020 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 2/21/2025 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 2/17/2026 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the requirements for submissions to the NIH IRB by investigators, to NIH IRB members when reviewing IRB submissions, and to IRBO staff when reviewing research that may be exempt under 45 CFR 46.  This policy fully supersedes the following HRPP Standard Operating Procedures (SOPs):  SOP 5  Research Activities with Human Data/Specimens, SOP 6 Determinations, Including Exemptions Made by the Office of Human Subjects Research Protections (OHSRP), SOP 8 Procedures and Required Documentation for Submission and Initial Review of Protocols, SOP 9 Continuing Review by the Convened IRB, SOP 10 Amendments to IRB-approved Research, SOP 11 Suspensions and Terminations of IRB Approval and Administrative Holds and SOP 11A Closure of an IRB-approved protocol. In addition, this policy partially supersedes SOP 16 Reporting Requirements for Unanticipated Problems, Adverse Events and Protocol Deviations.  **Partial Revision Date:** 11/30/2022 These revisions update terminology to comport with the implementation of Huron PROTECT electronic IRB system.  **Partial Revision 02/18/2025:** This revision is to remind investigators to disclose to the IRB when they are listed as an inventor for any intellectual property that is being evaluated in the research study. This revision also removes the requirement for submission of a high-level summary of events at time of Continuing Review.
+2.  **Filing Instructions:**
+
+-   **Insert:** NIH Manual Chapter 3014-205, dated 10/01/2020, **Partial Revision Date:** 11/30/2022, **Partial Revision Date:** 02/18/2025
+-   **Implementation Date:** 10/12/2020
+
+1.  **PLEASE NOTE:** For information on:
+
+-   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+-   Content of this chapter, contact the issuing office listed above.
+-   NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL:  [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+1.  Describes the requirements for submissions of exempt and non-exempt human subjects research to facilitate review by the NIH Institutional Review Board (IRB) (i.e., review by the convened IRB, expedited procedures, limited IRB procedures, or exempt procedures). 
+
+### B. Scope
+
+1.  This policy applies to:
+    1.  NIH investigators when the NIH IRB is the Reviewing IRB, or when the human subjects research may be exempt from IRB review.
+    2.  Non-NIH investigators when the NIH is the Reviewing IRB.
+    3.  The NIH IRB, including those experienced IRB members designated to conduct expedited review, limited IRB review or exempt review (referred to as designated reviewers).
+        1.  Note that certain Office of IRB Operations (IRBO) staff members are also IRB members. These include:
+            1.  IRBO staff designated as reviewers, to conduct expedited or limited IRB review.
+            2.  IRBO staff designated  as reviewers to review research that is possibly exempt under 45 CFR 46.101 (Pre-2018 Common Rule) or 45 CFR 46.104 (2018 Common Rule).
+    4.  For information about NIH requirements when the NIH relies on an external Reviewing IRB, see _Policy 3014-105 IRB Reliance_.
+
+### C. Policy
+
+1.  In order for a submission to be approved, the NIH Principal Investigator (PI) must submit all required materials (e.g., required documentation and information collected in the electronic IRB system) to the IRB in a timely manner.
+    1.  When the NIH IRB is the Reviewing IRB for a relying site, all required materials must be submitted through the NIH electronic IRB system.
+2.  Submissions that are incomplete may be withdrawn by IRBO from IRB consideration.
+3.  When conducting its review, the convened IRB, or designated reviewer (using expedited, limited IRB, or exempt procedures) will review the submitted materials in order to determine that the regulatory and policy requirements for approval of research are met, or whether more information is needed to make a determination. (See _Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research_.)
+4.  When closing research at the NIH, the PI must provide assurance to the IRB that the maintenance and future use of specimens will be consistent with the data management plan described in the protocol and as described in the informed consent(s).
+5.  The PI or Sponsor may prematurely close the research, or the IRB may suspend or terminate its approval consistent with the requirements in _Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research_.
+6.  Institute/Center (IC) leadership has the authority to direct a PI to close a study if deemed necessary, IC leadership may submit the study closure, or any other submission, to the IRB on behalf of the PI.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+**Note**: There _may be more than one definition per term_, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized
+
+Definitions demarcated with (**_Pre-2018 Common Rule_**) apply to research approved by an IRB (or deemed to be exempt, or for which no Institutional Review Board (IRB) review was required under the regulations) prior to the effective date of the 2018 Common Rule (January 21, 2019).
+
+Definitions demarcated with (**_2018 Common Rule_**) apply to all research approved by an IRB (or deemed to be exempt, or for which no IRB review was required under the regulations) on or after January 21, 2019 and to research transitioned to the 2018 requirements in accordance with NIH Human Research Protection Program (HRPP) policy.
+
+1.  [Amendment](https://policymanual.nih.gov/3014-001#A) (See Modification)
+2.  [Continuing review (Pre-2018 Common Rule Definition)](https://policymanual.nih.gov/3014-001#C)
+3.  [Continuing review (2018 Common Rule Definition)](https://policymanual.nih.gov/3014-001#C)
+4.  [Exempt Research](https://policymanual.nih.gov/3014-001#E)
+5.  [Initial review](https://policymanual.nih.gov/3014-001#I)
+6.  [Modification](https://policymanual.nih.gov/3014-001#M) (previously referred to as an Amendment)
+7.  [Reviewing IRB](https://policymanual.nih.gov/3014-001#R)
+8.  [Study Closure](https://policymanual.nih.gov/3014-001#S)
+
+### E. Responsibilities and Requirements
+
+1.  **General Requirements for Submissions to the NIH IRB**
+
+This section describes the general requirements for submissions to the NIH IRB and the required components of those submissions. Sections [_E.2.-E.4_](#E.2)_._ below describe the responsibilities of the parties (PI, Office of IRB Operations (IRBO) staff, or the NIH IRB) with regard to these submissions.
+
+1.  **Required materials for Initial Review of non-exempt human subjects research:** For all new applications submitted via the electronic IRB system regarding non-exempt human subjects research (whether reviewed by the convened IRB or by a designated reviewer using expedited procedures), the following information or materials must be submitted:
+    1.  Research protocol, including a description of the data and safety monitoring plan (See NIH protocol templates):
+    2.  Informed consent and/or assent documents (e.g., consent, parental permission, information sheets, verbal script), as applicable;
+    3.  Initial Scientific Review with Chief Scientific Officer (CSO) approval or waiver (See _Policy 3014-106 Ancillary Reviews_);
+    4.  For covered protocols, the Deputy Ethics Counselor (DEC) clearance. (_See Policy 3014-102 Investigator Conflict of Interest and Government Royalties_);
+    5.  List any NIH investigator engaged in the research who is identified as an inventor on the intellectual property being evaluated in the research. (See  _Policy 3014-102 Investigator Conflict of Interest and Government Royalties.)_
+    6.  Recruitment materials, as applicable (e.g., email text, flyers, posters, scripts, social media ads) (See _Policy 3014-302 Subject Recruitment and Compensation)_;
+    7.  Study instruments used to collect data from research subjects (e.g., surveys, interview forms, questionnaires, assessments), as applicable;
+    8.  Ancillary committee approval(s) (e.g., Radiation Safety Committee, Institutional Biosafety Committee, etc.), as applicable (_Policy 3014-106 Ancillary Reviews)_;
+    9.  If the NIH investigator will be conducting research at a non-NIH site, documentation from the non-NIH site indicating permission for the NIH investigator to conduct research at that site (e.g., a letter of support), as applicable (See _Policy  3014-105 IRB Reliance_.);
+    10.  For new applications involving investigational drugs or devices, or off-label use of a drug or device, submission to the IRB must follow the IND and IDE requirements described in _Policy 3014-500 Research Involving Drugs, Biologics, and Nutritional Products_ or _Policy 3014-501 Research Involving FDA Regulated Devices_, as applicable.
+    11.  For initial review involving multi-site research for which the NIH IRB is the Reviewing IRB, the documentation must include:
+         1.  A model protocol that includes a description of the research activities which are occurring at each site;
+         2.  A model informed consent document(s) when the NIH is initiating the research;
+         3.  The model informed consent(s) for participating sites;
+         4.  Confirmation from each of the participating sites that the institutional requirements of the relying institution have been met; and
+         5.  Any other documents or information that the IRBO requests.
+2.  **Required materials for initial review of exempt human subjects research:**  The following materials must be submitted along with the appropriate application in the electronic IRB system:
+    1.  Research protocol (e.g., the _Protocol Template for Prospective Data Collection_ or _Protocol Template_ _for Secondary Research_); and
+    2.  When the research involves prospective collection of data:
+        1.  Document outlining the elements of informed consent (e.g., consent form, information sheet, verbal script, etc.);
+        2.  Recruitment materials, (e.g., flyers, posters, scripts, social media ads) (_Policy 3014-302 Subject Recruitment and Compensation_), as applicable; and
+        3.  Study instruments used to collect data from research subjects (e.g., surveys, interview forms, questionnaires, assessments).
+    3.  Any other documents or information that the IRBO requests.
+3.  **Required materials for Continuing Review (CR) of non-exempt human subjects research:**  For CR of non-exempt human subjects research (whether reviewed by the convened IRB or by  a designated reviewer using expedited procedures), in addition to the appropriate application in the electronic IRB system the following materials must be submitted:
+    1.  The most recent IRB-approved protocol;
+    2.  The most recent IRB-approved informed consent/assent documents, as applicable;
+        1.  In addition, if a subject was enrolled in the past year, provide a redacted copy of the last NIH signed consent(s)/assent(s) for each of the IRB-approved informed consent/assent forms used in the previous review period.
+    3.  For covered protocols, indication of the Deputy Ethics Counselor (DEC) clearance. (See _Policy 3014-102 Investigator Conflict of Interest and Government Royalties_.)
+    4.  Documentation to support the data and safety monitoring plan, as applicable, and if not previously submitted prior to the time of continuing review (e.g., data safety monitoring report(s));
+    5.  Any audit reports not previously submitted to the IRB; and
+    6.  Any other documents or information that the IRBO requests.
+4.  **Required materials for modifications to non-exempt human subjects research:** For modifications to previously approved non-exempt human subjects research (whether reviewed by the convened IRB or by designated reviewer using expedited procedures), in addition to the appropriate application in the electronic IRB system the following materials must be submitted:
+    1.  Revised protocol, as applicable;
+    2.  Revised informed consent and/or assent documents (e.g., consent, parental permission, information sheets, verbal script), as applicable;
+    3.  For covered protocols, for which a new NIH investigator is being added, documentation of the Deputy Ethics Counselor (DEC) clearance (See _Policy 3014-102 Investigator Conflict of Interest and Government Royalties.);_
+    4.  Any other documents or information that the IRBO requests; and
+    5.  When the NIH IRB is the Reviewing IRB and the PI is adding a participating site, whether to initiate multi-site research or to expand an existing multi-site protocol, the modification must include the following documentation:
+        1.  Letter of support from the participating site where the research will be conducted indicating that local site requirements have been met;
+        2.  The NIH model consent form template that includes the participating site’s required site-specific language (e.g., subject injury language, conflict of interest language), as applicable;
+        3.  Confirmation from the participating site that the institutional requirements of the relying institution have been met; and
+        4.  Any other documents or information that the IRBO requests.
+5.  **Required materials for modifications to exempt human subjects research:**  For modifications to previously approved research determined to be exempt (whether reviewed by exempt procedures or limited IRB procedures), in addition to the appropriate application in the electronic IRB system, the following materials must be submitted:
+    1.  Revised research protocol (e.g., see the _Protocol Template for Prospective Data Collection_ or _Protocol Template_ _for Secondary Research_) as applicable;
+    2.  When the proposed research involves prospective collection of data, include the following documentation, as applicable:
+        1.  Revised document outlining the elements of informed consent (e.g., consent form, information sheet, verbal script, etc.);
+        2.  Revised recruitment material, as applicable (e.g., email text, social media ads, flyers, posters, scripts, etc.) (See _Policy 3014-302 Subject Recruitment and Compensation._);
+        3.  Revised study instruments used to collect data from research subjects (e.g., surveys, interview forms, questionnaires, assessments); and
+    3.  Any other documents or information that the IRBO requests.
+6.  **Requirements for Reporting Research Events for exempt and non-exempt human subjects research:** Please see _Policy 3014-801 Reporting Research Events_ regarding submissions of reportable research events (e.g., UPs, Protocol Deviations, Adverse Events, Deaths, and Non-Compliance) to the IRB.
+7.  **Required materials for submission of study closure for non-exempt human subjects research:** When all study activities are complete including data analysis, or when the research is being prematurely closed (see _Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research_), the study closure must be submitted via the Continuing Review application in the electronic IRB system. In addition, the following materials must also be submitted:
+    1.  Provide assurance to the IRB that the disposition and future use of any data and specimens is consistent with the description in the protocol and in the informed consent(s);
+    2.  Draft communication for subjects regarding premature closure of the study, if applicable, and not already approved by the IRB, as part of a modification.
+    3.  Any other documents or information that the IRBO requests.
+
+2. **Principal Investigator Responsibilities and Requirements**
+
+1.  **The PI is responsible for:**     
+    1.  Ensuring the completeness of submissions to the NIH IRB consistent with the requirements of this policy.
+    2.  Ensuring all submissions to the NIH IRB will be via the NIH electronic IRB system using the appropriate study application (e.g., initial review, continuing review, or modification) and supporting documentation (e.g., protocol, informed consent/assent documents, and other documents as described above) consistent with the type of review sought, see [E.1](#E.1). above.
+2.  When the NIH is relying on an external Reviewing IRB, the NIH PI/Lead Site Investigator must first submit all required model documents (e.g., the model protocol and model consents) to the IRBO, via the NIH electronic IRB submission system, for institutional review consistent with the requirements outlined in _Policy 3014-105 IRB Reliance and Collaborative Research._
+
+3. **Office of IRB Operations Responsibilities and Requirements**
+
+1.  Office of IRB Operations (IRBO) is responsible for screening all submissions (e.g., initial reviews, modifications, or continuing reviews) to the NIH IRB (whether for review by the convened IRB or by designated review using expedited or limited IRB or exempt procedures), or when conducting an institutional review of NIH research when the NIH is relying on an external Reviewing IRB as outlined in _Policy 3014-105 IRB Reliance and Collaborative Research._
+2.  At its discretion, the IRBO may administratively withdraw submissions from IRB consideration when the PI is non-responsive to requests from the IRB or from IRBO staff for 30 calendar days.  The investigator will be notified by the IRBO if the submission is administratively withdrawn.
+3.  The submission components described in this policy are considered IRB records and will be retained by the IRBO consistent with the requirements of _Policy 3014-206 Maintenance of Records._
+
+4. **IRB Responsibilities and Requirements**
+
+1.  When conducting its review, the convened NIH IRB or, the designated reviewer (using expedited, limited IRB or exempt procedures), must review the submission materials in order to determine that all regulatory and policy requirements for approval of research are met. (See _Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research_.)
+
+### F. References
+
+1.  **Federal Regulations**
+
+HHS: [45 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)
+
+FDA: 21 CFR parts [50](https://www.ecfr.gov/cgi-bin/text-idx?SID=df867320a19ec31f499c8cb763d29ad3&mc=true&node=pt21.1.50&rgn=div5), [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=df867320a19ec31f499c8cb763d29ad3&mc=true&node=pt21.1.56&rgn=div5), [312](https://www.ecfr.gov/cgi-bin/text-idx?SID=df867320a19ec31f499c8cb763d29ad3&mc=true&node=pt21.5.312&rgn=div5) and [812](https://www.ecfr.gov/cgi-bin/text-idx?SID=df867320a19ec31f499c8cb763d29ad3&mc=true&node=pt21.8.812&rgn=div5)
+
+2.  **NIH Policy**
+
+[Policy 3014-102 Investigator Conflict of Interest and Government Royalties](https://policymanual.nih.gov/3014-102)
+
+[Policy 3014-105 IRB Reliance](https://policymanual.nih.gov/3014-105)
+
+[Policy 3014-106 Ancillary Reviews](https://policymanual.nih.gov/3014-106)
+
+[Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research](https://policymanual.nih.gov/3014-204)
+
+[Policy 3014-206 Maintenance of Records](https://policymanual.nih.gov/3014-206)
+
+[Policy 3014-302 Subject Recruitment and Compensation](https://policymanual.nih.gov/3014-302)
+
+[Policy 3014-500 Research Involving Drugs, Biologics, and Nutritional Products](https://policymanual.nih.gov/3014-500)
+
+[Policy 3014-501 Research Involving FDA Regulated Devices](https://policymanual.nih.gov/3014-501)
+
+[Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)
+
+3.  **Guidance and Tools**
+
+Office for Human Research Protections (OHRP) guidance: [_Continuing Review Guidance_  (2010)](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/guidance-on-continuing-review-2010/index.html#section-h)
+
+[Protocol Template for Prospective Data Collection](https://irbo.nih.gov/confluence/display/IRBO/Templates+Forms+and+Guidelines)
+
+[Protocol Template for Secondary Research](https://irbo.nih.gov/confluence/display/IRBO/Templates+Forms+and+Guidelines)
+
+[NIH protocol templates](https://irbo.nih.gov/confluence/display/ohsrp/Protocol+Templates)

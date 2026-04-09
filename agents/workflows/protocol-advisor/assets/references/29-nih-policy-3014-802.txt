@@ -1,0 +1,128 @@
+Name: NIH Policy 3014-802
+Purpose: reference
+Description: Process and reporting requirements for non-compliance in human subjects research.
+URL: https://policymanual.nih.gov/3014-802
+Selection Rule: (none)
+Token Count: 5694
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 29
+
+---
+
+## 3014-802 - Non-Compliance in Human Subjects Research
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 5/14/2019 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 7/05/2024 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 4/16/2021 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the process for the investigation and resolution of allegations of non-compliance the requirements for reporting research-related events to the Institutional Review Board (IRB). **Partial Revision 5/19/2021:** This partial revision clarifies the requirements for non-compliance for closed protocols or activities never under IRB review. Sections C.10 and E.4, and E.5.e were revised to address that the OHSRP will investigate, and the Research Compliance Review Committee (RCRC) will review, non-compliance related to closed protocols or for activities that were never under IRB review. **Partial Revision 7/05/2024:** This revision clarifies the authorities of the OHSRP Director, IRBO Director and/or IRB Chair to immediately suspend, or have the PI take additional actions necessary to protect the health, safety or welfare of subjects in response to an allegation of non-compliance, or refer it for review by the RCRC.
+2.  **Filing Instructions:**
+    -   **Insert:** NIH Manual Chapter 3014-802, dated 5/14/2019, Partial Revision: 7/05/2024.
+    -   **Implementation Date:** 7/1/2019.
+3.  **PLEASE NOTE:** For information on:
+    -   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+    -   Content of this chapter, contact the issuing office listed above.
+    -   NIH Policy Manual, contact the Division of Compliance Management, DCM, on 301-496-4606 or enter this URL:   [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)  
+
+### A. Purpose
+
+1.  The purpose of this policy is to describe the process for the investigation and resolution of allegations of non-compliance.
+
+### B. Scope
+
+1.  This policy applies to NIH investigators conducting human subjects research reviewed by the NIH IRB.
+2.  This policy applies to investigators not covered by the NIH Federalwide Assurance (FWA) when the NIH is the Reviewing IRB for human subjects research conducted by these investigators.
+3.  This policy applies to the OHSRP and its offices and the NIH IRB.
+4.  This policy also applies to persons or entities within the NIH who suspect possible non-compliance in the conduct of human subjects research.
+
+### C. Policy
+
+1.  NIH investigators are required to follow all applicable laws, regulations, and NIH institutional policies governing the protection of human subjects in research.
+2.  Non-NIH investigators who are under the jurisdiction of the NIH IRB, must follow applicable laws, regulations and NIH policies as they relate to the protection of human subjects in research.
+3.  Investigators, any member or component of the NIH Human Research Protection Program (HRPP), or any individual or entity within the NIH who suspects possible non-compliance in the conduct of human subjects research, is required to report such an occurrence consistent with this policy.
+4.  Allegations may be made anonymously and will be investigated to the extent possible.
+5.  The identity of complainants will be kept confidential to the extent possible.
+6.  Allegations from subjects or their family members that relate to possible non-compliance may also be reported and managed consistent with this policy. Other subject complaints will be managed consistent with _Policy 3014-104 Managing Research-related Complaints from Subjects._
+7.  All allegations of non-compliance should be reported to the OHSRP office of Compliance and Training (see _Policy 3014-801 Reporting Research Events_).
+8.  Allegations of non-compliance will be investigated in a fair and timely manner, and the respondent will be given an opportunity to respond to any allegation of non-compliance before a final determination is made.
+9.  Allegations related to possible non-compliance of an IRB will be referred to the Deputy Director for Intramural Research (DDIR) who will determine the process for investigating the allegation.
+10.  For all protocols in which the research was conducted under the jurisdiction of the NIH IRB, the Research Compliance Review Committee (RCRC) has the final authority to determine whether there is non-compliance and, if so, whether it is serious and/or continuing.
+11.  In response to an allegation of non-compliance, any IRB Chair (including the NIH IRB Executive Chair), the OHSRP Director, or the IRBO Director may immediately suspend the research or require the PI to take additional actions if necessary to protect the health, safety or welfare of subjects and/or refer the issue to the RCRC to determine whether additional actions are required.
+12.  Allegations of potential non-compliance with HRPP policies that occur on a closed protocol, or for activities that were never under IRB review, will be investigated by the OHSRP consistent with this policy. 
+13.  When NIH is relying on an external IRB, NIH investigators must follow the policies of the Reviewing IRB for reporting possible non-compliance. Please see _Policy 3014-801 Reporting Research Events_ for additional NIH reporting requirements.
+14.  The individual(s) who alleges non-compliance (Complainant) related to human subjects research will be informed, upon request, whether the investigation is continuing or completed. Additional information will be provided consistent with federal law and policy.
+15.  Allegations of non-compliance made in good faith will not reflect negatively on the reporting individual, nor lead to reprisal against that individual.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link:  [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c).
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized. 
+
+1.  [Allegation of Non-Compliance (also “Allegation”)](https://policymanual.nih.gov/3014-001#A)
+2.  [Complainant](https://policymanual.nih.gov/3014-001#C)
+3.  [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+4.  [Non-Compliance](https://policymanual.nih.gov/3014-001#N)
+    -   Continuing non-compliance
+    -   Serious non-compliance
+5.  [Office of Compliance and Training](https://policymanual.nih.gov/3014-001#O)
+6.  [Reliance (Authorization) Agreement](https://policymanual.nih.gov/3014-001#R)
+7.  [Research Compliance Review Committee (RCRC)](https://policymanual.nih.gov/3014-001#R)
+8.  [Respondent](https://policymanual.nih.gov/3014-001#R)
+
+### E. Responsibilities and Requirements
+
+1.  NIH investigators are required to follow all applicable laws, regulations, and NIH institutional policies governing the protection of human subjects in research.
+    1.  Non-NIH investigators who are under the jurisdiction of the NIH IRB, must follow applicable laws, regulations and NIH policies as they relate to governing the protection of human subjects in research.
+2.  Additionally, any member or component of the NIH Human Research Protection Program (HRPP), or any individual or entity within the NIH who suspects possible non-compliance in the conduct of human subjects research, is required to report such an occurrence. This must be reported in a timely manner to the office of Compliance and Training.
+3.  The Respondent and any involved person or entity are expected to fully cooperate with any investigation of non-compliance and provide any requested information and/or materials to the office of Compliance and Training, the IC, NIH Office of the Director (OD), or any other authorized party.
+4.  When the NIH IRB is the Reviewing IRB, (whether the protocol is currently open or closed), or for human subjects research conducted by NIH Investigators without IRB approval, the office of Compliance and Training is responsible for conducting the preliminary review of allegation of non-compliance, in consultation with, as necessary, the OHSRP Director, IRBO Director and/or the Executive Chair.
+    1.  The office of Compliance and Training will make a preliminary determination for the HRPP as to whether the allegation is credible (e.g., has a basis in fact) and falls within the scope of human subjects protections and, if so, whether the allegation of non-compliance, if true, is potentially serious and/or continuing.
+        1.  If allegations meet these criteria, the respondent will be notified of the allegations. The office of Compliance and Training will refer allegations of non-compliance deemed by it to be potentially serious and/or continuing to the RCRC. This will occur whether the protocol is open or not at the time of the allegation.
+        2.  If the answer to any of these criteria is “no,” then the investigation will not proceed to consideration by the RCRC and the respondent will be notified.
+        3.  Possible non-compliance relating to concerns outside the scope of human subjects protections may be referred to the appropriate office for further review (e.g., matters related to possible scientific misconduct will be forwarded to the NIH Agency Intramural Research Integrity Officer (AIRIO)).
+    2.  In consultation with the OHSRP Director, IRBO Director and/or the Executive Chair, the office of Compliance and Training is responsible for determining for OHSRP if immediate steps are necessary to protect the rights, welfare and safety of subjects and communicate this to the RCRC and the PI, including but not limited to immediate suspension of research activities.
+        1.  Administrative holds may also be placed on the research by the study sponsor, OD or NIH Institute or Center (IC) leadership, or any regulatory agency.
+5.  The RCRC is responsible for reviewing possible serious or continuing non-compliance in human subjects research for which the NIH IRB is the Reviewing IRB (whether the protocol is currently open or closed), or for human subjects research conducted by NIH Investigators without IRB approval, that has been referred from the office of Compliance and Training. The RCRC has the final authority to determine whether there is non-compliance that is serious and/or continuing and to determine corrective action.
+    1.  On behalf of the RCRC, the office of Compliance and Training is responsible for coordinating any investigation of an allegation of non-compliance, in consultation with the Director of OHSRP, the Director of IRBO and/or the Executive Chair of the NIH IRB. Additional resources will be requested from the HRPP and IC leadership as needed.
+    2.  A written report will be prepared by office of Compliance and Training describing the possible non-compliance, evidence examined, and summary or source documents (if pertinent) of the investigation. The report will be provided to the RCRC and the respondent.
+    3.  The respondent will be provided an opportunity to address the RCRC in person if they so choose and/or provide a written response.
+    4.  The RCRC will make the final determination regarding non-compliance and if it is serious and/or continuing.  The determination will be provided in writing to the respondent, as well as to the Director OHSRP, IRBO Director, the DDIR, and the relevant IC CD.
+        1.  When the NIH IRB(s) is the Reviewing IRB for a multi-center study, reporting to non-NIH sites will be governed by the terms of the reliance agreement.
+    5.  As appropriate, the investigator with assistance of their IC, as needed, will initiate corrective action. 
+        1.  As part of its deliberations, the RCRC will determine the adequacy of any proposed corrective actions. 
+        2.  As a duly convened IRB, the RCRC may require modifications to any proposed corrective action as a condition for continued approval of research, for example, continued monitoring, notification to past research subjects, or reconsent of current subjects when the investigation results in information that might impact the subjects’ willingness to continue participation. (_45 CFR 46.116(b)(5)_ (pre-2018 Common Rule) or 4_5 CFR 46.116(c)(5)_ (2018 Common Rule), and _21 CFR 50.25(b)(5)_ as applicable).
+        3.  For non-compliance that occurred on protocols that are closed at the time of the non-compliance determination, or that occurred in research conducted without IRB approval, the RCRC may make recommendations to NIH and IC leadership as to appropriate corrective actions or remediations.
+    6.  As a duly convened committee, the RCRC may exercise the full authority of an IRB including suspension or termination of IRB approval of research (see _Policy 3014-200 IRB Scope and Authority_).
+    7.  The office of Compliance and Training will report to appropriate regulatory authorities and institutional officials as described in _Policy 3014-801 Reporting Research Events_ and _Policy 101 Organizational Structure of OHSRP._
+    8.  An investigator may request reconsideration by the RCRC of a finding of serious and/or continuing non-compliance for good cause, such as submission of new information that was not considered or available during the investigation, material failure to follow the non-compliance policies, or that the corrective action(s) is perceived to exceed the severity of the non-compliance.
+    9.  Requests for reconsideration will be submitted in writing to the Director of OHSRP for consideration, who has final authority to determine if the finding will be reconsidered by the RCRC.
+6.  When the NIH is relying on an external Reviewing IRB, any allegations of possible non-compliance received by the office of Compliance and Training that have not already been reported to the Reviewing IRB will be communicated to the Reviewing IRB based on that IRB’s reporting requirements.
+    1.  The office of Compliance and Training will coordinate with the Reviewing IRB, with input from the OHSRP Director, the IRBO Director and/or the NIH Executive Chair, regarding any investigation of an allegation of non-compliance involving an NIH investigator.
+    2.  The Reviewing IRB has final regulatory authority to determine if the non-compliance is serious and/or continuing, unless otherwise specified in the terms of the reliance agreement.
+    3.  NIH will work with the Reviewing IRB in developing corrective action as needed to assist with resolution of the problem.
+    4.  If the Reviewing IRB determines the non-compliance to be serious and/or continuing, the office of Compliance and Training will report to the appropriate NIH officials as required by _Policy 3014-801- Reporting Research Events._
+    5.  The policies of the Reviewing IRB will apply to the appeal of any determinations of serious and/or continuing non-compliance, unless otherwise specified by the terms of the reliance agreement.
+7.  The IC leadership or other institutional authorities, such as the Institutional Official,  have the authority to take restrictive measures above and beyond what has been required by the Reviewing IRB including, stopping research activities, closure of the protocol, or other actions within the scope of its authority (see _Policy 3014-100 NIH Intramural Research Program's Human Research Protection Program (HRPP)_ and _Policy 3014-101 Organizational Structure of the OHSRP_).
+8.  At the conclusion of the investigation, the office of Compliance and Training will notify the complainant consistent with federal law and policy.
+
+### F. References
+
+1.  **Federal Regulations**
+    -   HHS: [45 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)
+    -   FDA: [21 CFR 50](https://www.ecfr.gov/cgi-bin/text-idx?tpl=/ecfrbrowse/Title21/21cfr50_main_02.tpl)
+2.  **NIH Policy**
+    -   [Policy 3014-100 NIH's Intramural Research Program’s Human Research Protection Program (HRPP)](https://policymanual.nih.gov/3014-100)
+    -   [Policy 3014-101 Organizational Structure of the OHSRP](https://policymanual.nih.gov/3014-101)
+    -   [Policy 3014-104 Managing Research-related Complaints from Subjects](https://policymanual.nih.gov/3014-104)
+    -   [Policy 3014-200 IRB Scope and Authority](https://policymanual.nih.gov/3014-200)
+    -   [Policy 3014-201 IRB Membership and Composition](https://policymanual.nih.gov/3014-201)
+    -   [Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)

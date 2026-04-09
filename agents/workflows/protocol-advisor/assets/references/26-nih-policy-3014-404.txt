@@ -1,0 +1,113 @@
+Name: NIH Policy 3014-404
+Purpose: reference
+Description: Additional rules for enrolling NIH staff or immediate family members of the study team as research subjects.
+URL: https://policymanual.nih.gov/3014-404
+Selection Rule: (none)
+Token Count: 4237
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 26
+
+---
+
+## 3014-404 - Research Involving NIH Staff or Immediate Family Members of the Study Team as Subjects
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 5/08/2020 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 3/12/2025 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 9/05/2025 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the requirements for research involving NIH staff participating in NIH Research. This policy partially supersedes SOP 14A Research Involving Vulnerable Subjects (General Considerations) and fully supersedes SOP 14F- Research Involving Staff as Subjects. **Partial Revision 02/11/2025:** This revision clarifies the applicability of _NIH Manual Chapter: 2300-630-3 - Leave Policy for NIH Employees Participating in NIH Intramural Research Program (IRP) Biomedical Research Studies_. In addition, we clarify who may not obtain informed consent of immediate family members of the study team at C.9.
+2.  **Filing Instructions:**
+    -   **Insert:** NIH Manual Chapter 3014-404, dated 05/08/2020
+    -   **Implementation Date:** 09/14/2020
+3.  **PLEASE NOTE:** For information on:
+    -   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+    -   Content of this chapter, contact the issuing office listed above.
+    -   NIH Policy Manual, contact the Division of Compliance Management, OMA, on 301-496-4606 or enter this URL:    [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)  
+
+### A. Purpose
+
+1.  Describes the circumstances under Human Research Protection Program (HRPP) policy in which NIH staff or immediate family members of the study team, may be enrolled as research subjects on NIH Intramural Research Program (IRP) protocols.
+
+### B. Scope
+
+1.  This policy applies to NIH staff who wish to participate in NIH IRP research at an NIH site.
+2.  This policy applies to NIH Principal Investigators (PIs) who recruit and/or enroll subjects who are NIH staff or immediate family members of the study team.
+3.  This policy applies to the NIH IRB, when reviewing research that anticipates, or is modified to allow, the recruitment and/or enrollment of NIH staff or immediate family members of the study team. The policy will also be addressed as local context information supplied to an external Reviewing IRB, as appropriate, when the research occurs at an NIH site.
+4.  NIH Institutes and Centers (ICs) may have additional requirements, policies, or restrictions.
+
+### C. Policy
+
+1.  NIH staff and immediate family members of the study team are generally permitted to participate in human subjects research conducted by the NIH. This is true whether or not the research offers the prospect of direct benefit.
+2.  NIH staff who participate in NIH intramural research must comply with NIH policy including, but not limited to:
+    1.  Any prohibitions or restrictions on participation in NIH research by the NIH staff member’s Institute or Center;
+    2.  NIH compensation requirements, or the requirements of the staff member’s employer_;_ and
+    3.  NIH leave requirements of the staff member's employer as applicable. NIH federal employees (which for the purpose of this policy, includes Public Health Service (PHS) Commissioned Corps officers) must review _NIH Manual Chapter: 2300-630-3 - Leave Policy for NIH Employees Participating in NIH Intramural Research Program (IRP) Biomedical Research Studies.)_
+3.  NIH staff interested in participating in NIH Research must review the _NIH Frequently Asked Questions (FAQs) for Staff Who are Considering Participation in NIH Research_.
+4.  When recruiting and/or enrolling NIH staff and immediate family members of the study team, NIH PIs will use appropriate safeguards described in this policy and/or as required by the IRB including when:  
+    1.  The research offers no prospect of direct benefit (see [E.1.a.](#E.1.a.) below); and/or
+        1.  An NIH staff member seeks to enroll in research taking place within their own work unit (e.g., lab, branch or office), or in research conducted by any of their supervisors (See [E.1.b.](#E.1.b.) below).
+5.  When an external IRB is the reviewing IRB, and when the research occurs at an NIH site, the requirements of this policy will be provided by the NIH PI as local context information, as appropriate.
+6.  For research that does not offer the prospect of direct benefit to the subject (e.g., studies on healthy volunteers or natural history protocols), the NIH PI must describe in the protocol the safeguards that will be put in place if the recruitment and/or enrollment of NIH staff or immediate family members of the study team, is anticipated.  If enrollment of NIH staff or immediate family members of the study team is not anticipated, a modification indicating such safeguards must be approved by the IRB before enrollment.
+7.  For research that offers the prospect of direct benefit to the subject (e.g., studies of a potential therapeutic intervention for a condition from which the subject suffers), NIH PIs are not required to obtain IRB approval for enrollment of NIH staff or the immediate family members of the study team.
+8.  Regardless of whether the research offers prospect of direct benefit, if the potential participant is an NIH staff member who is in a subordinate relationship with an investigator on the research team or is part of the work unit where the research is taking place, whenever possible, consent should be obtained by an individual in a non-supervisory relationship with the subject.  Also, a consent monitor or other qualified investigator must be present to observe the consent.
+9.  When enrolling an immediate family member of NIH staff, informed consent may not be obtained by an NIH staff member who is related to the potential participant.
+10.  When reviewing research subject to this policy, the NIH IRB must determine whether a protocol’s proposed safeguards for research participation by NIH staff or the immediate family members of the study team are adequate when the research anticipates or is modified to allow the recruitment and/or enrollment of this population.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c).
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized. 
+
+1.  [Coercion](https://policymanual.nih.gov/3014-001#C)
+2.  [Consent Monitor](https://policymanual.nih.gov/3014-001#C)
+3.  [Immediate Family Member](https://policymanual.nih.gov/3014-001#I)
+4.  [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+5.  [NIH Staff](https://policymanual.nih.gov/3014-001#N)
+6.  [Subordinate](https://policymanual.nih.gov/3014-001#S)
+7.  [Supervisor](https://policymanual.nih.gov/3014-001#S)
+8.  [Work Unit](https://policymanual.nih.gov/3014-001#W)
+
+### E. Responsibilities and Requirements
+
+1.  **General requirements for NIH Investigators and Principal Investigators (PI):**
+    1.  When NIH staff or immediate family members of the study team participate in NIH research that offers no prospect of direct benefit (e.g., studies on healthy volunteers or natural history protocols) the following requirements apply:
+        1.  The NIH PI must indicate in the protocol whether NIH staff or immediate family members of the study team will be recruited or will be allowed to enroll in the research. When this population will be recruited or allowed to enroll in the research, the NIH PI must describe in the protocol:
+            1.  The safeguards (e.g., recruitment methods, consent monitoring, or another investigator confirming eligibility of the subject) that will be put in place for the recruitment or enrollment of this population. Include any additional safeguards required by the IRB.
+            2.  The plan for recruiting this population, when it is anticipated,
+            3.  When recruiting NIH staff, the PI must always follow the requirements listed below:
+                -   Solicitation of subordinates should not be direct, either orally or through individual mailings or email distribution.
+                -   Flyers and recruiting materials may be displayed in the workplace only where public announcements are permitted to be posted.
+        2.  When the research does not anticipate the recruitment or enrollment of this population and the PI wants to enroll NIH staff or immediate family members of the study team, a modification describing such safeguards in the protocol must be approved by the IRB prior to enrollment.
+        3.  Prior to enrollment on an NIH study (and regardless of whether the research offers prospect of direct benefit), the NIH investigator must provide and request the NIH staff member review the _NIH Frequently Asked Questions (FAQs) for Staff Who are Considering Participation in NIH Research_.  In addition, the NIH investigator must direct staff to comply with the requirements specified in [C.2](#C2). above.
+2.  **When an NIH staff member seeks to enroll in research taking place within their own work unit or conducted by any of their supervisors, the NIH PI must assure the following:**
+    1.  The subject will be informed that neither participation nor refusal to participate as a research subject will have an effect, either beneficial or adverse, on the subject’s employment, training, or position at the NIH,
+    2.  To the greatest extent possible, consent will be obtained by an individual in a non-supervisory relationship with the subject, and
+    3.  A third party (e.g., a consent monitor) must be present to observe the consent process. This process is used to minimize the risk of undue pressure on the NIH staff member when an investigator on the research team is also the staff member’s supervisor.  This can be achieved by one of the following methods:
+        1.  At the NIH CC, a consent monitor is available through the CC Department of Bioethics Consultation Service or by a Clinical Research Advocate from the NIMH Human Subjects Protection Unit (HSPU); or
+        2.  A consent monitor may also be another party independent of the research team (e.g., an IC monitor); or
+        3.  Lastly, if a consent monitor is not available, the consent process will be observed by another qualified investigator on the study who is independent of the NIH staff member’s work unit and not a supervisor to the NIH staff member. If no such person exists, consent observation may be performed by any qualified investigator on the study.
+3.  **NIH IRB requirements:**
+    1.  When an NIH PI describes in the protocol that NIH staff or immediate family members of the study team may be recruited and/or enrolled on the study, the NIH IRB must:
+        1.  Ensure adequate safeguards for these subjects (e.g., regarding recruitment methods, consent monitoring, another investigator confirming eligibility of the subject) when the research offers no prospect of direct benefit; and/or
+        2.  Ensure adequate protections are in place to minimize the possibility of coercion and bias when NIH staff seek to enroll in research taking place within their own work unit, or to enroll in research conducted by any of their supervisors.
+    2.  In addition to the measures described in this policy, the NIH IRB may require any other safeguards it deems necessary to protect the rights, safety and welfare of subjects and to avoid biasing the research results.
+
+### F. References
+
+1.  **Federal Regulations: N/A**
+2.  **NIH Policy:**
+
+[NIH Manual Chapter: 2300-630-3 - Leave Policy for NIH Employees Participating in NIH Intramural Research Program (IRP) Biomedical Research Studies](https://policymanual.nih.gov/manage/chapter/view/2300-630-3)
+
+       **3. Guidance:**
+
+[NIH Frequently Asked Questions (FAQs) for Staff Who are Considering Participation in NIH Research](https://irbo.nih.gov/documents/371/404-Guideline-_FAQs_for_Research_Involving_NIH_Staff_09.14.2020.pdf) (PDF download).

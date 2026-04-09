@@ -1,0 +1,165 @@
+Name: 3014-700 - International Research
+Source URL: https://policymanual.nih.gov/3014-700
+Fetched At: 2026-04-03T18:46:10.817Z
+Source Type: html
+
+---
+
+## 3014-700 - International Research
+
+Issuing Office: OD/OIR/OHSRP
+Phone:
+(301) 402-3713
+
+Release Date: 10/30/2020
+Technical Revision Date: 2/05/2025 ?
+
+Transmittal Notice
+
+- Explanation of Material Transmitted: This policy describes the requirements and responsibilities of NIH investigators when conducting non-exempt human subjects research in foreign countries. This policy partially supersedes SOP 20B NIH IRB Responsibilities Reviewing Local Context Considerations for Offsite Research.
+- Filing Instructions:Insert: NIH Manual Chapter 3014-203, dated 10/30/2020
+- Implementation Date: 11/09/2020
+
+- PLEASE NOTE: For information on:The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+- Content of this chapter, contact the issuing office listed above.
+- NIH Policy Manual, contact the Division of Compliance Management, DCM, on 301-496-4606 or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+- Describes the requirements and responsibilities of NIH investigators when conducting non-exempt human subjects research in foreign countries.
+
+### B. Scope
+
+- This policy applies to NIH investigators conducting non-exempt human subjects research in foreign countries.
+- This policy applies to the NIH Institutional Review Board (IRB) when reviewing non-exempt human subjects research that will be conducted in foreign countries.
+- This policy does not cover all federal and NIH policy requirements for non-exempt human subjects research conducted in a foreign country. For more information about other NIH policy requirements for international research, consult the Fogarty International Center website.
+- This policy generally does not apply to NIH intramural support for foreign research where no NIH investigator is conducting non-exempt human subjects research (see C.8. below). Regardless of whether NIH investigators conduct non-exempt human subjects research in foreign countries, they are responsible to determine if there are relevant NIH or IC specific policies, regulations or laws that apply to their activities.
+
+### C. Policy
+
+- Human subjects research conducted by NIH investigators is subject to federal law, regulation and policy, including NIH policy, regardless of whether the research is conducted domestically or internationally.
+- Research may not be conducted by NIH investigators in any foreign country that is contrary to any U.S. Government prohibitions or restrictions on conducting research in that country.[1]
+- When the NIH IRB is reviewing research conducted collaboratively with foreign investigators and/or institutions, its oversight responsibilities extend only to the activities of those investigators covered by the NIH FWA as specified in Policy 3014-100 NIH Intramural Research Program’s Human Research Protection Program.
+- When conducting non-exempt human subjects research in a foreign country, NIH investigators must comply with all applicable in-country laws and regulations. If U.S. law, regulation, or policy (including NIH policy) differs from the foreign requirements, the most restrictive approach should be used - so long as it is not contrary to U.S. law or policy. (For more information, see the International Compilation of Human Research Standards.)
+- When international research will involve the study of test articles (e.g., investigational drugs, biologics, or devices) in a foreign country and the test articles will be shipped from the United States to the foreign site, the NIH Principal Investigator (PI) will comply with all requirements detailed in E.1.b.below.
+- Non-exempt human subjects research conducted or supported by the NIH IRP in a foreign country must be consistent with NIH’s Department of Health and Human Services (HHS) Federalwide Assurance (FWA).Non-exempt human subjects research conducted in a foreign country with a foreign institution, must be with an institution that holds an active FWA and reviewed by an IRB/Ethics Committee (EC) registered with the HHS Office for Human Research Protections (OHRP) or has equivalent procedures consistent with 45 CFR 46.101(h). (See OHRP database for FWA and IRB/ECs.) Any exception to this policy statement requires a compelling justification and must be approved in advance by the NIH Institutional Official (IO).
+
+- Non-exempt human subjects research conducted by NIH investigators in a foreign country, must be approved by an in-country IRB/EC prior to receiving final approval by the NIH IRB when it is the Reviewing IRB.If reviewed by an external U.S.-based IRB and approved by that IRB prior to in-country IRB/EC approval, NIH research may not commence until the NIH Investigator receives approval from the in-country IRB/EC, or if no in-country IRB/EC, until the reviewing IRB requirements for local context review (if any) have been met.
+
+- When the NIH IRB is the reviewing IRB, its review will be limited to determining if the proposed research meets the requirements of U.S. federal law, regulation and policy. The NIH IRB will not make determinations whether the research is compliant with the laws or regulations of any foreign nation, which will be determined by the in-country IRB/EC (see C.11. below), unless there is no in-country IRB/EC (and so C.9. applies).
+- When the NIH IRB is the Reviewing IRB, and when there is no in-country IRB/EC, the NIH IRB will require a written assessment of the research for its consistency with foreign country laws and regulations, local customs and culture. The written assessment will be obtained from an individual who has appropriate expertise in the foreign country’s culture and who is independent of the research team.
+- If the NIH Intramural Research Program (IRP) is supporting non-exempt human subjects research conducted in a foreign country, but the NIH is not otherwise engaged in the human subjects research, then review by the NIH IRB is not required, but in-country IRB/EC review is still required. As noted in B.4. above, other NIH requirements may still apply. (See OHRP Engagement of Institutions in Human Subjects Research.)If reviewed only by an in-country IRB/EC, that IRB must be registered with OHRP and conduct its review compliant with 45 CFR 46, or has equivalent procedures consistent with 45 CFR 46.101(h). (See OHRP database for FWA and IRB/ECs.).
+
+- Research may not be initiated in a foreign country until both U.S.-based Reviewing IRB approval and in-country IRB/EC (if applicable) approval has been obtained.In the absence of in-country IRB/EC review, NIH PIs cannot initiate research until approval of the U.S.-based Reviewing IRB has been received.
+- If U.S.-based IRB review is not required as no NIH or other U.S.-based investigators are engaged in human subjects research, then only in-country IRB/EC review is required and research may not commence until such approval has been received.
+
+- The NIH IRB will not approve research occurring in a foreign country that has been previously disapproved by, or otherwise conflicts with the determinations of, the in-country IRB/EC. If previously approved by the NIH IRB and a later determination by the in-country IRB/EC disapproves the research, the NIH IRB approval will be rescinded.
+
+[1] Contact Fogarty International Center for additional information about international research collaborations.
+
+### D. Definitions
+
+OSHRP has developed a comprehensive glossary of definitions that describe the terms listed below. The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c).
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+- [Federal Wide Assurance (FWA)](https://policymanual.nih.gov/3014-001#F)
+- [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+- [Test Article](https://policymanual.nih.gov/3014-001#T)
+
+### E. Responsibilities and Requirements
+
+- NIH Principal Investigator (PI) and Investigator ResponsibilitiesNIH Investigators must comply with federal law, regulation, and policy, including NIH policy, regardless of whether the research is conducted either domestically or internationally (e.g., 45 CFR 46, and FDA regulations at 21 CFR parts 50, 56, 312, and 812). In addition to these requirements, all NIH investigators conducting non-exempt human subjects research in foreign countries, must comply with:All applicable foreign country laws and regulations consistent with C.3. above (e.g., the foreign country regulations for human subjects protection, for drugs and devices, collection and transportation of biological specimens and, as applicable, ICH or CIOMS standards). (For more information, see the International Compilation of Human Research Standards.);
+- The requirements of the in-country IRB/EC (if applicable), so long as the requirements are no less restrictive than, and are not counter to the standards in E.1.a.I., above. For example, all NIH investigators must have a clear understanding regarding policy differences between the in-country IRB/EC and the U.S.-based Reviewing IRB, (e.g., as detailed in the protocol or other written agreement) such as, reporting research events, maintaining proper research records, and non-compliance, as compared to NIH policy; and
+- The requirements of the U.S.-based Reviewing IRB.
+
+- When international research involves the study of test articles (e.g., drugs, biologics, nutritional products or devices) in a foreign country, and the test articles will be shipped from the United States to the foreign site, the NIH PI must:Comply with FDA regulations for shipping test articles internationally;
+- Comply with applicable NIH requirements (e.g., pharmacy, CC Office of Research Support and Compliance (ORSC));
+- Comply with in-country regulatory requirements, approvals for test articles, and any necessary import requirements; and
+- Provide written documentation to the NIH IRB from the foreign site indicating all necessary approvals for use of a test article under the local laws have been obtained.
+
+- For research conducted in a foreign country, the NIH PI must describe in the protocol, the rationale and the plan (e.g., scope of research, facilities) for conducting non-exempt human subjects research at the foreign site(s), and relevant local context information, including but not limited to: The name of the foreign PI/Lead Site Investigator(s) (if collaborating with a foreign institution);
+- The rationale for conducting research in the foreign country;
+- Information about the foreign study population and what is required to enroll them in research, (e.g., legal age at which subjects can provide consent to participate in research, capacity to consent standards, legally authorized representative standards, local processes for obtaining research informed consent, local languages or dialects, and vulnerable populations).
+
+- Research that has been disapproved by an in-country IRB/EC, cannot be submitted to the U.S.-based IRB for approval.If the U.S.-based IRB has already approved the research the NIH PI must promptly notify the U.S.-based IRB that the in-country IRB has disapproved the research.
+
+- When the NIH IRB is the reviewing IRB, in addition to the submissions requirements specified in Policy 3014-205 Requirements for IRB Submissions, the NIH PI must submit the following items to the NIH IRB (including, as applicable, certified translations of any foreign-language documents into English):Local context information that is not described in the protocol, including, but not limited to:A description of the foreign country laws and regulations or local customs that impact the conduct of the proposed research;
+- Whether the protocol will require, in addition to any necessary local IRB/EC approval, local review and approval by any other in-country entities (e.g., institutions, offices, departments, Scientific Committees, drug and/or device oversight agencies).
+
+- Documentation of in-country IRB/EC (if applicable) review determinations and approvals, or a written assessment consistent with C.7. above, when there is no in-country IRB/EC; and
+- Any other materials needed by the NIH IRB to complete its review.
+
+- NIH PIs must not initiate research until both the U.S.-based Reviewing IRB approval and the in-country IRB/EC approval (if applicable) have been obtained.
+
+- Responsibilities of the NIH IRBWhen reviewing international research, the NIH IRB must take local context information into consideration when making its determinations.
+- The NIH IRB must not issue a final approval for research conducted in a foreign country until approved by an in-country IRB/EC, if one existsIf the foreign country does not have an IRB/EC, the IRBO will require the submission of an independent assessment of the protocol by an individual with knowledge of the foreign country laws and regulations, or local culture and customs, which must be submitted to the NIH IRB to consider prior to review and approval of the research.
+
+- The NIH IRB must not approve collaborative research occurring a foreign country that that has been previously disapproved by, or otherwise conflicts, with the determinations the in-country IRB/EC. If previously approved by the NIH IRB and a later determination by the in-country IRB/EC disapproves the research, the NIH IRB approval will be rescinded.
+
+### F. References
+
+- Federal Regulation:HHS: [45 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)
+- FDA: 21 CFR parts [50](https://www.ecfr.gov/cgi-bin/text-idx?tpl=/ecfrbrowse/Title21/21cfr50_main_02.tpl), [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=cb4aa22ea00ab7cebf1fe59b498ed13f&mc=true&node=pt21.1.56&rgn=div5), [312](https://www.ecfr.gov/cgi-bin/text-idx?SID=89083ed7486c909d2d507e21627a5da6&mc=true&node=pt21.5.312&rgn=div5), and [812](https://www.ecfr.gov/cgi-bin/text-idx?SID=76380ba5e989ab88f2af9f110c7b916d&mc=true&node=pt21.8.812&rgn=div5)
+
+- NIH Policy:[Policy 3014-100 NIH Intramural Research Program’s Human Research Protection Program](https://policymanual.nih.gov/3014-100)
+- [Policy 3014-205 Requirements for IRB Submissions](https://policymanual.nih.gov/3014-205)
+- [Policy 3014-500 Research Involving Drugs, Biological, and Nutritional Products](https://policymanual.nih.gov/3014-500)
+- [Policy 3014-501 Research Involving FDA Regulated Devices](https://policymanual.nih.gov/3014-501)
+- [Policy 3014-502 Expanded, Including Emergency Use of Investigational Drugs, Biologics and Medical Devices (Test Articles)](https://policymanual.nih.gov/3014-502)
+
+- Guidance:[Fogarty International Center, Division of International Relations](https://www.fic.nih.gov/About/Staff/Pages/International-Relations.aspx)
+- [International Compilation of Human Research Standards](https://www.hhs.gov/ohrp/international/compilation-human-research-standards/index.html)
+- [OHRP database for FWA and IRB/ECs](https://ohrp.cit.nih.gov/search/search.aspx?styp=bsc)
+- [OHRP Engagement of Institutions in Human Subjects Research](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/guidance-on-engagement-of-institutions/index.html) (2008)
+- [Institute/Center (IC) Technology Development Coordinators](https://www.ott.nih.gov/tdcs)
+
+Add Section
+
+###### * If you require a 508 compliant PDF version of a chapter please contact [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#9bbbebf4f7f2f8e2f6faf5eefaf7dbf5f2f3b5fcf4ed)
+
+|
+
+Type of Publish
+
+|
+|
+
+Release Date
+
+|
+
+| |
+| |
+
+Add Your Note (optional):
+
+Office of Management Assessment, National Institutes of Health, 6705 Rockledge Dr. Suite 601 Bethesda, MD 20892
+
+Phone: (301) 496-4606 Email: [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#b9c9d6d5d0dac0d4d8d7ccd8d5f9d7d0d197ded6cf)
+
+- [Resources](https://oma.od.nih.gov/dms/pages/manual-chapters-links.aspx)
+
+- [About](https://oma.od.nih.gov/dms/pages/manual-chapters.aspx)
+
+- [Contacts](https://oma.od.nih.gov/dms/pages/manual-chapters-manual-system-contacts.aspx)
+
+- [Web Policies and Notices](https://www.nih.gov/web-policies-notices)
+
+- [HHS Vulnerability Disclosure](https://www.hhs.gov/vulnerability-disclosure-policy/index.html)
+
+- [FOIA](https://www.nih.gov/icd/od/foia/index.htm)
+
+- [No Fear Act](https://www.edi.nih.gov/no-fear-act)
+
+- [Office of Management](https://om.od.nih.gov/)
+
+- [National Institutes of Health](https://www.nih.gov/)
+
+- [U.S. Department of Health and Human Services](https://www.hhs.gov/)
+
+- [USA.Gov - Government Made Easy](https://www.usa.gov/)
+
+NIH... Turning Discovery into Health(r)
+
+Arrow UpBack to Top

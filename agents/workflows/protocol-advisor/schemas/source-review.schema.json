@@ -1,0 +1,87 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task_type", "summary", "source_review"],
+  "properties": {
+    "task_type": {
+      "type": "string",
+      "enum": ["source_review"]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "source_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_title",
+        "applies",
+        "applicability_reason",
+        "review_basis",
+        "review_basis_reason",
+        "verdict",
+        "findings"
+      ],
+      "properties": {
+        "source_id": { "type": "string" },
+        "source_title": { "type": "string" },
+        "applies": { "type": "boolean" },
+        "applicability_reason": { "type": "string" },
+        "review_basis": {
+          "type": "string",
+          "enum": ["historical_only", "current_gap", "mixed"]
+        },
+        "review_basis_reason": { "type": "string" },
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "compliant",
+            "non_compliant",
+            "insufficient_evidence",
+            "conditional_gap",
+            "not_applicable"
+          ]
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "finding_id",
+              "category_id",
+              "citation",
+              "status",
+              "issue_title",
+              "source_excerpt",
+              "subject_evidence",
+              "analysis",
+              "required_action"
+            ],
+            "properties": {
+              "finding_id": { "type": "string" },
+              "category_id": { "type": "string" },
+              "citation": { "type": "string" },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "compliant",
+                  "non_compliant",
+                  "insufficient_evidence",
+                  "conditional_gap",
+                  "not_applicable"
+                ]
+              },
+              "issue_title": { "type": "string" },
+              "source_excerpt": { "type": "string" },
+              "subject_evidence": { "type": "string" },
+              "analysis": { "type": "string" },
+              "required_action": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

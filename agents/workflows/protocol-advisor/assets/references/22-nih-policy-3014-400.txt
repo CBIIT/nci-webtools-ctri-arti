@@ -1,0 +1,115 @@
+Name: NIH Policy 3014-400
+Purpose: reference
+Description: Additional protections for research involving pregnant women, human fetuses, and neonates.
+URL: https://policymanual.nih.gov/3014-400
+Selection Rule: (none)
+Token Count: 3806
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 22
+
+---
+
+## 3014-400 - Research Involving Pregnant Women, Human Fetuses, and Neonates
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 9/25/2019 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 12/23/2024 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 2/05/2025 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the requirements for research involving pregnant women, human fetuses and neonates.  This policy partially supersedes SOP 14A Vulnerable Populations, and fully supersedes SOP 14B- Research Involving Pregnant Women, Human Fetuses and Neonates. **Partial Revision 12/23/2024:** Updated terminology throughout chapter.
+2.  **Filing Instructions:**
+    -   **Insert:** NIH Manual Chapter 3014-400, dated 09/25/2019
+    -   **Implementation Date:** 09/14/2020
+3.  **PLEASE NOTE:** For information on:
+    -   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+    -   Content of this chapter, contact the issuing office listed above.
+    -   NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx "link to the NIH Policy Manual home page")
+
+### A. Purpose
+
+1.  Describe general considerations and certain regulatory requirements that apply when an NIH Institutional Review Board (IRB) is reviewing, or when an NIH investigator seeks to perform research involving pregnant women, human fetuses, neonates, and/or research involving, after delivery, the placenta, the dead fetus, or fetal material.
+
+### B. Scope
+
+1.  This policy applies to research conducted by NIH investigators involving pregnant women, human fetuses, and neonates, and/or research involving, after delivery, the placenta, the dead fetus, or fetal material. This policy also applies when such research is being reviewed by the NIH IRB.
+2.  This policy is not intended to be an exhaustive listing of statutory, regulatory, and policy requirements. For more complete information, NIH Investigators and IRBs should refer to 45 CFR 46 Subpart B. Further, for research involving fetal tissue, Principal Investigators must consult the Office of Intramural Research (OIR) for information on additional requirements and restrictions (see [C.3](#C.3). below for more details).
+
+### C. Policy
+
+1.  NIH investigators and the NIH IRB must comply with the basic requirements for Protection of Human Subjects at 45 CFR 46 Subpart A and to the requirements for Protections for Pregnant Women, Human Fetuses, and Neonates Involved in Research at 45 CFR 46 Subpart B when applicable. In addition:
+    1.  When the pregnant woman is also a child or the research involves a viable neonate, the NIH investigator and the NIH IRB must also comply with the requirements at 45 CFR 46 Subpart D. (See _Policy 3014-402 Research Involving Children_.)
+2.  NIH investigators and the IRB must comply with Food and Drug Administration (FDA) and Department of Health and Human Services (referred to as HHS in this policy) regulations, as applicable. In limited circumstances, FDA and HHS regulations allow for exception(s) from informed consent requirements for emergency research, but this waiver may not be applied to research subject to 45 CFR 46, Subpart B (e.g., pregnant women, human fetuses, or neonates). (21 CFR part 50.24)
+3.  NIH investigators must comply with applicable regulatory and federal policy requirements. NIH Investigators must consult the OIR for information on additional requirements and restrictions. For example, the _OIR Sourcebook: Special Research Considerations_ includes additional requirements related to prohibited research, and research with human embryonic stem cells (hESCs), human induced pluripotent stem cells (IPSCs), adult stem cells and research involving human fetal tissue.
+4.  For exempt human subjects research involving pregnant women, human fetuses, or neonates, and/or research involving, after delivery, the placenta, the dead fetus, or fetal material:
+    1.  When the research is subject to the pre-2018 Common Rule, the exemptions at 45 CFR 46.101(b)(1) through (6) may apply as long as the conditions of the exemption are met.
+    2.  When the research is subject to the requirements of the 2018 Common Rule, the exemptions at 45 CFR 46.104(d)(1) through (8) may apply to research as long as the conditions of the exemption are met.[\[1\]](#footnote1)
+5.  For non-exempt human subjects research subject to 45 CFR 46, Subpart B (e.g., involving pregnant women, human fetuses, or neonates), in addition to the basic requirements of Subpart A (described in [C.1.](#C.1) above), the following regulatory requirements must be satisfied, when applicable:
+    1.  Research involving pregnant women and/or human fetuses may be conducted only in accordance with all the conditions of 45 CFR 46.204.
+    2.  Research involving neonates varies by viability. Research with neonates may be approved only if the following requirements are satisfied:
+        1.  Research involving viable neonates may be conducted only in accordance with the conditions of 45 CFR 46.205(d). (See _Policy 3014-402 Research Involving Children.)_
+        2.  Research involving neonates of uncertain viability may be conducted only in accordance with the conditions of 45 CFR 46.205 (a) and (b).
+        3.  Research involving nonviable neonates may be conducted only in accordance with the conditions of 45 CFR 46.205(a) and (c).
+    3.  Research involving, after delivery, the placenta, the dead fetus, or fetal material may be conducted only in accordance with 45 CFR 46.206.
+    4.  Research that is not otherwise approvable under 45 CFR 46.204 and 45 CFR 46.205 (described in subsections _C.5.a.-C.5.c._ above) but which presents an opportunity to understand, prevent, or alleviate a serious problem affecting the health or welfare of pregnant women, human fetuses, or neonates, requires additional review and approval by the Secretary, HHS. (45 CFR 46.207)
+
+---
+
+[\[1\]](#footnote1) Exemptions related to broad consent for the maintenance, storage and secondary use of identifiable private information or identifiable biospecimens at 45 CFR 46.104(d)(7) or (8) are not being implemented in the NIH IRP at this time.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+**Note**: There _may be more than one definition per term_, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized. 
+
+1.  [Children](https://policymanual.nih.gov/3014-001#C)
+2.  [Dead Fetus](https://policymanual.nih.gov/3014-001#D)
+3.  [Delivery](https://policymanual.nih.gov/3014-001#D)
+4.  [Fetus](https://policymanual.nih.gov/3014-001#F)
+5.  [Neonate](https://policymanual.nih.gov/3014-001#N)
+6.  [Nonviable Neonate](https://policymanual.nih.gov/3014-001#N)
+7.  [Pregnancy](https://policymanual.nih.gov/3014-001#P)
+8.  [Secretary](https://policymanual.nih.gov/3014-001#S)
+9.  [Viable](https://policymanual.nih.gov/3014-001#V)
+
+### E. Responsibilities and Requirements
+
+1.   **Investigator Responsibilities**
+    1.  When conducting research subject to 45 CFR 46, Subpart B (e.g., involving pregnant women, human fetuses and neonates), Principal Investigators (PIs) must ensure that the protocol and the performance of the research is in compliance with all applicable sections of Subpart B and the other applicable Subparts of 45 CFR 46 as described in [Section _C_](#C.1)_,_ above, as well as requirements noted in [Section _B_](#B.1).
+    2.  In addition to the requirements for informed consent described in 45 CFR 46 Subpart A, when the research involves pregnant women, human fetuses, or neonates, and/or research involving, after delivery, the placenta, the dead fetus, or fetal material, the consent requirements at 45 CFR 46 Subpart B must also be met, as well as the other applicable Subparts.
+2.  **Responsibilities of the NIH IRB**
+    1.  When reviewing research involving pregnant women, human fetuses, and neonates, and/or research involving, after delivery, the placenta, the dead fetus, or fetal material, the IRB shall only approve research that satisfies all applicable sections of Subpart B and the other applicable Subparts of 45 CFR 46 as described in Section _C._ above. (45 CFR 46.203)
+    2.  The IRB will document that applicable regulatory protections are satisfied during its review and approval of the proposed research.
+    3.  When reviewing research that might be subject to 45 CFR 46.207, and prior to review by the Secretary HHS, the IRB must determine and document in the Minutes that the research presents a reasonable opportunity to further the understanding, prevention, or alleviation of a serious problem affecting the health or welfare of pregnant women, human fetuses, or neonates.
+        1.  When the proposed research in this category has been determined by the IRB to satisfy the requirements at 45 CFR 46.207, IRBO will send the research protocol and the IRB Minutes documenting its determination to the HHS Office for Human Research Protections (OHRP) for review by the Secretary in accordance with 45 CFR 46.207.
+
+### F. References
+
+1.  **Federal regulations**
+
+HHS: [Subpart A](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML#sp45.1.46.a), [Subpart B](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML#sp45.1.46.b), [Subpart C](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML#sp45.1.46.c), [Subpart D](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML#sp45.1.46.d); 
+
+FDA: [21 CFR part 50](https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?CFRPart=50)
+
+2.  **NIH Policies**
+
+  [OIR Sourcebook: Special Research Cons](https://oir.nih.gov/sourcebook/ethical-conduct/special-research-considerations)iderations
+
+  [Policy 3014-402 Research Involving Children](https://policymanual.nih.gov/3014-402)
+
+3.  **Guidance**
+
+[NIH Human Embryonic Stem Cell Registry](http://grants.nih.gov/stem_cells/registry/current.htm) (lines eligible for use with NIH funds)
+
+[NIH Guidelines for Human Embryonic and Induced Pluripotent Stem Cells](https://stemcells.nih.gov/research-policy/guidelines-for-human-stem-cell-research)
+
+[NIH Stem Cell Website](https://stemcells.nih.gov/) (general info)
+
+[NIH Stem Cell FAQs](https://stemcells.nih.gov/research-policy/stem-cells-faqs) (NIH Guidelines for Human Stem Cell Registry Policy Questions and Answers)

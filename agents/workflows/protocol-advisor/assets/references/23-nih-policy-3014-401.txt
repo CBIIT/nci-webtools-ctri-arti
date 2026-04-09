@@ -1,0 +1,120 @@
+Name: NIH Policy 3014-401
+Purpose: reference
+Description: Additional protections for research involving prisoners.
+URL: https://policymanual.nih.gov/3014-401
+Selection Rule: (none)
+Token Count: 4917
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 23
+
+---
+
+## 3014-401 - Research Involving Prisoners
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 6/09/2020 [?](javascript:void\(0\);) **Technical Revision Date:** 12/19/2024 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the requirements for research involving prisoners.  This policy partially supersedes SOP 14A Research Involving Vulnerable Subjects (General Considerations), and  fully supersedes SOP 14C- Research Involving Prisoners.
+2.  **Filing Instructions:**
+    -   **Insert:** NIH Manual Chapter 3014-401, dated 06/09/2020
+    -   **Implementation Date:** 09/14/2020
+3.  **PLEASE NOTE:** For information on:
+    -   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+    -   Content of this chapter, contact the issuing office listed above.
+    -   NIH Policy Manual, contact the Division of Compliance Management, OMA, on 301-496-4606 or enter this URL:   [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)  
+
+### A. Purpose
+
+1.  To define the ethical and regulatory requirements that apply to human subjects research involving prisoners.
+
+### B. Scope
+
+1.  This policy applies to all research reviewed by the NIH IRB that involve prisoners as subjects, whether prisoners are an intended population, or if a subject becomes a prisoner at any time during the course of the research.
+2.  This policy applies to NIH investigators conducting NIH human subjects research involving prisoners, whether the reviewing IRB is the NIH IRB or an external IRB.
+3.  This policy applies to non-NIH investigators, including Lead Site Investigators, when the NIH IRB is the reviewing IRB.
+4.  This policy applies to the NIH IRB and to the Office of Human Subjects Research Protections (OHSRP).
+
+### C. Policy
+
+1.  The protection of the rights, welfare and safety of subjects who are prisoners is of paramount importance to the NIH Human Research Protection Program (HRPP). Therefore, the NIH Principal Investigator (PI)/Lead Site Investigator will ensure that all non-exempt human subjects research that involves prisoners as subjects, is conducted in compliance with 45 CFR 46 Subpart C - _Additional Protections Pertaining to Biomedical and Behavioral Research Involving Prisoners as Subjects_ (“Subpart C”) and has been approved by the IRB to permit the enrollment of prisoners.
+2.  Non-exempt human subjects research involving prisoners will not be initiated or continued until IRB approval and HHS Office for Human Research Protections (OHRP) written approval, except as noted in [_E.1.c.II_](#E.1.c.II) below.
+3.  For research subject to the pre-2018 Common Rule, the exemptions at 45 CFR 46.101(b) do not apply to research involving prisoners (45 CFR 46.101(i), Footnote 1).
+    1.  For research subject to the 2018 Common Rule, research involving prisoners cannot be deemed exempt under 45 CFR 46.104(d), except for research aimed at involving a broader subject population that only incidentally includes prisoners. (46.104(b)(2))
+4.  Informed consent can be waived or altered in research involving prisoners only in accordance with applicable regulations. However, even if informed consent is waived or altered, subjects will be clearly informed in advance that participation in the research will have no effect on their parole, if such notification is relevant. (45 CFR 46.305(a)(6))
+5.  Prisoners cannot be involved in emergency research where the requirement for informed consent has been waived by the Secretary under the authority of 45 CFR 46.101(i). (See 61 Fed. Reg. 51531 (Oct. 2, 1996)_._)
+6.  The convened NIH IRB will review research involving prisoners consistent with the requirements specified at [_E.2.a_](#E.2.a.) _and_ [_E.2.b_](#E.2.b.) below, regardless of risk level.  Expedited review is not permitted as a policy matter.
+7.  The OHSRP Office of IRB Operations (IRBO) will ensure the composition of the IRB and the quorum requirements are met consistent with 45 CFR 46.304.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c).
+
+**Note**: There _may be more than one definition per term_, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized. 
+
+1.  [Minimal Risk (for Prisoner Research under Subpart C)](https://policymanual.nih.gov/3014-001#M)
+2.  [Prisoner](https://policymanual.nih.gov/3014-001#P)
+3.  [Prisoner Representative](https://policymanual.nih.gov/3014-001#P)
+4.  [Secretary](https://policymanual.nih.gov/3014-001#S)
+
+### E. Responsibilities and Requirements
+
+1.  **Principal Investigator (PI)/Lead Site Investigator Responsibilities**
+    1.  The NIH Principal Investigator (PI)/Lead site investigator may not initiate research that enrolls prisoners, or anticipates subjects will become prisoners, unless IRB and OHRP approval have been obtained in accordance with this policy.
+    2.  The NIH PI/Lead site investigator must provide sufficient information in the protocol for the IRB to determine that the requirements under 45 CFR 46.305 and 45 CFR 46.306 are met.
+    3.  The NIH PI/Lead Site Investigator is responsible for promptly notifying the Office of IRB Operations (IRBO) if a subject becomes a prisoner during the course of a human research study not previously approved for inclusion of prisoners.
+        1.  All research interactions and interventions with, and obtaining identifiable private information about, the now-incarcerated prisoner-subject, must be suspended immediately until the requirements of subpart C have been satisfied, except as noted below in [_E.1.c.II_](#E.1.c.II) below. (See OHRP Guidance – Prisoner Involvement in Research (May 23, 2003))
+        2.  In special circumstances in which the NIH PI/Lead Site Investigator asserts that it is in the best interests of the subject to remain in the research study while incarcerated, the NIH PI/Lead Site Investigator must promptly notify IRBO and obtain permission from the IRB chair to continue activities necessary to assure the safety and welfare of the now prisoner-subject until full review by the convened board to determine the requirements of Subpart C are satisfied, or that research interactions with the now prisoner-subject must cease.
+            1.  The NIH PI/Lead Site Investigator must also submit an modification for review by the convened IRB that requests permission for the prisoner-subject to remain on the study. The modification must include any additional safeguards and changes to procedures (if any) needed in order for the now-prisoner-subject to remain on the research as consistent with this policy.
+        3.  However, even under the circumstances in [_E.1.c.II_](#E.1.c.II), no research activities involving the prisoner-subject may take place prior to IRB approval and receipt of a letter of authorization from OHRP except for those necessary for the welfare or safety of the subject.
+    4.  When informed consent is waived or altered, the NIH PI/Lead Site Investigator is responsible to ensure that prisoner-subjects are clearly informed in advance that participation in the research will have no effect on their parole, if such notification is relevant. (45 CFR 46.305(a)(6)).
+2.  **NIH IRB Responsibilities**
+    1.  In addition to meeting the requirements for IRB composition in 45 CFR 46.107, the NIH IRB must meet the following special composition requirements, as noted in 45 CFR 46.304 and quorum requirements, for research involving prisoners undergoing convened board review, including initial review, continuing review and review of modifications or reportable events: (_Policy 3014-201 IRB Membership and Composition_)
+        1.  A majority of the IRB (exclusive of prisoner representative members) shall have no association with the prison(s) involved, apart from their membership on the IRB.
+        2.  At least one member of the IRB shall be a prisoner representative.
+        3.  Attendance of the prisoner representative as a voting member in order for quorum to be met when the NIH IRB reviews research subject to Subpart C.
+    2.  In addition to the criteria for approval at 45 CFR 46.111 and, as applicable, 21 CFR 56.111, the NIH IRB is responsible for the review and approval of research that meets the regulatory criteria in Subpart C. This includes documentation of the required findings at 45 CFR 46.305(a), and that the research falls within one of the permissible categories at 45 CFR 46.306(a)(2), or under the Secretarial waiver for certain types of epidemiological research further described in section [_E.2.b.II_](#E.2.b.II) below. (_Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research_)
+        1.  The NIH IRB(s) is responsible for applying additional safeguards for the protection of prisoners, including when reviewing research involving prisoners who may be under constraints because of their incarceration which could affect their ability to make a truly voluntary and uncoerced decision whether or not to participate in research.
+        2.  As of June 20, 2003, the Secretary granted a waiver of the applicability of 45 CFR 46.305(a)(1) and 46.306(a)(2) in order to allow for the conduct or support of important and necessary epidemiologic research on prisoners that meets specific criteria (e.g., epidemiological research related to chronic diseases, injuries, and environmental health), provided that these studies meet the following criteria: (See 68 Fed. Reg. 36929 (Jun. 20, 2003))
+            1.  Present no more than minimal risk and no more than inconvenience to the prisoner-subjects, and
+            2.  Prisoners are not the particular focus of the research.
+            3.  The NIH IRB must review the research subject to a waiver under Subpart C and document all other required findings under HHS regulations at 45 CFR 46.305(a)
+    3.  Upon receipt of the PI's report that a previously enrolled research subject has become a prisoner, if the research has not been previously approved for the enrollment of prisoners, and the PI wishes to have the prisoner-subject continue to participate in the research, the IRB must promptly re-review the proposal in accordance with the requirements of Subpart C.
+        1.  Further, for the subject to remain in the research pending review by the convened board, the IRB Chair must review requests by the NIH PI/Lead Site Investigator and determine that it is in the best interest of the prisoner-subject to continue on the research (see [_E.1.c.II_](#E.1.c.II) above), until the requirements of Subpart C are satisfied, or until it is decided by the IRB that Subpart C is not met and the prisoner-subject must be withdrawn.
+3.  **Office of IRB Operations (IRBO) Responsibilities**
+    1.  The IRBO is responsible for ensuring that the prisoner representative meets the requirements of 45 CFR 46.304 and notifying OHRP regarding any change in the NIH IRB roster by the addition of a prisoner representative. (See Policy 3014-201 IRB Membership and Composition.)
+    2.  When the NIH IRB is reviewing research involving prisoners, the IRBO is responsible for ensuring the quorum requirements at [_E.2.a_](#E.2.a) above have been met.
+    3.  The IRBO is responsible for sending a copy of the research proposal along with a certification letter, signed by the NIH Institutional Official, to OHRP in order to certify to the Secretary that the NIH IRB provided its approval of research involving prisoners and has fulfilled its duties under 45 CFR 46.305, including certifying to OHRP that an appropriately constituted IRB panel has reviewed the proposal, and that all required findings have been documented by the IRB.
+    4.  If a subject becomes a prisoner during the course of a human research study not previously approved for inclusion of prisoners, the IRBO must send a certification to OHRP and wait for a letter of authorization in reply. Research activities involving prisoners may not continue until OHRP issues written approval of the study to NIH, except as noted in [_E.2.c.I_](#E.2.c.I) above.
+
+### F. References
+
+1.  **Federal Regulation and Guidance:**
+
+HHS: [45 CFR 46](https://www.ecfr.gov/cgi-bin/text-idx?m=06&d=22&y=2020&cd=20200619&submit=GO&SID=bcb56934f6da4a323bd2a8454034c136&node=pt45.1.46&pd=20200522); [45 CFR 46 Subpart C](https://www.ecfr.gov/cgi-bin/text-idx?m=06&d=22&y=2020&cd=20200619&submit=GO&SID=bcb56934f6da4a323bd2a8454034c136&node=pt45.1.46&pd=20200522#sp45.1.46.c) (46.301 – 46.306);
+
+FDA: [21 CFR 56.111](https://www.ecfr.gov/cgi-bin/text-idx?SID=09997dd341d4441b4a09cebdbaf87dad&mc=true&node=pt21.1.56&rgn=div5#se21.1.56_1111)
+
+[61 Fed. Reg. 51531 (Oct. 2, 1996)](https://www.govinfo.gov/content/pkg/FR-1996-10-02/pdf/96-24968.pdf) - [_Waiver of Informed Consent Requirements in Certain Emergency Research_](https://www.govinfo.gov/app/details/FR-1996-10-02/96-24968)
+
+[68 Fed. Reg. 36929 (Jun. 20, 2003)](https://www.govinfo.gov/content/pkg/FR-2003-06-20/pdf/03-15580.pdf) - [_Waiver of the Applicability of Certain Provisions of Department of Health and Human Services Regulations for Protection of Human Research Subjects for Department of Health and Human Services Conducted or Supported Epidemiologic Research Involving Prisoners as Subjects_](https://www.gpo.gov/fdsys/pkg/FR-2003-06-20/pdf/03-15580.pdf)
+
+2.  **NIH Policy:**
+
+[Policy 3014-201 IRB Membership and Composition](https://policymanual.nih.gov/3014-201)
+
+[Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research](https://policymanual.nih.gov/3014-204)
+
+3.  **Guidance:**
+
+[OHRP Guidance – Prisoner Involvement in Research (May 23, 2003)](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/prisoner-research-ohrp-guidance-2003/index.html)
+
+[OHRP Prisoner Research FAQs](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/faq/prisoner-research/index.html)
+
+[Informed Consent Requirements in Emergency Research (OPRR Letter, 1996)](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/emergency-research-informed-consent-requirements/index.html)

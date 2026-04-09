@@ -1,0 +1,142 @@
+Name: NIH Policy 3014-302
+Purpose: reference
+Description: Subject recruitment and compensation requirements, including protocol and consent disclosure expectations.
+URL: https://policymanual.nih.gov/3014-302
+Selection Rule: (none)
+Token Count: 5096
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 21
+
+---
+
+## 3014-302 - Subject Recruitment and Compensation
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 6/03/2020 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 12/06/2023 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 12/08/2025 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the requirements for research subject recruitment and compensation. Upon implementation, this policy fully supersedes SOP 13- Recruitment, Selection and Compensation of Research Subjects. **Partial Revision 12/06/2023:** This revision adds the ability to use and compensate peer recruiters when the NIH IRB is the reviewing IRB.
+2.  **Filing Instructions:**
+    -   **Insert:** NIH Manual Chapter 3014-302, dated 06/03/2020
+    -   **Implementation Date:** 08/03/2020, **Partial Revision date** 12/06/2023
+
+**PLEASE NOTE:** For information on:
+
+-   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+-   Content of this chapter, contact the issuing office listed above.
+-   NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+1.  Describe the requirements for research subject recruitment to assure that recruitment will promote the fair and equitable selection of subjects and to ensure scientific validity of the research.
+2.  Describe the requirements for research subject compensation to assure that compensation will minimize the possibility of coercion or undue influence.
+3.  Describe the NIH policy position with regard to receipt or payment of finder’s fees (recruitment incentives) by NIH investigators.
+
+### B. Scope
+
+1.  This policy applies to NIH investigators when conducting human subjects research at an NIH site, regardless of whether the NIH Institutional Review Board (IRB) or an external IRB is the Reviewing IRB.
+2.  This policy applies to NIH investigators when conducting human subjects research at a non-NIH site, when the NIH IRB is the Reviewing IRB.  
+3.  This policy applies to non-NIH investigators when the NIH IRB is the reviewing IRB.
+4.  This policy applies to the NIH IRB.
+5.  This policy does not address the reimbursement of travel, lodging, or _per diem_ for research subjects. Consult your Institute, Center or Office (ICO) about any ICO policy regarding reimbursement for travel, lodging or _per diem_.
+
+### C. Policy
+
+1.  Recruitment of subjects will not commence prior to IRB approval of the research protocol.
+2.  The plan for recruitment of subjects will promote the fair and equitable selection of subjects.
+3.  The plan for recruitment of research subjects will be described in the protocol and the relevant recruitment material will be provided to the IRB for review.
+4.  For FDA-regulated research, recruitment materials will meet the requirements specified in [E.1.a.II.iii.](#E.1.a.II.iii) below.
+5.  NIH investigators, or their supporting ICOs, are not permitted to provide or receive finder’s fees (e.g., payment in exchange for referrals of individual prospective research subjects, which are sometimes referred to as “recruitment incentives”), from any source in connection with research at NIH, except as described below:
+    1.  Individuals or entities may be compensated for recruitment services, consistent with terms of the contract and/or appropriation rules.
+    2.  The NIH IRB may approve incentive payments for subject-driven recruiting, known as “peer recruitment,” on a protocol by protocol basis. (See _Guideline for Payment to Participants to Recruit Their Peers to the Study (Peer Recruiters)_.
+6.  No NIH investigator may receive recruitment bonuses from study Sponsors (e.g., a bonus payment for achieving a subject recruitment threshold).
+7.  When applicable, the compensation plan, including the method, the timing of distribution, and the amounts for compensation of research subjects must be described in both the protocol and the informed consent form(s). Alternatively, both the protocol and the informed consent form(s) must describe that compensation will not be provided.
+8.  The IRB will review recruitment materials to determine whether they are approvable under federal regulation and policy, including NIH policy. (45 CFR 46.111 and 46.116, and as applicable, 21 CFR parts 50.20 and 56.111)
+9.  The IRB will review the plan for compensation, including the method, the timing of distribution, and the amounts for compensation of research subjects, consistent with NIH policy, to assure that it is not coercive and does not present undue influence to research subjects. (45 CFR 46.111 and 46.116, and as applicable, 21 CFR parts 50.20 and 56.111)
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: **[NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)**
+
+Note: there may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized. 
+
+1.  [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+    
+2.  [Recruitment Materials](https://policymanual.nih.gov/3014-001#R)
+    
+3.  [Recruitment Methods](https://policymanual.nih.gov/3014-001#R)
+    
+
+### E. Responsibilities and Requirements
+
+1.  **Principal Investigator (PI) Responsibilities Regarding Recruitment and Subject Correspondence:**
+    1.  Regarding recruitment and subject correspondence, the NIH PI must:
+        1.  Include a description of the recruitment plan that is fair and equitable in the protocol (e.g., intended populations and cohorts, and methods for recruitment).     
+        2.  Prospectively submit all recruitment materials to the Reviewing IRB for review and approval (e.g., either at the time of initial submission or as a modification). 
+            1.  Recruitment materials directed at prospective subjects must be limited to the information needed to determine subject eligibility and interest in participation.
+            2.  Recruitment materials must not:
+                -   State or imply a certainty of a favorable outcome or other benefits beyond what is described in the protocol and in the consent(s);
+                -   Include exculpatory language; or
+                -   Emphasize payment or the amount to be paid (e.g., use of larger or bold type font).
+            3.  Regarding FDA-regulated research, recruitment materials must comply with the following requirements:
+                -   State that the test article (drug, biologic, or device) is investigational;
+                -   Not make claims, either explicitly or implicitly, that the test article is safe or effective;
+                -   Not make claims that the test article is known to be equivalent or superior to any other drug, biologic, or device;
+                -   Not promise “free medical treatment or care”, when the intent is only to inform subjects that they will not be charged for participating in the study; and
+                -   Other best practices described in the FDA information sheet, _Recruiting Study Subjects - Guidance for Institutional Review Boards and Clinical Investigators_.)
+            4.  When posting on a clinical trial website (e.g., _clinicaltrials.gov_ or NIH _Search the Studies_):
+                -   The NIH PI does not need to seek IRB review or approval when the recruitment material of an IRB-approved study only includes basic descriptive information, (i.e., title, purpose of the study, protocol summary, basic eligibility criteria, study site location(s), and how to contact the study site). (See OHRP guidance on _IRB Review of Clinical Trial Websites_.)
+                -   The NIH PI must submit recruitment materials to the IRB for review and approval when the materials include any of the following: a description of clinical trial risks, potential benefits, or solicitation of identifiable private information from, or about, potential human subjects.
+            5.   The NIH PI does not need to seek IRB review or approval of media releases, statements or interviews.
+2.   **Principal Investigator (PI) Responsibilities Regarding Compensation of Research Subjects:**
+    1.  Regarding compensation of subjects, the NIH PI must:
+        1.  When applicable, ensure that the plan for compensation is described in both the protocol and the informed consent form(s), and includes the method, the timing of distribution, and the amounts for compensation of research subjects. Alternatively, both the protocol and the informed consent form(s) must describe that compensation will not be provided.
+        2.  Not state or imply to subjects that compensation is a “benefit” of the research.
+        3.  Eliminate or reduce, to the extent possible, undue influence or coercion, regarding the amount of payment, timing and disbursement of compensation, (45 CFR 46.111and 46.116, and as applicable, 21 CFR parts 50.20 and 56.111) and:
+            1.  Whenever possible, compensation must accrue over the course of the study and be provided to participants in a prorated manner (e.g., rather than being made in a single payment at the end of the study);
+            2.   Any payment made for completing the study is reasonable and not so large so as to entice the subject to enroll, or continue in the study when they might have otherwise withdrawn;
+            3.  Subjects that withdraw prior to completion of the study should receive compensation for study activities that have been completed;
+            4.  Compensation for NIH research should be based on time and inconvenience to the participant;
+            5.  The compensation of research subjects must be applied fairly to all study subjects in the same protocol. For example, when a study enrolls both affected individuals and healthy volunteers and there is no prospect of direct benefit to either cohort, the subjects will be offered compensation based on the same parameters, and compensation amounts will not be adjusted on an individual basis or due to cohort assignment; 
+            6.  Individual subjects may decline to receive compensation for participation in research and still participate in the study.
+        4.  For FDA-regulated research, subjects cannot be compensated via a coupon or a discount on the purchase price of the test article once it is approved for marketing. 
+        5.  Ensure that subject compensation is consistently described in the informed consent form, protocol, and recruitment materials, including when applicable, that there is no compensation for participation.
+3.  **Institutional Review Board (IRB) Responsibilities Regarding Recruitment:**
+    1.  The IRB must review the recruitment plan to assure that recruitment will promote the fair and equitable selection of subjects, consistent with the requirements specified at [C.8.](#C.8) above.
+    2.  The IRB must review and ensure consistency and completeness between the recruitment plan described in the protocol and the recruitment materials submitted.
+    3.  In addition, when reviewing FDA-regulated research, the IRB will ensure that recruitment materials meet the requirements described in [E.1.a.II.iii.](#E.1.a.II.iii) above.
+    4.  The IRB must ensure that recruitment materials do not:
+        1.  State or imply a certainty of favorable outcome or other benefits beyond what is outlined in the protocol and consent document(s).
+        2.  Include exculpatory language.
+        3.  Emphasize payment or the amount to be paid (e.g., use of larger or bold type font).
+    5.  When serving as the Reviewing IRB for multi-site research, the NIH IRB(s) will approve template recruitment materials under the main protocol and allow each participating site to only enter site-specific institutional  information (e.g., contact telephone number) without additional approval when the IRB explicitly anticipates the addition of such information (e.g., a fill-in-the blank field).
+    6.  The IRB must review all template recruitment correspondence to research subjects.
+4.  **Institutional Review Board (IRB) Responsibilities Regarding Compensation:**
+    1.  The IRB must review the plan for compensation in the protocol and the description of the plan in the informed consent form(s) to ensure that it is not coercive and will not unduly influence subjects to enroll, or continue participation when they would otherwise have withdrawn, consistent with requirements specified at [C.9.](#C.9) above.
+    2.  The IRB must determine that:
+        1.  The amount of payment and method and timing of disbursement is neither coercive nor presents undue influence (e.g., payment should ideally be prorated for completed visits rather than a one-time payment for completing the entire study).
+        2.  Any payment made for completing the study is reasonable and not so large as to unduly influence subjects to stay in the study when they may have otherwise withdrawn.
+        3.  All information regarding payment, including amount and payment schedule, is included in the consent form(s) and is consistent with the protocol.
+
+### F. References
+
+1.  **Federal Regulation:**  
+    HHS: [46 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)  
+    FDA: 21 CFR parts [50](https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?CFRPart=50&showFR=1&subpartNode=21:1.0.1.1.20.4) and [56](https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?CFRPart=56)
+2.  **NIH Policy:**  
+    [Policy 3014-301 Informed Consent](https://policymanual.nih.gov/3014-301)
+3.  **Guidance and Tools:**  
+    [FDA information sheet: Payment and Reimbursement to Research Subjects – Guidance for Institutional Review Boards and Clinical Investigators](https://www.fda.gov/RegulatoryInformation/Guidances/ucm126429.htm) (January 2018)  
+    FDA information sheet: [Recruiting Study Subjects- Guidance for Institutional Review Boards and Clinical Investigators](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/recruiting-study-subjects) (January 1998)  
+    OHRP Guidance: [IRB Review of Clinical Trial Websites](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/clinical-trial-websites/index.html) (2005)  
+    NIH: [Search the Studies](https://clinicalstudies.info.nih.gov/)  
+    NIH: [clinicaltrials.gov](https://clinicaltrials.gov)  
+    [Guideline for Payment to Participants to Recruit Their Peers to the Study (Peer Recruiters)](https://irbo.nih.gov/documents/363/302-Guideline-Payment_to_Peer_Recruiters_11.28.2023.pdf) (Document Download)

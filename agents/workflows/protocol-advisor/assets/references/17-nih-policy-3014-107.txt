@@ -1,0 +1,126 @@
+Name: NIH Policy 3014-107
+Purpose: reference
+Description: Privacy and confidentiality requirements, including Privacy Act and Certificate of Confidentiality expectations for protocols and consent.
+URL: https://policymanual.nih.gov/3014-107
+Selection Rule: (none)
+Token Count: 5829
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 17
+
+---
+
+## 3014-107 - Privacy and Confidentiality
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 5/22/2019 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 6/07/2021 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 6/20/2024 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the NIH requirements for privacy and confidentiality and ensures that the National Institutes of Health’s (NIH) Intramural Research Program (IRP) research activities comply with Federal standards for privacy and confidentiality in the collection, use and disclosure of research subjects’ information). **Partial Revision 6/07/2021:** This partial revision clarifies the meaning of privacy of subjects and their interest in controlling the access by others to themselves during research procedures. Section E.1.c. was revised to describe privacy in the context of protections an investigator would describe in the protocol and consent. Section E.1.d. was revised to split confidentiality protections away from privacy protections that would be described in the protocol and the consent. 
+2.  **Filing Instructions:**
+    
+    -   **Insert:** NIH Manual Chapter 3014-107, dated 05/22/2019, Partial Revision: 06/07/2021 
+    -   **Implementation Date:** 11/16/2020
+    
+    **PLEASE NOTE:** For information on:
+    -   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy)
+    -   Content of this chapter, contact the issuing office listed above.
+    -   NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx) 
+
+### A. Purpose
+
+1.  Ensure that the National Institutes of Health’s (NIH) Intramural Research Program (IRP) research activities comply with Federal standards for privacy and confidentiality in the collection, use and disclosure of research subjects’ information.
+
+### B. Scope
+
+1.  This policy applies to the following individuals: 
+    1.  NIH Investigators. Since NIH policy requires that all study team members conducting human subjects research (HSR) under a protocol be listed as study investigators, the term investigators used within this policy includes these study team members.
+    2.  Non-NIH Investigators are subject to this policy when they are otherwise subject to the NIH privacy and confidentiality standards (e.g., by agreement or through certain access to, or use of, NIH-protected data).
+
+### C. Policy
+
+1.  It is the policy of the NIH Human Research Protection Program (HRPP) to maximize research subjects’ privacy and to maintain the confidentiality of their personally identifiable information.  In its human research and record-keeping activities, the NIH HRPP follows the requirements of the Privacy Act of 1974 (5 U.S.C. 552a). 
+2.  The NIH follows federal law provided by the Privacy Act of 1974 (5 U.S.C. 552a). This Act includes procedures for: 1) Protecting records that can be retrieved by personal identifiers such as a name, social security number, or other identifying number or symbol, and 2) Persons to access their identifiable records and to request correction(s) of these records.
+    1.  In implementing the requirements of the Privacy Act, the NIH follows the Department of Health and Human Services (HHS) Privacy Act Regulations, 45 CFR Part 5b. Aside from the limited categories of disclosures permitted by 5 U.S.C. 552a(b), the Privacy Act prohibits disclosure of personally identifiable records without the written consent of the individual(s) to whom the records pertain. NIH Privacy Act System of Records Notices #09-25-0099 (Clinical Research: Patient Medical Records) and #09-25-0200 (Clinical, Basic and Population-based Research Studies of the National Institutes of Health), specify permissible uses and disclosures of the records covered by those systems.  NIH has adopted Required NIH Language for inclusion in all NIH Institutional Review Board (IRB) approved consent documents that addresses research subjects' rights under the Privacy Act.
+3.  To further protect the privacy of research participants enrolled in research conducted by  NIH investigators, or in collaboration with NIH investigators, the NIH IRP has been issued a Certificate of Confidentiality for applicable research pursuant to Section 301(d) of the Public Health Service Act (42 U.S.C. 241(d)), as further explained in the [_Appendix 1 - DDIR Desk to Desk Memo regarding IRP implementation of Certificates of Confidentiality_](#Appendix) and the NIH Policy on Issuance on Certificates of Confidentiality.  NIH has adopted Required NIH Language for inclusion in all NIH IRB approved consent documents that explains the privacy protections afforded by the Certificate of Confidentiality.
+4.  In addition, under Section 301(f) of the Public Health Service Act (42 U.S.C. 241(f)), the Secretary may exempt from disclosure under the Freedom of Information Act (FOIA) biomedical information about a research participant that is gathered or used during the course of biomedical research if, A) the participant is identified; or B) there is at least a very small risk, as determined by current scientific practices or statistical methods, that some combination of the information, the request, and other available data sources could be used to deduce the identity of a participant.
+5.  When the NIH is the Reviewing IRB it will ensure that the privacy and confidentiality protections outlined in the protocol and the informed consent document are consistent with 45 CFR 46 requirements.
+6.  Privacy Education – New NIH staff must complete required Privacy Awareness training before establishing NIH accounts. NIH staff are required to complete annual Privacy Refresher training, consistent with the requirements of the NIH Privacy Program.
+7.  The NIH is not subject to the HIPAA Privacy Rule. NIH Principal Investigators (PIs) should not agree to any HIPAA terms, including the execution of Business Associate Agreements, when collaborating with other institutions and should seek guidance from the NIH Office of the General Counsel in advance if such requests are posed to NIH PIs.
+    1.  When NIH is the Reviewing IRB, it may review protocols for institutions that are subject to HIPAA, however the NIH Reviewing IRB may not act as a Privacy Board, consistent with [E.4.b.I.](#E.4.B.I) below.
+
+### D. Definitions
+
+Office of Human Subjects Research Protections (OHSRP) has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+**Note**: There _may be more than one definition per term_, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized. 
+
+Definitions demarcated with (_Pre-2018 Common Rule definition_) apply to research approved (or deemed to be exempt or for which no IRB review was required under the regulations) prior to the effective date of the 2018 Common Rule (January 21, 2019).  Definitions demarcated with (_2018 Common Rule definition_) apply to all research approved by an IRB (or deemed to be exempt or for which no IRB review was required under the regulations) on or after January 21, 2019 and to research transitioned to the 2018 requirements in accordance with HRPP policy.
+
+1.  [Certificate of Confidentiality](https://policymanual.nih.gov/3014-001#C) 
+2.  [Confidentiality](https://policymanual.nih.gov/3014-001#C) 
+3.  [HIPAA Privacy Rule](https://policymanual.nih.gov/3014-001#H) ([45 CFR 164.508(c)](https://www.ecfr.gov/cgi-bin/text-idx?SID=416a87fbfd02c19ab67110c15fc59e9a&mc=true&node=pt45.2.164&rgn=div5#se45.2.164_1508)) 
+4.  [Identifiable Biospecimen (2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#I)
+5.  [Identifiable Private Information (2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#I)
+6.  [Identifiable Sensitive Information (ISI)](https://policymanual.nih.gov/3014-001#I) 
+7.  [Individually identifiable (Pre-2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#I) 
+8.  [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+9.  [Personally Identifiable Information (PII)](https://policymanual.nih.gov/3014-001#P) 
+10.  [Private Information (2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#P) 
+11.  [Private Information (Pre-2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#P) 
+12.  [Relying Institution](https://policymanual.nih.gov/3014-001#R)
+13.  [Required NIH Language](https://policymanual.nih.gov/3014-001#R)
+14.  [Reviewing IRB](https://policymanual.nih.gov/3014-001#R)
+
+### E. Responsibilities and Requirements
+
+1.  Investigators
+    1.  NIH Investigators are responsible for identifying and complying with the requirements of the Privacy Act of 1974 ([_C.1._](#C1) and [C.2.](#C2) above) and the terms of the NIH IRP Certificate ([_C.3._](#C3) above) according to federal regulations, and the policies of the NIH Privacy Program.
+        1.  Non-NIH Investigators who are also subject to the NIH privacy and confidentiality standards, are responsible for identifying and complying with the requirements of the Privacy Act and the terms of the NIH IRP Certificate according to federal regulations, and the policies of the NIH Privacy Program.
+    2.  The NIH Principal Investigator (PI) is responsible to ensure that privacy and confidentiality protections are described in the protocol and research informed consent document when the research is being performed at an NIH site or the information will be entered into an NIH Privacy Act system.
+    3.  In addition to applying requirements described in item E.1.a above, NIH PIs will identify in the protocol and research informed consent document the procedures for protecting the privacy of research participants. In this context, privacy refers to subjects and their interest in controlling the access by others to themselves, (e.g. how investigators will ensure that consent and procedures are conducted in a quiet environment, and only include appropriate parties).
+    4.  NIH PIs will identify in the protocol and research informed consent document the procedures for protecting the confidentiality of subject data, consistent with this policy, this includes, for example, access to medical records for the purpose of subject identification (recruitment) or screening, collection of Personally Identifiable Information (PII)/Identifiable Sensitive Information (ISI) for the purposes of the research, and collection or use of human biospecimens with PII attached.
+    5.  Investigators are responsible for following the plan described in the protocol for protecting the confidentiality of information and data provided by research subjects.
+    6.  For NIH consent forms: The terms of the Privacy Act of 1974 and the NIH Certificate is addressed in the Required NIH Language in the informed consent document (see _Consent Form Templates_ for Required NIH Language). Neither PIs nor the IRB will revise the Required NIH Language in the NIH informed consent document without prospective review and approval by OHSRP and the NIH Office of the General Counsel (OGC).  This prospective review and approval is required even when a non-NIH IRB requests modifications to the Required NIH Language in the NIH consent form.
+2.  NIH Privacy Program within the Office of Management Assessment (OMA)
+    1.  The NIH Privacy Program establishes policies for ensuring information collected and stored by the NIH complies with Privacy Act requirements. In addition, the NIH Privacy Program is responsible for managing and mitigating privacy breaches within the NIH and collaborates with IC Privacy Coordinators across the NIH to prevent and manage situations where persons other than authorized users have access, or potential access, to personally identifiable information (PII).
+    2.  The NIH Privacy Program and the IC Privacy Coordinators are responsible for institutional compliance with the Privacy Act of 1974. When a non-routine Privacy Act issue arises, NIH staff may consult with the IC Privacy Coordinator regarding appropriate procedures.
+3.  OHSRP
+    1.  The OHSRP is responsible for providing guidance on the implementation of the Certificate in the NIH IRP.
+4.  NIH IRB
+    1.  The NIH IRB is responsible for reviewing and approving the privacy and confidentiality protections outlined in the protocol and the informed consent document to ensure that they are consistent with the requirements specified in [C.5.](#C5) above, as well as to satisfy the regulations at 45 CFR 46. 
+    2.  When an NIH IRB is the Reviewing IRB, this review of privacy and confidentiality protections will be included as part of the IRB review of NIH protocols and informed consent documents.
+        1.  Per the terms of the NIH reliance (authorization) agreement, the NIH IRB will not act as a Privacy Board for the HIPAA Privacy Rule (45 CFR 164.508(c)) for the Relying institution when they are the Reviewing IRB as specified in [C.7.](#C7) above. (_Policy 3014-105 IRB Reliance_)
+    3.  When an NIH IRB is the Reviewing IRB, it will review the protocol and informed consent document to determine whether adequate procedures are in place to protect the confidentiality of research participants information. Moreover, the NIH IRB will assure that confidentiality protections provided by the PI are consistent with the Common Rule (45 CFR 46), NIH requirements (for NIH consent documents), and are commensurate with the degree of risk of harm from improper disclosure.
+    4.  For NIH consent forms: The Reviewing IRB may require additional confidentiality language in the research informed consent document, as it deems appropriate, so long as it is not inconsistent with the Required NIH Language for privacy and confidentiality or NIH policy.
+    5.  When the NIH IRB is the Reviewing IRB, it will not modify or change approved HIPAA authorization language, as applicable, that has been provided by the Relying Institution in the research informed consent document, consistent with [E.4.b.1.](#E.4.B.I) above. The IRB will also assure that adequate procedures are in placed to protect the privacy of research participants. Additionally, the NIH IRB will assure that confidentiality protections provided by the PI are consistent with the Common Rule (45 CFR 46), and commensurate with the degree of risk of harm from improper disclosure.
+
+### F. References
+
+1.  Federal Regulation:
+    -   HHS:   [45 CFR 46](https://www.ecfr.gov/cgi-bin/text-idx?SID=f0df37d0abaf6d0a163f87c6fa387a7e&mc=true&node=pt45.1.46&rgn=div5) and [45 CFR 164](https://www.ecfr.gov/cgi-bin/text-idx?SID=416a87fbfd02c19ab67110c15fc59e9a&mc=true&node=pt45.2.164&rgn=div5)
+    -   FDA:   21 CFR parts [50](https://www.ecfr.gov/cgi-bin/text-idx?SID=416a87fbfd02c19ab67110c15fc59e9a&mc=true&node=pt21.1.50&rgn=div5), [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=416a87fbfd02c19ab67110c15fc59e9a&mc=true&node=pt21.1.56&rgn=div5)
+    -   [Privacy Act of 1974, 5 U.S.C. 552a](https://uscode.house.gov/view.xhtml?req=\(title:5%20section:552a%20edition:prelim)
+    -   [Section 301 of the Public Health Service Act (42 U.S.C. 241)](https://www.govinfo.gov/content/pkg/COMPS-8773/pdf/COMPS-8773.pdf)
+2.  NIH Policy:
+    -   [NIH Policy on Issuance of Certificates of Confidentiality](https://grants.nih.gov/grants/guide/notice-files/NOT-OD-17-109.html)
+    -   NIH Privacy Act System of Records Notices:
+        1.  ​​​​​​​[#09-25-0099, Clinical Research Patient Medical Records, HHS/NIH/CC](https://www.hhs.gov/foia/privacy/sorns/nih-sorns.html?language=en)
+        2.  [#09-25-0200, Clinical Basic and Population-based Research Studies of the National Institutes of Health (NIH), HHS/NIH/OD](https://www.hhs.gov/foia/privacy/sorns/nih-sorns.html?language=en)
+    -   [​​​​​​​​​​​​​​​​​​​​​](https://www.hhs.gov/foia/privacy/sorns/nih-sorns.html?language=en)[Policy 3014-105 IRB Reliance](https://policymanual.nih.gov/3014-105)
+3.  NIH Resources:
+    -   [Certificates of Confidentiality](https://grants.nih.gov/policy/humansubjects/coc.htm)
+    -   [NIH Privacy Program](https://oma.od.nih.gov/DMS/Pages/Privacy-Program.aspx)
+    -   [NIH IC Privacy Coordinators](https://oma.od.nih.gov/DMS/Pages/Privacy-Program-Privacy-Coordinators.aspx)
+    -   [​​​​​​​](https://oma.od.nih.gov/DMS/Pages/Privacy-Program-Privacy-Coordinators.aspx)[NIH IRB Consent Form Templates](https://irbo.nih.gov/confluence/display/ohsrp/Consent+Templates+and+Guidance)
+
+### Appendix 1
+
+[Appendix 1 - DDIR Desk to Desk Memo regarding IRP implementation of Certificates of Confidentiality dated 10-13-2017](https://policymanual.nih.gov/chapter/attachment/download/5855) (Document Download)

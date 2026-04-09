@@ -1,0 +1,167 @@
+Name: NIH Policy 3008
+Purpose: reference
+Description: NIH human biospecimen policy for storage, management, and use of biospecimens in intramural research.
+URL: https://policymanual.nih.gov/3008
+Selection Rule: (none)
+Token Count: 9013
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 13
+
+---
+
+## 3008 - NIH Human Biospecimen Program
+
+**Issuing Office:** OD/OIR **Phone:** [(301) 451-7764](tel:\(301\) 451-7764)
+
+**Issuing Office Email:** [\[email protected\]](/cdn-cgi/l/email-protection#88c9c1dac1c7c8e7eca6e6e1e0a6efe7feb7fbfdeae2edebfcb5c5cba8bbb8b8b0a8a5a8c6c1c0a8c0fde5e9e6a8cae1e7fbf8edebe1e5ede6a8d8fae7effae9e5a8)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 8/04/2023 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:**  This new policy describes the requirements of the National Institutes of Health (NIH) Intramural Research Program (IRP) to oversee, and store, track, and report human biospecimens and to submit an annual NIH Human Biospecimen Storage and Tracking Report to U.S. Congress (hereafter also referred to as the NIH Annual Report to Congress), in compliance with the NIH Reform Act of 2006.
+2.  **Filing Instructions:**
+    -   **Remove**:  N/A
+    -   **Insert**:  NIH Policy Manual, Chapter 3008, dated 08/04/2023
+3.  **PLEASE NOTE:**  For information on:
+    -   Content of this chapter contact the issuing office listed above.
+    -   NIH Policy Manual, contact the Division of Compliance Management, OMA on 301-496-4606, [\[email protected\]](/cdn-cgi/l/email-protection#3a4a5556535943575b544f5b567a545352145d554c), or: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx).
+
+### A. Purpose
+
+This Manual Chapter establishes the requirements for the NIH Intramural Research Program (IRP) as executed by NIH offices (including Institutes and Centers) and staff to oversee NIH intramural human biospecimens.  This includes the responsibility of stewards and others to store, track, and report to NIH on an annual basis about human biospecimens maintained within NIH IRP facilities or maintained on behalf of the IRP.  Further, the Manual Chapter facilitates NIH’s compliance with the NIH Reform Act of 2006 ([42 U.S.C. 283a(c](https://www.govinfo.gov/content/pkg/USCODE-2020-title42/html/USCODE-2020-title42-chap6A-subchapIII-partA-sec283a.htm))).  The purpose of this policy is also to promote ethical and best practices in IRP storage and tracking of human biospecimens, facilitating the ability of NIH to maintain, use, and share valuable resources.
+
+### B. Scope
+
+This Manual Chapter pertains to human biospecimens maintained within IRP facilities or maintained on behalf of the IRP (referred to as “NIH maintained”).  Human biospecimens are blood, body fluids, cells, tissues, and other biological materials obtained from humans (see definitions in Section G).  While the responsibility discussed in this policy is shared by many, in particular stewards are required to store, track, and, on an annual basis, report human biospecimens in accordance with this policy.  As defined by this policy, a steward is typically a NIH Principal Investigator (PI) or occasionally a Lead Investigator reporting to a PI.  A PI becomes a steward when they acquire, store, or use human biospecimens for active research use under an assigned ZIA project number.  A steward may also be a person responsible for an NIH maintained human biospecimen collection (sometimes referred to as a biorepository) under an assigned ZIC number and being stored for possible future use.  Only the project lead for a collection with a ZIC or ZIA number becomes the steward and there is only one steward per human biospecimen collection.  On those occasions when a contractor has a ZIC number and is maintaining or managing NIH human biospecimens, the requirements outlined in this policy are applicable to the contractor.  See definition of Steward in Definitions Section for a description of ZIA and ZIC numbers.
+
+The following situations create human biospecimens that are subject to storing, tracking, and reporting by stewards under this policy:
+
+1.  Human biospecimens originally collected for patient care (i.e., clinical) or research purposes, whether they are stored in an identifiable or a de-identified manner (see definitions in Section G).
+2.  Human biospecimens collected from living or dead individuals.
+3.  Human biospecimens acquired from an NIH Core Facility or from an NIH collaborator.
+4.  Human biospecimens acquired from commercial vendors and non-commercial sources that consist of human fetal tissue (HFT), human fetal cells, human induced Pluripotent Stem Cells (hiPSC), or human Embryonic Stem Cells (hESCs). Any other human biospecimen (non-fetal and non-embryotic/pluripotent stem cells) from commercial vendors do not require reporting under this policy.
+
+### C. Background
+
+NIH is required by the NIH Reform Act of 2006 to report annually, through the Health and Human Services (HHS) Secretary, to Congress on how NIH human biospecimens are stored and tracked.  Through this Manual Chapter, the NIH Director, through the Deputy Director for Intramural Research (DDIR) and Institutes/Centers/Offices leadership (ICO), sets requirements for NIH storage and tracking of human biospecimens and requires NIH staff to gather and report specific information about human biospecimens.  The Office of Intramural Research (OIR), using the procedures outlined in **Appendix 1**, _NIH Intramural Research Program Human Biospecimen Guidelines_ (hereafter referred to as the Guidelines, which are incorporated by reference), is responsible for the administrative management of the annual reporting process in the IRP. Previously, researchers relied upon the Guidelines to understand both NIH policy and standard operating procedures.  This Manual Chapter provides the policy requirements and delineates roles and responsibilities for stewards and others, whereas the Guidelines (**Appendix 1**) addresses the required ICO and steward procedures for compliance and best practices.
+
+### D. Policy
+
+NIH human biospecimens are valuable agency research assets for which the proper management and stewardship is critical to maintain their value and public access ([NIH MC 1189](https://policymanual.nih.gov/1189)).  NIH ICOs and stewards of NIH human biospecimens must ensure that they manage human biospecimens according to requirements of this policy, procedures described in the Guidelines (**Appendix 1**), and that they participate in the OIR annual reporting process.  Further accounting and reporting may be required in certain circumstances.  Stewards may be assisted by knowledgeable NIH staff members in completing the requirements of this policy, but the steward retains the ultimate responsibility for compliance with this policy.
+
+1.  **Storing of Human Biospecimens**
+    1.  NIH ICOs and stewards of NIH maintained human biospecimens must ensure that Freezer Storage Facilities or individual freezers in ICO laboratories, adhere to the appropriate NIH policies and best practices for biorepository functionality, to include but not be limited to, the ability to receive, safely store, efficiently track, and appropriately use or share human biospecimens.
+    2.  Storage procedures of the ICO must facilitate within NIH and, as feasible, the broader scientific community the appropriate sharing of NIH maintained human biospecimens in accordance with as applicable law and policy. Examples of considerations for sharing may include the Privacy Act or permissions in a human subjects research informed consent document related to an Institutional Review Board (IRB) approved protocol.
+    3.  NIH stewards must also take into consideration the storage locations, such as whether the NIH human biospecimen could or likely contain infectious materials and a corresponding biosafety level.  Requests to store at a lower containment level would need NIH Institutional Biosafety Committee (IBC) approval.
+2.  **Tracking of Human Biospecimens**
+    1.  Each NIH steward of NIH maintained human biospecimens must use an in-house or ICO contracted inventory management system that is configurable, scalable, auditable, and that can accurately track the NIH human biospecimen collections that they manage.  The system used must be able to provide accurate complete reports and unique labels for human biospecimen consistent with industry standards.
+    2.  The final disposition of each NIH human biospecimen, whether it be exhaustion, sharing, or disposal, must be documented in the tracking system.
+3.  **Reporting of Human Biospecimens Annually in the NIH Intramural Data Base (NIDB)**
+    1.  Each steward of NIH maintained human biospecimens will be required to report on their collection(s) annually, through a process managed by OIR in the NIDB.  The report types are the NIDB Annual Report and, when applicable, the NIH Biospecimen Report.  The steward, or a knowledgeable staff member delegated to perform this task, will provide timely and accurate reporting about the storage and tracking of these collections.  The steward retains ultimate responsibility for the completion and accuracy of the report.
+    2.  Reports in NIDB will be routed to ICO representatives for approval, and then to OIR for collation and assessment.  Information from the NIDB may be used to draft the NIH Annual Report to Congress.
+4.  **Annual Reporting and additional requirements for Human Fetal Tissue, Human Fetal Cells, Human Embryonic Stem Cells, and Human Induced Pluripotent Stem Cells**
+    1.  Stewards of NIH maintained human biospecimens that include human fetal tissue or human fetal cells (see definitions in Section G), including those acquired commercially, will track this information consistent with this policy and will have additional compliance requirements, such as Investigator Attestation procedures.  (For more information, review the policy for the acquisition and use of human fetal tissue found in the OIR Sourcebook, [Policies and Procedures for the Use of Human Fetal Tissue (HFT) for Research Purposes in the Intramural Program at NIH](https://oir.nih.gov/sourcebook/ethical-conduct/special-research-considerations/policies-procedures-use-human-fetal-tissue-hft-research-purposes-intramural).
+    2.  Stewards of NIH maintained human biospecimens that include human embryonic stem cells (hESCs) or human induced pluripotent stem cells (hiPSCs), including those acquired commercially, will track this information consistent with this policy and will have additional compliance requirements, such as Investigator Attestation procedures. (For more information, review the policy for the acquisition and use of human stem cells found in the OIR Sourcebook, [Special Research Considerations](https://oir.nih.gov/sourcebook/ethical-conduct/special-research-considerations).)
+5.  **Oversight, Noncompliance, and Additional Requirements**
+    1.  Oversight of compliance with this Manual Chapter is managed by OIR.  Failure by ICOs or NIH stewards or staff to comply with this policy may result in corrective actions including as follows:
+        1.  Notification to Deputy Director of Intramural Research (DDIR) or ICO leadership of noncompliance with this Manual Chapter.
+        2.  Disciplinary action for noncompliance with this Manual Chapter, consistent with existing NIH Office of Human Resources policy and procedures, which may range from Letters of Reprimand to removal from Federal service.
+    2.  Human biospecimens maintained within NIH IRP facilities or maintained on behalf of the IRP must remain in the custody/control of NIH unless disposal or transfer is approved through appropriate ICO channels.  
+    3.  For NIH maintained human biospecimens that originate from human subjects research, NIH PIs and staff will comply with the regulations for the protection of human subjects in research ([45 CFR 46](https://www.govinfo.gov/content/pkg/CFR-2021-title45-vol1/pdf/CFR-2021-title45-vol1-part46.pdf), and as applicable, Food and Drug Administration regulations), as well as any IRB approved protocol and signed consent form, in terms of acquiring, storing, using, sharing, future use, and disposing of human biospecimens.  In addition, NIH PIs and staff will comply with [NIH Manual Chapter 3014](https://policymanual.nih.gov/3014), NIH Intramural Human Research Protection Program, as applicable.  Manual Chapter 3008 does not provide policy about human subject research protections.  Contact NIH Office of Human Subjects Research Protections (OHSRP) for more information about human subjects protections requirements.
+    4.  All NIH staff must safeguard individual privacy rights and handle Personally Identifiable Information (PII) in accordance with the Privacy Act of 1974.  For more information about the Privacy Act, contact your ICO Privacy Coordinator.  NIH IRP research studies that collect or use identifiable, sensitive information (ISI) are deemed issued a Certificate of Confidentiality (CoC).  Identifiable, sensitive information, includes human biospecimens and information associated with human biospecimens.  The purpose of the CoC is to protect the privacy of research subjects by prohibiting the disclosure of identifiable, sensitive information protected by a CoC to anyone not connected to the research, except under limited circumstances (e.g., when the subject consents to such a disclosure.
+    5.  Human biospecimens can pose a safety risk to individuals who handle them; therefore it is further required that NIH PIs and staff will comply with NIH policies and procedures for working safely with NIH maintained human biospecimens, as specified in [NIH Manual Chapter 3035](https://policymanual.nih.gov/3035), Working Safely with Potentially Hazardous Biological Materials. Contact the NIH Division of Occupational Health and Safety (DOHS) for any questions related to Manual Chapter 3035.  Manual Chapter 3008 does not provide policy on occupational safety issues.  Research materials shipped domestically and internationally are subject to a number of Federal, State and Local regulations.  Contact the NIH Office of Logistics and Acquisition Operations (OLAO) Freight Forwarding Team to learn more about handling and shipping biological materials.  Additional policy matters can be found in [NIH Manual Chapter 26101-42-F](https://policymanual.nih.gov/26101-42-F), Shipping Policies and Procedures.
+    6.  Analysis of human biospecimens yields “human data,” and it is expected that NIH staff collect data in a manner that permits the broadest sharing possible and share data broadly for secondary research purposes, as specified in [NIH Manual Chapter 3016](https://policymanual.nih.gov/3016), Intramural Research Program Human Data Sharing (HDS) Policy and in the OIR Sourcebook.  Additionally, it is expected that NIH staff share genomic data consistent with NIH policies. Manual Chapter 3008 does not provide policy on the collecting or sharing of human data or genomic data derived from the use of human biospecimens. Information and requirements regarding human data management and sharing can be found in the [NIH Data Management and Sharing Policy](https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-013.html) and the [NIH Genomic Data Sharing Policy](https://grants.nih.gov/grants/guide/notice-files/not-od-14-124.html), as appropriate.
+
+### E. Roles & Responsibilities
+
+Storage and tracking procedures of the ICO must facilitate within NIH and, as feasible, the broader scientific community the appropriate sharing of NIH maintained human biospecimens in accordance with applicable law and policy.  The following are the roles and responsibilities of all those involved in maintaining NIH human biospecimens.
+
+1.  **Stewards will**:
+    1.  Follow all applicable Federal laws and HHS/NIH policies with regard to human biospecimens, including Section D of this policy.
+    2.  Contact the appropriate NIH offices (e.g., ICO Technology Transfer Office, Office of Human Subjects Research Protections) before transferring, disposing, sharing, or receiving human biospecimens if there are questions about whether all required procedures and guidance will be followed, or all required approvals were obtained in advance.
+    3.  Monitor the NIH human biospecimens inventory and perform quality assurance reviews to determine the need to update or remove human biospecimen.
+    4.  Maintain current knowledge of this policy, all other relevant policies, standard operating procedures (SOPs), and protocols associated with the use of human biospecimens.
+    5.  Coordinate with their ICO Biospecimen Liaison to ensure requirements of this policy are met.
+    6.  Timely and accurately reporting in NIDB on their collection(s) of NIH human biospecimens annually, through a process managed by OIR.  This includes the NIDB Annual Report and, when appropriate, the NIH Biospecimen Report.
+2.  **ICO Scientific Directors**:
+    1.  Be knowledgeable of, and adhere to, applicable policies with regard to human biospecimens.
+    2.  Approve the NIDB Annual Report and, as filed, the NIH Biospecimens Report in NIDB for each steward.
+    3.  Appoint ICO Biospecimen Liaisons by email to [\[email protected\]](/cdn-cgi/l/email-protection#6d2c243f24222d020943030405430a021b), specifying the name, organization, telephone number(s), and email address.
+    4.  Provide input, enforce compliance within each ICO, and approve the content of this policy.
+3.  **ICO Biospecimen Liaisons**:
+    1.  Serve as a liaison between the ICO, stewards, and OIR.
+    2.  Train stewards on their human biospecimen reporting requirements.
+    3.  Support and guide stewards with handling of and reporting of their human biospecimen collections in NIDB.
+    4.  Support ICOs with their human biospecimen storage, tracking, use, sharing, transfer, and disposal requirements.
+    5.  Consult with OIR to identify compliance requirements.
+    6.  Receive notification of NIDB reporting requirements for their ICO and disseminate the information and reminders as appropriate within the ICO.
+4.  **Office of Intramural Research**:
+    1.  Inform members of the IRP, to include the SDs, stewards, and ICO Biospecimen Liaisons, of the NIDB Annual Report and NIH Biospecimen Report reporting requirements and procedures for human biospecimens.  Collate and assess the reported data.
+    2.  Manage the process for writing the annual NIH Human Biospecimen Storage and Tracking Report to U.S. Congress.
+    3.  The NIH Deputy Director of Intramural Research (DDIR) reviews and approves the NIH Human Biospecimen Storage and Tracking Report to U.S. Congress for routing through the proper NIH and HHS offices prior to submission to U.S. Congress.
+5.  **Office of the NIH Director**:
+    1.  The NIH Executive Secretary (ExecSec) initiates annual workflow for the NIH Human Biospecimen Storage and Tracking Report to U.S. Congress.
+    2.  The NIH Office of Science Policy (OSP) reviews the draft NIH Human Biospecimen Storage and Tracking Report to U.S. Congress.
+    3.  The HHS Office of the General Counsel, NIH Branch (OGC) reviews the draft NIH Human Biospecimen Storage and Tracking Report to U.S. Congress.
+    4.  The NIH Office of Legislative Policy and Analysis (OLPA) reviews the draft NIH Human Biospecimen Storage and Tracking Report to the U.S. Congress.
+    5.  The NIH Director approves and sends the report to the Health and Human Services (HHS) Secretary.
+
+### F. References
+
+1.  [Frequently Asked Questions on the Biospecimen reporting process](https://oir.nih.gov/sourcebook/ethical-conduct/research-ethics/nih-guidelines/guide-human-biospecimen-storage-tracking/frequently-asked-questions)  
+2.  [H.R. 6614, 109th U.S. Congress NIH Reform, Public Law 109-482, Title 1 (2017)](https://www.congress.gov/bill/109th-congress/house-bill/6164)     
+3.  [ICO Biospecimen Liaisons](https://oir.nih.gov/sourcebook/ethical-conduct/research-ethics/nih-guidelines/guide-human-biospecimen-storage-tracking/list-biospecimen-liaisons)
+4.  [NIH Data Management and Sharing Policy](https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-013.html)
+5.  [NIH Genomic Data Sharing Policy](https://grants.nih.gov/grants/guide/notice-files/not-od-14-124.html)
+6.  [NIH Guidelines for Human Stem Cell Research](https://stemcells.nih.gov/research-policy/guidelines-for-human-stem-cell-research)
+7.  [NIH Policy Manual, Chapter 1743 (2020), Managing Federal Records](https://policymanual.nih.gov/1743)
+8.  [NIH Policy Manual, Chapter 3014 (2021), Intramural Human Research Protection Program](https://policymanual.nih.gov/3014)
+9.  [NIH Policy Manual, Chapter 3014-001 (2022), Introduction to NIH Human Protection Program (HRPP) Policy Development](https://policymanual.nih.gov/3014-001)
+10.  [NIH Policy Manual, Chapter 3016 (2015), Intramural Research Program Human Data Sharing (HDS)](https://policymanual.nih.gov/3016)
+11.  [NIH Policy Manual, Chapter 3035 (2017), Working Safely with Potentially Hazardous Biological Materials](https://policymanual.nih.gov/3035)
+12.  [OIR Sourcebook Human Stem Cell Use](https://oir.nih.gov/sourcebook/ethical-conduct/special-research-considerations/human-stem-cell-use)
+13.  [OIR Sourcebook Policies and Procedures for the Use of Human Fetal Tissue (HFT) for Research Purposes in the Intramural Program at NIH](https://oir.nih.gov/sourcebook/ethical-conduct/special-research-considerations/policies-procedures-use-human-fetal-tissue-hft-research-purposes-intramural)
+14.  [OIR Sourcebook Special Research Considerations](https://oir.nih.gov/sourcebook/ethical-conduct/special-research-considerations)
+
+### G. Definitions
+
+**Biorepository:** An organization, place, room, or container (a physical entity) in which biospecimens are stored.
+
+**Collection:** A set of similar types of human biospecimens taken from a human patient or research subject (such as blood samples, liver biopsy material, sputum samples), which are stored, tracked, and reported on together as like material.
+
+**De-identified:**  Biospecimens from which identifiable information has been removed.  If there is a secure and controlled way to link back to the identifiable information of origin, the investigator using the biospecimen must not have access to that linkage in order for the biospecimens to be considered de-identified.
+
+**Human Biospecimens:** A quantity of tissue, blood, urine, or other human-derived material.  A single biopsy may generate several human biospecimens, including multiple paraffin blocks or frozen sample.  A human biospecimen can comprise subcellular structures, cells, tissue (e.g., bone, muscle, connective tissue, and skin), organs (e.g., liver, bladder, heart, and kidney), blood, gametes (sperm and ova), embryos, fetal tissue, and waste (urine, feces, sweat, hair and nail clippings, shed epithelial cells, and placenta).
+
+**Human Fetal Tissue (HFT; NIH Grants Policy Statement** [4.1.14 Human Fetal Tissue Research](https://grants.nih.gov/grants/policy/nihgps/HTML5/section_4/4.1.14_human_fetal_tissue_research.htm)**):** Tissue or cells obtained from a dead human embryo or fetus after a spontaneous or induced abortion or stillbirth.  This definition does not include established human fetal cell lines acquired from a vendor or through an MTA.
+
+**Human Embryonic Stem Cells (hESCs;** [NIH Guidelines for Human Stem Cell Research](https://stemcells.nih.gov/research-policy/guidelines-for-human-stem-cell-research)**):** Cells that are derived from the inner cell mass of blastocyst stage human embryos, are capable of dividing without differentiating for a prolonged period in culture, and are known to develop into cells and tissues of the three primary germ layers.
+
+**Human Induced Pluripotent Stem Cells (hiPSCs;** [Stem Cell Basics](https://stemcells.nih.gov/info/basics/stc-basics)**)**: Mature human adult cells reprogrammed into an embryonic stem cell-like state.
+
+**Human Subject**, for the purpose of MC 3008 (2018 Common Rule definition, see 45 CFR 46.102(e) for the complete definition)**:** A living individual about whom an investigator (whether professional or student) conducting research: (i) Obtains information or biospecimens through intervention or interaction with the individual, and uses, studies, or analyzes the information or biospecimens; or (ii) Obtains, uses, studies, analyzes, or generates identifiable private information or identifiable biospecimens.
+
+**Identifiable Biospecimen** (2018 Common Rule definition, 45 CFR 46.102(e)(6))**:** A biospecimen for which the identity of the subject is or may readily be ascertained by the investigator or associated with the biospecimen.
+
+**NIH Core Facility**: For purposes of this manual chapter, a NIH Core Facility is a facility generating data/reagents for multiple investigators and projects.  Each Core Facility should have its own NIH annual report in NIDB.  The text should describe the scientific area and list the projects being supported.  Each Core Facility has its own assigned ZIC number.
+
+**Primary Cells**: Cells that have been isolated directly from human tissue (such as epithelial cells, muscle cells, or hematopoietic cells), which have not been modified, and which generally have a finite lifespan and a limited expansion capacity.
+
+**Principal Investigator (PI,** [NIH Manual Chapter 3014-001](https://policymanual.nih.gov/3014-001)**)** – The investigator with the overall responsibility for the design, conduct, and reporting of the research, and must assure both the protocol and the research team’s actions are compliant with applicable law, regulation, and NIH policy, even when certain aspects of the research are delegated to other investigators. 
+
+**Reports**: This policy refers to three types of reports.
+
+-   NIDB Annual Report - NIH investigators that have a ZIA or ZIC number covering their research, will report annually details of their research.
+-   NIH Biospecimen Report - NIH investigators that submit data to the NIDB are asked if they maintain (storage/use/acquisition) NIH Human Biospecimens, if so, they report additional details.  Those investigators that do not have NIH Human Biospecimens can opt out within the reporting system.
+-   NIH Human Biospecimen Storage and Tracking Report to U.S. Congress (aka "NIH Annual Report to Congress) - is based on the data from the NIH Biospecimen Report submitted by NIH investigators.
+
+**Steward**: A steward is a Principal Investigator or Lead Investigator (reporting to a PI) that files an annual report in NIDB (“NIDB Annual Report”) based on their assigned ZIA or ZIC project number and subsequently reports the storage/use/acquisition of human biospecimens associated with their NIH annual report in NIDB (“NIH Biospecimen Report”).   PIs or stewards may delegate some biospecimen collection reporting activities to others (including contractors) but are ultimately responsible for annual human biospecimen reporting of collections under their control.
+
+### Appendix 1 – NIH Intramural Research Program Human Biospecimen Guidelines
+
+[NIH Intramural Research Program Human Biospecimen Guidelines](https://policymanual.nih.gov/manage/chapter/downloadattachment?id=9265)

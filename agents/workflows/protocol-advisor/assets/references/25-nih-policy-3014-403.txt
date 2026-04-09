@@ -1,0 +1,182 @@
+Name: NIH Policy 3014-403
+Purpose: reference
+Description: Additional safeguards for research involving adults who lack decision-making capacity to consent to research participation.
+URL: https://policymanual.nih.gov/3014-403
+Selection Rule: (none)
+Token Count: 6647
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 25
+
+---
+
+## 3014-403 - Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 5/13/2020 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 12/18/2024 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 1/11/2023 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** NIH Human Research Protection Program (HRPP) policies have been revised to comport with the revised HHS Common Rule (45 CFR 46) and to reflect the newly consolidated Institutional Review Board (IRB) structure within the NIH Intramural Research Program. This policy describes the requirements for research involving adults who lack the decision-making capacity to consent to research participation.  Upon implementation, this policy fully supersedes SOP 14E – Research Involving Adults Who Are or May Be Unable to Consent and partially supersedes SOP 14A – Research Involving Vulnerable Subjects (General Considerations). **Partial Revision 12/18/2024:** This revision clarifies requirements, for seeking assent  from adults who lack capacity to consent, when appropriate.
+2.  **Filing Instructions:**
+
+-   **Insert:** NIH Manual Chapter 30-403, dated 05/13/2020
+-   **Implementation Date:** 09/14/2020
+
+3.  **PLEASE NOTE:** For information on:
+
+-   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+-   Content of this chapter, contact the issuing office listed above.
+-   NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+1.  Describes the additional safeguards and considerations that apply when reviewing or conducting research involving adult human subjects who lack decision-making capacity to consent to, or continue participation in, research. (Also referred to in this policy as “subject(s) without capacity.”)
+2.  Describes the circumstances under which the NIH Intramural Research Program (IRP) will permit a Legally Authorized Representative (LAR) to provide consent for a subject without capacity.
+
+### B. Scope
+
+1.  This policy applies to all research reviewed by the NIH IRB.
+    1.  When the research is conducted at a non-NIH site, certain legal requirements or policy may apply and supersede the hierarchy used to determine a LAR at that site. 
+2.  This policy applies to NIH investigators when conducting research at an NIH site, whether the reviewing IRB is the NIH IRB or an external IRB.
+3.  This policy applies to non-NIH Lead Site Investigators (Lead site Investigators) at a non-NIH site when the NIH IRB is the reviewing IRB.
+4.  This policy applies to the NIH Institutional Official (IO).
+
+### C. Policy
+
+1.  The protection of the rights, welfare and safety of subjects without capacity is of paramount importance to the NIH Human Research Protection Program (HRPP). Therefore, the NIH Principal Investigator (PI)/Lead Site Investigator will not initiate research that enrolls subjects without capacity or include subjects who lose capacity during the research without IRB approval to do so (except as noted at [C.4.a](#C.4.a) below).
+2.  The NIH IRB will only approve research that permits the participation of subjects without capacity if it has determined and documented that the research meets one of the following risk/benefit categories:
+    1.  The research is minimal risk (Category A); or
+    2.  The research is greater than minimal risk, and offers a prospect of direct benefit to the subject (Category B); or
+    3.  The research is no more than a minor increase over minimal risk with no prospect of direct benefit, and does not adversely affect the rights, safety, or welfare of the subjects (Category C) or;
+    4.  Research does not meet the above conditions but has undergone additional institutional review and approval by the NIH Institutional Official (Category D).
+3.  The hierarchy[\[1\]](#_ftn1) for determining who may serve as the LAR at an NIH site, is as follows (for research conducted at non-NIH sites, this may vary due to state law or institutional policy):
+    1.  Court-appointed guardian of the person, who is authorized to consent to the research.[\[2\]](#_ftn2)
+    2.  The individual(s) appointed in the patient’s Durable Power of Attorney (DPA) for health care.[\[3\]](#_ftn3)
+    3.  If the prospective subject does not have a court-appointed guardian or DPA for health care, and s/he is capable of understanding the DPA process, even if s/he lacks capacity to consent to research, the prospective subject may execute a DPA for health care.[\[4\]](#_ftn4)
+    4.  For risk/benefit categories A, B and C (see [C.2](#C.2) above), if no court-appointed guardian or DPA for health care exists, and the prospective subject is unable to execute a DPA for health care, then the next of kin hierarchy listed below may be used to identify the LAR in the following descending order:
+        1.  Spouse or domestic partner,[\[5\]](#_ftn5)
+        2.  Adult child,
+        3.  Parent,
+        4.  Adult sibling, or
+        5.  Other relative
+    5.  For risk/benefit category D ([C.2.d](#C.2.d) above), the next of kin hierarchy may **not** be used to identify a LAR and, in these circumstances, research is not permitted if no court-appointed guardian or DPA for healthcare is available to consent.
+4.  For all research requiring informed consent and approved in advance by the IRB to involve subjects without capacity, legally effective informed consent must be obtained from the LAR prior to the initiation of any research activities, except as described in [C.4.a](#C.4.a) below.  
+    1.  When a subject with capacity consented to the research, and has a temporary loss of capacity (e.g., they are expected to regain capacity), reconsent of the subject by the LAR is not required for the subject’s continued participation in the research.
+    2.  If the research has not been approved by the IRB for inclusion of subjects without capacity, and a subject who had capacity previously provided consent for themselves subsequently loses capacity permanently, and the research involves continued interactions or interventions with the subject (excluding only data or specimen analysis), then the NIH PI/Lead Site Investigator must obtain IRB approval, and reconsent from the LAR, for the subject without capacity to remain on the research, consistent with requirements of [E.1.f](#E.1.f) below.
+5.  When enrolling persons who have been determined to lack capacity to consent to participation in research, the assent of the subject must be obtained, unless the subject has been determined to be unable to provide assent.
+
+---
+
+[\[1\]](#_ftnref1) The NIH PI should consult NIH OGC if they have questions about the application of this hierarchy.  For subjects seen at the CC, see also, _MAS 19-1 Determining Legally Authorized Representatives for Adult Patients Who Are Unable to Provide Informed Consent for Clinical Care or Re-Admission_ (26 March 2020).
+
+[\[2\]](#_ftnref2) A court-appointed guardian may only consent for a subject without capacity to participate in research if the guardian has authority to do so under the laws of the state that issued the guardianship order and the terms of the guardianship order. For any subject with a guardianship order, provide a copy of the court order with two weeks advance notice to the Office of General Counsel (OGC) for review, prior to expected enrollment.
+
+[\[3\]](#_ftnref3) In most cases, it is expected that health care providers will be able to independently interpret DPA documents. However, please contact the _CC Bioethics Consultation Service_ for ethical concerns or OGC for legal concerns when interpreting such documents.  
+
+[\[4\]](#_ftnref4) At the CC, the Ability to Consent Assessment Team evaluates whether an adult who is unable to consent to research has retained the ability to execute a DPA. If at a non-CC NIH site, contact your IC leadership for policies and guidance.
+
+[\[5\]](#_ftnref5) Domestic partner is a relationship between two individuals (opposite or same sex)  who: (1) are at least 18 years old, (2) are not related to each other by blood or marriage, (3) are not married or in a civil union or domestic partnership with any others, and (4) have agreed to be, and continue to be, in a relationship of mutual interdependence in which each individual contributes to the maintenance and support of the other individual and the relationship, even if both individuals are not required to contribute equally to the relationship.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized. 
+
+Definitions demarcated with (Pre-2018 Common Rule definition) apply to research approved by an IRB (or deemed to be exempt, or for which no IRB review was required under the regulations) prior to the effective date of the 2018 Common Rule (January 21, 2019). 
+
+Definitions demarcated with (2018 Common Rule definition) apply to all research approved by an IRB (or deemed to be exempt, or for which no IRB review was required under the regulations) on or after January 21, 2019, and to research transitioned to the 2018 requirements in accordance with HRPP policy.
+
+1.  [Ability to Consent Assessment Team (ACAT)](https://policymanual.nih.gov/3014-001#A)
+2.  [Adults](https://policymanual.nih.gov/3014-001#A)
+3.  [Assent](https://policymanual.nih.gov/3014-001#A)
+4.  [Durable Power of Attorney (DPA) for Health Care](https://policymanual.nih.gov/3014-001#D)
+5.  [Legally Authorized Representative (LAR) (2018 Common Rule Definition)](https://policymanual.nih.gov/3014-001#L)
+6.  [Legally Authorized Representative (LAR) (Pre-2018 Common Rule Definition)](https://policymanual.nih.gov/3014-001#L)
+7.  [Legally Authorized Representative (LAR) (FDA Definition)](https://policymanual.nih.gov/3014-001#L)
+8.  [Minimal risk](https://policymanual.nih.gov/3014-001#M)
+
+### E. Responsibilities and Requirements
+
+1.  **NIH Principal Investigator (PI) and as applicable, Lead Site Investigator Responsibilities:**
+    1.  The NIH PI/Lead Site Investigator may not initiate research that enrolls subjects without capacity or include subjects who lose capacity during the research unless IRB approval has been obtained in accordance with this policy.
+    2.  When the research will, or may, include subjects without capacity, the NIH PI/Lead Site Investigator must describe the following items in the protocol:
+        1.  That subjects without capacity are eligible to participate in the research.
+            1.  If these subjects originally have capacity to consent, and may subsequently lose capacity to consent, then describe the conditions under which these subjects will be able to continue to participate in the research.
+        2.  The compelling justification for including the participation of these subjects in the research, any safeguards that will be put in place, and the procedures to be followed;
+        3.  The plan for assessing the initial and ongoing capacity of the subjects and identifying the LAR, based on [C.3](#C.3) above;
+        4.  The process for obtaining initial consent from the LAR and/or reconsent from the LAR.
+    3.  Determine if the individual lacking capacity to provide consent is capable of providing assent and if so, obtaining assent from the subject.
+        1.  Assent may be provided by the subject orally or in written form, as determined to be most appropriate by the NIH PI.  
+        2.  Provision of assent must be documented in the research and/or medical record.
+            1.  If the individual is determined to be unable to provide assent, document this determination in the research and/or medical record.
+    4.  Before a subject without capacity is scheduled to be enrolled in the research, or if a returning subject has lost capacity since the last study visit, the NIH PI/Lead Site Investigator will:
+        1.  Confirm the validity of the LAR. The LAR is someone who:
+            1.  Is permitted consistent with the risk/benefit category made by the NIH IRB, if applicable, in [C.2](#C.2) above;
+            2.  Is permitted consistent with the hierarchy described in [C.3](#C.3) above;
+            3.  Has the capacity to consent to the research; and
+            4.  Is able to represent the wishes or best interests of the subject.
+        2.  Ensure that the LAR will be available, ideally present, at the time of research consent; and
+        3.  For any subject with a guardianship order, who will be seen at an NIH site, the NIH PI must provide a copy of the court order to the NIH Office of General Counsel (OGC) for review consistent with [C.3.a](#C.3.a) above.
+    5.  For all research that has been approved by the IRB for the participation of subjects without capacity, unless informed consent is waived by the IRB, the NIH PI/Lead Site Investigator must obtain, as applicable:
+        1.  Initial consent from the LAR when enrolling a subject without capacity who is over the age of majority;
+        2.  Reconsent from the LAR for a subject without capacity who has attained the age of majority while on the research (See Policies _301 Informed Consent_ and _402 Research Involving Children_);
+        3.  Reconsent of the LAR for a subject without capacity, when reconsent of subjects is required by the IRB; or
+        4.  Reconsent from the LAR for any subject who has a loss of capacity while participating on the research, consistent with [E.1.e](#E.1.e) below.
+    6.  If the research has not been approved by the IRB for the participation of subjects without capacity, and a subject who was previously able to provide consent for themselves subsequently loses the capacity to provide ongoing consent, and the research involves continued interactions or interventions with the subject (excluding only data or specimen analysis), and if the NIH PI/Lead Site Investigator wishes the subject to remain on the research, then the NIH PI/Lead Site Investigator must:
+        1.  Identify and engage with the LAR, so the LAR can advocate on behalf of the subject;
+        2.  Assess whether the loss of capacity is temporary or permanent:
+            1.  When the loss of capacity is permanent:
+                -   The NIH PI/Lead Site Investigator must modify the protocol consistent with [E.1.b](#E.1.b) above, and obtain IRB approval for the inclusion of subjects without capacity.
+                -   The subject may remain on the research until the IRB has made the determination whether the protocol can include subjects without capacity on the research.
+                -   If the IRB determines that the subject without capacity can remain on the research, then reconsent by the LAR is required.
+                -   If the IRB determines that subjects without capacity may not be included on the research, then the subject must be withdrawn.
+            2.  When the loss of capacity is temporary (e.g., subjects are expected to regain capacity), no modification of the protocol needs to be submitted to the IRB. Further, reconsent of the LAR is not needed in order for the subject to remain on the research.
+2.  **IRB Responsibilities:**
+    1.  When the protocol, or protocol modification, permits the participation of subjects without capacity, the IRB must determine:
+        1.  That the protocol contains a compelling justification for including subjects without capacity in the research;
+        2.  That the procedures are appropriate for subjects without capacity; including whether:
+            1.  The process for seeking assent from subjects who are capable of providing it is appropriate. (See IRB member tip sheet, _IRB Review of Appropriateness and Processes for Obtaining Assent from Individuals Who Lack Consent Capacity_ for more information.)
+            2.  Plans for obtaining initial consent and/or reconsent from the LAR are adequate, unless consent is waived by the IRB;
+            3.  The plan for assessing the subject’s initial and ongoing capacity to consent is adequate.
+            4.  Additional safeguards are needed.
+    2.  The IRB must document the reasonably expected risks and prospect of direct benefit (if any) for subjects without capacity, using the categories described in [C.2](#C.2) above.
+        1.  The NIH IRB must refer protocols with a Category D determination (see [C.2.d](#C.2.d) above) to the NIH IO for institutional review and approval before the IRB may give its approval.
+3.  **NIH Institutional Official (IO) Responsibilities:**
+    1.  Upon receipt of a determination of Category D (see [C.2.d](#C.2.d) above) by the NIH IRB, for research involving subjects without capacity, the NIH IO must convene an independent panel of NIH employees with appropriate subject matter expertise and who have no conflicts of interest with the protocol. This panel will advise the IO, who will conduct an institutional review to decide if the research can be approved to proceed.
+    2.  The panel must provide to the IO a written report addressing the following, and confirming whether:
+        1.  The knowledge to be obtained: (a) is of vital importance, (b) cannot reasonably be obtained by studying adults who can consent, and (c) cannot be obtained in a way that poses less risk;
+        2.  The risks of the protocol are not excessive; and
+        3.  Additional conditions or protections are, or are not, needed.
+    3.  In response to the panel’s report, the IO can concur with the IRB’s determination and may allow the research to proceed, or may disapprove implementing the IRB-approved research.
+
+### F. References
+
+1.  **Federal Regulations:**
+
+HHS: [45 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)
+
+FDA: [21 CFR 50](https://www.ecfr.gov/cgi-bin/text-idx?SID=614109c1cb95a0bb067566714f77a11a&mc=true&node=pt21.1.50&rgn=div5)
+
+2.  **NIH Policies:**
+
+[MAS 19-1 Determining Legally Authorized Representatives for Adult Patients Who Are Unable to Provide Informed Consent for Clinical Care or Re-Admission](https://cc-internal2.cc.nih.gov/policies/PDF/M19-1.pdf) (26 March 2020)
+
+[Policy 3014-301 Informed Consent](https://policymanual.nih.gov/3014-301)
+
+[Policy 3014-402 Research Involving Children](https://policymanual.nih.gov/3014-402)
+
+3.  Guidance and Resources:
+
+[Clinical Center (CC) Bioethics Consultation Service, including the Ability to Consent Assessment Team (ACAT)](https://www.bioethics.nih.gov/clinical/consultation.shtml)
+
+[NIMH Human Subjects Protection Unit](https://www.nimh.nih.gov/research/research-conducted-at-nimh/scientific-director/office-of-clinical-director/administrative-research-support/human-subjects-protection-unit-hspu.shtml)
+
+[IRB Member Tip Sheet: IRB Review of Appropriateness and Processes for Obtaining Assent from Individuals Who Lack Consent Capacity](https://irbo.nih.gov/confluence/download/attachments/38962257/Assent%20Considerations%20for%20Subjects%20Lacking%20Consent%20Capacity-October%202024.pdf?version=1&modificationDate=1727364281787&api=v2)

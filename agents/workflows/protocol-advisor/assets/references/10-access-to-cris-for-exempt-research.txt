@@ -1,0 +1,66 @@
+Name: Access to CRIS for Exempt Research
+Purpose: form
+Description: Supplemental CRIS access form for exempt research workflows; supporting form rather than a primary protocol template.
+URL: https://irbo.nih.gov/documents/111/Access_to_CRIS_Exempt_Research_23_Aug_2021_Fillable_508C.pdf
+Selection Rule: first_page_contains_any=["CRIS Access for IRB Exempt Retrospective Chart Review"]
+Token Count: 1389
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 10
+
+---
+
+Ver. 4; August 23, 2021
+Page 1 of 3
+CRIS Access for IRB Exempt Retrospective Chart Review
+Instructions: All investigators, who wish to complete a retrospective chart review using NIH records
+for research purposes, are expected to first contact the Office of Biomedical Translational Research
+Informatics (BTRS) team (BTRISSupport@nih.gov) to determine whether it would be possible to
+conduct the study using de-identified data in BTRIS or if the BTRIS staff can help obtain and deidentify
+data for the study team. For example, at times, the BTRIS staff can obtain identifiable
+biospecimens or data for the researchers and either anonymize it, or de-identify it and/or act as an
+honest broker (and retain a code key linking to identifier). If you have sought feedback from the
+BTRIS team and learned that it is not possible to conduct your study without access to CRIS, you may
+proceed with submitting for an exemption which involves the use of CRIS.
+Once you have received a formal determination letter from the NIH IRBO stating that your planned
+retrospective chart review project is exempt from IRB review and approval, please complete and sign
+this form. Do not list anyone on this form who will access CRIS for the project unless he or she
+already has approved CRIS access. Please note that any research team member who plans to access
+CRIS and does not currently have access to CRIS, will need to complete the required steps to obtain
+access, prior to being included on this form or beginning any research activities for the project.
+Once you have completed this form, you should email the signed copy (without the instructions page)
+and a copy of the exemption letter from the IRBO to the Health Information Management
+Department (HIMD): Marisa Owens, owensms@cc.nih.gov and Amanda Grove, groveak@cc.nih.gov
+and cc: Julie Eiserman, julie.eiserman@nih.gov.
+Please note that no one can access CRIS for this project, including outside of the submitted start
+and end dates, without first formally notifying the HIMD. If you do not have a CRIS account, please
+notify Marisa and Amanda for further instructions. All personnel accessing individual medical
+records without proper IRB approval and HIMD authorization are at risk of being audited.
+If after you complete this form, you need to add new investigators to conducting chart reviews in
+CRIS; if the criteria of your eligible subject population changes; or if you must add or eliminate a
+protocol from the list of involved protocols for the project, you must amend your secondary research
+protocol and submit an amendment in iRIS. Once you have received a new determination, you must
+complete a new version of this form and submit it to the HIMD, following the same steps above.
+If your end date for needed access to CRIS must be extended, you must revise just this form with the
+new date and submit the signed form with the original exemption letter to the HIMD.
+Ver. 4; August 23, 2021
+Page 2 of 3
+CRIS Access for IRB Exempt Retrospective Chart Review
+IRB Number: ____________________________
+Study Title: ________________________________________________________________________
+NIH Principal Investigator Name: ______________________________
+Determination Date (on IRBO letter): _______________________
+Names of all NIH employees, staff, fellows, trainees, etc. who will access CRIS to complete the
+retrospective chart review:
+_________________________________ _________________________________
+_________________________________ _________________________________
+_________________________________ _________________________________
+_________________________________ _________________________________
+Description of patients whose records will be accessed, i.e., the eligibility criteria required in order for
+a patient to be included:
+Protocols numbers and associated PI names, if only certain protocols will be accessed for this project:
+Start Date for accessing CRIS: _________________________________
+End Date for accessing CRIS: _________________________________
+Ver. 4; August 23, 2021
+Page 3 of 3
+__________________________________ ________ __________________________
+NIH Investigator Signature IC Date

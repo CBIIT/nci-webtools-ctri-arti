@@ -1,0 +1,257 @@
+Name: pSITE Protocol Addendum Template
+Purpose: addendum
+Description: Participating site addendum template for use when NIH is the reviewing IRB for an external site.
+URL: https://irbo.nih.gov/documents/501/pSITE_Protocol_Addendum_May2024.docx
+Selection Rule: body_contains_all=["Recruitment and Consent", "Study Procedures", "Local Context"]
+Token Count: 3228
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 7
+
+---
+
+header:
+footer: Version date 01-30-23
+
+PARTICIPATING SITE (pSITE) PROTOCOL ADDENDUM TEMPLATE FOR USE WHEN NIH IS THE REVIEWING IRB FOR AN EXTERNAL INSTITUTION/SITE
+
+This preface contains clarification about the purpose of this template and should be removed before it is finalized and distributed.
+
+The pSITE Protocol Addendum is required as a supplement to the pSITE Application in the PROTECT eIRB system and provides the NIH IRB with important information about how the protocol will be implemented at the pSITE.
+
+The goal of this template is to assist the pSITE Principal Investigator in communicating pSITE local context information to the NIH IRB and to allow for a more detailed description of how the research will be implemented at the pSITE, particularly when it will differ to how the research is described in the main protocol.
+
+This document needs to be submitted with the initial pSITE submission in PROTECT as a standalone document.
+
+Style Guidelines:
+
+12-point font (Times, Times New Roman or Arial) and single line spacing for the protocol addendum document. Section numbers shown refer to sections in the main study protocol. Margins should be 1 inch on all sides.  This document is already formatted using headings in the styles.
+
+Instruction/explanatory text is indicated by italics and should be deleted prior to finalizing the addendum. This text provides information on the content that should be included in the addendum.
+
+Version control is important to track protocol development, revisions, and amendments. With each revision, the version date located in the header of each page needs updating.
+
+If a section is not applicable to the pSITE, do not delete it; rather indicate that the section is not applicable. Duplication of information in the protocol addendum that is already in the main protocol should be avoided.
+
+[INSERT PARTICIPATING SITE (pSITE) NAME] PROTOCOL ADDENDUM TO BE USED BY NEW SITES BEING ADDED TO AN NIH PROTOCOL
+
+Protocol Title:
+
+NIH IRB #: IRB number that is in PROTECT
+
+pSITE Principal Investigator: 	[Insert pSITE PI Name, address, email and contact #]
+
+Phone: XXXX
+
+Email: XXXX
+
+[Insert pSITE Study Contact, email and contact #]
+
+Phone: XXXX
+
+Email: XXXX
+
+Version Date: (update with all subsequent amendments)
+
+The date that all editing of the document was completed, or date editing began - be sure it is consistent throughout the protocol document.
+
+Note:
+
+The NIH IRB only approves the pSITE PI. The review of other pSITE study team members remains the responsibility of the pSITE institution.
+
+A proxy (study contact) for communication purposes is also needed. No pSITE study personnel other than the pSITE PI and proxy are listed in this document or the pSITE Application.
+
+Abbreviations
+
+Core Site	Lead/ Main Site (Generally the NIH Site)
+
+NIH	National Institutes of Health
+
+OHSRP 	NIH Office of Human Subjects Research Protections
+
+pSITE	Participating Site
+
+[pSITE: Add additional abbreviation(s) if applicable]
+
+Description of PARTICIPATING Site and Role in the Research Protocol
+
+Provide a brief description of the location of the site and its facilities as applicable to the role being carried out in the research protocol, e.g., indicate where in your institution pSITE study team members will be carrying out research activities and if any activities will take place away from the pSITE such as at a third-party location like a local recreation center.
+
+Research subjects and activities
+
+Types of research subjects at your site. (Check all that apply)
+
+	 	No subjects
+
+		Healthy controls
+
+		Adults (as defined by state law)
+
+		Newborns, Infants
+
+		Children age 2 and over (as defined by state law)
+
+		Pregnant Women/Fetuses
+
+		Prisoners
+
+		Persons with Impaired decision making
+
+		Students
+
+		Employees/Staff in Dept/Unit/Lab (vs general recruitment)
+
+		Other (Describe other subject type(s)):
+
+IF ENROLLING CHILDREN, List the state in which your site is located and provide the age of majority:
+
+State:
+
+Age:
+
+Activities at this site: (Check all that apply)
+
+		None
+
+		Medical Records Review
+
+		Obtaining Informed Consent
+
+		Research Interactions
+
+		Recruitment
+
+		Other (describe other activities type(s)):
+
+Specific Research Interactions at this site: (Check all that apply)
+
+		Epidemiology/Observation
+
+		Behaviors/Psychosocial Intervention/Trial (e.g. surveys, questionnaires, interviews)
+
+		Lab Specimen Study (e.g. blood, urine, extra tissue during biopsy, genetic research)
+
+		Medical Intervention/Trial (e.g. drugs, devices, comparison of therapeutic approaches, new procedures, extra MRIs, exams, etc.)
+
+		Use of Investigational Material
+
+	 Recruitment
+
+		Other (describe other interactions):
+
+Specimen use at this Site: (Check all that apply)
+
+		None
+
+		Analysis
+
+		Banking
+
+		Collection
+
+		Creation of Repository
+
+Data Analysis at this Site: (Check all that apply)
+
+		No data analysis will be conducted at this site
+
+		Anonymous
+
+		Coded / deidentified with no access to the code key
+
+		Coded / deidentified but hold a code key
+
+		Identifiable Other (describe other interactions):
+
+Research Data: (Check all that apply)
+
+ No research data will be retained at this site
+
+ All or most of the research records and research related information will be retained at this site
+
+ Will be kept at another location or sent offsite
+
+9.2     Where will the research data be kept?
+
+Ancillary Services utilized at this site requiring other institutional reviews: (Check all that apply)
+
+		None
+
+		Biostatistics
+
+		Biomedical Engineering
+
+		Pharmacy
+
+		Nursing
+
+		Radiation Safety (exposure to ionizing radiation or administration of radiopharmaceutical)
+
+	 Other (Describe other ancillary services):
+
+Recruitment and Consent
+
+Describe any differences from the main protocol in how recruitment and consent will be implemented at your site. Differences must be agreed upon by the NIH Lead PI of the study.
+
+If planning to use a short form consent, describe your institution’s policy on its use and confirm whether or not the NIH’s short form can be used at your institution:
+
+Compensation/ Reimbursement
+
+Describe any differences from the main protocol in how compensation/ reimbursement will be provided to subjects at your institution, e.g., any non-research procedures will be billed to insurance. Differences must be agreed upon by the Lead PI of the study.
+
+Study Procedures
+
+Describe any study procedures that will be done differently or in addition to the procedures described in the main protocol.
+
+Describe the drug storage/accountability procedures at your site if they differ from the main protocol.
+
+Local Context
+
+Are there any cultural, ethnic, religious, or other special characteristics of the community, or local issues, that the NIH IRB needs to consider in its review of your pSITE application and/or that may contribute to the acceptability of this research in your area?
+
+Describe any state and local laws that will impact the conduct of the main protocol at your institution that have not already been described as part of your submission to the NIH IRB
+
+Do local requirements or state laws stipulate requirements for enrolling vulnerable populations at your institution differ from those described in the main protocol or associated documents? For example, your site may require that consent be obtained by a physician if the protocol is greater than minimal risk, or your site may require the translation of the consent form after use of the short form; or your site may require certain safeguards if a student seeks to enroll.  If applicable, describe how consent will be obtained from subjects who lack capacity to consent.
+
+Are all Participating Site study team members involved in this Protocol appropriately qualified and in compliance with local HRPP training requirements?
+
+		Yes
+
+		No
+
+Do any Participating Site Study Team members have a financial interest related to this research?
+
+	Yes
+
+	No
+
+If a financial conflict has been identified for any Participating Site Study Team members, provide the NIH IRB with the following information.
+
+The identity of the conflicted team member and their role in the study.
+
+A summary of the management plan if one has been developed.
+
+The summary must not include detailed financial information. It should identify the:
+
+Nature of the conflict
+
+Whether any disclosures are required, and
+
+Any restrictions placed on investigator activities to manage the conflict.
+
+Provide a summary of the management plan below or attach it to this submission and identify a point of contact for conflicts of interest/ the management plan at the Participating Site:
+
+Additional information
+
+If there is any additional information you would like to provide about how the protocol will be implemented differently at your institution or that should be considered by the NIH IRB when reviewing your site that has not been captured in this form, use this section to describe this.
+
+DocumentS TO BE Submitted TO THE NIH IRB
+
+        Check all that apply (type of documents attached):
+
+		pSITE Consent/Assent documents
+
+		pSITE Recruitment Materials
+
+	 	pSITE Protocol Addendum
+
+		Clearance Letter from pSITE HRPP/IRB Office - Notification from the pSITE HRPP/IRB indicating that pSITE institutional requirements have been met and local context information provided has been locally approved – this can be in a letter, email, memo etc. It can be as simple as an appropriate person from pSITE writing a response email addressed to one of the NIH study team saying: pSITE confirms that the submission to the NIH IRB by our site meets pSITE institutional requirements and that local context information provided is accurate. This is a requirement from NIH HRPP Policy 105.

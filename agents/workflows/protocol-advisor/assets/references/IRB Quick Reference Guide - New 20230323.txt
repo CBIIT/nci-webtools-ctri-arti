@@ -1,0 +1,1145 @@
+Name: IRB Quick Reference Guide - New 20230323
+Source URL: https://irbo.nih.gov/documents/179/IRB_Quick_Reference_Guide.pdf
+Extracted At: 2026-04-08T21:55:44.892Z
+Source Type: pdf
+Page Count: 33
+
+---
+
+## Page 1
+
+IRB Quick Reference Guide
+1
+§46.111 Criteria for IRB Approval of Research
+REFERENCES
+• 45 CFR 46 HHS Common Rule
+• 21 CFR 56 for FDA regulated research
+• 21 CFR 50 informed consent requirements for FDA regulated research
+• Policy 204 Levels of IRB Review and Criteria for IRB Approval of Research
+Criteria for Approval
+(a) In order to approve research covered by this policy the IRB shall determine that all of the
+following requirements are satisfied:
+(1) Risks to subjects are minimized : (i) By using procedures which are consistent with
+sound research design, and which do not unnecessarily expose subjects to risk, and (ii)
+whenever appropriate, by using procedures already being performed on the subjects for
+diagnostic or treatment purposes.
+(2) Risks to subjects are reasonable in relation to anticipated benefits, if any, to
+subjects, and the importance of the knowledge that may reasonably be expected to
+result. In evaluating risks and benefits, the IRB should consider only those risks and
+benefits that may result from the research (as distinguished from risks and benefits of
+therapies subjects would receive even if not participating in the research). The IRB
+should not consider possible long-range effects of applying knowledge gained in the
+research (for example, the possible effects of the research on public policy) as among
+those research risks that fall within the purview of its responsibility.
+(3) Selection of subjects is equitable . In making this assessment the IRB should take into
+account the purposes of the research and the setting in which the research will be
+conducted and should be particularly cognizant of the special problems of research
+involving vulnerable populations, such as children, prisoners, pregnant women, mentally
+disabled persons, or economically or educationally disadvantaged persons.
+(4) Informed consent will be sought from each prospective subject or the subject's legally
+authorized representative, in accordance with, and to the extent required by §46.116 .
+(5) Informed consent will be appropriately documented or appropriately waived in
+accordance with, and to the extent required by §46.117
+(6) When appropriate, the research plan makes adequate provision for monitoring the data
+collected to ensure the safety of subjects .
+(7) When appropriate, there are adequate provisions to protect the privacy of subjects and
+to maintain the confidentiality of data .
+
+## Page 2
+
+IRB Quick Reference Guide
+2
+(b) When some or all of the subjects are likely to be vulnerable to coercion or undue influence,
+such as children, prisoners, pregnant women, mentally disabled persons, or economically or
+educationally disadvantaged persons, additional safeguards have been included in the study
+to protect the rights and welfare of these subjects.
+
+## Page 3
+
+IRB Quick Reference Guide
+3
+Basic Elements of Informed Consent
+REFERENCES
+• 45 CFR 46 HHS Common Rule
+• 21 CFR 56 for FDA regulated research
+• 21 CFR 50 informed consent requirements for FDA regulated research
+• Policy 301 Informed Consent
+• Consent FAQs – Look under “ Everything you need to know about consent ”
+• NIH Policy on the Dissemination of NIH-Funded Clinical Trial Information
+DEFINITIONS
+Clinical trial ( as defined by the NIH Policy on the Dissemination of NIH-Funded Clinical Trial
+Information ) - “ A research study in which one or more human subjects are prospectively
+assigned to one or more interventions (which may include placebo or other control) to evaluate
+the effects of those interventions on health- related biomedical or behavioral outcomes” and is
+broader than the statutory definition of an “ applicable clinical trial .”
+Coercion - An overt or implicit threat of harm that is intentionally presented by one person to
+another in order to obtain a certain outcome.
+Legally Authorized Representative (LAR) (2018 Common Rule) – An individual or judicial or
+other body authorized under applicable law to consent on behalf of a prospective subject to the
+subject's participation in the procedure(s) involved in the research. If there is no applicable law
+addressing this issue, legally authorized representative means an individual recognized by
+institutional policy as acceptable for providing consent in the nonresearch context on behalf of
+the prospective subject to the subject's participation in the procedure(s) involved in the research.
+( 45 CFR 46.102(i) )
+Legally effective – Informed consent is legally effective if it is both obtained from the subject
+(or the subject’s legally authorized representative) and documented in a manner that is consistent
+with the US Department of Health and Human Services (HHS) protection of human subjects
+regulations, FDA regulations, and with applicable laws of the jurisdiction in which the research
+is conducted.
+Undue Influence - An offer of an excessive or inappropriate reward or other overture in order to
+obtain a certain outcome.
+General Requirements of Informed Consent
+Unless waived or altered as approved by the IRB, informed consent must be legally effective and
+comply with Common Rule requirements as described in 46.116 , 46.117 , applicable subparts of
+45 CFR 46 (B, C and D), and NIH policy for consenting adults lacking capacity to consent or for
+staff participating in NIH research . In addition, for FDA-regulated research informed consent
+
+## Page 4
+
+IRB Quick Reference Guide
+4
+must comply with requirements as described at 21 CFR 50 Subparts B and D and in further
+detail below.
+• Before involving a human subject in research, an investigator shall obtain the legally
+effective informed consent of the subject or the subject’s legally authorized representative.
+( 46.116(a)(1) / 50.20 )
+• An investigator shall seek informed consent only under circumstances that provide the
+prospective subject or the legally authorized representative sufficient opportunity to discuss
+and consider whether or not to participate and that minimize the possibility of coercion or
+undue influence. ( 46.116(a)(2) / 50.20 )
+• The information that is given to the subject or the legally authorized representative shall be in
+language understandable to the subject or the legally authorized representative.
+( 46.116(a)(3) / 50.20 )
+• The prospective subject or the legally authorized representative must be provided with the
+information that a reasonable person would want to have in order to make an informed
+decision about whether to participate, and an opportunity to discuss that information.
+( 46.116(a)(4) 2018 Common Rule only )
+• Informed consent must begin with a concise and focused presentation of the key information
+that is most likely to assist a prospective subject or legally authorized representative in
+understanding the reasons why one might or might not want to participate in the research.
+This part of the informed consent must be organized and presented in a way that facilitates
+comprehension. ( 46.116(a)(5)(i) 2018 Common Rule only )
+• Informed consent as a whole must present information in sufficient detail relating to the
+research, and must be organized and presented in a way that does not merely provide lists of
+isolated facts, but rather facilitates the prospective subject’s or legal ly authorized
+representative’s understanding of the reasons why one might or might not want to participate.
+( 46.116(a)(5)(ii) 2018 Common Rule only)
+• No informed consent may include any exculpatory language through which the subject or
+the legally authorized representative is made to waive or appear to waive any of the subject’s
+legal rights, or releases or appears to release the investigator, the sponsor, the institution, or
+its agents from liability for negligence. ( 46.116(a)(6) / 50.20 )
+Basic Elements of Informed Consent
+When seeking informed consent, the following information shall be provided to each subject or
+the legally authorized representative (LAR):
+• A statement that the study involves research, an explanation of the purposes of the research
+and the expected duration of the subject’s participation, a description of the procedures to be
+followed, and identification of any procedures that are experimental
+( 46.116(b)(1) / 50.25(a)(1) )
+
+## Page 5
+
+IRB Quick Reference Guide
+5
+• A description of any reasonably foreseeable risks or discomforts to the subject
+( 46.116(b)(2) / 50.25(a)(2) )
+• A description of any benefits to the subject or to others that may reasonably be expected from
+the research ( 46.116(b)(3) / 50.25(a)(3) )
+• A disclosure of appropriate alternative procedures or courses of treatment, if any, that might
+be advantageous to the subject ( 46.116(b)(4) / 50.25(a)(4) )
+• A statement describing the extent, if any, to which confidentiality of records identifying the
+subject will be maintained. ( 46.116(b)(a)(5) ) Additionally for FDA-regulated research : “ that
+notes the possibility that the Food and Drug Administration may inspect the records. ”
+( 50.25(a)(5) )
+• For research involving more than minimal risk, an explanation as to whether any
+compensation and an explanation as to whether any medical treatments are available if injury
+occurs and, if so, what they consist of, or where further information may be obtained
+( 46.116(b)(6) / 50.25(a)(6) )
+• An explanation of whom to contact for answers to pertinent questions about the research and
+research subjects’ rights, and whom to contact in the event of a research -related injury to the
+subject ( 46.116(b)(7) / 50.25(a)(7) )
+• A statement that participation is voluntary, refusal to participate will involve no penalty or
+loss of benefits to which the subject is otherwise entitled, and the subject may discontinue
+participation at any time without penalty or loss of benefits to which the subject is otherwise
+entitled. ( 46.116(b)(8) / 50.25(a)(8) )
+• One of the following statements about any research that involves the collection of
+identifiable private information or identifiable biospecimens: ( 46.116(b)(9) 2018 Common
+Rule only )
+o A statement that identifiers might be removed from the identifiable private
+information or identifiable biospecimens and that, after such removal, the
+information or biospecimens could be used for future research studies or
+distributed to another investigator for future research studies without additional
+informed consent from the subject or the legally authorized representative, if this
+might be a possibility; or
+o A statement that the subject’s information or biospecimens collected as part of the
+research, even if identifiers are removed, will not be used or distributed for future
+research studies.
+Additional Elements of Informed Consent
+In addition to the basic elements of consent described above, one or more of the following
+elements of information, when appropriate, shall also be provided to each subject or the LAR:
+
+## Page 6
+
+IRB Quick Reference Guide
+6
+• A statement that the particular treatment or procedure may involve risks to the subject (or to
+the embryo or fetus, if the subject is or may become pregnant) that are currently
+unforeseeable ( 46.116(c)(1) / 50.25(b)(1) )
+• Anticipated circumstances under which the subject’s participation may be terminated by the
+investigator without regard to the subject’s or the legally authorized representative’s consent
+( 46.116(c)(2) / 50.25(b)(2) )
+• Any additional costs to the subject that may result from participation in the research
+( 46.116(c)(3) / 50.25(b)(3) )
+• The consequences of a subject’s decision to withdraw from the research and procedures for
+orderly termination of participation by the subject ( 46.116(c)(4) / 50.25(b)(4) )
+• A statement that significant new findings developed during the course of the research that
+may relate to the subject’s willingness to continue participation will be provided to the
+subject ( 46.116(c)(5) / 50.25(b)(5) )
+• The approximate number of subjects involved in the study ( 46.116(c)(6) / 50.25(b)(6) )
+• A statement that the subject’s biospecimens (even if identifiers are removed) may be used for
+commercial profit and whether the subject will or will not share in this commercial profit
+( 46.116(c)(7) 2018 Common Rule only )
+• A statement regarding whether clinically relevant research results, including individual
+research results, will be disclosed to subjects, and if so, under what conditions ( 46.116(c)(8)
+2018 Common Rule only ): and
+• For research involving biospecimens, whether the research will (if known) or might include
+whole genome sequencing (i.e., sequencing of a human germline or somatic specimen with
+the intent to generate the genome or exome sequence of that specimen). ( 46.116(c)(9) 2018
+Common Rule only )
+Additional FDA Requirements for Informed Consent
+In addition to above, the FDA also requires the following:
+• A description of procedures which are experimental.
+• A statement whic h identifies the test article as “investigational” or “not approved by the
+FDA ,” if the test article under study is not FDA -approved for the proposed use. OR If the test
+article is approved, include a statement as whether it is being used according to its labeled
+indications. ( 21 CFR 50.25(a)(1) )
+• Make no claims which state or imply, directly or indirectly, that the test article is safe or
+effective for the purposes under investigation or that the product is in any way equivalent or
+superior to another product. ( 21 CFR 312.7(a) / 21 CFR 812.7(d) )
+
+## Page 7
+
+IRB Quick Reference Guide
+7
+• NIH PIs must include the statement below word or word for either clinical trial (as defined
+above) informed consent documents as required by the NIH Policy on the Dissemination of
+NIH-Funded Clinical Trial Information , or for “ applicable clinical trials ,” as defined by
+statute at 42 U.S.C. 282(j)(1)(A):
+“A description of this clinical trial will be available on http://www.ClinicalTrials.gov , as
+required by U.S. law. This Web site will not include information that can identify you. At
+most, the Web site will include a summary of the results. You can search this Web site at any
+time.”
+
+## Page 8
+
+IRB Quick Reference Guide
+8
+Waiver or Alteration of Informed Consent &
+Waiver of Documentation of Consent
+REFERENCES
+• 301 - Policy - Informed Consent
+• 46.116 and 46.117 / 50.23 , 50.24 and 56.109(c)
+• Guidance for Sponsors, Investigators, and Institutional Review Boards - IRB Waiver or
+Alteration of Informed Consent for Clinical Investigations Involving No More Than
+Minimal Risk to Human Subjects
+• Guidance for Institutional Review Boards, Clinical Investigators, and Sponsors:
+Exception from Informed Consent Requirements for Emergency Research
+The IRB only may waive or alter elements of informed consent or waive documentation of
+informed consent when the IRB determines and documents that the requirements for waiver or
+alteration are met, as specified in 45 CFR parts 46.116 and 46.117 or, for emergency research, as
+noted at 61 Federal Register 51531
+1
+.
+HHS - Waiver or Alteration of Consent
+When waiving or altering consent or waiving the requirements under 46.116, the IRB must
+find and document that:
+(1) The research involves no more than minimal risk to the subjects.
+(2) The waiver or alteration will not adversely affect the rights and welfare of the subjects.
+(3) The research could not practicably be carried out without the waiver or alteration.
+(4) If the research involves using identifiable private information or identifiable
+biospecimens, the research could not practicably be carried out without using such
+information or biospecimens in an identifiable format ( This clause only applies to the
+2018 Common Rule (CR) ); and
+(5) Whenever appropriate, the subjects will be provided with additional pertinent
+information after participation.
+FDA - Waiver or Alteration of Consent
+When the research is regulated by the FDA, the IRB may only waive informed consent for
+emergency research as specified in 21 CFR parts 50.23 and 50.24 and waive documentation of
+1
+Waiver of informed consent is not permitted for certain research with vulnerable populations. Per 61 FR 51531 ,
+because of special regulatory limitations relating to research involving prisoners (Subpart C of 45 CFR part 46) and
+research involving fetuses, pregnant women, and human in vitro fertilization (Subpart B of 45 CFR part 46), the
+waiver for emergency research is not applicable to these categories of research/
+
+## Page 9
+
+IRB Quick Reference Guide
+9
+informed consent as specified in 56.109(c) or waive or alter elements of informed consent for
+non-emergency, minimal risk research in accordance with applicable FDA guidance .
+NOTE: The FDA is in the process of harmonization with the HHS 2018 Common Rule however
+this process is not yet complete. The FDA has not accepted the revised waiver criteria adopted
+by the 2018 CR.
+HHS - Waiver of Documentation of Consent
+The informed consent document must be signed and dated by the subject
+2
+, except when the IRB
+has approved a waiver of documentation of informed consent, consistent with 46.117(c) and
+when applicable 56.109(c) (see related requirements for FDA regulated research below).
+(1) An IRB may waive the requirement for the investigator to obtain a signed informed consent
+form for some or all subjects if it finds any of the following:
+(i) That the only record linking the subject and the research would be the informed consent
+form and the principal risk would be potential harm resulting from a breach of
+confidentiality. Each subject (or legally authorized representative) will be asked whether
+the subject wants documentation linking the subject with the research, and the subject’s
+wishes will govern;
+(ii) That the research presents no more than minimal risk of harm to subjects and involves no
+procedures for which written consent is normally required outside of the research context;
+or
+(iii) If the subjects or legally authorized representatives are members of a distinct cultural
+group or community in which signing forms is not the norm, that the research presents no
+more than minimal risk of harm to subjects and provided there is an appropriate
+alternative mechanism for documenting that informed consent was obtained. ( This clause
+only applies to the 2018 CR)
+(2) In cases in which the documentation requirement is waived, the IRB may require the
+investigator to provide subjects or legally authorized representatives with a written statement
+regarding the research.
+FDA – Waiver of Documentation of Consent
+(c) An IRB shall require documentation of informed consent in accordance with §50.27 , except
+as follows:
+(1) The IRB may, for some or all subjects, waive the requirement that the subject, or the
+subject's legally authorized representative, sign a written consent form if it finds that the
+2
+When minor subjects reach the age of majority, investigators must seek informed consent from the now-
+adult subject for their continued participation unless consent is not required (e.g., for certain exempt
+research) or if waived by the IRB (See Policy 402 Research Involving Children ).
+
+## Page 10
+
+IRB Quick Reference Guide
+10
+research presents no more than minimal risk of harm to subjects and involves no
+procedures for which written consent is normally required outside the research context; or
+(2) The IRB may, for some or all subjects, find that the requirements for an exception from
+informed consent for emergency research are met as described in §50.24 . (For more
+information about emergency research see Guidance for Institutional Review Boards,
+Clinical Investigators, and Sponsors: Exception from Informed Consent Requirements for
+Emergency Research .)
+(d) In cases where the documentation requirement is waived under paragraph (c)(1) of this
+section, the IRB may require the investigator to provide subjects with a written statement
+regarding the research.
+
+## Page 11
+
+IRB Quick Reference Guide
+11
+Subpart D - Children
+REFERENCES
+• Policy 402 Research Involving Children
+• 45 CFR 46 Subpart D / 21 CFR part 50, Subpart D
+• IRB Tip Sheet - Research Involving Children
+• OHRP Research with Children FAQs
+Under Subpart D children are defined as follows: Children are persons who have not attained
+the legal age for consent to treatments or procedures involved in the research, under the
+applicable law of the jurisdiction in which the research will be conducted
+3
+(45 CFR 46.402(a)).
+Approval Categories for Research Involving Children
+Research involving children is only approvable under one of the following categories:
+404 / 51 : No greater than minimal risk
+• Assent of child (as applicable);
+• Permission of parents (may determine permission of 1 parent is sufficient
+4
+)
+405 / 52 : Greater than minimal risk, but with the possibility of direct benefit to individual
+subjects
+• Risk is justified by the anticipated benefit to the subjects;
+• Relation of the anticipated benefit to the risk is at least as favorable to the subjects as
+that presented by available alternatives;
+• Assent of child (as applicable); and
+• Permission of parents (may determine permission of 1 parent is sufficient
+5
+)
+406 / 53 : Greater than minimal risk and no possibility of direct benefit to individual subjects, but
+likely to yield generalizable knowledge about the subject’s disorder or condition
+• Risk represents a minor increase over minimal risk;
+3
+For research conducted at an NIH site, an adult is anyone 18 years or older, unless the child is legally emancipated.
+4
+For research taking place at an NIH site, and in cases where parents share joint legal custody for
+medical decision-making of a child (e.g., by a custody agreement or court order), both parents must give
+their permission regardless of the risk level of the research. Exceptions may include if one parent has
+since died, become incompetent, or is not reasonably available.
+5
+Ibid. 4
+
+## Page 12
+
+IRB Quick Reference Guide
+12
+• Intervention or procedure presents experiences to the children that are reasonably
+commensurate with those inherent in their actual or expected medical, dental,
+psychological, social or educational situations;
+• Intervention or procedure is likely to yield generalizable knowledge about the
+subjects’ disorder or condition which is of vital importance for the understanding or
+amelioration of the subjects’ disorder or condition;
+• Assent of child (as applicable); and
+• Permission of both parents
+407 / 54 : Greater than minimal risk research not otherwise approvable which presents an
+opportunity to understand, prevent or alleviate a serious problem affecting the health or
+welfare of children
+• IRB finds and documents that the research presents a reasonable opportunity to
+further the understanding, prevention or alleviation of a serious problem affecting
+the health or welfare of children, and
+• The HHS Secretary or FDA Commissioner approval and publication in federal
+register.
+Parental Permission
+Parental signature requirements - If the research contains interventions that are only minimal
+risk, or greater than minimal risk with a prospect of direct benefit, the IRB can determine the
+signature from either 1 or 2 parents is sufficient.
+For research taking place at an NIH site, and in cases where parents share joint legal custody for
+medical decision-making of a child (e.g., by a custody agreement or court order), both parents
+must give their permission regardless of the risk level of the research. Exceptions may include if
+one parent has since died, become incompetent, or is not reasonably available
+However, if the research contains any procedures determined by the IRB to be greater than
+minimal risk without a prospect of direct benefit, the IRB must require 2 parent signatures. This
+is true even if the same study contains interventions that have a prospect of direct benefit.
+Assent of Children
+The IRB must determine that adequate provisions are made for soliciting the assent of children,
+when in the judgment of the IRB the children are capable of providing assent. When determining
+whether children are capable of assenting, the IRB must take into account:
+• age
+• maturity, and
+• the psychological state of the children
+
+## Page 13
+
+IRB Quick Reference Guide
+13
+This judgment may be made for all children to be involved in research under a particular
+protocol, or for each child, as the IRB deems appropriate.
+Waiver of Assent
+If the IRB determines that the capability of some or all of the children is so limited that they
+cannot reasonably be consulted or that the research intervention/procedure holds out a prospect
+of direct benefit that is important to the health or well-being of the children and is available only
+in the context of the research, then the assent of the children is not a necessary requirement. Even
+where the IRB determines that the subjects are capable of assenting, the IRB may still waive the
+assent consistent with 46.116 .
+The regulations at 46.408 (a) identify three types of circumstances where the IRB may determine
+that waiver of children’s assent is appropriate, if the:
+1. Capability of some or all of the children is so limited that they cannot reasonably be
+consulted;
+2. Intervention or procedure involved in the research holds out the prospect of direct benefit to
+the health or well-being of the children and is available only in the context of the research.
+3. Research meets the same conditions as those for waiver or alteration of informed consent in
+research involving adults, as specified in the regulations at either 46.116 (c) or (d).
+When the IRB determines that assent is required, it must also determine whether and how assent
+must be documented.
+Wards
+For research involving wards of the state, in order to be approvable under 46.406 or 46.407 the
+requirements of 46.409 must be met.
+
+## Page 14
+
+IRB Quick Reference Guide
+14
+Subpart B – Pregnant Persons, Fetuses and Neonates
+REFERENCES
+• Policy 400 Research Involving Pregnant Women, Human Fetuses, and Neonates
+• 45 CFR 46 Subpart B
+• IRB Tip Sheet - Research Involving Pregnant Subjects
+• Guideline for Inclusion-Exclusion of Pregnant Persons and Information about
+Pregnancy Testing ( file will download from webpage )
+Under Subpart B pregnancy is defined as follows: Pregnancy encompasses the period of time
+from implantation until delivery. A woman shall be assumed to be pregnant if she exhibits any of
+the pertinent presumptive signs of pregnancy, such as missed menses, until the results of a
+pregnancy test are negative or until delivery .
+Pregnant Persons and Fetuses
+Pregnant women or fetuses may only be involved in research if all of the following conditions
+under 46.204 are met, as applicable:
+Scientifically Appropriate:
+a) Where scientifically appropriate, preclinical studies, including studies on pregnant
+animals, and clinical studies, including studies on nonpregnant women, have been
+conducted and provide data for assessing potential risks to pregnant women and fetuses.
+Risk/Benefit:
+b) The risk to the fetus is caused solely by interventions or procedures that hold out the
+prospect of direct benefit for the woman or the fetus ; or,
+• if there is no such prospect of benefit, the risk to the fetus is not greater than minimal,
+and
+• the purpose of the research is the development of important biomedical knowledge
+which cannot be obtained by any other means.
+c) Any risk is the least possible for achieving the objectives of the research.
+d) If the research holds out the prospect of direct benefit to the pregnant woman , the
+prospect of a direct benefit both to the pregnant woman and the fetus , or
+• no prospect of benefit for the woman nor the fetus when risk to the fetus is not greater
+than minimal, and
+• the purpose of the research is the development of important biomedical knowledge
+that cannot be obtained by any other means,
+• her consent is obtained in accord with the informed consent provisions of subpart A.
+
+## Page 15
+
+IRB Quick Reference Guide
+15
+e) If the research holds out the prospect of direct benefit solely to the fetus , then the
+consent of the pregnant woman and the father is obtained in accord with the informed
+consent provisions of subpart A of this part, except that the father's consent need not be
+obtained if he is unable to consent because of unavailability, incompetence, or temporary
+incapacity or the pregnancy resulted from rape or incest.
+Consent of Parents:
+f) Each individual providing consent under paragraph (d) or (e) of this section is fully
+informed regarding the reasonably foreseeable impact of the research on the fetus or
+neonate.
+Pregnant Children:
+g) For children who are pregnant, assent and permission are obtained in accord with the
+provisions of subpart D. (See previous section on Children)
+Prohibitions on researchers against termination:
+h) No inducements , monetary or otherwise, will be offered to terminate a pregnancy.
+i) Individuals engaged in the research will have no part in any decisions as to the timing,
+method, or procedures used to terminate a pregnancy.
+j) Individuals engaged in the research will have no part in determining the viability of a
+neonate.
+Neonates (newborns)
+For research involving neonates, review under 46.205
+Placental/Fetal Material
+For research involving use of the placenta, the dead fetus or fetal materials (after delivery),
+review under 46.206
+Secretarial Review
+For research not otherwise approvable but which presents an opportunity to understand,
+prevent or alleviate a serious problem affecting the health or welfare of pregnant persons, fetuses
+or neonates, review under 46.207 .
+
+## Page 16
+
+IRB Quick Reference Guide
+16
+Subpart C – Prisoners
+REFERENCES
+• Policy 401 Research Involving Prisoners
+• 45 CFR 46 Subpart C
+• Guideline for Enrolling Prisoners in Research ( file will download from webpage )
+• Epidemiological Research - 68 Fed. Reg. 36929 (Jun. 20, 2003)
+• Emergency Research - 61 Fed. Reg. 51531 (Oct. 2, 1996)
+• OHRP Prisoner Research FAQ s
+DEFINITIONS
+• Prisoner means any individual involuntarily confined or detained in a penal institution. The
+term is intended to encompass individuals sentenced to such an institution under a criminal or
+civil statute, individuals detained in other facilities by virtue of statutes or commitment
+procedures which provide alternatives to criminal prosecution or incarceration in a penal
+institution, and individuals detained pending arraignment, trial, or sentencing.
+• Minimal risk is the probability and magnitude of physical or psychological harm that is
+normally encountered in the daily lives, or in the routine medical, dental, or psychological
+examination of healthy persons
+Apply Subpart C whenever the research involves prisoners regardless of whether prisoners
+are the intended subject population, or for a protocol not previously approved under
+Subpart C, but a subject becomes a prisoner during the course of the research and the
+investigators wants the subject to remain on the research during the period of incarceration.
+Prisoners - Composition of the IRB
+In order to review research involving prisoners the IRB must be composed in accordance
+with 46.304 .
+Required Findings of the IRB Permissible categories of approval
+The Board will approve research involving
+prisoners only if it finds that:
+(1) The research under review represents one of
+the categories of research permissible
+under §46.306(a)(2) (See next column)
+(2) Any possible advantages accruing to the
+prisoner through his or her participation in the
+research, when compared to the general living
+conditions, medical care, quality of food,
+amenities and opportunity for earnings in the
+(a) Biomedical or behavioral research
+conducted or supported by DHHS may
+involve prisoners as subjects only if:
+(1) The institution responsible for the conduct of
+the research has certified to the Secretary that
+the Institutional Review Board has approved
+the research under §46.305 of this subpart;
+and
+(2) In the judgment of the Secretary the proposed
+
+## Page 17
+
+IRB Quick Reference Guide
+17
+prison, are not of such a magnitude that his or
+her ability to weigh the risks of the research
+against the value of such advantages in the
+limited choice environment of the prison is
+impaired;
+(3) The risks involved in the research are
+commensurate with risks that would be
+accepted by non-prisoner volunteers;
+(4) Procedures for the selection of subjects within
+the prison are fair to all prisoners and immune
+from arbitrary intervention by prison
+authorities or prisoners. Unless the principal
+investigator provides to the Board
+justification in writing for following some
+other procedures, control subjects must be
+selected randomly from the group of available
+prisoners who meet the characteristics needed
+for that particular research project;
+(5) The information is presented in language
+which is understandable to the subject
+population;
+(6) Adequate assurance exists that parole boards
+will not take into account a prisoner's
+participation in the research in making
+decisions regarding parole, and each prisoner
+is clearly informed in advance that
+participation in the research will have no
+effect on his or her parole; and
+(7) Where the Board finds there may be a need
+for follow-up examination or care of
+participants after the end of their participation,
+adequate provision has been made for such
+examination or care, taking into account the
+varying lengths of individual prisoners'
+sentences, and for informing participants of
+this fact.
+research involves solely the following:
+(i) Study of the possible causes, effects, and
+processes of incarceration, and of criminal
+behavior, provided that the study presents
+no more than minimal risk and no more
+than inconvenience to the subjects;
+(ii) Study of prisons as institutional structures
+or of prisoners as incarcerated persons,
+provided that the study presents no more
+than minimal risk and no more than
+inconvenience to the subjects;
+(iii) Research on conditions particularly
+affecting prisoners as a class (for example,
+vaccine trials and other research on
+hepatitis which is much more prevalent in
+prisons than elsewhere; and research on
+social and psychological problems such as
+alcoholism, drug addiction, and sexual
+assaults) provided that the study may
+proceed only after the Secretary has
+consulted with appropriate experts
+including experts in penology, medicine,
+and ethics, and published notice, in the
+Federal Register, of his intent to approve
+such research; or
+(iv) Research on practices, both innovative and
+accepted, which have the intent and
+reasonable probability of improving the
+health or well-being of the subject. In cases
+in which those studies require the
+assignment of prisoners in a manner
+consistent with protocols approved by the
+IRB to control groups which may not
+benefit from the research, the study may
+proceed only after the Secretary has
+consulted with appropriate experts,
+including experts in penology, medicine,
+and ethics, and published notice, in the
+Federal Register, of the intent to approve
+such research.
+(b) Except as provided in paragraph (a) of this
+section, biomedical or behavioral research
+conducted or supported by DHHS shall not
+involve prisoners as subjects.
+
+## Page 18
+
+IRB Quick Reference Guide
+18
+Prisoners - Epidemiological Research
+The Secretary granted a waiver of the applicability ( 68 Fed. Reg. 36929 (Jun. 20, 2003) ) of 45
+CFR 46.305(a)(1) and 46.306(a)(2) in order to allow for important and necessary epidemiologic
+research on prisoners that meets specific criteria (e.g., epidemiological research related to
+chronic diseases, injuries, and environmental health), provided that these studies meet the
+following criteria:
+• Present no more than minimal risk and no more than inconvenience to the prisoner-
+subjects, and
+• Prisoners are not the particular focus of the research.
+• The IRB must review the research subject to a waiver under Subpart C and document all
+other required findings under HHS regulations at 46.305 (a)
+Prisoners - Emergency Research
+Prisoners cannot be involved in emergency research where the Secretary HHS has waived the
+requirement for informed consent ( 46.101 (i) and 61 Fed. Reg. 51531 (Oct. 2, 1996) )
+
+## Page 19
+
+IRB Quick Reference Guide
+19
+Individuals Lacking Capacity to Consent To Research
+REFERENCES
+• Policy 403 Research Involving Subjects Lacking Capacity to Consent to Research
+Participation
+• Research Involving Individuals Without Consent Capacity ( file will download from
+webpage )
+• SACHRP Recommendations Regarding Research Involving Individuals with Impaired
+Decision making (2009)
+• IRB Review of Research Involving Potential Subjects Lacking Consent Capacity
+The regulations do not include a separate subpart describing protections for those with
+impaired decision making as they do for pregnant women/human fetuses/neonates,
+prisoners, and children. However, the criteria for IRB approval of research at 46.111(b) ,
+notes that the IRB must determine “ When some or all of the subjects are likely to be
+vulnerable to coercion or undue influence, such as children, prisoners, individuals with
+impaired decision-making capacity, or economically or educationally disadvantaged
+persons, additional safeguards have been included in the study to protect the rights and
+welfare of these subjects. ”
+At the NIH, adult individuals lacking capacity to consent to research participation may
+participate both in research studying disorders about their condition as well as studies of
+conditions unrelated to their cognitive impairment that have the prospect of direct benefit.
+Risk Categories for Adults Lacking Capacity to Consent
+The NIH IRB may only approve research that permits the participation of subjects without
+consent capacity if it determines and documents that the research meets one of the
+following risk/benefit categories:
+Category A - The research is minimal risk
+Category B - The research is greater than minimal risk, and offers a prospect of direct
+benefit to the participant
+Category C - The research is no more than a minor increase over minimal risk with no
+prospect of direct benefit , and does not adversely affect the rights, safety, or welfare of
+the participants, or
+Category D - The research does not meet the above conditions but has undergone
+additional institutional review and approval by the NIH Institutional Official
+
+## Page 20
+
+IRB Quick Reference Guide
+20
+Safeguards Based on Level of Risk
+In addition to assessing the level of risk, the IRB should determine if appropriate safeguards are
+in place:
+• If the potential subject lacks the capacity to consent to research participation, consent must
+be obtained from their Legally Authorized Representative (LAR).
+• For studies that pose greater than minimal risk, consider whether consent capacity
+assessments should be conducted by a qualified professional who is independent of the
+study team.
+• Ensure the plan for assessing initial and ongoing consent is adequate, when applicable.
+• Consider if consent monitoring or assent by the potential subject (verbal or written) should
+be required.
+• The hierarchy for determining who may serve as the LAR at an NIH site
+6
+is specified in
+Policy 403 and in the table below.
+6
+For research conducted at non-NIH sites, who may serve as the LAR may vary due to state law or institutional
+policy
+
+## Page 21
+
+IRB Quick Reference Guide
+21
+Risk Category Risk/Benefit
+Level
+Hierarchy for Determining the LAR (at an NIH
+site)
+Category A Minimal Risk 1. Court-appointed guardian of the person, who is
+authorized to consent to the research
+7
+2. The individual(s) appointed in the patient’s
+Durable Power of Attorney (DPA) for health
+care
+3. If the prospective subject does not have a court
+appointed guardian or DPA for health care, and
+they are capable of understanding the DPA
+process, even if they lack capacity to consent to
+research, the prospective subject may execute a
+DPA for health care
+4. If no court-appointed guardian or DPA for
+health care exists, and the prospective subject is
+unable to execute a DPA for health care, then
+the next of kin hierarchy listed below may be
+used to identify the LAR in the following
+descending order:
+a. Spouse or domestic partner
+b. Adult child
+c. Parent
+d. Adult sibling, or
+e. Other relative
+Category B Greater than Minimal
+Risk (GMTR) but
+offers prospect of
+direct benefit (DB)
+Same as Category A
+Category C No more than a minor
+increase over minimal
+risk with no prospect
+of DB, and does not
+adversely affect the
+rights, safety or
+welfare of participants
+Same as Category A
+Category D Research that does not
+fall into one of the
+above categories
+• There must be a court-appointed guardian or
+DPA for healthcare who can provide consent
+on behalf of the participant, and
+• The next of kin hierarchy (as listed
+above) may not be used to identify an
+LAR
+In addition, institutional review and approval by
+the NIH Institutional Official is required followed
+by review by the convened Board
+7
+A court-appointed guardian may only consent for a subject without capacity to participate in research if the
+guardian has authority to do so under the laws of the state that issued the guardianship order and the terms of the
+guardianship order
+
+## Page 22
+
+IRB Quick Reference Guide
+22
+Investigational Devices
+REFERENCES
+• Policy 501 Research Involving FDA Regulated Devices
+• FDA regulations - 21 CFR parts 50 , 56 , 809 , 812 , and 814
+• Device Determinations (March 2022) ( file will download from webpage )
+DEFINITIONS
+Clinical investigation of a device – A clinical investigation or research involving one or
+more subjects to determine the safety or effectiveness of a device. ( 21 CFR 812.3(h) )
+Investigational Device – A device, including a transitional device, that is the object of an
+investigation.
+Non-significant Risk (NSR) Device – An investigational device that is not a significant
+risk device as defined at 21 CFR 812.3(m) .
+Significant Risk (SR) Device - An investigational device that:
+1. Is intended as an implant and presents a potential for serious risk to the health,
+safety, or welfare of a subject;
+2. Is purported or represented to be for a use in supporting or sustaining human life
+and presents a potential for serious risk to the health, safety, or welfare of a subject;
+3. Is for a use of substantial importance in diagnosing, curing, mitigating, or treating
+disease, or otherwise preventing impairment of human health and presents a
+potential for serious risk to the health, safety, or welfare of a subject; or
+4. Otherwise presents a potential for serious risk to the health, safety, or welfare of a
+subject. ( 21 CFR 812.3(m) )
+Determinations Involving Investigational Devices
+If the research will use a legally marketed device(s) in accordance with the FDA labeling,
+then no IDE is required. OR
+The device investigation is exempt if it meets FDA criteria under 21 CFR 812.2(c) :
+1. A device, other than a transitional device, in commercial distribution immediately
+before May 28, 1976, when used or investigated in accordance with the labeling.
+2. A device, other than a transitional device, introduced into commercial distribution
+on or after May 28, 1976, that the FDA has determined to be substantially
+equivalent to a device in commercial distribution immediately before May 28,
+1976, and that is used or investigated in accordance with the labeling.
+
+## Page 23
+
+IRB Quick Reference Guide
+23
+3. A diagnostic device if the sponsor complies with applicable requirements in
+§809.10(c) and if the testing:
+1. Is noninvasive,
+2. Does not require an invasive sampling procedure that presents significant
+risk,
+3. Does not by design or intention introduce energy into a subject, and
+4. Is not used as a diagnostic procedure without confirmation of the diagnosis
+by another, medically established diagnostic product or procedure.
+4. A device undergoing consumer preference testing, testing of a modification, or
+testing of a combination of two or more devices in commercial distribution if the
+testing is not for the purpose of determining safety or effectiveness and does not
+put subjects at risk.
+5. A custom device as defined in §812.3(b) unless the device is being used to
+determine safety or effectiveness for commercial distribution.
+Otherwise, if the research involves the study of the safety or efficacy of an investigational
+device, then an IDE is required. In that case, the IRB must determine if the device is a
+Significant Risk (SR) or a Non-significant Risk (NSR) device. When the IRB makes an
+NSR determination it is acting in lieu of the FDA and it is issuing an IDE under
+abbreviated requirements at 812.2(b) . When the FDA has already provided the Sponsor a
+formal determination regarding the Investigational Device Exemption (IDE), t he FDA’s
+determination is final.
+IRB Responsibilities When Reviewing Non-exempt Device Investigations
+If the research involves the study of the safety or efficacy of an investigational
+device, then the Sponsor is responsible for making the initial assessment whether the
+device is an NSR or SR device. This will be provided to the IRB.
+• If the FDA has not provided a determination regarding the IDE, then the IRB is
+responsible to determine if it agrees with the Sponsor’s initial assessment.
+• If the IRB agrees with the Sponsor’s initial assessment, then the IRB should review the
+study, applying requisite criteria for review and approval . If the IRB disagrees with the
+Sponsor’s initial assessment, then it should make its assessment based on the table
+below.
+• If the FDA has provided a determination, t he FDA’s determination is final . However,
+in accordance with 812.42 the investigation may not commence until IRB has
+conducted its review, and documented this determination in the Minutes.
+
+## Page 24
+
+IRB Quick Reference Guide
+24
+Determinations for Investigational Devices that are not Exempt or Will
+be used as FDA-approved
+Determination: Significant Risk (SR) Investigational
+Device - An investigational device that:
+1. Is intended as an implant; or
+2. Is purported or represented to be for a use
+in supporting or sustaining human life; or
+3. Is for a use of substantial importance
+in diagnosing, curing, mitigating, or
+treating disease, or otherwise preventing
+impairment of human health; or
+4. Otherwise presents a potential for serious
+risk to the health, safety, or welfare of a
+subject. ( 21 CFR 812.3(m) )
+Non-significant
+Risk (NSR) Device
+- Does not meet
+definition of an SR
+device study
+Required
+Approval:
+IDE from FDA and IRB approval IRB approval only
+Applicable FDA
+regulations:
+Subject to full IDE regulations at 21 CFR 812 Subject to abbreviated
+IDE regulations at
+( 21 CFR 812.2(b) )
+
+## Page 25
+
+IRB Quick Reference Guide
+25
+Evaluating Events – Unanticipated Problems
+REFERENCES
+• Policy 801 Reporting Research Events
+• Guidance - Reporting Research Events and Non-compliance ( file will download from
+webpage )
+• IRB Member Review of Reported Events as Possible Unanticipated Problems
+• OHRP Guidance - Reviewing and Reporting Unanticipated Problems Involving Risks
+to Subjects or Others and Adverse Events (2007)
+DEFINITIONS
+Unanticipated Problems Involving Risks to Subjects or Others – Any incident,
+experience, or outcome that meets all the following criteria:
+1. Unexpected (in terms of nature, severity, or frequency) given
+(a) the research procedures that are described in the protocol-related documents,
+such as the IRB-approved research protocol and informed consent document;
+and
+(b) the characteristics of the subject population being studied.
+2. Related or possibly related to participation in the research (possibly related
+means there is a reasonable possibility that the incident, experience, or outcome
+may have been caused by the procedures involved in the research); and
+3. Suggests that the research places subjects, or others (which may include
+research staff, family members or other individuals not directly participating in the
+research) at a greater risk of harm (including physical, psychological, economic,
+or social harm) related to the research than was previously known or expected.
+Unanticipated (Unexpected) – An experience that was not expected or previously
+observed, or is not consistent in nature, severity, or frequency with existing risk
+information, such as in the investigator’s brochure, device manual, research protocol,
+consent form, or other available information (e.g., Investigation New Drug (IND)
+application for an investigational drug or Investigational Device Exemption (IDE)
+application for an investigational device). Interchangeable with “unexpected”. This
+includes an event or problem occurring in one or more subjects in a research study that is
+not consistent with the expected natural progression of any underlying disease, disorder, or
+condition of the subject experiencing the event/problem.
+
+## Page 26
+
+IRB Quick Reference Guide
+26
+IRB Considerations for Unanticipated Problems (UPs)
+When the IRB determines an event is a UP, IRB members should consider:
+• Are corrective actions that are planned or already taken by the investigator
+appropriate and sufficient?
+• Are risks to participants or others still minimized and reasonable in relation to
+anticipated benefits?
+• Are modifications to the protocol and/or consent needed? For example,
+o Should safety monitoring frequency be increased?
+o Does the consent need to be updated to notify subjects of the new risk?
+o Should existing subjects be reconsented?
+• Are risks to participants such that IRB should consider suspending enrollment?
+Suspend/terminate entire study?
+IRB Authorities when the Event is a UP
+In response to a reportable event, the IRB has the authority to:
+• Request additional information
+• Require modification of the protocol or consent(s)
+• Require notification of subjects
+• Require reconsent of subjects
+• Require the investigator to suspend new enrollment to the protocol
+• Increase the type and/or frequency of safety monitoring
+• Change the period of review, or
+• Other measures to protect the rights, safety and welfare of subjects
+
+## Page 27
+
+IRB Quick Reference Guide
+27
+Is the event is a UP Flowchart
+Figure 1 Flowchart to determine if the event is an Unanticipated Problem
+
+## Page 28
+
+IRB Quick Reference Guide
+28
+RCRC IRB – Review of Potential Non-Compliance
+REFERENCES
+• Policy 802 Non-compliance in Human Subjects Research
+• Guidance - Reporting Research Events and Non-compliance ( file will download from
+webpage )
+DEFINITIONS
+Non-Compliance – Failure of an investigator to follow the applicable laws, regulations, or
+institutional policies governing the protection of human subjects in research, or the
+requirements or determinations of the Institutional Review Board (IRB), whether the
+failure is intentional or not.
+1. Continuing non-compliance - A pattern of recurring non-compliance that either
+has resulted, or, if continued, may result in harm to subjects or otherwise materially
+compromise the rights, welfare and/or safety of subjects, affect the scientific
+integrity of the study or validity of the results. The pattern may comprise repetition
+of the same non-compliant action(s), or different non-compliant events. Such non-
+compliance may be unintentional (e.g., due to lack of understanding, knowledge, or
+commitment), or intentional (e.g., due to deliberate choice to ignore or compromise
+the requirements of any applicable regulation, organizational policy, or
+determination of the IRB).
+2. Serious non-compliance - Non-compliance, whether intentional or not, that results
+in harm or otherwise materially compromises the rights, welfare and/or safety of
+the subject. Non-compliance that materially affects the scientific integrity or
+validity of the research may be considered serious non-compliance, even if it does
+not result in direct harm to research subjects.
+RCRC Responsibilities When Reviewing Non-compliance
+The Research Compliance Review Committee (RCRC) is a duly constituted IRB registered with
+OHRP. In accordance with Policy 802 , for all protocols in which the research was conducted
+under the jurisdiction of the NIH IRB, the RCRC has the final authority to determine whether
+there is non-compliance.
+When the RCRC reviews non-compliance, it:
+• Will determine whether it is serious and/or continuing
+• Will determine the adequacy of any corrective actions that are planned or already
+taken by the investigator or what corrective actions are needed to assure compliance
+moving forward
+
+## Page 29
+
+IRB Quick Reference Guide
+29
+• Has all the authorities of the IRB including, requiring modifications to any proposed
+corrective action as a condition for continued approval of research. For example,
+o Continued monitoring,
+o Notification to past research subjects,
+o Reconsent of current subjects when the investigation results in information that
+might impact the subjects’ willingness to continue participation in the research , or
+o Mandated training of the study team.
+
+## Page 30
+
+IRB Quick Reference Guide
+30
+Expanded Access to Investigational Drugs & Devices
+REFERENCES
+• Policy 502 Expanded Access, Including Emergency Use of Investigational Drugs,
+Biologics, and Medical Devices (Test Articles)
+• FDA regulations - 21 CFR parts 50 , 56 , and for treatment use of investigational:
+o Drugs - 21 CFR 312 subpart I
+o Devices - 21 CFR 812.36
+• Emergency Use of an Investigational Drug or Biologic (January 1998, Content current
+as of 07/12/2018)
+• Expanded Access to Experimental Biologics (Content current as of 09/16/2019)
+• Expanded Access Categories for Drugs (Including Biologics) (Content current as of
+01/04/2018)
+• Expanded Access for Medical Devices (Content current as of 6/21/2019)
+DEFINITIONS
+Expanded access ( Sometimes referred to as “compassionate use”) – A potential
+pathway for a patient with an immediately life-threatening condition or serious disease or
+condition to gain access to an investigational medical product (drug, biologic, or medical
+device) for treatment outside of clinical trials when no comparable or satisfactory
+alternative therapy options are available. ( See Expanded Access Keywords, Definitions
+and Resources .)
+Immediately life-threatening disease or condition – A stage of disease in which there is
+reasonable likelihood that death will occur within a matter of months or in which
+premature death is likely without early treatment. ( 21 CFR 312.300(b) )
+Serious disease or condition – A disease or condition associated with morbidity that has
+substantial impact on day-to-day functioning. Short-lived and self-limiting morbidity will
+usually not be sufficient, but the morbidity need not be irreversible, provided it is
+persistent or recurrent. Whether a disease or condition is serious is a matter of clinical
+judgment, based on its impact on such factors as survival, day-to-day functioning, or the
+likelihood that the disease, if left untreated, will progress from a less severe condition to a
+more serious one. ( 21 CFR 312.300(b) )
+
+## Page 31
+
+IRB Quick Reference Guide
+31
+Expanded Access to Investigational Drugs, Biologics or Devices for Treatment
+Expanded access refers to the use of an investigational drug, biologic, or device product
+(test article) when the primary purpose is to diagnose, monitor or treat a patient's disease
+or condition rather than to obtain the kind of information about the drug that is generally
+derived from clinical trials. The regulations are intended to facilitate access to
+investigational drugs for treatment use for patients with serious or immediately life-
+threatening diseases or conditions who lack therapeutic alternatives. At the NIH:
+• Only persons enrolled in an NIH research protocol may be treated using an expanded
+access protocol, and
+• NIH Investigators may not perform research interventions or collect or analyze data for
+research purposes under an expanded access protocol.
+Emergency use for an individual patient:
+• For drugs under an existing IND emergency use can be requested and authorized by a
+rapid means of communication (e.g., telephone) and may start immediately upon FDA
+authorization
+• For devices, if all of the criteria are met as described below, an unapproved device may
+be used in an emergency situation without prior approval by the FDA so long as other
+requirements are fulfilled.
+For non-emergency expanded access applications of a:
+• Drug - the expanded access IND will take effect at the end of the 30-day waiting period
+unless notified by the FDA earlier
+• Device - the expanded access IDE will take effect at the end of the 30-day waiting
+period unless notified by the FDA earlier
+Criteria for a Patient to be eligible for Expanded Access use of a Test Article
+• In order for a patient to be eligible for expanded use, the following criteria must be
+met:
+o Patient(s) must have a serious or immediately life-threatening disease or
+condition, and
+o There is no comparable or satisfactory alternative therapy to diagnose, monitor,
+or treat the disease or condition, and
+o The potential patient benefit justifies the potential risks of the treatment and the
+potential risks are not unreasonable in the context of the disease or condition to
+be treated, and
+o The expanded use of the investigational test article for the requested treatment
+will not interfere with the initiation, conduct, or completion of clinical
+investigations that could support marketing approval of the product, and
+
+## Page 32
+
+IRB Quick Reference Guide
+32
+o At the NIH, the patient must be a subject enrolled on an NIH research study
+• For a patient to be eligible for emergency use of a test article the following criteria
+also must be met:
+o The condition requires immediate intervention before review at a convened IRB
+meeting is possible, or to avoid major irreversible morbidity
+IRB Review Expanded Access INDs/IDEs
+For expanded access protocols, prospective IRB review and approval must be obtained,
+except in certain cases of individual patient use as described below. Even though expanded
+access is for treatment use, informed consent must still be obtained for treatment with the
+investigational drug or device, and if the treatment extends beyond 12 months then CR is
+required.
+SINGLE-PATIENT EXPANDED ACCESS INDS/IDES
+There are 2 types of single-patient expanded access protocols the first involves emergency
+access and the second non-emergency access. It is unlikely that the IRB will see these
+since Chair concurrence can be obtained by the physician. It is helpful to see the criteria
+for emergency access as described in the informed consent clause to distinguish this type
+of expanded access protocol from non-emergency access:
+Informed Consent for treatment will be obtained from the patient or LAR, unless the PI
+and a physician who is not part of the investigation has concurred within 5 days after the
+use of the test article that:
+o The patient was confronted by a life-threatening situation necessitating the use of
+the test article;
+o Informed consent could not be obtained from the patient because of an inability to
+communicate with, or legally effective consent could not be obtained from the
+patient, and time was not sufficient to obtain consent from the LAR; and
+o There is available no alternative method of approved or generally recognized
+therapy that provided an equal or greater likelihood of saving the life of the patient.
+( 21 CFR 50.23(a) )
+In the case of emergency use of a test article, any subsequent use of the test article at the
+institution is subject to IRB review. ( 21 CFR 56.104(c) )
+OTHER EXPANDED ACCESS INDS/IDES
+Other expanded access protocols including, “ Intermediate-size population ” and “ Treatment
+IND/ Protocol ” or rarely, a Humanitarian Use Device (HUD) involve more than one
+patient. The convened Board will review these expanded access protocols similar to
+research protocols unless a waiver for full IRB review has been granted by the FDA under
+21 CFR 56.104 . In its review the IRB will evaluate the submission to determine whether
+
+## Page 33
+
+IRB Quick Reference Guide
+33
+the use complies with regulatory requirements for expanded access use described above.
+Other considerations include:
+• Informed Consent for treatment will be obtained from the patient or LAR
+• Continuing review and approval for expanded access protocols that will exceed a 12-
+month period
+• For expanded access use involving devices, the investigator has established an
+appropriate schedule for monitoring the patient(s), taking into consideration nature of
+the test article and specific needs of the patient(s).
+• The Submission of reportable events to the NIH IRB consistent with Policy 3014-801
+Reporting Research Events .

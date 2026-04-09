@@ -1,0 +1,232 @@
+Name: 3014-801 - Reporting Research Events
+Source URL: https://policymanual.nih.gov/3014-801
+Fetched At: 2026-04-03T18:43:27.487Z
+Source Type: html
+
+---
+
+## 3014-801 - Reporting Research Events
+
+Issuing Office: OD/OIR/OHSRP
+Phone:
+(301) 402-3713
+
+Approving Official(s): DDIR
+
+Release Date: 5/14/2019
+
+Partial Revision Date: 8/06/2025 ?
+
+Technical Revision Date: 1/02/2026 ?
+
+Transmittal Notice
+
+- Explanation of Material Transmitted: This policy describes the requirements for reporting research-related events to the Institutional Review Board (IRB). Partial Revision Date 6/3/2021: This revision specifies reporting requirements to the OHSRP office of Compliance and Training when a PI receives a 483 from the Food and Drug Administration. Partial Revision Date 8/9/2021: This revision specifies reporting requirements to the OHSRP office of Compliance and Training when an external reviewing IRB suspends or terminates research activities at an NIH site; adds IRB responsibilities when reviewing reportable events and includes minor edits for clarity and consistency. Partial Revision Date 02/15/2024: This revision is to provide the requirement to report short-form consent use to the NIH IRB via the Reportable New Information (RNI) form in the electronic IRB (eIRB) system. Partial Revision 7/21/2024: This revision clarifies the authorities of the OHSRP Director, IRBO Director and/or IRB Chair to immediately suspend, or have the PI take additional actions necessary to protect the health, safety or welfare of subjects in response to a Reportable event, or refer it for review by the RCRC or IRB. Partial Revision 4/03/2025: This revision clarifies event reporting requirements for expanded access protocols (EAPs) to the NIH IRB. Partial Revision 05/05/2025: This revision clarifies reporting requirements for research events that occur on minimal risk protocols that are not subject to continuing review. Partial Revision 08/06/2025: This revision clarifies that NIH PIs must report to the IRB when the Sponsor has withdrawn the IND.
+- Filing Instructions:Insert: NIH Manual Chapter 3014-801, dated 5/14/2019, Partial Revision Date: 6/3/2021, 8/9/2021, 02/15/2024, 7/21/2024, 4/03/2025, 05/05/2025, 08/06/2025
+- Implementation Date: 7/1/2019
+
+- PLEASE NOTE: For information on:The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+- Content of this chapter, contact the issuing office listed above.
+- NIH Policy Manual, contact the Division of Compliance Management, DCM, on 301-496-4606 or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+- This policy outlines the requirements for reporting research-related events to the Institutional Review Board (IRB) and, when applicable, the Office of Human Subjects Research Protections (OHSRP), office of Compliance and Training.
+
+### B. Scope
+
+- This policy applies to all NIH investigators conducting human subjects research.
+
+- This policy applies to the OHSRP.
+
+- This policy applies to investigators not covered by the NIH Federalwide Assurance (FWA) when the NIH is the Reviewing IRB for human subjects research conducted by these investigators.
+
+### C. Policy
+
+- For all human subjects research in which an NIH IRB is the Reviewing IRB, NIH Principal Investigators (PIs) and, as applicable, non-NIH Site PIs/Lead Investigators (further referred to as non-NIH investigators), are required to ensure that all reportable events, as defined in this policy, are reported to the OHSRP office of Compliance and Training within the time frames as specified in this policy.The NIH Principal Investigators (PIs)/designees and, as applicable, non-NIH Investigators must report events to the OHSRP office of Compliance and Training via the NIH electronic IRB (eIRB) system in accordance with Section E.1., whether the events occur at the NIH or a non-NIH site;
+- For protocols not subject to continuing review (e.g., because it has been determined by the IRB to be not more than minimal risk or because it is subject to limited IRB review), the PI is expected to track minor deviations and only report them to the IRB if they rise to the level of a reportable event (e.g., a major deviation, non-compliance or unanticipated problem), and according to the timeframes specified in E.1. below.
+
+- For human subjects research when the Reviewing IRB is not an NIH IRB (referred to in this policy as an “external IRB”), NIH PIs/Lead investigators (further referred to as NIH PI(s) to include NIH PIs, NIH Site PIs in the case of multi-site research, and NIH AIs participating in a collaborative research protocol with a non-NIH PI) are required to ensure that the reporting requirements of the Reviewing IRB are followed by NIH staff.When the Reviewing IRB is an external IRB, and the reportable event occurred at an NIH site, or directly impacts the NIH site, the NIH PI must report the event to the Reviewing IRB in accordance with that IRB’s instructions, and also to the OHSRP office of Compliance and Training in the NIH eIRB system within 7 calendar days of the NIH PI becoming aware of the event.
+- When the Reviewing IRB is an external IRB, and the event occurred at a non-NIH site, the NIH PI/Lead Investigator is required to ensure that the reporting requirements of the Reviewing IRB are followed. The investigator does not also report these events to the OHSRP office of Compliance and Training, except as specified in Section E.1.b.I.i. below.
+
+- In response to any reportable event, any IRB Chair (including the NIH IRB Executive Chair), the OHSRP Director, or the IRBO Director may immediately suspend the research or require the PI to take additional actions if necessary, to protect the health, safety or welfare of subjects and/or refer the issue to the Research Compliance Review Committee (RCRC) or IRB as appropriate, to determine whether additional actions are required.
+- Additional reporting may also be required as specified by an NIH Institute/Center (IC) or other NIH policy.
+- This policy’s reporting requirements are in addition to the requirements of regulatory agencies (such as the FDA) and/or any institutionally agreed-upon requirements, e.g., with study sponsors or through reliance agreements.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below. The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c).
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+- [Adverse Event (AE)](https://policymanual.nih.gov/3014-001#A)
+
+- [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+
+- [Non-Compliance](https://policymanual.nih.gov/3014-001#N) Continuing non-compliance
+
+- Serious non-compliance
+
+- [Protocol Deviation (PD)](https://policymanual.nih.gov/3014-001#P)
+
+- [Reportable Event](https://policymanual.nih.gov/3014-001#R)
+
+- [Reviewing Institutional Review Board (IRB)](https://policymanual.nih.gov/3014-001#R)
+
+- [Serious Adverse Event (SAE)](https://policymanual.nih.gov/3014-001#S)
+
+- [Unanticipated (Unexpected)](https://policymanual.nih.gov/3014-001#U)
+
+- [Unanticipated Adverse Device Effect (UADE)](https://policymanual.nih.gov/3014-001#U)
+
+- [Unanticipated Problem Involving Risks to Subjects or Others (UP)](https://policymanual.nih.gov/3014-001#U)
+
+### E. Responsibilities and Requirements
+
+- Responsibilities of investigators:The PI must ensure that all AEs and SAEs are appropriately identified, tracked, and recorded, according to the IRB-approved protocol, data and safety monitoring plan, and in accordance with any additional NIH, regulatory, IC-specific and/or study sponsor requirements.(Policy 3014-503 Data and Safety Monitoring)
+- The NIH PI/designee and, as applicable, non-NIH Investigators, must ensure that the following events are reported to the NIH IRB or OHSRP office of Compliance and Training within the time frames specified below. (See Appendix 1: Investigator Reporting Requirements and Timeframes for tabular view of these requirements)Non-compliance: Any actual or suspected non-compliance by any investigator or entity associated with the protocol must be reported by the NIH PI/designee within 7 calendar days of any investigator or individual associated with the protocol first becoming aware, unless otherwise indicated in this policy. Please refer to Policy 3014-802 Non-compliance in Human Subjects Research[.](https://policymanual.nih.gov/3014-802)External IRB determinations of serious and/or continuing non-compliance about an NIH investigator: If the NIH is relying on an external IRB and the Reviewing IRB makes a determination of serious and/or continuing non-compliance regarding an NIH investigator, then, even if the determination has already been provided to OHSRP either directly or via the NIH Institutional Official (IO)/designee, the NIH PI/designee must report this in the NIH eIRB system within 7 calendar days of any member of the NIH research team being notified of the determination by the Reviewing IRB. The NIH PI must provide the OHSRP office of Compliance and Training with documentation from the Reviewing IRB.
+
+- Major Deviation: A deviation must be reported within 7 calendar days of an investigator becoming aware of an actual or suspected deviation. Although protocol deviations are also non-compliance, these should only be reported once as deviations.
+- Unanticipated Problem (UP): A UP must be reported within 7 calendar days of an investigator becoming aware of the actual or suspected UP.
+- Death: Any death of a research subject that is possibly, probably or definitely related to the research must be reported within 24 hours of an investigator becoming aware of the death.
+- New information that might affect the willingness of a subject to enroll or remain in the study should be reported within 7 calendar days of an investigator first becoming aware.
+- Notify the IRB of the use of the short form consent via the eIRB system within 7 calendar days, and when applicable, the provision of the IRB-approved translated long form to the subject, as described in Policy 3014-301 Informed Consent.
+- Any suspension or termination of research activities, including holds on new enrollment, placed upon the research by the study sponsor, NIH or IC leadership, or any regulatory agency must be reported within 7 calendar days of an investigator becoming aware.Suspension or termination of research activities at NIH by an external IRB: If the NIH is relying on an external IRB and the Reviewing IRB suspends or terminates NIH research activities, this must be reported to OHSRP office of Compliance and Training within 7 calendar days of any NIH member of the research team being notified.
+
+- Withdrawal of an IND: Report within 7 calendar days upon receipt of a Sponsor notification that the IND has been withdrawn.
+
+- For FDA-regulated studies, investigators are required to report events to the study sponsor as described in the protocol and to immediately (i.e., no longer than 10 days) report SAEs or UADEs to the study sponsor and, if also an actual or suspected UP, to the IRB within 7 calendar days of an investigator becoming aware. In addition, investigators must provide to the OHSRP office of Compliance and Training a copy of any and all FDA Form 483 issued regarding an NIH research protocol. This must occur within 7 calendar days of receipt of an FDA Form 483.
+- For FDA-regulated expanded access protocols (EAPs):NIH Investigators must report events to the NIH IRB consistent with section E.1. above for Intermediate-size Patient Population INDs and Treatment INDs.
+- However, events related to single-patient EAPs, including for emergency use, do not need to be reported to the NIH IRB.
+- Regardless of the type of EAP, NIH Investigators are expected to report to the Sponsor and to the FDA consistent with the requirements of Policy 3014-502 - Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles) and as specified at 21 CFR 312 Subpart I for drugs and at 21 CFR 812.36(f) and 812.150 for devices.
+
+- Responsibilities of the OHSRP Office of Compliance and Training and the IRB(s):When NIH is the Reviewing IRB, the OHSRP office of Compliance and Training is responsible for the following:Conducting initial evaluation and triage of all reportable events submitted using the NIH eIRB system.
+- In consultation, as needed, with the OHSRP Director, IRBO Director, and/or Executive Chair, determining if any reported event requires immediate action to protect the rights, safety or welfare of research subjects and if so, communicating such actions to the PI and the IRB.
+- Referring potentially serious and/or continuing non-compliance to the RCRC.
+- Referring reported UPs and new information that might affect the willingness of a subject to enroll or remain in the study to the convened IRB for determination and review of any proposed changes to the protocol or consent made by the PI in response to the UP or new information.
+- Reporting to the HHS Office for Human Research Protections (OHRP) and, as applicable, FDA, all NIH IRB determinations of serious and/or continuing non-compliance, UPs, or NIH IRB suspensions or terminations of IRB approval within 30 days of the determination, suspension or termination of IRB approval. The Office may make interim reports in advance of the IRB’s final determination as deemed necessary.Reports to regulatory agencies will be provided to the NIH Institutional Official (I.O.).
+- When the Reviewing IRB is an external IRB, unless otherwise specified in the reliance agreement, the external IRB has the regulatory responsibility for any necessary reporting to federal agencies overseeing human subjects research protections (e.g., reporting to OHRP and as applicable, the FDA).
+
+- When NIH is the Reviewing IRB, the RCRC, as a duly constituted IRB, is responsible for the following:Reviewing possible serious and/or continuing non-compliance occurring within studies under the NIH IRB’s purview.
+- Determining whether serious and/or continuing non-compliance occurred and evaluating the adequacy of any proposed corrective action. (See Policy 3014-802 Non-compliance in Human Subjects Research).
+
+- When the NIH IRB is the Reviewing IRB, it is responsible for the following:Reviewing reportable events (e.g., unanticipated problems, non-compliance, or new information that may impact a subject’s decision to enroll or remain on the study) occurring on studies under the NIH IRB’s purview.
+- Reviewing the high-level summary of research events submitted at time of continuing review to determine whether there is any change that would impact the criteria for approval at 45 CFR 46.111 (e.g., risk benefit assessment or frequency of review) or notification of subjects.
+- Assessing and determining whether a research event is an unanticipated problem to subjects or others and evaluating the adequacy of any proposed actions or notifications to subjects in response to the reported event, consistent with Policies 3014-200 IRB Scope and Authority and 3014-204 Levels of IRB Review and Criteria for IRB approval of research.
+- In its review of reportable events, the IRB has the authority to suspend or terminate IRB approval of research, for example, research that has been associated with unexpected serious harm to subjects. In response to a reportable event, the IRB also has the authority to:Request additional information;
+- Require modification of the protocol or consent(s);
+- Require notification of subjects;
+- Require the investigator to suspend new enrollment to the protocol;
+- Increase the type and/or frequency of safety monitoring;
+- Change the period of review, or
+- Other measures to protect the rights, safety and welfare of subjects.
+
+(See Policy 3014-200 IRB Scope and Authority and 3014-204 Levels of IRB Reviewand Criteria for IRB approval of research.)
+
+- When reviewing reports of short form consent use, ensure the requirements of Policy 3014-301 Informed Consent are met regarding non-English speaking participants.
+
+### F. References
+
+- Federal Regulations HHS: [45 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/revised-common-rule-regulatory-text/index.html)
+
+- FDA: 21 CFR parts [312](https://www.ecfr.gov/cgi-bin/text-idx?SID=d8089df97699ae5246fa1cec9a8c9566&mc=true&node=pt21.5.312&rgn=div5#se21.5.312_132) and [812](https://www.ecfr.gov/cgi-bin/text-idx?SID=b4faff96e9b1ff2aa3f217b4d6cc9972&mc=true&node=se21.8.812_13&rgn=div8)
+
+- NIH Policies [Policy 3014-200 IRB Scope and Authority](https://policymanual.nih.gov/3014-200)
+
+- [Policy](https://policymanual.nih.gov/3014-204)[3014-204 Levels of IRB Review and Criteria for IRB approval of research](https://policymanual.nih.gov/3014-204)
+
+- [Policy 3014-301 Informed Consent](https://policymanual.nih.gov/3014-301)
+
+- [Policy 3014-503 Data and Safety Monitoring](https://policymanual.nih.gov/3014-503)
+
+- [Policy 3014-802 Non-Compliance in Human Subjects Research](https://policymanual.nih.gov/3014-802)
+
+- Guidance [E6(R2) Good Clinical Practice: Integrated Addendum to ICH E6(R1): Guidance for Industry](https://www.fda.gov/downloads/Drugs/Guidances/UCM464506.pdf)
+
+- [OHRP Guidance on Reviewing and Reporting Unanticipated Problems Involving Risks to Subjects or Others (2007)](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/reviewing-unanticipated-problems/index.html)
+
+### APPENDIX 1: PRINCIPAL INVESTIGATOR/DESIGNEE REPORTING REQUIREMENTS AND TIMEFRAMES
+
+Edit Appendix
+
+| Investigator Status | | NIH IRB is Reviewing IRB | | External IRB is Reviewing IRB |
+
+| NIH PI, or as applicable, the NIH lead site investigator, and/or any NIH study team member | |
+
+- Report the following reportable events to the NIH IRB within 7 calendar days of any investigator first becoming aware*Actual or suspected non-compliance
+- Actual or suspected major deviations
+- Actual or suspected Unanticipated Problems (UPs)
+- New information that might affect the willingness of a subject to enroll or remain in the study
+- Suspension or termination of research activities, including holds on new enrollment, placed upon the research by the study sponsor, NIH or IC leadership, or any regulatory agency
+- Upon notification of withdrawal of an IND by a Sponsor
+
+- Death of a research subject that is possibly, probably or definitely related to the research must be reported within 24 hours of the investigator becoming aware of the death.
+- For FDA regulated studies, report events to the study sponsor as described in the protocol and immediately report (i.e., no longer than 10 days) SAEs or UADEs to the study sponsor and, if also an actual or suspected UP, to the IRB within 7 calendar days of the investigator becoming aware.
+- Provide a copy of any and all FDA Form 483 regarding an NIH research protocol received by the NIH PI within 7 calendar days to OHSRP office of Compliance and Training.
+| |
+
+- Report events to the Reviewing IRB as per its policy
+- If event occurs at an NIH site, also report to the OHSRP office of Compliance and Training within 7 calendar days*
+- For FDA regulated studies, report events to the study sponsor as described in the protocol and immediately report (i.e., no longer than 10 days) SAEs or UADEs to the study sponsor and, if also a UP, to the IRB within 7 calendar days.
+- Provide a copy of any and all FDA Form 483 regarding an NIH research protocol received by the NIH PI within 7 calendar days to OHSRP office of Compliance and Training.
+- Report any determinations by the External IRB of serious and/or continuing non-compliance by an NIH investigator in the NIH eIRB system within 7 calendar days .* Also, provide the OHSRP office of Compliance and Training with documentation from the Reviewing IRB.
+- Report any suspension or termination of research activities at an NIH site by the external IRB within 7 calendar days.
+|
+
+| Investigator status | | NIH IRB is Reviewing IRB | | External IRB is Reviewing IRB |
+
+| Non-NIH Investigator | | Requirements for reporting events to the NIH IRB are the same as those for the NIH investigators as defined above** (Non-NIH investigators should consult their institution’s policies if local reporting is also required.) | | Report events to the Reviewing IRB as per its policy |
+
+* Report events in the NIH eIRB system.
+
+** Report events in the NIH eIRB system
+
+Add Section
+
+###### * If you require a 508 compliant PDF version of a chapter please contact [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#92b2e2fdfefbf1ebfff3fce7f3fed2fcfbfabcf5fde4)
+
+|
+
+Type of Publish
+
+|
+|
+
+Release Date
+
+|
+
+| |
+| |
+
+Add Your Note (optional):
+
+Office of Management Assessment, National Institutes of Health, 6705 Rockledge Dr. Suite 601 Bethesda, MD 20892
+
+Phone: (301) 496-4606 Email: [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#d4a4bbb8bdb7adb9b5baa1b5b894babdbcfab3bba2)
+
+- [Resources](https://oma.od.nih.gov/dms/pages/manual-chapters-links.aspx)
+
+- [About](https://oma.od.nih.gov/dms/pages/manual-chapters.aspx)
+
+- [Contacts](https://oma.od.nih.gov/dms/pages/manual-chapters-manual-system-contacts.aspx)
+
+- [Web Policies and Notices](https://www.nih.gov/web-policies-notices)
+
+- [HHS Vulnerability Disclosure](https://www.hhs.gov/vulnerability-disclosure-policy/index.html)
+
+- [FOIA](https://www.nih.gov/icd/od/foia/index.htm)
+
+- [No Fear Act](https://www.edi.nih.gov/no-fear-act)
+
+- [Office of Management](https://om.od.nih.gov/)
+
+- [National Institutes of Health](https://www.nih.gov/)
+
+- [U.S. Department of Health and Human Services](https://www.hhs.gov/)
+
+- [USA.Gov - Government Made Easy](https://www.usa.gov/)
+
+NIH... Turning Discovery into Health(r)
+
+Arrow UpBack to Top

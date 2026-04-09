@@ -1,0 +1,252 @@
+Name: NIH Policy 3007
+Purpose: reference
+Description: ClinicalTrials.gov registration and results-reporting requirements for NIH intramural clinical trials and natural history or observational studies.
+URL: https://policymanual.nih.gov/3007
+Selection Rule: (none)
+Token Count: 12630
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 12
+
+---
+
+## 3007 - Clinical Trial Registration and Results Information Reporting
+
+**Issuing Office:** OD/OIR **Phone:** [(301) 496-3561](tel:\(301\) 496-3561)
+
+**Release Date:** 1/14/2022 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy establishes responsibilities and procedures for registration and results information reporting of clinical trials and natural history or observational clinical studies (“NH/O studies”) to ClinicalTrials.gov when the clinical trial or NH/O clinical studies are conducted or supported by the Intramural Research Program (IRP) of the National Institutes of Health (NIH), consistent with the requirements of NIH Policy on the Dissemination of NIH-Funded Clinical Trial Information (NOT-OD-16-149) (hereinafter referred to as “the NIH Policy”), Section 801 of the Food and Drug Administration Amendments Act of 2007 (42 U.S.C. 282(j)) (hereinafter referred to as “FDAAA”), and the Final Rule for Clinical Trials Registration and Results Information Reporting (42 CFR Part 11) (hereinafter referred to as “the regulation”). 
+2.  **Filing Instructions:**
+
+-   **Remove:**   N/A
+-   **Insert:**      NIH Manual Chapter 3007, dated 01/14/2022
+
+3.  **PLEASE NOTE:** For information on:
+
+-   Content of this chapter, contact the issuing office listed above.
+-   NIH Policy Manual, contact the Management Operations Branch, Division of Compliance Management, OMA on 301-496-4606, [\[email protected\]](/cdn-cgi/l/email-protection#dbabb4b7b2b8a2b6bab5aebab79bb5b2b3f5bcb4ad) or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx.](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+This Manual Chapter establishes the expectation that all NIH Intramural Research Program (IRP) principal investigators (PIs) conducting clinical trials  or natural history or observational clinical studies (“NH/O studies”), as defined herein, will ensure that their clinical trials and NH/O studies are registered at ClinicalTrials.gov for public posting. Further, for clinical trials, NIH IRP PIs will ensure that results information is submitted to ClinicalTrials.gov for public posting.  The purpose of this policy is to promote broad and responsible dissemination of information from NIH IRP-conducted or supported clinical trials and NH/O studies through ClinicalTrials.gov, consistent with applicable laws, regulations, and policy.
+
+### B. Scope
+
+This Manual Chapter applies to all IRP-conducted or supported clinical trials meeting the NIH definition of “clinical trial” (see Section H, Definitions), regardless of study phase, type of intervention, or whether they are subject to the regulation at 42 CFR Part 11. For example, this policy covers: phase 1 intramural clinical trials of an FDA-regulated product; intramural clinical trials studying interventions not regulated by the FDA, such as behavioral interventions; and intramural clinical trials that are “applicable clinical trials” subject to the regulation. In addition to studies meeting the NIH definition of “clinical trial,” this Manual Chapter applies to IRP-conducted or supported NH/O studies for which no specific intervention or outcome is being studied. 
+
+This Manual Chapter applies to NIH employees with appropriate Intramural Professional Designations and credentials to serve as a PI on an IRP conducted or supported clinical trial or NH/O study (“NIH IRP PI”); it does not apply to contractors, individuals in the Guest Researcher/Special Volunteer Program, Research Collaborators, or extramural researchers, none of whom can serve as a PI on an IRP conducted or supported clinical trial or NH/O study. This Manual Chapter also applies to any non-NIH employee assigned pursuant to the Intergovernmental Personnel Act (IPA), who is a PI on an IRP conducted or supported clinical trial or NH/O study and, as such, is an NIH IRP PI for purposes of this Manual Chapter.
+
+The NIH Policy (“NIH Policy on the Dissemination of NIH-Funded Clinical Trial Information ([https://grants.nih.gov/grants/guide/notice-files/not-od-16-149.html](https://grants.nih.gov/grants/guide/notice-files/not-od-16-149.html))” became effective on January18, 2017. The specific procedures described in this Manual Chapter, which supplements for the intramural program the NIH Policy, as well as the requirement to register IRP-conducted or supported NH/O studies, are effective as of the Manual Chapter release date.
+
+### C. Background
+
+​​​​NIH was first mandated to create a registry of clinical trials by the Food and Drug Administration Modernization Act of 1997 (FDAMA). In response to this mandate, the National Library of Medicine (NLM) created ClinicalTrials.gov for data collection. The registry mandated by FDAMA was expanded by FDAAA, which amended Section 402(j) of the Public Health Service Act.  FDAAA both expanded the registry with respect to type of clinical trial information collected and required the registration and submission of basic results information for “applicable clinical trials.”  FDAAA also required the Secretary of Health and Human Services (HHS) to use rulemaking to expand the requirements for registration and results submission. HHS implemented these amendments in the Final Rule for Clinical Trials Registration and Results Information Submission, 42 CFR Part 11, which took effect in January 2017.  Concurrently, NIH issued the NIH Policy, NOT-OD-16-149, which is complementary to the statutory and regulatory requirements, and establishes the expectation that all NIH-funded clinical trials, including NIH IRP clinical trials, will be registered and have results information submitted to ClinicalTrials.gov, regardless of study phase, type of intervention or whether they are an “applicable clinical trial” subject to FDAAA or the regulation.
+
+### D. Policy
+
+NIH IRP PIs will ensure that clinical trials and NH/O studies conducted or supported by the IRP are registered at ClinicalTrials.gov for public posting.  Further, for clinical trials, NIH IRP PIs will ensure that results information is submitted to ClinicalTrials.gov for public posting.  Specific rules that must be followed are provided in **APPENDIX 1, Standard Operating Procedure (SOP) for Registration and Reporting Results to ClinicalTrials.gov**, and may depend on whether the clinical trial meets the definition of an “applicable clinical trial” and is subject to the regulation.
+
+1.  If the intramural clinical trial is an applicable clinical trial subject to the regulation, and the NIH IRP PI is the Responsible Party (RP), the PI will ensure that all regulatory requirements are met.
+2.  If the intramural clinical trial is an applicable clinical trial subject to the regulation, but the NIH IRP PI is not the RP, the PI will coordinate with the RP to ensure that all regulatory requirements are met.
+3.  If the intramural clinical trial is not an applicable clinical trial, and thus is not subject to the regulation but is subject to the NIH Policy, and the NIH IRP PI is the RP, the PI nevertheless is responsible for carrying out the tasks and meeting the timelines described in the NIH Policy, which are consistent with the regulatory requirements. Such tasks include registering the clinical trial on ClinicalTrials.gov and submitting results information to ClinicalTrials.gov.
+4.  NH/O studies do not have outcomes of interventions and thus do not fall under the clinical trial definition; therefore, results reporting is not required. In contrast, basic experimental studies involving humans (BESH) fall under the definition of a clinical trial and results reporting requirements apply, with an interim opportunity for using alternative reporting platforms ([https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-](https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-088.html) [088.html](https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-088.html) ).  The interim opportunity for using alternative reporting platforms expires on September 24, 2023.
+
+In addition, informed consent documents for clinical trials and NH/O studies within all categories, above, are to include a specific statement relating to posting of clinical trial information at ClinicalTrials.gov.
+
+Each IRP conducted or supported clinical trial or NH/O study should have only one study record in ClinicalTrials.gov. If the NIH IRP PI is the RP, registration information will be entered by the Office of Protocol Services on the RP’s behalf. PIs need not and should not create a separate record of the applicable clinical trial to comply with this policy.
+
+The NIH NLM will publicly post the submitted registration information and results information on ClinicalTrials.gov, in accordance with the regulation and applicable policies and procedures.
+
+Oversight of and compliance with this Manual Chapter is managed within the Office of Protocol Services (OPS) and the Associate Director for Clinical Research. Failure to comply with this policy may result in corrective actions impacting the RP, if the RP is an NIH IRP PI, and the Sponsor, if the Sponsor is an NIH IC. Such RPs and Sponsors who do not comply with this Manual Chapter are subject to the consequences below, as applicable:
+
+1.  Notification of NIH Institute, Center, and Office (ICO) leadership by the Associate Director for Clinical Research of noncompliance with this Manual Chapter by an NIH IRP PI who is functioning as the RP.
+2.  Notification of the NIH Director by the Associate Director for Clinical Research if an ICO develops a pattern of noncompliance with this Manual Chapter, either as the Sponsor or as the employer of RPs;
+3.  Withholding of approval of all new clinical protocol Scientific Reviews by the Associate Director for Clinical Research until non-compliance with this Manual Chapter has been satisfactorily addressed, as determined by the Associate Director for Clinical Research;
+4.  Documentation by a supervisor in annual Performance Management Appraisal Program (PMAP) evaluation of failure to timely comply with the Manual Chapter;
+5.  Disciplinary action, consistent with existing NIH Office of Human Resources policy and procedure, which may range from Letters of Reprimand to removal from Federal service for noncompliance with the Manual Chapter.
+
+The failure to report results information not later than one year after the clinical trial’s primary completion date may result in an internal notice of noncompliance with this Manual Chapter, which must be resolved within 30 days from receipt of notification.
+
+Further, for clinical trials governed by FDAAA and/or the regulation, the failure to report results information within one year of the trial’s primary completion date may result in an internal notice of possible noncompliance, which must be resolved within 30 days from receipt of notification to avoid notification to the FDA of possible noncompliance.
+
+### E. Responsibilities
+
+**NIH IRP Principal Investigator (PI)**: An NIH IRP PI for an NIH IRP conducted or supported clinical trial or NH/O study, may be designated by the Sponsor (typically an NIH Institute, Center, or Office (ICO) as the Responsible Party (RP) conducting the clinical trial, so long as the PI has access to and control over the data from IRP conducted or supported clinical trial or NH/O study, has the right to publish the results from the IRP conducted or supported clinical trial or NH/O study, and has the ability to meet all the requirements under the regulation, NIH Policy, and/or this Manual Chapter as applicable, for the submission of clinical trial or NH/O study information.
+
+The NIH Principal Investigator (PI) serving as the Responsible Party (RP) must:
+
+1.  Develop a plan and include it in the protocol submitted to the IRB, for submitting results information (e.g., primary and secondary outcome data, in addition to adverse events, baseline characteristics, and participant flow information) within the required timeframe;
+2.  Ensure registration information is submitted to ClinicalTrials.gov by the Office of Protocol Services (OPS) in accordance with the deadlines established in the regulation, the NIH Policy, and/or this Manual Chapter, as applicable;
+3.  Be listed as the RP in ClinicalTrials.gov by name, official title, and NIH IC affiliation;
+4.  If the NIH IRP PI is not the RP, he/she must identify the name of the RP and provide this information to OPS;
+5.  Receive notification of a pending deadline for results information reporting;
+6.  Provide all registration information and other information as requested to OPS and, if applicable, results information to other NIH resources assisting with results information submission, such as the Biomedical Translational Information System (BTRIS) or NLM;
+7.  Seek assistance from BTRIS for results information reporting, if desired, at least six months prior to the standard results information submission deadline;
+8.  For NIH-Defined Phase III Clinical Trials (as per NOT-OD-18-014, Amendment: NIH Policy and Guidelines on the Inclusion of Women and Minorities as Subjects in Clinical Trials), report results of the valid analysis of groups differences (ensures that a valid analysis be done for each primary outcome measure by sex/gender, race and/or ethnicity) to ClinicalTrials.gov;
+9.  Ensure results information are submitted to ClinicalTrials.gov in accordance with the deadlines established in the regulation or NIH Policy, as applicable;
+10.  Receive notification of noncompliance with this Manual Chapter due to a missed deadline for results information reporting;
+11.  Update registration information with OPS at least annually, or sooner as otherwise required by regulation, NIH Policy, and this Manual Chapter, as applicable; and,
+12.  Respond to Quality Control (QC) comments by ClinicalTrials.gov within timeframes provided.
+
+**NIH Institute, Center, and Office (ICO) Contact:** The ICO contact:
+
+1.  Is identified by the ICO Director to assist in monitoring compliance with this Manual Chapter;
+2.  Receives notification of a pending deadline for results information reporting;
+3.  Receives notification of noncompliance with this Manual Chapter due to a missed deadline for results information reporting;
+4.  Helps to facilitate compliance with the Manual Chapter within the IC; and,
+5.  For NIH-Defined Phase III protocols, verifies that the results information include the outcome of the valid analysis of group differences (sex/gender, and race and/or ethnicity).
+
+**ICO Branch/Laboratory Chief:** Branch and Laboratory Chiefs are responsible for assuring that branch/laboratory protocols for an IRP conducted or supported clinical trial or NH/O study contain a plan for compliance with ClinicalTrials.gov registration and results information reporting.
+
+**ICO Clinical Director:** The ICO Clinical Director is responsible for monitoring compliance with ClinicalTrials.gov registration and results information reporting for an IRP conducted or supported clinical trial or NH/O study within their ICO. The Clinical Director:
+
+1.  Provides IC support through the ICO Contact;
+2.  Receives notification of a pending deadline for results information reporting;
+3.  Receives notification of noncompliance with this Manual Chapter due to a missed deadline for results information reporting.​​​​​​​
+
+**ICO Scientific Director:** The ICO Scientific Director ensures an IRP conducted or supported clinical trial or NH/O study outcome measures and ClinicalTrials.gov compliance is appropriately addressed in the protocol at time of scientific review. In addition, the Scientific Director ensures that a new RP is designated should the current RP depart NIH or otherwise be unable to report results. The Scientific Director:
+
+1.  Receives notification of noncompliance with this Manual Chapter due to a missed deadline for results information reporting;
+2.  Promptly addresses issues related to noncompliance with this Manual Chapter and ensures resolution of such noncompliance.​​​​​​​
+
+**ICO Director:** The ICO Director ensures prompt corrective action for issues related to noncompliance with this Manual Chapter is taken, as appropriate. In addition, the ICO Director ensures a culture of compliance with this Manual Chapter within the ICO.
+
+**Associate** **Director** **for** **Clinical** **Research**: The Associate Director for Clinical Research
+
+1.  Works with the Deputy Director for Intramural Research to ensure OPS and BTRIS have the necessary resources to assist with timely results information reporting;
+2.  Receives notification of a pending deadline for results information reporting;
+3.  Receives notification of noncompliance with this Manual Chapter due to a missed deadline for results information reporting; and
+4.  Takes corrective action for noncompliance with this Manual Chapter consistent as appropriate, consistent with the corrective actions described above.
+
+​​​​​​​**Office of Protocol Services (OPS):** OPS coordinates administration of ClinicalTrials.gov Protocol Registration and Results System for IRP conducted or supported clinical trial or NH/O study, as follows:
+
+1.  Registers all intramural clinical trials and NH/O studies on ClinicalTrials.gov, on behalf of the NIH IRP PI assigned as the RP, creating accounts for the RP and research team and assigning access to study records as necessary;
+2.  Ensures all registration information is complete;
+3.  Receives and tracks the name of the RP, when an NIH IRP PI is not the RP of an IRP conducted or supported clinical trial or NH/O study;
+4.  Facilitates development of study lay title and lay summary with the Office of Clinical Communications, for review by the RP;
+5.  Monitors IRP conducted or supported clinical trial or NH/O studies for compliance with registration and results information reporting requirements, as applicable;
+6.  Provides access to the RP into ClinicalTrials.gov;
+7.  Notifies appropriate parties of a pending deadline for results information reporting;
+8.  Notifies appropriate parties of noncompliance with this Manual Chapter due to a missed deadline for results information reporting on behalf of the Associate Director for Clinical Research;
+9.  Sends summary report of the current status of all IRP conducted or supported clinical trials or NH/O studies to the IC POC, the ICO Clinical Director, the Associate Director for Clinical Research, and the Deputy Director for Intramural Research; and,
+10.  Provides general guidance concerning registration and results information reporting pursuant to this Manual Chapter.
+11.  Manages Records Retention and Disposal under the authority of [NIH Manual](https://policymanual.nih.gov/1743) [Chapter 1743](https://policymanual.nih.gov/1743), “Managing Federal Records,” Appendix 4, Records Management Resources. These records must be maintained in accordance with current NIH Records Management and Federal guidelines. Contact your [ICO Records Liaison](https://oma.od.nih.gov/DMS/Pages/Records-Management-Records-Liaisons.aspx) or the [NIH](https://oma.od.nih.gov/DMS/Pages/Records-Management.aspx) [Records Officer](https://oma.od.nih.gov/DMS/Pages/Records-Management.aspx) for additional information.​​​​​​​
+
+**The Deputy Director for Intramural Research (DDIR):** The DDIR consults with the Associate Director for Clinical Research to resolve issues, interpretations, and actions taken pursuant to this Manual Chapter.
+
+**Biomedical Translational** **Information** **System** **(BTRIS)**: The BTRIS team assists the RP with results information reporting, and collaborates to create and complete spreadsheets to be uploaded in the ClinicalTrials.gov Protocol Registration and Reports System.
+
+**The National Library of Medicine**:
+
+1.  Develops and maintains the ClinicalTrials.gov database;
+2.  Administers the quality control review process for submitted clinical trials information; and
+3.  Provides information to the NIH IRP and other entities concerning registration and results information reporting.
+
+### F. Procedures
+
+The NIH Office of Protocol Services will maintain a Standard Operating Procedure (SOP) for Registration and Reporting Results on ClinicalTrials.gov, which IRP NIH PIs are required to follow. The SOP is included as **APPENDIX 1** to this Manual Chapter.
+
+### G. References
+
+Clinicaltrials.gov
+
+-   ClinicalTrials.gov – Frequently Asked Questions [https://www.clinicaltrials.gov/ct2/manage-recs/faq](https://www.clinicaltrials.gov/ct2/manage-recs/faq#fr_23)
+-   Protocol Registration and Results System (PRS) Information [https://www.clinicaltrials.gov/ct2/manage-](https://www.clinicaltrials.gov/ct2/manage-recs/resources#ProtocolRegistration) [recs/resources#ProtocolRegistration](https://www.clinicaltrials.gov/ct2/manage-recs/resources#ProtocolRegistration)
+-   FDAAA 801 and the Final Rule [https://www.clinicaltrials.gov/ct2/manage-recs/fdaaa](https://www.clinicaltrials.gov/ct2/manage-recs/fdaaa)
+
+NIH Policy
+
+-   NIH Policy on the Dissemination of NIH-Funded Clinical Trial Information ([https://grants.nih.gov/grants/guide/notice-files/not-od-16-](https://grants.nih.gov/grants/guide/notice-files/not-od-16-149.html) [149.html](https://grants.nih.gov/grants/guide/notice-files/not-od-16-149.html))
+-   NIH’s Definition of a Clinical Trial [https://grants.nih.gov/policy/clinical-](https://grants.nih.gov/policy/clinical-trials/definition.htm) [trials/definition.htm](https://grants.nih.gov/policy/clinical-trials/definition.htm)
+-   Does Your Human Subjects Research Study Meet the NIH Definition of a Clinical Trial? [https://grants.nih.gov/ct-decision/index.htm](https://grants.nih.gov/ct-decision/index.htm)
+
+Intramural Resources
+
+-   NIH OIR Sourcebook: Points of Contact for FDAAA Compliance at ICs [https://oir.nih.gov/sourcebook/intramural-program-oversight/intramural-](https://oir.nih.gov/sourcebook/intramural-program-oversight/intramural-data-sharing/guide-fdaaa-reporting-research-results/assistance-available-help-results-reporting-0) [data-sharing/guide-fdaaa-reporting-research-results/assistance-available-](https://oir.nih.gov/sourcebook/intramural-program-oversight/intramural-data-sharing/guide-fdaaa-reporting-research-results/assistance-available-help-results-reporting-0) [help-results-reporting-0](https://oir.nih.gov/sourcebook/intramural-program-oversight/intramural-data-sharing/guide-fdaaa-reporting-research-results/assistance-available-help-results-reporting-0)
+-   NIH OIR Sourcebook: Guide to FDAAA Reporting Research Results [https://oir.nih.gov/sourcebook/intramural-program-oversight/intramural-](https://oir.nih.gov/sourcebook/intramural-program-oversight/intramural-data-sharing/guide-fdaaa-reporting-research-results) [data-sharing/guide-fdaaa-reporting-research-results](https://oir.nih.gov/sourcebook/intramural-program-oversight/intramural-data-sharing/guide-fdaaa-reporting-research-results)
+
+[NIH Office of Management Assessment (OMA)](https://oma.od.nih.gov/pages/home.aspx)
+
+-   [Division of Compliance Management (DCM)](https://oma.od.nih.gov/DMS/Pages/Home.aspx)
+-   [Division of Program Integrity (DPI)](https://oma.od.nih.gov/DPI/Pages/Home.aspx)
+-   [Division of Risk Management and Audit Liaison (RMAL)](https://oma.od.nih.gov/RMAL/Pages/Home.aspx)
+
+### H. Definitions
+
+**Basic Experimental Studies Involving Humans (BESH):** Studies that meet both the definition of **basic research** (a systematic study directed toward greater knowledge or understanding of the fundamental aspects of phenomena and of observable facts without specific application towards processes or products in mind, see 32 C.F.R. 272.3) and the NIH definition of a **clinical trial** (below). BESH participants are prospectively assigned to a manipulation or intervention, whereas researchers conducting NH/O studies do not control an independent study variable. See [https://grants.nih.gov/policy/clinical-trials/besh.htm](https://grants.nih.gov/policy/clinical-trials/besh.htm) .
+
+**Clinical Trial:** A research study in which one or more human subjects are prospectively assigned to one or more interventions (which may be placebo or other control) to evaluate the effects of those interventions on health-related biomedical or behavioral outcomes. See [https://grants.nih.gov/policy/clinical-](https://grants.nih.gov/policy/clinical-trials/definition.htm) [trials/definition.htm](https://grants.nih.gov/policy/clinical-trials/definition.htm).
+
+**Human Subject (45 CRF 46.102(e)):** A living individual about whom an investigator (whether professional or student) conducting research: (i) Obtains information or biospecimens through intervention or interaction with the individual, and uses, studies, or analyzes the information or biospecimens; or (ii) Obtains, uses, studies, analyzes, or generates identifiable private information or identifiable biospecimens.
+
+**Natural History and Observational (NH/O) Studies.** For purposes of this policy, studies in which investigators assess health outcomes in groups of participants according to a research plan or protocol. Participants may receive interventions (which can include medical products such as drugs or devices) or procedures as part of their routine medical care, but participants are not assigned to specific interventions by the investigator (as in a clinical trial). For example, investigators may observe a group of older adults to learn more about the effects of different lifestyles on cardiac health.
+
+**Outcome Measure (42 CFR 11.10):** A pre-specified measurement that will be used to determine the effect of an experimental variable on the human subject(s) in a clinical trial. A primary outcome measure means the outcome measure(s) of greatest importance specified in the protocol, usually the one(s) used in the power calculation. A secondary outcome measure means an outcome measure that is of lesser importance than a primary outcome measure, but is part of a pre-specified analysis plan for evaluating the effects of the intervention or interventions under investigation in a clinical trial and is not specified as an exploratory or other measure.
+
+**Primary Completion Date (42 CFR 11.10)**: The date that the final subject was examined or received an intervention for the purposes of final collection of data for the primary outcome, whether the clinical trial concluded according to the pre- specified protocol or was terminated.
+
+**Records Retention and Disposal:** All records pertaining to this chapter must be retained and disposed of under the authority of [NIH Manual 1743](https://policymanual.nih.gov/1743), “Managing Federal Records,” Appendix 4, Records Management Resources. These records must be maintained in accordance with current NIH Records Management and Federal guidelines. Contact your [ICO Records Liaison](https://oma.od.nih.gov/DMS/Pages/Records-Management-Records-Liaisons.aspx) or the [NIH Records Officer](https://oma.od.nih.gov/DMS/Pages/Records-Management.aspx) for additional information.        \`
+
+**Registration Information**: Per the regulation and NIH Policy, registration information consists of the descriptive information, recruitment information, location and contact information, and administrative data elements under 42 CFR 11.28.
+
+**Responsible Party (42 CFR 11.10, with modifications for the IRP):** (1) the sponsor of the clinical trial, as defined in 21 CFR 50.3 ; or (2) the principal investigator of such clinical trial if so designated by a sponsor, so long as the principal investigator is responsible for conducting the trial, has access to and control over the data from the clinical trial, has the right to publish the results of the trial, and has the ability to meet all of the requirements for the submission of clinical trial information. There must be one (and only one) responsible party for purposes of submitting information to ClinicalTrials.gov. For NH/O studies, the PI is the RP if so designated by the IC, and there is no “Sponsor” for NH/O studies.
+
+**Results Information**: Per the regulation and NIH Policy, results information for clinical trials includes the participant flow, demographic and baseline characteristics, outcomes and statistical analyses, adverse events, the protocol and statistical analysis plan, and administrative information data elements under 42 CFR 11.48. For NH/O studies, results information includes participant flow, demographic and baseline characteristics, and recruitment status
+
+**Sponsor (21 CFR 50.3(e)):** A person who initiates a clinical investigation, but who does not actually conduct the investigation, i.e., the test article is administered or dispensed to or used involving, a subject under the immediate direction of another individual. A person other than an individual (e.g., corporation or agency) that uses one or more of its own employees to conduct a clinical investigation it has initiated is considered to be a Sponsor (not a sponsor- investigator), and the employees are considered to be investigators.
+
+**Sponsor Investigator (21 CFR 50.3(f)):** An individual who both initiates and actually conducts, alone or with others, a clinical investigation, i.e., under whose immediate direction the test article is administered or dispensed to, or used involving, a subject. The term does not include any person other than an individual, e.g., corporation or agency.
+
+### I. Appendix 1
+
+**Purpose**
+
+This document provides procedures for NIH Intramural Research Program (IRP) leadership, intramural  principal investigators (PIs), and support staff for registering NIH IRP-conducted or supported clinical trials and natural history or observational (NH/O) studies, and reporting clinical trial results information to ClinicalTrials.gov, as may be required by Section 801 of the Food and Drug Administration Amendments Act of 2007, [the Final Rule for Clinical Trials Registration and Results Information Submission (42 CFR Part 11 or “the regulation”)](https://www.federalregister.gov/d/2016-22129/p-1164), the [NIH Policy on the Dissemination of NIH-Funded Clinical Trial Information (NIH Policy)](https://grants.nih.gov/policy/clinical-trials/reporting/understanding/nih-policy.htm), or the Policy Manual \[insert #\], Clinical Trial Registration and Results Information Reporting.  This SOP is a companion to the Policy Manual \[insert #\], Clinical Trial Registration and Results Information Reporting and incorporates such policy, including scope, definitions, and effective date.
+
+**Procedures**
+
+**IRB Protocol Development and Scientific Review:**
+
+As part of the scientific review process, the PI must indicate who is the Responsible Party (RP) for registering NIH IRP-conducted or supported clinical trials and natural history and observational studies (NH/O) studies, and reporting clinical trial results information to ClinicalTrials.gov. To support results information reporting and compliance generally, the protocol should include: (1) outcome measures that are focused and readily measurable; and (2) a description of how and when the required registration and results information for submission to ClinicalTrials.gov will be collected and aggregated.
+
+**Registration and Updates**:
+
+The NIH IRP Office of Protocol Services (OPS) serves as the IRP administrator for ClinicalTrials.gov Protocol Registration and Results System (PRS) for NIH IRP-conducted or supported clinical trials and NH/O studies.  In that capacity, OPS facilitates the registration of IRP clinical trials and NH/O studies, on behalf of NIH RPs, in ClinicalTrials.gov.  IRP clinical trials and NH/O studies are required to be registered in ClinicalTrials.gov within 21 days after first human subject enrollment, although it is strongly recommended that registration be completed before the first human subject is enrolled in accordance with the [International Committee of Medical Journal Editors (ICMJE) requirements](file:///C:/Users/partinkm/AppData/Local/Microsoft/Windows/INetCache/Content.Outlook/GCYIDZJN/\(http:/www.icmje.org/recommendations/browse/publishing-and-editorial-issues/clinical-trial-registration.html\)).
+
+Once the NIH IRP-conducted or supported clinical trial or NH/O study is registered by OPS, the NIH RP must continue to update registration information.   In general, the clinical trial or NH/O study record must be reviewed for accuracy at least every 12 months.  Further, some data elements must be updated more rapidly, according to the following timeframes:
+
+1.  15 calendar days after change in approval or clearance status of a device or product by US FDA.
+2.  30 calendar days from the change:
+    1.  Study start date - first human subject enrolled (if the first human subject was not enrolled at the time of registration)
+    2.  Intervention Name(s) – after a nonproprietary name is established
+    3.  Expanded Access Status – change in the availability of expanded access.
+    4.  Expanded Access Type – change in the type of available expanded access
+    5.  Overall Recruitment Status – change in the overall recruitment status.
+    6.  Individual Site Status – change in status of any individual site.
+    7.  Human Subjects Protection Review Board Status – change in status
+    8.  Primary Completion Date/Enrollment – after the clinical trial reaches its actual primary completion date. At the time the primary completion date is changed to "actual," the actual number of participants enrolled must be submitted.  Study Completion Date – after the clinical trial reaches its actual study completion date.
+    9.  Responsible Party/Contact Information – change in the RP, the official title of the RP, or RP contact information
+3.  Not less than every 12 months:
+    1.  Record Verification Date – At least yearly, the RP must review the record for accuracy and update the Record Verification Date, even if no other information is submitted at that time.
+
+The OPS will continue to update the protocol information on clinicaltrials.gov upon receipt, until the point in time when the primary outcome is met and ownership of the record transferred to the RP. The RP’s obligation to submit updates ends when all required results information has been submitted and any concerns identified in the quality control process have been corrected or addressed.
+
+**Results Information Reporting:**
+
+It is the responsibility of the RP to report results information within the required time frames. In general, results information for the primary outcome is required no later than one year after the primary completion date.  For secondary outcomes, results information is required no later than one year after the date on which the final human subject is examined or receives an intervention for the purposes of final collection of data for that secondary outcome measure. Comments identified by NLM during their Quality Control process must be addressed and resubmitted within 25 days. NH/O studies are excluded from the results information reporting requirements of this policy, although results information may be submitted for such studies as appropriate and desired.
+
+No later than 30 days of meeting the primary completion date, the RP must notify OPS, who will then update ClinicalTrials.gov. OPS will send a notification of a pending deadline for results information reporting to RPs as the results information submission deadline nears, and will copy the IC point of contact and the IC Clinical Director. RPs should contact BTRIS for assistance with results information submission 6 months prior to the results information submission deadline, if BTRIS’s assistance is desired. Clinical trials and NH/O studies that do not accrue participants will have an overall recruitment status of “withdrawn” and no further results information will need to be submitted.  In addition, clinical trials that meet the NIH definition of “Phase III clinical trials” are required to report to ClinicalTrials.gov the results of the valid analysis of group differences for each primary outcome measure by sex/gender, and race and/or ethnicity. For more information, see “Inclusion of Women and Minorities as Participants in Research Involving Human Subjects”: [https://grants.nih.gov/policy/inclusion/women-and-minorities.htm](https://grants.nih.gov/policy/inclusion/women-and-minorities.htm)
+
+**Certification for Delay and Good Cause Extension Requests**:
+
+Submission of results information may be delayed in certain circumstances, as outlined in the regulations 42 CFR 11.44(b), (c), and (e).  A certification for delay or a good cause extension request for a clinical trial may be submitted through the PRS, with prior IRP approval. These requests must be submitted prior to the results deadline or results information will be considered late. 
+
+The RP must submit a certification for delay or good cause extension request to their Clinical Director at least 30 days prior to the standard results information submission deadline. The request must contain a description of the reason(s) why results information cannot be submitted according to the standard deadline. Once approved by the Clinical Director, the request is forwarded to the Associate Director for Clinical Research for approval, via OPS. In emergency cases, the RP’s Clinical Director and Associate Director of Clinical Research, at their discretion, may review a request submitted 1-13 days prior to the standard results information submission deadline; however, requests submitted on or after the standard results information submission deadline will not be considered. There are likely to be only a few situations that would constitute “good cause.” Some examples are provided in the Final Rule preamble.
+
+**SOP Appendix A– Timeline**
+
+****

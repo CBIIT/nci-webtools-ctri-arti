@@ -1,0 +1,210 @@
+Name: 3014-106 - Ancillary Reviews
+Source URL: https://policymanual.nih.gov/3014-106
+Fetched At: 2026-04-03T18:46:12.946Z
+Source Type: html
+
+---
+
+## 3014-106 - Ancillary Reviews
+
+Issuing Office: OD/OIR/OHSRP
+Phone:
+(301) 402-3713
+
+Approving Official(s): DDIR
+
+Release Date: 8/03/2020
+
+Partial Revision Date: 2/14/2025 ?
+
+Technical Revision Date: 9/24/2024 ?
+
+Transmittal Notice
+
+- Explanation of Material Transmitted: This policy describes the NIH institutional reviews (referred to as “ancillary reviews”) that are required for human subjects research activities, in addition to Institutional Review Board (IRB) review. Upon implementation, this policy partially supersedes SOP 8 Procedures and Required Documentation for Submission. Partial Revision 09/09/2024: To clarify that ancillary reviews are required for intermediate-size patient population and treatment Investigational New Drug (IND) expanded access protocols. To add the requirement for Intramural researchers to obtain prospective approval from the Human Fetal Tissue (HFT) Review Committee, and human subjects review, before use or acquisition of HFT. This includes research involving HFT that may be considered to be not human subjects research (NHSR). To add information about review by the NIH Protocol Royalty Analysis Committee (PRAC) when the NIH IRB is informed that an investigator is listed as an inventor for any intellectual property that is being evaluated in the research under review. . Partial Revision 2/14/2025: This revision specifies that investigators should consult the Biological Safety Officer for any new product used in an expanded access protocol at the NIH that has not previously been reviewed by the NIH IBC.
+- Filing Instructions:
+
+- Insert: NIH Manual Chapter 3014-106, dated 08/03/2020; Partial Revision: 09/09/2024
+- Implementation Date: 10/12/2020
+
+- PLEASE NOTE: For information on:
+
+- The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+- Content of this chapter, contact the issuing office listed above.
+- NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+- Describe the NIH institutional ancillary reviews required for human subjects research activities, in addition to Institutional Review Board (IRB) review.
+
+### B. Scope
+
+- This policy applies to NIH investigators conducting human subjects research within the NIH Intramural Research Program (IRP), regardless of whether the NIH IRB or a non-NIH IRB is the Reviewing IRB. For information about ancillary review requirements for institutions relying upon the NIH IRB, see Policy 3014-105 IRB Reliance and Collaborative Research. For information about ethics review and policy, see Policy 3014-102 Investigator Conflict of Interest and Government Royalties.
+
+- This policy applies to NIH investigators conducting research with de-identified human fetal tissue (HFT) that is not readily identifiable to the NIH investigator and therefore might be considered not human subjects research (NHSR).
+
+### C. Policy
+
+- In addition to the requirement for IRB review for non-exempt human subjects research conducted by NIH investigators, ancillary reviews may also be required. Ancillary reviews include but are not limited to: Ethics Review, Office of Technology Transfer Review, Scientific Review, Radiation Safety Committee (RSC), Radioactive Drug Research Committee (RDRC), Institutional Biosafety Committee (IBC), Human Fetal Tissue Review Committee, Protocol Royalty Analysis Committee (PRAC) and the Select Agent Program (SAP). Human fetal tissue use by NIH investigators that might be considered NHSR must also be reviewed by the HFT Review Committee, and undergo human subjects review by the Office of IRB Operations.
+
+- In addition to the requirement for IRB review for expanded access protocols conducted by NIH investigators, ancillary review may also be required consistent with C.1. above, for intermediate-size patient population and treatment INDs protocols.
+
+- All non-exempt human subjects research conducted by NIH investigators must undergo scientific review consistent with the Policy for Scientific Review of Clinical Protocols Utilizing the NIH Intramural Program, unless waived by the Institute/Center (IC) leadership. All waivers of Scientific Review must be approved by the Chief Scientific Officer, Clinical Center (CC).
+
+- When an NIH IRB is the Reviewing IRB, documentation of approval by the required NIH ancillary review entities must be provided to the NIH IRB.
+
+- When the NIH relies upon a non-NIH Reviewing IRB, approvals by NIH ancillary review entities are still required, and documentation of such approval must be provided to the Office of IRB Operations (IRBO) prior to submission to the Reviewing IRB.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below. The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+Definitions demarcated with ([Pre-2018 Common Rule](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/regulatory-text/index.html) definition) apply to research approved by an IRB (or deemed to be exempt, or for which no IRB review was required under the regulations) prior to the effective date of the [2018 Common Rule](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML) (January 21, 2019).
+
+Definitions demarcated with ([2018 Common Rule](https://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&SID=83cd09e1c0f5c6937cd9d7513160fc3f&pitd=20180719&n=pt45.1.46&r=PART&ty=HTML) definition) apply to all research approved by an IRB (or deemed to be exempt, or for which no IRB review was required under the regulations) on or after January 21, 2019, and to research transitioned to the 2018 requirements in accordance with HRPP policy.
+
+- [Clinical protocol](https://policymanual.nih.gov/3014-001#C)
+
+- [Cooperative Research and Development Agreements (CRADAs)](https://policymanual.nih.gov/3014-001#C)
+
+- [Cooperative Research and Development Agreement (CRADA) Review Subcommittee](https://policymanual.nih.gov/3014-001#C)
+
+- [Covered Research Protocol](https://policymanual.nih.gov/3014-001#C)
+
+- [Non-covered research protocols](https://policymanual.nih.gov/3014-001#N)
+
+- [Deputy Ethics Counselors (DECs)](https://policymanual.nih.gov/3014-001#D)
+
+- [Dual Use Research of Concern (DURC)](https://policymanual.nih.gov/3014-001#D)
+
+- [Human Fetal Tissue (HFT)](https://policymanual.nih.gov/3014-001#H)
+
+- [Human Subject (2018 Common Rule)](https://policymanual.nih.gov/3014-001#H)
+
+- [Institutional Biosafety Committee (IBC)](https://policymanual.nih.gov/3014-001#I)
+
+- [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+
+- [Office of Technology Transfer (Tech Transfer or OTT)](https://policymanual.nih.gov/3014-001#O)
+
+- [Principal Investigator (PI)](https://policymanual.nih.gov/3014-001#P)
+
+- [The Radioactive Drug Research Committee (RDRC)](https://policymanual.nih.gov/3014-001#R)
+
+- [Radioactive Drug](https://policymanual.nih.gov/3014-001#R)
+
+- [The Radiation Safety Committee (RSC)](https://policymanual.nih.gov/3014-001#R)
+
+- [Scientific Review (SR)](https://policymanual.nih.gov/3014-001#S)
+
+- [Select Agents](https://policymanual.nih.gov/3014-001#S)
+
+- [Select Agent Program (SAP)](https://policymanual.nih.gov/3014-001#S)
+
+### E. Responsibilities and Requirements
+
+- General Requirements: NIH Principal Investigators (PIs) are required to ensure that necessary ancillary reviews are completed and approved prior to initiation of non-exempt human subjects research.
+- NIH PIs are required to ensure that necessary ancillary reviews are completed and approved prior to initiation of intermediate-size patient population and treatment IND expanded access protocols. (See Policy 3014-502 Expanded Access, Including Emergency Access to Drugs, Biologics and Devices (Test Articles))
+- The IRB Office (IRBO), during its pre-review of a submission, may inform a Principal Investigator that any missing ancillary approval is necessary before the NIH IRB will review or approve the research, or before the protocol can be submitted to a non-NIH IRB for review.
+- The Reviewing IRB is responsible for incorporating into the informed consent any language required to be disclosed to a research subject by an ancillary review committee (e.g., disclosure that an investigator on the protocol is listed on the government-owned patent or employee invention report).
+
+- Scientific review:The scientific review process applies to clinical protocols (as defined in Section D. above) and generally occurs at the time of initial protocol review, annual and quadrennial review of the ongoing protocol, and review of substantive modifications to a protocol that pose new scientific questions or substantially alter the scientific approach.
+- Intramural Research Program (IRP) PIs are responsible for ensuring clinical protocols involving non-exempt human subjects research have undergone review of scientific content, or obtained a waiver, consistent with the Policy for Scientific Review of Clinical Protocols Utilizing the NIH Intramural Program. This requirement must be met prior to initiating IRB review.
+- The Office of IRB Operations (IRBO) will monitor the protocol file to ensure submission of documentation of scientific review (or waiver, if applicable) prior to initiating IRB review of the protocol, consistent with Policy 3014-203 Support of IRB Operations.
+
+- Deputy Ethics Counselor (DEC) Review:NIH PIs are responsible for ensuring DEC review of covered research protocols occurs prior to IRB review, as described in Policy 3014-102 Investigator Conflict of Interest and Government Royalties.
+
+- The Radiation Safety Committee (RSC): The RSC is responsible for reviewing and approving certain clinical research studies involving exposure of human subjects to ionizing radiation, as described in the RSC charter and policy.
+- When there is research radiation use in the protocol that is subject to RSC review, the Principal Investigator must apply to the Radiation Safety Committee for review, consistent with RSC policy. (See information about submissions to the RSC in References below.) If the investigator is unsure whether Radiation Safety Committee review is required s/he should consult with either the RSC or the IRB for guidance.
+
+- The Radioactive Drug Research Committee (RDRC):The RDRC is responsible for reviewing and approving the use of certain “non-approved” radioactive drugs for research purposes in humans that would otherwise require review by the FDA in the form of an Investigational New Drug (IND). Use of radioactive drugs in such studies is generally intended to obtain basic research information and is “not intended for immediate therapeutic, diagnostic or similar purposes or to determine the safety and effectiveness of the drug in humans for such purposes (i.e., to carry out a clinical trial)”. (21 CFR 361.1(d)(7)).
+- Principal Investigators must follow instructions for submission for RDRC review. (See References for link to RDRC.)
+- Approval of proposed research may be granted when the RDRC has determined, that the research is in accordance with the standards set forth in 21 CFR 361.1. (See References.)
+
+- NIH Office of Technology Transfer (Tech Transfer or OTT): In cooperation with the technology-transfer offices of the Institutes and Centers (ICs) of the NIH, OTT is responsible for managing the docketing process for securing patents, enforcing terms in the licenses negotiated by the ICs, and managing the royalties collected under those licenses to encourage the development of new products and services to benefit public health.
+- Principal Investigators should contact their IC Technology Transfer Office, Technology Development Coordinator, and Licensing & Patenting Managers for assistance in the various phases of the intramural technology transfer processes: review of Employee Invention Reports (EIRs); managing patent prosecution for inventions; licensing available technologies; establishing various agreements, such as Confidential Disclosure Agreements (CDAs), Cooperative Research and Development Agreements (CRADAs), Material Transfer Agreements (MTAs); and Clinical Trial Agreements (CTAs).
+- HHS OTT polices can be accessed at HHS Technology Transfer Policies.
+
+- CRADA Subcommittee: When a company seeks the right to license inventions made by NIH staff during a clinical trial, the IC Technology Development Coordinator will work with the company and the CRADA Principal Investigator to arrange a CRADA. When the CRADA is ready for execution, the IC Technology Development Coordinator will refer the CRADA to the CRADA Subcommittee for advisory review, and then route the final agreement for signatures.
+- When a clinical trial involves a CRADA, the CRADA PI is responsible for notifying the IRB. Specifically, the CRADA PI must inform the IRB when the CRADA partner will receive identifiable human data or identifiable materials.
+- The IRB is responsible for ensuring that the appropriate language is included in the informed consent, including disclosure that if applicable, identifiable human data or identifiable materials will be shared with the CRADA partner.
+
+- Institutional Biosafety Committee (IBC):The IBC oversees a review and registration process and addresses concerns regarding the Dual Use Research of Concern (DURC) nature of proposed research. The Committee provides recommendations for safety policy to the Director of the NIH or his designee and the DDIR and reviews all infectious disease research performed at BSL-2 and above and any research that falls under the NIH Guidelines for Research Involving Recombinant or Synthetic Nucleic Acid Molecules (NIH Guidelines).
+- All Principal Investigators (PIs) working with human, plant, or animal pathogens must register their work with the Institutional Biosafety Committee (IBC). This is done through the DOHS electronic biological registration interface (‘PI Dashboard’), which can be accessed through the DOHS Principal Investigators resource page. PIs may consult with IBC contacts, Institute assigned safety specialists, or a Biological Safety Officer, BSO through DOHS at 301-496-2960 if they will be conducting basic and/or clinical research involving recombinant DNA, including human gene transfer, or potentially infectious/toxic materials to ensure that proper containment and biosafety practices are employed.All applicable protocols must be submitted in the relevant electronic review system and be reviewed by the NIH IBC.
+- Per the NIH Guidelines, all Expanded Access Protocols (EAPs) that are FDA authorized, (including for single patient use) do not require IBC review. However, for some products, the NIH IBC may still elect to review the study to reduce risk for the NIH. For any new product used in an expanded access protocol at the NIH that has not previously been reviewed by the NIH IBC, consult with the Biological Safety Officer for the NIH Bethesda IBC at ([[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#aee0e7e6ecfde1eec0c7c680c9c1d8)) to determine if IBC review of this product will be required prior to submission of the protocol to the NIH IRB.
+- This decision will be documented in the IBC approved registration which should be submitted with the initial IRB application.
+
+- Principal Investigators considering whether their research constitutes DURC should refer to the NIH Dual-Use Research webpage for information and requirements. All IBC registrations include a series of questions that evaluate the work for DURC. (See References.)
+
+- The NIH Select Agent Program (SAP):The SAP manages the oversight of the possession, use, or transfer of selects agents at the NIH. This oversight is performed by the entity assigned Responsible Official (RO) for the SAP. The NIH must comply with the regulations and requirements of 42 CFR 73, 7 CFR 331 and 9 CFR 121.
+- Principal Investigators planning to work with select agents/toxins must enroll in the SAP and receive approval prior to the possession, use and transfer of select agents/toxins. It is critical that enrollment in the NIH Select Agent Program occur well in advance of IRB submission. For additional information, training and requirements, see the NIH Select Agent Program webpage. (See References.)
+
+- Human Fetal Tissue (HFT) Review Requirements:The Human Fetal Tissue Review Committee ensures that HFT is utilized for IRP non-transplantation research only when scientifically justifiable, and in the least amount possible to achieve the scientific outcomes; and to ensure that the acquisition and use of HFT by the IRP complies with all applicable laws and HHS/NIH policies. (See also, Policies and Procedures for the Use of Human Fetal Tissue (HFT) for Non-transplantation Research Purposes in the NIH Intramural Research Program.)
+- NIH intramural investigators proposing to obtain HFT or to perform any non-transplantation research[1] utilizing HFT must obtain approval from the following entities before HFT is acquired and research begins:The HFT Review Committee, and
+- A human subjects review by IRBO for NHSR, or the IRB for non-exempt human subjects research.
+
+- Protocol Royalty Analysis Committee Requirements:The OHSRP Protocol Royalty Analysis Committee (PRAC) review process (see the guideline for Management of real or apparent financial and other conflicts of interests or royalty payments for investigators conducting research being reviewed by the NIH IRB) is triggered when the NIH IRB is the reviewing IRB and has been informed that any of the following circumstances exist:The NIH Director has approved the issuance of a waiver from the conflict of interest requirements related to the research under review,
+- An investigator engaged in the research is identified as an inventor on intellectual property that is being evaluated in the research, or
+- A non-NIH investigator has been determined to have a conflict of interest by their home institution.
+
+- When an investigator engaged in the research is identified as an inventor on intellectual property that is being evaluated in the research, the NIH PI must disclose this to the Reviewing IRB in the electronic IRB system. (See the Information sheet for PROTECT question on Investigator inventions for more information and Policy 3014-102 Investigator Conflict of Interest and Government Royalties.)
+
+[1] NIH Intramural investigators seeking to use HFT for transplantation should prospectively reach out to OIR for additional guidance and requirements.
+
+### F. References
+
+- Federal RegulationsFDA: [21 CFR 361.1](https://www.ecfr.gov/cgi-bin/text-idx?SID=d8f750a9efb9828d3ca512a8fac7201e&mc=true&node=se21.5.361_11&rgn=div8)Regarding Select Agents: [42 CFR Part 73](https://www.ecfr.gov/current/title-42/chapter-I/subchapter-F/part-73), [7 CFR Part 331](https://www.ecfr.gov/current/title-7/subtitle-B/chapter-III/part-331) and [9 CFR Part 121](https://www.ecfr.gov/current/title-9/chapter-I/subchapter-E/part-121) [Radioactive drugs for certain research uses](https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?FR=361.1)
+- NIH Policy[Policy 3014-102 Investigator Conflict of Interest and Government Royalties](https://policymanual.nih.gov/3014-102)[Policy 3014-105 IRB Reliance and Collaborative Research](https://policymanual.nih.gov/3014-105)[Policy 3014-203 Support of IRB Operations](https://policymanual.nih.gov/3014-203)[Policy 3014-502 Expanded Access, Including Emergency Access to Drugs, Biologics and Devices (Test Articles)](https://policymanual.nih.gov/3014-502)[Policies and Procedures to Guide Boards of Scientific Counselors In Reviewing Intramural Research at the NIH](https://oir.nih.gov/sites/default/files/uploads/sourcebook/documents/review_science/policy-guide_bsc_reviewing_intramural_research.pdf) [Policy for Scientific Review of Clinical Protocols Utilizing the NIH Intramural Program](https://oir.nih.gov/sites/default/files/uploads/sourcebook/documents/review_science/policy-scientific_review_clinical_protocols.pdf)[HHS Technology Transfer Policies](https://www.techtransfer.nih.gov/policy)[Excerpts from FDA RDRC Regulations (21 CFR 361.1)](https://drs.ors.od.nih.gov/rsc/RDRC/Pages/rdrc_reqpro.aspx), revised April 1, 2011 [Policies and Procedures for the Use of Human Fetal Tissue (HFT) for Non-transplantation Research Purposes in the NIH Intramural Research Program](https://oir.nih.gov/sourcebook/ethical-conduct/special-research-considerations/policies-procedures-use-human-fetal-tissue-hft-non-transplantation-research)
+- Guidance[RSC Clinical Protocol and Assistance](https://drs.ors.od.nih.gov/rsc/CPI/Pages/protocol_index.aspx)[RSC Forms and Policy Documents webpage](https://drs.ors.od.nih.gov/rsc/Pages/forms_index.aspx)[Biosafety in Microbiological and Biomedical Laboratories, 5th Edition](https://www.hhs.gov/guidance/sites/default/files/hhs-guidance-documents/2006294012-hr-2008_bmbl.pdf)Office of Scientific Policy: [NIH Guidelines for Research Involving Recombinant or Synthetic Nucleic Acid Molecules (NIH Guidelines)](https://osp.od.nih.gov/wp-content/uploads/NIH_Guidelines.pdf)ORS, Division of Occupational Health and Safety: [The Role of the PI](https://www.ors.od.nih.gov/sr/dohs/YourRole/Pages/PrincipalInvestigators.aspx)ORS, Division of Occupational Health and Safety: [NIH IBC Registration Process](https://www.ors.od.nih.gov/sr/dohs/safety/laboratory/BioSafety/Pages/Registrations.aspx)ORS, Division of Occupational Health and Safety: [Select Agent Program](https://www.ors.od.nih.gov/sr/dohs/safety/laboratory/BioSafety/Pages/select_agents.aspx)ORS, Division of Occupational Health and Safety: [Example RD/HPRD Dual Use-Screening Survey](https://www.ors.od.nih.gov/sr/dohs/safety/laboratory/BioSafety/Pages/RDHPRDSurvey.aspx) (The questions shown are completed in the online biological registration process.)[NIH Office of Intramural Research oversight on Dual Use Research](https://oir.nih.gov/sourcebook/ethical-conduct/special-research-considerations/dual-use-research)[Management of real or apparent financial and other conflicts of interests or royalty payments for investigators conducting research being reviewed by the NIH IRB](https://irbo.nih.gov/confluence/download/attachments/36241835/102-Guideline-Management%20of%20Investigator%20Royalties%2003.29.2023.pdf?version=1&modificationDate=1706740070105&api=v2) (document download)[Information sheet for PROTECT question on Investigator inventions](https://irbo.nih.gov/confluence/download/attachments/36241835/102-Guideline-Royalties%20and%20investigator%20inventions%2003.28.2023.pdf?version=1&modificationDate=1706793679283&api=v2) (document download)
+
+Add Section
+
+###### * If you require a 508 compliant PDF version of a chapter please contact [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#82a2f2edeeebe1fbefe3ecf7e3eec2ecebeaace5edf4)
+
+|
+
+Type of Publish
+
+|
+|
+
+Release Date
+
+|
+
+| |
+| |
+
+Add Your Note (optional):
+
+Office of Management Assessment, National Institutes of Health, 6705 Rockledge Dr. Suite 601 Bethesda, MD 20892
+
+Phone: (301) 496-4606 Email: [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#f9899695909a809498978c9895b9979091d79e968f)
+
+- [Resources](https://oma.od.nih.gov/dms/pages/manual-chapters-links.aspx)
+
+- [About](https://oma.od.nih.gov/dms/pages/manual-chapters.aspx)
+
+- [Contacts](https://oma.od.nih.gov/dms/pages/manual-chapters-manual-system-contacts.aspx)
+
+- [Web Policies and Notices](https://www.nih.gov/web-policies-notices)
+
+- [HHS Vulnerability Disclosure](https://www.hhs.gov/vulnerability-disclosure-policy/index.html)
+
+- [FOIA](https://www.nih.gov/icd/od/foia/index.htm)
+
+- [No Fear Act](https://www.edi.nih.gov/no-fear-act)
+
+- [Office of Management](https://om.od.nih.gov/)
+
+- [National Institutes of Health](https://www.nih.gov/)
+
+- [U.S. Department of Health and Human Services](https://www.hhs.gov/)
+
+- [USA.Gov - Government Made Easy](https://www.usa.gov/)
+
+NIH... Turning Discovery into Health(r)
+
+Arrow UpBack to Top

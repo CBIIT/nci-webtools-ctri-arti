@@ -1,0 +1,385 @@
+Name: NIH Policy 3014-301
+Purpose: reference
+Description: Informed consent requirements, waiver or alteration rules, and NIH consent-document expectations.
+URL: https://policymanual.nih.gov/3014-301
+Selection Rule: (none)
+Token Count: 20476
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 20
+
+---
+
+## 3014-301 - Informed Consent
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 3/23/2021 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 10/02/2024 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 1/15/2026 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the requirements for investigators regarding informed consent for non-exempt and certain exempt human subjects research. This policy also describes the requirements for the NIH Institutional Review Board, as the Reviewing IRB when reviewing and approving informed consent documents and procedures, or for waiver or alteration of consent, including waiver or alteration of documentation of informed consent. **Technical Revision 5/20/2021:** Updated links to the new Telehealth policies 3014-301 and M20-1 and added reference to the FDA guidance on planned emergency research. **Partial Revision 11/7/22:** This revision clarifies the educational and supervisory requirements for post-doctoral Intramural Research Training Awardees (IRTAs)/Cancer Research Training Awardees (CRTAs) and Visiting Fellows (VFs) when obtaining informed consent. **Partial Revision 02/13/2024:** This revision includes updated requirements for informed consent for non-English speaking subjects which takes effect March 1, 2024, and recommendations from the recent consolidated FDA guidance on informed consent. In addition, this revision incorporates regulatory changes at 21 CFR 50.22 for waiver or alteration of informed consent elements or waiver to obtain informed consent for FDA-regulated minimal risk research which took effect January 22, 2024. **Partial Revision 10/02/2024:** This revision includes requirements for the consent of persons who are blind/illiterate at E.2.i.
+2.  **Filing Instructions:**  
+    **Insert:** NIH Manual Chapter 3014-301, Dated 03/23/2021  
+    **Implementation Date:** 03/30/2021
+3.  **PLEASE NOTE:** For information on:
+
+-   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy)
+-   Content of this chapter, contact the issuing office listed above.
+-   NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL:  [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+1.  Describes the requirements for investigators regarding informed consent when writing protocols and informed consent documents, and when obtaining and documenting informed consent, in non-exempt and certain exempt human subjects research.
+2.  Describes the requirements for the NIH Institutional Review Board (NIH IRB), as the Reviewing IRB, when reviewing and approving the informed consent document(s) and procedures, including the conditions when a request for waiver or alteration of consent, or a waiver of documentation of informed consent, may be considered.
+
+### B. Scope
+
+1.  This policy applies to investigators developing and obtaining informed consent, and to IRB members approving informed consent for non-exempt human subjects research under the pre-2018 Common Rule (45 CFR 46) and under the 2018 Common Rule (45 CFR 46, general compliance date of January 21, 2019), as applicable.
+2.  This policy applies to investigators developing and implementing informed consent, and to IRBO staff members approving informed consent for certain exempt human subjects research under the 2018 Common Rule (45 CFR 46.104) and for certain exempt research under the pre-2018 Common Rule (45 CFR 46.101).
+3.  This policy applies to informed consent requirements for Food and Drug Administration (FDA) regulated research. (21 CFR parts 50 and 56)
+4.  For the purposes of this policy: 
+    1.   When referring to an adult who is providing or signing consent, the term “subject” means, “Subject or Legally Authorized Representative (LAR)” unless otherwise specified. For requirements regarding LAR consent for adults who lack decision-making capacity to consent, see _Policy 3014-403 Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation_.
+    2.  Parental or guardian permission for participation of a child in research, as required by 45 CFR 46 Subpart D, is referred to as “consent”. For requirements regarding parental permission and assent of children, see _Policy 3014-402 Research Involving Children_.
+5.  This policy applies to NIH investigators, whether the Reviewing IRB is the NIH IRB or an external IRB.
+6.  This policy applies to non-NIH investigators when the NIH IRB is the Reviewing IRB.
+7.  This policy applies to the NIH IRB, when it is the Reviewing IRB.
+8.  This policy does not address, or apply to, the use of broad consent for the storage, maintenance and secondary research use of identifiable private information or identifiable biospecimens, as described in the 2018 Common Rule at 45 CFR 46.116(d)[\[1\]](#[1]Anchor).
+
+[\[1\]](#[1]) Exemptions related to broad consent for the maintenance, storage and secondary use of identifiable private information or identifiable biospecimens at 45 CFR 46.104(d)(7) or (8) are not being implemented in the NIH IRP at this time.
+
+### C. Policy
+
+1.  Principal Investigators (PIs) will ensure that all requirements for informed consent are met, in accordance with federal law, regulation, and policy, including NIH policy. (45 CFR 46, and 21 CFR parts 50 and 56, as applicable)
+    1.  Research initially approved by the IRB, or for which IRB review was waived or determined to be exempt, prior to January 21, 2019, is subject to the requirements of the pre-2018 Common Rule (45 CFR 46).  For the purposes of informed consent (whether oral or written, and as approved by the IRB), see specifically 45 CFR 46.116, 46.117 and applicable Subparts of 45 CFR 46 (i.e., B and D);
+    2.  Research initially approved by the IRB, or for which IRB review was waived or determined to be exempt on or after January 21, 2019, or which was originally subject to the pre-2018 Common Rule and transitioned to the 2018 Common Rule, is subject to the requirements of the 2018 Common Rule (45 CFR 46). For the purposes of informed consent (oral or written), see specifically 45 CFR 46.116, 46.117 and applicable Subparts of 45 CFR 46 (i.e., B and D);
+    3.  When conducting FDA-regulated research, all requirements found at 21 CFR 50 Subparts B and D apply in addition to the applicable Common Rule requirements noted above. (See [E.2.f.](#E.2.f.Anchor) below for more information)
+2.  Investigators will not enroll or involve a subject in any research activities, until legally effective informed consent has been obtained.
+    1.  When an adult subject lacks decision-making capacity to provide informed consent, and consent is required for a subject to participate, or to continue to participate, in the research, then informed consent must be obtained from the LAR to be considered legally effective. Assent may be required by the IRB. (See _Policy 3014-403 Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation_)
+    2.  No child may be enrolled in research or have research procedures initiated unless parental permission and child assent (oral or written, as required and approved by the IRB) are obtained consistent with the requirements of 45 CFR 46 Subpart D and, as applicable, 21 CFR 50 Subpart D, unless waived by the IRB. (See _Policy 3014-402 Research Involving Children_)
+3.  The informed consent document must be signed and dated by the subject, except when the IRB has approved a waiver of documentation of informed consent. (See 45 CFR 46.117(c))
+    1.  When minor subjects reach the age of majority[\[2\]](#[2]Anchor), investigators must seek informed consent from the now-adult subject for their continued participation unless consent is not required (e.g., for certain exempt research) or if waived by the IRB (See _Policy 3014-402 Research Involving Children_).
+4.  When the NIH IRB is the Reviewing IRB, and the research is taking place at an NIH site, the NIH PI will only use NIH consent document templates, for review and approval by the NIH IRB.
+5.  All research taking place at an NIH site, regardless of the reviewing IRB, must include the NIH required institutional language in the consent.
+    1.  When relying on an external Reviewing IRB and using a non-NIH consent, the NIH PI must use NIH required institutional language as approved by the Office of IRB Operations (IRBO) during its administrative review. (See _Policy 3014-105 IRB Reliance and Collaborative Research_)
+    2.  Changes to the NIH required institutional language are not permitted unless first approved by OHSRP.
+6.  When conducting remote informed consent using synchronous audio/video, only NIH-approved platforms may be used (See [E.3.a.V.](#E.3.a.V.Anchor) below for more information about remote consent). (For research consent obtained from, or research conducted with, NIH Clinical Center (CC) subjects, other policies and restrictions may also apply. For more information see the _Policy 3014-303 Intramural Telehealth Requirements_ and for research conducted at the Clinical Center, the CC _Medical Administrative Series Policy_ _M20-1 Utilization of Telehealth/Telemedicine by NIH Healthcare Providers for NIH Clinical Center Patients_)
+7.  When enrollment of non-English speaking subjects is anticipated, consent must be obtained using an IRB-approved translated long form consent.
+8.  When enrollment of a non-English speaking person is not anticipated and there is no IRB-approved translated long form consent in the language of the subject, the short form process may be used to document consent only as described in the IRB-determined categories below:
+    1.  For minimal risk research:
+        1.  No more than three (3) uses of the short form consent in a given language is permitted per study, unless otherwise directed by the IRB.
+        2.  After three (3) uses of a short form in a given language or when directed by the IRB, the PI must translate the long form consent and obtain IRB approval before use with any future subjects; and
+        3.  Upon IRB approval, the PI must, provide the translated long form to any subjects previously enrolled using the short form consent process who speak that language. See [E.2.h_._](#E.2.h.Anchor) below for more information.
+    2.  For greater than minimal research:
+        1.  When there is no translated long form available and it is determined by the PI that it is in the subject’s best interest to be allowed to enroll prior to translation of the consent document, then it is permitted to proceed using the short form consent process (See [E.2.h_._](#E.2.h.Anchor) below) using the IRB-approved short form consent in the language of the subject. For example, the subject’s medical condition necessitates an intervention in a time frame in which the consent cannot be translated. Cost or inconvenience to the study team does not constitute sufficient justification.
+        2.  When the short form consent process is utilized, the PI must promptly submit to the IRB a translated version of the IRB-approved long form consent and provide it to the subject as soon as possible after IRB approval (See [E.2.h_._](#E.2.h.Anchor) below). (See _Guidance for obtaining consent to participate in research from non-English speaking participants_ for more information)
+    3.  The IRB must be notified of the use of the short form (See _Policy 3014-801 Reporting Research Events_), and when applicable, provision of the translated long form to the subject, as described in section [E.2.h.II.ii.](#E.2.h.II.ii.Anchor) below.
+    4.  Use of the short form consent process _is not_ permitted under the following circumstances, unless specifically approved by the IRB:
+        1.  Enrollment of healthy volunteers in greater than minimal risk research;
+        2.  When there is sufficient time to obtain translation of the long form informed consent document.
+9.  When the research is regulated by the FDA, and a subject withdraws or is withdrawn from the research, the investigator cannot continue to access the subject’s medical record or other confidential records (e.g., other protocol research records) for additional research purposes unless the subject has provided consent for this purpose. (See [E.2.f.II.viii_._](#E.2.f.II.viii.Anchor) below, 21 CFR 312.62(b) and 812.140(a)(3), and see _Policy 3014-500 Research Involving Drugs, Biological, and Nutritional Products_)
+10.  For clinical trials as defined by, and subject to, the 2018 Common Rule, if the NIH is the only site, or in the case of multi-center research when NIH is the lead site, then the NIH PI, or the PI’s Institute or Center (IC), must post one blank copy of an IRB-approved informed consent document used to enroll subjects in the research, on a publicly available federal website that is established as a repository for such informed consent documents (e.g., ClinicalTrials.gov or Regulations.gov). The document must be posted after the trial is closed to recruitment, and no later than 60 days after the last study visit by any subject, as required by the protocol. (45 CFR 46.116(h) of the 2018 Common Rule)
+11.  For human subjects research determined to be exempt under 45 CFR 46.101(b) (pre-2018 Common Rule) or 45 CFR 46.104 (2018 Common Rule), IRBO may require that the PI share certain consent information with the subject prior to beginning the research, see [E.1.](#E.1.Anchor) below.
+12.  The NIH IRB will only approve informed consent documents and procedures that comply with the requirements specified in 45 CFR part 46 and applicable Subparts.
+     1.  In addition, for FDA regulated research, the IRB will only approve a consent procedure in which informed consent will be obtained from each human subject to whom the test article is administered consistent with 21 CFR part 50 Subparts B and D, except as provided in C.13.a. below. 
+13.  The IRB may only waive or alter elements of informed consent or documentation of informed consent when the IRB determines and documents that the requirements for waiver or alteration are met, as specified in 45 CFR parts 46.116 and 46.117 or, for emergency research, as noted at 61 Federal Register 51531[\[3\]](#[3]Anchor).
+     1.  Further, when the research is also regulated by the FDA, the IRB may only:
+         1.  Waive or alter elements of informed consent for minimal risk research as specified in 45 CFR 46.117(f)(3) and 21 CFR 50.22,
+         2.  Waive informed consent for emergency research as specified in 21 CFR 50.23 and 50.24, and
+         3.  Waive documentation of informed consent as specified in 21 CFR 56.109(c).
+     2.  In addition, under the 2018 Common Rule, documentation of informed consent may be waived when subjects are members of a distinct cultural group or community in which signing forms is not the norm and 1) the research presents no more than minimal risk of harm to subjects, 2) provided there is an appropriate alternative mechanism for documenting that informed consent was obtained, and 3) this consent procedure has been prospectively approved by the IRB. (See 45 CFR 46.117(c)(iii) of the 2018 Common Rule)
+
+---
+
+[\[2\]](#[2]) For the purpose of consent at an NIH site, an adult is anyone 18 years old or older.
+
+[\[3\]](#[3]) Waiver of informed consent is not permitted for certain research with vulnerable populations. Per 61 FR 51531, because of special regulatory limitations relating to research involving prisoners (Subpart C of 45 CFR part 46) and research involving fetuses, pregnant women, and human _in vitro_ fertilization (Subpart B of 45 CFR part 46), the waiver for emergency research is not applicable to these categories of research.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below. The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+Definitions demarcated with (_Pre-2018 Common Rule definition_) apply to research approved (or deemed to be exempt or for which no IRB review was required under the regulations) prior to the effective date of the 2018 Common Rule (January 21, 2019).
+
+Definitions demarcated with (_2018 Common Rule definition_) apply to all research approved by an IRB (or deemed to be exempt or for which no IRB review was required under the regulations) on or after January 21, 2019 and to research transitioned to the 2018 requirements in accordance with Human Research Protection Program (HRPP) policy.
+
+**Note**: There _may be more than one definition per term_, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+1.  [Clinical Trial](https://policymanual.nih.gov/3014-001#C)
+2.  [Coercion](https://policymanual.nih.gov/3014-001#C)
+3.  [Consent Monitor](https://policymanual.nih.gov/3014-001#C)
+4.  [Informed Consent](https://policymanual.nih.gov/3014-001#I)
+5.  [Informed Consent Document](https://policymanual.nih.gov/3014-001#I)
+6.  [Legally Authorized Representative (2018 Common Rule)](https://policymanual.nih.gov/3014-001#L)
+7.  [Legally Authorized Representative (LAR) (pre-2018 Common Rule and FDA definition)](https://policymanual.nih.gov/3014-001#L)
+8.  [Legally Effective](https://policymanual.nih.gov/3014-001#L)
+9.  [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+10.  [Test Article](https://policymanual.nih.gov/3014-001#T)
+11.  [Undue Influence](https://policymanual.nih.gov/3014-001#U)
+12.  [Written, or In Writing (2018 Common Rule)](https://policymanual.nih.gov/3014-001#W)
+
+### E. Responsibilities and Requirements
+
+1.  **Requirements for Informed Consent in Exempt Research** (For exempt requirements, see 45 CFR 46.101(b) of the pre-2018 Common Rule or 45 CFR 46.104 of the 2018 Common Rule) 
+    
+    NIH investigators are responsible for complying with the requirements of Section E.1.
+    
+    1.  NIH investigators who seek an exempt determination from the IRBO, (e.g., research involving prospective collection of information from human subjects[\[4\]](#[4]Anchor)), must comply with the following, when applicable:
+        1.  The plan for how consent information will be conveyed to subjects must be included in the protocol.
+        2.  The consent information (or documents, if any) must be submitted in the electronic IRB system for review by the IRBO.
+        3.  The consent information that is conveyed to subjects must include the following elements:
+            1.  The purpose of the research;
+            2.  That the activity is being conducted for research purposes;
+            3.  That participation is voluntary;
+            4.  A description of the procedures involved (e.g., approximate time commitment, type of research procedures, type and number of questions being asked); and
+            5.  The name and contact information for one of the investigators.
+        4.  If relevant to the research, the investigator must also address the following topics in the consent information:
+            1.  A description of the subject population (e.g., number of subjects anticipated to be accrued, eligibility criteria);
+            2.  Any anticipated risks or benefits;
+            3.  When withdrawing from the study, whether the subject’s data will be maintained after withdrawal;
+            4.  Whether identifiable private information will be collected or not. If identifiable private information will be collected, how privacy and confidentiality will be maintained; and
+            5.  Compensation (including when none is offered).
+    2.  Before involving a subject in the research, consent information must be provided to the subject.  However, the consent information need not contain all the elements of informed consent as described in 45 CFR 46.116, nor be documented using a written, signed consent as described in 45 CFR 46.117. The consent information may be conveyed to the subject, verbally, in writing, or electronically, as approved by the IRBO.
+    3.  Under the 2018 Common Rule, for exempt research involving benign behavioral interventions, if subjects will be deceived regarding the nature or purposes of the research, they must be informed that they will be unaware of, or misled, regarding the nature or purposes of the research, and subjects must authorize the deception through prospective agreement to participate in the research. (See 45 CFR 46.104(d)(3)(iii))
+2.  **Requirements for Informed Consent in Non-exempt Human Subjects Research** 
+    
+    NIH investigators, and non-NIH investigators when the NIH IRB is the reviewing IRB, are responsible for complying with the requirements of E.2. In addition, the requirements of E.2. are informational for IRB members.
+    
+    1.  Informed consent, including the informed consent document, unless waived or altered as approved by the IRB, must be legally effective and comply with Common Rule requirements as described in 45 CFR 46.116, 45 CFR 46.117, and applicable subparts of 45 CFR 46. In addition, for FDA-regulated research informed consent must comply with requirements as described at 21 CFR 50 Subparts B and D, and in further detail as consistent with [E.2.f.](#E.2.f.Anchor) below.
+    2.  Unless waived or altered by the IRB, the IRB-approved informed consent document must:
+        1.  Include all applicable general requirements and basic elements of informed consent. (45 CFR 46.116(a) and (b) of the 2018 Common Rule, or 45 CFR 46.116 and 46.116(a) of the pre-2018 Common Rule, as applicable);
+        2.  Include all applicable additional elements of informed consent. (45 CFR 46.116(c) of the 2018 Common Rule, or 45 CFR 46.116(b) of the pre-2018 Common Rule, as applicable);
+        3.  Be provided in language understandable to the subject (e.g., written at an appropriate reading level for the intended audience, including an explanation of scientific and medical terms, and written in the preferred language of the subject) consistent with this policy. For requirements for non-English speaking subjects, see [E.2.h.](#E.2.h.Anchor) below. (45 CFR 46.116 of the pre-2018 Common Rule and 45 CFR 46.116(a)(3) of the 2018 Common Rule)
+        4.  Not include any exculpatory language that waives, or appears to waive, any of the subject's legal rights, nor may it release or appear to release the investigator, the sponsor, the institution, or its agents from liability for negligence. (45 CFR 46.116 of the pre-2018 Common Rule, 45 CFR 46.116(a)(6) of the 2018 Common Rule and as applicable, 21 CFR 50.20);
+        5.  Be approved by the IRB prior to use; and
+        6.  Not be further altered or modified unless prospectively approved by the IRB.
+    3.  Unless waived or altered by the IRB as permitted by the 2018 Common Rule, research approved under the 2018 Common Rule must comply with the following non-exhaustive list of the 2018 regulatory requirements for informed consent:
+        1.  The subject must be provided with information that a reasonable person would want to know in order to make an informed decision about whether to participate in the research.
+        2.  Informed consent must begin with a concise and focused presentation of the key information that is most likely to assist a subject in understanding the reasons why one might or might not want to participate in the research. This part of the informed consent must be organized and presented in a way that facilitates comprehension. (45 CFR 46.116(a)(5)(i) of the 2018 Common Rule);
+        3.  Informed consent as a whole must present information in sufficient detail about the research and must be organized and presented in a way that does not merely provide lists of isolated facts, but rather facilitates the subject's understanding of the reasons why one might or might not want to participate in the research. (45 CFR 46.116(a)(5)(ii) of the 2018 Common Rule);
+        4.  For research that involves the collection of identifiable private information or identifiable biospecimens, informed consent must include a statement whether or not identifiers might be removed and the data or biospecimens shared without additional informed consent, as required by 45 CFR 46.116(b)(9) of the 2018 Common Rule;
+        5.  When appropriate, informed consent must include information relating to the use of biospecimens leading to commercial profit, return of clinically relevant results, and performance of whole genome sequencing, as specified in 45 CFR 46.116(c)(7-9) of the 2018 Common Rule; and
+        6.  At least one blank copy of an IRB-approved consent must be posted on a federal website established for this purpose. See [C.10.](#C.10.Anchor) above.
+    4.  Informed consent documents for use at NIH sites must comply with the following:
+        1.  When the NIH IRB is the Reviewing IRB, the appropriate NIH consent templates must be used, which include NIH required institutional language. (See _NIH IRB consent templates_ on the IRBO website).
+        2.  When the Reviewing IRB is an external IRB, the NIH PI must work with IRBO to ensure that NIH required institutional language and applicable local context information is inserted into the consent document, and any inapplicable information is removed (e.g., that which is contrary to applicable law or NIH policy). (See _Policy 3014-105 IRB Reliance and Collaborative Research_ for more information)
+        3.  Changes to the NIH required institutional language are not permitted unless approved by OHSRP consistent with [C.5.b.](#C.5.b.Anchor) above.
+        4.  Include any additional information required by the NIH IRB (in addition to the requirements at 45 CFR 46.116) to be given to subjects, when in the IRB’s judgement, the information would meaningfully add to the protection of the rights and welfare of subjects. (45 CFR 46.109(b))
+    5.  When obtaining informed consent from subjects, informed consent must:
+        1.  Be sought only under circumstances that provide the subject sufficient opportunity to read the consent, discuss it, and consider whether or not to participate. The subject must have the opportunity to discuss the information with a knowledgeable investigator. (See 45 CFR 46.117(b))
+            1.  Whenever possible, the informed consent document must be given to the subject in advance of the consent discussion, so that the subject will have sufficient opportunity to consider the information about the research and discuss it (e.g., with their primary care provider or family members).
+        2.  Be obtained before involving the subject in the research.
+        3.  Be obtained using only the most recent IRB-approved informed consent document.
+        4.  Be presented in such a manner to minimize the possibility for coercion or undue influence. (46.116 of the pre-2018 Common Rule, and 46.116(a)(2) of the 2018 Common Rule, and as applicable, 21 CFR 50.20)
+        5.  Fulfill vulnerable population requirements for informed consent under 45 CFR 46 Subparts B, C, D, and NIH policies. (See _Policy 3014-400_ _Research Involving Pregnant Women, Human Fetuses, and Neonates, Policy 3014-401 Research Involving Prisoners_, _Policy 3014-402 Research Involving Children_, _Policy 3014-403 Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation_, and _Policy 3014-404 Research Involving NIH Staff as Subjects_)
+        6.  Be signed and dated by the subject, except when the IRB has approved a waiver of documentation of consent. (See 45 CFR 46.117(a))
+            1.  Be signed by the subject either in writing or electronically. However, when obtaining electronic signature, NIH investigators are reminded that methods for obtaining electronic signature must comply with any NIH- or IC-specific and IRBO requirements. In addition, obtaining electronic signature must be prospectively reviewed and approved by the IRB.
+                -   For FDA-regulated research, any use of electronic signature must be compliant with the requirements of 21 CFR part 11.
+            2.  Unless documentation is waived by the IRB, a copy of the signed informed consent document must be provided to the subject who signed it.
+            3.  For subjects where disability prevents them from being able to physically sign their name, or in the case of illiterate subjects, they may be enrolled in a study by “making their mark” on the informed consent document. (For additional requirements for consent of blind/illiterate subjects, see [E.2.i.](#E.2.i.Anchor) below)
+            4.  Some subjects may be permitted, due to disability, to verbally consent if it meets the requirements of the regulation. Such a subject who is physically unable to make their mark, and unable to speak, can be entered into a study if they are competent and able to indicate approval, or disapproval, by other means.  However, whatever alternative procedure is utilized to indicate subject permission, must be prospectively reviewed and approved by the IRB and documented consistent with [E.2.e.VII.](#E.2.e.VII.Anchor) below.
+        7.  For NIH investigators, be documented in the subject’s record, describing the method used for communication with the subject and the specific means by which the subject communicated agreement to participate in the study (e.g., their verbal response and signing of the informed consent document). (For research conducted at the NIH Clinical Center, see _MAS Policy M23-1 Informed Consent for Medical and Surgical Procedures_ for more information about documentation of informed consent in the medical record)
+    6.  Informed Consent Requirements related to FDA-regulated Research
+        1.  Informed consent must be obtained from each human subject to whom the test article is administered consistent with 21 CFR part 50 Subparts B and D, except as provided in 21 CFR 50.22, 50.23 or 50.24, and 21 CFR 56.109(c).
+        2.  In addition to other applicable requirements, informed consent for FDA-regulated research must, as appropriate:
+            1.  Comply with the requirements described in 21 CFR 50 Subpart B.
+            2.  Comply with requirements described in 21 CFR 50 Subpart D, when the research involves children.
+            3.  Comply with HRPP Policies _3014-500_ R_esearch Involving Drugs, Biological, and Nutritional Products_, _3014-501 Research Involving FDA Regulated Devices_, and _3014-502_ _Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles)_.
+            4.  Include a description of procedures that are experimental.
+            5.  Include a statement to identify the test article as “investigational” or “not approved by the FDA,” if the test article under study is not FDA-approved for the proposed use. If the test article is approved, include statement as to whether it is being used according to its labeled indications. (21 CFR 50.25(a)(1))
+            6.  Make no claims which state or imply, directly or indirectly, that the test article is safe or effective for the purpose(s) under investigation or that the product is in any way equivalent or superior to another product. (See 21 CFR 312.7(a), 21 CFR 812.7(d), and _Guidance for Institutional Review Boards and Clinical Investigators- Recruiting Study Subjects_)
+            7.  Comply with section [E.2.g.](#E.2.g.Anchor) regarding ClinicalTrials.gov
+            8.  Include information about data retention in the event of a subject’s withdrawal from the research. Explain that the subject’s data collected to the point of withdrawal remains part of the study database and will not be removed.  Further, the investigator may not continue to access the subject’s medical record or other confidential records consistent with [C.9.](#C.9.Anchor) above.
+                -   If the subject is withdrawn from the primary study intervention but will remain on the study in a more limited manner (e.g., for safety or long-term follow-up), and the original consent does not describe this limited participation, the investigator must obtain consent for this limited participation. Further, this consent should distinguish clinical outcomes from research procedures and must be approved by the IRB. (See _Guidance for Sponsors, Clinical Investigators, and IRBs Data Retention When Subjects Withdraw from FDA-Regulated Clinical Trials_); or
+                -   If the subject declines to participate in further follow-up or to provide clinical outcome information, note that the researcher may continue to use the subject’s data in the research database collected prior to the subject’s withdrawal consistent with the informed consent document.
+    7.  Informed Consent requirements relating to ClinicalTrials.gov
+        1.  For NIH IRP trials within the scope of the _NIH Policy on the Dissemination of NIH-Funded Clinical Trial Information_, informed consent documents for clinical trials are to include a specific statement relating to posting of clinical trial information.
+            1.  Note that the definition of “_clinical trial_” under the _NIH Policy on the Dissemination of NIH-Funded Clinical Trial Information_ is “a research study in which one or more human subjects are prospectively assigned to one or more interventions (which may include placebo or other control) to evaluate the effects of those interventions on health-related biomedical or behavioral outcomes” and is broader than the statutory definition of an “[_applicable clinical trial_](https://www.govinfo.gov/content/pkg/CFR-2017-title42-vol1/xml/CFR-2017-title42-vol1-part11.xml#seqnum11.10).”
+            2.  NIH PIs must include the statement found at [E.2.g.II_._](#E.2.g.II.Anchor) below in clinical trial (as defined in [E.2.g.I.i.](#E.2.g.I.i.Anchor) above) informed consent documents as required by the _NIH Policy on the Dissemination of NIH-Funded Clinical Trial Information_.
+        2.  For “_applicable clinical trials_,” as defined by statute at 42 U.S.C. 282(j)(1)(A), when seeking informed consent, include the following statement, word-for-word, regarding study registration and information submission to the registry databank at ClinicalTrials.gov: “A description of this clinical trial will be available on http://www.ClinicalTrials.gov, as required by U.S. law. This Web site will not include information that can identify you. At most, the Web site will include a summary of the results. You can search this Web site at any time.”  (21 CFR 50.25(c))
+    8.  Enrollment of non-English Speaking Subjects
+        1.  When non-English speaking subjects are anticipated to enroll in the research:
+            1.  The PI must submit a certified translated long form consent document in the language of the anticipated subjects to the IRB for approval.
+            2.  IRB approval of the certified translation must be obtained before the translated long form consent document is used.
+        2.  When a non-English speaking subject seeks to enroll unexpectedly, and there is no IRB-approved long form consent document in the language of the subject, then:
+            1.  For minimal risk research, the requirements of [C.8.a.](#C.8.a.Anchor) above must be followed in addition to the requirements specified in this section.
+            2.  For greater than minimal risk research, when the short form consent process is utilized, in addition to the requirements specified in this section and at [C.8.b.](#C.8.b.Anchor) above, the PI must:
+                -   document the rationale for why the use of short form consent was necessary in the research record, then
+                -   promptly obtain a certified translation of the IRB-approved long form consent in the language of the subject, and
+                -   provide the translated long form consent to the subject as soon as possible upon approval by the IRB. (See _Guidance for the obtaining consent to participate in research from non-English speaking participants_ for more information)
+            3.  Notify the IRB of the use of the short form consent consistent with [C.8.c.](#C.8.c.Anchor) above, via the electronic IRB submission system within 7 calendar days. The notification must provide the rationale for the use of the short form.
+            4.  If the research is greater than minimal risk, or if directed to do so by the IRB, inform the IRB that the provision of the translated full consent document to the subject occurred as soon as possible after IRB approval.
+            5.  Under certain circumstances (See [C.8.d.](#C.8.d.Anchor) above) and at the discretion of the IRB, the PI may be directed to translate the English informed consent document into another language in lieu of short form consent use.
+        3.  When obtaining short form consent the investigator must use an IRB-approved short form consent document in the language of the subject, if one is available.
+            1.  If there is no IRB-approved short form consent document in the language of the subject, the NIH PI must submit (before use) a certified translation of the short form consent in the language of the subject that meets the requirements of 45 CFR 46.116 and 46.117(b)(2) for approval by the IRB.
+        4.  When using the short form consent procedure, the PI must obtain IRB approval for the written summary that is used as the basis of translation of what is to be said to the subject, except when the IRB-approved English long form consent document is used for this purpose. (See 45 CFR 46.117(b)(2))
+        5.  When obtaining short form consent (or when the subject requires an interpreter for long form consent discussions) a professional interpreter, should be used (e.g., in-person interpreter or via a phone interpretation service). (See also _Medical Administrative Policy M23-2 Language Access in the Clinical Center_)
+            1.  Use of an adult family member for interpretation is not permitted unless a professional medical interpreter cannot be located.  The research record must document the reasons for using a family member and the attempts made to locate a professional interpreter.
+        6.  For research approved under the 2018 Common Rule requirements, when obtaining short form consent, the key information must be presented first to the subject, before other information, if any, is provided. (See 45 CFR 46.116(a)(5)(i) and see [E.2.c.II_._](#E.2.c.II.Anchor) above for key information requirements)
+        7.  When the short form consent procedure is used to consent subjects, there must be a witness who is present for the entire oral consent presentation.
+            1.  The witness must be present at the location of the Investigator obtaining consent.
+                -   When it is urgent to enroll the subject, and in the very rare instance that the witness cannot be at the location of the investigator, the short and long form consents can be provided electronically to the witness, who will then sign and return the documents electronically.
+                -   Signatures collected using a remote consent process must be “wet” signatures using a pen, mouse or stylus and not electronic signatures.
+                -   If the witness is unable to sign the required documents, it is not acceptable for the PI to make a notation in the research record on behalf of the witness. In this case the subject may not be enrolled.
+            2.  Either the interpreter or a second individual (fluent in both languages) can serve as the witness.
+            3.  The witness must be fluent in the language of the subject and in English. Generally, the purpose of the witness is to attest to the voluntariness of the subject’s consent and the adequacy of the consent process (i.e., that the information was accurately conveyed and that the subject’s questions were answered).
+                -   In the very rare instance that the interpreter is unable to act as the witness, and if the witness is not fluent in both the language of the subject and English, then the witness should verify with the interpreter that the subject understands the information presented, that all questions have been satisfactorily addressed, and that the subject agrees to participate. The witness, or investigator obtaining informed consent, should document this as a note in the record documenting the short form consent procedure.
+        8.  Required signatures during the short form consent procedure must be obtained in accordance with 45 CFR 46.117(b)(2):
+            1.  The investigator obtaining consent must sign and date the English long form/written summary that is used as the basis of translation.
+            2.  The subject must only sign and date the short form consent.
+            3.  The witness to the short form consent procedure must sign and date both the short form and the English long form/written summary that is used as the basis of translation.
+                -   The interpreter may sign as the witness. However, the interpreter cannot be required to be the witness. When the interpreter cannot sign as the witness, another party, who is present for the entire oral consent presentation, must sign as a witness, consistent with [E.2.h.VII.iii.](#E.2.h.VII.iii.Anchor) above.
+        9.  The subject must be provided a copy of the signed short form consent as well as a copy of the signed English long form/written summary that was used as the basis of translation.
+        10.  The research team must complete the Administrative section of the short form consent, as well as the administrative section of the English long form/written summary, stating who witnessed the short form consent procedure.
+        11.  The consent procedure must be documented in the subject’s record consistent with the policy of the institution.
+    9.  Consent of persons who are blind or illiterate:
+        1.  When the oral consent process is used to consent a person who is blind or illiterate (e.g., because the person will not be using an assistive device to read the consent themselves), there must be a witness to the entire oral presentation of the informed consent.
+        2.  In this case, the long form of the IRB-approved consent is utilized and the witness signs on the witness line. The use of the long-form written in the language of the subject is required whether the person who is blind or illiterate is English speaking or non-English speaking.
+        3.  When the person who is blind/illiterate is non-English speaking and the short form process will be utilized due to unexpected enrollment and there is no IRB-approved long form available in their language, then the requirements of [E.2.h.II.](#E.2.h.II.Anchor) above must be followed.
+        4.  The consent procedure indicating that the person is blind or illiterate and use of the witness must be documented in the subject’s record. (For additional information about consenting persons who are blind or illiterate see _OHSRP Consent FAQs_)
+3.  **Principal Investigator Responsibilities related to Non-exempt Human Subjects Research**
+    
+    NIH PIs, and non-NIH PIs when the NIH IRB is the reviewing IRB, in addition to complying with the requirements in [E.2.](#E.2.Anchor) above, must also comply with the requirements in Section E.3.
+    
+    1.  For non-exempt human subjects research, the PI must:
+        1.  Ensure that all requirements for informed consent are met, in accordance with federal law, regulation, and policy, including NIH policy, (e.g., 45 CFR 46, and 21 CFR parts 50 and 56, as applicable).
+        2.  Provide a description in the protocol of the procedures for obtaining and documenting informed consent for the research.
+        3.  Submit the informed consent documents in the electronic IRB system.
+        4.  Ensure that legally effective informed consent has been obtained from each human subject, before conducting human subjects research, consistent with the IRB-approved protocol and consistent with [C.2.](#C.2.Anchor) above, unless the requirements for consent, or documentation of consent, have been waived or altered by the IRB.
+        5.  When seeking to use a remote consent procedure (i.e., telephone or video conference), describe this procedure and justify its use in the protocol.
+            1.  Note for NIH PIs: When conducting remote informed consent using synchronous audio/video, only NIH-approved platforms may be used consistent with [C.6.](#C.6.Anchor) above.
+            2.  When informed consent has been obtained using a remote consent procedure, no research procedures may be initiated until the investigator has verified that the subject has returned a signed and dated the informed consent document, unless the IRB has granted a waiver of documentation of consent. An exception to this is when an IRB has approved the information and/or sample (e.g., a survey, blood collection or buccal swab sample) to be collected remotely and returned along with the informed consent document. In this case, however, no use or analysis of the information or sample may begin unless a fully executed informed consent document has been received and verified by an investigator.
+        6.  When requesting waiver or alteration of consent, or waiver of consent documentation, provide the applicable rationale for the request in the protocol that meets the appropriate regulatory requirements, (i.e., that meets the relevant requirements of:  45 CFR 46.116;  45 CFR 46.117; or for emergency research as noted at 61 Federal Register 51531; or for FDA-regulated research as specified in 21 CFR 50.22, 50.23 or 50.24 and 21 CFR 56.109(c)).
+        7.  When the research involves deception, provide in the protocol an adequate description of, and the rationale for, such procedures to be conducted. The protocol must provide a description of the process to debrief subjects (e.g., when subjects will be debriefed, by whom and how subjects will be debriefed). In addition, the requirements in 45 CFR 46.116 for waiver or alteration of informed consent must be fulfilled.
+            1.  At the conclusion of the research subject’s participation, as part of the debrief, the investigator must inform the subject about the deception; and
+            2.  The subject must be provided with the opportunity to withdraw their data from the research endpoint analysis.
+        8.  When consent monitoring is required, develop a consent monitoring plan for review and approval by the IRB. The consent monitoring should be conducted by qualified persons. (See _Policy 3014-200 IRB Scope and Authority_ and _Policy 3014-404 Research Involving NIH Staff as Subjects_)
+        9.  Provide all consent documents to the IRB for review and approval prior to use.
+        10.  Submit revised informed consent documents to the IRB for approval when there is new information that may affect the willingness of subjects to enroll or remain in research.
+             1.  Further, ensure that no changes are made to the informed consent document without IRB approval, including changes recommended by any ancillary review committee.
+        11.  When the NIH IRB is the Reviewing IRB, for NIH research that is taking place at an NIH site, the NIH PI will only use the NIH IRB-approved consent templates consistent with [E.2.d.](#E.2.d.Anchor) above.
+        12.  Must comply with the requirements consistent with [E.2.d.II.](#E.2.d.II.Anchor) above, when using an external Reviewing IRB.
+             1.  NIH PIs are reminded that changes to the NIH required institutional language are not permitted unless first approved by OHSRP consistent with [C.5.b.](#C.5.b.Anchor) above.
+        13.  Submit revised informed consent documents to the IRB for approval when there is new information that may affect the willingness of subjects to enroll or remain in research.
+             1.  In such cases, the IRB may require Investigators to reconsent already enrolled subjects.
+        14.  Ensure that investigators delegated to obtain informed consent are qualified to obtain informed consent (e.g., based on familiarity with the protocol, research, clinical experience, and qualifications) and have completed appropriate training per _Policy 3014-103 Education Program_ and other NIH requirements as applicable.
+             1.  Except as described in ii. below, Visiting Fellows (VFs), Intramural Research Training Awardees (IRTAs), and Cancer Research Training Awardees (CRTAs) serving as Associate Investigators may observe or participate in the informed consent process only if they are under the direct and constant supervision by a qualified NIH federal employee investigator. These trainees may not sign the informed consent document. (See _Policy 3014-300 Investigator Responsibilities_ for more information about trainees)
+             2.  Post-doctoral IRTAs/CRTAs and post-doctoral VFs who are Associate Investigators may obtain the informed consent of a prospective subject without the presence of a qualified NIH federal employee investigator after sufficient training by the PI about the protocol. The post-doctoral IRTA/CRTA or post-doctoral VF must be knowledgeable, and be able to explain, about the protocol and all of the information contained the informed consent document and be capable of addressing all subject questions. In addition, to be eligible to obtain consent, the post-doctoral IRTA/CRTA or post-doctoral VF must have also completed _Elements of a Successful Informed Consent_ course and the validated _Objective Structured Clinical Examination (OSCE) for the Informed Consent Process_ offered by the NIMH Human Subjects Protection Unit (HSPU).
+             3.  Those designated to obtain informed consent must be identified in the approved IRB application prior to initiating informed consent.
+        15.  For research subject to the 2018 Common Rule, ensure that one blank copy of an IRB-approved informed consent document used to enroll subjects, is posted on a publicly available federal website for this purpose (ClinicalTrials.gov or Regulations.gov) consistent with [C.10.](#C.10.Anchor) above. For more information see _OHRP Informed Consent Posting Instructions_ and _NIH Guidance on Posting Informed Consent Forms for NIH-funded Clinical Trials (NOT-OD-19-110)_
+4.  **Office of IRB Operations (IRBO) Responsibilities for Exempt Research**
+    1.  The IRBO will only approve consent information and informed consent procedures, e.g., for research involving prospective collection of information, that are consistent with the applicable requirements specified in 45 CFR 46.101(b) of the pre-2018 Common Rule or 45 CFR 46.104 of the 2018 Common Rule and with the requirements specified in [E.1.a.III.](#E.1.a.III.Anchor) and [E.1.a.IV.](#E.1.a.IV.Anchor) above.
+    2.  In order to ensure that the informed consent procedures and consent information are adequate and meet the applicable regulatory and NIH policy requirements, the IRBO will review the:
+        1.  Informed consent procedures described in the protocol;
+        2.  IRB application; and
+        3.  Consent information.
+    3.  Under the 2018 Common Rule, for benign behavioral research when subjects will be deceived regarding the nature or purposes of the research, IRBO must review the information provided by the PI, and only approve the research if subjects will be informed that they will be unaware of, or misled, regarding the nature or purposes of the research, and subjects must authorize the deception through prospective agreement to participate in the research. (See 45 CFR 46.104(d)(3)(iii))
+5.  **NIH IRB Responsibilities**
+    1.  The NIH IRB will only approve informed consent documents and processes that comply with the applicable requirements specified in 45 CFR 46.116, 46.117, and applicable subparts of the 45 CFR 46, and for emergency research as noted at 61 Federal Register 51531. In addition, for FDA regulated research, informed consent documents and procedures must comply with applicable requirements specified in 21 CFR 50 Subpart B and Subpart D, and IRB responsibilities found in 21 CFR 56 Subpart C, 21 CFR 312, and 21 CFR 812.
+    2.  In order to ensure that the informed consent procedures and documents are adequate and meet the applicable regulatory and NIH policy requirements, the IRB will review the:
+        1.  Informed consent procedures described in the protocol;
+        2.  IRB application; and
+        3.  Informed consent/assent document(s).
+    3.  Only the IRB may waive or alter elements of informed consent, or documentation of informed consent, when the IRB determines and documents that the requirements for waiver or alteration are met, as specified in 45 CFR parts 46.116 and 46.117, or for emergency research as noted at 61 Federal Register 51531[\[5\]](#[5]Anchor), and for FDA regulated research specified in 21 CFR parts 50.22,  50.23 or 50.24 and 56.109(c) .
+    4.  An IRB may approve a research protocol that is sufficiently detailed and describes how an investigator will obtain identifiable information or biospecimens for the purpose of screening, recruiting, or determining the eligibility of subjects without the informed consent of the subject, so long as it is consistent with regulatory requirements. (See 45 CFR 46.116(g) of the 2018 Common Rule)
+    5.  The IRB may require monitoring of informed consent (by the IRB or an impartial observer such as a consent monitor). (45 CFR 46.109(e) of the pre-2018 and 45 CFR 46.109(g) of the 2018 Common Rule)
+    6.  When the research involves deception, the IRB will review the information provided by the PI and only approve the research if:
+        1.  The protocol meets the conditions for a waiver or alteration of consent (45 CFR 46.116(d) of the pre-2018 Common Rule and 45 CFR 46.116(f) of the 2018 Common Rule);
+        2.  It determines that the use of deception is appropriate and is needed to meet the research goals or objectives; and
+        3.  At the conclusion of participation, the investigator discloses to the subject that deception occurred as part of the research and be given the opportunity to consent to allow the subject’s data to be used, or to withdraw from the study.
+    7.  When reviewing short form consent use with non-English speaking subjects, ensure the requirements of [C.8.](#C.8.Anchor) and [E.2.h.](#E.2.h.Anchor) above have been satisfied. (See also _Policy 3014-801 Reporting Research Events_)
+
+---
+
+[\[4\]](#[4]) Exemptions related to broad consent for the maintenance, storage and secondary use of identifiable private information or identifiable biospecimens at 45 CFR 46.104(d)(7) or (8) of the 2018 Common Rule are not being implemented in the NIH IRP at this time.  Some research including vulnerable populations may not use/are not permitted to use exemptions.
+
+[\[5\]](#[5]) Per the 61 FR 51531 waiver, because of special regulatory limitations relating to research involving prisoners (subpart C of 45 CFR part 46) and research involving fetuses, pregnant women, and human _in vitro_ fertilization (subpart B of 45 CFR part 46), this waiver is inapplicable to these categories of research.
+
+### F. References
+
+1.  Federal Regulation 
+    
+    HHS: [45 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)
+    
+    FDA: 21 CFR parts [11](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11), [50](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-50?toc=1), [56](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-56), [312](https://www.ecfr.gov/cgi-bin/text-idx?SID=5f494b3fc83ffeea5b2170c627b228c3&mc=true&node=pt21.5.312&rgn=div5) and [812](https://www.ecfr.gov/cgi-bin/text-idx?SID=5f494b3fc83ffeea5b2170c627b228c3&mc=true&node=pt21.8.812&rgn=div5)
+    
+    [ClinicalTrials.gov and applicable clinical trials definition](https://www.federalregister.gov/documents/2016/09/21/2016-22129/clinical-trials-registration-and-results-information-submission#h-63)
+    
+    [Regulations.gov](https://regulations.gov)
+    
+    [Section 301 of the Public Health Service Act (42 U.S.C. 241)](https://www.congress.gov/114/plaws/publ255/PLAW-114publ255.pdf)
+    
+    [61 FR 51531: Waiver of Informed Consent Requirements in Certain Emergency Research](https://www.govinfo.gov/app/details/FR-1996-10-02/96-24968)
+    
+2.  NIH Policies and Resources
+    
+    [Policy 3014-103 Education Program](https://policymanual.nih.gov/3014-103)
+    
+    [Policy 3014-200 IRB Scope and Authority](https://policymanual.nih.gov/3014-200)
+    
+    [Policy 3014-300 Investigator Responsibilities](https://policymanual.nih.gov/3014-300)
+    
+    [Policy 3014-302 Subject Recruitment and Compensation](https://policymanual.nih.gov/3014-302) 
+    
+    [Policy 3014-303 Intramural Telehealth Requirements](https://policymanual.nih.gov/3014-303)
+    
+    [Policy 3014-400 Research Involving Pregnant Women, Human Fetuses and Neonates](https://policymanual.nih.gov/3014-400)
+    
+    [Policy 3014-401 Research Involving Prisoners](https://policymanual.nih.gov/3014-401)
+    
+    [Policy 3014-402 Research Involving Children](https://policymanual.nih.gov/3014-402)
+    
+    [Policy 3014-403 Research Involving Adults Who Lack Decision-making Capacity to Consent to Research Participation](https://policymanual.nih.gov/3014-403)
+    
+    [Policy 3014-404 Research Involving Staff as Subjects](https://policymanual.nih.gov/3014-404)
+    
+    [Policy 3014-500 Research Involving Drugs, Biological, and Nutritional Products](https://policymanual.nih.gov/3014-500)
+    
+    [Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)
+    
+    Researchers - [https://irbo.nih.gov/confluence/display/ohsrp/IRB+Templates](https://irbo.nih.gov/confluence/display/ohsrp/IRB+Templates)
+    
+    [MAS Policy M20-1 Utilization of Telehealth/Telemedicine by NIH Healthcare Providers for NIH Clinical Center Patients](https://cc-internal2.cc.nih.gov/policies/PDF/M20-1.pdf)
+    
+    [MAS Policy M23-1 Informed Consent for Medical and Surgical Procedures](https://cc-internal2.cc.nih.gov/policies/show_policy.asp?pol_number=M23-1)
+    
+    [MAS Policy M23-2 Language Access in the Clinical Center](https://cc-internal2.cc.nih.gov/policies/show_policy.asp?pol_number=M23-2)
+    
+    [NIH Policy on the Dissemination of NIH-Funded Clinical Trial Information](https://grants.nih.gov/policy/clinical-trials/reporting/understanding/nih-policy.htm)
+    
+    [NIMH Human Subjects Protection Unit (HSPU)](http://www.nimh.nih.gov/research/research-conducted-at-nimh/scientific-director/office-of-clinical-director/administrative-research-support/human-subjects-protection-unit-hspu)
+    
+    _Objective Structured Clinical Examination (OSCE) for the Informed Consent Process_ (in the [_NIMH Toolkit_](https://www.nimh.nih.gov/sites/default/files/documents/research/research-conducted-at-nimh/scientific-director/office-of-clinical-director/administrative-research-support/NIMH_human_subjects_research_protections_toolkit.pdf))
+    
+    [NIH IRB consent templates](https://irbo.nih.gov/confluence/display/ohsrp/Consent+Templates+and+Guidance)
+    
+3.  Guidance:
+    
+    NIH: 
+    
+    [NIH Guidance on Posting Informed Consent Forms for NIH-funded Clinical Trials (NOT-OD-19-110)](https://grants.nih.gov/grants/guide/notice-files/NOT-OD-19-110.html)
+    
+    FDA:
+    
+    [Informed Consent Guidance for IRBs, Clinical Investigators, and Sponsors (August 2023)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/informed-consent)
+    
+    [Guidance for Institutional Review Boards and Clinical Investigators- Recruiting Study Subjects](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/recruiting-study-subjects)
+    
+    [Guidance for Sponsors, Clinical Investigators, and IRBs Data Retention When Subjects Withdraw from FDA-Regulated Clinical Trials](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/data-retention-when-subjects-withdraw-fda-regulated-clinical-trials)
+    
+    [Guidance for Institutional Review Boards, Clinical Investigators, and Sponsors: Exception from Informed Consent Requirements for Emergency Research](https://www.fda.gov/media/80554/download)
+    
+    OHRP: 
+    
+    [OHRP Informed Consent Posting Instructions](https://www.hhs.gov/ohrp/regulations-and-policy/informed-consent-posting/informed-consent-posting-guidance/index.html)
+    
+    OHSRP:
+    
+    [Guidance for obtaining consent to participate in research from non-English speaking participants](https://ohsrp.irbo-stage.nih.gov/confluence/display/ohsrp/HRPP+Policies?preview=%2F36241835%2F174161946%2F301-Guideline-Enrolling+Non-English+Speaking+Subjects+01.31.2024.pdf)
+    
+    [Consent FAQs](https://irbo.nih.gov/confluence/display/ohsrp/Consent+FAQS)

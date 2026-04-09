@@ -1,0 +1,138 @@
+Name: NIH Policy 3014-104
+Purpose: reference
+Description: Requirements for managing research-related complaints from subjects.
+URL: https://policymanual.nih.gov/3014-104
+Selection Rule: (none)
+Token Count: 4454
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 15
+
+---
+
+## 3014-104 - Managing Research-Related Complaints from Subjects
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Release Date:** 1/10/2020 [?](javascript:void\(0\);) **Technical Revision Date:** 9/03/2024 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:**  This policy describes the requirements for managing research-related complaints from human subjects. Upon implementation, this policy, fully supersedes the NIH HRPP SOP 22 Research Subject Information and Services and Research-Related Complaints from Research Subjects. The current policies and SOPs can be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+
+1.  **Filing Instructions:**
+    
+    -   **Insert:** NIH Manual Chapter 3014-104, dated 01/10/2020
+        
+    -   **Implementation Date:** 09/21/2020
+        
+
+**PLEASE NOTE:**
+
+-   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+-   For information on content of this chapter, contact the issuing office listed above.
+-   For information on NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL:  [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+Describe how the NIH Intramural Research Program’s (IRP’s) Human Research Protection Program (HRPP) manages research-related complaints received from a research subject, a subject’s legally authorized representative (LAR) and/or family, or others. Throughout the remainder of this document, the term “complainant” will refer to any person who made a complaint under this policy. 
+
+### B. Scope
+
+1.  This policy applies to NIH investigators.
+2.  This policy applies to non-NIH investigators when the NIH Institutional Review Board (IRB) is the Reviewing IRB.
+3.  This policy applies to the NIH IRB.
+4.  This policy applies to the Office of Human Subjects Research Protections (OHSRP), including its offices.
+5.  This policy applies to Institute/Center (IC) leadership, as applicable.
+
+### C. Policy
+
+1.  NIH Principal Investigators (PIs) will assure that that research subjects (or their LARs) receive contact information for individuals, both within and external to the research team, who can address or receive complaints regarding research participation. This information will be provided, via the informed consent form, and upon request.
+2.  Complainants may bring complaints regarding research participation to the attention of NIH investigators or to the designated contacts as described in the research informed consent document. Complainants may also bring their complaints to OHSRP.
+3.  Any NIH investigator or OHSRP staff receiving a subject complaint regarding research participation, will inform the subject (or delegate to another the responsibility to do so), when pertinent, that:
+    1.  The name of the complainant(s) will be kept confidential to the extent possible, and that complete confidentiality cannot be assured;
+    2.  The corresponding subject’s identity may be revealed during the investigation;
+    3.  Anonymous complaints will be accepted. However, anonymity may hinder both the investigation of the complaint, as well as inhibit the ability to provide responses to the complainant;
+    4.  The issue will be considered by those receiving the complaint as soon as feasible, but it may be referred to other parties, as appropriate;
+    5.  Complaints that indicate possible non-compliance will be addressed according to _Policy 3014-802 Non-compliance in Human Subjects Research_;
+    6.  Complaints that indicate possible unanticipated problems will be addressed according to _Policy 3014-801 Reporting Research Events;_ and
+    7.  Results of a subsequent inquiry or an investigation, if any, may be provided to the non-anonymous complainant, consistent with C.4. below.
+4.  Communications to complainants will be consistent with the Privacy Act of 1974, federal laws, regulations, and policy, including NIH policy.
+    1.  In some instances, for example, the complainant may be told that appropriate measures have been taken, or that the matter is being investigated and no further information will be forthcoming.
+5.  All those who receive research-related complaints, whether written or verbal, will document the complaint (e.g., in the research record, CRIS, the office tracking system) consistent with federal law, regulation, and policy, including NIH policy.
+6.  Receiving NIH investigators will report all complaints to the NIH PI, or IC leadership for response or referral of the matter, as appropriate. If OHSRP receives the complaint initially, it will inform the PI.
+7.  When an NIH PI receives a research-related complaint, the PI will address the complaint as soon as feasible, and/or refer the matter to other NIH or IC offices, as appropriate.
+8.  The NIH PI will report as follows:
+    1.  Complaints that indicate possible unanticipated problems according to _Policy 3014-801 Reporting Research Events._
+    2.  Complaints that indicate possible non-compliance according to _Policy 3014-802 Non-compliance in Human Subjects Research_.
+    3.  Unresolved complaints at the time of Continuing Review, consistent with _Policy 3014-205 Requirements for IRB Submissions,_ when the NIH IRB is the Reviewing IRB_._
+    4.  Complaints consistent with the external IRB’s reporting requirements, and consistent with the terms of the reliance agreement, when a non-NIH IRB is the Reviewing IRB.
+9.  Regardless of whether the NIH IRB is the reviewing IRB, the PI will notify the OHSRP office of Compliance and Training of unresolved complaints. The OHSRP office of Compliance and Training is available to assist NIH PIs in handling and responding to complaints.
+10.  NIH investigators will cooperate with investigations conducted under this policy.
+11.  As necessary, the OHSRP, which includes the office of Compliance and Training, will work with appropriate parties and/or offices, consistent with the nature of the complaint.
+     1.  Matters outside the scope of the Human Research Protection Program (HRPP) will be referred to the appropriate NIH office or IC.
+     2.  Matters within the scope of the HRPP may also be handled by NIH offices other than OHSRP, when appropriate.
+12.  Any IRB Chair (including the NIH IRB Executive Chair), the OHSRP Director, or the IRBO Director may immediately suspend the research, require the PI take additional actions necessary to protect the health, safety or welfare of subjects, and/or refer the issue to the IRB to determine whether additional actions are required. 
+13.  In response to a subject complaint, the IRB may take any or all of the following actions, including, but not limited to:
+     1.  Modify the research protocol and/or consent(s);
+     2.  Suspend or terminate IRB approval for some or all of the Principal Investigator’s (PI’s) studies;
+     3.  Require additional education for the investigator(s);
+     4.  Inform other IC or NIH Officials to consider additional actions, as appropriate.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+**Note**: There _may be more than one definition per term_, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized. 
+
+1.  [Complaint](https://policymanual.nih.gov/3014-001#C)
+2.  [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+
+### E. Responsibilities and Requirements
+
+1.  **NIH Investigator Responsibilities**
+    1.  When receiving or discussing complaints with complainants, NIH Investigators (or their designee) must:
+        1.  Provide the information specified in [C.3](#C3) above.
+        2.  Communicate respectfully with the complainant: The point of contact for the complainant should respond to inquiries from the complainant about the status or outcome of the investigation as consistent with privacy rules and other applicable federal law, regulation, or policy, including NIH policy. However, in some instances, the complainant may be told, for example, that appropriate measures have been taken, or that the matter is being investigated and no further information will be forthcoming.
+        3.  Document complaints (e.g., in the research record, CRIS) consistent with federal law, regulation, and policy, including NIH policy.
+        4.  Report all complaints to the NIH PI or IC leadership.
+            1.  When reporting subject complaints to the PI, staff should honor a subject’s request for anonymity to the extent possible.
+        5.  Address complaints to the extent possible within the investigator’s ability, scope, and authority, as soon as feasible. When necessary, the complaint must be referred to other NIH ICs or offices as appropriate (e.g., the IC Privacy Office, NIH Police, Clinical Center).
+        6.  Cooperate with investigations of subject complaints, consistent with this policy at [C.10](#C10) above.
+2.  **NIH PI Responsibilities**
+    1.  In addition to NIH Investigator responsibilities at [E.1.a](#E1a) above, the NIH PI is responsible for:
+        1.  Informing subjects (or their LAR) about who to contact both inside and outside the research team regarding research-related complaints (in the informed consent document and upon request).
+        2.  Providing appropriate support, management, oversight, and assistance regarding complaints reported to study team members, upon PI awareness of the complaint.
+        3.  Referring the unresolved complaint to the OHSRP office of Compliance and Training for further investigation, consistent with [C.9](#C9) above.
+        4.  The NIH PI will report as follows:
+            1.  Complaints that indicate possible unanticipated problems according to _Policy 3014-801 Reporting Research Events._
+            2.  Complaints that indicate possible non-compliance according to _Policy 3014-802 Non-compliance in Human Subjects Research._
+            3.  Unresolved complaints at the time of Continuing Review, consistent with _Policy 3014-205 Requirements for IRB Submissions_, when the NIH IRB is the Reviewing IRB.
+            4.  Complaints consistent with the external IRB’s reporting requirements, and consistent with the terms of the reliance agreement, when a non-NIH IRB is the Reviewing IRB.
+3.  **OHSRP Responsibilities, including Responsibilities of the office of Compliance and Training**
+
+The OHSRP is responsible for:
+
+1.  Documenting received complaints, consistent with [C.5](#C5) above and notifying the PI consistent with [C.6](#C6) above;
+2.  Assisting NIH Investigators and other NIH offices in handling and responding to  complaints;
+3.  Reviewing, investigating, and addressing complaints, as applicable;
+4.  Communicating with subjects:
+    1.  When working directly with subjects, providing the information specified in [C.3](#C3) above.
+    2.  Unless the complainant wishes to remain anonymous, communicating to the complainant the status or outcome of the investigation, consistent with privacy rules and other applicable federal law, regulation, or policy, including NIH policy. However, in some instances, the complainant may be told that appropriate measures have been taken, or that the matter is being investigated, and that no further information will be forthcoming.
+5.  Working collaboratively with a non-NIH site for multi-site research, to resolve the complaint, consistent with the applicable policies of the Reviewing IRB, and the terms of the reliance agreement;
+6.  Coordinating with, or referring matters to, appropriate parties within NIH ICs or offices consistent with [C.11](#C11) above (e.g., IC Clinical Director, IC Privacy Coordinator, or Clinical Center personnel such as the Director of Office of Patient Safety and Clinical Quality, Chief Medical Officer, and/or Patient Representative); and
+7.  When the complaint suggests immediate risk of harm to subjects or others, referring the matter to the IRB Chair, OHSRP Director, IRBO Director, or the NIH IRB, as appropriate.
+
+### F. References
+
+1.  Federal Regulations  
+    [Privacy Act of 1974, 5 U.S.C. § 552a](https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title5-section552a&num=0&edition=prelim)
+    
+2.  NIH Policy  
+    [Policy 3014-205 Requirements for IRB Submissions](https://policymanual.nih.gov/3014-205)  
+    [Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)  
+    [Policy 3014-802 Non-Compliance in Human Subjects Research](https://policymanual.nih.gov/3014-802)
+    
+3.  Guidance  
+    [Privacy: Frequently Asked Questions (FAQs)](https://oma.od.nih.gov/DMS/Documents/Privacy/NIH%20Privacy%20FAQs%202017.pdf)

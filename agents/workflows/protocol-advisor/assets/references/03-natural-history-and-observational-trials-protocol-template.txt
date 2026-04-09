@@ -1,0 +1,2027 @@
+Name: Natural History and Observational Trials Protocol Template
+Purpose: protocol template
+Description: Main NIH protocol template for natural history and observational studies.
+URL: https://irbo.nih.gov/documents/323/Natural__History_and_Observational_Trials_Protocol_Template.docx
+Selection Rule: footer_contains="Observational Template v9 02.04.2025" OR upper_titles_contains_all=["OBJECTIVES AND ENDPOINTS", "PARTICIPANT DISCONTINUATION/WITHDRAWAL"]
+Token Count: 44987
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 3
+
+---
+
+header: PAGE   \* MERGEFORMAT 69
+Abbreviated Title:
+Version Date:
+footer: Observational Template v9 02.04.2025
+
+PROTOCOL TEMPLATE FOR NATURAL HISTORY/OBSERVATIONAL TRIALS
+
+This preface contains clarification about the protocol template and its supporting materials.  Remove the preface before finalizing and submitting the protocol for review.
+
+If you are preparing a Natural History protocol, please review the additional guidance found here.
+
+The term "protocol" is defined as a complete written description of, and scientific rationale for, a research activity involving human subjects. The protocol document serves as a free-standing document which clearly directs the conduct of the research.  It is the “recipe” followed by the investigators and study team in performing the research activities.
+
+Thus, "protocol" means both the written description of the research activity and the activity itself.
+
+The goal of this template is to assist investigators to write a comprehensive protocol that meets the standard outlined in the International Council for Harmonisation (ICH) Guidance for Industry, E6 Good Clinical Practice: Consolidated Guidance (ICH-E6).  Its use will also help investigators think through the scientific basis of their assumptions, minimize uncertainty in the interpretation of outcomes, and prevent loss of data.   A common protocol structure and organization will facilitate protocol review by oversight entities.
+
+If an NIH Investigator is not the author of the study, then an NIH Protocol Addendum is required and should include information found in the NIH Protocol Addendum Template.
+
+This template should also be used for investigator-initiated studies when the external Reviewing IRB does not have a protocol template and/or a Sponsor (if applicable) has given the NIH team discretion to write the protocol.
+
+The following are considerations for teams that use this protocol template for multi-institutional protocols (protocols where non-exempt human subjects research is taking place at more than one site) that will be reviewed by the NIH IRB, and where the intramural NIH IC will serve as the Coordinating Center and/or Sponsor:
+
+The protocol is a study-wide document that will be used at the NIH and across all Participating Sites (pSites).
+
+It needs to contain all pertinent information about how the protocol will be implemented so that the NIH IRB can review and approve the research – as a whole.
+
+Make it as general as possible so that it can work across sites.
+
+Address the NIH-specific differences either by creating an NIH Protocol Addendum or include them in the protocol itself, but do not forget to address how the pSites will handle the equivalent situation. For example, if planning to enroll subjects lacking decision-making capacity, NIH teams need to specify how NIH will handle that, but they should also include a general statement that at the other pSites, these subjects will be consented per local requirements.
+
+There is no need to go into specific differences for the pSites in the protocol as detailed information about them will go in the pSite Addendum but overlooking them completely in the main protocol can be confusing or inadvertently causes deviations later.
+
+The NIH Protocol addendum should be uploaded separately in PROTECT as a WORD document.
+
+Style Guidelines:
+
+12-point font (Times, Times New Roman or Arial) and single line spacing for the protocol document. The decimal system (i.e., 1.0; 1.1; etc.) should be used to subdivide the various sections. Margins should be 1 inch on all sides.  This document is already formatted using headings in the styles.
+
+If a section is not applicable to your protocol, do not delete it; rather indicate that the section is not applicable.
+
+Duplication of information in the protocol document should be avoided. Please reference appropriate sections where the detailed information can be located. For example:
+
+Early termination rules can be described in the Study Design or Statistical Considerations sections with reference to the other section as appropriate.
+
+Instruction/explanatory text is indicated by italics and should be deleted prior to finalizing the protocol. This text provides information on the content that should be included in the protocol.
+
+Example text is included to further aid in protocol writing and should be modified to suit the intervention, behavioral or social manipulation study, design, and conduct of the planned clinical trial, or it may be deleted if it is not relevant. Example text is indicated in [regular font].  Within example text, a need for insertion of specific information is notated by <angle brackets>.
+
+Version control is important to track protocol development, revisions, and modifications. It is also necessary to ensure that the most recently updated and IRB approved version of a protocol is used by all staff conducting the study. With each revision, the version date located in the header of each page should be updated.
+
+Abbreviated Title: (not to exceed 30 characters)
+
+NIH IRB #: IRB number that is in PROTECT.
+
+Version Date: (updated with all subsequent modifications)
+
+The date that all editing of the document was completed, or date editing began—be sure it is consistent throughout the protocol document.
+
+Title: (not to exceed 250 characters)
+
+Title will consist of:
+
+Protocol type (e.g., Natural History, Screening)
+
+Words such as: observation, prospective/retrospective, and disease entity.
+
+Do not include the words “patient” or “treatment”.
+
+Principal Investigator:
+
+Note: All Study Team Members (associate investigators, etc.) who are engaged in human subjects research (HSR) at the NIH site(s)) should be listed separately in PROTECT.
+
+List the affiliation, address, and contact information to include telephone, fax and email for the PI.
+
+NIH Principal Investigator:
+
+XXX Branch
+
+XXX Institute
+
+Building 10, Rm XXXX
+
+9000 Rockville Pike
+
+Bethesda, MD 20892
+
+Phone: XXXX
+
+E-mail: XXXX
+
+Multi-institutional protocols are protocols in which non-exempt human subjects research is taking place at more than one site.  For multi-institutional protocols in which the intramural NIH IC is the Coordinating Center and/or Sponsor:
+
+Provide name of the Coordinating Center
+
+Provide name of the responsible Data Safety Monitoring Board (DSMB) or Safety Monitoring Committee (SMC) if applicable.
+
+If NIH will be the Coordinating Center and a Participating Site (pSite) will NOT be relying on the NIH IRB, identify them in Q. 8 of the Basic Study Information section found in the PROTECT smart form. Do NOT list these sites in the table below.
+
+If NIH will be the Reviewing IRB for a Participating Site (pSite), insert the table below and provide the name of each planned or existing relying site and the pSite Principal Investigator (PI). 
+
+Participating Sites (pSites)
+
+List of all pSites and pSite PIs that will be/are relying on the NIH IRB
+
+pSite Name:
+
+pSite PI:
+
+STATEMENT OF COMPLIANCE
+
+Provide a statement that the trial will be conducted in compliance with the protocol, International Council for Harmonisation Good Clinical Practice (ICH GCP) and applicable state, local and federal regulatory requirements. Each engaged institution must have a current Federal-Wide Assurance (FWA) issued by the Office for Human Research Protections (OHRP) and must provide this protocol and the associated informed consent documents and recruitment materials for review and approval by an appropriate Institutional Review Board (IRB) or Ethics Committee (EC) registered with OHRP. Any modifications to the protocol or consent materials must also be approved before implementation. Suggested language:
+
+The protocol will be carried out in accordance with International Council for Harmonisation Good Clinical Practice (ICH GCP) and the following:
+
+United States (US) Code of Federal Regulations (CFR) applicable to clinical studies (45 CFR Part 46, 21 CFR Part 50, 21 CFR Part 56, 21 CFR Part 312, and/or 21 CFR Part 812)
+
+National Institutes of Health (NIH)-funded investigators and trial site staff who are responsible for the conduct, management, or oversight of NIH-funded trials have completed Human Subjects Protection and ICH GCP Training.
+
+The protocol, informed consent form(s), recruitment materials, and all participant materials will be submitted to the Institutional Review Board (IRB) for review and approval.  Approval of both the protocol and the consent form must be obtained before any participant is enrolled.  Any modification to the protocol will require review and approval by the IRB before the changes are implemented to the study.  In addition, all changes to the consent form will be IRB-approved; an IRB determination will be made regarding whether a new consent needs to be obtained from participants who provided consent, using a previously approved consent form.
+
+PROTOCOL SUMMARY
+
+Synopsis
+
+Title:
+
+<Full title>
+
+Study Description:
+
+Provide a short description of the protocol, including a brief statement of the study hypothesis. This should be only a few sentences in length. A schedule of assessments should be included in the Schedule of Activities, Section 1.2.
+
+Objectives:
+
+Include the primary and secondary objectives. These objectives should be the same as the objectives contained in the body of the protocol.
+
+<Primary Objective:
+
+Secondary Objectives: >
+
+Endpoints:
+
+Include the primary endpoint and secondary endpoints. These endpoints should be the same as the endpoints contained in the body of the protocol. These align with Outcome Measures in clinicaltrials.gov.
+
+<Primary Endpoint:
+
+Secondary Endpoints: >
+
+Study Population:
+
+Specify sample size, sex, age, demographic group, general health status, geographic location.
+
+Description of Sites/Facilities Enrolling Participants:
+
+Provide a brief description of planned facilities/participating sites enrolling participants as well as those that will be working with identifiable data/specimens or coded data/specimens and will have access to the code key. Indicate general number (quantity) of sites only and if the study is intended to include sites outside of the United States.
+
+Study Duration:
+
+Estimated time (in months) from when the study opens to enrollment until completion of data analyses.
+
+Participant Duration:
+
+Time (e.g., in months) it will take for each individual participant to complete all participant visits.
+
+	Schedule of Activities (SOA)
+
+The schedule below is provided as an example and should be modified as appropriate.
+
+The schedule of activities must capture all procedures or interventions that will be performed at each study visit as part of the research.  These may be performed on all subjects or a subset of subjects based upon specific criteria.  For example, these may be time driven (e.g., MRI every 6 months) or event driven (MRI on all subjects that meet a pre-specified criterion).  They critical factor is that the procedure or intervention is prescribed by the protocol.  Do not include tests or procedures that are performed only for clinical diagnostic or treatment purposes on individual patients for the purposes of managing their condition. The Schedule of Activities must also include any tests that are used to determine eligibility (screening tests).
+
+Allowable windows should be stated for all visits. To determine the appropriate windows, consider feasibility and relevance of the visit time points to study endpoints.
+
+Procedures
+
+Screening
+
+Day -7 to -1
+
+Enrollment/Baseline
+
+Visit 1, Day 1
+
+Study Visit 2
+
+Day 7  +/-1 day
+
+Study Visit 3
+
+Day 14 +/- 1 day
+
+Study Visit 4
+
+Day 21 +/-1 day
+
+Study Visit 5
+
+Day 28 +/-1 day
+
+Study Visit 6
+
+Day  35 +/-1 day
+
+Study Visit 7
+
+Day 42 +/-1 day
+
+Study Visit 8
+
+Day 49 +/-1 day
+
+Study Visit 9
+
+Day 56 +/-1 day
+
+Study Visit 10
+
+Day 63 +/-1 day
+
+Study Visit 11
+
+Day 70 +/- 1 day
+
+Study Visit 12
+
+Day 77 +/-1day
+
+Final Study Visit 13Day 84 +/-1 day
+
+Informed consent
+
+X
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+Demographics
+
+X
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+Medical history
+
+X
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+Concomitant medication review
+
+X
+
+X---------------------------------------------------------------------------------------------X
+
+-
+
+Physical exam
+
+X
+
+X
+
+-
+
+-
+
+X
+
+-
+
+-
+
+X
+
+-
+
+-
+
+X
+
+-
+
+-
+
+X
+
+Vital signs
+
+X
+
+X
+
+-
+
+-
+
+X
+
+-
+
+-
+
+X
+
+-
+
+-
+
+X
+
+-
+
+-
+
+X
+
+Height
+
+X
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+Weight
+
+X
+
+X
+
+-
+
+X
+
+-
+
+X
+
+-
+
+X
+
+-
+
+X
+
+-
+
+X
+
+-
+
+X
+
+Performance status
+
+X
+
+X
+
+-
+
+X
+
+-
+
+X
+
+-
+
+X
+
+-
+
+X
+
+-
+
+X
+
+-
+
+X
+
+Hematology
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+serum chemistry a
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+Pregnancy test b
+
+X
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+EKG
+
+X
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+-
+
+Radiologic/Imaging assessment
+
+X
+
+-
+
+-
+
+-
+
+X
+
+-
+
+-
+
+-
+
+X
+
+-
+
+-
+
+-
+
+-
+
+X
+
+Other assessments (e.g., immunology assays)
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+Complete Case Report Forms (CRFs)
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+X
+
+a:	Albumin, alkaline phosphatase, total bilirubin, bicarbonate, BUN, calcium, chloride, creatinine, glucose, LDH, phosphorus, potassium, total protein, AST, ALT, sodium.
+
+b:	Serum pregnancy test (women who are able to become pregnant).
+
+INTRODUCTION
+
+Study Rationale
+
+State the problem or question (e.g., describe the population, disease, current standard of care, if one exists, and limitations of knowledge or available therapy) and the reason for conducting the study.
+
+Background
+
+This section should include:
+
+Discussion of important literature and data that are relevant to the study and that provide background for the study (reference citations should be listed in Section 11, References)
+
+Applicable clinical, epidemiological, or public health background or context of the study.
+
+Importance of the study and any relevant treatment issues or controversies
+
+Risk/Benefit Assessment
+
+Known Potential Risks
+
+Include a discussion of known potential risks of any research procedures or interventions.  This includes any interventions/procedures listed in your schedule of activities.  Do not include a description of the risks of interventions or procedures that performed solely for clinical diagnostic or treatment purposes on individual patients.
+
+Potential risks and discomforts must be minimized to the greatest extent possible by using procedures such as appropriate training of personnel, monitoring, withdrawal of the subject upon evidence of difficulty or adverse event; and referral for treatment, counseling or other necessary follow-up.
+
+Consider not only immediate risks, but also delayed or long-term risks.
+
+Consider physical, reproductive, psychological, social, legal, and economic risks as well as community or group harms (e.g., breach of confidentiality is a common risk in social and behavioral research). If applicable, describe risks to others who are not subjects (e.g., group harms, harms to society).
+
+If risk is related to proposed procedures included in the protocol, describe alternative procedures that have been considered and explain why alternative procedures are not included.
+
+Provide a description of alternative courses of action which are available should the subject elect not to participate in the study.  If there are no alternatives available to the subject, this should be stated.
+
+Known Potential Benefits
+
+Describe any physical, psychological, social, or any other potential benefits to individual participants or society in general, as a result of participating in the study, addressing each of the following:
+
+Immediate potential benefits
+
+Long-range potential benefits
+
+Include a discussion of known potential benefits of only the research interventions or procedures.  Do not include the benefits of any interventions or procedures that are performed solely for clinical diagnostic or therapeutic purposes on individual purposes.  If your protocol contains research diagnostic or monitoring procedures, for example serial imaging, that may lead to early detection of treatable conditions, this may be described as a potential benefit to subjects.  Similarly, if your protocol contains research assays or procedures that may provide diagnostic information unavailable outside the protocol that may result in meaningful alterations in clinical care, these may be described.  Be sure to include sufficient information to justify these claims of potential benefit.
+
+Provision of clinical care that is incidental to being enrolled in the protocol is not considered a benefit of the research.
+
+Note that payment to participants, whether as an inducement to participate or as compensation for time and inconvenience, is not considered a “benefit”.
+
+Assessment of Potential Risks and Benefits
+
+Include an assessment of known potential risks and benefits of the research, addressing each of the following:
+
+Rationale for the necessity of exposing participants to risks and a summary of the ways that risks to participants were minimized in the study design.
+
+Justification as to why the value of the information to be gained outweighs the risks of participation in the study.
+
+If you are enrolling more than one population (e.g. affected participants and healthy participants), be sure to address the above for each cohort.
+
+OBJECTIVES AND ENDPOINTS
+
+For purposes of registration to ClinicalTrials.gov, the terms Objectives and Endpoints as used in this template align with the terms Primary Purpose and Outcome Measures in ClinicalTrials.gov, respectively. Provide a description of the study objectives and endpoints, as well as a justification for selecting the particular endpoints, in the table format included below.  This will provide clear articulation of how the selected primary and secondary endpoint(s) are linked to achieving the primary and secondary objectives and an explanation of why endpoint(s) were chosen. Data points collected in the study should support an objective or have a regulatory purpose.  Therefore, careful consideration should be given prospectively to the amount of data needed to support the study’s objectives.
+
+An objective is the purpose for performing the study in terms of the scientific question to be answered. Express each objective as a statement of purpose (e.g., to assess, to determine, to compare, to evaluate).
+
+For observational studies, a study endpoint/outcome measure is a specific key measurement[s] or observation[s] used to describe patterns of diseases or traits or associations with exposures, risk factors or treatment.  Study endpoints should be prioritized and should correspond to the study objectives and hypotheses being tested. Give succinct, but precise definitions of the study endpoints used to address the study’s primary objective and secondary objectives. Describe how endpoint(s) will be adjudicated, if applicable.
+
+For purely descriptive research studies, the objective may be relatively broad.  However, as much specificity as possible should be provided.  For example, rather than “to study the natural history of disease X” could be “describe the progression of CNS lesions (or other physiologic derangements as applicable) in disease X.
+
+OBJECTIVES
+
+ENDPOINTS
+
+JUSTIFICATION FOR ENDPOINTS
+
+Primary
+
+The primary objective is the main question. This objective generally drives statistical planning for the trial (e.g., calculation of the sample size to provide the appropriate power for statistical testing, when appropriate).
+
+The primary endpoint(s) should be clearly specified and its importance and role in the analysis and interpretation of study results should be defined. The primary endpoint(s) is the basis for concluding that the study met its objective. Generally, there should be just one primary endpoint that will provide a clinically relevant, valid, and reliable measure of the primary objective.  For purely descriptive studies in which there is no primary endpoint, provide an explanation of how you will determine when the study objectives have been met.
+
+Briefly explain why the endpoint(s) were chosen.
+
+Secondary
+
+The secondary objective(s) are goals that will provide further information about the disease being studied.
+
+Secondary endpoints should be clearly specified.  Secondary endpoints are those that may provide supportive information. It is recommended that the list of secondary endpoints be short, because the chance of demonstrating an effect on any secondary endpoint after appropriate correction for multiplicity becomes increasingly small as the number of endpoints increases.
+
+Briefly explain why the endpoint(s) were chosen.
+
+Tertiary/Exploratory
+
+Tertiary/exploratory objective(s) serve as a basis for explaining or supporting findings of primary analyses and for suggesting further hypotheses for later research.
+
+Exploratory endpoints should be specified. Exploratory endpoints may include clinically important events that are expected to occur too infrequently or endpoints that for other reasons are thought to be less likely to show an effect but are included to explore new hypotheses.
+
+Briefly explain why the endpoint(s) were chosen.
+
+STUDY DESIGN
+
+The scientific integrity of the trial and the credibility of the data from the study depend substantially on the study design.  A description of the study design should be consistent with the Protocol Synopsis (section 1.1) and include:
+
+Indicate if single site or multi-site. Multi-site study is defined as the same protocol used to conduct non-exempt human subjects research at more than one site.  If single site, identify at which NIH location the research activity will occur.  If multi-site, specify which research activities are taking place at each location involved. Refer to NIH HRPP Polices 105 and 109 for guidance on multi-site studies.
+
+A statement of the hypothesis
+
+Concomitant Therapy
+
+Include content in this section if applicable, otherwise note as not applicable.
+
+This section should be consistent with the medication restrictions in the inclusion/exclusion criteria previously listed.  Describe the data that will be recorded related to permitted concomitant medications, supplements, complementary and alternative therapies, treatments, and/or procedures.  Include details about when the information will be collected (e.g., screening, all study visits).
+
+Example text provided as a guide, customize as needed:
+
+For this protocol, a prescription medication is defined as a medication that can be prescribed only by a properly authorized/licensed clinician. Medications to be reported in the Case Report Form (CRF) are concomitant prescription medications, over-the-counter medications and supplements.
+
+STUDY POPULATION
+
+No text is to be entered in this section; rather it should be included under the relevant subheadings below.
+
+The following subsections should include a description of the study population and participant recruitment. The study population should be appropriate for the study.  Given the continuing challenges in achieving clinically relevant demographic inclusion in clinical trials, it is important to focus on clinically relevant potential participants at the earliest stages of protocol development.  Therefore, it is essential that the population’s characteristics be considered during the study planning phase to ensure the study can adequately meet its objectives and provide evidence for the total population under study).
+
+Use the following guidelines when developing participant eligibility criteria to be listed in Sections 5.1 Inclusion Criteria and 5.2 Exclusion Criteria:
+
+The eligibility criteria should provide a definition of participant characteristics required for study entry/enrollment.
+
+Determine if screening procedures will be performed under a separate screening consent form as part of this protocol or under a separate screening protocol.
+
+The risks of the study should be considered in the development of the inclusion/exclusion criteria so that risks are minimized.
+
+The same criterion should not be listed as both an inclusion and exclusion criterion (e.g., do not state age >18 years old as an inclusion criterion and age ≤18 years old as an exclusion criterion).
+
+Identify specific laboratory tests or clinical characteristics that will be used as criteria for enrollment or exclusion.
+
+If reproductive status (e.g., pregnancy, lactation, reproductive potential) is an eligibility criterion, provide specific contraception requirements (e.g., licensed hormonal or barrier methods).
+
+If you have more than one study population, please define the common inclusion and exclusion criteria followed by the specific inclusion and exclusion criteria for each subpopulation.
+
+Inclusion Criteria
+
+Inclusion criteria are characteristics that define the population under study, e.g., those criteria that every potential participant must satisfy, to qualify for study entry. Provide a statement that individuals must meet all of the inclusion criteria in order to be eligible to participate in the study and then list each criterion.
+
+Women and members of minority groups must be included in accordance with the NIH Policy on Inclusion of Women and Minorities as Participants in Research Involving Human Subjects. Beginning in 2019, participants of all ages must be included in accordance with the NIH Policy on the Inclusion of Individuals Across the Lifespan as Participants in Research Involving Human Subjects. The rationale for exclusion of these groups must be addressed in section 5.2.
+
+Some criteria to consider for inclusion are: provision of appropriate consent and assent, willingness and ability to participate in study procedures, age range, health status, specific clinical diagnosis or symptoms, background medical treatment, laboratory ranges, and use of appropriate contraception. Additional criteria should be included as appropriate for the study design and risk.
+
+Example text provided as a guide, customize as needed:
+
+In order to be eligible to participate in this study, an individual must meet all of the following criteria:
+
+Stated willingness to comply with all study procedures and availability for the duration of the study
+
+Aged <specify range>
+
+In good general health as evidenced by medical history or diagnosed with <specify condition/disease> or exhibiting <specify clinical signs or symptoms or physical/oral examination findings>
+
+<Specify laboratory test> results between <specify range>
+
+Agreement to adhere to Lifestyle Considerations (see section 5.5) throughout study duration]
+
+Ability of subject <insert only if applicable: or Legally Authorized Representative (LAR)> to understand and the willingness to sign a written informed consent document.
+
+Exclusion Criteria
+
+Exclusion criteria are characteristics that make an individual ineligible for study participation.  Provide a statement that all individuals meeting any of the exclusion criteria at baseline will be excluded from study participation and then list each criterion.  If specific populations are excluded (e.g., elderly or pediatric populations, women or minorities), provide a clear and compelling rationale and justification, to establish that inclusion is inappropriate with respect to the health of the participants or the purpose of the research.
+
+If the eligibility criteria exclude any population from the study on the basis of any factor, including but not limited to race, ethnicity, sex, pregnancy, disability, nationality, religion, age, or English-language ability, a justification for the exclusion based on scientific or safety concerns should be stated. Example text provided as a guide, customize as needed (including adding a statement about equitable selection):
+
+An individual who meets any of the following criteria will be excluded from participation in this study:
+
+Current use of < specify disallowed concomitant medications>
+
+Presence of <specific devices (e.g., cardiac pacemaker)>
+
+Pregnancy or lactation
+
+Treatment with another investigational drug or other intervention within <specify time frame>
+
+Current smoker or tobacco use within <specify timeframe>
+
+< Specify any condition(s) or diagnosis, both physical or psychological, or physical exam finding that precludes participation>
+
+Inclusion of Vulnerable Participants
+
+If appropriate, include justification for inclusion of each vulnerable population which is intentionally included in your study.  Vulnerable participants include, but are not limited to, those individuals potentially subject to coercion and/or undue influence and those who lack consent capacity, including prisoners, NIH staff, cognitively impaired participants and children.  Include safeguards for protecting vulnerable populations.  Reference the appropriate NIH HRPP policies or Federal Regulations Subparts as necessary when discussing the research involvement of these subjects. Discuss what, if any, procedures or practices will be used in the protocol to minimize their susceptibility to undue influences and unnecessary risks (physical, psychological, etc.) as research subjects. Please refer to OHRP guidelines when considering inclusion of vulnerable populations. Note that if during the course of the study, a participant becomes a member of the designated population, (e.g., if a participant becomes a prisoner during the study) if that person is to remain on study, IRB approval for inclusion of that population is needed..
+
+Children: If the research involves persons who have not attained the legal age for consent to treatments or procedures involved in the research (“children”), refer to NIH HRPP Policy 402 to ensure sufficient information is provided.
+
+Prisoners: If the research involves prisoners, review NIH HRPP Policy 401 to ensure sufficient information is provided. If the study did not anticipate the participation of prisoners on the research, and a subject becomes incarcerated during study participation, if the PI wishes the subject to remain on the research, the PI must immediately review and comply with the requirements specified in NIH HRPP Policy 401.
+
+Adult subjects who lack decision-making capacity to consent to research participation: If the research involves adults with current decisional impairments, or if an individual may become decisionally impaired over the course of the study, review the NIH HRPP Policy 403 to ensure that you have provided sufficient information. All research protocols should state whether adults who are unable to provide initial informed consent are excluded or are eligible to enroll, and the conditions, if any, under which adults who permanently lose the capacity to provide on-going consent subsequent to giving initial consent, may continue to participate.  Please note that when a subject with capacity consented to the research and has a temporary loss of capacity (e.g., they are expected to regain capacity), reconsent of the subject by the LAR is not required for the subject’s continued participation in the research. However, the LAR should be engaged to advocate on behalf of the subject during the period of temporary incapacity.
+
+NIH Staff, and family members of study team members:   If the research involves planned enrollment of NIH staff, or family members of study team members, review NIH HRPP Policy 404 to ensure that you have provided sufficient information.  For research that does not offer the prospect of direct benefit to the subject (e.g., studies on healthy volunteers or natural history protocols), you must describe the safeguards that will be put in place.
+
+Other vulnerable populations:  If the research involves another potentially vulnerable population not identified specifically by OHRP or NIH HRPP policy please provide that information (e.g., military members, non-English Speakers, HIV/AIDS, economically disadvantaged individuals, illiterate, or blind participants).
+
+Example language:
+
+Participation of NIH Staff or family members of study team members
+
+NIH staff and family members of study team members may be enrolled in this study when this population meets the study entry criteria.  Neither participation nor refusal to participate as a subject in the research will have an effect, either beneficial or adverse, on the participant’s employment or position at NIH.
+
+Every effort will be made to protect participant information, but such information may be available in medical records and may be available to authorized users outside of the study team in both an identifiable an unidentifiable manner.
+
+The NIH Frequently Asked Questions (FAQs) for Staff Who are Considering Participation in NIH Research and Leave Policy for NIH Employees Participating in NIH Medical Research Studies (NIH Policy Manual 2300-630-3) will be provided to subjects for them to review.  Please see section 9.1.3 for consent of NIH Staff.
+
+Inclusion of Pregnant Women, fetuses or neonates
+
+Include content in this section if applicable, otherwise note as not applicable.
+
+If the research enrolls pregnant women, fetuses or neonates then the study must satisfy all of the requirements of 45 CR 46 subpart B.  Refer to NIH HRPP Policy 400 to ensure sufficient information is provided to allow this study meets Subpart B determination criteria.
+
+If the study does not intentionally enroll pregnant women, but it is possible a participant may become pregnant, and the researcher intends to keep the participant on the study/continue any of the research interactions/interventions while the woman is pregnant, then the protocol must provide sufficient justification and information for the IRB to determine that all of the requirements of subpart B are met.  Otherwise, it is best to exclude pregnant women and submit a modification to include the justification should a woman become pregnant and you wish to keep her on-study.
+
+Lifestyle Considerations
+
+Include content in this section if applicable, otherwise note as not applicable.
+
+Describe any restrictions during any parts of the study pertaining to lifestyle and/or diet (e.g., food and drink restrictions, timing of meals relative to dosing, intake of caffeine, alcohol, or tobacco, or limits on activity), and considerations for household contacts.  Describe what action will be taken if prohibited medications, treatments or procedures are indicated for care (e.g., early withdrawal).
+
+Example text provided as a guide, customize as needed:
+
+During this study, participants are asked to:
+
+Participants who use tobacco products will be instructed that use of nicotine-containing products (including nicotine patches) will not be permitted while they are in the clinical unit.
+
+Abstain from strenuous exercise for [x hours] before each blood collection for clinical laboratory tests. Participants may participate in light recreational activities during studies (e.g., watching television, reading).
+
+Minimize interactions with household contacts who may be immunocompromised.
+
+Screen Failures
+
+Participants who consent to participate in the study, who do not meet one or more criteria required for participation in the study during the screening procedures, are considered screen failures.  Indicate how screen failures will be handled in the study, including conditions and criteria upon which re-screening is acceptable, when applicable.
+
+Example text provided as a guide, customize as needed:
+
+Screen failures are defined as participants who consent to participate in the clinical study but are not subsequently entered in the study. A minimal set of screen failure information is required to ensure transparent reporting of screen failure participants, to meet the Consolidated Standards of Reporting Trials (CONSORT) publishing requirements and to respond to queries from regulatory authorities. Minimal information includes demography, screen failure details, eligibility criteria, and any serious adverse event (SAE).
+
+Individuals who do not meet the criteria for participation in this study (screen failure) because of a <specify modifiable factor> may be rescreened. Rescreened participants should be assigned the same participant number as for the initial screening.
+
+Strategies for Recruitment and Retention
+
+Identify general strategies for participant recruitment and retention. Please refer to NIH HRPP Policy 302 for specific guidance.
+
+Target study sample size by sex, race and ethnicity, and age; identify anticipated number to be screened including women and minorities in order to reach the target enrollment (should be consistent with information contained in Section 8.2, Sample Size Determination)
+
+Anticipated accrual rate
+
+Anticipated number of sites and participants to be enrolled from the U.S. and outside the U.S.
+
+For multi-site studies, state if accrual is competitive across all sites or detail the accrual ceilings for each site to equal the overall accrual ceiling number.
+
+Source of participants (e.g., inpatient hospital setting, outpatient clinics, student health service, or general public)
+
+Recruitment venues
+
+How potential participants will be identified and approached (where/when/how potential subjects will be recruited)
+
+If potential participants will be identified by examining existing medical records, or from existing registries or recruitment databases this must be described here.
+
+If medical records provided from outside referral sources will be reviewed to determine possible eligibility for the study, describe this here.
+
+Types of recruitment strategies planned (e.g. patient advocacy groups, national newspaper, local flyers; social media (make sure site complies with government terms of service; you can also refer to the NIH Social Media Guidelines), specific names of where advertisements may be planned are not needed).  Any information that will be used to recruit potential subjects needs to be IRB approved.  This includes information distributed at professional meetings, talks, etc.
+
+If the study requires long-term participation, describe procedures that will be used to enhance participant retention (e.g., multiple methods for contacting participants, visit reminders, incentives for visit attendance).
+
+Costs
+
+Describe and justify any costs that subject’s (or subject’s insurance) may be responsible for because of participation in the research (e.g., study procedure/drug/device and/or standard of care).  Include costs if there are unexpected complications/hospitalization transfer that may occur to other hospitals.
+
+Compensation
+
+Describe any plan for compensation.  Refer to NIH HRPP Policy 302 for specific policy requirements and consider if there will be variations across participating sites as to compensation amount or method for compensation.
+
+Describe the payment method (e.g., cash, check) and include how much money will be provided and for what activities, as well as when (timing) compensation will be provided.
+
+For pediatric participants, describe whom will be paid (minor or parent/guardian)
+
+For adults lacking decision-making capacity, state if payment will be to participant or to LAR/guardian.
+
+Describe how compensation will be prorated if there are multiple research activities or if a subject withdraws from the study before finishing.
+
+Describe any reimbursement that might be provided (e.g., travel expenses such as hotel or mileage), as applicable, and the process for reimbursement (e.g., collection of receipt).
+
+Describe whether there is any reimbursement for escort (a person who accompanies the participant).
+
+For NIH staff participants, refer to NIH HRPP Policy 404.
+
+If no compensation will be provided, state that here in this section.
+
+PARTICIPANT DISCONTINUATION/WITHDRAWAL
+
+No text is to be entered in this section; rather it should be included under the relevant subheading below.
+
+Participants may withdraw voluntarily from the study or the PI may discontinue a participant from the study.
+
+Participant Discontinuation/Withdrawal from the Study
+
+Provide a list of reasons participation may be discontinued. It may be appropriate to provide distinct discontinuation criteria for participants and cohorts. If so, both sets of criteria should be listed separately and the distinction between the two must be stated clearly.  Also, note that participants may withdraw voluntarily from the study or discontinue the study intervention at any time.  However, investigators should seek to minimize participant discontinuation/withdrawal from study except for safety reasons.
+
+In addition, it is important to capture the reason for withdrawal or discontinuation, as this may impact inclusion of participant data in the analysis of results (see Section 8, Statistical Considerations).
+
+This section should include a discussion of replacement of participants who withdraw or discontinue early, if replacement is allowed.  This section should not include a discussion of how these participants will be handled in the analysis of study data.  This should be captured in the Section 8, Statistical Considerations.
+
+Example text provided as a guide, customize as needed:
+
+Participants are free to withdraw from participation in the study at any time upon request.
+
+An investigator may discontinue or withdraw a participant from the study for the following reasons:
+
+Significant non-compliance
+
+Subject has completed the study follow-up period
+
+Death
+
+Screen Failure
+
+The reason for participant discontinuation or withdrawal from the study will be recorded on the <specify> Case Report Form (CRF).
+
+Lost to Follow-up
+
+The protocol should describe the nature and duration of study follow-up. Validity of the study is a potential issue when participants are lost to follow-up, as information that is important to the endpoint evaluation is then lost. Participants are considered lost to follow-up when they stop reporting to scheduled study visits and cannot be reached to complete all protocol-required study procedures. Describe the plans to minimize loss to follow-up and missing data. If the study team intends to engage the serviced of a 3rd party to attempt to find lost subjects, this should be described.
+
+Example text provided as a guide, customize as needed:
+
+A participant will be considered lost to follow-up if he or she fails to return for <specify number of visits> scheduled visits and is unable to be contacted by the study site staff.
+
+The following actions must be taken if a participant fails to return to the clinic for a required study visit:
+
+The site will attempt to contact the participant and reschedule the missed visit <specify time frame> and counsel the participant on the importance of maintaining the assigned visit schedule and ascertain if the participant wishes to and/or should continue in the study.
+
+Before a participant is deemed lost to follow-up, the investigator or designee will make every effort to regain contact with the participant (where possible, 3 telephone calls and, if necessary, a certified letter to the participant’s last known mailing address or local equivalent methods). These contact attempts should be documented in the participant’s medical record or study file.
+
+Should the participant continue to be unreachable, he or she will be considered to have withdrawn from the study with a primary reason of lost to follow-up.
+
+STUDY ASSESSMENTS AND PROCEDURES
+
+Screening Procedures
+
+Discuss the sequence of events that should occur during the screening process and any decision points regarding participant eligibility.  Include the time frame prior to enrollment within which screening procedures/ evaluations must be performed (e.g., within 28 days prior to enrollment).  If a separate screening protocol is developed, describe how the screening protocol will be used to identify participants for this study.
+
+If an individual’s medical chart or results of diagnostic tests performed as part of an individual’s regular medical care are going to be used for screening or as a part of collection of trial data, relevant federal or state laws, and local institutional requirements should be followed, as applicable.  If this is the case, this section should note which information is to be obtained through review of existing data.
+
+Example text provided as a guide, customize as needed:
+
+Screening activities performed prior to obtaining informed consent
+
+Minimal risk activities that may be performed before the subject has signed a consent include the following:
+
+Email, written, in person or telephone communications with prospective subjects.
+
+Review of existing medical records to include H&P, laboratory studies, etc.  
+
+Review of existing MRI, x-ray, or CT images.
+
+Review of existing photographs or videos.
+
+Review of existing pathology specimens/reports from a specimen obtained for diagnostic purposes.
+
+Screening activities performed after a consent for screening has been signed
+
+The following activities will be performed only after the subject has signed the consent this study. Assessments performed at outside facilities or on another NIH protocol within the timeframes below may also be used to determine eligibility once a participant has signed the consent.
+
+All screening tests and procedures must be performed within 28 days prior to enrollment, unless a time period is specifically mentioned:
+
+Study Evaluations & Procedures
+
+Natural history protocols typically contain a mix of systematic interventions that are specified by the protocol as well as collection of data obtained during the course of clinical care. Do not describe those procedures that will be performed on individual patients solely for clinical diagnostic or therapeutic purposes.
+
+If you will be collecting additional data or samples during a procedure or intervention that is being conducted for clinical purposes, that should be described.  For example, the collection of additional biopsy specimens during a clinically indicated procedure or additional research sequences during a clinically indicated MRI.  You do not need to provide an in-depth discussion of the clinical procedure, just sufficient information to allow the IRB reviewer to understand the procedure and its purpose.
+
+Note that the protocol should provide a high-level discussion of all research procedures and detailed information can be further provided in a MOP or SOP.  In addition, note where approaches to decrease variability, such as centralized laboratory assessments, are being employed. The specific timing of procedures/evaluations to be done at each study visit is captured in Section 1.2, Schedule of Activities (SoA) and the time points of these procedures should not be included here.
+
+Note if a specifically qualified person (e.g., physician, psychologist) should be performing any of the assessments. Include any definitions used to characterize outcomes (e.g., diagnostic criteria, sub-clinical symptoms, and change in health behaviors considered clinically significant).
+
+If any procedure has a risk of suicidal ideation, or questionnaires include questions about depression/suicidality, provide a management plan.
+
+If you plan to have the option to conduct study visits remotely via telephone or a telehealth platform, refer to NIH HRPP Policy 303 for specific requirements. Specifically, in reference to study evaluations, specify which procedures/treatments may be performed locally and which must be performed on site.  Describe how and when you will communicate with the subjects and the subject’s local MD, if applicable.
+
+Systematic Research Interventions
+
+In this section include a description of all systematic research procedures and interventions.  These may be time driven, or event driven and are those interventions that will be performed on some or all subjects based on protocol specified criteria. For example, yearly MRIs on all subjects, or a bone marrow biopsy on any subject whose blood counts meet a protocol specified criterion. This section should include a list and description of all the procedures/evaluations that are planned as part of the research (see below) and, if multi-site, specify if certain study procedures will/will not be performed at any specific site:
+
+Physical examination (e.g., height and weight, organ systems, motor or vision assessment, or other functional abilities). If appropriate, discuss what constitutes a targeted physical examination.
+
+Biological specimen collection and laboratory evaluations. Include specific test components and type of specimens needed for each test. Include the total amount of blood to be drawn over what time period. For other specimens, describe the total volume/size/frequency that you plan to take over what time period.
+
+Special instructions for the preparation, handling, storage, and shipment of specimens should be described in the study’s MOP.
+
+Electrocardiograms (EKGs). specify if the EKG is for screening purposes only. Include any specific instructions for the collection and interpretation of the EKG (e.g., time points relative other evaluations). If EKGs will be analyzed at a central laboratory, instructions for the collection (e.g., equipment), transmission and archiving of the EKG data should be summarized in this protocol, and further outlined in the MOP. If the EKG will be read locally, indicate how these will be handled and in what format (e.g., digital or paper), as well as instructions with respect to local review.
+
+Radiographic or other imaging assessments. State the specific imaging required and, as appropriate, provide description of what is needed to perform the specialized imaging. Details describing how to perform the imaging in a standard fashion and equipment specifications may be described in the study’s MOP or a separate SOP.
+
+For studies which include the following use of radiation, ensure the appropriate application is submitted to the RSC at NIH:
+
+Involves the use of any radiation in pediatric participants (<18 years old) with an annual effective dose >0.5 rem or healthy pediatric volunteers (any dose level)
+
+Uses any radiation in healthy adult volunteers, excluding DEXA and chest X-Ray
+
+For any MRI with gadolinium, refer to the gadolinium guidelines for maximum amount and provide the FDA medication guide (see https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-fda-warns-gadolinium-based-contrast-agents-gbcas-are-retained-body )
+
+Counseling procedures, including any dietary or activity considerations that need to be adhered to during study participation.
+
+Administration of questionnaires or other instruments for patient-reported outcomes, such as a daily diary. If non-English speakers are enrolled, identify if assessments related to the primary objectives are validated in their languages.
+
+Assessment of adverse events. Describe provisions for follow-up of ongoing AEs/SAEs.
+
+Include in this section a discussion of the results of any study specific procedures that will be provided to participant (e.g., radiographic or other imaging or laboratory evaluations).
+
+Data collected during clinical care
+
+If you intend to collect and analyze data generated during the course of clinical care as part of this study, this should be described here.  Do not describe the actual clinical intervention, only describe the data that will be collected and the source of the data.  For example, results from routine clinical chemistry and imaging studies performed at the NIH Clinical Center.  If data will be obtained from other institutions, describe that here.
+
+Correlative Studies for Research
+
+Special assays or procedures required (e.g., immunology assays, flow cytometry assays, microarray, DNA sequencing). If more than one laboratory will be used, specify which assays will be done by each laboratory and if the specimens will be identifiable to that laboratory. Special instructions for the preparation, handling, storage, and shipment of specimens should be described in the study’s MOP. Include the total amount of blood to be drawn over what time period.
+
+Note: If there is an optional biopsy for research in the protocol, then the participant will consent at the time of the procedure. If the participant refuses the optional biopsy at that time, the refusal will be documented in the medical record and in the research record.
+
+Note: the CC MEC policy on limits of blood drawn for purposes of research:
+
+Adult Patients and Volunteers: Blood Drawing Limits for Research Purposes
+
+The amount of blood that may be drawn from adult patients and volunteers (i.e., those persons 18 years of age or older) for research purposes shall not exceed 10.5 mL/kg or 550 mL, whichever is smaller, over any eight-week period. The amount of blood to be drawn from volunteers and the frequency of collection shall be specified in the clinical research protocol, and exceptions to the 10.5 mL/kg or 550 mL limitations shall be approved by the IRB.
+
+Pediatric Patients: Blood Drawing Limits for Research Purposes
+
+For pediatric patients, no more than 5 mL/kg may be drawn for research purposes in a single day, and no more than 9.5 mL/kg may be drawn over any eight-week period.
+
+Samples for Genetic/Genomic Analysis
+
+Description of the scope of genetic/genomic analysis
+
+Include family/linkage studies (if applicable) and whole genome sequencing or whole exome sequencing,
+
+Specify whether the analysis will consist of germline and/or somatic analysis,
+
+Description of how privacy and confidentiality of medical information/biological specimens will be maximized
+
+Will participant identifiers be attached to data, or will samples/data be coded or unlinked? Even if protected health information (PHI) is removed, how likely is potential identification?
+
+How might this information make specific individuals or families identifiable?
+
+If research data will be coded, how will access to the “key” for the code be limited? Include a list of security measures (password –protected database, locked drawer, other). List positions of persons with access to the key
+
+Will pedigrees be published? Include a description of measures to minimize the changes of identifying specific families.
+
+Will any personally identifiable information be released to third parties?
+
+Under what circumstances will data/samples be shared with other researchers?
+
+Management of Primary Results
+
+Discuss what specific results will be given to participants or their health care providers. In general, the results offered should be scientifically valid, confirmed, and should have significant implications for the subject’s health and well-being.
+
+Address whether the confirmation laboratory is CLIA certified.  Note that results obtained in a non-CLIA laboratory cannot be provided back to the participant or health care provider for purposes of providing clinical diagnostic information.
+
+If confirmatory CLIA testing is required, the research team should provide an option for this at no cost.
+
+Discuss the potential time frame that initial sequencing will be conducted, and if it may be at a time significantly after the participants enrollment, whether and how you intend to recontact them to inform them of any results.  When appropriate, the informed consent document should contain information informing the participant that sequencing may be done at a later time or perhaps not performed at all.
+
+Plans to return other forms of data—such as significant non-health-related data—should be built into the study design.
+
+Return of Secondary Genomic Research Results
+
+The IRB expects investigators to describe a plan for returning to participants certain secondary genomic findings obtained during their participation in NIH intramural research studies, unless there is a strong justification not to do so. For a detailed description of the scope and applicability of this requirement, as well as the elements required to be addressed in the plan, see IRB Guidance for Return of Secondary Genomic Results in the NIH Intramural Program. Once approved by the IRB, the Principal Investigator is expected to adhere to all aspects of this plan.
+
+No return
+
+Provide justification for why secondary genomic findings will not be returned to participants.
+
+Return
+
+Describe which service you have engaged to analyze and return secondary findings, or whether the primary research team will perform this analysis.
+
+Describe which findings will be sought.
+
+At a minimum, the ACMG list of actionable findings that is current at the time the analysis is performed should be returned.
+
+Additional genes may also be included if they are generally agreed upon by the expert community to be clinically important to the subject and are actionable.  These should be described in the protocol.
+
+If the protocol involves multiple cohorts of participants that have different levels of clinical engagement with the study team, then describe whether and how the return of secondary genomic results will vary based on cohort group.  [Note: Consent forms for these cohorts should reflect these differences.]
+
+If the original research sample collection and sequencing will not be performed in a CLIA certified laboratory, address the process for obtaining confirmation of the secondary finding(s) in CLIA certified laboratory at no cost to the participant.
+
+Include a description of the anticipated timing of the analysis and subject notification, relative to sample collection. If it known that the analysis and notification will not happen for an extended period after sample collection, this should be stated.
+
+Discuss if you will only perform a single analysis for secondary findings, or if you will perform a repeat analysis periodically.  A one-time analysis is acceptable; however, other approaches are allowable but must be described in the protocol.
+
+Discuss how findings will be returned:
+
+How will subjects be notified of the need for an additional sample collection or to return results (written communication, secure email, or telephone)?
+
+Discuss whether secondary findings will be returned to participants at an in person visit, for example at the Clinical Center, or whether alternative methods (e.g., telemedicine, telephone) will be utilized. Describe if their will any additional costs incurred by the participant if they must return for a visit.
+
+Describe who will do the genetic counseling and how it will be conducted. The process of identifying and disclosing research results should involve professionals with the appropriate expertise required to provide the participant with sufficient interpretive information and opportunity to ask questions and have any concerns addressed.
+
+Identify to whom the secondary findings will be returned.
+
+Secondary findings may only be returned to the research participant or to their legally authorized representative (LAR), unless there is a valid release of medical information request identifying another individual as authorized to receive this information.
+
+Results obtained from a participant who is deceased at the time the secondary findings become known may be released to next of kin upon confirmation of their identity and relationship to the subject, consistent with Clinical Center Health Information Management and/or IC Privacy Office policies
+
+Example language:
+
+The study will utilize the <specify the service being used for secondary analysis or whether the primary study team will perform this role>to conduct the analysis for clinically actionable secondary results from genomic sequence data generated under this study.
+
+Clinically actionable findings for the purpose of this study are defined as disorders appearing in the American College of Medical Genetics and Genomics (ACMG) recommendations for the return of incidental findings that is current at the time the analysis is performed. (Expanded lists are permissible; any findings that will be sought in addition to the ACMG’s recommended list must be specified.)
+
+Subjects will be contacted <describe how contact will be made> by the primary study team <or relevant party>if a clinically actionable variant is identified to provide an additional blood or saliva specimen to allow for confirmation in a CLIA certified laboratory, if necessary.  If the research findings are verified in the CLIA certified lab, then subject will be offered the opportunity to come to NIH or to schedule a telemedicine visit (at our expense) to have a genetic counseling session with <specify who will provide this genetic education and counseling associated with the return of results> to explain this result. If the subject does not want to come to NIH or have a telemedicine visit, a referral to a local genetic healthcare provider may be provided to receive this result (at their expense).
+
+We anticipate that the analysis for secondary findings will occur within <specify expected time frame> of specimen collection.  This is the only time during the course of the study that secondary findings will be returned. No additional interrogation regarding secondary actionable findings will be made after the initial analysis.
+
+Genetic counseling
+
+Describe who will do the genetic counseling, would counseling happen in person, and how it will be conducted. The process of identifying and disclosing research results should involve professionals with the appropriate expertise required to provide the participant with sufficient interpretive information.
+
+Use Of Existing Data/Specimens
+
+From Subjects Who Will Enroll in this Protocol
+
+If identifiable data or specimens, collected as part of a different NIH protocol, will be obtained, or shared for research in this protocol, it must be described in both protocols and any active consent form(s).  The following is recommended language when you will obtain identifiable data or specimens from the medical record and/or from the research database/lab associated with another NIH protocol for use as part of this research. Include one or both statements below, as applicable:
+
+When the desired data is available in the participants’ medical record: We may review the participant’s NIH medical records to obtain results of procedures conducted under another protocol in order to <insert reason here: minimize repeating procedures/tests or meet the research objectives>.
+
+AND/OR
+
+When the desired data or specimens is only available in the research record/lab: We may obtain existing identifiable research data <and/or insert type specimens> collected under <insert protocol number and title here> to <insert reason here: minimize repeating procedures/tests or meet the research objectives>.
+
+The following is recommended language when you will share identifiable data or specimens from your research database/lab with another NIH protocol for analysis and then will receive research results that can be linked to your subjects.  If the only data that the other research team will access can be pulled from the medical record, you do not need to include any of this language below.
+
+Note that if identifiable data or specimens will be shared with the other team, the expectation is that subjects will be co-enrolled on the other protocol. Otherwise, a waiver of consent will need to be requested and approved as part of the other protocol to allow for research with identifiers.
+
+We may share identifiable research data <and/or specimens> with <insert protocol number and title here>, in order to <insert reason here> if subjects are co-enrolled.
+
+From Subjects Who Will Not Enroll in this Protocol
+
+If you plan to incorporate other existing data and/or specimens, from subjects who you do not intend to enroll in this protocol, as part of this research, specific information should be included here.  Below are two scenarios and the required content that you should address in this protocol for each.
+
+Identifiable data and/or specimens collected under another IRB-approved protocol, when the subjects will not otherwise enroll to take part in this protocol
+
+Describe the specific sources of the data/specimens, i.e. the protocol numbers and titles and how the investigators have access to these materials (e.g. both protocols involve some of the same investigator(s))
+
+Describe the subject population whose data/specimens will be incorporated including number of subjects, if known
+
+Discuss what the various consent versions say about the future use of data/specimens; if there is language about future use, confirm it is consistent with the planned research; ensure there is no language that would preclude new research, e.g. all specimens or data will be destroyed when the study ends
+
+Describe the specific types of data/specimens that are being included from the previous protocols
+
+Then discuss either plan to re-consent the subjects for use of their data/specimens or make the case for waiver of informed consent for the new research using the criteria under the revised CR in section 9.1.1
+
+Explain why the data/specimens are being included and the planned research activities that will be conducted with these materials
+
+De-identified data and/or specimens collected under an NIH or non-NIH IRB-approved protocol or originally obtained from outside of the NIH from another source (clinical specimens, repository, etc.)
+
+There is no requirement to obtain IRB approval for the use of de-identified data/specimens generally, but it might be relevant to describe the use of the data/specimens if it is part of the science or if the numbers are necessary as part of the statistical analysis.
+
+Describe the specific sources of the data/specimens and the context under which the materials were originally collected, e.g. an IRB-approved protocol (include the protocol numbers and titles); clinical specimens received from an outside entity, repository, etc. and how the investigators have access to these materials (e.g. both protocols involve the same investigator(s))
+
+Make the case for why the PI/AI isn’t able to re-identify the data/specimens, if s/he is going to include de-identified data/specimens from subjects from his/her own protocols,
+
+Describe the subject population whose data/specimens will be incorporated, including number of subjects, if known
+
+Discuss what the various consent versions say about future use of data/specimens, when applicable; if there is language about future use, confirm it is consistent with the planned research; ensure there is no language that would preclude new research, e.g. all specimens or data will be destroyed when the study ends
+
+Describe the specific types of data/specimens that are being included from the previous protocols
+
+Explain why the data/specimens are being included and the planned research activities that will be conducted with these materials
+
+Adverse Events
+
+No text is to be entered in this section; rather it should be included under the relevant subheadings below.
+
+Depending on the nature of the intervention, it may not be necessary to collect all adverse events in your database, except those that are considered to be unanticipated problems (UPs; see Section 7.5, Unanticipated Problems for clarification).
+
+The following subsections are intended to highlight the specific assessments related to safety and the aspects of the study which are proposed to ensure the safety of study participants. Consider developing this section in consultation with a professional with experience in the clinical care of your population. Consider the risks of the study procedures and the characteristics of the study.
+
+Definition of Adverse Event
+
+Provide the definition of an Adverse Event (AE) being used for the study. Note that the NIH HRPP definition of an AE is used in this template. However, for some studies, definitions from the OHRP Guidance on Reviewing and Reporting Unanticipated Problems Involving Risks to Subjects or Others and Adverse Events; or ICH GCP definition may be more appropriate.
+
+Example text provided as a guide, customize as needed:
+
+Any untoward medical occurrence in a human subject, including any abnormal sign (for example, abnormal physical exam or laboratory finding), symptom, or disease, temporally associated with the subject’s participation in research, whether or not considered related to the subject’s participation in the research. 
+
+Definition of Serious Adverse Events (SAE)
+
+Provide the definition of an SAE being used for the study.
+
+Example text provided as a guide, customize as needed:
+
+A Serious Adverse Event is any Adverse Event that:
+
+Results in death;
+
+Is life-threatening (places the subject at immediate risk of death from the event as it occurred);
+
+Results in inpatient hospitalization or prolongation of existing hospitalization;
+
+Results in a persistent or significant disability/incapacity;
+
+Results in a congenital anomaly/birth defect; OR
+
+Based upon appropriate medical judgment, may jeopardize the subject’s health and may require medical or surgical intervention to prevent one of the other outcomes listed above in this definition (examples of such events include allergic bronchospasm requiring intensive treatment in the emergency room or at home, blood dyscrasias or convulsions that do not result in inpatient hospitalization, or the development of drug dependency or drug abuse).
+
+Classification of an Adverse Event
+
+Severity of Event
+
+All AEs will be assessed by the study clinician using a protocol defined grading system.  Describe the method of grading an AE for severity. For example, many toxicity tables are available for use and are adaptable to various study designs. Selection of a toxicity table or severity scale should be made in consultation with the study Medical Monitor.
+
+Example text provided as a guide, customize as needed:
+
+For adverse events (AEs) not included in the protocol defined grading system, the following guidelines will be used to describe severity.
+
+Mild – Events require minimal or no treatment and do not interfere with the participant’s daily activities.
+
+Moderate – Events result in a low level of inconvenience or concern with the therapeutic measures. Moderate events may cause some interference with functioning.
+
+Severe – Events interrupt a participant’s usual daily activity and may require systemic drug therapy or other treatment. Severe events are usually potentially life-threatening or incapacitating.  Of note, the term “severe” does not necessarily equate to “serious”.
+
+Relationship to Study Procedures
+
+All AEs will have their relationship to study participation assessed with a level of specificity appropriate to the study design. The clinician’s assessment of an AEs relationship to study procedures is part of the documentation process, but it is not a factor in determining what is or is not reported in the study. Describe the method of determining the relationship of an AE to a study procedure. If there is any doubt as to whether a clinical observation is an AE, the event should be recorded.  Some protocols may use a binary assessment (related/not related); others may have a scale of relatedness.  Evaluation of relatedness must consider etiologies such as natural history of the underlying disease, concurrent illness, concomitant therapy, study-related procedures, accidents, and other external factors.
+
+Example text provided as a guide, customize as needed:
+
+All adverse events (AEs) will have their relationship to study procedures assessed by an appropriately trained clinician based on temporal relationship and his/her clinical judgment. The degree of certainty about causality will be graded using the categories below.
+
+Related – The AE is known to occur with the study procedures, there is a reasonable possibility that the study procedures caused the AE, or there is a temporal relationship between the study procedures and the event. Reasonable possibility means that there is evidence to suggest a causal relationship between the study procedures and the AE.
+
+Not Related – There is not a reasonable possibility that the study procedures caused the event, there is no temporal relationship between the study procedures and event onset, or an alternate etiology has been established.
+
+OR
+
+Definitely Related – There is clear evidence to suggest a causal relationship, and other possible contributing factors can be ruled out. The clinical event, including an abnormal laboratory test result, occurs in a plausible time relationship to study procedures administration and cannot be explained by concurrent disease or other drugs or chemicals. The response to withdrawal of the study procedures should be clinically plausible.
+
+Probably Related – There is evidence to suggest a causal relationship, and the influence of other factors is unlikely. The clinical event, including an abnormal laboratory test result, occurs within a reasonable time after administration of the study procedures, is unlikely to be attributed to concurrent disease or other drugs or chemicals, and follows a clinically reasonable response on withdrawal.
+
+Potentially Related – There is some evidence to suggest a causal relationship (e.g., the event occurred within a reasonable time after administration of study procedures). However, other factors may have contributed to the event (e.g., the participant’s clinical condition, other concomitant events). Although an AE may rate only as “possibly related” soon after discovery, it can be flagged as requiring more information and later be upgraded to “probably related” or “definitely related”, as appropriate.
+
+Unlikely to be related – A clinical event, including an abnormal laboratory test result, whose temporal relationship to study procedures administration makes a causal relationship improbable (e.g., the event did not occur within a reasonable time after administration of the study procedures) and in which other drugs or chemicals or underlying disease provides plausible explanations (e.g., the participant’s clinical condition, other concomitant treatments).
+
+Not Related – The AE is completely independent of study procedures administration, and/or evidence exists that the event is definitely related to another etiology. There must be an alternative, definitive etiology documented by the clinician.
+
+Expectedness
+
+Expected adverse reactions are AEs that are known to occur for the study procedures being studied and should be collected in a standard, systematic format using a grading scale based on functional assessment or magnitude of reaction. Identify the source of the reference safety information used to determine the expectedness of the AE. Expectedness is assessed based on the awareness of AEs previously observed, not on the basis of what might be anticipated from the properties of the study intervention.
+
+An AE or suspected adverse reaction is considered "unexpected" if it is unlikely to occur in the study population, or it is unlikely to occur at the severity that has been observed.
+
+Example text provided as a guide, customize as needed:
+
+A clinician with appropriate expertise in <insert condition> will be responsible for determining whether an adverse event (AE) is expected or unexpected. An AE will be considered unexpected if the nature, severity, or frequency of the event is not consistent with the risk information previously described for the study procedures.
+
+Adverse Event Reporting
+
+This section addresses responsibilities of investigators for reporting of AEs & SAEs outside of the study team and the clinical database. However, it is important to recognize that sponsors and/or funding agencies have additional responsibilities under regulations that are not described in this template and should be incorporated into relevant SOPs.
+
+Describe the AE reporting procedures, including timeframes (some institutions may require that AEs be reported within a pre-specified amount of time). If reporting is required to more than one entity (e.g., IRB and funding agency), PIs should submit reports to both entities using the earliest required reporting timeframe.
+
+Example text:
+
+In consultation with the PI, a trained member of the study team will be responsible for conducting an evaluation of all adverse events and shall report the results of such evaluation to the NIH Institutional Review Board (IRB) as per Policy 801.
+
+Unanticipated Problems
+
+No text is to be entered in this section; rather it should be included under the relevant subheadings below.
+
+Definition of Unanticipated Problems (UP)
+
+Any incident, experience, or outcome that meets all of the following criteria:
+
+Unexpected in terms of nature, severity, or frequency given (a) the research procedures that are described in the protocol-related documents, such as the Institutional Review Board (IRB)-approved research protocol and informed consent document; and (b) the characteristics of the participant population being studied; and
+
+Related or possibly related to participation in the research (“possibly related” means there is a reasonable possibility that the incident, experience, or outcome may have been caused by the procedures involved in the research); and
+
+Suggests that the research places participants or others (which many include research staff, family members or other individuals not directly participating in the research) at a greater risk of harm (including physical, psychological, economic, or social harm) than was previously known or expected.
+
+Unanticipated Problem Reporting
+
+The investigator will report unanticipated problems (UPs) to the NIH Institutional Review Board (IRB) as per Policy 801.
+
+STATISTICAL CONSIDERATIONS
+
+The following subsections should describe the statistical tests and analysis plans for the protocol, as applicable. They should indicate how the study will answer the most important questions with precision and a minimum of bias, while remaining feasible.
+
+State whether there will be a formal Statistical Analysis Plan (SAP). The SAP generally includes additional statistical analysis detail (e.g., more detail of analysis populations, summary of statistical strategies).
+
+If the following sections are not applicable to your study due to the exploratory nature of the research, indicate that in the respective sections.  However, where a relevant analysis can be conducted, that should be described.  The following paragraph is from FDA guidance on Natural History Studies and may be used to guide your approach to this section.
+
+The SAP elements should delineate the analysis population, definition of endpoints, descriptive objectives, testable hypotheses and statistical methods to be employed in analysis of the data including the timing of the data analyses conducted in the study. The SAP should include enough detail so that the analysis results can be replicated. The SAP can also increase the study’s efficiency by focusing on the most relevant data to be collected without imposing excessive rigidity (Thomas and Peterson 2012). Preplanned interim analyses at certain intervals or milestones may suggest design changes to the protocol. Protocol elements may be modified or dropped for reasons of relevancy, feasibility, and reliability based on interim analyses, but any such changes should be well documented as a modification to the protocol, including the timing and rationale for the changes.
+
+In any natural history study, consistency of procedures and data collection across data collection sites and across time is critical. The analysis model may also need to make adjustments for the effects of sites within the country or region. A natural history study that collects data in widely dispersed site locations needs to consider potential language and cultural differences in the patient perceptions, manifestations, and effects of a disease. Evaluation of intra- and inter-rater reliability of clinical outcome assessments and performance requirements of the biomarker measurement assays/tests should be considered.
+
+Statistical Hypothesis
+
+If applicable, state the formal and testable null and alternative hypotheses for primary and key secondary endpoints, specifying the type of comparison and time period for which each endpoint will be analyzed. For observational studies, a study endpoint/outcome measure is a specific key measurement[s] or observation[s] used to describe patterns of diseases or traits or associations with exposures, risk factors or treatment.
+
+Primary Endpoint(s):
+
+Secondary Endpoint(s):
+
+Sample Size Determination/Accrual Ceiling
+
+Include number of participants to recruit, screen, and enroll to meet the study endpoints/aims.
+
+Statistical Analyses
+
+General Approach
+
+As applicable, address the following:
+
+For descriptive statistics, describe how categorical and continuous data will be presented (e.g., percentages, means with standard deviations, median, range).
+
+State whether checks of assumptions (e.g., normality) underlying statistical procedures will be performed and whether any corrective procedures will be applied (e.g., transformation or nonparametric tests).
+
+Baseline Descriptive Statistics
+
+Include content in this section if applicable, otherwise delete this section.
+
+Procedure groups should be compared on baseline characteristics, including demographics and laboratory measurements, using descriptive statistics. Discuss planned baseline descriptive statistics, indicate whether inferential statistics will be used.
+
+Sub-Group Analyses
+
+If applicable, describe how the primary endpoint will be analyzed based on age, sex, race/ethnicity or other demographic characteristic(s) or provide justification for why such analyses are not warranted (e.g., study intervention only for use in men or children).
+
+Describe how the secondary endpoint(s) will be analyzed based on age, sex, race/ethnicity or other demographic characteristic(s) or provide justification for why such analyses are not warranted (e.g., study intervention only for use in men or children).
+
+Tabulation of individual Participant Data
+
+State whether individual participant data will be listed by measure and time point.
+
+Exploratory Analyses
+
+Exploratory analyses cannot be used as confirmatory proof for registration trials. All planned exploratory analyses should be specified in the protocol.
+
+REGULATORY AND OPERATIONAL CONSIDERATIONS
+
+Informed Consent Process
+
+No text is to be entered in this section; rather it should be included under the relevant subheadings below.
+
+The following subsections should describe the procedures for obtaining and documenting informed consent of study participants.  State if a separate screening consent will be used.  If a separate screening consent will not be used, the study consent must be signed prior to conducting study screening procedures. Some screening procedures may be performed prior to consent if addressed in section 7.1.
+
+In obtaining and documenting informed consent, the investigator must comply with applicable regulatory requirements (e.g., 45 CFR Part 46, 21 CFR Part 50, 21 CFR Part 56) and should adhere to ICH GCP. Prior to the beginning of the trial, the investigator should have the IRB’s written approval for the protocol and the written informed consent form(s) and any other written information to be provided to the participants.
+
+If this is a multi-institutional protocol enrolling subjects at different Participating Sites that are relying on the NIH IRB, try to describe what applies to all sites in a very general way and distinguish this from what will only apply at the NIH site.
+
+For example, “Children will be enrolled across all sites using the NIH IRB-approved assent process and in compliance with applicable local institutional policy.”  Or “Consent will be obtained using an electronic platform after approval from the NIH IRB and as permitted by local institutional policy. At the NIH site, the iMed platform will be used etc.…”.
+
+This approach ensures that participating sites comply with requirements from the NIH IRB and their home institutions and allows for additional local information to be provided later in the pSite Addendum, when a specific site is ready to be added to the NIH protocol e.g., the name of the specific electronic platform that may be used by a participating site.
+
+Consent/Assent Procedures and Documentation
+
+Provide a detailed description of the consent process, including the following, as applicable:
+
+Where and when will consent be obtained?
+
+Describe how the privacy of subjects will be protected during the informed consent procedure, (e.g., informed consent will be conducted in a quiet room with a closed door with only relevant parties present, to protect the privacy of the subject).
+
+Who is authorized to obtain consent?
+
+How will coercion or undue influence be minimized?
+
+Will consent be done in person, or by telephone/videoconference?  Describe the process.
+
+Will the consent be provided electronically or in hard copy?
+
+Will the consent be provided in advance of your discussion?
+
+How much time will the potential subject be provided to consider their participation?
+
+Who will answer questions from the participant?
+
+Will the potential participant be provided the opportunity to consult with others (family, friends, private physician, etc.) prior to providing consent?
+
+If you are using an electronic platform to document signatures, you must describe how you will document consent via the electronic platform, specifically:
+
+Name the electronic platform you plan to use (e.g., iMed, DocuSign, Adobe, etc.), and state if it is 21CFR Part 11 compliant.
+
+Describe how the signature of both the subject and investigator will be obtained (paint the picture of the process: will both be looking at the same screen? Is the consent signature obtained synchronously or asynchronously?)
+
+Describe if you plan to use a true electronic signature or whether signature will be obtained using a stylus/mouse.
+
+If you are obtaining a true electronic signature for this protocol, describe the process of how you will verify the identity of the subject prior to obtaining consent.
+
+Requests for Waiving Consent/Assent or Altering Elements of Informed Consent (or Parent Permission) must be obtained in advance, and address the following (refer to NIH HRPP Policy 301 and note that this is only allowed for minimal risk studies):
+
+Describe why the research could not practicably be carried out without the requested waiver or alteration (e.g. some subjects are lost to follow up, all subjects are needed or it would bias the results)
+
+Describe why the research could not practicably be carried out without using subject identifiers.
+
+Describe how the waiver won’t adversely affect the rights and welfare of subjects.
+
+Describe how and when subjects will be provided additional information after participation, if appropriate.
+
+Requests for Waiving Documentation of Consent (or Parent Permission) must address at least one the following (refer to NIH HRPP Policy 301):
+
+Validate that the only record linking the subject and the research would be the consent document and the principal risk would be potential harm resulting from a breach of confidentiality (i.e. when you are not otherwise collecting identifiers as part of the protocol), OR
+
+Validate that the research is no greater than minimal risk and only involves procedures for which written consent is normally not required outside the research context (Note that this is the only justification allowed for FDA regulated research), OR
+
+Validate that the subjects are members of a distinct cultural group/community in which signing forms is not the norm; the research presents no more than minimal risk of harm to subjects; and there is a plan in place for documenting that informed consent was obtained.
+
+Consent Process for Minors/Children (under 18 years of age):
+
+Describe how parental permission will be obtained.
+
+If applicable, describe the process for obtaining assent of the subjects.
+
+Written assent should be obtained whenever possible.
+
+Note that in situations where there is joint custody of a child, both parents must provide permission and sign the consent. If only one parent can be present at NIH, the other parent’s permission can be obtained by telephone via the procedure you describe.
+
+Address consent processes for children who become adults or emancipated during a study.
+
+Consent Process for Adults who Lack Decision-making Capacity to Consent to Research Participation:
+
+Describe the process to determine whether an individual is capable of consent.
+
+If the individual is not capable of giving consent to participate, indicate who will be authorized to give consent (e.g., court appointed guardian, the individual appointed in the participant’s Durable Power of Attorney (DPA) for health care, spouse, adult child etc.) As a reminder, if there is a guardianship order, consult OGC as early as feasible, to ensure that the guardian is authorized to provide consent under the laws of the state that issued the order.
+
+If participant is not able to provide consent, indicate that they can be assessed for their ability to understand the DPA process. If the subject does not have a court appointed guardian and is not capable of executing a DPA for health care, be sure to review NIH HRPP Policy 403 for the updated hierarchy for who may serve as a LAR at an NIH site.
+
+Consider consultation with the Clinical Center Human Subjects Protection Unit (HSPU) or the Ability to Consent Assessment Team (ACAT) teams.
+
+If subjects may lose decision-making capacity during the study, describe the process for the LAR to be identified, when this will be done, how the LAR will be notified, and how the LAR will be involved in the study.  Also describe how decision-making ability will be monitored over the course of the study.
+
+This section should be consistent with Section 5.7, Strategies for Recruitment and Retention when describing consent plans and special considerations for children or other vulnerable participants.
+
+For assent of children, if applicable:
+
+Children (those individuals under the age of consent in the jurisdictions in which they reside, usually age 18) are generally not legally permitted to give consent, but depending on their age, they may have the ability to give assent (“assent” means a child’s affirmative agreement to participate in research). Every protocol involving children must include a discussion of how assent will be obtained for the particular study including who will determine what type of assent (verbal, written) will be obtained for each child. If appropriate, age guidelines should be included for the type of assent to be obtained. Written assent will be documented by the child themselves when they sign the assent document.
+
+Example language for verbal and written assent:
+
+Where deemed appropriate by the clinician and the child’s parent(s) or guardian, the child will also be included in all discussions about the trial and age-appropriate language will be used to describe the procedures and tests involved in this study, along with the risks, discomforts and benefits of participation. Verbal assent will be obtained as appropriate for children ages [fill in the blank]. Children under the age of 18, but who are age [fill in the blank] or older will be asked to sign an age-appropriate assent form. Children under the age of [fill in the blank] will not be required to provide assent as they typically do not have the ability to fully understand the nature of research. The consent/assent process will be documented in the child’s medical record, including the assessment of the child’s ability to provide assent (verbal versus written) as applicable. All children will be contacted after they have reached the age of 18 to determine whether they wish to continue on the trial and informed consent will be obtained from them at that time.
+
+Example language for verbal assent only (Investigator should provide a justification for why written assent will not be obtained):
+
+Where deemed appropriate by the clinician and the child’s parent(s) or guardian, the child will also be included in all discussions about the trial and age-appropriate language will be used to describe the procedures and tests involved in this study, along with the risks, discomforts and benefits of participation. Written assent will not be obtained from children as [provide justification here]. Verbal assent will be obtained as appropriate for children ages [fill in the blank].  Children under the age of [fill in the blank] will not be required to provide assent as they typically do not have the ability to understand the nature of research. The consent/assent process will be documented in the child’s medical record, including the assessment of the child’s ability to provide assent (verbal versus written) as applicable. All children will be contacted after they have reached the age of 18 to determine whether they wish to continue on the trial and informed consent will be obtained from them at that time.
+
+Example language for waiver of assent:
+
+If assent will not be obtained, the protocol must provide justification for no assent procedures. The Code of Federal Regulations allow for waiver of assent only if the capacity of some or all of the children is so limited that they cannot reasonably be assented or if the intervention or procedures involved in the research holds out the prospect of direct benefit to the health or well-being of the children and is available on the context of research. However, the child should be included in the discussions to the degree they are capable of understanding.
+
+The investigator should specify if the waiver is requested for some or all of the children enrolled in the research.
+
+Sample language 1:
+
+A waiver of assent is requested for [specify some or all] minors enrolled in this research as the minors cannot reasonably be expected to have the ability to provide meaningful assent due to their underlying condition, age, maturity or psychological state.
+
+Sample language 2:
+
+A waiver of assent is requested for [specify some or all] minors enrolled in this research as the research intervention has the prospect of direct benefit to the participant [describe what the benefit is] and the intervention is available only in the context of the research.
+
+Consent for minors when they reach the age of majority
+
+If a minor becomes an adult while on study and lacks decision-making capacity to consent to research, the requirements of NIH HRPP Policy 403 come into effect. Study teams should plan for this circumstance, and if the subject can remain on study, the protocol should also address how this process will be managed.
+
+Example language for waiver of consent for minors who reach the age of majority:
+
+When a pediatric subject reaches the age of majority, continued participation (including ongoing interactions with the subject or continued analysis of identifiable data) will require that consent be obtained from the now adult with the standard protocol consent document to ensure legally effective informed consent has been obtained.
+
+When we have no ongoing interactions with the subjects, including if subjects are lost to follow up or withdrawn from the study, we request a waiver of informed consent to continue to use data and/or specimens obtained from those individuals.
+
+Requirements for a Waiver of Consent consistent with 45 CFR 46.116 (f)(3):
+
+The research involves no more than minimal risk to the subjects.
+
+Analysis of samples and data from this study involves no additional risks to subjects.
+
+The research could not practicably be carried out without the waiver or alteration.
+
+Considering the length of time between the minor’s last contact with the research team and their age of majority, it will likely be very difficult to locate them again. A significant reduction in the number of samples analyzed is likely to impact the quality of the research.
+
+As the research involves using identifiable private information or identifiable biospecimens, the research could not practicably be carried out without using such information or biospecimens in an identifiable format.
+
+Though the purpose of future studies cannot yet be known, they often involve the correlation of clinical outcomes and clinical interventions with laboratory studies.  Such information would be unavailable if access to medical record numbers was unavailable.
+
+The waiver or alteration will not adversely affect the rights and welfare of the subjects.
+
+Retention of these samples or data does not affect the welfare of subjects.
+
+Whenever appropriate, the subjects will be provided with additional pertinent information after participation.
+
+We only request a waiver of consent for those subjects who have been lost to follow-up or who have been taken off study prior to reaching the age of majority.
+
+The informed consent process will be documented in the medical record.
+
+The investigator will confirm that, when required, written legally effective consent has been obtained prior to initiating any study interventions.
+
+Considerations for Consent of NIH staff, or family members of study team members
+
+Example language:
+
+If the potential participant is a member of the research team where this research is taking place, procedures outlined in NIH HRPP Policy 404 will be followed.  Consent for NIH staff will be obtained as detailed above with the following additional protections:
+
+Consent from staff members will be obtained by an individual independent of the staff member’s team whenever possible.  Otherwise, the consent procedure will be independently monitored by the CC Department of Bioethics Consultation Service to minimize the risk of undue pressure on the staff member.
+
+Consent of Adults who lack, or lose, decision-making capacity to consent to research participation
+
+Example language is provided below. Tailor accordingly if circumstances differ. Please note that in general subjects who lack the capacity to consent to research may only be enrolled/retained if there is a prospect of direct benefit, or if the risk profile is no more than minimal or a minor increase over minimal risk. (Refer to  NIH HRPP Policy 403).
+
+Be sure to include your plan for assessing the initial and ongoing capacity of the subjects and how you will identify the LAR, and the process you will have for obtaining initial consent from the LAR and/or reconsent from the LAR.
+
+The study team may contact the NIH Ability to Consent Assessment Team (ACAT) for evaluation as needed for the following: an independent assessment of whether an individual has the capacity to provide consent; assistance in confirming the validity of the LAR when indicated; and/or an assessment of the capacity to appoint an LAR.
+
+If you will be enrolling adults who lack decision-making capacity to consent to research, consider whether some or all of the potential participants will have the capacity to provide assent. If so, consider how you will obtain assent from these individuals, in particular if you anticipate their enrollment.  Discuss (in this section of the protocol) your plan for obtaining assent, considering the specifics of the population you expect to enroll (e.g. temporary or permanent loss of capacity, waxing/waning capacity).  Written assent is not required by the IRB (but you can choose to do this if appropriate) as your assent plan will be very context and population specific. As this is so variable, there is no example text provided for this content as it will be specific to each study.
+
+Adults unable to consent to research are excluded from enrolling in the protocol. However, it is possible that subjects enrolled in the protocol may permanently lose the capacity to consent for themselves during the course of this study.  In the event this occurs, subjects will [choose whichever is applicable] be withdrawn from the study [or, if applicable to this study] remain in the study because [provide justification as to why it is appropriate for the subject to remain in the study].  If subjects will remain in the study, an LAR will be identified consistent with Policy 403 and informed consent obtained from the LAR, as described in Section 9.1.1.
+
+Or: Adults unable to consent to research can be enrolled in this protocol:
+
+The PI /study investigators will identify an appropriate LAR consistent with the requirements of Policy 403 and will obtain consent from the LAR as outlined in the consent process in Section 9.1.1 before initiating research interventions.
+
+Study Discontinuation and Closure
+
+List possible reasons for termination or temporary suspension of the study (e.g., study closure based on PI decision, sponsor/funder decision, regulatory or other oversight bodies; review of serious, unexpected, and related AEs; noncompliance; futility).  For any study that is prematurely terminated or temporarily suspended, the PI will promptly inform study participants, the IRB, and sponsor and provide the reason(s) for the termination or temporary suspension.
+
+When a study is prematurely terminated, refer to Section 6, Study Intervention Discontinuation and Participant Discontinuation/Withdrawal, for handling of enrolled study participants.
+
+Example text provided as a guide, customize as needed:
+
+This study may be temporarily suspended or prematurely terminated if there is sufficient reasonable cause.  Written notification, documenting the reason for study suspension or termination, will be provided by the suspending or terminating party to <study participants, investigator, funding agency and regulatory authorities>.  If the study is prematurely terminated or suspended, the Principal Investigator (PI) will promptly inform study participants, the Institutional Review Board (IRB), and sponsor and will provide the reason(s) for the termination or suspension.  Study participants will be contacted, as applicable, and be informed of changes to study visit schedule.
+
+ Circumstances that may warrant termination or suspension include, but are not limited to:
+
+Determination of unexpected, significant, or unacceptable risk to participants
+
+Insufficient compliance to protocol requirements
+
+Data that are not sufficiently complete and/or evaluable
+
+Determination that the primary endpoint has been met
+
+Study may resume once concerns about safety, protocol compliance, and data quality are addressed, and satisfy the IRB.
+
+Confidentiality and Privacy
+
+In the context of conducting human subjects research, privacy refers to a person having control over the extent, timing, and circumstances of sharing oneself (physically, behaviorally, or intellectually) with others and to the right of individuals to limit access to/about themselves from/by others, especially information shared with researchers.  In the context of conducting human subjects research, confidentiality pertains to the treatment of information that a participant has disclosed in a relationship of trust and with the expectation that it will not be divulged to others without permission. This section will describe protections for maintaining confidentiality of participant data, including, but not limited to forms, records and samples and participant privacy. Refer to NIH HRPP Policy 107 for specific policy requirements.
+
+Include procedures for maintaining participant confidentiality, privacy protections, any special data security requirements, and record retention per the sponsor’s requirements. Describe who would have access to records, including the investigator and other study staff, the clinical monitor, funding institutions, representatives of the NIH Institute or Center (IC), representatives from the IRB, and regulatory agencies.  In addition, consider inclusion of the following information:
+
+Describe whether identifiers will be attached to data/samples, or whether data will be coded or unlinked.
+
+If unlinked or coded, and additional information (e.g., age, ethnicity, sex, diagnosis) is available, discuss whether this might make specific individuals or families identifiable.
+
+If research data/samples will be coded, describe how access to the “key” for the code will be limited.  Include description of security measures (password-protected database, locked drawer, other).  List names or positions of persons with access to the key.
+
+Include a discussion of the circumstances in which data or samples will be shared with other researchers.
+
+Include a discussion of plans to publish participant’s family pedigrees, with a description of measures to minimize the chance of identifying specific families.
+
+Describe any situations in which personally identifiable information will be released to third parties.
+
+State who has access to records, data, and samples.  Consider if monitors or auditors outside of study investigators will need access.
+
+Discuss any additional features to protect confidentiality (e.g., use of a certificate of confidentiality).
+
+Provide the protections you will take to protect the privacy of subject. Privacy refers to persons and their interest in controlling the access by others to themselves. For example, explain how you will ensure that when you will conduct procedures, or history and physicals, how you will ensure the privacy of the subject. Examples include ensuring only relevant study or clinical staff are present during the procedure which is conducted in a closed room, etc.
+
+Example text provided as a guide; customization will be required to address all aspects that should be included in this section:
+
+Participant confidentiality and privacy is strictly held in trust by the participating investigators, their staff, and the sponsor(s). This confidentiality is extended to cover testing of biological samples and genetic tests in addition to the clinical information relating to participants. Therefore, the study protocol, documentation, data, and all other information generated will be held in strict confidence.
+
+All research activities will be conducted in as private a setting as possible.
+
+The study monitor, representatives of the Institutional Review Board (IRB), and/or regulatory agencies may inspect all documents and records required to be maintained by the investigator, including but not limited to, medical records (office, clinic, or hospital) and pharmacy records for the participants in this study. The clinical study site will permit access to such records.
+
+The study participant’s contact information will be securely stored at each clinical site for internal use during the study. At the end of the study, all records will continue to be kept in a secure location for as long a period as dictated by the reviewing IRB, Institutional policies, or sponsor requirements.
+
+Study participant research data, which is for purposes of statistical analysis and scientific reporting, will be transmitted to and stored at the <specify name of Data Coordinating Center>. This will not include the participant’s contact or identifying information. Rather, individual participants and their research data will be identified by a unique study identification number. The study data entry and study management systems used by clinical sites and by <specify name of Data Coordinating Center> research staff will be secured and password protected. At the end of the study, all study databases will be de-identified and archived at the <specify name of Data Coordinating Center>.
+
+To further protect the privacy of study participants, a Certificate of Confidentiality has been issued by the National Institutes of Health (NIH).  This certificate protects identifiable research information from forced disclosure. It allows the investigator and others who have access to research records to refuse to disclose identifying information on research participation in any civil, criminal, administrative, legislative, or other proceeding, whether at the federal, state, or local level. By protecting researchers and institutions from being compelled to disclose information that would identify research participants, Certificates of Confidentiality help achieve the research objectives and promote participation in studies by helping assure confidentiality and privacy to participants.
+
+Storage, Use, and Sharing of Specimens and Data for Secondary Research
+
+If data and/or residual specimens will be retained and used by the study team for secondary research (research that is not described in this protocol), and/or be shared for secondary research with other colleagues, please address this as follows below. Ensure that any information included in this section is consistent with the language in the consent form(s) for this study, and in Section 9.3, Confidentiality and Privacy Section 9.8, Data Handling and Record Keeping, and 9.10 Human Data Sharing.  Please note that any use of identifiable specimens and data for secondary research must be described in another IRB-approved protocol and requires new informed consent or approval of a waiver of consent.
+
+Specify if and what materials will be retained in the research record/lab for secondary research, e.g. state all data and specimens will be retained (You do not need to address any data that will be available in the medical record.).
+
+Specify how long specimens or data will be stored, (e.g., indefinitely).
+
+Specify whether you will store these specimens/data in an identifiable (including coded and linked) format and/or if you will anonymize them for your future use.
+
+Specify whether any potential secondary research will or might include whole genome sequencing ((i.e., sequencing of a human germline or somatic specimen with the intent to generate the genome or exome sequence of that specimen).
+
+Specify whether identifiable, coded, and/or anonymized specimens and/or data will be shared with other researchers for secondary research (If you intend to share in all manners, please state that.); and
+
+Specify whether specimens and/or data will be shared in repositories (open access or closed/restricted access (only available to researchers)).
+
+Safety Oversight
+
+Appropriate safety oversight should be used for each trial.  This could include a Safety Monitoring Committee (SMC), Data Safety Monitoring Board (DSMB), and/or an Independent Safety Monitor (ISM). Independent oversight is an important component to ensure human subjects’ protection and data integrity and should be considered for each study. In this section, the type of safety oversight should be clearly identified along with any known responsibilities for the oversight of safety and data integrity in the study. Describe the composition of the SMC or DSMB, frequency of interim data review, final data analysis and method of reviews. A separate DSMB Charter will provide further detail of DSMB membership, responsibilities and administration of the DSMB.   Refer to NIH HRPP Policy 503.  Note that the level of safety oversight should be relative to the risks of the study, and for a simple natural history study, oversight by only the PI is likely adequate.
+
+Example text provided as a guide, customize as needed:
+
+Principal Investigator/Research Team
+
+The clinical research team will meet on a regular basis (approximately weekly) when subjects are being actively enrolled/evaluated on the study to discuss each subject.
+
+All data will be collected in a timely manner and reviewed by the principal investigator or a lead associate investigator. Events meeting requirements for expedited reporting as described in HRPP Policy 801 will be submitted within the required timelines.
+
+The principal investigator will review all data on each subject to ensure safety and data accuracy. The principal investigator will personally conduct or supervise the investigation and provide appropriate delegation of responsibilities to other members of the research staff.
+
+Clinical Monitoring
+
+Site monitoring is conducted to ensure that the rights and well-being of trial participants are protected, that the reported trial data are accurate, complete, and verifiable, and that the conduct of the trial is in compliance with the currently approved protocol, with ICH GCP, and with applicable regulatory requirement(s).
+
+This section should give a general description of how monitoring of the conduct and progress of the clinical investigation will be conducted (i.e., who will conduct the monitoring, the type, frequency, and extent of monitoring, who will be provided reports of monitoring, if independent audits of the monitoring will be conducted).  This section may refer to a separate detailed clinical monitoring plan.
+
+A separate clinical monitoring plan (CMP) should describe in detail who will conduct the monitoring, at what frequency monitoring will be done, at what level of detail monitoring will be performed, and the distribution of monitoring reports.  A CMP ordinarily should focus on preventing or mitigating important and likely risks, identified by a risk assessment, to critical data and processes. The types (e.g., on-site, centralized), frequency (e.g., early, for initial assessment and training versus throughout the study), and extent (e.g., comprehensive (100% data verification) versus targeted or random review of certain data (less than 100% data verification)) of monitoring activities will depend on a range of factors, considered during the risk assessment, including the complexity of the study design, types of study endpoints, clinical complexity of the study population, geography, relative experience of the PI, electronic data capture, relative safety of the study intervention, stage of the study, and quantity of data.
+
+If a separate CMP is not used, include all the details noted above in this section of the protocol.
+
+Example text when a separate CMP is being used is provided as a guide, customize as needed:
+
+Clinical site monitoring is conducted to ensure that the rights and well-being of trial participants are protected, that the reported trial data are accurate, complete, and verifiable, and that the conduct of the trial is in compliance with the currently approved protocol, with International Council for Harmonisation Good Clinical Practice (ICH GCP), and with applicable regulatory requirement(s).
+
+Monitoring for this study will be performed by <insert text>.
+
+<Insert brief description of type of monitoring (e.g., on-site, centralized), frequency (e.g., early, for initial assessment and training versus throughout the study), and extent (e.g., comprehensive (100% data verification) versus targeted or random review of certain data (less than 100% data verification or targeted data verification of endpoint, safety and other key data variables)>.
+
+<Insert text> will be provided copies of monitoring reports within <x> days of visit.
+
+Details of clinical site monitoring are documented in a Clinical Monitoring Plan (CMP). The CMP describes in detail who will conduct the monitoring, at what frequency monitoring will be done, at what level of detail monitoring will be performed, and the distribution of monitoring reports.
+
+Independent audits <will/will not> be conducted by <insert text> to ensure monitoring practices are performed consistently across all participating sites and that monitors are following the CMP.
+
+OR
+
+Example text when a separate CMP is not being used is provided as a guide, customize as needed:
+
+Clinical site monitoring is conducted to ensure that the rights and well-being of trial participants are protected, that the reported trial data are accurate, complete, and verifiable, and that the conduct of the trial is in compliance with the currently approved protocol, with International Council for Harmonisation Good Clinical Practice (ICH GCP), and with applicable regulatory requirement(s).
+
+<Insert detailed description of who will conduct the monitoring, the type of monitoring (e.g., on-site, centralized), frequency (e.g., early, for initial assessment and training versus throughout the study), and extent (e.g., comprehensive (100% data verification) versus targeted or random review of certain data (less than 100% data verification or targeted data verification of endpoint, safety and other key data variables)), and the distribution of monitoring reports>
+
+Independent audits <will/will not> be conducted by <insert text> to ensure monitoring practices are performed consistently across all participating sites.
+
+Quality Assurance and Quality Control
+
+This section will briefly describe the plans for quality management, the system for assessing the quality of processes within a system.  Quality management encompasses quality assurance (QA) and quality control (QC).
+
+Each site, both clinical and laboratory, should have SOPs for quality management that describe:
+
+How data and biological specimens (when applicable) will be evaluated for compliance with the protocol, ethical standards, regulatory compliance, and accuracy in relation to source documents.
+
+The documents to be reviewed (e.g., CRFs, clinic notes, product accountability records, specimen tracking logs, questionnaires, audio or video recordings), who is responsible, and the frequency for reviews.
+
+Who will be responsible for addressing QA issues (e.g., correcting procedures that are not in compliance with protocol) and QC issues (e.g., correcting errors in data entry).
+
+Staff training methods and how such training will be tracked.
+
+If applicable, calibration exercises conducted prior to and during the study to train examiners and maintain acceptable intra- and inter-examiner agreement.
+
+Regular monitoring and an independent audit, if conducted, must be performed according to ICH GCP.  See also Section 9.6, Clinical Monitoring.
+
+Example text provided as a guide, customize as needed:
+
+Each clinical site will perform internal quality management of study conduct, data and biological specimen collection, documentation and completion.  An individualized quality management plan will be developed to describe a site’s quality management.
+
+Quality control (QC) procedures will be implemented beginning with the data entry system and data QC checks that will be run on the database will be generated. Any missing data or data anomalies will be communicated to the site(s) for clarification/resolution.
+
+Following written Standard Operating Procedures (SOPs), the monitors will verify that the clinical trial is conducted and data are generated and biological specimens are collected, documented (recorded), and reported in compliance with the protocol, International Council for Harmonisation Good Clinical Practice (ICH GCP), and applicable regulatory requirements (e.g., Good Laboratory Practices (GLP), Good Manufacturing Practices (GMP)).
+
+The investigational site will provide direct access to all study related sites, source data/documents, and reports for the purpose of monitoring and auditing by the IC, and inspection by local and regulatory authorities.
+
+Data Handling and Record Keeping
+
+ No text is to be entered in this section; rather it should be included under the relevant subheadings below.
+
+Each participating site will maintain appropriate medical and research records for this trial, in compliance with ICH GCP and regulatory and institutional requirements for the protection of confidentiality of participants.  As part of participating in a NIH-sponsored or NIH-affiliated study, each site will permit authorized representatives of the NIH and regulatory agencies to examine (and when permitted by applicable law, to copy) clinical records for the purposes of quality assurance reviews, audits, and evaluation of the study safety, progress, and data validity. Describe in this section who will have access to records.
+
+The following subsections should include a description of the data handling and record keeping for the conduct of the trial.
+
+Data Collection and Management Responsibilities
+
+Provide details regarding the type(s) of data capture that will be used for the study and any relevant data standards or common data elements that are being utilized as a part of the trial. Specify whether it will be paper or electronic, distributed or central, batched or ongoing processing, and any related requirements. Indicate expectations for time for submission of CRFs. Further details should be provided in the MOP or the data management plan, including detailed descriptions of source documentation, CRFs, instructions for completing forms, data handling procedures, and procedures for data monitoring.
+
+Source data are all information, original records of clinical findings, observations, or other activities that have occurred in the study.  Electronic source data are data initially recorded in electronic form. Examples of source data include, but are not limited to, hospital records, clinical and office charts, laboratory notes, memoranda, participants’ memory aids or evaluation checklists, pharmacy dispensing records, audio recordings of counseling sessions, recorded data from automated instruments, copies or transcriptions certified after verification as being accurate and complete, microfiches, photographic negatives, microfilm or magnetic media, x-rays, and participant files and records kept at the pharmacy, at the laboratories, and medico-technical departments involved in the clinical trial. It is acceptable to use CRFs as source documents.  If this is the case, it should be stated in this section what data will be collected on CRFs and what data will be collected from other sources.
+
+It is not acceptable for the CRF to be the only record of a participant’s inclusion in the study.  Study participation should be captured in a participant’s medical record.  This is to ensure that anyone who would access the participant medical record has adequate knowledge that the participant is participating in a clinical trial.
+
+Describe responsibilities for data handling and record keeping as they specifically relate to the clinical site(s), laboratory(ies), and DCC. Information should include the role in data collection, review of data, trial materials, and reports, as well as retention of source documents, files, and records.  Describe coding dictionaries to be used and reconciliation processes (if applicable).
+
+If data are to be generated in one location and transferred to another group, describe the responsibilities of each party.
+
+Investigators should track and record AEs and SAEs in a research database that are related to the research procedures.  Furthermore, if a research intervention or procedure is known to commonly lead to mild adverse events, for example grade 1 or 2 hot flash following administration of IV contrast for a CT scan, it may not be particularly useful to record that AE in the database.
+
+If this is a multi-site protocol, describe the data/specimen collection, access, and sharing plan for each participating site by addressing the following:
+
+Data/specimen collection and access: Indicate the data to be accessed or collected by the participating site(s); describe whether it will be identifiable, de-identified (coded), and/or anonymized.
+
+Data/specimen sharing and storage scope: Describe what will be shared between the NIH, the Coordinating Center (if not the NIH), and the participating site(s) (e.g., aggregate data, individual-level data, specimens, etc.); include what will be stored at the NIH, the Coordinating Center (if not the NIH), and/or the participating site(s).
+
+Data/specimen sharing methods: Indicate how data will be shared between NIH and the participating site.
+
+Example text provided as a guide, customize as needed:
+
+Data collection is the responsibility of the clinical trial staff at the site under the supervision of the site investigator. The investigator is responsible for ensuring the accuracy, completeness, legibility, and timeliness of the data reported.
+
+All source documents should be completed in a neat, legible manner to ensure accurate interpretation of data.
+
+Hardcopies of the study visit worksheets will be provided for use as source document worksheets for recording data for each participant enrolled in the study.  Data recorded in the electronic case report form (eCRF) derived from source documents should be consistent with the data recorded on the source documents.
+
+Clinical data (including adverse events (AEs), concomitant medications, and expected adverse reactions data) and clinical laboratory data will be entered into <specify name of data capture system>, a 21 CFR Part 11-compliant data capture system provided by the <specify Data Coordinating Center>. The data system includes password protection and internal quality checks, such as automatic range checks, to identify data that appear inconsistent, incomplete, or inaccurate. Clinical data will be entered directly from the source documents.
+
+AEs and SAEs that are related to the research procedures described in this protocol will be recorded in <specify name of data capture system>, with the exception of Grade 1 or 2 AEs that are expected.  AEs and SAEs that in the investigators judgment are not at least possibly related to research procedures, for example those that are due to the natural course of the disease, will not be recorded as AEs/SAEs in the research database.
+
+Study Records Retention
+
+Specify the length of time for the investigator to maintain all records pertaining to this study.  The investigator should use the most conservative rule for document retention – i.e., retention should follow the rule that has the longest period.
+
+Indicate whether permission is required (and from whom) prior to destruction of records.
+
+Study intervention records may be described here if not addressed elsewhere in the protocol.
+
+Example text provided as a guide, customize as needed:
+
+Study documents should be retained as per the NIH Intramural Records Retention Schedule. No records will be destroyed without the written consent of the sponsor, if applicable. It is the responsibility of the sponsor to inform the investigator when these documents no longer need to be retained.
+
+Protocol Deviations and Non-Compliance
+
+Plans for detecting, reviewing, and reporting deviations from the protocol and non-compliance should be described. A statement should be included to indicate that deviations are not allowed, unless a statement is included in the investigator agreement. Provisions for approval of deviations can be described.
+
+Example text provided as a guide, customize as needed:
+
+It is the responsibility of the investigator to use continuous vigilance to identify and report deviations and/or non-compliance to the NIH Institutional Review Board as per Policy 801.  All deviations must be addressed in study source documents, reported to <specify NIH Institute or Center (IC)> Program Official and <specify Data Coordinating Center or sponsor>.  The investigator is responsible for knowing and adhering to the reviewing IRB requirements.
+
+NIH Definition of Protocol Deviation
+
+A protocol deviation is any changed, divergence, or departure from the IRB-approved research protocol.
+
+Major deviations: Deviations from the IRB approved protocol that have, or may have the potential to, negatively impact the rights, welfare or safety of the subject, or to substantially negatively impact the scientific integrity or validity of the study.
+
+Minor deviations: Deviations that do not have the potential to negatively impact the rights, safety or welfare of subjects or others, or the scientific integrity or validity of the study.
+
+Human Data Sharing, including Genomic Data Sharing, and Publication
+
+Per the 2023 NIH Data Management and Sharing (DMS) Policy, effective January 25, 2023, all NIH IRP protocols are required to have a Data Management & Sharing (DMS) Plan using the IRP DMS Plan template. For more information about the required elements, please review Writing a Data Management & Sharing Plan. The plan should not be included in the protocol. Plans for sharing genomic data research that is subject to the NIH Genomic Data Sharing (GDS) Policy should now be incorporated as part of the protocol’s overall DMS Plan. For protocols submitted for Initial Scientific Review on or after January 25, 2023, the DMS plan must be submitted into the NIDB (if they are associated with a ZIA) and then as a separate attachment as part of the Scientific Review Process.
+
+Investigators who are required to comply with these policies must ensure that the sharing and future research language in their consent forms is consistent with their DMS Plan.  For more information about complying with the DMS Policy in the IRP, please review 2023 NIH Data Management and Sharing Policy in the Sourcebook.
+
+Those who must comply with the GDS Policy, must ensure that the Institutional Certification(s) are complete and approved by their SD or designee prior to starting the research. Please contact your IC’s GPA for help. For more information about complying with the GDS Policy in the IRP, please review Implementing the GDS Policy in the IRP.
+
+NIH Data Management and Sharing Policy and NIH Genomic Data Sharing Policy Compliance
+
+Below is sample text that can be used in the protocol, as applicable.  Please delete the sections below that are not relevant to your research:
+
+This study will comply with the NIH Data Management and Sharing (DMS) Policy, which applies to all new and ongoing NIH-funded research in the IRP, as of January 25, 2023, that is associated with a ZIA, with a clinical protocol that undergoes scientific review and/or will involve genomic data sharing.
+
+If the study must comply with the NIH Genomic Data Sharing (GDS) Policy include the following language and ensure that the consent form addresses sharing via repository and the applicable genomic summary results language, as applicable:
+
+This study will comply with the NIH Genomic Data Sharing (GDS) Policy, which applies to all new and ongoing NIH IRP-funded research, as of August 31, 2015, that generates large-scale human or non-human genomic data, as well as the use of these data for subsequent research. Large-scale data include genome-wide association studies (GWAS), single nucleotide polymorphisms (SNP) arrays, and genome sequence, transcriptomic, epigenomic, and gene expression data.
+
+NIH Public Access Policy Compliance
+
+Below is sample text that can be used in the protocol, as applicable.  Please delete this text and write N/A if it is not relevant to your protocol:
+
+This study will comply with the NIH Public Access Policy, which ensures that the public has access to the published results of NIH funded research. It requires scientists to submit final peer-reviewed journal manuscripts that arise from NIH funds to the digital archive PubMed Central upon acceptance for publication.
+
+Collaborative Agreements
+
+Only include this section if applicable.
+
+Agreement Type
+
+If the investigational study agent is provided by another party under a Collaborative Agreement [Cooperative Research and Development Agreement (CRADA) or Clinical Trials Agreement (CTA)], with the Pharmaceutical Company or other Institution, or if a Confidential Disclosure Agreement (CDA) is associated with the protocol, this section must be included in the protocol. Information on the investigational study agent’s Agreement status should be described in this section. If no Collaborative Agreement applies to the investigational study agent, this section should be marked as not applicable.
+
+Once the agreements are executed, please include the number identifying the agreement.
+
+For multi-center studies where specimens are being sent between sites for processing, the following language may be used if approved by your IC Tech Transfer Office: Transfers that are associated with correlative studies conducted under an approved protocol: Investigators in the NIH intramural program may participate in multi-site clinical trials (either as a site or as the coordinating center) under which human materials are transferred from the intramural program to another site for correlative studies that are part of the approved protocol. In such a situation, the protocol clearly documents the tests conducted under the correlative studies, and each institution participating in the clinical study is bound by the terms of their Protocol and their obligations under the statutes and regulations. In addition, intramural protocols are cleared by the IC Clinical Director. In such situations, use of an HM-MTA is not necessary for these transfers.
+
+Conflict of Interest Policy
+
+This section should include a description of how the study will manage actual or perceived conflicts of interest.
+
+Example text provided as a guide, customize as needed:
+
+The independence of this study from any actual or perceived influence is critical.  Therefore, any actual conflict of interest of persons who have a role in the design, conduct, analysis, publication, or any aspect of this trial will be disclosed and managed. Furthermore, persons who have a perceived conflict of interest will be required to have such conflicts managed in a way that is appropriate to their participation in the design and conduct of this trial.  The study leadership in conjunction with the <specify NIH Institute or Center (IC)> has established policies and procedures for all study group members to disclose all conflicts of interest and will establish a mechanism for the management of all reported dualities of interest.
+
+ABBREVIATIONS
+
+The list below includes abbreviations utilized in this template.  However, this list should be customized for each protocol (i.e., abbreviations not used should be removed and new abbreviations used should be added to this list).
+
+AE
+
+Adverse Event
+
+ANCOVA
+
+Analysis of Covariance
+
+CFR
+
+Code of Federal Regulations
+
+CLIA
+
+Clinical Laboratory Improvement Amendments
+
+CMP
+
+Clinical Monitoring Plan
+
+CONSORT
+
+Consolidated Standards of Reporting Trials
+
+CRF
+
+Case Report Form
+
+DCC
+
+Data Coordinating Center
+
+DSMB
+
+Data Safety Monitoring Board
+
+EC
+
+Ethics Committee
+
+eCRF
+
+Electronic Case Report Forms
+
+FDA
+
+Food and Drug Administration
+
+GCP
+
+Good Clinical Practice
+
+GLP
+
+Good Laboratory Practices
+
+GMP
+
+Good Manufacturing Practices
+
+GWAS
+
+Genome-Wide Association Studies
+
+ICH
+
+International Council for Harmonisation
+
+ICMJE
+
+International Committee of Medical Journal Editors
+
+IRB
+
+Institutional Review Board
+
+ISM
+
+Independent Safety Monitor
+
+MOP
+
+Manual of Procedures
+
+NIH
+
+National Institutes of Health
+
+NIH IC
+
+NIH Institute or Center
+
+OHRP
+
+Office for Human Research Protections
+
+PI
+
+Principal Investigator
+
+QA
+
+Quality Assurance
+
+QC
+
+Quality Control
+
+SAE
+
+Serious Adverse Event
+
+SAP
+
+Statistical Analysis Plan
+
+SMC
+
+Safety Monitoring Committee
+
+SOA
+
+Schedule of Activities
+
+SOP
+
+Standard Operating Procedure
+
+UP
+
+Unanticipated Problem
+
+US
+
+United States
+
+REFERENCES
+
+Include a list of relevant literature and citations for all publications referenced in the text of the protocol.  Use a consistent, standard, modern format, which might be dependent upon the required format for the anticipated journal for publication (e.g., N Engl J Med, JAMA, etc.).  The preferred format is International Committee of Medical Journal Editors (ICMJE).

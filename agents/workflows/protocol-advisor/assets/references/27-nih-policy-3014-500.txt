@@ -1,0 +1,225 @@
+Name: NIH Policy 3014-500
+Purpose: reference
+Description: NIH requirements for FDA-regulated research involving drugs, biologics, and nutritional products.
+URL: https://policymanual.nih.gov/3014-500
+Selection Rule: (none)
+Token Count: 8608
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 27
+
+---
+
+## 3014-500 - Research Involving Drugs, Biological, and Nutritional Products
+
+**Issuing Office:** OD/OIR/OHSRP **Phone:** [(301) 402-3713](tel:\(301\) 402-3713)
+
+**Approving Official(s):** DDIR
+
+**Release Date:** 4/20/2020 [?](javascript:void\(0\);)  
+**Partial Revision Date:** 8/02/2025 [?](javascript:void\(0\);)  
+**Technical Revision Date:** 11/21/2025 [?](javascript:void\(0\);)
+
+  
+
+Transmittal Notice
+
+1.  **Explanation of Material Transmitted:** This policy describes the responsibilities of NIH Investigators, non-NIH Investigators, NIH Sponsors, and the NIH Institutional Review Board (IRB) when conducting or reviewing human subjects research (HSR) that involves the use of drugs, biological products, or nutritional products (e.g., dietary supplements or foods) that are under the oversight of the Food and Drug Administration (FDA) and the Department of Health and Human Services (HHS). **Partial Revision 6/3/2021:** This revision specifies the requirement for NIH PIs to report any and all FDA Form 483s to the OHSRP Office of Compliance and Training consistent with Policy 3014-801 Reporting Research Events. **Partial Revision 10/30/2023:** This revision adds flexibility at E.1.a.V.ii. for notifying the IRB of updates to the Investigator Brochure (IB) if the changes do not adversely impact the risk-benefit assessment. **Partial Revision 8/02/2025:** This revision clarifies that NIH PIs must report to the IRB when the Sponsor has withdrawn the IND.
+2.  **Filing Instructions:**
+
+-   **Insert:** NIH Manual Chapter 3014-500, dated 04/20/2020, Partial Revision Date: 08/02/2025
+-   **Implementation Date:** 10/26/2020
+
+3.  **PLEASE NOTE:** For information on:
+
+-   The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+-   Content of this chapter, contact the issuing office listed above.
+-   NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL:  [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+1.  Describes the responsibilities of NIH Investigators, non-NIH Investigators, NIH Sponsors, and the NIH Institutional Review Board (IRB) when conducting or reviewing human subjects research (HSR) that involves the use of drugs, biological products, or nutritional products (e.g., dietary supplements or foods) that are under the oversight of the Food and Drug Administration (FDA) and the Department of Health and Human Services (HHS).
+
+### B. Scope
+
+1.  This policy applies to NIH Investigators when conducting FDA-regulated research involving drugs, biological products, or nutritional products (referred to in this policy as “test articles”), whether or not the research is conducted under an Investigational New Drug application (IND1).
+2.  This policy applies to non-NIH Investigators when conducting FDA-regulated research involving the use of drugs, biological products, or nutritional products, when the NIH IRB is the Reviewing IRB.
+3.  This policy applies to Institutes and Centers (ICs) when acting in capacity of Sponsor for drugs, biological products, or nutritional products.
+4.  This policy applies to the NIH IRB as the Reviewing IRB.
+
+ 1Information regarding treatment use and expanded access to investigational drugs, biological products or nutritional products is addressed in _NIH Policy 3014- 502 Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices__._ 
+
+### C. Policy
+
+1.  NIH Investigators and non-NIH Investigators conducting human subjects research involving drugs, biological products, or nutritional products, must comply with all applicable FDA regulations including, but not limited to, 21 CFR parts 50, 56, 312 and 600 as well as those set forth in HHS regulations at 45 CFR 46.
+2.  When reviewing and approving research that involves drugs, biological products, or nutritional products, the NIH IRB must apply the applicable FDA regulations including, but not limited to, 21 CFR parts 50, 56, 312 and 600 as well as those set forth in HHS regulations at 45 CFR 46.
+3.  By NIH policy, NIH investigators may not be Sponsors, effective January 15, 2018. However, investigators may have sponsor responsibilities when required by regulation. (See [E.2.](#E.2) below for more information.)
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below.  The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+**Note**: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized. 
+
+Definitions demarcated with (_**Pre-2018 Common Rule**_) apply to research approved by an IRB (or deemed to be exempt, or for which no Institutional Review Board (IRB) review was required under the regulations) prior to the effective date of the 2018 Common Rule (January 21, 2019).
+
+Definitions demarcated with (_**2018 Common Rule**_) apply to all research approved by an IRB (or deemed to be exempt, or for which no IRB review was required under the regulations) on or after January 21, 2019 and to research transitioned to the 2018 requirements in accordance with NIH Human Research Protection Program (HRPP) policy.
+
+1.  [Adverse event (AE)](https://policymanual.nih.gov/3014-001#A)
+    1.  [Adverse Event (In the context of FDA-required reporting)](https://policymanual.nih.gov/3014-001#A)
+2.  [Biological product](https://policymanual.nih.gov/3014-001#B)
+3.  [Clinical Investigation](https://policymanual.nih.gov/3014-001#C)
+    1.  Clinical Investigation (involving drugs)
+4.  [Color Additive](https://policymanual.nih.gov/3014-001#C)        
+5.  [Dietary Supplement](https://policymanual.nih.gov/3014-001#D)
+6.  [Drug](https://policymanual.nih.gov/3014-001#D)
+7.  [Human Subject (2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#H)
+
+(2)  Intervention
+
+(3)   Interaction
+
+(4)   Private Information
+
+(5)   Identifiable private information
+
+(6)   Identifiable biospecimen
+
+8.  [Human Subject (Pre-2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#H)
+    1.  Intervention
+    2.  Private information
+9.  [Human Subject (FDA Regulations)](https://policymanual.nih.gov/3014-001#H)
+10.  [Investigational New Drug](https://policymanual.nih.gov/3014-001#I)
+11.  [IND (Application)](https://policymanual.nih.gov/3014-001#I)
+12.  [Investigator (for research involving investigational drugs)](https://policymanual.nih.gov/3014-001#I)
+13.  [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+14.  [Non-Compliance](https://policymanual.nih.gov/3014-001#N)
+     1.  Serious non-compliance
+     2.  Continuing non-compliance
+15.  [Protocol Deviation (PD)](https://policymanual.nih.gov/3014-001#P)
+     1.  Major Deviations
+     2.  Minor Deviations
+16.  [Research (Clinical Investigation) (for FDA-regulated Research)](https://policymanual.nih.gov/3014-001#R)
+17.  [Serious adverse event (SAE) or Serious Suspected Adverse Reaction (SUSAR)](https://policymanual.nih.gov/3014-001#S)
+18.  [Sponsor (for drugs and biologics)](https://policymanual.nih.gov/3014-001#S)
+19.  [Sponsor-Investigator (for drugs and biologics)](https://policymanual.nih.gov/3014-001#S)
+20.  [Subject (FDA- for study of investigational drugs)](https://policymanual.nih.gov/3014-001#S)
+21.  [Test Article (for FDA regulated research)](https://policymanual.nih.gov/3014-001#T)
+22.  [Unanticipated Problem Involving Risks to Subjects or Others (UP)](https://policymanual.nih.gov/3014-001#U)
+
+### E. Responsibilities and Requirements
+
+1.  **Principal Investigator Responsibilities:**
+
+NIH Principal Investigators (PIs) are responsible for:
+
+1.  When the research involves the clinical investigation of a test article, providing documentation in the protocol whether the test article(s) for use is under an IND or provide written justification for why the test article(s) is exempt from the requirement for an IND. (21 CFR 312.2) (See FDA guidance, _Investigational New Drug Applications (INDs) – Determining Whether Human Research Studies Can Be Conducted Without an IND,_ September 2013.)
+    1.  If the Office of IRB Operations (IRBO) does not concur with the investigator that the test article is exempt, the IRBO may require the investigator to submit to the FDA for a formal determination prior to further review of the study.  The FDA determination as to whether the test article is exempt or requires an IND is final.
+    2.  If the FDA has indicated the test article is exempt from the IND regulations, documentation from FDA confirming this determination should be kept in the regulatory binder and provided to the IRB upon submission for initial review or upon request.
+    3.  If the use of the test article is not exempt from the requirement for an IND, the IRBO will not further review the study and research may not begin until a valid IND is in effect.  The PI is responsible for providing documentation to the IRB confirming that an IND is in effect.  A valid IND will be considered to be in effect:
+        1.  Thirty days after the FDA receives the IND application, unless the FDA notifies the sponsor that the investigations described in the IND are subject to a clinical hold; (21 CFR parts 312.40 and 312.42); OR
+        2.  An earlier notification by FDA that the clinical investigations in the IND may begin.
+    4.  Investigators should provide documentation from the FDA verifying the IND number and indicating the study is safe to proceed (e.g., the FDA letter assigning the IND number and safe to proceed letter).  If the safe to proceed letter has not been received, the IRB will accept documentation from the Sponsor indicating the FDA’s confirmation that the study may proceed.
+    5.  The PI must include either the Package insert (in the case of an approved drug) or Investigator Brochure (IB) if one exists, with protocol submission to the NIH IRB.
+        1.  If no IB exists for an investigational drug, the investigator must include in the protocol all relevant preclinical and clinical safety and efficacy data to support the proposed use of the test article in the research.
+        2.  During the course of the research, updated IBs must be provided to the IRB within 7 days of receipt if the changes to the IB reflect, in the investigator's judgment, an increase in risks to subjects or decrease in the acceptability of risks. If the changes do not adversely impact risk-benefit, submission must be the earlier of either 60 days from receipt or at the next modification or continuing review.
+2.  Conducting the investigation according to the signed investigator statement provided by the Sponsor (for studies being conducted under an IND), the investigational plan, IRB approved protocol, and applicable regulations.
+3.  Obtaining informed consent from each human subject to whom the drug is administered consistent with 21 CFR part 50 Subpart B, except as provided in 21 CFR 50.22, 50.23 or 50.24.
+4.  Ensuring control of drugs under investigation, including documentation, maintenance, and tracking of the test article. (21 CFR 312.61)
+5.  Ensuring that the protocol has a maintenance and tracking plan for the test article that includes, but is not limited to, the receipt, storage, handling, and dispensing of the test article. (21 CFR 312.62(a))
+    1.  Some or all of the duties associated with this responsibility may be delegated to other appropriate individuals. For example, at the NIH CC, the CC Pharmacy Department is responsible for the receipt, storage, dispensing and disposition of all investigational drugs
+6.  Ensuring safety reporting requirements are met. (21 CFR 312.64(b))
+    1.  Principal Investigators are required to promptly report serious adverse events (SAEs) to sponsors. (21 CFR 312.64(b))
+    2.  The PI must report Adverse Events (AEs), Serious Adverse Events (SAEs), Deaths, Unanticipated Problems (UPs), protocol deviations, and noncompliance consistent with the sponsor reporting requirements in the protocol, NIH Institute/Center (IC) policy, and to the IRB per _Policy 3014-801 Reporting Research Events._
+    3.  The PI must report to the IRB when notified by the Sponsor that the IND has been withdrawn consistent with _Policy 3014-801 Reporting Research Events_.
+7.  In addition to safety reporting (see _E.1.f._ above), submitting required reports to the Sponsor (e.g., annual reports, final reports, and financial disclosure reports). (21 CFR 312.64)
+8.  Ensuring recordkeeping and record retention requirements are met. (21 CFR 312.57 and _NIH Manual Chapter 1743- Managing Federal Records)_
+    1.  The PI must prepare adequate and accurate case histories, records of subjects’ conditions before, during and after the clinical investigation, progress notes that record observations and other data about each subject and assure that research data is verifiable in the source documents. (21 CFR 312.62)
+    2.  The PI must follow record retention requirements such that at the closure of the trial, the Investigators and Sponsors must retain the records and reports required for the longest of the following intervals: 1) at least 3 years as required by the _NIH Manual Chapter 1743-Managing Federal Records;_  2) two years after a marketing application is approved for the drug or, 3) if an application is not approved for the drug, records must be maintained for 2 years after shipment and delivery of the drug for investigational use is discontinued and FDA has been notified. (21 CFR parts 312.57(c) and (d), and 312.62(c))
+    3.  When a subject withdraws from a study conducted under an IND, the data collected on the subject to the point of withdrawal remains part of the study database and may not be removed.  The investigator may not continue to access the subject’s medical record or other confidential records for additional research purposes unless the subject has provided consent to do so.
+9.  If the PI terminates or suspends a trial without prior agreement of the sponsor, the PI must inform the IRB and the Sponsor promptly.  Communication from the PI to the IRB and the Sponsor will include a detailed written explanation of the reasons for termination or suspension.
+10.  If the Sponsor terminates or suspends a trial, the PI must promptly inform the IRB and provide the Board with a detailed written explanation of the termination or suspension.
+11.  If the Reviewing IRB terminates or suspends its approval of a trial, the PI will promptly inform the Sponsor.
+     1.  When a trial is terminated, the PI will work with the IRB to create a plan to promptly inform the study subjects about suspension/termination and should ensure appropriate therapy and follow-up for subjects. If the reason for termination/suspension could be relevant for former study subjects, the PI and the IRB will consider whether former subjects should also be notified.
+
+2. **Sponsor Responsibilities (when the Sponsor is the NIH Institute/Center (IC) or a NIH employee):**
+
+1.  The Sponsor is responsible for:
+    1.  Submitting an IND to the FDA for each clinical investigation, unless exempt from IND requirements as defined in 21 CFR 312.2(a). (21 CFR 312.20)
+    2.  Selecting qualified investigators. (21 CFR 312.53)
+    3.  Providing investigators with the information they need to conduct an investigation properly. (21 CFR 312.50)
+    4.  Maintaining adequate records showing the receipt, shipment, or other disposition of the investigational drug including disposition of unused supply of investigational drug. (21 CFR 312.62)
+    5.  Ensuring proper monitoring of the investigation(s). (21 CFR 312.50)
+    6.  Ensuring that the investigation(s) is conducted in accordance with the general investigational plan and protocols contained in the IND. (21 CFR 312.50)
+    7.  Notifying FDA and all participating investigators (i.e., all investigators to whom the sponsor is providing drug under its INDs or under any investigator's IND) in an IND safety report of potential serious risks, from clinical trials or any other source, as soon as possible, but in no case later than 15 calendar days after the sponsor determines that the information qualifies for reporting. (21 CFR 312.32)
+    8.  Maintaining an effective IND with respect to the investigations, including maintaining the Sponsor’s Regulatory binder.
+    9.  Submitting an annual report to the FDA within 60 days of the anniversary date that the IND went into effect. (21 CFR 312.33)
+    10.  Prompt reporting to the FDA and to investigators when an IND is withdrawn. (21 CFR 312.38)
+
+3\. **Sponsor-Investigator:**
+
+1.  By NIH policy, INDs shall be held by the IC, rather than by the NIH PI on the clinical protocol.
+2.  Investigators may serve as the Sponsor for expanded access protocols. (See _Policy 3014-502 Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles))._
+    1.  When a PI holds the IND (Sponsor-Investigator), s/he assumes all responsibilities of both the Investigator (see [E.1.](#E.1) above) as well as the Sponsor (see [E.2.](#E.2) above). (See 21 CFR 312 Subpart E and 21 CFR 312 Subpart I.)
+
+4\. **IRB Responsibilities:**
+
+1.  When the NIH IRB is the Reviewing IRB, it is responsible for the following:
+    1.  In its review and approval of FDA-regulated research the NIH IRB must apply the applicable FDA regulations including, but not limited to, 21 CFR parts 50, 56, 312 and 600 as well as those set forth in HHS regulations at 45 CFR 46.  (_See Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research_ and _Policy 3014-301 Informed Consent.)_
+2.  If the IRB does not have the necessary expertise in its membership to review the specific research activity, additional consultation will be sought consistent with requirements specified in _Policy 3014-201_ _IRB Membership and Composition_.
+3.  When a PI indicates that the use of the test article is exempt from IND requirements, the IRB Analyst, IRBO Director, Executive IRB Chair or designee, will confirm that the Investigator’s justification meets the criteria for exemption. If it is determined that the proposed use of the study drug does not meet the criteria for exemption from the IND requirements, the PI will be required to submit an IND application to the FDA or ask the FDA for a formal determination as to whether an IND is needed. The FDA determination is final.
+4.  The IRBO will not further process the submitted IRB application until a determination has been reached by the FDA, or 30 days has elapsed since submission of the IND application to the FDA and no clinical hold has been placed on the clinical investigation.
+5.  The IRB will confirm that the test article has an IND issued by the FDA, or the use of the test article in the study meets all of the requirements for exemption from the requirement for an IND as defined in 21 CFR 312.2(a). (Note: Regardless of the method of confirming the issuance of an IND, an IB may not be used to validate an IND.)
+6.  For expedited review, the NIH IRB must continue to comply with both the most current FDA regulation at 21 CFR 56, and as appropriate, the HHS regulations at 45 CFR 46. (See _Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research_)
+7.  For continuing review, the NIH IRB must continue to comply with both the most current FDA regulations at 21 CFR 56, and as appropriate, the HHS regulations at 45 CFR 46. (See _Policy 3014-204 Levels of IRB_ Review _and Criteria for IRB Review of Research_)
+8.  The IRB will review proposed advertising to ensure that advertisements do none of the following:
+    1.  Make claims, either explicitly or implicitly, that the drug, biologic or nutritional products is safe or effective for the purposes under investigation, or that the test article is known to be equivalent or superior to any other drug, biologic or nutritional products;
+    2.  Use terms such as "new treatment," "new medication" or "new drug" without explaining that the test article is investigational;
+    3.  Allow “compensation" for participation in a trial offered by a sponsor to include a coupon good for a discount on the purchase price of the product once it has been approved for marketing.
+
+i. When the Reviewing IRB suspends or terminates a study, the IRB will report its actions to the investigator, NIH Institutional officials, and OHSRP. OHSRP will report termination or suspension of a trial to the FDA and OHRP consistent with _Policy 3014-801 Reporting Research Events._
+
+5. **Responsibilities related to FDA Inspections include the following;**
+
+1.  Investigators, Sponsors, IRBs, and other FDA regulated entities (e.g., the NIH Radioactive Drug Research Committee, Pharmacy, etc.) must make records available for FDA inspection. (21 CFR parts 56.115(b) and 312.68).
+    1.  NIH researchers who are informed of an FDA inspection must immediately notify their Clinical Director, Clinical Center (CC) CEO, ORSC, and OHSRP.
+2.  Researchers must cooperate with guidance provided by the Clinical Director, CC CEO, OHSRP and ORSC staff with respect to such inspections, including allowing appropriate NIH personnel to participate in the inspection.
+3.  The PI must provide to the OHSRP office of Compliance and Training a copy of any and all FDA Form 483 issued regarding an NIH research study, consistent with _Policy 3014-801 Reporting Research Events._
+4.  Any written responses to the FDA submitted by NIH researchers must first be approved by the Clinical Director, CC CEO, ORSC, and OHSRP. The appropriate party must provide a draft response to the Clinical Director, CC CEO, ORSC, and OHSRP at least four business days before it must be submitted to the FDA.
+5.  If there is disagreement between a researcher and a Clinical Director, CC CEO, ORSC representative, or OHSRP about a response to the FDA, the Deputy Director for Intramural Research (DDIR) will make the decision about the appropriate response.
+6.  Any written responses to the FDA submitted by an NIH IRB in response to an FDA inspection must first be approved by the Director, OHSRP with input from ORSC, as needed. The IRB must provide a draft response to the ORSC and OHSRP Director at least four business days before it must be submitted to the FDA.
+
+### F. References
+
+1.  Federal Regulations
+
+HHS: [45 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)
+
+FDA: 21 CFR parts [50](https://www.ecfr.gov/cgi-bin/text-idx?SID=2fd22034d7039b800a72780a6865d4f1&mc=true&tpl=/ecfrbrowse/Title21/21cfr50_main_02.tpl), [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=2fd22034d7039b800a72780a6865d4f1&mc=true&tpl=/ecfrbrowse/Title21/21cfr56_main_02.tpl), [312](https://www.ecfr.gov/cgi-bin/text-idx?SID=2fd22034d7039b800a72780a6865d4f1&mc=true&tpl=/ecfrbrowse/Title21/21cfr56_main_02.tpl) (including Subparts E and I), [320](https://www.ecfr.gov/cgi-bin/text-idx?SID=721325aa19db01de13cd5409765764fb&mc=true&node=pt21.5.320&rgn=div5), and [600](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-F/part-600)
+
+2.  NIH Policies
+
+[Policy 3014-201 IRB Membership and Composition](https://policymanual.nih.gov/3014-201)
+
+[Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research](https://policymanual.nih.gov/3014-204)
+
+[Policy 3014-301 Informed Consent](https://policymanual.nih.gov/3014-301)
+
+[Policy 3014-502 Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles)](https://policymanual.nih.gov/3014-502)
+
+[Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)
+
+[Policy 3014-802 Non-compliance in Human Subjects Research](https://policymanual.nih.gov/3014-802)
+
+[NIH Manual Chapter 1743-Managing Federal Records](https://policymanual.nih.gov/1743)
+
+3.  Guidance and Tools
+
+[Guidance Document - Investigational New Drug Applications – Determining Whether Human Research Studies Can Be Conducted Without an IND (September 2013)](https://www.fda.gov/downloads/Drugs/GuidanceComplianceRegulatoryInformation/Guidances/UCM229175.pdf)
+
+[Guidance for IRBs, Clinical Investigators and Sponsors - IRB Responsibilities for Reviewing the Qualifications of Investigators, Adequacy of Research Sites, and the Determination of Whether an IND/IDE is Needed (August 2013)](https://www.fda.gov/downloads/RegulatoryInformation/Guidances/UCM328855.pdf)
+
+[Guidance Document - Investigator Responsibilities — Protecting the Rights, Safety, and Welfare of Study Subjects (October 2009)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/investigator-responsibilities-protecting-rights-safety-and-welfare-study-subjects)
+
+[Guidance for Sponsors, Clinical Investigators, and IRBs - Data Retention When Subjects Withdraw from FDA-Regulated Clinical Trials (October 2008)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/data-retention-when-subjects-withdraw-fda-regulated-clinical-trials)
+
+[Information for Sponsor-Investigators Submitting Investigational New Drug Applications (INDs) (Content current as of: 6/27/2017)](https://www.fda.gov/Drugs/DevelopmentApprovalProcess/HowDrugsareDevelopedandApproved/ApprovalApplications/InvestigationalNewDrugINDApplication/ucm071098.htm)

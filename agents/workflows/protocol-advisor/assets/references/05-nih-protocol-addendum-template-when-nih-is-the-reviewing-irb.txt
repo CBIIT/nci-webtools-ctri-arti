@@ -1,0 +1,381 @@
+Name: NIH Protocol Addendum Template When NIH is the Reviewing IRB
+Purpose: addendum
+Description: NIH addendum template used when NIH is the reviewing IRB.
+URL: https://irbo.nih.gov/documents/322/NIH_Protocol_Addendum_Template_When_NIH_is_the_Reviewing_IRB.docx
+Selection Rule: footer_contains="NIH Addendum Template v2 02.04.2025" OR upper_titles_contains_all=["RISK/BENEFIT ASSESSMENT"]
+Token Count: 13417
+Source CSV: protocol-advisor-source-content-v10.csv
+Row: 5
+
+---
+
+header:
+footer: NIH Addendum Template v2 02.04.2025
+
+NIH PROTOCOL ADDENDUM TEMPLATE WHEN NIH IS THE REVIEWING IRB
+
+An NIH Protocol Addendum is required when an NIH Investigator is not the author of the study and the Sponsor protocol describes activities that will not be done at the NIH (e.g., billing insurance or obtaining HIPAA authorization) and does not include relevant information about NIH policies or how the protocol will be implemented at the NIH site. Describe in the addendum relevant NIH local context information and anything that will be done differently at the NIH. The content of the NIH Addendum is therefore determined by the content of the Sponsor protocol. This template contains suggested information to include if not already included in the Sponsor protocol.
+
+ Note: This template is not an exhaustive list of what is found in an NIH Protocol Addendum.  Contact the NIH Reliance and sIRB team at mailto:nih-reliance-sirb@nih.gov for more guidance.
+
+Style Guidelines:
+
+12-point font (Times, Times New Roman or Arial) and single line spacing for the protocol document. The decimal system (i.e. 1.0; 1.1; etc.) should be used to subdivide the various sections. Margins should be 1 inch on all sides.  This document is already formatted using headings in the styles.
+
+Duplication of information in the protocol document should be avoided. Please reference appropriate sections where the detailed information is located in the primary protocol.
+
+Instruction/explanatory text is indicated by italics and should be deleted prior to finalizing the protocol. This text provides information on the content that should be included in the protocol.
+
+Example text is included to further aid in protocol writing and should be modified to suit the intervention, behavioral or social manipulation study, design, and conduct of the planned clinical trial, or it may be deleted if it is not relevant. Example text is indicated in [regular font].  Within example text, a need for insertion of specific information is notated by <angle brackets>.
+
+Version control is important to track protocol development, revisions, and modifications. It is also necessary to ensure that the most recently updated and IRB approved version of a protocol is used by all staff conducting the study. With each revision, the version date located in the header of each page should be updated.
+
+The addendum should be uploaded separately in PROTECT as a WORD document.
+
+Abbreviated Title: (not to exceed 30 characters)
+
+NIH IRB #: IRB number that is in PROTECT.
+
+Version Date: (updated with all subsequent modifications)
+
+The date that all editing of the document was completed, or date editing began—be sure it is consistent throughout the protocol document.
+
+Title: (not to exceed 250 characters)
+
+NIH ADDENDUM
+
+RISK/BENEFIT ASSESSMENT
+
+Known Potential Risks
+
+Include a discussion of known potential risks from either clinical or nonclinical studies.  If a package insert or device labeling from a licensed or approved product is available, it should be used as the primary source of risk information. If the product is investigational, the Investigator’s Brochure (IB) should be the primary source of the risk information. In addition, relevant published literature can also provide relevant risk information. If the risk profile cannot be described from the package insert, device labeling, or the IB, the risk information discussion will result from published literature and should be included and referenced appropriately.
+
+Potential risks and discomforts must be minimized to the greatest extent possible by using procedures such as appropriate training of personnel, monitoring, withdrawal of the subject upon evidence of difficulty or adverse event; and referral for treatment, counseling or other necessary follow-up.
+
+Consider not only immediate risks, but also delayed or long-term risks
+
+Consider physical, reproductive, psychological, social, legal, and economic risks as well as community or group harms (e.g., breach of confidentiality is a common risk in social and behavioral research). If applicable, describe risks to others who are not subjects (e.g., group harms, harms to society).
+
+If risk is related to proposed procedures included in the protocol, describe alternative procedures that have been considered and explain why alternative procedures are not included
+
+Provide a description of alternative courses of action which are available should the subject elect not to participate in the study.  If there are no alternatives available to the subject, this should be stated.
+
+Known Potential Benefits
+
+Include a discussion of known potential benefits from either clinical or nonclinical studies.  If a package insert or device labeling from a licensed or approved product is available, it should be used as the primary source of potential benefit information. If the product is investigational, the IB should be the primary source of the potential benefit information. In addition, relevant published literature can also provide potentially relevant benefit information. If the potential benefit cannot be described from the package insert, device labeling, or the IB, the potential benefit information discussion will result from published literature and should be included and referenced appropriately.
+
+Describe any physical, psychological, social, or any other potential benefits to individual participants or society in general, as a result of participating in the study, addressing each of the following:
+
+Immediate potential benefits
+
+Long-range potential benefits
+
+Note that payment to participants, whether as an inducement to participate or as compensation for time and inconvenience, is not considered a “benefit.” Provision of incidental care is also not to be considered a benefit.
+
+Assessment of Potential Risks and Benefits
+
+Include an assessment of known potential risks and benefits, addressing each of the following:
+
+Rationale for the necessity of exposing participants to risks and a summary of the ways that risks to participants were minimized in the study design
+
+Justification as to why the value of the information to be gained outweighs the risks of participation in the study
+
+If you are enrolling more than one population (e.g. affected participants and healthy participants), be sure to address the above for each cohort.
+
+REGULATORY AND OPERATIONAL CONSIDERATIONS
+
+Informed Consent Process
+
+No text is to be entered in this section; rather it should be included under the relevant subheadings below.
+
+The following subsections should describe the procedures at the NIH site for obtaining and documenting informed consent of study participants.  State if a separate screening consent will be used.  If a separate screening consent will not be used, the study consent must be signed prior to conducting study screening procedures.
+
+In obtaining and documenting informed consent, the investigator must comply with applicable regulatory requirements (e.g., 45 CFR Part 46, 21 CFR Part 50, 21 CFR Part 56) and should adhere to ICH GCP. Prior to the beginning of the trial, the investigator should have the IRB’s written approval for the protocol and the written informed consent form(s) and any other written information to be provided to the participants.
+
+Consent/Assent Procedures and Documentation
+
+Provide a detailed description of the consent process, including the following, as applicable:
+
+Where and when will consent be obtained?
+
+Describe how the privacy of subjects will be protected during the informed consent procedure, (e.g., informed consent will be conducted in a quiet room with a closed door with only relevant parties present, to protect the privacy of the subject).
+
+Who is authorized to obtain consent?
+
+How will coercion or undue influence be minimized?
+
+Will consent be done in person, or by telephone/videoconference?  Describe the process.
+
+Will the consent be provided electronically or in hard copy?
+
+Will the consent be provided in advance of your discussion?
+
+How much time will the potential subject be provided to consider their participation?
+
+Who will answer questions from the participant?
+
+Will the potential participant be provided the opportunity to consult with others (family, friends, private physician etc.) prior to providing consent?
+
+If you are using an electronic platform to document signatures, you must describe how you will document consent via the electronic platform, specifically:
+
+Name the electronic platform you plan to use (e.g. iMed, DocuSign, Adobe, etc.), and state if it is 21CFR Part 11 compliant.
+
+Describe how the signature of both the subject and investigator will be obtained (paint the picture of the process: will both be looking at the same screen? Is the consent signature obtained synchronously or asynchronously?)
+
+Describe if you plan to use a true electronic signature or whether signature will be obtained using a stylus/mouse/finger
+
+If you are obtaining a true electronic signature for this protocol, describe the process of how you will verify the identity of the subject prior to obtaining consent.
+
+Requests for Waiving Consent/Assent or Altering Elements of Informed Consent (or Parent Permission) must be obtained in advance, and address the following (refer to NIH HRPP Policy 301 and note that this is only allowed for minimal risk studies):
+
+Describe why the research could not practicably be carried out without the requested waiver or alteration (e.g. some subjects are lost to follow up, all subjects are needed or it would bias the results)
+
+Describe why the research could not practicably be carried out without using subject identifiers
+
+Describe how the waiver won’t adversely affect the rights and welfare of subjects.
+
+Describe how and when subjects will be provided additional information after participation, if appropriate.
+
+Requests for Waiving Documentation of Consent (or Parent Permission) must address at least one the following (refer to NIH HRPP Policy 301):
+
+Validate that the only record linking the subject and the research would be the consent document and the principal risk would be potential harm resulting from a breach of confidentiality (i.e. when you are not otherwise collecting identifiers as part of the protocol), OR
+
+Validate that the research is no greater than minimal risk and only involves procedures for which written consent is normally not required outside the research context (Note that this is the only justification allowed for FDA regulated research), OR
+
+Validate that the subjects are members of a distinct cultural group/community in which signing forms is not the norm; the research presents no more than minimal risk of harm to subjects; and there is a plan in place for documenting that informed consent was obtained.
+
+Consent Process for Minors/Children (under 18 years of age):
+
+Describe how parental permission will be obtained.
+
+If applicable, describe the process for obtaining assent of the subjects.
+
+Written assent should be obtained whenever possible.
+
+Note that in situations where there is joint custody of a child, both parents must provide permission and sign the consent. If only one parent can be present at NIH, the other parent’s permission can be obtained by telephone via the procedure you describe.
+
+Address consent processes for children who become adults or emancipated during a study.
+
+Consent Process for Adults who Lack Decision-making Capacity to Consent to Research Participation:
+
+Describe the process to determine whether an individual is capable of consent.
+
+If the individual is not capable of giving consent to participate, indicate who will be authorized to give consent (e.g., court appointed guardian, the individual appointed in the participant’s Durable Power of Attorney (DPA) for health care, spouse, adult child etc.) As a reminder, if there is a guardianship order, consult OGC as early as feasible, to ensure that the guardian is authorized to provide consent under the laws of the state that issued the order.
+
+If participant is not able to provide consent, indicate that they can be assessed for their ability to understand the DPA process. If the subject does not have a court appointed guardian and is not capable of executing a DPA for health care, be sure to review NIH HRPP Policy 403 for the updated hierarchy for who may serve as a LAR at an NIH site.
+
+Consider consultation with the Clinical Center Human Subjects Protection Unit (HSPU) or the Ability to Consent Assessment Team (ACAT) teams.
+
+If subjects may lose decision-making capacity during the study, describe the process for the LAR to be identified, when this will be done, how the LAR will be notified, and how the LAR will be involved in the study.  Also describe how decision-making ability will be monitored over the course of the study.
+
+This section should be consistent with the Strategies for Recruitment and Retention in the primary protocol when describing consent plans and special considerations for children or other vulnerable participants.
+
+For assent of children, if applicable
+
+Children (those individuals under the age of consent in the jurisdictions in which they reside, usually age 18) are generally not legally permitted to give consent, but depending on their age, they may have the ability to give assent (“assent” means a child’s affirmative agreement to participate in research). Every protocol involving children must include a discussion of how assent will be obtained for the particular study including who will determine what type of assent (verbal, written) will be obtained for each child. If appropriate, age guidelines should be included for the type of assent to be obtained. Written assent will be documented by the child themselves when they sign the assent document.
+
+Sample language for verbal and written assent:
+
+Where deemed appropriate by the clinician and the child’s parent(s) or guardian, the child will also be included in all discussions about the trial and age-appropriate language will be used to describe the procedures and tests involved in this study, along with the risks, discomforts and benefits of participation. Verbal assent will be obtained as appropriate for children ages [fill in the blank]. Children under the age of 18, but who are age [fill in the blank] or older will be asked to sign an age-appropriate assent form. Children under the age of [fill in the blank] will not be required to provide assent as they typically do not have the ability to fully understand the nature of research. The consent/assent process will be documented in the child’s medical record, including the assessment of the child’s ability to provide assent (verbal versus written) as applicable. All children will be contacted after they have reached the age of 18 to determine whether they wish to continue on the trial and informed consent will be obtained from them at that time.
+
+Sample language for verbal assent only (Investigator should provide a justification for why written assent will not be obtained):
+
+Where deemed appropriate by the clinician and the child’s parent(s) or guardian, the child will also be included in all discussions about the trial and age-appropriate language will be used to describe the procedures and tests involved in this study, along with the risks, discomforts and benefits of participation. Written assent will not be obtained from children as [provide justification here]. Verbal assent will be obtained as appropriate for children ages [fill in the blank].  Children under the age of [fill in the blank] will not be required to provide assent as they typically do not have the ability to understand the nature of research. The consent/assent process will be documented in the child’s medical record, including the assessment of the child’s ability to provide assent (verbal versus written) as applicable. All children will be contacted after they have reached the age of 18 to determine whether they wish to continue on the trial and informed consent will be obtained from them at that time.
+
+Sample language for waiver of assent:
+
+If assent will not be obtained, the protocol must provide justification for no assent procedures. The Code of Federal Regulations allow for waiver of assent only if the capacity of some or all of the children is so limited that they cannot reasonably be assented or if the intervention or procedures involved in the research holds out the prospect of direct benefit to the health or well-being of the children and is available on the context of research. However, the child should be included in the discussions to the degree they are capable of understanding.
+
+The investigator should specify if the waiver is requested for some or all of the children enrolled in the research.
+
+Sample language 1:
+
+A waiver of assent is requested for [specify some or all] minors enrolled in this research as the minors cannot reasonably be expected to have the ability to provide meaningful assent due to their underlying condition, age, maturity or psychological state.
+
+Sample language 2:
+
+A waiver of assent is requested for [specify some or all] minors enrolled in this research as the research intervention has the prospect of direct benefit to the participant [describe what the benefit is] and the intervention is available only in the context of the research.
+
+Consent for minors when they reach the age of majority
+
+If a minor becomes an adult while on study and lacks decision-making capacity to consent to research, the requirements of NIH HRPP Policy 403 come into effect. Study teams should plan for this circumstance, and if the subject can remain on study, the protocol should also address how this process will be managed.
+
+Sample language for waiver of consent for minors who reach the age of majority:
+
+When a pediatric subject reaches the age of majority, continued participation (including ongoing interactions with the subject or continued analysis of identifiable data) will require that consent be obtained from the now adult with the standard protocol consent document to ensure legally effective informed consent has been obtained.
+
+When we have no ongoing interactions with subjects, including if subjects are lost to follow up or withdrawn from the study, we request a waiver of informed consent to continue to use data and/or specimens obtained from those individuals.
+
+Requirements for a Waiver of Consent consistent with 45 CFR 46.116(f)(3):
+
+The research involves no more than minimal risk to the subjects.
+
+Analysis of samples and data from this study involves no additional risks to subjects.
+
+The research could not practicably be carried out without the waiver or alteration.
+
+Considering the length of time between the minor’s last contact with the research team and their age of majority, it will likely be very difficult to locate them again. A significant reduction in the number of samples analyzed is likely to impact the quality of the research.
+
+As the research involves using identifiable private information or identifiable biospecimens, the research could not practicably be carried out without using such information or biospecimens in an identifiable format.
+
+Though the purpose of future studies cannot yet be known, they often involve the correlation of clinical outcomes and clinical interventions with laboratory studies.  Such information would be unavailable if access to medical record numbers was unavailable.
+
+The waiver or alteration will not adversely affect the rights and welfare of the subjects.
+
+Retention of these samples or data does not affect the welfare of subjects.
+
+Whenever appropriate, the subjects will be provided with additional pertinent information after participation.
+
+We only request a waiver of consent for those subjects who have been lost to follow-up or who have been taken off study prior to reaching the age of majority.
+
+Considerations for Consent of NIH staff, or family members of study team members
+
+Example language:
+
+If the potential participant is a member of the research team where this research is taking place, procedures outlined in NIH HRPP Policy 404 will be followed. Consent for NIH staff will be obtained as detailed above with the following additional protections:
+
+Consent from staff members will be obtained by an individual independent of the staff member’s team whenever possible.  Otherwise, the consent procedure will be independently monitored by the CC Department of Bioethics Consultation Service to minimize the risk of undue pressure on the staff member.
+
+Consent of Adults who lack, or lose, decision-making capacity to consent to research participation
+
+Example language is provided below. Tailor accordingly if circumstances differ. Please note that in general subjects who lack the capacity to consent to research may only be enrolled/retained if there is a prospect of direct benefit, or if the risk profile is no more than minimal or a minor increase over minimal risk. (Refer to NIH HRPP Policy 403).
+
+Be sure to include your plan for assessing the initial and ongoing capacity of the subjects and how you will identify the LAR, and the process you will have for obtaining initial consent from the LAR and/or reconsent from the LAR.
+
+The study team may contact the NIH Ability to Consent Assessment Team(ACAT) for evaluation as needed for the following: an independent assessment of whether an individual has the capacity to provide consent; assistance in confirming the validity of the LAR when indicated; and/or an assessment of the capacity to appoint an LAR.
+
+If you will be enrolling adults who lack decision-making capacity to consent to research, consider whether some or all of the potential participants will have the capacity to provide assent. If so, consider how you will obtain assent from these individuals, in particular if you anticipate their enrollment.  Discuss (in this section of the protocol) your plan for obtaining assent, considering the specifics of the population you expect to enroll (e.g. temporary or permanent loss of capacity, waxing/waning capacity). Written assent is not required by the IRB (but you can choose to do this if appropriate) as your assent plan will be very context and population specific. As this is so variable, there is no example text provided for this content as it will be specific to each study.
+
+Adults unable to consent to research are excluded from enrolling in the protocol. However, it is possible that subjects enrolled in the protocol may permanently lose the capacity to consent for themselves during the course of this study.  In the event this occurs, subjects will [choose whichever is applicable] be withdrawn from the study [or, if applicable to this study] remain in the study because [provide justification as to why it is appropriate for the subject to remain in the study].  If subjects will remain in the study, an LAR will be identified consistent with Policy 403 and informed consent will be obtained from the LAR, as described in Section 2.1.1.
+
+Or: Adults unable to consent to research can be enrolled in this protocol:
+
+The PI/ study investigators will identify an appropriate LAR consistent with the requirements of Policy 403 and will obtain consent from the LAR as outlined in the consent process in Section 2.1.1 before initiating research interventions.
+
+Confidentiality and Privacy
+
+Privacy is defined as a person having control over the extent, timing, and circumstances of sharing oneself (physically, behaviorally, or intellectually) with others. Privacy also refers to the right of individuals to limit access to/about themselves from/by others, especially information shared with researchers.  Confidentiality pertains to the treatment of information that a participant has disclosed in a relationship of trust and with the expectation that it will not be divulged to others without permission. This section will describe protections for maintaining confidentiality of participant data, including, but not limited to forms, records and samples and participant privacy.  Refer to NIH HRPP Policy 107 for specific policy requirements.
+
+Include procedures for maintaining participant confidentiality, privacy protections, any special data security requirements, and record retention per the sponsor’s requirements. Describe who would have access to records, including the investigator and other study staff, the clinical monitor, funding institutions, representatives of the NIH Institute or Center (IC), IND/IDE sponsor, representatives from the IRB, regulatory agencies, and representatives of the pharmaceutical company supplying product to be tested.  In addition, consider inclusion of the following information:
+
+Describe whether identifiers will be attached to data/samples, or whether data will be coded or unlinked.
+
+If unlinked or coded, and additional information (e.g., age, ethnicity, sex, diagnosis) is available, discuss whether this might make specific individuals or families identifiable.
+
+If research data/samples will be coded, describe how access to the “key” for the code will be limited.  Include description of security measures (password-protected database, locked drawer, other).  List names or positions of persons with access to the key.
+
+Include a discussion of the circumstances in which data or samples will be shared with other researchers.
+
+Include a discussion of plans to publish participant’s family pedigrees, with a description of measures to minimize the chance of identifying specific families.
+
+Describe any situations in which personally identifiable information will be released to third parties.
+
+State who has access to records, data, and samples.  Consider if monitors or auditors outside of study investigators will need access.
+
+Discuss any additional features to protect confidentiality (e.g., use of a certificate of confidentiality).
+
+Provide the protections you will take to protect the privacy of subject. Privacy refers to persons and their interest in controlling the access by others to themselves. For example, explain how you will ensure that when you will conduct procedures, or history and physicals, how you will ensure the privacy of the subject. Examples include ensuring only relevant study or clinical staff are present during the procedure which is conducted in a closed room, etc.
+
+Example text provided as a guide; customization will be required to address all aspects that should be included in this section:
+
+Participant confidentiality and privacy is strictly held in trust by the participating investigators, their staff, and the sponsor(s). This confidentiality is extended to cover testing of biological samples and genetic tests in addition to the clinical information relating to participants. Therefore, the study protocol, documentation, data, and all other information generated will be held in strict confidence. No information concerning the study or the data will be released to any unauthorized third party without prior written approval of the sponsor.
+
+All research activities will be conducted in as private a setting as possible.
+
+The study monitor, other authorized representatives of the sponsor, representatives of the Institutional Review Board (IRB), and/or regulatory agencies may inspect all documents and records required to be maintained by the investigator, including but not limited to, medical records (office, clinic, or hospital) and pharmacy records for the participants in this study. The clinical study site will permit access to such records.
+
+The study participant’s contact information will be securely stored at each clinical site for internal use during the study. At the end of the study, all records will continue to be kept in a secure location for as long a period as dictated by the reviewing IRB, Institutional policies, or sponsor requirements.
+
+Study participant research data, which is for purposes of statistical analysis and scientific reporting, will be transmitted to and stored at the <specify name of Data Coordinating Center>. This will not include the participant’s contact or identifying information. Rather, individual participants and their research data will be identified by a unique study identification number. The study data entry and study management systems used by clinical sites and by <specify name of Data Coordinating Center> research staff will be secured and password protected. At the end of the study, all study databases will be de-identified and archived at the <specify name of Data Coordinating Center>.
+
+To further protect the privacy of study participants, a Certificate of Confidentiality has been issued by the National Institutes of Health (NIH).  This certificate protects identifiable research information from forced disclosure. It allows the investigator and others who have access to research records to refuse to disclose identifying information on research participation in any civil, criminal, administrative, legislative, or other proceeding, whether at the federal, state, or local level. By protecting researchers and institutions from being compelled to disclose information that would identify research participants, Certificates of Confidentiality help achieve the research objectives and promote participation in studies by helping assure confidentiality and privacy to participants.
+
+Storage, Use, and Sharing of Specimens and Data for Secondary Research
+
+If data and/or residual specimens will be retained and used by the study team for secondary research (research that is not described in this protocol,) and/or be shared for secondary research with other colleagues, please address this as follows below. Ensure that any information included in this section is consistent with the language in the consent form(s) for this study, and in Section 2.1.5, Confidentiality and Privacy and 2.2 NIH Data Management and Sharing Policy and NIH Genomic Data Sharing Policy Compliance.  Please note that any use of identifiable specimens and data for secondary research must be described in another IRB-approved protocol and requires new informed consent or approval of a waiver of consent.
+
+Specify if and what materials will be retained in the research record/lab for secondary research, e.g. state all data and specimens will be retained (You do not need to address any data that will be available in the medical record.).
+
+Specify how long specimens or data will be stored, (e.g., indefinitely).
+
+Specify whether you will store these specimens/data in an identifiable (including coded and linked) format and/or if you will anonymize them for your future use.
+
+Specify whether any potential secondary research will or might include whole genome sequencing ((i.e., sequencing of a human germline or somatic specimen with the intent to generate the genome or exome sequence of that specimen).
+
+Specify whether identifiable, coded, and/or anonymized specimens and/or data will be shared with other researchers for secondary research (If you intend to share in all manners, please state that.); and
+
+Specify whether specimens and/or data will be shared in repositories (open access or closed/restricted access (only available to researchers)).
+
+Study Records Retention
+
+Specify the length of time for the investigator to maintain all records pertaining to this study.  The investigator should use the most conservative rule for document retention – i.e., retention should follow the rule that has the longest period.
+
+Indicate whether permission is required (and from whom) prior to destruction of records. If under an IND/IDE, records should not be destroyed without the IND/IDE sponsor’s agreement. Pharmaceutical companies who supply unapproved products should be consulted.
+
+Study intervention records may be described here if not addressed elsewhere in the protocol.
+
+Example text provided as a guide, customize as needed:
+
+Study documents should be retained for a minimum of 2 years after the last approval of a marketing application in an International Council for Harmonisation (ICH) region and until there are no pending or contemplated marketing applications in an ICH region or until at least 2 years have elapsed since the formal discontinuation of clinical development of the study intervention, and as per the NIH Intramural Records Retention Schedule. No records will be destroyed without the written consent of the sponsor, if applicable. It is the responsibility of the sponsor to inform the investigator when these documents no longer need to be retained.
+
+Protocol Deviations and Non-Compliance
+
+Plans for detecting, reviewing, and reporting deviations and non-compliance from the protocol should be described. A statement should be included to indicate that deviations are not allowed, unless a statement is included in the investigator agreement. Provisions for approval of deviations can be described.
+
+Example text provided as a guide, customize as needed:
+
+It is the responsibility of the investigator to use continuous vigilance to identify and report deviations and/or non-compliance to the NIH Institutional Review Board as per Policy 801.  All deviations must be addressed in study source documents, reported to <specify NIH Institute or Center (IC)> Program Official and <specify Data Coordinating Center or sponsor>.  The investigator is responsible for knowing and adhering to the reviewing IRB requirements.
+
+NIH Definition of Protocol Deviation
+
+A protocol deviation is any changed, divergence, or departure from the IRB-approved research protocol.
+
+Major deviations: Deviations from the IRB approved protocol that have, or may have the potential to, negatively impact the rights, welfare or safety of the subject, or to substantially negatively impact the scientific integrity or validity of the study.
+
+Minor deviations: Deviations that do not have the potential to negatively impact the rights, safety or welfare of subjects or others, or the scientific integrity or validity of the study.
+
+Human Data Sharing, including Genomic Data Sharing, and Publication
+
+Per the 2023 NIH Data Management and Sharing (DMS) Policy, effective January 25, 2023, all NIH IRP protocols are required to have a Data Management & Sharing (DMS) Plan using the IRP DMS Plan template. For more information about the required elements, please review Writing a Data Management & Sharing Plan. The plan should not be included in the protocol. Plans for sharing genomic data research that is subject to the NIH Genomic Data Sharing (GDS) Policy should now be incorporated as part of the protocol’s overall DMS Plan. For protocols submitted for Initial Scientific Review on or after January 25, 2023, the DMS plan must be submitted into the NIDB (if they are associated with a ZIA) and then as a separate attachment as part of the Scientific Review Process.
+
+Investigators who are required to comply with these policies must ensure that the sharing and future research language in their consent forms is consistent with their DMS Plan.  For more information about complying with the DMS Policy in the IRP, please review 2023 NIH Data Management and Sharing Policy in the Sourcebook.
+
+Those who must comply with the GDS Policy, must ensure that the Institutional Certification(s) are complete and approved by their SD or designee prior to starting the research. Please contact your IC’s GPA for help. For more information about complying with the GDS Policy in the IRP, please review Implementing the GDS Policy in the IRP.
+
+ NIH Data Management and Sharing Policy and NIH Genomic Data Sharing Policy Compliance
+
+Below is sample text that can be used in the protocol, as applicable.  Please delete the sections below that are not relevant to your research:
+
+This study will comply with the NIH Data Management and Sharing (DMS) Policy, which applies to all new and ongoing NIH-funded research in the IRP, as of January 25, 2023, that is associated with a ZIA, with a clinical protocol that undergoes scientific review and/or will involve genomic data sharing.
+
+If the study must comply with the NIH Genomic Data Sharing (GDS) Policy include the following language and ensure that the consent form addresses sharing via repository and the applicable genomic summary results language, as applicable:
+
+This study will comply with the NIH Genomic Data Sharing (GDS) Policy, which applies to all new and ongoing NIH IRP-funded research, as of August 31, 2015, that generates large-scale human or non-human genomic data, as well as the use of these data for subsequent research. Large-scale data include genome-wide association studies (GWAS), single nucleotide polymorphisms (SNP) arrays, and genome sequence, transcriptomic, epigenomic, and gene expression data.
+
+ NIH Public Access Policy Compliance
+
+Below is sample text that can be used in the protocol, as applicable.  Please delete this text and write N/A if it is not relevant to your protocol:
+
+This study will comply with the NIH Public Access Policy, which ensures that the public has access to the published results of NIH funded research. It requires scientists to submit final peer-reviewed journal manuscripts that arise from NIH funds to the digital archive PubMed Central upon acceptance for publication.
+
+Collaborative Agreements
+
+Only include this section if applicable.
+
+Note: This section should not refer to agreements determining who will serve as the Reviewing IRB (e.g., Reliance Agreement) or extending the NIH’s FWA to an investigator (e.g., Individual Investigator Agreement or FWA Coverage Agreement).
+
+Agreement Type
+
+If the investigational study agent is provided by another party under a Collaborative Agreement [Cooperative Research and Development Agreement (CRADA) or Clinical Trials Agreement (CTA)], with the Pharmaceutical Company or other Institution, or if a Confidential Disclosure Agreement (CDA) is associated with the protocol, this section must be included in the protocol. Information on the investigational study agent’s Agreement status should be described in this section. If no Collaborative Agreement applies to the investigational study agent, this section should be marked as not applicable.
+
+Once the agreements are executed, please include the number identifying the agreement.
+
+For multi-center studies where specimens are being sent between sites for processing, the following language may be used if approved by your IC Tech Transfer Office: Transfers that are associated with correlative studies conducted under an approved protocol: Investigators in the NIH intramural program may participate in multi-site clinical trials (either as a site or as the coordinating center) under which human materials are transferred from the intramural program to another site for correlative studies that are part of the approved protocol. In such a situation, the protocol clearly documents the tests conducted under the correlative studies, and each institution participating in the clinical study is bound by the terms of their Protocol and their obligations under the statutes and regulations. In addition, intramural protocols are cleared by the IC Clinical Director. In such situations, use of an HM-MTA is not necessary for these transfers.
+
+Conflict of Interest Policy
+
+This section should include a description of how the study will manage actual or perceived conflicts of interest.
+
+Example text provided as a guide, customize as needed:
+
+The independence of this study from any actual or perceived influence, such as by the pharmaceutical industry, is critical.  Therefore, any actual conflict of interest of persons who have a role in the design, conduct, analysis, publication, or any aspect of this trial will be disclosed and managed. Furthermore, persons who have a perceived conflict of interest will be required to have such conflicts managed in a way that is appropriate to their participation in the design and conduct of this trial.  The study leadership in conjunction with the <specify NIH Institute or Center (IC)> has established policies and procedures for all study group members to disclose all conflicts of interest and will establish a mechanism for the management of all reported dualities of interest.

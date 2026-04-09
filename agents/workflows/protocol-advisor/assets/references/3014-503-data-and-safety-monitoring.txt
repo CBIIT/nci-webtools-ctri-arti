@@ -1,0 +1,165 @@
+Name: 3014-503 - Data and Safety Monitoring
+Source URL: https://policymanual.nih.gov/3014-503
+Fetched At: 2026-04-03T18:46:10.293Z
+Source Type: html
+
+---
+
+## 3014-503 - Data and Safety Monitoring
+
+Issuing Office: OD/OIR/OHSRP
+Phone:
+(301) 402-3713
+
+Approving Official(s): DDIR
+
+Release Date: 8/30/2019
+Technical Revision Date: 2/05/2025 ?
+
+Transmittal Notice
+
+- Explanation of Material Transmitted: This policy describes the requirements for data and safety monitoring for human subjects research, based on federal regulation and policy, including NIH policy. This policy fully supersedes SOP 17 Data and Safety Monitoring.
+- Filing Instructions:Insert: NIH Manual Chapter 3014-203, dated 8/30/2019
+- Implementation Date: 10/26/2020
+
+- PLEASE NOTE: For information on:The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+- Content of this chapter, contact the issuing office listed above.
+- NIH Policy Manual, contact the Division of Compliance Management, DCM, on 301-496-4606 or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+This policy establishes the requirements for inclusion of a Data and Safety Monitoring Plan (DSMP) in non-exempt human subjects research protocols conducted by the NIH Intramural Research Program (IRP) and the requirements for Institutional Review Board (IRB) review of such DSMPs.
+
+### B. Scope
+
+- This policy applies to NIH investigators conducting non-exempt human subjects research.
+
+- This policy applies to NIH Institutes and Centers (ICs) that support and manage non-exempt human subjects research conducted by NIH investigators.
+
+- This policy applies to the NIH Institutional Review Board when it is the reviewing IRB.
+
+- This policy applies to non-NIH investigators when submitting to the NIH IRB as the Reviewing IRB.
+
+### C. Policy
+
+- All non-exempt human subjects research protocols must include: a data safety monitoring plan (DSMP) that is commensurate with the level of risk of the research to monitor the data collected to ensure the safety of subjects, consistent with regulatory criteria for approval by an IRB at 45 CFR 46.111(a)(6) and 21 CFR 56.111(a)(6), and consistent with NIH policy (e.g., the Policy for Scientific Review of Clinical Protocols Utilizing the NIH Intramural Program Submission Requirements and Review Criteria).
+- The DSMP must be described in the protocol submitted to the IRB for review.For FDA-regulated emergency research for which informed consent is excepted, the requirement at 21 CFR 50.24(a)(7)(iv) specifies the establishment of an independent data monitoring committee to provide oversight over the clinical research.
+
+- Institutes and Centers (ICs) are required to ensure a system for appropriate oversight and monitoring of the conduct of clinical trials to ensure the safety of research subjects and the validity and integrity of the data.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below. The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c).
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+- [Clinical trial](https://policymanual.nih.gov/3014-001#C)
+
+- [Data and Safety Monitoring.](https://policymanual.nih.gov/3014-001#D)
+
+- [Data and Safety Monitoring Board (DSMB)](https://policymanual.nih.gov/3014-001#D)
+
+- [Data and Safety Monitoring Entity](https://policymanual.nih.gov/3014-001#D)
+
+- [Data and Safety Monitoring Plan (DSMP)](https://policymanual.nih.gov/3014-001#D)
+
+- [Medical Monitor (also known as Safety Monitor)](https://policymanual.nih.gov/3014-001#M)
+
+- [Study Monitor (also known as a Clinical Monitor or Clinical Research Associate)](https://policymanual.nih.gov/3014-001#S)
+
+- [Sponsor](https://policymanual.nih.gov/3014-001#S)
+
+- [Stopping rules](https://policymanual.nih.gov/3014-001#S)
+
+### E. Responsibilities and Requirements
+
+- The PI is responsible for the following:Providing to the IRB a DSMP for all non-exempt human subject research protocols. The DSMP should be commensurate with the level of risk, nature and complexity of the research, and the population under study. As applicable, the DSMP should:Identify the data and safety monitoring entity (e.g., PI, medical monitor or Data Safety Monitoring Board (DSMB)).
+- The investigator should also provide the following in the DSMP, commensurate with the level of risk and complexity of the study:The schedule for reporting to the data and safety monitoring entity;
+- The frequency of assessments of data or events;
+- The stopping rules;
+- Plans for interim and/or futility analyses;
+- Procedures for communication between the PI, research team members, the study sponsor, the data and safety monitoring entity, the IRB, others at NIH and, as applicable, the coordinating or statistical center, FDA and other study sites.
+
+- Ensuring that the DSMP as outlined in the IRB-approved protocol is followed;
+- Ensuring that required information is promptly provided to the data and safety monitoring entity;
+- Notifying the data and safety monitoring entity when there are modifications to the protocol that affect the DSMP;
+- Responding to the data and safety monitoring entity recommendations. Responses may include providing corrections to errors in fact, responses to recommendations, or requests for corrective action plans;
+- Providing DSMP reports to the IRB at the time of continuing review or sooner if the report meets the requirements for prompt reporting to the IRB as specified in Policy 3014-801 Reporting Research Events.
+- For FDA-regulated emergency research for which informed consent is excepted, the requirement at 21 CFR 50.24 (a)(7)(iv), the PI must ensure the establishment of an independent data monitoring committee to exercise oversight of the clinical investigation.
+- Investigators are expected to be familiar and comply with additional NIH requirements (e.g. the Policy for Scientific Review of Clinical Protocols Utilizing the NIH Intramural Program Submission Requirements and Review Criteria).
+
+- The NIH IRB Responsibilities:The IRB is responsible for reviewing the DSMP to determine whether there are adequate provisions to ensure, to the extent possible, the safety of research subjects and the integrity of the data. If necessary, the IRB may require changes to secure approval.
+- The IRB is responsible for reviewing data and safety monitoring reports at the time of continuing review, or sooner if submitted to the IRB (e.g., under Policy 3014-801 Reporting Research Events or protocol reporting requirements) and IRB review is deemed necessary by the IRB Chair, IRBO Director or Director OHSRP in order to determine if the study remains approvable or needs modification.IRB review of data and safety monitoring reports includes the following:Review of the findings and, if applicable, review of the investigator’s proposed actions in response to monitoring report findings (e.g., modification of the protocol or consent(s), placing of administrative hold or study closure);
+- Determining whether any additional changes are needed based on the report. (For example, deciding if the frequency of continuing review is still adequate, requiring modification of the protocol or consent(s), or deciding whether the protocol will be suspended or terminated, based on reported results.) (Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research)
+
+- Institute/Center ResponsibilitiesInstitute/Centers (ICs) are responsible for the establishment of Data and Safety Monitoring Entity (DSME) for multi-site clinical trials, or when the protocol contains a DSMP that calls for the use of a DSME, or the DSME is requested by the IRB. Generally, the establishment of a DSME is governed by the IC’s written procedures and NIH policies (e.g., the NIH Policy for Data and Safety Monitoring).The NIH IC, the FDA, a Sponsor, or an IRB can require that a DSMP identify an independent data and safety monitoring entity (e.g. a medical monitor or a Data and Safety and Monitoring Board).
+
+- ICs are responsible for providing adequate resources and staff support to the data and safety monitoring entity and for appointing a medical monitor or members to the DSMB.Establishment of formal DSMBs must be consistent with written IC procedures and NIH polices (e.g., NIH Policy for Data and Safety Monitoring)
+- The IC must ensure that conflict of interest requirements are addressed for DSMB members, as applicable.
+
+- Supporting PIs to address the data and safety monitoring entity’s recommendations, as applicable.
+- When NIH is the sponsor, the IC may require post-approval monitoring to review data on a pre-determined basis or randomly.
+
+### F. References
+
+- Federal RegulationsHHS: [45 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)
+- FDA: 21 CFR parts [50](https://www.ecfr.gov/cgi-bin/text-idx?SID=cb4aa22ea00ab7cebf1fe59b498ed13f&mc=true&node=pt21.1.50&rgn=div5) and [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=cb4aa22ea00ab7cebf1fe59b498ed13f&mc=true&node=pt21.1.56&rgn=div5)
+
+- NIH Policy[Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research NIH IRB Meetings](https://policymanual.nih.gov/3014-204)
+- [Policy 3014-500 Research Involving Drugs, Biologics, and Nutritional Products](https://policymanual.nih.gov/3014-500)
+- [Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)
+- [Policy for Scientific Review of Clinical Protocols Utilizing the NIH Intramural Programs](https://oir.nih.gov/sites/default/files/uploads/sourcebook/documents/review_science/policy-scientific_review_clinical_protocols.pdf)
+- [NIH Policy for Data and Safety Monitoring](https://grants.nih.gov/grants/guide/notice-files/not98-084.html)
+
+- Guidance[FDA Guidance for Clinical Trial Sponsors: Establishment and Operation of Clinical Trial Data Monitoring Committees (March 2006)](https://www.fda.gov/downloads/regulatoryinformation/guidances/ucm127073.pdf)
+- [FDA Guidance for Industry: Oversight of Clinical Investigations – A Risk-based Approach to Monitoring (August 2013)](https://www.fda.gov/media/116754/download)
+
+Add Section
+
+###### * If you require a 508 compliant PDF version of a chapter please contact [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#3a1a4a5556535943575b544f5b567a545352145d554c)
+
+|
+
+Type of Publish
+
+|
+|
+
+Release Date
+
+|
+
+| |
+| |
+
+Add Your Note (optional):
+
+Office of Management Assessment, National Institutes of Health, 6705 Rockledge Dr. Suite 601 Bethesda, MD 20892
+
+Phone: (301) 496-4606 Email: [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#b2c2dddedbd1cbdfd3dcc7d3def2dcdbda9cd5ddc4)
+
+- [Resources](https://oma.od.nih.gov/dms/pages/manual-chapters-links.aspx)
+
+- [About](https://oma.od.nih.gov/dms/pages/manual-chapters.aspx)
+
+- [Contacts](https://oma.od.nih.gov/dms/pages/manual-chapters-manual-system-contacts.aspx)
+
+- [Web Policies and Notices](https://www.nih.gov/web-policies-notices)
+
+- [HHS Vulnerability Disclosure](https://www.hhs.gov/vulnerability-disclosure-policy/index.html)
+
+- [FOIA](https://www.nih.gov/icd/od/foia/index.htm)
+
+- [No Fear Act](https://www.edi.nih.gov/no-fear-act)
+
+- [Office of Management](https://om.od.nih.gov/)
+
+- [National Institutes of Health](https://www.nih.gov/)
+
+- [U.S. Department of Health and Human Services](https://www.hhs.gov/)
+
+- [USA.Gov - Government Made Easy](https://www.usa.gov/)
+
+NIH... Turning Discovery into Health(r)
+
+Arrow UpBack to Top

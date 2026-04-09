@@ -1,0 +1,246 @@
+Name: 3014-300 - Investigator Responsibilities
+Source URL: https://policymanual.nih.gov/3014-300
+Fetched At: 2026-04-03T18:46:12.666Z
+Source Type: html
+
+---
+
+## 3014-300 - Investigator Responsibilities
+
+Issuing Office: OD/OIR/OHSRP
+Phone:
+(301) 402-3713
+
+Approving Official(s): DDM
+
+Release Date: 3/23/2021
+
+Partial Revision Date: 2/14/2025 ?
+
+Technical Revision Date: 8/05/2021 ?
+
+Transmittal Notice
+
+- Explanation of Material Transmitted: This policy describes the mandates and requirements of all NIH investigators, which includes NIH Principal Investigators (PIs), NIH Investigators, and NIH trainee Investigators, when conducting human subjects research (both exempt and non-exempt human subject research); and describes the responsibilities and requirements of non-NIH investigators when the NIH IRB is the Reviewing IRB. Partial Revision 6/3/2021: This revision specifies the requirement for NIH PIs to report any and all FDA Form 483s to the OHSRP Office of Compliance and Training consistent with Policy 3014-801 Reporting Research Events. Technical Revision 8/5/2021: This revision adds the definition, “Engaged in Human Subjects Research,” to clarify when research staff must be designated as investigators by the PI. Partial Revision 11/7/22: This revision further clarifies who can or cannot be a Principal Investigator and revises the conditions upon which certain trainees can obtain consent for research. Partial Revision 2/14/25: This revision is to remind investigators to disclose to the IRB when a study staff member is listed as an inventor for any intellectual property that is being evaluated in the research study.
+- Filing Instructions:
+
+- Insert: NIH Manual Chapter 3014-300, dated 3/23/2021, Partial Revision: 2/14/2025
+- Implementation Date: 3/30/2021
+
+- PLEASE NOTE: For information on:
+
+- The current policies can also be found at: [https://irbo.nih.gov/confluence/display/ohsrp/Policy](https://irbo.nih.gov/confluence/display/ohsrp/Policy).
+- Content of this chapter, contact the issuing office listed above.
+- NIH Policy Manual, contact the Division of Compliance Management, OMA, on (301) 496-4606, or enter this URL: [https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx](https://oma.od.nih.gov/DMS/Pages/Manual-Chapters.aspx)
+
+### A. Purpose
+
+- Describes the responsibilities and requirements of all NIH investigators, which includes NIH Principal Investigators (PIs), when conducting human subjects research (both exempt and non-exempt human subject research).
+
+- Describes the responsibilities and requirements of non-NIH investigators when the NIH IRB is the Reviewing IRB.
+
+### B. Scope
+
+- This policy applies to:NIH investigators, including NIH PIs, conducting human subjects research on an NIH protocol, whether the reviewing IRB is the NIH IRB or an external IRB.For NIH IRP research that is overseen by an external IRB, responsibilities and requirements are outlined in Policy 3014-105 IRB Reliance.
+
+- Non-NIH investigators when the NIH IRB is the reviewing IRB.
+
+Note: This policy focuses on key responsibilities of NIH investigators. However, additional responsibilities are established in the other NIH Human Research Protection Program (HRPP) policies. NIH investigators are expected to be familiar and comply with those additional requirements, as applicable.
+
+### C. Policy
+
+- InvestigatorsAll investigators are expected to conduct themselves according to the highest standards of professional conduct and integrity and to adhere to the ethical principles that address the protection of human subjects in research. (See Policy 3014-100 NIH Intramural Research Program’s Human Research Protection Program.)
+- All NIH investigators will comply with federal law, regulation and policy, including NIH policy, and will conduct the research in compliance with the IRB approved protocol.
+- When the NIH IRB is the Reviewing IRB, all investigators will follow the policies of the NIH IRB (NIH HRPP policies).When an external IRB is the Reviewing IRB, in addition to NIH policies, NIH investigators will also comply with the applicable policies and procedures of the external IRB.
+
+- NIH Principal Investigators (PIs) In addition to section C.1., the following applies:Only the following investigators may be PIs on NIH protocolsNIH Federal Employees, including Commissioned Corp Officers, assigned to the NIH.NIH Federal Employees who are IPA appointees (but not IPA detailees) may be NIH PIs with the concurrence of NIH IC leadership and the approvals of the NIH Institutional Official.
+
+- Non-NIH Federal Employees with the concurrence of NIH Institute/Center (IC) Leadership and the approval of the NIH Institutional Official.
+
+- The following investigators may not be PIs on NIH protocols:Non-NIH investigators who are not federal employees (e.g., those employed by academia or practicing at a community hospital), such as IPA detailees, contractors, Special Volunteers (SVs), guest researchers, research collaborators, and trainees (e.g., Intramural Research Training Awardees (IRTAs) and Cancer Research Training Awardees (CRTAs) and Visiting Fellows (VFs)).However, investigators covered under the NIH Federalwide Assurance (FWA), for example some contractors and SVs may be Adjunct Principal Investigators (Adjunct PI). In such cases, the NIH PI must be a federal employee and must meet the requirements for an NIH PI (see C.2.a. above). While Adjunct PIs share some responsibility for leadership of the protocol, the supervisory authority remains with the NIH PI. (For more information about who is covered under the NIH FWA, see Policy 3014-100 NIH Intramural Research Program's Human Research Protection Program.)
+
+- There can be only one (1) NIH PI or Lead Site Investigator for protocols conducted by the NIH IRP.
+- NIH Principal Investigators must be approved by IC leadership, based on the IC leadership’s determination that the PI is qualified on the basis of education, training and experience to conduct the proposed research.
+- The NIH PI has overall responsibility for the design, conduct, reporting and scientific integrity of the research.
+- When the NIH is initiating the research, the NIH PI is responsible for knowing whether additional IRB oversight is required by regulation (e.g., when dual review is needed, by either a tribal IRB or a foreign IRB). The PI is responsible for ensuring that OHSRP is informed of this at the time of submission, and the PI is responsible to ensure that such a review occurs.If dual IRB review is required, research may not commence at the site subject to the non-NIH IRB oversight, until approval is granted by all required reviewing IRBs.
+
+- The NIH PI may assign responsibility for specific aspects of the conduct of the research to appropriately qualified individuals consistent with the IRB-approved protocol and the requirements, as described in this policy. However, at all times the PI retains overall responsibility for the conduct of the research, and must assure both the protocol and the research team’s actions are compliant with law, regulation, and policy.
+- NIH PIs must designate those individuals who are engaged in human subjects research as investigators on the protocol (e.g., Associate Investigators (AIs), Adjunct PIs, Lead Associate Investigators (LAIs), or Medical Advisory Investigators (MAIs), as applicable), and list them on the IRB application.The NIH PI is responsible for ensuring that investigators designated on the IRB application are qualified to perform their delegated roles in conduct of the study, and are appropriately credentialed and licensed, as applicable, to perform their assigned tasks and are listed on the IRB application.
+- The NIH PI is responsible for ensuring that all AIs that interact with human subjects, are permitted to do so in accordance with all NIH policies. For example, there are significant restrictions on activities permitted for trainees:VFs, IRTAs and CRTAs serving as Associate Investigators must be under the direct supervision and control by an NIH federal employee when interacting with a subject on the research. (See 2300-320-7 - Intramural Research Training Award (IRTA) Program Automated Fellowship Payment System and 2300-320-3 NIH Intramural Visiting Fellows Program (VFP) Policies.)
+- Except as described in the iii. below, VFs, IRTAs and CRTAs serving as Associate Investigators may observe or participate in the informed consent process only if they are under the direct and constant supervision by a qualified NIH federal employee investigator. These trainees may not sign the informed consent document. (See Policy 3014-301 Informed Consent for more information).
+- Post-doctoral IRTAs/CRTAs and post-doctoral VFs who are Associate Investigators may obtain the informed consent of a prospective subject without the presence of a qualified NIH federal employee investigator after sufficient training by the PI about the protocol. The post-doctoral IRTA/CRTA or post-doctoral VF must be knowledgeable about, and able to explain, the protocol and all of the information contained the informed consent document and be capable of addressing all subject questions. (See MC 3014-301 Informed Consent). In addition, to be eligible to obtain consent, the post-doctoral IRTA/CRTA or post-doctoral VF much have completed Elements of a Successful Informed Consent course and the validated Objective Structured Clinical Examination (OSCE) for the Informed Consent Process offered by the NIMH Human Subjects Protection Unit (HSPU) per Policy 3014-103 Education Program.
+
+### D. Definitions
+
+OHSRP has developed a comprehensive glossary of definitions that describe the terms listed below. The glossary can be found at the following link: [NIH IRP HRPP Policy Glossary](https://policymanual.nih.gov/3014-001#3c10217c)
+
+Note: There may be more than one definition per term, so please review terms carefully to make sure they match the terms listed below. Qualified terms are indicated with a parenthetical qualification. When reviewing a definition, be sure that you are reviewing the appropriate definition that links to this policy. To further assist the reader, each term in the glossary cites the relevant policy number(s) indicating where the term is utilized.
+
+Definitions demarcated with (Pre-2018 Common Rule) apply to research approved by an IRB (or deemed to be exempt, or for which no Institutional Review Board (IRB) review was required under the regulations) prior to the effective date of the 2018 Common Rule (January 21, 2019).
+
+Definitions demarcated with (2018 Common Rule) apply to all research approved by an IRB (or deemed to be exempt, or for which no IRB review was required under the regulations) on or after January 21, 2019 and to research transitioned to the 2018 requirements in accordance with NIH Human Research Protection Program (HRPP) policy.
+
+- [Adjunct Principal Investigator (Adjunct PI)](https://policymanual.nih.gov/3014-001#A)
+- [Associate Investigators (AI)](https://policymanual.nih.gov/3014-001#A)
+- [Engaged in Human Subjects Research](https://policymanual.nih.gov/3014-001#E)
+- [Human Subject (HHS Regulations) (2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#H)Identifiable biospecimen
+- Identifiable private information
+- Interaction
+- Intervention
+- Private information
+
+- [Human Subject (HHS Regulations) (Pre-2018 Common Rule definition)](https://policymanual.nih.gov/3014-001#H).Intervention
+- Private information
+
+- [Human Subjects Research (HSR)](https://policymanual.nih.gov/3014-001#H)
+- [Investigator](https://policymanual.nih.gov/3014-001#I)
+- [Lead Associate Investigator (LAI)](https://policymanual.nih.gov/3014-001#L)
+- [Lead Site Investigator](https://policymanual.nih.gov/3014-001#L).
+- [Medical Advisory Investigator (MAI)](https://policymanual.nih.gov/3014-001#M)
+- [NIH Federal Employee](https://policymanual.nih.gov/3014-001#N)
+- [NIH Investigator](https://policymanual.nih.gov/3014-001#N)
+- Non-NIH Federal Employee
+- [Principal Investigator (PI)](https://policymanual.nih.gov/3014-001#P)
+- [Research (2018 Common Rule Definition)](https://policymanual.nih.gov/3014-001#R)
+- [Research (Pre-2018 Common Rule Definition)](https://policymanual.nih.gov/3014-001#R)
+- [Reviewing IRB](https://policymanual.nih.gov/3014-001#R)
+
+### E. Responsibilities and Requirements
+
+- Responsibilities of all NIH investigators conducting non-exempt human subjects researchNIH investigators must:Comply with policy outlined in C.1. above;
+- Know when an activity constitutes non-exempt human subjects research and assure IRB approval has been granted when required before performing human subjects research;
+- Know, understand and comply with the federal laws, regulations, and policies, including NIH policy, that apply to the research;
+- Conduct the research compliant with the IRB approved protocol;
+- Ensure that informed consent is obtained from each human subject and documented before conducting human subjects research, consistent with the IRB-approved protocol and according to Policy 3014-301 Informed Consent, unless the requirements for consent or documentation of consent have been waived or altered by the IRB;
+- Disclose conflicts of interest consistent with Policy 3014-102 - Investigator Conflict of Interest and Government Royalties
+- Ensure the accuracy, completeness, legibility, and timeliness of the data;
+- Follow internal policies for the appropriate documentation of research related tests and procedures; and
+- Be responsive to subject concerns and complaints consistent with Policy 3014-104 Managing Research-Related Complaints from Research Subjects.
+
+- Responsibilities of NIH Principal Investigators conducting non-exempt human subjects researchThe PI must comply with the requirements outlined in C.1. and C.2. above;
+- For each protocol, the PI is responsible for designating other investigators as described below:Medical Advisory Investigator (MAI): When the research involves medical care or clinical interventions and the PI is not a member of the senior or junior medical staff, research, adjunct staff or affiliate staff, or is not licensed to provide the appropriate level of medical care, or when an IRB or IC CD considers it warranted, the PI will designate a MAI.The MAI must be identified in the IRB application and approved by the IRB.
+- Only one (1) MAI may be appointed to the protocol.
+
+- Associate Investigators (AIs): The PI may designate other qualified investigators as necessary to conduct safe and ethical research, consistent with C.2.h. above.
+- An Adjunct PI may be designated: There can be only one (1) Adjunct PI per protocol and there must be a named NIH PI who is a federal employee, consistent with C.2.a. above, and who will be responsible for the conduct of the protocol.
+- A Lead Associate Investigator may be designated. There can be only one (1) Lead Associate Investigator per protocol.
+
+- The PI, at a minimum, is accountable to:Ensure sufficient resources are allocated to the research.
+- Comply with the determinations of the Reviewing IRB.
+- Conduct research only after the following conditions have been met:IRB approval is obtained;
+- When applicable, all other necessary institutional approvals have been obtained (See Policy 3014-106 Ancillary Reviews.);
+- As applicable, appropriate agreements have been executed with outside entities (e.g., FDA sponsors, collaborators). This agreement may be a MOU, Clinical Trial Agreement (CTA), or Cooperative Research and Development Agreement (CRADA).
+
+- For research involving the use or disclosure of identifiable private information or biospecimens, subjects’ privacy and confidentiality is protected in compliance with relevant laws, regulations, policies, and the terms of the informed consent or other documents. (See Policy 3014-107 Privacy and Confidentiality).
+- Ensure proper arrangements for IRB oversight when conducting non-exempt human subjects research at a non-NIH site, or with a non-NIH institution, including when seeking single IRB review for multi-site research (whether by the NIH IRB or an external IRB). This arrangement occurs via a reliance agreement or other appropriate mechanism, consistent with the requirements set forth in Policy 3014-105 IRB Reliance.
+- Ensure that, when Continuing Review is required by either regulation or by the IRB, submission of the required documents for IRB review occurs with sufficient time to allow for IRB review and approval prior to the expiration of the current IRB approval and with sufficient time for response by the PI to any stipulations of the IRB. (See Policy 3014-205 Requirements for IRB Submissions.)Alternatively, for those studies that do not require continuing review, ensure timely submission to the IRB of modifications, progress reports, reportable events and any documentation required by other NIH policies, and also that the study is closed with the IRB upon completion of the research. (See Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research.)
+
+- Report Unanticipated problems (UPs), non-compliance or other research events to the IRB and, as necessary, to sponsors or other regulatory agencies in accordance with requirements set forth in Policy 3014-801 Reporting Research Events.
+- Disclose to the IRB when an investigator engaged in the research is identified as an inventor of intellectual property that is being evaluated in the research consistent with Policy 3014-102 - Investigator Conflict of Interest and Government Royalties.
+- Maintain a regulatory file with current and accurate records of all study documentation as required by applicable regulatory requirements. (See NIH Manual Chapter 1743 - Keeping and Destroying Records, the NIH Intramural Records Retention Schedule, and the NIH Privacy Act Policy.)
+- Cooperate with NIH oversight (e.g., IRB, OHSRP, ORSC, or IC), authorized federal regulatory agencies, and sponsors, including for: investigations, monitoring, audits, and actions. Provision of certain documents to auditors or monitors may be privileged and not appropriate for disclosure, consult with appropriate NIH offices (e.g., OHSRP, OGC, ORSC or IC Privacy Officer) as needed. Regarding FDA inspections: NIH researchers who are informed of an FDA inspection must immediately notify their Clinical Director, Clinical Center (CC) CEO, ORSC, and OHSRP.
+- Any written responses to the FDA submitted by NIH researchers must first be approved by the Clinical Director, CC CEO, ORSC, and OHSRP. The appropriate party must provide a draft response to the Clinical Director, CC CEO, ORSC, and OHSRP at least four business days before it must be submitted to the FDA.
+- NIH PIs are required to report any and all FDA Form 483s to the OHSRP office of Compliance and Training consistent with Policy 3014-801 Reporting Research Events.
+
+- Ensure, when an investigator is leaving the NIH:That proper arrangements are made for continued IRB oversight for any investigator who wishes to continue the research or continue to perform data analysis of identifiable data. (See Policies 3014-105 IRB Reliance and 3014-109, Coverage under the NIH Federalwide Assurance.);
+- That data and specimens are transferred to/retained by the departing investigator only with appropriate permissions, forms, and IC oversight.(See, e.g., NIH Manual Chapter 1743, Managing Federal Records and the HHS Technology Transfer Policies and Procedures Manual.);and
+- That if it is the PI who is leaving, to revise the protocol and obtain IRB approval of a new PI who is suitably qualified to be responsible for the conduct of the research.
+
+- Requirements for Investigators Conducting FDA Regulated Research When the NIH IRB is the Reviewing IRBIn addition to the applicable requirements listed above, investigators conducting research regulated by the Food and Drug Administration (FDA) must comply with FDA requirements and NIH policy. These requirements are not described in this policy, for more information review: Policies 3014-500 Research Involving Drugs, Biological, and Nutritional Products, Policy 3014-501 Research Involving FDA Regulated Devices, and Policy 3014-502 Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles).
+
+- Requirements for Investigators Conducting Exempt Human Subjects ResearchIn addition to the requirements listed in E.1. above, the following apply to investigators conducting research that has been determined to be exempt from 45 CFR 46, including exempt research which was approved under limited IRB review procedures (see Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research). The PI will:Submit documentation via the NIH electronic IRB system to support the request for exempt or limited IRB review determination consistent with requirements set forth in Policy 3014-205 Requirements for IRB Submissions.
+- Upon receiving a determination for exempt research or approval by limited IRB procedures, conduct research in compliance with the approved protocol.
+- Submit any changes to the research to IRBO for review and approval by exempt or limited IRB procedures prior to implementation of those changes consistent with requirements set forth in Policy 3014-205 Requirements for IRB Submissions.
+- Maintain adequate and accurate study records and documentation. (See NIH Manual Chapter 1743 - Managing Federal Records, NIH Intramural Records Retention Schedule, and the NIH Privacy Act Policy.)
+- Report research events according to Policy 3014-801 Reporting Research Events.
+
+### F. References
+
+- Federal Regulations
+
+- HHS: [45 CFR 46](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/index.html)
+- FDA: 21 CFR parts [50](https://www.ecfr.gov/cgi-bin/text-idx?SID=6be2a5ca5a6be6b86f031efad7bf1579&mc=true&node=pt21.1.50&rgn=div5), [56](https://www.ecfr.gov/cgi-bin/text-idx?SID=9655855b4f8e514a53bce1b823829e59&mc=true&node=pt21.1.56&rgn=div5), [312](https://www.ecfr.gov/cgi-bin/text-idx?SID=9655855b4f8e514a53bce1b823829e59&mc=true&node=pt21.5.312&rgn=div5), and [812](https://www.ecfr.gov/cgi-bin/text-idx?SID=9655855b4f8e514a53bce1b823829e59&mc=true&node=pt21.8.812&rgn=div5)
+
+- NIH Policy
+
+- [2300-320-7- Intramural Research Training Award (IRTA) Program Automated Fellowship Payment System](https://policymanual.nih.gov/2300-320-7)
+- [HHS Technology Transfer Policies and Procedures Manual](https://www.ott.nih.gov/policy/hhs-technology-transfer-policies)
+- [Medical Administrative Series (MAS) Policies](http://intranet.cc.nih.gov/mec/mas/index.shtml)
+- [MAS Policy M80-3 (7/3/18 version) The Use of Investigational or New Drugs in Clinical Research](http://cc-internal.cc.nih.gov/policies/PDF/M80-3.pdf)
+- [NIH Intramural Records Retention Schedule](https://oma.od.nih.gov/DMS/Documents/Records/Record%20Schedules/NIH%20Intramural%20Research%20Records%20Schedule_12.18.2018.pdf)
+- [NIH Manual Chapter 1743 - Keeping and Destroying Records](https://policymanual.nih.gov/1743)
+- [NIH Manual Chapter 2300-320-3 NIH Intramural Visiting Fellows Program (VFP) Policies](https://policymanual.nih.gov/3014-2300-320-3)
+- [Policy 3014-100 NIH Intramural Research Program’s Human Research Protection Program](https://policymanual.nih.gov/3014-100)
+- [Policy 3014-102 - Investigator Conflict of Interest and Government Royalties](https://policymanual.nih.gov/3014-102)
+- [Policy 3014-103 Education Program](https://policymanual.nih.gov/3014-103)
+- [Policy 3014-104 Managing Research-Related Complaints from Research Subjects](https://policymanual.nih.gov/3014-104)
+- [Policy 3014-105 IRB Reliance](https://policymanual.nih.gov/3014-105)
+- [Policy 3014-106 Ancillary Reviews](https://policymanual.nih.gov/3014-106)
+- [Policy 3014-107 Privacy and Confidentiality](https://policymanual.nih.gov/3014-107)
+- [Policy 3014-109 Coverage Under the NIH Federalwide Assurance](https://policymanual.nih.gov/3014-109)
+- [Policy 3014-204 Levels of IRB Review and Criteria for IRB Approval of Research](https://policymanual.nih.gov/3014-204)
+- [Policy 3014-205 Requirements for IRB Submissions](https://policymanual.nih.gov/3014-205)
+- [Policy 3014-301 Informed Consent](https://policymanual.nih.gov/3014-301)
+- [Policies 3014-500 Research Involving Drugs, Biological, and Nutritional Products](https://policymanual.nih.gov/3014-500)
+- [Policy 3014-501 Research Involving FDA Regulated Devices](https://policymanual.nih.gov/3014-501)
+- [Policy 3014-502 Expanded Access, Including Emergency Use of Investigational Drugs, Biologics, and Medical Devices (Test Articles)](https://policymanual.nih.gov/3014-502)
+- [Policy 3014-801 Reporting Research Events](https://policymanual.nih.gov/3014-801)
+
+- Guidance and Resources
+
+- [FDA Guidance for Industry – Investigator Responsibilities-Protecting the Rights, Safety, and Welfare of Study Subjects](http://www.fda.gov/downloads/Drugs/GuidanceComplianceRegulatoryInformation/Guidances/UCM187772.pdf)
+- [FDA Guidance for Industry - E6(R2) Good Clinical Practice: Integrated Addendum to ICH E6 (R1)](https://www.fda.gov/downloads/Drugs/Guidances/UCM464506.pdf)
+- [OHRP Investigator Responsibilities FAQs](https://www.hhs.gov/ohrp/regulations-and-policy/guidance/faq/investigator-responsibilities/index.html)
+- [NIH Privacy Act Policy](https://oma.od.nih.gov/DMS/Pages/Privacy-Program-Privacy-Act.aspx)
+- Elements of a Successful Informed Consent course offered by the [NIMH Human Subjects Protection Unit](https://www.nimh.nih.gov/research/research-conducted-at-nimh/scientific-director/office-of-clinical-director/administrative-research-support/human-subjects-protection-unit-hspu) (HSPU)
+- Objective Structured Clinical Examination (OSCE) for the Informed Consent Process offered by the [NIMH Human Subjects Protection Unit](https://www.nimh.nih.gov/research/research-conducted-at-nimh/scientific-director/office-of-clinical-director/administrative-research-support/human-subjects-protection-unit-hspu) (HSPU)
+
+Add Section
+
+###### * If you require a 508 compliant PDF version of a chapter please contact [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#c6e6b6a9aaafa5bfaba7a8b3a7aa86a8afaee8a1a9b0)
+
+|
+
+Type of Publish
+
+|
+|
+
+Release Date
+
+|
+
+| |
+| |
+
+Add Your Note (optional):
+
+Office of Management Assessment, National Institutes of Health, 6705 Rockledge Dr. Suite 601 Bethesda, MD 20892
+
+Phone: (301) 496-4606 Email: [[email protected]](https://policymanual.nih.gov/cdn-cgi/l/email-protection#04746b686d677d69656a716568446a6d6c2a636b72)
+
+- [Resources](https://oma.od.nih.gov/dms/pages/manual-chapters-links.aspx)
+
+- [About](https://oma.od.nih.gov/dms/pages/manual-chapters.aspx)
+
+- [Contacts](https://oma.od.nih.gov/dms/pages/manual-chapters-manual-system-contacts.aspx)
+
+- [Web Policies and Notices](https://www.nih.gov/web-policies-notices)
+
+- [HHS Vulnerability Disclosure](https://www.hhs.gov/vulnerability-disclosure-policy/index.html)
+
+- [FOIA](https://www.nih.gov/icd/od/foia/index.htm)
+
+- [No Fear Act](https://www.edi.nih.gov/no-fear-act)
+
+- [Office of Management](https://om.od.nih.gov/)
+
+- [National Institutes of Health](https://www.nih.gov/)
+
+- [U.S. Department of Health and Human Services](https://www.hhs.gov/)
+
+- [USA.Gov - Government Made Easy](https://www.usa.gov/)
+
+NIH... Turning Discovery into Health(r)
+
+Arrow UpBack to Top
