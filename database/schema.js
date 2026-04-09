@@ -418,6 +418,21 @@ export const AgentTool = pgTable(
   (t) => [uniqueIndex("AgentTool_toolID_agentID_idx").on(t.toolID, t.agentID)]
 );
 
+export const Configuration = pgTable(
+  "Configuration",
+  {
+    id: serial("id").primaryKey(),
+    key: text("key").notNull(),
+    value: text("value").notNull().default(""),
+    description: text("description"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [uniqueIndex("Configuration_key_idx").on(t.key)]
+);
+
 export const Session = pgTable(
   "session",
   {
@@ -576,6 +591,7 @@ export const tables = {
   UserAgent,
   UserTool,
   AgentTool,
+  Configuration,
 };
 
 function loadTemplateSeedData() {

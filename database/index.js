@@ -204,6 +204,7 @@ export const {
   AgentTool,
   Usage,
   Session,
+  Configuration,
 } = schema;
 
 /**
