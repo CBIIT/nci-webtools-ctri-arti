@@ -84,7 +84,7 @@ const USER_CHILDREN = [
     path: "users/:id/usage",
     title: "User Usage",
     policy: "/_/usage",
-    importPath: "./users/user-usage.js",
+    importPath: "./users/usage-statistic/user-usage-page.js",
     hidden: true,
   },
   {

@@ -9,7 +9,6 @@ import {
 } from "solid-js";
 import html from "solid-js/html";
 
-
 import { AlertContainer } from "../../../components/alert.js";
 import { alerts, clearAlert, handleError, handleHttpError } from "../../../utils/alerts.js";
 import {
@@ -17,87 +16,18 @@ import {
   unregisterErrorDataCollector,
 } from "../../../utils/global-error-handler.js";
 import { USAGE_TOOL_NAMES, USAGE_TYPE_NAMES, VALID_DATE_RANGES } from "../../constants.js";
-import { formatDate } from "../date-utils.js";
+import { formatDate, calculateDateRange, getDefaultStartDate } from "../date-utils.js";
 
 import { usageTableHeader } from "./usage-table-header.js";
 import { usageTable } from "./usage-table.js";
 
 const fetchConfig = () => fetch("/api/config").then((r) => r.json());
 
-// Get default start date (30 days ago)
-export function getDefaultStartDate() {
-  const date = new Date();
-  date.setDate(date.getDate() - 30);
-  return formatDate(date);
-}
-
-// Calculate date range from preset
-export function calculateDateRange(preset) {
-  const now = new Date();
-  let startDate, endDate;
-
-  switch (preset) {
-    case "This Week": {
-      startDate = new Date(now);
-      const day = startDate.getDay();
-      const diff = day;
-      startDate.setDate(startDate.getDate() - diff);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-    }
-    case "Last 30 Days": {
-      startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - 30);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-    }
-    case "Last 60 Days": {
-      startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - 60);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-    }
-    case "Last 120 Days": {
-      startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - 120);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-    }
-    case "Last 360 Days": {
-      startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - 360);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-    }
-    default: {
-      startDate = new Date(now);
-      const day = startDate.getDay();
-      const diff = day;
-      startDate.setDate(startDate.getDate() - diff);
-      startDate.setHours(0, 0, 0, 0);
-    }
-  }
-
-  endDate = new Date(now);
-  endDate.setHours(23, 59, 59, 999);
-
-  return {
-    startDate: formatDate(startDate),
-    endDate: formatDate(endDate),
-  };
-}
-
-// Validate date range from URL params
-export function validateDateRange(dateRange, defaultRange = "Last 30 Days") {
-  return VALID_DATE_RANGES.includes(dateRange) ? dateRange : defaultRange;
-}
-
 function UsersList() {
-  const [config] = createResource(fetchConfig);
-  const [selectedDateRange, setSelectedDateRange] = createSignal("This Week");
+  const [selectedDateRange, setSelectedDateRange] = createSignal(VALID_DATE_RANGES[0]);
   const [customDates, setCustomDates] = createSignal({
     startDate: getDefaultStartDate(),
-    endDate: formatDate(new Date()),
+    endDate: new Date().toISOString(),
   });
 
   onMount(() => {
@@ -318,23 +248,14 @@ function UsersList() {
         return null;
       }}
     >
-      <div
-        class="w-100 overflow-hidden font-inter font-smooth"
-        style="background: linear-gradient(180deg, #000E26 0%, #7EA4EE 55%, #FFFFFF 100%);"
-      >
+      <div class="w-100 overflow-hidden font-inter font-smooth page-header-bg">
         <div
-          class="w-100 d-flex align-items-center"
-          style="background: url('/assets/images/users/user_banner.png') center top / cover no-repeat; min-height: 200px;"
+          class="w-100 d-flex align-items-center page-header-banner"
           role="img"
           aria-label="Page header"
         >
           <div class="container">
-            <h1
-              class="mb-0 text-white font-poppins"
-              style="font-weight: 500; font-size: 40px; line-height: 40px; padding: 0 0 0 44px;"
-            >
-              AI Usage Dashboard
-            </h1>
+            <h1 class="text-white font-poppins page-header-text">AI Usage Dashboard</h1>
           </div>
         </div>
         <div class="container pb-4" style="margin-top: -36px; position: relative; z-index: 1;">
