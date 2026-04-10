@@ -1,6 +1,6 @@
 import { json, Router } from "express";
 import { logErrors, logRequests } from "shared/middleware.js";
-import { routeHandler } from "shared/utils.js";
+import { routeHandler, sendNotFound } from "shared/utils.js";
 
 export function createUsersRouter({ application } = {}) {
   if (!application) {
@@ -33,7 +33,7 @@ export function createUsersRouter({ application } = {}) {
     "/users/resolve",
     routeHandler(async (req, res) => {
       const result = await application.resolveUser(req.query);
-      if (!result) return res.status(404).json({ error: "User not found" });
+      if (!result) return sendNotFound(res, "User");
       res.json(result);
     })
   );
@@ -42,7 +42,7 @@ export function createUsersRouter({ application } = {}) {
     "/users/:id",
     routeHandler(async (req, res) => {
       const user = await application.getUser(req.params.id);
-      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user) return sendNotFound(res, "User");
       res.json(user);
     })
   );
@@ -51,7 +51,7 @@ export function createUsersRouter({ application } = {}) {
     "/users",
     routeHandler(async (req, res) => {
       const user = await application.createUser(req.body);
-      res.json(user);
+      res.status(201).json(user);
     })
   );
 
@@ -59,7 +59,7 @@ export function createUsersRouter({ application } = {}) {
     "/users/find-or-create",
     routeHandler(async (req, res) => {
       const user = await application.findOrCreateUser(req.body);
-      res.json(user);
+      res.status(201).json(user);
     })
   );
 
@@ -67,7 +67,7 @@ export function createUsersRouter({ application } = {}) {
     "/users/:id",
     routeHandler(async (req, res) => {
       const user = await application.updateUser(req.params.id, req.body);
-      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user) return sendNotFound(res, "User");
       res.json(user);
     })
   );
@@ -76,7 +76,7 @@ export function createUsersRouter({ application } = {}) {
     "/users/:id/profile",
     routeHandler(async (req, res) => {
       const user = await application.updateProfile(req.params.id, req.body);
-      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user) return sendNotFound(res, "User");
       res.json(user);
     })
   );
@@ -85,7 +85,7 @@ export function createUsersRouter({ application } = {}) {
     "/users/:id",
     routeHandler(async (req, res) => {
       const result = await application.deleteUser(req.params.id);
-      if (!result) return res.status(404).json({ error: "User not found" });
+      if (!result) return sendNotFound(res, "User");
       res.json(result);
     })
   );
@@ -124,7 +124,7 @@ export function createUsersRouter({ application } = {}) {
         limit: req.query.limit ? +req.query.limit : undefined,
         offset: req.query.offset ? +req.query.offset : undefined,
       });
-      if (!result) return res.status(404).json({ error: "User not found" });
+      if (!result) return sendNotFound(res, "User");
       res.json(result);
     })
   );
@@ -177,7 +177,7 @@ export function createUsersRouter({ application } = {}) {
     "/users/:id/budget/reset",
     routeHandler(async (req, res) => {
       const result = await application.resetUserBudget(req.params.id);
-      if (!result) return res.status(404).json({ error: "User not found" });
+      if (!result) return sendNotFound(res, "User");
       res.json(result);
     })
   );

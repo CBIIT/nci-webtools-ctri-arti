@@ -6,7 +6,24 @@ import {
 
 import { createPlainError, requestJson, streamNdjsonRequest } from "../shared/clients/http.js";
 
+function createAgentsError(response, _message, payload) {
+  return createPlainError(response, `Agents error: ${response.status}`, payload);
+}
+
 export function createAgentsRemote({ baseUrl, fetchImpl = fetch }) {
+  function createRequestOptions(requestContext, body) {
+    return {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...requestContextToInternalHeaders(requestContext),
+      },
+      body,
+      errorMessage: "Agents request failed",
+      createError: createAgentsError,
+    };
+  }
+
   return {
     async *chat({
       context,
@@ -25,36 +42,22 @@ export function createAgentsRemote({ baseUrl, fetchImpl = fetch }) {
         conversationId == null
           ? `${baseUrl}/api/v1/agents/${agentId}/chat`
           : `${baseUrl}/api/v1/agents/${agentId}/conversations/${conversationId}/chat`;
+      const options = createRequestOptions(requestContext, {
+        message,
+        modelOverride,
+        thoughtBudget,
+        background,
+      });
 
       if (background) {
-        const result = await requestJson(fetchImpl, {
-          url,
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...requestContextToInternalHeaders(requestContext),
-          },
-          body: { message, modelOverride, thoughtBudget, background },
-          errorMessage: "Agents request failed",
-          createError: (response, _message, payload) =>
-            createPlainError(response, `Agents error: ${response.status}`, payload),
-        });
-
+        const result = await requestJson(fetchImpl, { url, ...options });
         yield { backgroundAccepted: result };
         return;
       }
 
       for await (const event of streamNdjsonRequest(fetchImpl, {
         url,
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...requestContextToInternalHeaders(requestContext),
-        },
-        body: { message, modelOverride, thoughtBudget, background },
-        errorMessage: "Agents request failed",
-        createError: (response, _message, payload) =>
-          createPlainError(response, `Agents error: ${response.status}`, payload),
+        ...options,
         onParseError: (error) => logger.error("Error parsing agent stream line:", error),
       })) {
         yield event;

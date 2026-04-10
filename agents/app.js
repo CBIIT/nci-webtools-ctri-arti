@@ -1,21 +1,20 @@
-import { createCmsService } from "cms/service.js";
-import { createGatewayService } from "gateway/service.js";
 import { requireUserRequestContext } from "shared/request-context.js";
 import { createValidationError } from "shared/utils.js";
-import { createUsersApplication } from "users/app.js";
 
 import { runAgentLoop } from "./core/loop.js";
 import { validateUserMessageContent } from "./validation.js";
 
 export function createAgentsApplication({
   runLoop = runAgentLoop,
-  gateway = createGatewayService(),
+  gateway,
   cms,
-  users = createUsersApplication(),
+  users,
   sendEmail = null,
   source = "direct",
 } = {}) {
-  const cmsModule = cms ?? createCmsService({ gateway, source });
+  if (!gateway) throw new Error("gateway is required");
+  if (!cms) throw new Error("cms is required");
+  if (!users) throw new Error("users is required");
 
   return {
     async *chat({
@@ -43,7 +42,7 @@ export function createAgentsApplication({
         modelOverride,
         thoughtBudget: thoughtBudget || 0,
         gateway,
-        cms: cmsModule,
+        cms,
         users,
         sendEmail,
       });

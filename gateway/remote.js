@@ -1,3 +1,5 @@
+import logger from "shared/logger.js";
+
 import {
   buildQueryString,
   createStatusCodeError,
@@ -48,7 +50,7 @@ export function createGatewayRemote({ baseUrl, fetchImpl = fetch }) {
       if (params?.stream) {
         return {
           stream: parseNdjsonStream(response.body, {
-            onParseError: (error) => console.error("Error parsing stream line:", error),
+            onParseError: (error) => logger.error("Error parsing stream line:", error),
           }),
         };
       }

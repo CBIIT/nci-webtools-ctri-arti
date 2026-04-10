@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { readRequestContext, withResolvedContext } from "./helpers.js";
+import { readRequestContext, sendNotFound, withResolvedContext } from "./helpers.js";
 
 export function createCmsAgentsRouter({ application, resolveContext = readRequestContext } = {}) {
   if (!application) {
@@ -29,7 +29,7 @@ export function createCmsAgentsRouter({ application, resolveContext = readReques
     "/agents/:id",
     withResolvedContext(resolveContext, async (req, res) => {
       const agent = await application.getAgent(req.context, req.params.id);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) return sendNotFound(res, "Agent");
       res.json(agent);
     })
   );

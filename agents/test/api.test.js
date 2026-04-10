@@ -4,12 +4,12 @@ import { describe, it } from "node:test";
 import express from "express";
 import request from "supertest";
 
-import { createAgentsRouter } from "agents/http.js";
+import { createAgentsChatRouter } from "agents/http.js";
 
 function buildApp(application = null) {
   const app = express();
   app.use(
-    createAgentsRouter({
+    createAgentsChatRouter({
       application: application || {
         async chat() {
           throw new Error("chat should not be called in request context validation tests");

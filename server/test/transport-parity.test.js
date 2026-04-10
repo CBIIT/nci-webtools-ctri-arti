@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import { test } from "node:test";
 
-import { createAgentsRouter } from "agents/api.js";
 import { createAgentsApplication } from "agents/app.js";
+import { createAgentsChatRouter } from "agents/http.js";
 import { createAgentsRemote } from "agents/remote.js";
 import { v1Router as cmsApi } from "cms/api.js";
 import { ConversationService } from "cms/core/conversation-service.js";
@@ -272,17 +272,21 @@ test("transport parity", async (t) => {
       storeConversationResource: (userId, data) => svc.storeConversationResource(userId, data),
     };
 
+    const fakeUsers = {};
+
     const application = createAgentsApplication({
       source: "direct",
       gateway: fakeGateway,
       cms,
+      users: fakeUsers,
     });
     const agentsServer = await startServer(
-      createAgentsRouter({
+      createAgentsChatRouter({
         application: createAgentsApplication({
           source: "internal-http",
           gateway: fakeGateway,
           cms,
+          users: fakeUsers,
         }),
       }),
       "/api/v1"

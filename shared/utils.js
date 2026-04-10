@@ -57,6 +57,10 @@ export function createForbiddenError(message) {
   return createAppError(403, message);
 }
 
+export function sendNotFound(res, label) {
+  return res.status(404).json({ error: `${label} not found` });
+}
+
 export function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }

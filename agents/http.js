@@ -1,6 +1,7 @@
 import { json, Router } from "express";
 import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 import logger from "shared/logger.js";
+import { logErrors, logRequests } from "shared/middleware.js";
 import { readHttpRequestContext } from "shared/request-context.js";
 import { routeHandler, streamNdjsonResponse } from "shared/utils.js";
 
@@ -81,6 +82,7 @@ export function createAgentsChatRouter({
 
   const api = Router();
   api.use(json({ limit: JSON_BODY_LIMIT }));
+  api.use(logRequests());
 
   api.post(
     "/agents/:agentId/conversations/:conversationId/chat",
@@ -104,7 +106,7 @@ export function createAgentsChatRouter({
     )
   );
 
+  api.use(logErrors());
+
   return api;
 }
-
-export const createAgentsRouter = createAgentsChatRouter;

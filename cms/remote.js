@@ -8,267 +8,148 @@ import {
   streamNdjsonRequest,
 } from "../shared/clients/http.js";
 
-function normalizeClientContext(userIdOrContext, source = "internal-http") {
-  return createRequestContext(userIdOrContext, { source });
-}
-
-function createHeaders(userIdOrContext) {
-  const context = normalizeClientContext(userIdOrContext);
+function createContextHeaders(userIdOrContext, source = "internal-http") {
+  const context = createRequestContext(userIdOrContext, { source });
   return {
     "Content-Type": "application/json",
     ...requestContextToInternalHeaders(context),
   };
 }
 
-async function httpRequest(fetchImpl, baseUrl, method, path, body, userIdOrContext) {
-  return requestJson(fetchImpl, {
-    url: `${baseUrl}${path}`,
-    method,
-    headers: createHeaders(userIdOrContext),
-    body,
-    errorMessage: "CMS request failed",
-    createError: createStatusError,
-  });
-}
-
-async function* streamRequest(fetchImpl, baseUrl, method, path, body, userIdOrContext) {
-  for await (const event of streamNdjsonRequest(fetchImpl, {
-    url: `${baseUrl}${path}`,
-    method,
-    headers: createHeaders(userIdOrContext),
-    body,
-    errorMessage: "CMS stream request failed",
-    createError: createPlainError,
-  })) {
-    if (event.error) throw new Error(event.error);
-    yield event;
-  }
-}
-
 export function createCmsRemote({ baseUrl, fetchImpl = fetch }) {
-  return {
-    createAgent: (context, data) =>
-      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/agents", data, context),
-    getAgents: (context) =>
-      httpRequest(fetchImpl, baseUrl, "GET", "/api/v1/agents", undefined, context),
-    getAgent: (context, agentId) =>
-      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/agents/${agentId}`, undefined, context),
-    updateAgent: (context, agentId, updates) =>
-      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/agents/${agentId}`, updates, context),
-    deleteAgent: (context, agentId) =>
-      httpRequest(fetchImpl, baseUrl, "DELETE", `/api/v1/agents/${agentId}`, undefined, context),
+  function requestCms(path, context, options = {}) {
+    return requestJson(fetchImpl, {
+      url: `${baseUrl}${path}`,
+      headers: createContextHeaders(context),
+      errorMessage: "CMS request failed",
+      createError: createStatusError,
+      ...options,
+    });
+  }
 
+  async function* streamCms(path, context, options = {}) {
+    for await (const event of streamNdjsonRequest(fetchImpl, {
+      url: `${baseUrl}${path}`,
+      headers: createContextHeaders(context),
+      errorMessage: "CMS stream request failed",
+      createError: createPlainError,
+      ...options,
+    })) {
+      if (event.error) throw new Error(event.error);
+      yield event;
+    }
+  }
+
+  return {
+    // Agents
+    createAgent: (context, data) =>
+      requestCms("/api/v1/agents", context, { method: "POST", body: data }),
+    getAgents: (context) => requestCms("/api/v1/agents", context),
+    getAgent: (context, agentId) => requestCms(`/api/v1/agents/${agentId}`, context),
+    updateAgent: (context, agentId, updates) =>
+      requestCms(`/api/v1/agents/${agentId}`, context, { method: "PUT", body: updates }),
+    deleteAgent: (context, agentId) =>
+      requestCms(`/api/v1/agents/${agentId}`, context, { method: "DELETE" }),
+
+    // Conversations
     createConversation: (context, data) =>
-      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/conversations", data, context),
+      requestCms("/api/v1/conversations", context, { method: "POST", body: data }),
     getConversations: (context, options = {}) => {
       const { limit = 20, offset = 0 } = options;
-      return httpRequest(
-        fetchImpl,
-        baseUrl,
-        "GET",
-        `/api/v1/conversations${buildQueryString({ limit, offset })}`,
-        undefined,
-        context
-      );
+      return requestCms(`/api/v1/conversations${buildQueryString({ limit, offset })}`, context);
     },
     getConversation: (context, conversationId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "GET",
-        `/api/v1/conversations/${conversationId}`,
-        undefined,
-        context
-      ),
+      requestCms(`/api/v1/conversations/${conversationId}`, context),
     updateConversation: (context, conversationId, updates) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "PUT",
-        `/api/v1/conversations/${conversationId}`,
-        updates,
-        context
-      ),
+      requestCms(`/api/v1/conversations/${conversationId}`, context, {
+        method: "PUT",
+        body: updates,
+      }),
     deleteConversation: (context, conversationId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "DELETE",
-        `/api/v1/conversations/${conversationId}`,
-        undefined,
-        context
-      ),
+      requestCms(`/api/v1/conversations/${conversationId}`, context, { method: "DELETE" }),
 
+    // Context + Summarize
     getContext: (context, conversationId, options = {}) => {
       const query = buildQueryString({ compressed: options.compressed ? true : undefined });
-      return httpRequest(
-        fetchImpl,
-        baseUrl,
-        "GET",
-        `/api/v1/conversations/${conversationId}/context${query}`,
-        undefined,
-        context
-      );
+      return requestCms(`/api/v1/conversations/${conversationId}/context${query}`, context);
     },
     summarize: (context, conversationId, params) =>
-      streamRequest(
-        fetchImpl,
-        baseUrl,
-        "POST",
-        `/api/v1/conversations/${conversationId}/summarize`,
-        params,
-        context
-      ),
+      streamCms(`/api/v1/conversations/${conversationId}/summarize`, context, {
+        method: "POST",
+        body: params,
+      }),
 
+    // Messages
     appendConversationMessage: (context, data) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "POST",
-        `/api/v1/conversations/${data.conversationId}/messages`,
-        data,
-        context
-      ),
+      requestCms(`/api/v1/conversations/${data.conversationId}/messages`, context, {
+        method: "POST",
+        body: data,
+      }),
     getMessages: (context, conversationId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "GET",
-        `/api/v1/conversations/${conversationId}/messages`,
-        undefined,
-        context
-      ),
-    getMessage: (context, messageId) =>
-      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/messages/${messageId}`, undefined, context),
+      requestCms(`/api/v1/conversations/${conversationId}/messages`, context),
+    getMessage: (context, messageId) => requestCms(`/api/v1/messages/${messageId}`, context),
     updateMessage: (context, messageId, updates) =>
-      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/messages/${messageId}`, updates, context),
+      requestCms(`/api/v1/messages/${messageId}`, context, { method: "PUT", body: updates }),
     deleteMessage: (context, messageId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "DELETE",
-        `/api/v1/messages/${messageId}`,
-        undefined,
-        context
-      ),
+      requestCms(`/api/v1/messages/${messageId}`, context, { method: "DELETE" }),
 
-    createTool: (data) => httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/tools", data, null),
-    getTool: (toolId) =>
-      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/tools/${toolId}`, undefined, null),
-    getTools: (context) =>
-      httpRequest(fetchImpl, baseUrl, "GET", "/api/v1/tools", undefined, context),
+    // Tools (no user context)
+    createTool: (data) => requestCms("/api/v1/tools", null, { method: "POST", body: data }),
+    getTool: (toolId) => requestCms(`/api/v1/tools/${toolId}`, null),
+    getTools: (context) => requestCms("/api/v1/tools", context),
     updateTool: (toolId, updates) =>
-      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/tools/${toolId}`, updates, null),
-    deleteTool: (toolId) =>
-      httpRequest(fetchImpl, baseUrl, "DELETE", `/api/v1/tools/${toolId}`, undefined, null),
+      requestCms(`/api/v1/tools/${toolId}`, null, { method: "PUT", body: updates }),
+    deleteTool: (toolId) => requestCms(`/api/v1/tools/${toolId}`, null, { method: "DELETE" }),
 
-    createPrompt: (data) => httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/prompts", data, null),
-    getPrompt: (promptId) =>
-      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/prompts/${promptId}`, undefined, null),
-    getPrompts: () => httpRequest(fetchImpl, baseUrl, "GET", "/api/v1/prompts", undefined, null),
+    // Prompts (no user context)
+    createPrompt: (data) => requestCms("/api/v1/prompts", null, { method: "POST", body: data }),
+    getPrompt: (promptId) => requestCms(`/api/v1/prompts/${promptId}`, null),
+    getPrompts: () => requestCms("/api/v1/prompts", null),
     updatePrompt: (promptId, updates) =>
-      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/prompts/${promptId}`, updates, null),
+      requestCms(`/api/v1/prompts/${promptId}`, null, { method: "PUT", body: updates }),
     deletePrompt: (promptId) =>
-      httpRequest(fetchImpl, baseUrl, "DELETE", `/api/v1/prompts/${promptId}`, undefined, null),
+      requestCms(`/api/v1/prompts/${promptId}`, null, { method: "DELETE" }),
 
+    // Resources
     storeConversationResource: (context, data) =>
-      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/resources", data, context),
-    getResource: (context, resourceId) =>
-      httpRequest(fetchImpl, baseUrl, "GET", `/api/v1/resources/${resourceId}`, undefined, context),
+      requestCms("/api/v1/resources", context, { method: "POST", body: data }),
+    getResource: (context, resourceId) => requestCms(`/api/v1/resources/${resourceId}`, context),
     updateConversationResource: (context, resourceId, updates) =>
-      httpRequest(fetchImpl, baseUrl, "PUT", `/api/v1/resources/${resourceId}`, updates, context),
+      requestCms(`/api/v1/resources/${resourceId}`, context, { method: "PUT", body: updates }),
     getResourcesByAgent: (context, agentId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "GET",
-        `/api/v1/agents/${agentId}/resources`,
-        undefined,
-        context
-      ),
+      requestCms(`/api/v1/agents/${agentId}/resources`, context),
     getResourcesByConversation: (context, conversationId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "GET",
-        `/api/v1/conversations/${conversationId}/resources`,
-        undefined,
-        context
-      ),
+      requestCms(`/api/v1/conversations/${conversationId}/resources`, context),
     deleteConversationResource: (context, resourceId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "DELETE",
-        `/api/v1/resources/${resourceId}`,
-        undefined,
-        context
-      ),
+      requestCms(`/api/v1/resources/${resourceId}`, context, { method: "DELETE" }),
 
+    // Vectors
     storeConversationVectors: (context, data) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "POST",
-        `/api/v1/conversations/${data.conversationId}/vectors`,
-        { vectors: data.vectors },
-        context
-      ),
+      requestCms(`/api/v1/conversations/${data.conversationId}/vectors`, context, {
+        method: "POST",
+        body: { vectors: data.vectors },
+      }),
     getVectorsByConversation: (context, conversationId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "GET",
-        `/api/v1/conversations/${conversationId}/vectors`,
-        undefined,
-        context
-      ),
+      requestCms(`/api/v1/conversations/${conversationId}/vectors`, context),
     getVectorsByResource: (context, resourceId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "GET",
-        `/api/v1/resources/${resourceId}/vectors`,
-        undefined,
-        context
-      ),
+      requestCms(`/api/v1/resources/${resourceId}/vectors`, context),
     searchVectors: (params) => {
       const query = buildQueryString(params, {
         serializeValue: (key, value) => (key === "embedding" ? JSON.stringify(value) : value),
       });
-      return httpRequest(
-        fetchImpl,
-        baseUrl,
-        "GET",
-        `/api/v1/vectors/search${query}`,
-        undefined,
-        null
-      );
+      return requestCms(`/api/v1/vectors/search${query}`, null);
     },
     deleteVectorsByResource: (context, resourceId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "DELETE",
-        `/api/v1/resources/${resourceId}/vectors`,
-        undefined,
-        context
-      ),
+      requestCms(`/api/v1/resources/${resourceId}/vectors`, context, { method: "DELETE" }),
     deleteVectorsByConversation: (context, conversationId) =>
-      httpRequest(
-        fetchImpl,
-        baseUrl,
-        "DELETE",
-        `/api/v1/conversations/${conversationId}/vectors`,
-        undefined,
-        context
-      ),
+      requestCms(`/api/v1/conversations/${conversationId}/vectors`, context, { method: "DELETE" }),
 
+    // Search
     searchMessages: (context, params) =>
-      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/search/messages", params, context),
+      requestCms("/api/v1/search/messages", context, { method: "POST", body: params }),
     searchResourceVectors: (context, params) =>
-      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/search/vectors", params, context),
+      requestCms("/api/v1/search/vectors", context, { method: "POST", body: params }),
     searchChunks: (context, params) =>
-      httpRequest(fetchImpl, baseUrl, "POST", "/api/v1/search/chunks", params, context),
+      requestCms("/api/v1/search/chunks", context, { method: "POST", body: params }),
   };
 }
