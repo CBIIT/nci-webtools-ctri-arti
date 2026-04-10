@@ -141,9 +141,10 @@ function UserUsage() {
 
   /** Single-day window for `/admin/usage` (daily-table override or default first row). */
   const requestHistoryDateRange = createMemo(() => {
+    const recentDate = mostRecentDateInRange();
     const override = requestHistoryDayOverride();
     if (override) return override;
-    return mostRecentDateInRange();
+    return recentDate;
   });
 
   const onSelectDailyUsageDay = (period) => {
@@ -298,7 +299,7 @@ function UserUsage() {
         return null;
       }}
     >
-      <div class="page-header-bg overflow-hidden font-inter font-smooth">
+      <div class="font-inter font-smooth">
         <div class="page-header-banner">
           <div class="container d-flex flex-column" style="gap: 40px;">
             <a
@@ -321,7 +322,7 @@ function UserUsage() {
             <h1 class="text-white font-poppins page-header-text">Usage Statistics</h1>
           </div>
         </div>
-        <div class="container pb-4" style="margin-top: -36px; position: relative">
+        <div class="container pb-4" style="position: relative">
           <div class="usage-card-body">
             <div class="usage-card-body-inner">
               <!-- Error Alert -->
@@ -343,28 +344,31 @@ function UserUsage() {
                 </div>
               <//>
 
-              <${Overview}
-                userResource=${userResource}
-                selectedDateRange=${selectedDateRange}
-                setSelectedDateRange=${setSelectedDateRange}
-                customDates=${customDates}
-                setCustomDates=${setCustomDates}
-                maxDate=${formatDate(new Date())}
-              />
-              <${UsageSummary} userStats=${userStats} />
+              <${Show} when=${() => !analyticsData.loading && !userResource.loading}>
+                <${Overview}
+                  userResource=${userResource}
+                  selectedDateRange=${selectedDateRange}
+                  setSelectedDateRange=${setSelectedDateRange}
+                  customDates=${customDates}
+                  setCustomDates=${setCustomDates}
+                  maxDate=${formatDate(new Date())}
+                />
 
-              <!-- Usage Summary -->
-              <${Show} when=${() => !analyticsData.loading && userStats()}>
+                <${UsageSummary} userStats=${userStats} />
+              <//>
+
+              <${Show} when=${() => !dailyAnalytics.loading}>
                 <${DailyUsage}
                   dailyAnalytics=${dailyAnalytics}
                   onSelectDailyUsageDay=${onSelectDailyUsageDay}
                 />
+              <//>
+              <${Show} when=${() => !analyticsData.loading}>
                 <${RequestHistory}
                   dateRange=${requestHistoryDateRange}
                   groupedUsageData=${groupedUsageData}
                 />
               <//>
-
               <!-- No Data Message -->
               <${Show} when=${() => !analyticsData.loading && !userStats()}>
                 <div class="alert alert-info">${NO_DATA_MESSAGE}</div>
