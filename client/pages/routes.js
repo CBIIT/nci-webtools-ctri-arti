@@ -52,6 +52,12 @@ const TOOLS_CHILDREN = [
     importPath: "./tools/export-conversations/index.js",
     hidden: true,
   },
+  {
+    path: "protocol-advisor",
+    title: "Protocol Advisor",
+    policy: "/tools/protocol-advisor",
+    importPath: "./tools/protocol-advisor/index.js",
+  },
 ].map(createProtectedRoute);
 
 const USER_CHILDREN = [
