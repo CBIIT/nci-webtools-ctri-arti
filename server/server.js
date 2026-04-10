@@ -2,11 +2,11 @@ import http from "http";
 import https from "https";
 import { pathToFileURL } from "url";
 
-import { getSchemaReadiness, waitForSchemaReady } from "database/readiness.js";
 import express from "express";
 import session from "express-session";
 import logger from "shared/logger.js";
 import { nocache, securityHeaders } from "shared/middleware.js";
+import { createSchemaReadyServiceApp } from "shared/service-app.js";
 
 import { createServerApi } from "./api/index.js";
 import { touchSession } from "./api/middleware.js";
@@ -20,34 +20,12 @@ const sessionMaxAge = parseInt(SESSION_MAX_AGE, 10) || 30 * 60 * 1000;
 const entrypointUrl = process.argv[1] ? pathToFileURL(process.argv[1]).href : null;
 
 if (entrypointUrl && import.meta.url === entrypointUrl) {
-  let schemaReady = false;
   const application = await createApp(process.env);
-  const app = express();
-  app.get("/health", async (_req, res) => {
-    const readiness = await getSchemaReadiness();
-    res.status(readiness.ready ? 200 : 503).json({
-      status: readiness.ready ? "ok" : "waiting",
-      schema: readiness,
-    });
+  const app = createSchemaReadyServiceApp({
+    router: application,
+    onReady: () => startScheduler(),
+    readinessFailureMessage: "Server schema readiness failed",
   });
-  app.use(async (req, res, next) => {
-    if (schemaReady) {
-      return application(req, res, next);
-    }
-
-    const readiness = await getSchemaReadiness();
-    return res.status(503).json({
-      error: "Service is starting",
-      schema: readiness,
-    });
-  });
-
-  waitForSchemaReady()
-    .then(() => {
-      schemaReady = true;
-      startScheduler();
-    })
-    .catch((error) => logger.error(`Server schema readiness failed: ${error.message || error}`));
 
   createServer(app, process.env).listen(PORT, () =>
     logger.info(`Server is running on port ${PORT}`)
@@ -90,13 +68,6 @@ export async function createApp(env = process.env) {
   app.use(touchSession({ except: (req) => req.method === "GET" && req.path.endsWith("/session") }));
   app.use("/api/v1", api);
   app.use("/api", api); // backward compat (deprecated)
-  app.get("/health", async (_req, res) => {
-    const readiness = await getSchemaReadiness();
-    res.status(readiness.ready ? 200 : 503).json({
-      status: readiness.ready ? "ok" : "waiting",
-      schema: readiness,
-    });
-  });
   app.use(express.static(CLIENT_FOLDER));
   app.get(/.*/, (req, res) => res.sendFile("index.html", { root: CLIENT_FOLDER }));
   return app;

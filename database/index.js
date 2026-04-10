@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import { sql } from "drizzle-orm";
 import logger from "shared/logger.js";
 
-import { getResultRows } from "./sync.js";
+import { getResultRows, splitStatements } from "./sync.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const migrationsFolder = resolve(__dirname, "migrations");
@@ -46,10 +46,7 @@ async function runMigrations(execFn) {
     if (applied.has(file)) continue;
 
     const migrationSql = readFileSync(resolve(migrationsFolder, file), "utf-8");
-    const statements = migrationSql
-      .split("--> statement-breakpoint")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const statements = splitStatements(migrationSql);
     for (const stmt of statements) {
       await execFn(stmt);
     }
@@ -119,6 +116,8 @@ const schema = await import("./schema.js");
 
 const usePg = !!PGHOST;
 
+let exec;
+
 if (!usePg) {
   installPGliteTimerUnrefPatch();
 
@@ -135,23 +134,13 @@ if (!usePg) {
     await client.close();
   };
   db = drizzle({ client, schema });
-
-  if (DB_SKIP_SYNC !== "true") {
-    // Run init SQL (extensions, etc.) before migrations — PGlite can't do this via prepared statements
-    await client.exec(initSql);
-
-    await runMigrations((stmt) => client.exec(stmt));
-
-    const { seedDatabase } = schema;
-    await seedDatabase(db);
-    await ensureRelationalIntegrity(db);
-  }
+  exec = (stmt) => client.exec(stmt);
 } else {
   // PostgreSQL mode (production)
   const postgres = (await import("postgres")).default;
   const { drizzle } = await import("drizzle-orm/postgres-js");
 
-  const sql = postgres({
+  const pgSql = postgres({
     host: PGHOST,
     port: +PGPORT,
     database: PGDATABASE,
@@ -161,20 +150,17 @@ if (!usePg) {
     onnotice: () => {},
   });
   closeDatabaseImpl = async () => {
-    await sql.end({ timeout: 1 });
+    await pgSql.end({ timeout: 1 });
   };
-  db = drizzle(sql, { schema });
+  db = drizzle(pgSql, { schema });
+  exec = (stmt) => pgSql.unsafe(stmt);
+}
 
-  if (DB_SKIP_SYNC !== "true") {
-    // Run init SQL (extensions, etc.) before migrations
-    await sql.unsafe(initSql);
-
-    await runMigrations((stmt) => sql.unsafe(stmt));
-
-    const { seedDatabase } = schema;
-    await seedDatabase(db);
-    await ensureRelationalIntegrity(db);
-  }
+if (DB_SKIP_SYNC !== "true") {
+  await exec(initSql);
+  await runMigrations(exec);
+  await schema.seedDatabase(db);
+  await ensureRelationalIntegrity(db);
 }
 
 if (isTestRuntime()) {

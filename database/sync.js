@@ -6,7 +6,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const migrationsFolder = resolve(__dirname, "migrations");
 const initSql = readFileSync(resolve(__dirname, "init.sql"), "utf-8");
 
-function splitStatements(sqlText) {
+export function splitStatements(sqlText) {
   return sqlText
     .split("--> statement-breakpoint")
     .map((statement) => statement.trim())
