@@ -131,7 +131,7 @@ test("getDateRange", async (t) => {
   });
 
   await t.test("date-only start begins at UTC midnight, end at 23:59:59.999 UTC", () => {
-    const { startDate, endDate } = getDateRange("2024-06-15", "2024-06-15");
+    const { startDate, endDate } = getDateRange("2024-06-15", "2024-06-15", "UTC");
     assert.strictEqual(startDate.getUTCHours(), 0);
     assert.strictEqual(startDate.getUTCMinutes(), 0);
     assert.strictEqual(endDate.getUTCHours(), 23);
@@ -141,7 +141,7 @@ test("getDateRange", async (t) => {
   });
 
   await t.test("date-only params preserve the intended UTC calendar day", () => {
-    const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09");
+    const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09", "UTC");
     assert.strictEqual(startDate.getUTCFullYear(), 2026);
     assert.strictEqual(startDate.getUTCMonth(), 2);
     assert.strictEqual(startDate.getUTCDate(), 9);
@@ -151,7 +151,7 @@ test("getDateRange", async (t) => {
   });
 
   await t.test("same-day evening UTC timestamps remain inside a date-only range", () => {
-    const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09");
+    const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09", "UTC");
     const evening = new Date("2026-03-09T20:41:57.000Z");
     assert.ok(evening >= startDate, "evening timestamp should be after startDate");
     assert.ok(evening <= endDate, "evening timestamp should be before endDate");
@@ -167,7 +167,7 @@ test("getDateRange", async (t) => {
   });
 
   await t.test("supports mixed date-only and UTC timestamp bounds", () => {
-    const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09T20:41:57.123Z");
+    const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09T20:41:57.123Z", "UTC");
     assert.strictEqual(startDate.toISOString(), "2026-03-09T00:00:00.000Z");
     assert.strictEqual(endDate.toISOString(), "2026-03-09T20:41:57.123Z");
   });
