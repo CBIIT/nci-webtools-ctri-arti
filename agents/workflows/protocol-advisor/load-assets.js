@@ -39,6 +39,8 @@ export async function loadProtocolAdvisorAssets(ctx) {
     prompts: {
       system: readUtf8(PROMPT_PATHS.system),
       sourceReview: readUtf8(PROMPT_PATHS.sourceReview),
+      contradictionReviewSystem: readUtf8(PROMPT_PATHS.contradictionReviewSystem),
+      contradictionReviewUser: readUtf8(PROMPT_PATHS.contradictionReviewUser),
       finalReport: readUtf8(PROMPT_PATHS.finalReport),
       sourceReviewSchema: readUtf8(PROMPT_PATHS.sourceReviewSchema),
     },

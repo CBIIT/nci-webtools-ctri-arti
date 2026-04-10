@@ -30,6 +30,7 @@ function buildFinalReportPayload(merged) {
           required_action: finding.required_action,
         })),
       })),
+    contradiction_review: merged.contradictionReview,
   };
 }
 

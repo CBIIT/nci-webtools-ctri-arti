@@ -1,11 +1,6 @@
-import {
-  countBy,
-  normalizeText,
-  overallDisposition,
-  verdictRank,
-} from "./review-helpers.js";
+import { countBy, normalizeText, overallDisposition, verdictRank } from "./review-helpers.js";
 
-function buildAuditReport(merged) {
+function buildAuditReport(merged, contradictionReview) {
   const lines = [];
   lines.push("# EXECUTIVE SUMMARY: COMPLIANCE REVIEW");
   lines.push("");
@@ -18,7 +13,9 @@ function buildAuditReport(merged) {
 
   const topFindings = merged.findings.filter((item) => !item.duplicate_of).slice(0, 12);
   for (const finding of topFindings) {
-    lines.push(`- [${finding.status}] ${finding.issue_title} (${finding.citation || finding.source_id})`);
+    lines.push(
+      `- [${finding.status}] ${finding.issue_title} (${finding.citation || finding.source_id})`
+    );
   }
 
   lines.push("");
@@ -51,13 +48,74 @@ function buildAuditReport(merged) {
     lines.push("");
   }
 
-  return `${lines.join("\n").replace(/\n{3,}/g, "\n\n").trim()}\n`;
+  if (contradictionReview.status === "completed" && contradictionReview.findings.length > 0) {
+    lines.push("## INTERNAL CONTRADICTIONS REVIEW");
+    lines.push("");
+    lines.push(contradictionReview.overallSummary);
+    lines.push("");
+    for (const finding of contradictionReview.findings) {
+      lines.push(`- [${finding.severity}] ${finding.concept || finding.category}`);
+      const locA = finding.sectionA.sectionId || "unspecified";
+      const pageA = finding.sectionA.page ? ` (p. ${finding.sectionA.page})` : "";
+      lines.push(`  - Section A: ${locA} ${finding.sectionA.sectionTitle}${pageA}`);
+      lines.push(`  - Quote A: ${finding.sectionA.quote}`);
+      const locB = finding.sectionB.sectionId || "unspecified";
+      const pageB = finding.sectionB.page ? ` (p. ${finding.sectionB.page})` : "";
+      lines.push(`  - Section B: ${locB} ${finding.sectionB.sectionTitle}${pageB}`);
+      lines.push(`  - Quote B: ${finding.sectionB.quote}`);
+      lines.push(`  - Explanation: ${finding.explanation}`);
+      lines.push(`  - Resolution Guidance: ${finding.resolutionGuidance}`);
+    }
+    lines.push("");
+  }
+
+  return `${lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()}\n`;
+}
+
+function buildContradictionReview(result) {
+  if (!result) {
+    return {
+      status: "not_executed",
+      overallSummary: "",
+      documentClean: true,
+      findings: [],
+    };
+  }
+
+  if (result.status === "completed") {
+    return {
+      status: "completed",
+      overallSummary: result.output?.overallSummary || "",
+      documentClean: Array.isArray(result.output?.findings) && result.output.findings.length === 0,
+      findings: Array.isArray(result.output?.findings) ? result.output.findings : [],
+    };
+  }
+
+  if (result.status === "failed") {
+    return {
+      status: "failed",
+      overallSummary: result.output?.error || "Contradiction review failed.",
+      documentClean: false,
+      findings: [],
+    };
+  }
+
+  return {
+    status: "not_executed",
+    overallSummary: result.output?.message || "",
+    documentClean: true,
+    findings: [],
+  };
 }
 
 export function aggregateProtocolAdvisorReport(ctx) {
   const assets = ctx.steps.loadAssets;
   const parsedProtocol = ctx.steps.parseProtocol;
   const reviewArtifacts = ctx.steps.executeSourceReviews.results;
+  const contradictionReview = buildContradictionReview(ctx.steps.executeContradictionReview);
 
   const sourceVerdicts = reviewArtifacts.map((artifact) => ({
     source_id: artifact.source_review.source_id,
@@ -109,10 +167,12 @@ export function aggregateProtocolAdvisorReport(ctx) {
   }
 
   sourceVerdicts.sort(
-    (a, b) => verdictRank(a.verdict) - verdictRank(b.verdict) || a.source_id.localeCompare(b.source_id)
+    (a, b) =>
+      verdictRank(a.verdict) - verdictRank(b.verdict) || a.source_id.localeCompare(b.source_id)
   );
   findings.sort(
-    (a, b) => verdictRank(a.status) - verdictRank(b.status) || a.issue_title.localeCompare(b.issue_title)
+    (a, b) =>
+      verdictRank(a.status) - verdictRank(b.status) || a.issue_title.localeCompare(b.issue_title)
   );
 
   const uniqueFindings = findings.filter((item) => !item.duplicate_of);
@@ -156,6 +216,7 @@ export function aggregateProtocolAdvisorReport(ctx) {
 
   return {
     ...merged,
-    audit_report_markdown: buildAuditReport(merged),
+    contradictionReview,
+    audit_report_markdown: buildAuditReport(merged, contradictionReview),
   };
 }

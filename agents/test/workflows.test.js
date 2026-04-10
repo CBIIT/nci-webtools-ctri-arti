@@ -105,7 +105,7 @@ describe("workflows", () => {
     assert.ok(assets.sources.some((source) => source.id === "45-cfr-part-46"));
     assert.ok(assets.sources.some((source) => source.id === "secondary_research"));
     assert.ok(assets.prompts.system.includes("You are Protocol Advisor"));
-    assert.ok(assets.prompts.sourceReviewSchema.includes("\"task_type\""));
+    assert.ok(assets.prompts.sourceReviewSchema.includes('"task_type"'));
   });
 
   it("runs the protocol advisor workflow end to end and emails a final DOCX report", async () => {
@@ -117,6 +117,7 @@ describe("workflows", () => {
         calls.push(params);
 
         if (params.type === "workflow-protocol_advisor-final_report") {
+          assert.match(params.messages[0].content[0].text, /"contradiction_review"/);
           return {
             output: {
               message: {
@@ -168,6 +169,27 @@ describe("workflows", () => {
           };
         }
 
+        if (params.type === "workflow-protocol_advisor-contradiction_review") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      overallSummary: "No contradictions identified.",
+                      documentClean: true,
+                      findings: [],
+                      citations: [],
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 10, outputTokens: 10 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
         const userText = params.messages[0].content[0].text;
 
         if (userText.includes("REFERENCE SOURCE\n- id: 45-cfr-part-46")) {
@@ -193,7 +215,8 @@ describe("workflows", () => {
                             status: "insufficient_evidence",
                             issue_title: "Consent detail missing",
                             source_excerpt: "Informed consent must include required elements.",
-                            subject_evidence: "The protocol mentions consent but omits procedural detail.",
+                            subject_evidence:
+                              "The protocol mentions consent but omits procedural detail.",
                             analysis: "The protocol does not clearly describe the consent process.",
                             required_action: "Add explicit consent-process detail and timing.",
                           },
@@ -299,8 +322,18 @@ describe("workflows", () => {
       }
     );
 
-    assert.equal(calls.filter((call) => call.type === "workflow-protocol_advisor-source_review").length, 29);
-    assert.equal(calls.filter((call) => call.type === "workflow-protocol_advisor-final_report").length, 1);
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-source_review").length,
+      29
+    );
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-contradiction_review").length,
+      1
+    );
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-final_report").length,
+      1
+    );
     assert.equal(result.output.delivery.status, "sent");
     assert.equal(result.output.delivery.recipient, "reviewer@example.org");
     assert.equal(result.output.status, "clarification_required");
@@ -324,6 +357,27 @@ describe("workflows", () => {
       invoke: async (params) => {
         if (params.type === "workflow-protocol_advisor-source_review" && !firstSystemPrompt) {
           firstSystemPrompt = params.system;
+        }
+
+        if (params.type === "workflow-protocol_advisor-contradiction_review") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      overallSummary: "No contradictions identified.",
+                      documentClean: true,
+                      findings: [],
+                      citations: [],
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
         }
 
         if (params.type === "workflow-protocol_advisor-final_report") {
