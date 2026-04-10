@@ -203,6 +203,12 @@ test("Translator request form visibility follows role", async (t) => {
         "translator auth loaded for normal user"
       );
 
+      await waitForCondition(
+        () => container.textContent.includes("Request Consent Spanish Translation"),
+        5000,
+        "translator Spanish request text rendered"
+      );
+
       assert.ok(
         container.textContent.includes("Request Consent Spanish Translation"),
         "Normal users should see the Spanish request text"
