@@ -4,7 +4,6 @@ import { createStore, reconcile } from "solid-js/store";
 
 import { AlertContainer } from "../../../components/alert.js";
 import FileInput from "../../../components/file-input.js";
-import { InlineSelect } from "../../../components/inline-select.js";
 import { useAuthContext } from "../../../contexts/auth-context.js";
 import { MODEL_OPTIONS } from "../../../models/model-options.js";
 import { alerts, clearAlert, handleError } from "../../../utils/alerts.js";
@@ -281,11 +280,6 @@ export default function Page() {
     unregisterErrorDataCollector("translate");
   });
 
-  const targetModelOptions = () => {
-    let modelsOptions = MODELS.map((m) => ({ value: m.value, label: m.label }));
-    return [{ value: engine(), label: "AWS Translate" }, ...modelsOptions];
-  };
-
   // #region Session Persistence
   const { setParam, createSession, saveSession } = useSessionPersistence({
     dbPrefix: "arti-translator",
@@ -504,31 +498,34 @@ export default function Page() {
         return null;
       }}
     >
-      <div id="translator-page" class="font-smooth bg">
-        <div
-          class="d-flex align-items-center profile-banner"
-          aria-label="Profile Management Banner"
-        >
-          <div class="container">
-            <h1 class="profile-title fw-medium font-outfit text-white mb-0">Translator</h1>
-          </div>
-        </div>
-        <div class="container py-5">
+      <div class="bg-info-subtle h-100 position-relative">
+        <div class="container py-3">
           <form
             id="translateForm"
             onSubmit=${handleSubmit}
             onReset=${handleReset}
             class="container p-0"
           >
-            <div class="d-flex align-items-stretch column-gap-5">
+            <div class="row align-items-stretch mb-3 text-center">
+              <div class="col">
+                <div class="bg-white shadow border rounded p-3">
+                  <h1 class="fw-bold fs-3 form-label mt-3 mb-2">Document Translator</h1>
+                  <p class="mb-4 text-body-secondary">
+                    Easily translate your documents into multiple languages and generate accurate
+                    translations in seconds.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="row align-items-stretch">
               <div class="col-md-6 mb-2">
                 <${Show} when=${showTranslationRequest}>
-                  <div class="text-white">
-                    <h2 class="panel-title">Request Consent Spanish Translation</h2>
+                  <div class="bg-white shadow border rounded p-3 mb-2">
+                    <h2 class="fs-5 text-info">Request Consent Spanish Translation</h2>
                     <p>
                       To request for Spanish translation of your consent documents submit the <br />
                       <a
-                        class="text-white"
                         href="https://nih.sharepoint.com/:l:/s/NCI-CBIIT-ARTI/JADA1-ffrVT_T6akgYWsKhD7Aa23tlMmwVqNpg2zVKZ30lQ?nav=ZTA3NDEzMTYtY2U2Zi00YTkwLWEwMDQtMmZkZGMzYmI1NDdj"
                         target="_blank"
                         >Spanish Translation Request Form</a
@@ -537,11 +534,11 @@ export default function Page() {
                   </div>
                 <//>
                 <${Show} when=${showAdminContent}>
-                  <div class="position-relative w-100 mt-4">
-                    <div>
+                  <div class="position-relative w-100">
+                    <div class="bg-white shadow border rounded p-3 card-lg">
                       <div class="row">
-                        <div class="col-sm-12">
-                          <label for="fileInput" class="form-label required"
+                        <div class="col-sm-12 mb-2">
+                          <label for="inputText" class="form-label required text-info fs-5 mb-1"
                             >Source Documents</label
                           >
                           <${FileInput}
@@ -550,40 +547,36 @@ export default function Page() {
                             onChange=${handleFileSelect}
                             multiple=${true}
                             accept=".txt, .docx, .html"
-                            class="form-control form-control-sm mb-1"
+                            class="form-control form-control-sm mb-3"
                           />
-                          <!-- <div class="form-text">PDF or DOCX (max 25 MB)</div> -->
                         </div>
 
-                        <div class="col-sm-12 mt-25">
-                          <div>
+                        <div class="col-sm-12 mb-4">
+                          <div
+                            class="d-flex justify-content-start align-items-center flex-wrap gap-2"
+                          >
                             <label
-                              id="target-model-label"
-                              for="target-model-select"
-                              class="form-label required"
-                              >Target Model</label
+                              for="targetLanguage"
+                              class="form-label required text-info fs-5 mb-1"
+                              >Target Languages</label
                             >
                             <${Show} when=${() => user?.()?.Role?.name === "admin"}>
-                              <!-- target language -->
-                              <div class="mb-3">
-                                <div>
-                                  <${InlineSelect}
-                                    id="target-model-select"
-                                    ariaLabelledBy="target-model-label"
-                                    options=${() => targetModelOptions()}
-                                    value=${() => engine()}
-                                    onChange=${(e) => setEngine(e.target.value)}
-                                  />
-                                </div>
-                              </div>
+                              <select
+                                class="form-select form-select-sm w-auto mb-1"
+                                aria-label="Translation engine"
+                                value=${() => engine()}
+                                onChange=${(e) => setEngine(e.target.value)}
+                              >
+                                <option value="aws">AWS Translate</option>
+                                ${MODELS.map(
+                                  (m) => html`<option value=${m.value}>${m.label}</option>`
+                                )}
+                              </select>
                             <//>
                           </div>
 
-                          <div class="mt-25">
+                          <div class="border rounded p-3 pb-5">
                             <div class="row">
-                              <label for="targetLanguage" class="form-label required"
-                                >Target Languages</label
-                              >
                               <${For} each=${languageColumns()}>
                                 ${(col) => html`
                                   <div class="col-sm-3">
@@ -602,7 +595,7 @@ export default function Page() {
                                               onChange=${(e) => onTargetLanguageChange(e, option)}
                                             />
                                             <label
-                                              class="form-check-label cursor-pointer text-nowrap text-white"
+                                              class="form-check-label cursor-pointer text-nowrap"
                                               classList=${() => ({ "text-muted": option.disabled })}
                                               for=${() => option.value}
                                             >
@@ -621,7 +614,7 @@ export default function Page() {
                       </div>
                     </div>
 
-                    <div class="d-flex-center gap-3 mt-45">
+                    <div class="d-flex-center gap-1 mt-2">
                       <button type="reset" class="btn btn-wide btn-wide-info px-3 py-3">
                         Reset
                       </button>
@@ -638,27 +631,27 @@ export default function Page() {
               </div>
 
               <${Show} when=${showAdminContent}>
-                <div
-                  id="translator-right-panel"
-                  class="col-md-6 d-flex"
-                  style="margin-bottom: 66px !important;"
-                >
-                  <div class="flex-grow-1">
+                <div class="col-md-6 d-flex" style="margin-bottom: 66px !important;">
+                  <div
+                    class="d-flex flex-column bg-white shadow border rounded p-3 flex-fill h-100 card-lg"
+                  >
                     <${Show}
                       when=${() => Object.keys(store.generatedDocuments).length > 0}
                       fallback=${html`
-                        <div class="h-100">
-                          <div>To get started:</div>
-                          <ol>
-                            <li>Upload your source documents.</li>
-                            <li>Select one or more target languages from the list.</li>
-                            <li>Click Generate to create translated versions.</li>
-                          </ol>
+                        <div class="d-flex h-100 py-5">
+                          <div class="text-center py-5">
+                            <h1 class="text-info mb-3">Welcome to Document Translator</h1>
+                            <div>
+                              To get started, upload your source documents, select one or more
+                              target languages from the list, and click Generate to create
+                              translated versions.
+                            </div>
+                          </div>
                         </div>
                       `}
                     >
-                      <div class="d-flex flex-column gap-2 align-items-stretch">
-                        <div class="text-white small fw-semibold">
+                      <div class="d-flex flex-column gap-2">
+                        <div class="text-muted small fw-semibold">
                           <${Show}
                             when=${allJobsProcessed}
                             fallback="We are generating your forms now. This may take a few moments."
@@ -669,79 +662,88 @@ export default function Page() {
                             >
                           <//>
                         </div>
-                        <div class="mt-25">
-                          <${For} each=${() => Object.keys(store.generatedDocuments)}>
-                            ${(jobId) => {
-                              const job = () => store.generatedDocuments[jobId];
-                              return html`
-                                <div
-                                  class="d-flex justify-content-between align-items-center p-2 border rounded"
-                                >
-                                  <div class="flex-grow-1">
-                                    <div class="fw-medium">
-                                      <span
-                                        >${() =>
-                                          job().config?.displayInfo?.label || "Unknown"}</span
-                                      >
-                                    </div>
-                                    <div class="small text-white">
-                                      ${() =>
-                                        job().config?.displayInfo?.filename ||
-                                        "translated_text.txt"}
-                                    </div>
-                                  </div>
-                                  <${Show} when=${() => job()?.status === "processing"}>
-                                    <div
-                                      class="spinner-border spinner-border-sm text-white me-2"
-                                      role="status"
+
+                        <${For} each=${() => Object.keys(store.generatedDocuments)}>
+                          ${(jobId) => {
+                            const job = () => store.generatedDocuments[jobId];
+                            return html`
+                              <div
+                                class="d-flex justify-content-between align-items-center p-2 border rounded"
+                              >
+                                <div class="flex-grow-1">
+                                  <div class="fw-medium">
+                                    <span
+                                      >${() => job().config?.displayInfo?.label || "Unknown"}</span
                                     >
-                                      <span class="visually-hidden">Processing...</span>
-                                    </div>
-                                  <//>
-                                  <${Show} when=${() => job()?.status === "completed"}>
+                                  </div>
+                                  <div class="small text-muted">
+                                    ${() =>
+                                      job().config?.displayInfo?.filename || "translated_text.txt"}
+                                  </div>
+                                </div>
+                                <${Show} when=${() => job()?.status === "processing"}>
+                                  <div
+                                    class="spinner-border spinner-border-sm text-primary me-2"
+                                    role="status"
+                                  >
+                                    <span class="visually-hidden">Processing...</span>
+                                  </div>
+                                <//>
+                                <${Show} when=${() => job()?.status === "completed"}>
+                                  <button
+                                    type="button"
+                                    class="btn btn-outline-light"
+                                    onClick=${() => downloadJob(jobId)}
+                                  >
+                                    <img
+                                      src="/assets/images/icon-download.svg"
+                                      height="16"
+                                      alt="Download"
+                                    />
+                                  </button>
+                                <//>
+                                <${Show} when=${() => job()?.status === "error"}>
+                                  <div class="d-flex align-items-center gap-2">
                                     <button
                                       type="button"
-                                      class="btn"
-                                      onClick=${() => downloadJob(jobId)}
+                                      class="btn btn-sm btn-outline-danger"
+                                      title=${() => job().error}
+                                      onClick=${() => retryJob(jobId)}
                                     >
-                                      <img
-                                        src="/assets/images/icon-download-white.svg"
-                                        height="24"
-                                        alt="Download"
-                                      />
+                                      Retry
                                     </button>
-                                  <//>
-                                  <${Show} when=${() => job()?.status === "error"}>
-                                    <div class="d-flex align-items-center gap-2">
-                                      <button
-                                        type="button"
-                                        class="btn btn-sm btn-outline-light"
-                                        title=${() => job().error}
-                                        onClick=${() => retryJob(jobId)}
-                                      >
-                                        Retry
-                                      </button>
-                                    </div>
-                                  <//>
-                                </div>
-                              `;
-                            }}
-                          <//>
-                        </div>
+                                  </div>
+                                <//>
+                              </div>
+                            `;
+                          }}
+                        <//>
                       </div>
-
                       <${Show} when=${allJobsProcessed}>
-                        <div
-                          class="h-100 d-flex flex-column justify-content-between align-items-center"
-                        >
-                          <div class="text-end mt-55">
+                        <div class="h-100 d-flex flex-column justify-content-between">
+                          <div class="text-end">
                             <button
                               type="button"
-                              class="btn btn-wide btn-wide-info btn-outline px-3 py-3"
+                              class="btn btn-sm btn-link fw-semibold p-0"
                               onClick=${downloadAll}
                             >
                               Download All
                             </button>
+                          </div>
+                          <div class="mt-auto d-flex align-items-center">
+                            <img
+                              src="/assets/images/icon-star.svg"
+                              alt="Star"
+                              class="me-2"
+                              height="16"
+                            />
+                            <div>
+                              <span class="me-1">We would love your feedback!</span>
+                              <a href="https://www.cancer.gov/" target="_blank"
+                                >Take a quick survey</a
+                              >
+                              &nbsp;to help us improve.
+                            </div>
                           </div>
                         </div>
                       <//>
