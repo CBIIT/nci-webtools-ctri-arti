@@ -2,10 +2,9 @@ import http from "http";
 
 import express from "express";
 import logger from "shared/logger.js";
+import { createSchemaReadyServiceApp } from "shared/service-app.js";
 import { createUsersApplication } from "users/app.js";
 import { createUsersRemote } from "users/remote.js";
-
-import { createSchemaReadyServiceApp } from "../shared/service-app.js";
 
 import { createGatewayRouter } from "./http.js";
 import { createGatewayService } from "./service.js";

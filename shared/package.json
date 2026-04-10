@@ -13,17 +13,19 @@
     "./search.js": "./search.js",
     "./parsers.js": "./parsers.js",
     "./s3.js": "./s3.js",
-    "./embedder.js": "./embedder.js",
     "./chunker.js": "./chunker.js",
     "./http-limits.js": "./http-limits.js",
-    "./token-estimation.js": "./token-estimation.js"
+    "./token-estimation.js": "./token-estimation.js",
+    "./service-app.js": "./service-app.js",
+    "./clients/http.js": "./clients/http.js",
+    "./clients/ndjson.js": "./clients/ndjson.js"
   },
   "dependencies": {
-    "@huggingface/transformers": "^3.8.1",
-    "@aws-sdk/client-s3": "^3.1011.0",
-    "lodash": "^4.17.23",
+    "@huggingface/transformers": "^4.0.1",
+    "@aws-sdk/client-s3": "^3.1028.0",
+    "lodash": "^4.18.1",
     "mammoth": "^1.12.0",
-    "pdfjs-dist": "^5.5.207",
+    "pdfjs-dist": "^5.6.205",
     "winston": "^3.19.0"
   }
 }

@@ -7,10 +7,9 @@ import { createGatewayRemote } from "gateway/remote.js";
 import { createGatewayService } from "gateway/service.js";
 import { sendEmail } from "server/integrations/email.js";
 import logger from "shared/logger.js";
+import { createSchemaReadyServiceApp } from "shared/service-app.js";
 import { createUsersApplication } from "users/app.js";
 import { createUsersRemote } from "users/remote.js";
-
-import { createSchemaReadyServiceApp } from "../shared/service-app.js";
 
 import { createAgentsApplication } from "./app.js";
 import { createAgentsChatRouter } from "./http.js";

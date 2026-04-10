@@ -3,9 +3,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import express from "express";
+import { createSchemaReadyServiceApp } from "shared/service-app.js";
 import request from "supertest";
-
-import { createSchemaReadyServiceApp } from "../../shared/service-app.js";
 
 function createDeferred() {
   let resolvePromise;

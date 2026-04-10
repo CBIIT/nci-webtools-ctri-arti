@@ -4,8 +4,7 @@ import express from "express";
 import { createGatewayRemote } from "gateway/remote.js";
 import { createGatewayService } from "gateway/service.js";
 import logger from "shared/logger.js";
-
-import { createSchemaReadyServiceApp } from "../shared/service-app.js";
+import { createSchemaReadyServiceApp } from "shared/service-app.js";
 
 import { createCmsRouter } from "./http.js";
 import { createCmsService } from "./service.js";

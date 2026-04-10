@@ -2,8 +2,7 @@ import http from "http";
 
 import express from "express";
 import logger from "shared/logger.js";
-
-import { createSchemaReadyServiceApp } from "../shared/service-app.js";
+import { createSchemaReadyServiceApp } from "shared/service-app.js";
 
 import { createUsersApplication } from "./app.js";
 import { createUsersRouter } from "./http.js";
