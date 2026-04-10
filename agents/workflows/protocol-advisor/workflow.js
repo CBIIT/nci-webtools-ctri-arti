@@ -1,4 +1,5 @@
 import { aggregateProtocolAdvisorReport } from "./aggregate-report.js";
+import { executeProtocolAdvisorContradictionReview } from "./execute-contradiction-review.js";
 import { executeProtocolAdvisorSourceReviews } from "./execute-source-reviews.js";
 import { validateProtocolAdvisorInput } from "./input-schema.js";
 import { loadProtocolAdvisorAssets } from "./load-assets.js";
@@ -30,8 +31,12 @@ export const protocolAdvisorWorkflow = {
       deps: ["loadAssets", "parseProtocol"],
       run: executeProtocolAdvisorSourceReviews,
     },
+    executeContradictionReview: {
+      deps: ["parseProtocol", "loadAssets"],
+      run: executeProtocolAdvisorContradictionReview,
+    },
     aggregateReport: {
-      deps: ["loadAssets", "parseProtocol", "executeSourceReviews"],
+      deps: ["loadAssets", "parseProtocol", "executeSourceReviews", "executeContradictionReview"],
       run: aggregateProtocolAdvisorReport,
     },
     synthesizeFinalReport: {
