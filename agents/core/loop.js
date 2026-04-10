@@ -1,3 +1,5 @@
+import { createNotFoundError } from "shared/utils.js";
+
 import { getToolFn } from "../tools/index.js";
 import { getToolSpec, getToolSpecs } from "../tools/specs.js";
 
@@ -20,7 +22,7 @@ const TERMINAL_STOP_REASONS = new Set([
 async function loadAgentSession({ userId, agentId, conversationId, modelOverride, cms }) {
   const agent = await cms.getAgent(userId, agentId);
   if (!agent) {
-    throw new Error(`Agent not found: ${agentId}`);
+    throw createNotFoundError(`Agent not found: ${agentId}`);
   }
 
   const effectiveModel = modelOverride || agent.runtime?.model;
@@ -36,7 +38,7 @@ async function loadAgentSession({ userId, agentId, conversationId, modelOverride
   if (conversationId != null) {
     conversation = await cms.getConversation(userId, conversationId);
     if (!conversation) {
-      throw new Error(`Conversation not found: ${conversationId}`);
+      throw createNotFoundError(`Conversation not found: ${conversationId}`);
     }
   }
 

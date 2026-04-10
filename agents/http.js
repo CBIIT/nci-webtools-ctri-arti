@@ -3,9 +3,7 @@ import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 import logger from "shared/logger.js";
 import { logErrors, logRequests } from "shared/middleware.js";
 import { readHttpRequestContext } from "shared/request-context.js";
-import { routeHandler, streamNdjsonResponse } from "shared/utils.js";
-
-import { validateUserMessageContent } from "./validation.js";
+import { createValidationError, routeHandler, streamNdjsonResponse } from "shared/utils.js";
 
 export function getAgentRequestContext(req) {
   return readHttpRequestContext(req, {
@@ -31,9 +29,8 @@ async function handleChatRequest(req, res, { application, resolveContext, conver
   const { message, modelOverride, thoughtBudget, background } = req.body;
 
   if (!message?.content) {
-    return res.status(400).json({ error: "Message content required" });
+    throw createValidationError("Message content required");
   }
-  validateUserMessageContent(message.content);
 
   const stream = application.chat({
     context,
