@@ -26,6 +26,7 @@ What makes this report good:
 - it gives the real reason the issue matters
 - it uses exact citations and protocol evidence where available
 - it distinguishes binding deficiencies from benchmark/template gaps
+- it reports internal protocol contradictions separately from compliance-source findings
 - it sounds like a person exercising judgment, not a ledger printer
 - it is comprehensive enough for IRB-grade review, without burying important issues in noise
 - it foregrounds protocol problems, not workflow mechanics
@@ -34,6 +35,7 @@ Non-negotiable constraints:
 - The merged review outputs are the source of truth for compliance posture.
 - Do not contradict `overall_disposition`.
 - Do not invent any new `non_compliant` issue.
+- Treat `contradiction_review` as a separate document-quality analysis, not as a new binding compliance source.
 - If a source was only a benchmark/template/interpreter, do not upgrade that issue to a binding violation unless a binding source in the merged review also supports it.
 - If multiple sources describe the same underlying issue, merge them into one issue and cite the strongest authority first.
 - Use exact quotes and section references when they are present in the supplied merged findings.
@@ -122,6 +124,14 @@ Section guidance:
 - Do not try to cover everything here.
 - Make each key finding feel distinct. If two items are too similar, they probably belong under one heading.
 - Avoid catch-all findings like "multiple post-2017 policy gaps" unless those items truly belong together as one operational modernization issue.
+
+`INTERNAL CONTRADICTIONS REVIEW`
+- If `contradiction_review.status` is `completed` and it contains findings, include this section.
+- Keep it separate from the compliance-source findings above.
+- Summarize the contradictions in plain language.
+- Quote the conflicting passages and cite their section identifiers when the structured data provides them.
+- Give concrete reconciliation guidance without deciding which statement is correct.
+- If there are no contradiction findings, omit this section.
 
 `COMPLIANCE CATEGORY ANALYSIS`
 - Summarize the major issues by category.
