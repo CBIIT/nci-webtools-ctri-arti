@@ -1823,7 +1823,7 @@ dialog .close-btn {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  gap: 0;
+  gap: 5px !important;
   align-self: stretch;
   grid-row: 1 / span 1;
   grid-column: 2 / span 1;
@@ -1836,7 +1836,7 @@ dialog .close-btn {
 }
 
 .usage-metric-label {
-  color: var(--Blue-Blue-1, #036AC5);
+  color: var(--Blue-Blue-1, #036ac5);
 }
 
 .usage-summary .usage-metric-value--requests {
