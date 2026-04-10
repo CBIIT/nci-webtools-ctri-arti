@@ -3,6 +3,7 @@ import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 import logger from "shared/logger.js";
 import { logErrors, logRequests } from "shared/middleware.js";
 import { resolveRequestId } from "shared/request-context.js";
+import { createAppError, routeHandler, streamNdjsonResponse } from "shared/utils.js";
 
 function sendGatewayError(res, error) {
   return res.status(error.statusCode).json({
@@ -28,35 +29,40 @@ function sendGatewayRateLimit(res, result) {
   });
 }
 
-function createGatewayUnexpectedError(operation, cause) {
-  const message =
-    operation === "gateway list models"
-      ? "An error occurred while fetching models"
-      : "An error occurred while processing the model request";
-  const error = new Error(message);
-  error.statusCode = 500;
-  error.cause = cause;
-  return error;
+function createGatewayUnexpectedError(cause) {
+  return createAppError(500, "An error occurred while processing the model request", { cause });
 }
 
-function forwardGatewayError(error, next, { operation } = {}) {
+function forwardGatewayError(error, next) {
   if (error.statusCode) {
     return next(error);
   }
 
-  logger.error(`Error in ${operation}:`, error);
-  return next(createGatewayUnexpectedError(operation, error));
+  logger.error("Error in gateway invoke:", error);
+  return next(createGatewayUnexpectedError(error));
 }
 
-async function streamGatewayResponse(res, stream) {
-  for await (const message of stream) {
+function streamGatewayResponse(res, stream) {
+  return streamNdjsonResponse(res, stream, {
+    onWriteError: (error) => logger.error("Error processing stream message:", error),
+  });
+}
+
+/**
+ * Wraps routeHandler to ensure unexpected errors (no statusCode) get a 500 status
+ * with a safe user-facing message, rather than leaking internal details.
+ */
+function gatewayRouteHandler(fn) {
+  return routeHandler(async (req, res, next) => {
     try {
-      res.write(JSON.stringify(message) + "\n");
+      return await fn(req, res, next);
     } catch (error) {
-      logger.error("Error processing stream message:", error);
+      if (!error.statusCode) {
+        throw createAppError(500, "An unexpected gateway error occurred", { cause: error });
+      }
+      throw error;
     }
-  }
-  res.end();
+  });
 }
 
 export function createGatewayModelRouter({
@@ -87,22 +93,17 @@ export function createGatewayModelRouter({
         return sendGatewayError(res, error);
       }
 
-      return forwardGatewayError(error, next, {
-        operation: "gateway invoke",
-      });
+      return forwardGatewayError(error, next);
     }
   });
 
-  api.get("/model/list", async (req, res, next) => {
-    try {
+  api.get(
+    "/model/list",
+    gatewayRouteHandler(async (req, res) => {
       const results = await application.listModels({ type: req.query.type });
       res.json(results);
-    } catch (error) {
-      return forwardGatewayError(error, next, {
-        operation: "gateway list models",
-      });
-    }
-  });
+    })
+  );
 
   return api;
 }
@@ -118,39 +119,34 @@ export function createGatewayRouter({ application } = {}) {
   api.use(logRequests());
   api.use(createGatewayModelRouter({ application }));
 
-  api.get("/guardrails", async (_req, res, next) => {
-    try {
+  api.get(
+    "/guardrails",
+    gatewayRouteHandler(async (_req, res) => {
       const results = await application.listGuardrails();
       res.json(results);
-    } catch (error) {
-      next(error);
-    }
-  });
+    })
+  );
 
-  api.post("/guardrails/reconcile", async (req, res, next) => {
-    try {
+  api.post(
+    "/guardrails/reconcile",
+    gatewayRouteHandler(async (req, res) => {
       const ids = Array.isArray(req.body?.ids) ? req.body.ids : undefined;
       const results = await application.reconcileGuardrails({ ids });
       res.json(results);
-    } catch (error) {
-      next(error);
-    }
-  });
+    })
+  );
 
-  api.delete("/guardrails/:id", async (req, res, next) => {
-    try {
+  api.delete(
+    "/guardrails/:id",
+    gatewayRouteHandler(async (req, res) => {
       const result = await application.deleteGuardrail(Number(req.params.id));
       res.json(result);
-    } catch (error) {
-      if (error.statusCode) {
-        return res.status(error.statusCode).json({ error: error.message });
-      }
-      next(error);
-    }
-  });
+    })
+  );
 
-  api.post("/usage", async (req, res, next) => {
-    try {
+  api.post(
+    "/usage",
+    gatewayRouteHandler(async (req, res) => {
       const result = await application.trackUsage(
         req.body?.userId ?? null,
         req.body?.model,
@@ -158,13 +154,12 @@ export function createGatewayRouter({ application } = {}) {
         req.body?.options
       );
       res.json(result);
-    } catch (error) {
-      next(error);
-    }
-  });
+    })
+  );
 
-  api.post("/model-usage", async (req, res, next) => {
-    try {
+  api.post(
+    "/model-usage",
+    gatewayRouteHandler(async (req, res) => {
       const result = await application.trackModelUsage(
         req.body?.userId ?? null,
         req.body?.model,
@@ -172,10 +167,8 @@ export function createGatewayRouter({ application } = {}) {
         req.body?.options
       );
       res.json(result);
-    } catch (error) {
-      next(error);
-    }
-  });
+    })
+  );
 
   api.use(logErrors());
 

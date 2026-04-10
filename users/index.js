@@ -11,7 +11,7 @@ import { createUsersRouter } from "./http.js";
 const { PORT = 3004 } = process.env;
 const application = createUsersApplication();
 const router = express.Router();
-router.use("/api", createUsersRouter({ application }));
+router.use("/api/v1", createUsersRouter({ application }));
 const app = createSchemaReadyServiceApp({
   router,
   readinessFailureMessage: "Users schema readiness failed",

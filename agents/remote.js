@@ -1,3 +1,4 @@
+import logger from "shared/logger.js";
 import {
   requestContextToInternalHeaders,
   requireUserRequestContext,
@@ -54,7 +55,7 @@ export function createAgentsRemote({ baseUrl, fetchImpl = fetch }) {
         errorMessage: "Agents request failed",
         createError: (response, _message, payload) =>
           createPlainError(response, `Agents error: ${response.status}`, payload),
-        onParseError: (error) => console.error("Error parsing agent stream line:", error),
+        onParseError: (error) => logger.error("Error parsing agent stream line:", error),
       })) {
         yield event;
       }

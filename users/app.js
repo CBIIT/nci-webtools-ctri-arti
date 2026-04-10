@@ -1,8 +1,6 @@
-import { UserService } from "./user.js";
+import { getMutationCount } from "shared/utils.js";
 
-function countAffected(result) {
-  return result?.length ?? result?.rowCount ?? result?.affectedRows ?? result?.changes ?? 0;
-}
+import { UserService } from "./user.js";
 
 export function createUsersApplication({ service = new UserService() } = {}) {
   return {
@@ -82,7 +80,7 @@ export function createUsersApplication({ service = new UserService() } = {}) {
       const result = await service.resetAllBudgets();
       return {
         success: true,
-        updatedUsers: countAffected(result),
+        updatedUsers: getMutationCount(result),
       };
     },
 

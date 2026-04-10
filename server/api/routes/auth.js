@@ -1,6 +1,6 @@
 import { json, Router } from "express";
-import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 import { createAnonymousRequestContext } from "shared/request-context.js";
+import { routeHandler } from "shared/utils.js";
 
 import { loginMiddleware, oauthMiddleware } from "../middleware.js";
 
@@ -26,70 +26,81 @@ export function createAuthRouter({ modules } = {}) {
 
   const { cms, users } = modules;
   const api = Router();
-  api.use(json({ limit: JSON_BODY_LIMIT }));
+  // Auth routes handle only session/login/config — no file uploads or large payloads
+  api.use(json({ limit: "1mb" }));
 
   if (OAUTH_PROVIDER_ENABLED?.toLowerCase() === "true") {
     api.use("/oauth", oauthMiddleware());
   }
 
-  api.get("/login", loginMiddleware, async (req, res) => {
-    const { session } = req;
-    const { email, first_name: firstName, last_name: lastName } = session.userinfo;
-    if (!email) return res.redirect("/?error=missing_email");
-    session.user = await users.findOrCreateUser({ email, firstName, lastName });
-    res.redirect(session.destination || "/");
-  });
+  api.get(
+    "/login",
+    loginMiddleware,
+    routeHandler(async (req, res) => {
+      const { session } = req;
+      const { email, first_name: firstName, last_name: lastName } = session.userinfo;
+      if (!email) return res.redirect("/?error=missing_email");
+      session.user = await users.findOrCreateUser({ email, firstName, lastName });
+      res.redirect(session.destination || "/");
+    })
+  );
 
   api.get("/logout", (req, res) => {
     const destination = req.query.destination || "/";
     req.session.destroy(() => res.redirect(destination));
   });
 
-  api.all("/session", async (req, res) => {
-    const { session } = req;
-    const apiKey = req.headers["x-api-key"];
-    if (req.method === "POST") {
-      session.touch();
-      session.expires = session.cookie.expires;
-    }
+  api.all(
+    "/session",
+    routeHandler(async (req, res) => {
+      const { session } = req;
+      const apiKey = req.headers["x-api-key"];
+      if (req.method === "POST") {
+        session.touch();
+        session.expires = session.cookie.expires;
+      }
 
-    let user = await users.resolveIdentity({
-      sessionUserId: session.user?.id,
-      apiKey,
-    });
+      let user = await users.resolveIdentity({
+        sessionUserId: session.user?.id,
+        apiKey,
+      });
 
-    if (!user && !session.user?.id && !apiKey) {
-      user = session.user || null;
-    }
+      if (!user && !session.user?.id && !apiKey) {
+        user = session.user || null;
+      }
 
-    if (user && apiKey && !session.user?.id) {
-      session.user = user;
-    }
+      if (user && apiKey && !session.user?.id) {
+        session.user = user;
+      }
 
-    const access =
-      user?.access || (await users.getAccessForRole(DEFAULT_ANONYMOUS_VISIBILITY_ROLE));
+      const access =
+        user?.access || (await users.getAccessForRole(DEFAULT_ANONYMOUS_VISIBILITY_ROLE));
 
-    res.json({ user, access, expires: session.cookie.expires });
-  });
+      res.json({ user, access, expires: session.cookie.expires });
+    })
+  );
 
-  api.get("/config", async (req, res) => {
-    const anonymousContext = createAnonymousRequestContext({ source: "server" });
-    const [usersConfig, agentList] = await Promise.all([
-      users.getConfig(),
-      cms
-        .getAgents(anonymousContext)
-        .then((rows) =>
-          (Array.isArray(rows) ? rows : rows?.data || []).map((r) => r.name).filter(Boolean)
-        ),
-    ]);
+  api.get(
+    "/config",
+    routeHandler(async (req, res) => {
+      const anonymousContext = createAnonymousRequestContext({ source: "server" });
+      const [usersConfig, agentList] = await Promise.all([
+        users.getConfig(),
+        cms
+          .getAgents(anonymousContext)
+          .then((rows) =>
+            (Array.isArray(rows) ? rows : rows?.data || []).map((r) => r.name).filter(Boolean)
+          ),
+      ]);
 
-    const usageTypes = [...new Set([...COMMON_USAGE_TYPES, ...agentList])].sort();
+      const usageTypes = [...new Set([...COMMON_USAGE_TYPES, ...agentList])].sort();
 
-    res.json({
-      ...usersConfig,
-      usageTypes,
-    });
-  });
+      res.json({
+        ...usersConfig,
+        usageTypes,
+      });
+    })
+  );
 
   return api;
 }

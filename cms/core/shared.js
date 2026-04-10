@@ -7,27 +7,15 @@ export function stripAutoFields(obj) {
   return rest;
 }
 
-export function hasOwn(obj, key) {
-  return Object.prototype.hasOwnProperty.call(obj, key);
-}
-
-export function createNotFoundError(message) {
-  const error = new Error(message);
-  error.statusCode = 404;
-  return error;
-}
-
-export function createValidationError(message) {
-  const error = new Error(message);
-  error.statusCode = 400;
-  return error;
-}
-
-export function createForbiddenError(message) {
-  const error = new Error(message);
-  error.statusCode = 403;
-  return error;
-}
+export {
+  createNotFoundError,
+  createValidationError,
+  createForbiddenError,
+  validateConversationMessage,
+  hasOwn,
+  getMutationCount,
+} from "shared/utils.js";
+import { createNotFoundError, createValidationError, hasOwn } from "shared/utils.js";
 
 export function assertNoLegacyFields(input, legacyKeys, label = "Input") {
   const present = legacyKeys.filter((key) => hasOwn(input, key));
@@ -36,33 +24,6 @@ export function assertNoLegacyFields(input, legacyKeys, label = "Input") {
   throw createValidationError(
     `${label} must use canonical field names, not legacy aliases: ${present.join(", ")}`
   );
-}
-
-export function getMutationCount(result) {
-  return result.rowCount ?? result.affectedRows ?? result.changes ?? 0;
-}
-
-export function validateConversationMessage(role, content) {
-  if (!Array.isArray(content)) {
-    throw createValidationError("Message content must be an array");
-  }
-
-  let hasToolUse = false;
-  let hasToolResult = false;
-  for (const block of content) {
-    if (block?.toolUse) hasToolUse = true;
-    if (block?.toolResult) hasToolResult = true;
-  }
-
-  if (hasToolUse && hasToolResult) {
-    throw createValidationError("A single message cannot contain both tool uses and tool results");
-  }
-  if (role === "user" && hasToolUse) {
-    throw createValidationError("User messages cannot contain tool uses");
-  }
-  if (role === "assistant" && hasToolResult) {
-    throw createValidationError("Assistant messages cannot contain tool results");
-  }
 }
 
 export function resourceReadCondition(userId) {

@@ -3,6 +3,7 @@ import db, { Agent, Guardrail } from "database";
 
 import { eq, inArray, sql } from "drizzle-orm";
 import logger from "shared/logger.js";
+import { createAppError, createNotFoundError } from "shared/utils.js";
 
 function stableValue(value) {
   if (Array.isArray(value)) {
@@ -264,9 +265,7 @@ export async function deleteGuardrailById(id) {
     where: eq(Guardrail.id, id),
   });
   if (!guardrail) {
-    const error = new Error(`Guardrail not found: ${id}`);
-    error.statusCode = 404;
-    throw error;
+    throw createNotFoundError(`Guardrail not found: ${id}`);
   }
 
   const [{ count }] = await db
@@ -276,9 +275,7 @@ export async function deleteGuardrailById(id) {
     .from(Agent)
     .where(eq(Agent.guardrailID, id));
   if (Number(count) > 0) {
-    const error = new Error(`Guardrail is still assigned to ${count} agent(s)`);
-    error.statusCode = 409;
-    throw error;
+    throw createAppError(409, `Guardrail is still assigned to ${count} agent(s)`);
   }
 
   if (guardrail.awsGuardrailId) {

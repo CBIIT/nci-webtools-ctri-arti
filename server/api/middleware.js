@@ -1,6 +1,8 @@
 import Provider from "oidc-provider";
 import * as client from "openid-client";
-import logger, { formatObject } from "shared/logger.js";
+import logger from "shared/logger.js";
+import { logErrors as sharedLogErrors } from "shared/middleware.js";
+import { createAppError } from "shared/utils.js";
 
 import { sendLogReport } from "../integrations/email.js";
 
@@ -87,38 +89,32 @@ async function getOidcConfig(req) {
 }
 
 /**
- * Logs errors (should be used as the last middleware)
- * Server version wraps shared logErrors to add email sending.
- * @param {function} formatter
- * @returns (error, request, response, next) => void
+ * Server-specific logErrors that adds email reporting on top of the shared version.
  */
 export function logErrors(formatter = (e) => ({ error: e.message })) {
-  return (error, request, response, _next) => {
-    const cause = error.cause?.message ?? error.cause ?? "";
-    const fullErrorMessage = `${formatObject(error.message)}.\n${formatObject(error.additionalError)}${cause ? `\nCaused by: ${formatObject(cause)}` : ""}`;
-    logger.error(fullErrorMessage);
+  return sharedLogErrors({
+    formatter,
+    onError(error, request, fullErrorMessage) {
+      if (EMAIL_DEV && EMAIL_DEV.length > 0) {
+        const user = request.session?.user;
+        const userName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "N/A";
 
-    if (EMAIL_DEV && EMAIL_DEV.length > 0) {
-      const user = request.session?.user;
-      const userName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "N/A";
-
-      sendLogReport({
-        reportSource: "Automatic",
-        userId: user?.id || "N/A",
-        userName,
-        recipient: EMAIL_DEV,
-        metadata: [
-          { label: "Error Message", value: fullErrorMessage },
-          { label: "Stack Trace", value: error.stack },
-          { label: "Request Path", value: request.path },
-        ],
-      }).catch((reportError) => {
-        logger.error("Failed to send error log report:", reportError.message);
-      });
-    }
-
-    response.status(error.statusCode || 400).json(formatter(error));
-  };
+        sendLogReport({
+          reportSource: "Automatic",
+          userId: user?.id || "N/A",
+          userName,
+          recipient: EMAIL_DEV,
+          metadata: [
+            { label: "Error Message", value: fullErrorMessage },
+            { label: "Stack Trace", value: error.stack },
+            { label: "Request Path", value: request.path },
+          ],
+        }).catch((reportError) => {
+          logger.error("Failed to send error log report:", reportError.message);
+        });
+      }
+    },
+  });
 }
 
 /**
@@ -128,9 +124,7 @@ export async function loginMiddleware(req, res, next) {
   try {
     const oidcConfig = await getOidcConfig(req);
     if (!oidcConfig) {
-      const error = new Error("OIDC is not configured");
-      error.statusCode = 503;
-      throw error;
+      throw createAppError(503, "OIDC is not configured");
     }
     const sess = req.session;
 

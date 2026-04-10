@@ -1,4 +1,5 @@
 import { MAX_INLINE_FILE_COUNT, getInlineFileError } from "gateway/core/upload-limits.js";
+import logger from "shared/logger.js";
 import { parseDocument } from "shared/parsers.js";
 
 const FORMAT_TO_MIME = {
@@ -20,7 +21,7 @@ async function extractContent(rawBytes, format) {
     try {
       return { content: await parseDocument(rawBytes, mime), encoding: "utf-8" };
     } catch (error) {
-      console.warn(`Failed to parse ${format}:`, error.message);
+      logger.warn(`Failed to parse ${format}:`, error.message);
     }
   }
 

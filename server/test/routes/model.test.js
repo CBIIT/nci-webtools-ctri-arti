@@ -111,7 +111,7 @@ describe("server model route", () => {
     });
   });
 
-  it("preserves the edge list-models error message for unexpected failures", async () => {
+  it("returns 500 with safe message for unexpected list-models failures", async () => {
     const app = buildApp({
       listModelsResult: async () => {
         throw new Error("List models exploded");
@@ -122,7 +122,7 @@ describe("server model route", () => {
 
     assert.equal(res.status, 500);
     assert.deepStrictEqual(res.body, {
-      error: "An error occurred while fetching models",
+      error: "An unexpected gateway error occurred",
     });
   });
 });

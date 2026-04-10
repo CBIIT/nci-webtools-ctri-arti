@@ -115,7 +115,7 @@ test("transport parity", async (t) => {
   );
 
   await t.test("Users getUserByEmail matches in direct and HTTP mode", async () => {
-    const usersServer = await startServer(usersApi, "/api");
+    const usersServer = await startServer(usersApi, "/api/v1");
 
     try {
       const directClient = createUsersApplication();
@@ -136,7 +136,7 @@ test("transport parity", async (t) => {
   });
 
   await t.test("Users getAccessForRole matches in direct and HTTP mode", async () => {
-    const usersServer = await startServer(usersApi, "/api");
+    const usersServer = await startServer(usersApi, "/api/v1");
 
     try {
       const directClient = createUsersApplication();
@@ -155,7 +155,7 @@ test("transport parity", async (t) => {
   });
 
   await t.test("Users budget reset responses match in direct and HTTP mode", async () => {
-    const usersServer = await startServer(usersApi, "/api");
+    const usersServer = await startServer(usersApi, "/api/v1");
 
     const [directUser] = await db
       .insert(User)

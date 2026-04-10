@@ -20,15 +20,23 @@ export function logRequests(formatter = (request) => [getLoggedRequestPath(reque
 }
 
 /**
- * Logs errors (should be used as the last middleware)
- * Shared version — logs only, no email. Server wraps this to add email sending.
- * @param {function} formatter
- * @returns (error, request, response, next) => void
+ * Logs errors (should be used as the last middleware).
+ * Accepts an optional onError callback for service-specific side effects (e.g., email reporting).
+ *
+ * @param {object|function} [options] - Options object, or a formatter function for backward compat
+ * @param {function} [options.formatter] - Formats the JSON response body (default: { error: e.message })
+ * @param {function} [options.onError]  - Called with (error, request) after logging, before responding
+ * @returns Express error middleware (error, request, response, next) => void
  */
-export function logErrors(formatter = (e) => ({ error: e.message })) {
+export function logErrors(options = {}) {
+  const { formatter = (e) => ({ error: e.message }), onError } =
+    typeof options === "function" ? { formatter: options } : options;
+
   return (error, request, response, _next) => {
-    const fullErrorMessage = `${formatObject(error.message)}.\n${formatObject(error.additionalError)}`;
+    const cause = error.cause?.message ?? error.cause ?? "";
+    const fullErrorMessage = `${formatObject(error.message)}.\n${formatObject(error.additionalError)}${cause ? `\nCaused by: ${formatObject(cause)}` : ""}`;
     logger.error(fullErrorMessage);
+    if (onError) onError(error, request, fullErrorMessage);
     response.status(error.statusCode || 400).json(formatter(error));
   };
 }

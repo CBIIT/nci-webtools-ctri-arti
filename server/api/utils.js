@@ -1,6 +1,7 @@
 import { inspect } from "util";
 
 import forge from "node-forge";
+import logger from "shared/logger.js";
 import { readHttpRequestContext } from "shared/request-context.js";
 import { createHttpError, getDateRange, routeHandler } from "shared/utils.js";
 
@@ -27,7 +28,7 @@ export async function retry(fn, maxAttempts = 3, initialDelay = 0) {
       return await fn();
     } catch (error) {
       lastError = error;
-      console.error(`Attempt ${attempt} failed:`, error);
+      logger.error(`Attempt ${attempt} failed:`, error);
 
       if (attempt === maxAttempts) {
         break;

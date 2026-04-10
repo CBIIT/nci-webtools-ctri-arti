@@ -1,5 +1,5 @@
 import { readInternalRequestContext } from "shared/request-context.js";
-import { routeHandler } from "shared/utils.js";
+import { routeHandler, streamNdjsonResponse } from "shared/utils.js";
 
 const TEXT_DOWNLOAD_FORMATS = new Set(["txt", "md", "html", "htm", "csv", "json", "xml"]);
 const RESOURCE_MIME_TYPES = {
@@ -31,10 +31,7 @@ export function withResolvedContext(resolveContext, handler, options) {
 }
 
 export async function streamResponse(res, stream) {
-  for await (const message of stream) {
-    res.write(JSON.stringify(message) + "\n");
-  }
-  res.end();
+  return streamNdjsonResponse(res, stream);
 }
 
 export function parseEmbeddingQuery(value) {

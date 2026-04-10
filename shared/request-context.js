@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
 
+import { createAppError } from "./utils.js";
+
 const VALID_ACTOR_TYPES = new Set(["user", "system", "anonymous"]);
 const VALID_SOURCES = new Set(["server", "internal-http", "direct"]);
 const LEGACY_ANONYMOUS_TOKENS = new Set(["", "anonymous", "null", "undefined"]);
 const INVALID_REQUEST_ID_TOKENS = new Set(["", "unknown", "null", "undefined"]);
 
 function createContextError(message, statusCode = 400) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  return error;
+  return createAppError(statusCode, message);
 }
 
 function normalizePositiveInteger(value, fieldName = "userId") {

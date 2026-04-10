@@ -1,16 +1,11 @@
 import { createCmsService } from "cms/service.js";
 import { createGatewayService } from "gateway/service.js";
 import { requireUserRequestContext } from "shared/request-context.js";
+import { createValidationError } from "shared/utils.js";
 import { createUsersApplication } from "users/app.js";
 
 import { runAgentLoop } from "./core/loop.js";
 import { validateUserMessageContent } from "./validation.js";
-
-function createAppError(statusCode, message) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  return error;
-}
 
 export function createAgentsApplication({
   runLoop = runAgentLoop,
@@ -35,7 +30,7 @@ export function createAgentsApplication({
       const requestContext = requireUserRequestContext(context ?? userId, { source });
 
       if (!message?.content) {
-        throw createAppError(400, "Message content required");
+        throw createValidationError("Message content required");
       }
       validateUserMessageContent(message.content);
 

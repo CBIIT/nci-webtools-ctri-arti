@@ -7,19 +7,13 @@ import {
   isRateLimitedUser,
   normalizeEmbeddingUsageItems,
 } from "shared/gateway-usage.js";
+import { createAppError } from "shared/utils.js";
 
 import { deleteGuardrailById, listGuardrails, reconcileGuardrails } from "./core/guardrails.js";
 import { runEmbedding, runModel } from "./core/inference.js";
 
 const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
-
-function createGatewayError(statusCode, message, code) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  if (code) error.code = code;
-  return error;
-}
 
 async function getModelRecord(modelValue) {
   const [modelRecord] = modelValue
@@ -56,7 +50,7 @@ export function createGatewayApplication({
   async function requirePreflight({ userId, model }) {
     const modelRecord = await getModelRecord(model);
     if (!modelRecord) {
-      throw createGatewayError(404, "Model not found", "GATEWAY_MODEL_NOT_FOUND");
+      throw createAppError(404, "Model not found", { code: "GATEWAY_MODEL_NOT_FOUND" });
     }
 
     const limited = await getRateLimitResponse(userId);

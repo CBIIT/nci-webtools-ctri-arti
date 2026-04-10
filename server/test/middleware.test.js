@@ -250,7 +250,7 @@ test("securityHeaders", async (t) => {
 
     assert.strictEqual(
       res._headers["Strict-Transport-Security"],
-      "max-age=31536000; includeSubDomains"
+      "max-age=31536000; includeSubDomains; preload"
     );
   });
 });
