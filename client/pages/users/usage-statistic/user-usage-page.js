@@ -298,7 +298,7 @@ function UserUsage() {
         return null;
       }}
     >
-      <div class="page-header-bg overflow-hidden font-inter font-smooth">
+      <div class="font-inter font-smooth">
         <div class="page-header-banner">
           <div class="container d-flex flex-column" style="gap: 40px;">
             <a
@@ -321,7 +321,7 @@ function UserUsage() {
             <h1 class="text-white font-poppins page-header-text">Usage Statistics</h1>
           </div>
         </div>
-        <div class="container pb-4" style="margin-top: -36px; position: relative">
+        <div class="container pb-4" style="position: relative">
           <div class="usage-card-body">
             <div class="usage-card-body-inner">
               <!-- Error Alert -->

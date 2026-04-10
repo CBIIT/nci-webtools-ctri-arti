@@ -15,7 +15,7 @@ export function Overview(props) {
   const endDate = () => props.customDates?.endDate;
 
   return html`
-    <div class="card d-flex flex-column" style="padding: 15px 17px 12px 17px; gap: 15px;">
+    <div class="card usage-overview-card" style="padding: 15px 17px 12px 17px; gap: 15px;">
       <div class="d-flex flex-column">
         <h5 class="usage-user-name mb-0">
           ${() =>
@@ -34,7 +34,7 @@ export function Overview(props) {
           </div>
         </div>
       </div>
-      <div class="row g-3">
+      <div class="row g-3 w-100">
         <div class="col-md-4">
           <label for="date-range-filter" class="form-header-label">Date Range</label>
           <select
