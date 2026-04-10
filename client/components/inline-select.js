@@ -41,7 +41,8 @@ export function InlineSelect(props) {
   };
 
   const handleTriggerClick = () => {
-    if (!props.disabled) {
+    const isDisabled = typeof props.disabled === "function" ? props.disabled() : props.disabled;
+    if (!isDisabled) {
       setIsOpen(true);
     }
   };
@@ -68,7 +69,7 @@ export function InlineSelect(props) {
         id=${props.id}
         aria-labelledby=${props.ariaLabelledBy}
         aria-expanded=${() => isOpen()}
-        disabled=${props.disabled}
+        disabled=${() => (typeof props.disabled === "function" ? props.disabled() : props.disabled)}
         onClick=${handleTriggerClick}
         style=${() => (isOpen() ? "display: none" : "")}
       >
