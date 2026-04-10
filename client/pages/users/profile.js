@@ -2,6 +2,7 @@ import { createResource, createSignal, ErrorBoundary, onMount, Show } from "soli
 import html from "solid-js/html";
 
 import { AlertContainer } from "../../components/alert.js";
+import { PageBanner } from "../../components/page-banner.js";
 import { Status, useAuthContext } from "../../contexts/auth-context.js";
 import { alerts, clearAlert, handleError, handleHttpError, showAlert } from "../../utils/alerts.js";
 import { fetchCachedJson } from "../../utils/static-data.js";
@@ -62,14 +63,7 @@ function UserProfile() {
       }}
     >
       <div class="bg-profile font-smooth">
-        <div
-          class="d-flex align-items-center profile-banner"
-          aria-label="Profile Management Banner"
-        >
-          <div class="container">
-            <h1 class="profile-title fw-medium font-outfit text-white mb-0">User Profile</h1>
-          </div>
-        </div>
+        <${PageBanner} title="User Profile" />
         <div class="container profile-container">
           <!-- Error Alert -->
           <${Show} when=${() => status() === Status.ERROR}>
