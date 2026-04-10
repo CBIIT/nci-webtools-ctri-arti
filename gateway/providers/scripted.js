@@ -1,5 +1,5 @@
 import { NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
-import { estimateEmbeddingTextTokens } from "shared/token-estimation.js";
+import { estimateUtf8Tokens } from "shared/token-estimation.js";
 
 const DEFAULT_USAGE = {
   inputTokens: 100,
@@ -183,18 +183,6 @@ export default class ScriptedProvider {
     this.state.error = null;
   }
 
-  setMockResponse(response) {
-    this.setScriptedResponse(response);
-  }
-
-  setMockError(error) {
-    this.setScriptedError(error);
-  }
-
-  setMockStream(stream) {
-    this.setScriptedStream(stream);
-  }
-
   reset() {
     this.state = createScriptedState();
   }
@@ -314,7 +302,7 @@ export default class ScriptedProvider {
     });
     return {
       embedding,
-      inputTextTokenCount: typeof content === "string" ? estimateEmbeddingTextTokens(content) : 0,
+      inputTextTokenCount: typeof content === "string" ? estimateUtf8Tokens(content) : 0,
     };
   }
 

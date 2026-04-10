@@ -10,6 +10,7 @@ import { vector } from "@electric-sql/pglite/vector";
 import { auditRelationalIntegrity } from "database/relational-audit.js";
 import * as schema from "database/schema.js";
 import { seedDatabase } from "database/schema.js";
+import { splitStatements } from "database/sync.js";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 
@@ -17,13 +18,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const databaseDir = resolve(__dirname, "../../database");
 const migrationsDir = resolve(databaseDir, "migrations");
 const initSql = readFileSync(resolve(databaseDir, "init.sql"), "utf-8");
-
-function splitStatements(sqlText) {
-  return sqlText
-    .split("--> statement-breakpoint")
-    .map((statement) => statement.trim())
-    .filter(Boolean);
-}
 
 async function applyMigrations(client, predicate) {
   const files = readdirSync(migrationsDir)

@@ -2,7 +2,7 @@ import "../test-support/db.js";
 import assert from "node:assert";
 import { test } from "node:test";
 
-import { parseDocument, parseDocx } from "../integrations/parsers.js";
+import { parseDocument, parseDocx } from "shared/parsers.js";
 
 test("parseDocument", async (t) => {
   await t.test("handles plain text via default case", async () => {

@@ -3,11 +3,16 @@ import db, { User } from "database";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { v1Router } from "cms/api.js";
 import { ConversationService } from "cms/core/conversation-service.js";
+import { createCmsRouter } from "cms/http.js";
+import { createCmsService } from "cms/service.js";
 import { eq } from "drizzle-orm";
 import express from "express";
 import request from "supertest";
+
+const v1Router = createCmsRouter({
+  application: createCmsService({ source: "internal-http" }),
+});
 
 function buildApp() {
   const app = express();

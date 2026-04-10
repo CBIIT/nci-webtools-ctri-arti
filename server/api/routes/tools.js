@@ -2,15 +2,18 @@ import { getSchemaReadiness } from "database/readiness.js";
 import { json, Router } from "express";
 import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 import logger from "shared/logger.js";
+import { parseDocument } from "shared/parsers.js";
+import { readHttpRequestContext } from "shared/request-context.js";
+import { getFile, listFiles } from "shared/s3.js";
+import { search } from "shared/search.js";
+import { routeHandler } from "shared/utils.js";
 
 import { requireRole } from "../../auth.js";
 import { sendFeedback, sendLogReport, sendJustificationEmail } from "../../integrations/email.js";
-import { parseDocument } from "../../integrations/parsers.js";
 import { proxyMiddleware } from "../../integrations/proxy.js";
-import { getFile, listFiles } from "../../integrations/s3.js";
 import { textract } from "../../integrations/textract.js";
 import { getLanguages, translate } from "../../integrations/translate.js";
-import { getAuthenticatedUser, getRequestContext, routeHandler, search } from "../utils.js";
+import { getAuthenticatedUser } from "../utils.js";
 
 const { VERSION, S3_BUCKETS, EMAIL_DEV, EMAIL_ADMIN, EMAIL_USER_REPORTS } = process.env;
 
@@ -77,7 +80,7 @@ export function createToolsRouter({
     "/translate",
     requireRole(),
     routeHandler(async (req, res) => {
-      const context = getRequestContext(req);
+      const context = readHttpRequestContext(req, { source: "server" });
       const result = await translate(req.body);
 
       const chars = req.body.text?.length || 0;

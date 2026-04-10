@@ -1,6 +1,6 @@
 import { Readable } from "stream";
 
-import { createHttpError } from "../api/utils.js";
+import { createHttpError } from "shared/utils.js";
 
 export const WHITELIST = [/.*/i];
 

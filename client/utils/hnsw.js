@@ -1,5 +1,3 @@
-import { deleteDB, openDB } from "idb";
-
 /**
  * Hierarchical Navigable Small World (HNSW) index for approximate nearest neighbor search.
  *
@@ -583,85 +581,5 @@ export class HNSW {
     }
 
     return hnsw;
-  }
-}
-
-export class HNSWWithDB extends HNSW {
-  db = null;
-
-  constructor({
-    M = 16,
-    efConstruction = 200,
-    efSearch = 50,
-    metric = "cosine",
-    dbName = "hnsw-db",
-  } = {}) {
-    super({ M, efConstruction, efSearch, metric });
-    this.dbName = dbName;
-  }
-
-  static async create({
-    M = 16,
-    efConstruction = 200,
-    efSearch = 50,
-    metric = "cosine",
-    dbName = "hnsw-db",
-  } = {}) {
-    const instance = new HNSWWithDB({ M, efConstruction, efSearch, metric, dbName });
-    await instance.initDB();
-    return instance;
-  }
-
-  async initDB() {
-    this.db = await openDB(this.dbName, 1, {
-      upgrade(db) {
-        db.createObjectStore("hnsw-index");
-      },
-    });
-  }
-
-  async saveIndex() {
-    if (!this.db) {
-      // console.error('Database is not initialized');
-      return;
-    }
-
-    await this.db.put("hnsw-index", this.toJSON(), "hnsw");
-  }
-
-  async loadIndex() {
-    if (!this.db) {
-      // console.error('Database is not initialized');
-      return;
-    }
-
-    const loadedHNSW = await this.db.get("hnsw-index", "hnsw");
-
-    if (!loadedHNSW) {
-      // console.error('No saved HNSW index found');
-      return;
-    }
-
-    const hnsw = HNSW.fromJSON(loadedHNSW);
-    this.M = hnsw.M;
-    this.efConstruction = hnsw.efConstruction;
-    this.efSearch = hnsw.efSearch;
-    this.elementCount = hnsw.elementCount;
-    this.entryPoint = hnsw.entryPoint;
-    this.nodes = hnsw.nodes;
-  }
-
-  async deleteIndex() {
-    if (!this.db) {
-      // console.error('Database is not initialized');
-      return;
-    }
-
-    try {
-      await deleteDB(this.dbName);
-      this.initDB();
-    } catch (_error) {
-      // console.error('Failed to delete index:', error);
-    }
   }
 }
