@@ -10,12 +10,10 @@ import {
   RESOURCE_CHUNK_OVERLAP,
   RESOURCE_CHUNK_SIZE,
 } from "shared/embeddings.js";
+import { createNotFoundError, getMutationCount, hasOwn } from "shared/utils.js";
 
 import {
   assertNoLegacyFields,
-  createNotFoundError,
-  getMutationCount,
-  hasOwn,
   requireConversation,
   requireMessage,
   resourceReadCondition,

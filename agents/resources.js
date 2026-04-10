@@ -7,7 +7,3 @@ export function normalizeCmsResource(resource = {}) {
     messageId: resource.messageID ?? null,
   };
 }
-
-export function normalizeCmsResources(resources = []) {
-  return resources.map((resource) => normalizeCmsResource(resource));
-}

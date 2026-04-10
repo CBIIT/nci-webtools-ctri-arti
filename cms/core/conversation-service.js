@@ -1,12 +1,13 @@
 import db, { AgentTool, Prompt, Tool, UserTool, Vector } from "database";
 
 import { asc, desc, eq } from "drizzle-orm";
+import { getMutationCount } from "shared/utils.js";
 
 import { agentMethods } from "./agents.js";
 import { conversationMethods } from "./conversations.js";
 import { resourceMethods } from "./resources.js";
 import { searchMethods } from "./search.js";
-import { getMutationCount, stripAutoFields } from "./shared.js";
+import { stripAutoFields } from "./shared.js";
 
 async function missingEmbedDependency() {
   throw new Error("ConversationService embed dependency is required");

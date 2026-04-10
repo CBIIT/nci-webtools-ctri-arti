@@ -5,7 +5,7 @@ import {
   InvokeModelCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 import { assertValidEmbedding, NOVA_EMBEDDING_DIMENSIONS } from "shared/embeddings.js";
-import { estimateEmbeddingTextTokens } from "shared/token-estimation.js";
+import { estimateUtf8Tokens } from "shared/token-estimation.js";
 
 /* Example Usage: ConverseCommand
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime"; // ES Modules import
@@ -1250,7 +1250,7 @@ export default class BedrockProvider {
     }
 
     const inputTextTokenCount =
-      typeof content === "string" ? estimateEmbeddingTextTokens(content) : undefined;
+      typeof content === "string" ? estimateUtf8Tokens(content) : undefined;
 
     return {
       embedding: assertValidEmbedding(embedding, {

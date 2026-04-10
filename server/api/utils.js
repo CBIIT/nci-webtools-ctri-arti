@@ -3,11 +3,7 @@ import { inspect } from "util";
 import forge from "node-forge";
 import logger from "shared/logger.js";
 import { readHttpRequestContext } from "shared/request-context.js";
-import { createHttpError, getDateRange, routeHandler } from "shared/utils.js";
-
-// Re-export search functions from shared
-export { braveSearch, govSearch, search } from "shared/search.js";
-export { createHttpError, getDateRange, routeHandler };
+import { createHttpError } from "shared/utils.js";
 
 export const log = (value) =>
   console.log(inspect(value, { depth: null, colors: true, compact: false, breakLength: 120 }));
@@ -105,21 +101,8 @@ export function createCertificate(opts = {}) {
   return { key: privateKeyPem, cert: certPem };
 }
 
-export function getRequestContext(req, { allowAnonymous = false, source = "server" } = {}) {
-  return readHttpRequestContext(req, { allowAnonymous, source });
-}
-
-/**
- * Extracts the authenticated user ID from a request, or throws 401.
- * @param {import("express").Request} req
- * @returns {string} userId
- */
-export function getUserId(req) {
-  return getRequestContext(req).userId;
-}
-
 export function getAuthenticatedUser(req, options = {}) {
-  const context = getRequestContext(req, options);
+  const context = readHttpRequestContext(req, { source: "server", ...options });
   const user = req.session?.user;
   if (!user || Number(user.id) !== Number(context.userId)) {
     throw createHttpError(401, "Authentication required");

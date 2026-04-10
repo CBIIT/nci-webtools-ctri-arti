@@ -4,6 +4,7 @@ import { json, Router } from "express";
 import { createGatewayModelRouter } from "gateway/http.js";
 import { JSON_BODY_LIMIT } from "shared/http-limits.js";
 import { logRequests } from "shared/middleware.js";
+import { readHttpRequestContext } from "shared/request-context.js";
 
 import { requireRole } from "../auth.js";
 
@@ -11,7 +12,6 @@ import { logErrors } from "./middleware.js";
 import { createAdminRouter } from "./routes/admin.js";
 import { createAuthRouter } from "./routes/auth.js";
 import { createToolsRouter } from "./routes/tools.js";
-import { getRequestContext } from "./utils.js";
 
 const PUBLIC_ROUTES = new Set(["/config", "/login", "/logout", "/session", "/status"]);
 
@@ -41,7 +41,7 @@ export function createServerApi({ modules } = {}) {
     createCmsAgentsRouter({
       application: modules.cms,
       resolveContext(req) {
-        return getRequestContext(req);
+        return readHttpRequestContext(req, { source: "server" });
       },
     })
   );
@@ -50,7 +50,7 @@ export function createServerApi({ modules } = {}) {
     createCmsConversationsRouter({
       application: modules.cms,
       resolveContext(req) {
-        return getRequestContext(req);
+        return readHttpRequestContext(req, { source: "server" });
       },
     })
   );
@@ -58,7 +58,7 @@ export function createServerApi({ modules } = {}) {
     createGatewayModelRouter({
       application: modules.gateway,
       resolveInvokeInput(req) {
-        const { userId, requestId } = getRequestContext(req);
+        const { userId, requestId } = readHttpRequestContext(req, { source: "server" });
         return {
           ...req.body,
           userId,
@@ -72,5 +72,3 @@ export function createServerApi({ modules } = {}) {
 
   return api;
 }
-
-export default createServerApi;

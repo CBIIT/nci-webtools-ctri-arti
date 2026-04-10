@@ -5,8 +5,8 @@ import { ConversationService } from "./core/conversation-service.js";
 
 export function createCmsService({ gateway = createGatewayService(), source = "direct" } = {}) {
   const service = new ConversationService({
-    invoke: (...args) => gateway.invoke(...args),
-    embed: (...args) => gateway.embed(...args),
+    invoke: gateway.invoke,
+    embed: gateway.embed,
   });
 
   return createCmsApplication({

@@ -1,5 +1,5 @@
 import { readInternalRequestContext } from "shared/request-context.js";
-import { routeHandler, sendNotFound, streamNdjsonResponse } from "shared/utils.js";
+import { routeHandler } from "shared/utils.js";
 
 const TEXT_DOWNLOAD_FORMATS = new Set(["txt", "md", "html", "htm", "csv", "json", "xml"]);
 const RESOURCE_MIME_TYPES = {
@@ -30,17 +30,11 @@ export function withResolvedContext(resolveContext, handler, options) {
   });
 }
 
-export async function streamResponse(res, stream) {
-  return streamNdjsonResponse(res, stream);
-}
-
 export function parseEmbeddingQuery(value) {
   if (value === undefined || value === null || value === "") return undefined;
   if (Array.isArray(value)) value = value[0];
   return JSON.parse(value);
 }
-
-export { sendNotFound };
 
 export function parsePageQuery(query = {}) {
   return {

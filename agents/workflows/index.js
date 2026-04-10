@@ -21,5 +21,3 @@ export async function runWorkflow(name, input = {}, { options = {}, services = {
 
   return runWorkflowDefinition(workflow, input, { options, services });
 }
-
-export default workflows;

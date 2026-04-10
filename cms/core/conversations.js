@@ -2,14 +2,9 @@ import db, { Agent, Conversation, Message, Model, Resource } from "database";
 
 import { and, asc, count, desc, eq, gte, inArray } from "drizzle-orm";
 import { estimateMessageTokensAccurate } from "shared/token-estimation.js";
+import { getMutationCount, hasOwn, validateConversationMessage } from "shared/utils.js";
 
-import {
-  getMutationCount,
-  hasOwn,
-  requireConversation,
-  stripAutoFields,
-  validateConversationMessage,
-} from "./shared.js";
+import { requireConversation, stripAutoFields } from "./shared.js";
 
 const summarizingConversationIds = new Set();
 const CONVERSATION_SUMMARY_TOKEN = "[Conversation Summary]";
@@ -44,10 +39,6 @@ async function getConversationMessages(conversationId, { summaryMessageId = null
     .from(Message)
     .where(eq(Message.conversationID, conversationId))
     .orderBy(asc(Message.id));
-}
-
-async function countConversationTokens(messages) {
-  return estimateMessageTokensAccurate(messages);
 }
 
 function normalizeConversationWrite(data = {}) {
@@ -90,7 +81,7 @@ export const conversationMethods = {
       messages = await getConversationMessages(conversationId);
     }
 
-    const estimated = await countConversationTokens(messages);
+    const estimated = await estimateMessageTokensAccurate(messages);
     if (estimated < model.maxContext * 0.8) return null;
 
     return {

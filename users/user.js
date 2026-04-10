@@ -15,10 +15,8 @@ import {
   desc,
   isNotNull,
 } from "drizzle-orm";
-import { describeCron } from "shared/cron.js";
+import { describeCron, USAGE_RESET_SCHEDULE } from "shared/cron.js";
 import { getDateRange, hasOwn } from "shared/utils.js";
-
-const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 
 // ===== Private helpers =====
 
@@ -109,7 +107,7 @@ function serializeUserAccess(user) {
     return { ...user, access };
   }
 
-  const { RolePolicies, ...role } = user.Role;
+  const { RolePolicies: _RolePolicies, ...role } = user.Role;
 
   return {
     ...user,

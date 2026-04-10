@@ -6,6 +6,7 @@ import { createGatewayRemote } from "gateway/remote.js";
 import { createGatewayService } from "gateway/service.js";
 import { createUsersApplication } from "users/app.js";
 import { createUsersRemote } from "users/remote.js";
+
 import { sendEmail } from "./integrations/email.js";
 
 const { USERS_URL, GATEWAY_URL, CMS_URL, AGENTS_URL } = process.env;
@@ -68,16 +69,4 @@ export async function getServerModules() {
 
 export async function getUsersModule() {
   return (await getServerModules()).users;
-}
-
-export async function getGatewayModule() {
-  return (await getServerModules()).gateway;
-}
-
-export async function getCmsModule() {
-  return (await getServerModules()).cms;
-}
-
-export async function getAgentsModule() {
-  return (await getServerModules()).agents;
 }

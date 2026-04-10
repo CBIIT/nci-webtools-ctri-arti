@@ -25,7 +25,7 @@ const IMAGE_TILE_SIZE = 512;
 const IMAGE_TILE_TOKENS = 170;
 const IMAGE_FALLBACK_BYTES_PER_TOKEN = 768;
 
-function estimateUtf8Tokens(value, bytesPerToken = TEXT_BYTES_PER_TOKEN) {
+export function estimateUtf8Tokens(value, bytesPerToken = TEXT_BYTES_PER_TOKEN) {
   if (!value) return 0;
   return Math.max(1, Math.ceil(Buffer.byteLength(String(value), "utf8") / bytesPerToken));
 }
@@ -349,7 +349,7 @@ async function estimateDocumentBytesTokensAccurate(document = {}) {
   }
 
   if (format === "pdf") {
-    let pageCount = 1;
+    let pageCount;
     try {
       pageCount = await getPdfPageCount(Buffer.from(bytes));
     } catch {
@@ -384,9 +384,3 @@ export async function estimateMessageTokensAccurate(messages = []) {
   }
   return tokens;
 }
-
-export function estimateEmbeddingTextTokens(text) {
-  return estimateUtf8Tokens(text);
-}
-
-export { normalizeBytes };

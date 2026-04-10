@@ -7,7 +7,7 @@ import { parseDocument } from "shared/parsers.js";
 import { listFiles, getFile } from "shared/s3.js";
 import { search as searchWeb } from "shared/search.js";
 
-import { normalizeCmsResources } from "../resources.js";
+import { normalizeCmsResource } from "../resources.js";
 import { runWorkflow as executeWorkflow } from "../workflows/index.js";
 
 const { S3_BUCKETS } = process.env;
@@ -216,8 +216,8 @@ export async function editor(
       conversationId ? cms.getResourcesByConversation(userId, conversationId) : [],
       cms.getResourcesByAgent(userId, agentId),
     ]).then(([conversationResources, allAgentResources]) => [
-      normalizeCmsResources(conversationResources),
-      normalizeCmsResources(allAgentResources),
+      conversationResources.map(normalizeCmsResource),
+      allAgentResources.map(normalizeCmsResource),
     ]);
     const agentOnly = agentResources.filter((resource) => !resource.conversationId);
     const byName = new Map();

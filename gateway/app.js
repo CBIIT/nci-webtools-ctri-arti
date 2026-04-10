@@ -1,7 +1,7 @@
 import db, { Model, Provider, User } from "database";
 
 import { and, asc, eq, or } from "drizzle-orm";
-import { describeCron } from "shared/cron.js";
+import { describeCron, USAGE_RESET_SCHEDULE } from "shared/cron.js";
 import {
   buildRateLimitMessage,
   isRateLimitedUser,
@@ -12,7 +12,6 @@ import { createAppError } from "shared/utils.js";
 import { deleteGuardrailById, listGuardrails, reconcileGuardrails } from "./core/guardrails.js";
 import { runEmbedding, runModel } from "./core/inference.js";
 
-const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 const { resetDescription } = describeCron(USAGE_RESET_SCHEDULE);
 
 async function getModelRecord(modelValue) {
@@ -145,13 +144,8 @@ export function createGatewayApplication({
       return result;
     },
 
-    async trackUsage(userId, model, usageItems, options) {
-      return usageTracker(userId, model, usageItems, options);
-    },
-
-    async trackModelUsage(userId, model, usageData, options) {
-      return modelUsageTracker(userId, model, usageData, options);
-    },
+    trackUsage: usageTracker,
+    trackModelUsage: modelUsageTracker,
 
     listModels({ type } = {}) {
       const where = [or(eq(Model.providerID, 1), eq(Model.providerID, 3))];
@@ -174,16 +168,8 @@ export function createGatewayApplication({
         .orderBy(asc(Model.providerID), asc(Model.id));
     },
 
-    listGuardrails({ ids } = {}) {
-      return listGuardrails({ ids });
-    },
-
-    reconcileGuardrails({ ids } = {}) {
-      return reconcileGuardrails({ ids });
-    },
-
-    deleteGuardrail(id) {
-      return deleteGuardrailById(id);
-    },
+    listGuardrails,
+    reconcileGuardrails,
+    deleteGuardrail: deleteGuardrailById,
   };
 }

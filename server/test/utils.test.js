@@ -2,14 +2,9 @@ import "../test-support/db.js";
 import assert from "node:assert";
 import { test } from "node:test";
 
-import {
-  retry,
-  createHttpError,
-  routeHandler,
-  getDateRange,
-  createCertificate,
-  getAuthenticatedUser,
-} from "../api/utils.js";
+import { createHttpError, routeHandler, getDateRange } from "shared/utils.js";
+
+import { retry, createCertificate, getAuthenticatedUser } from "../api/utils.js";
 
 test("retry", async (t) => {
   await t.test("succeeds on first try", async () => {

@@ -1,6 +1,7 @@
 import { Router } from "express";
+import { sendNotFound } from "shared/utils.js";
 
-import { readRequestContext, sendNotFound, withResolvedContext } from "./helpers.js";
+import { readRequestContext, withResolvedContext } from "./helpers.js";
 
 export function createCmsToolsRouter({ application, resolveContext = readRequestContext } = {}) {
   if (!application) {

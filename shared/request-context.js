@@ -7,10 +7,6 @@ const VALID_SOURCES = new Set(["server", "internal-http", "direct"]);
 const LEGACY_ANONYMOUS_TOKENS = new Set(["", "anonymous", "null", "undefined"]);
 const INVALID_REQUEST_ID_TOKENS = new Set(["", "unknown", "null", "undefined"]);
 
-function createContextError(message, statusCode = 400) {
-  return createAppError(statusCode, message);
-}
-
 function normalizePositiveInteger(value, fieldName = "userId") {
   if (typeof value === "number" && Number.isInteger(value) && value > 0) {
     return value;
@@ -20,7 +16,7 @@ function normalizePositiveInteger(value, fieldName = "userId") {
     return Number(value.trim());
   }
 
-  throw createContextError(`${fieldName} must be a positive integer`);
+  throw createAppError(400, `${fieldName} must be a positive integer`);
 }
 
 export function normalizeRequestId(value) {
@@ -57,7 +53,7 @@ function normalizeRequestMetadata(input = {}, defaults = {}) {
   const requestId = resolveRequestId(input.requestId, defaults.requestId);
 
   if (!VALID_SOURCES.has(source)) {
-    throw createContextError(`Invalid request context source: ${source}`);
+    throw createAppError(400, `Invalid request context source: ${source}`);
   }
 
   return { source, requestId };
@@ -95,12 +91,12 @@ export function createRequestContext(input, options = {}) {
         (input.userId === null || input.userId === undefined ? "anonymous" : "user");
 
       if (!VALID_ACTOR_TYPES.has(actorType)) {
-        throw createContextError(`Invalid request actor type: ${actorType}`);
+        throw createAppError(400, `Invalid request actor type: ${actorType}`);
       }
 
       if (actorType === "anonymous") {
         if (input.userId !== null && input.userId !== undefined) {
-          throw createContextError("Anonymous request context cannot include a userId");
+          throw createAppError(400, "Anonymous request context cannot include a userId");
         }
         return createAnonymousRequestContext({ source, requestId });
       }
@@ -149,7 +145,7 @@ export function readInternalRequestContext(headers = {}, { required = true } = {
     });
 
     if (!context && required) {
-      throw createContextError("X-User-Id header required");
+      throw createAppError(400, "X-User-Id header required");
     }
 
     return context;
@@ -179,7 +175,7 @@ export function readHttpRequestContext(
 export function requireUserRequestContext(input, options = {}) {
   const context = createRequestContext(input, options);
   if (context.actorType !== "user") {
-    throw createContextError("Authentication required", 401);
+    throw createAppError(401, "Authentication required");
   }
   return context;
 }

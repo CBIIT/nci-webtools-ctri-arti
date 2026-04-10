@@ -1,11 +1,10 @@
 import { Router } from "express";
+import { sendNotFound, streamNdjsonResponse } from "shared/utils.js";
 
 import {
   parsePageQuery,
   readRequestContext,
-  sendNotFound,
   sendResourceDownload,
-  streamResponse,
   withResolvedContext,
 } from "./helpers.js";
 
@@ -82,7 +81,7 @@ export function createCmsConversationsRouter({
   api.post(
     "/conversations/:id/summarize",
     withResolvedContext(resolveContext, async (req, res) => {
-      await streamResponse(res, application.summarize(req.context, req.params.id, req.body));
+      await streamNdjsonResponse(res, application.summarize(req.context, req.params.id, req.body));
     })
   );
 

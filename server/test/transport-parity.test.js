@@ -7,21 +7,26 @@ import { test } from "node:test";
 import { createAgentsApplication } from "agents/app.js";
 import { createAgentsChatRouter } from "agents/http.js";
 import { createAgentsRemote } from "agents/remote.js";
-import { v1Router as cmsApi } from "cms/api.js";
 import { ConversationService } from "cms/core/conversation-service.js";
+import { createCmsRouter } from "cms/http.js";
 import { createCmsRemote } from "cms/remote.js";
 import { createCmsService } from "cms/service.js";
 import { eq, and } from "drizzle-orm";
 import express from "express";
-import gatewayApi from "gateway/api.js";
+import { createGatewayRouter } from "gateway/http.js";
 import { createGatewayRemote } from "gateway/remote.js";
 import { createGatewayService } from "gateway/service.js";
 import { normalizeEmbeddingUsageItems } from "shared/gateway-usage.js";
 import { createAnonymousRequestContext, createUserRequestContext } from "shared/request-context.js";
 import { createUsersApplication } from "users/app.js";
+import { createUsersRouter } from "users/http.js";
 import { createUsersRemote } from "users/remote.js";
 
-import usersApi from "../../users/api.js";
+const cmsApi = createCmsRouter({
+  application: createCmsService({ source: "internal-http" }),
+});
+const gatewayApi = createGatewayRouter({ application: createGatewayService() });
+const usersApi = createUsersRouter({ application: createUsersApplication() });
 
 function createHttpApp(router, basePath = "/") {
   const app = express();

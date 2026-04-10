@@ -1,21 +1,12 @@
 import { Agent, Resource } from "database";
 
 import { eq, isNull, or } from "drizzle-orm";
+import { createNotFoundError, createValidationError, hasOwn } from "shared/utils.js";
 
 export function stripAutoFields(obj) {
   const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = obj;
   return rest;
 }
-
-export {
-  createNotFoundError,
-  createValidationError,
-  createForbiddenError,
-  validateConversationMessage,
-  hasOwn,
-  getMutationCount,
-} from "shared/utils.js";
-import { createNotFoundError, createValidationError, hasOwn } from "shared/utils.js";
 
 export function assertNoLegacyFields(input, legacyKeys, label = "Input") {
   const present = legacyKeys.filter((key) => hasOwn(input, key));

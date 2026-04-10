@@ -1,8 +1,7 @@
 import cron from "node-cron";
+import { USAGE_RESET_SCHEDULE } from "shared/cron.js";
 
 import { getUsersModule } from "../compose.js";
-
-export const USAGE_RESET_SCHEDULE = process.env.USAGE_RESET_SCHEDULE || "0 0 * * *";
 
 export const resetUsageLimits = async () => {
   const users = await getUsersModule();
