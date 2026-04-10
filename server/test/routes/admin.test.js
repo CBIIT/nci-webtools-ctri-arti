@@ -263,14 +263,14 @@ describe("usage admin routes", () => {
     }
   });
 
-  it("uses tz for date-only usage and analytics queries", async () => {
+  it("uses UTC date-only bounds for usage and analytics queries", async () => {
     try {
       const [adminUser] = await db
         .insert(User)
         .values({
-          email: `admin-route-tz-${Date.now()}@test.com`,
+          email: `admin-route-utc-${Date.now()}@test.com`,
           firstName: "Admin",
-          lastName: "TZ",
+          lastName: "UTC",
           status: "active",
           roleID: 1,
         })
@@ -280,14 +280,14 @@ describe("usage admin routes", () => {
       const [user] = await db
         .insert(User)
         .values({
-          email: `usage-query-tz-${Date.now()}@test.com`,
+          email: `usage-query-utc-${Date.now()}@test.com`,
           firstName: "Usage",
-          lastName: "Timezone",
+          lastName: "UTC",
           status: "active",
           roleID: 3,
         })
         .returning();
-      const usageType = `admin-usage-tz-${Date.now()}`;
+      const usageType = `admin-usage-utc-dateonly-${Date.now()}`;
 
       await db.insert(Usage).values([
         {
@@ -298,8 +298,8 @@ describe("usage admin routes", () => {
           unit: "input_tokens",
           unitCost: 0.01,
           cost: 0.01,
-          createdAt: new Date("2026-03-09T03:30:00.000Z"),
-          updatedAt: new Date("2026-03-09T03:30:00.000Z"),
+          createdAt: new Date("2026-03-08T12:00:00.000Z"),
+          updatedAt: new Date("2026-03-08T12:00:00.000Z"),
         },
         {
           userID: user.id,
@@ -309,8 +309,8 @@ describe("usage admin routes", () => {
           unit: "input_tokens",
           unitCost: 0.01,
           cost: 0.02,
-          createdAt: new Date("2026-03-09T04:30:00.000Z"),
-          updatedAt: new Date("2026-03-09T04:30:00.000Z"),
+          createdAt: new Date("2026-03-09T12:00:00.000Z"),
+          updatedAt: new Date("2026-03-09T12:00:00.000Z"),
         },
       ]);
 
@@ -318,29 +318,25 @@ describe("usage admin routes", () => {
         `/admin/usage?userId=${user.id}` +
         `&type=${encodeURIComponent(usageType)}` +
         "&startDate=2026-03-09&endDate=2026-03-09" +
-        `&tz=${encodeURIComponent("America/New_York")}` +
         "&limit=20";
 
       const usageRes = await request(app).get(query);
 
       assert.equal(usageRes.status, 200);
       assert.equal(usageRes.body.meta.total, 1);
-      assert.equal(usageRes.body.meta.timeZone, "America/New_York");
       assert.equal(usageRes.body.data.length, 1);
       assert.equal(usageRes.body.data[0].requestId, `${usageType}-inside`);
 
       const analyticsQuery =
         `/admin/analytics?groupBy=day&userId=${user.id}` +
         `&type=${encodeURIComponent(usageType)}` +
-        "&startDate=2026-03-09&endDate=2026-03-09" +
-        `&tz=${encodeURIComponent("America/New_York")}`;
+        "&startDate=2026-03-09&endDate=2026-03-09";
 
       const analyticsRes = await request(app).get(analyticsQuery);
 
       assert.equal(analyticsRes.status, 200);
-      assert.equal(analyticsRes.body.meta.timeZone, "America/New_York");
       assert.equal(analyticsRes.body.data.length, 1);
-      assert.equal(analyticsRes.body.data[0].period, "2026-03-09T00:00:00");
+      assert.equal(analyticsRes.body.data[0].period, "2026-03-09T00:00:00Z");
       assert.equal(analyticsRes.body.data[0].totalRequests, 1);
       assert.equal(Number(analyticsRes.body.data[0].totalCost), 0.02);
     } finally {

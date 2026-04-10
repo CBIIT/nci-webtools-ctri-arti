@@ -118,7 +118,7 @@ test("routeHandler", async (t) => {
 });
 
 test("getDateRange", async (t) => {
-  await t.test("returns default range (last 30 days)", () => {
+  await t.test("returns default range (last 30 UTC days)", () => {
     const { startDate, endDate } = getDateRange();
     assert.ok(startDate instanceof Date);
     assert.ok(endDate instanceof Date);
@@ -129,34 +129,35 @@ test("getDateRange", async (t) => {
   });
 
   await t.test("accepts custom start and end dates", () => {
-    // Use ISO dates with explicit time to avoid timezone edge cases
     const { startDate, endDate } = getDateRange("2024-06-15", "2024-06-20");
-    assert.strictEqual(startDate.getFullYear(), 2024);
-    assert.strictEqual(startDate.getMonth(), 5); // June = 5
+    assert.strictEqual(startDate.getUTCFullYear(), 2024);
+    assert.strictEqual(startDate.getUTCMonth(), 5); // June = 5
     assert.ok(endDate > startDate);
   });
 
-  await t.test("start date begins at midnight, end date ends at 23:59:59", () => {
+  await t.test("date-only start begins at UTC midnight, end at 23:59:59.999 UTC", () => {
     const { startDate, endDate } = getDateRange("2024-06-15", "2024-06-15");
-    assert.strictEqual(startDate.getHours(), 0);
-    assert.strictEqual(startDate.getMinutes(), 0);
-    assert.strictEqual(endDate.getHours(), 23);
-    assert.strictEqual(endDate.getMinutes(), 59);
+    assert.strictEqual(startDate.getUTCHours(), 0);
+    assert.strictEqual(startDate.getUTCMinutes(), 0);
+    assert.strictEqual(endDate.getUTCHours(), 23);
+    assert.strictEqual(endDate.getUTCMinutes(), 59);
+    assert.strictEqual(endDate.getUTCSeconds(), 59);
+    assert.strictEqual(endDate.getUTCMilliseconds(), 999);
   });
 
-  await t.test("date-only params preserve the intended local calendar day", () => {
+  await t.test("date-only params preserve the intended UTC calendar day", () => {
     const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09");
-    assert.strictEqual(startDate.getFullYear(), 2026);
-    assert.strictEqual(startDate.getMonth(), 2);
-    assert.strictEqual(startDate.getDate(), 9);
-    assert.strictEqual(endDate.getFullYear(), 2026);
-    assert.strictEqual(endDate.getMonth(), 2);
-    assert.strictEqual(endDate.getDate(), 9);
+    assert.strictEqual(startDate.getUTCFullYear(), 2026);
+    assert.strictEqual(startDate.getUTCMonth(), 2);
+    assert.strictEqual(startDate.getUTCDate(), 9);
+    assert.strictEqual(endDate.getUTCFullYear(), 2026);
+    assert.strictEqual(endDate.getUTCMonth(), 2);
+    assert.strictEqual(endDate.getUTCDate(), 9);
   });
 
-  await t.test("same-day evening timestamps remain inside a date-only range", () => {
+  await t.test("same-day evening UTC timestamps remain inside a date-only range", () => {
     const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09");
-    const evening = new Date(2026, 2, 9, 20, 41, 57, 0);
+    const evening = new Date("2026-03-09T20:41:57.000Z");
     assert.ok(evening >= startDate, "evening timestamp should be after startDate");
     assert.ok(evening <= endDate, "evening timestamp should be before endDate");
   });
@@ -172,11 +173,7 @@ test("getDateRange", async (t) => {
 
   await t.test("supports mixed date-only and UTC timestamp bounds", () => {
     const { startDate, endDate } = getDateRange("2026-03-09", "2026-03-09T20:41:57.123Z");
-    assert.strictEqual(startDate.getFullYear(), 2026);
-    assert.strictEqual(startDate.getMonth(), 2);
-    assert.strictEqual(startDate.getDate(), 9);
-    assert.strictEqual(startDate.getHours(), 0);
-    assert.strictEqual(startDate.getMinutes(), 0);
+    assert.strictEqual(startDate.toISOString(), "2026-03-09T00:00:00.000Z");
     assert.strictEqual(endDate.toISOString(), "2026-03-09T20:41:57.123Z");
   });
 });

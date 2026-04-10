@@ -422,29 +422,30 @@ test("UserService billing lifecycle", async (t) => {
     assert.ok(result.data.some((row) => row.type === "guardrail"));
   });
 
-  await t.test("timezone-aware date-only filters use the requested local day", async () => {
+  await t.test("UTC date-only filters use midnight-to-23:59:59.999 UTC", async () => {
     const analyticsUser = await service.createUser({
-      email: `analytics-tz-${Date.now()}-${Math.random()}@test.com`,
+      email: `analytics-utc-${Date.now()}-${Math.random()}@test.com`,
       firstName: "Analytics",
-      lastName: "Timezone",
+      lastName: "UTC",
       status: "active",
       roleID: 3,
       budget: 5,
     });
-    const usageType = `analytics-tz-${Date.now()}`;
+    const usageType = `analytics-utc-${Date.now()}`;
 
+    // Record two usage rows: one clearly outside 2026-03-09 UTC, one clearly inside
     await service.recordUsage(analyticsUser.id, [
       {
         userID: analyticsUser.id,
         modelID: 99,
-        requestId: `${usageType}-outside`,
+        requestId: `${usageType}-before`,
         type: usageType,
         quantity: 1,
         unit: "input_tokens",
         unitCost: 0.01,
         cost: 0.01,
-        createdAt: new Date("2026-03-09T03:30:00.000Z"),
-        updatedAt: new Date("2026-03-09T03:30:00.000Z"),
+        createdAt: new Date("2026-03-08T12:00:00.000Z"),
+        updatedAt: new Date("2026-03-08T12:00:00.000Z"),
       },
       {
         userID: analyticsUser.id,
@@ -455,8 +456,8 @@ test("UserService billing lifecycle", async (t) => {
         unit: "input_tokens",
         unitCost: 0.01,
         cost: 0.02,
-        createdAt: new Date("2026-03-09T04:30:00.000Z"),
-        updatedAt: new Date("2026-03-09T04:30:00.000Z"),
+        createdAt: new Date("2026-03-09T12:00:00.000Z"),
+        updatedAt: new Date("2026-03-09T12:00:00.000Z"),
       },
     ]);
 
@@ -465,10 +466,8 @@ test("UserService billing lifecycle", async (t) => {
       type: usageType,
       startDate: "2026-03-09",
       endDate: "2026-03-09",
-      tz: "America/New_York",
     });
 
-    assert.strictEqual(usage.meta.timeZone, "America/New_York");
     assert.strictEqual(usage.meta.total, 1);
     assert.strictEqual(usage.data.length, 1);
     assert.strictEqual(usage.data[0].requestId, `${usageType}-inside`);
@@ -479,12 +478,10 @@ test("UserService billing lifecycle", async (t) => {
       type: usageType,
       startDate: "2026-03-09",
       endDate: "2026-03-09",
-      tz: "America/New_York",
     });
 
-    assert.strictEqual(analytics.meta.timeZone, "America/New_York");
     assert.strictEqual(analytics.data.length, 1);
-    assert.strictEqual(analytics.data[0].period, "2026-03-09T00:00:00");
+    assert.strictEqual(analytics.data[0].period, "2026-03-09T00:00:00Z");
     assert.strictEqual(analytics.data[0].totalRequests, 1);
     assert.strictEqual(Number(analytics.data[0].totalCost), 0.02);
   });

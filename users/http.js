@@ -9,11 +9,12 @@ export function createUsersRouter({ application } = {}) {
 
   const api = Router();
 
+  // Users service handles small payloads only (no file uploads or large content)
   api.use(json({ limit: "10mb" }));
   api.use(logRequests());
 
   api.get(
-    "/v1/users",
+    "/users",
     routeHandler(async (req, res) => {
       const { search, limit, offset, sortBy, sortOrder, ...filters } = req.query;
       const result = await application.getUsers({
@@ -29,7 +30,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.get(
-    "/v1/users/resolve",
+    "/users/resolve",
     routeHandler(async (req, res) => {
       const result = await application.resolveUser(req.query);
       if (!result) return res.status(404).json({ error: "User not found" });
@@ -38,7 +39,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.get(
-    "/v1/users/:id",
+    "/users/:id",
     routeHandler(async (req, res) => {
       const user = await application.getUser(req.params.id);
       if (!user) return res.status(404).json({ error: "User not found" });
@@ -47,7 +48,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.post(
-    "/v1/users",
+    "/users",
     routeHandler(async (req, res) => {
       const user = await application.createUser(req.body);
       res.json(user);
@@ -55,7 +56,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.post(
-    "/v1/users/find-or-create",
+    "/users/find-or-create",
     routeHandler(async (req, res) => {
       const user = await application.findOrCreateUser(req.body);
       res.json(user);
@@ -63,7 +64,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.put(
-    "/v1/users/:id",
+    "/users/:id",
     routeHandler(async (req, res) => {
       const user = await application.updateUser(req.params.id, req.body);
       if (!user) return res.status(404).json({ error: "User not found" });
@@ -72,7 +73,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.put(
-    "/v1/users/:id/profile",
+    "/users/:id/profile",
     routeHandler(async (req, res) => {
       const user = await application.updateProfile(req.params.id, req.body);
       if (!user) return res.status(404).json({ error: "User not found" });
@@ -81,7 +82,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.delete(
-    "/v1/users/:id",
+    "/users/:id",
     routeHandler(async (req, res) => {
       const result = await application.deleteUser(req.params.id);
       if (!result) return res.status(404).json({ error: "User not found" });
@@ -90,7 +91,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.get(
-    "/v1/roles",
+    "/roles",
     routeHandler(async (_req, res) => {
       const roles = await application.getRoles();
       res.json(roles);
@@ -98,7 +99,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.get(
-    "/v1/roles/:roleIdentifier/access",
+    "/roles/:roleIdentifier/access",
     routeHandler(async (req, res) => {
       const access = await application.getAccessForRole(req.params.roleIdentifier);
       res.json(access);
@@ -106,7 +107,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.post(
-    "/v1/usage",
+    "/usage",
     routeHandler(async (req, res) => {
       const result = await application.recordUsage(req.body.userId, req.body.rows);
       res.json(result);
@@ -114,12 +115,11 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.get(
-    "/v1/users/:id/usage",
+    "/users/:id/usage",
     routeHandler(async (req, res) => {
       const result = await application.getUserUsage(+req.params.id, {
         startDate: req.query.startDate,
         endDate: req.query.endDate,
-        tz: req.query.tz,
         type: req.query.type,
         limit: req.query.limit ? +req.query.limit : undefined,
         offset: req.query.offset ? +req.query.offset : undefined,
@@ -130,12 +130,11 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.get(
-    "/v1/usage",
+    "/usage",
     routeHandler(async (req, res) => {
       const result = await application.getUsage({
         startDate: req.query.startDate,
         endDate: req.query.endDate,
-        tz: req.query.tz,
         userId: req.query.userId,
         type: req.query.type,
         limit: req.query.limit ? +req.query.limit : undefined,
@@ -146,12 +145,11 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.get(
-    "/v1/analytics",
+    "/analytics",
     routeHandler(async (req, res) => {
       const result = await application.getAnalytics({
         startDate: req.query.startDate,
         endDate: req.query.endDate,
-        tz: req.query.tz,
         groupBy: req.query.groupBy,
         userId: req.query.userId,
         type: req.query.type,
@@ -168,7 +166,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.post(
-    "/v1/budgets/reset",
+    "/budgets/reset",
     routeHandler(async (_req, res) => {
       const result = await application.resetAllBudgets();
       res.json(result);
@@ -176,7 +174,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.post(
-    "/v1/users/:id/budget/reset",
+    "/users/:id/budget/reset",
     routeHandler(async (req, res) => {
       const result = await application.resetUserBudget(req.params.id);
       if (!result) return res.status(404).json({ error: "User not found" });
@@ -185,7 +183,7 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.get(
-    "/v1/config",
+    "/config",
     routeHandler(async (_req, res) => {
       res.json(application.getConfig());
     })
