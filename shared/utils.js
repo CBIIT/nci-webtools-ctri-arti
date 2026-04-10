@@ -61,6 +61,29 @@ export function sendNotFound(res, label) {
   return res.status(404).json({ error: `${label} not found` });
 }
 
+export function parseUsageQuery(query = {}) {
+  return {
+    startDate: query.startDate,
+    endDate: query.endDate,
+    type: query.type,
+    limit: query.limit ? +query.limit : undefined,
+    offset: query.offset ? +query.offset : undefined,
+  };
+}
+
+export function parseAnalyticsQuery(query = {}) {
+  return {
+    ...parseUsageQuery(query),
+    groupBy: query.groupBy,
+    userId: query.userId,
+    search: query.search,
+    sortBy: query.sortBy,
+    sortOrder: query.sortOrder,
+    role: query.role,
+    status: query.status,
+  };
+}
+
 export function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }

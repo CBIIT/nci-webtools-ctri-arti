@@ -1,24 +1,12 @@
 import db, { Agent, AgentTool, Conversation, Tool } from "database";
 
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { toRuntimeGuardrailConfig } from "gateway/core/guardrails.js";
+import { createForbiddenError, createNotFoundError, getMutationCount } from "shared/utils.js";
 
-import {
-  agentReadCondition,
-  createForbiddenError,
-  createNotFoundError,
-  getMutationCount,
-  stripAutoFields,
-} from "./shared.js";
+import { agentReadCondition, stripAutoFields } from "./shared.js";
 
 const DEFAULT_CHAT_MODEL = "us.anthropic.claude-sonnet-4-6";
-
-function buildGuardrailRuntimeConfig(guardrail) {
-  if (!guardrail?.awsGuardrailId) return null;
-  return {
-    guardrailIdentifier: guardrail.awsGuardrailId,
-    guardrailVersion: guardrail.awsGuardrailVersion || "DRAFT",
-  };
-}
 
 function buildAgentRuntimeConfig(agent) {
   return {
@@ -27,7 +15,7 @@ function buildAgentRuntimeConfig(agent) {
     modelParameters: agent?.modelParameters || null,
     systemPrompt: agent?.Prompt?.content || null,
     guardrailID: agent?.guardrailID || null,
-    guardrailConfig: buildGuardrailRuntimeConfig(agent?.Guardrail),
+    guardrailConfig: toRuntimeGuardrailConfig(agent?.Guardrail),
     tools: (agent?.AgentTools || []).map((agentTool) => agentTool.Tool?.name).filter(Boolean),
   };
 }

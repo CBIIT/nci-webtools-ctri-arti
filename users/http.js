@@ -1,6 +1,6 @@
 import { json, Router } from "express";
 import { logErrors, logRequests } from "shared/middleware.js";
-import { routeHandler, sendNotFound } from "shared/utils.js";
+import { routeHandler, sendNotFound, parseAnalyticsQuery, parseUsageQuery } from "shared/utils.js";
 
 export function createUsersRouter({ application } = {}) {
   if (!application) {
@@ -117,13 +117,7 @@ export function createUsersRouter({ application } = {}) {
   api.get(
     "/users/:id/usage",
     routeHandler(async (req, res) => {
-      const result = await application.getUserUsage(+req.params.id, {
-        startDate: req.query.startDate,
-        endDate: req.query.endDate,
-        type: req.query.type,
-        limit: req.query.limit ? +req.query.limit : undefined,
-        offset: req.query.offset ? +req.query.offset : undefined,
-      });
+      const result = await application.getUserUsage(+req.params.id, parseUsageQuery(req.query));
       if (!result) return sendNotFound(res, "User");
       res.json(result);
     })
@@ -133,12 +127,8 @@ export function createUsersRouter({ application } = {}) {
     "/usage",
     routeHandler(async (req, res) => {
       const result = await application.getUsage({
-        startDate: req.query.startDate,
-        endDate: req.query.endDate,
+        ...parseUsageQuery(req.query),
         userId: req.query.userId,
-        type: req.query.type,
-        limit: req.query.limit ? +req.query.limit : undefined,
-        offset: req.query.offset ? +req.query.offset : undefined,
       });
       res.json(result);
     })
@@ -147,20 +137,7 @@ export function createUsersRouter({ application } = {}) {
   api.get(
     "/analytics",
     routeHandler(async (req, res) => {
-      const result = await application.getAnalytics({
-        startDate: req.query.startDate,
-        endDate: req.query.endDate,
-        groupBy: req.query.groupBy,
-        userId: req.query.userId,
-        type: req.query.type,
-        search: req.query.search,
-        limit: req.query.limit ? +req.query.limit : undefined,
-        offset: req.query.offset ? +req.query.offset : undefined,
-        sortBy: req.query.sortBy,
-        sortOrder: req.query.sortOrder,
-        role: req.query.role,
-        status: req.query.status,
-      });
+      const result = await application.getAnalytics(parseAnalyticsQuery(req.query));
       res.json(result);
     })
   );

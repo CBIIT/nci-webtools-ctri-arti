@@ -3,25 +3,15 @@ import postgres from "postgres";
 
 import { auditRelationalIntegrity } from "../relational-audit.js";
 
-const config = {
-  host: process.env.PGHOST || "127.0.0.1",
-  port: Number(process.env.PGPORT || 5432),
-  database: process.env.PGDATABASE || "postgres",
-  username: process.env.PGUSER || "postgres",
-  password: process.env.PGPASSWORD || "postgres",
-};
-
-function printJson(label, value) {
-  console.log(`${label}: ${JSON.stringify(value, null, 2)}`);
-}
+import { pgConfig, printJson } from "./shared.js";
 
 async function main() {
   console.log(
-    `Connecting to postgres://${config.username}@${config.host}:${config.port}/${config.database}`
+    `Connecting to postgres://${pgConfig.username}@${pgConfig.host}:${pgConfig.port}/${pgConfig.database}`
   );
 
   const client = postgres({
-    ...config,
+    ...pgConfig,
     ssl: false,
     onnotice: () => {},
   });

@@ -1,9 +1,10 @@
 import { Router } from "express";
 import logger from "shared/logger.js";
+import { routeHandler, parseAnalyticsQuery, parseUsageQuery, sendNotFound } from "shared/utils.js";
 
 import { requireRole } from "../../auth.js";
 import { sendUsageLimitChangeEmail } from "../../integrations/email.js";
-import { getAuthenticatedUser, routeHandler } from "../utils.js";
+import { getAuthenticatedUser } from "../utils.js";
 
 export function createAdminRouter({
   modules,
@@ -39,7 +40,7 @@ export function createAdminRouter({
     requireRole("admin"),
     routeHandler(async (req, res) => {
       const user = await users.getUser(req.params.id);
-      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user) return sendNotFound(res, "User");
       res.json(user);
     })
   );
@@ -50,7 +51,7 @@ export function createAdminRouter({
     routeHandler(async (req, res) => {
       const currentUser = getAuthenticatedUser(req);
       const user = await users.updateProfile(currentUser.id, req.body);
-      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user) return sendNotFound(res, "User");
       res.json(user);
     })
   );
@@ -62,7 +63,7 @@ export function createAdminRouter({
       const { id } = req.body;
       const existingUser = id ? await users.getUser(id) : null;
       const user = id ? await users.updateUser(id, req.body) : await users.createUser(req.body);
-      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user) return sendNotFound(res, "User");
 
       const budgetChanged = id && existingUser && existingUser.budget !== user.budget;
       if (budgetChanged && user.email) {
@@ -95,7 +96,7 @@ export function createAdminRouter({
     requireRole("admin"),
     routeHandler(async (req, res) => {
       const result = await users.deleteUser(req.params.id);
-      if (!result) return res.status(404).json({ error: "User not found" });
+      if (!result) return sendNotFound(res, "User");
       res.json(result);
     })
   );
@@ -104,14 +105,8 @@ export function createAdminRouter({
     "/admin/users/:id/usage",
     requireRole("admin"),
     routeHandler(async (req, res) => {
-      const result = await users.getUserUsage(+req.params.id, {
-        startDate: req.query.startDate,
-        endDate: req.query.endDate,
-        type: req.query.type,
-        limit: req.query.limit ? +req.query.limit : undefined,
-        offset: req.query.offset ? +req.query.offset : undefined,
-      });
-      if (!result) return res.status(404).json({ error: "User not found" });
+      const result = await users.getUserUsage(+req.params.id, parseUsageQuery(req.query));
+      if (!result) return sendNotFound(res, "User");
       res.json(result);
     })
   );
@@ -130,12 +125,8 @@ export function createAdminRouter({
     requireRole("admin"),
     routeHandler(async (req, res) => {
       const result = await users.getUsage({
-        startDate: req.query.startDate,
-        endDate: req.query.endDate,
+        ...parseUsageQuery(req.query),
         userId: req.query.userId,
-        type: req.query.type,
-        limit: req.query.limit ? +req.query.limit : undefined,
-        offset: req.query.offset ? +req.query.offset : undefined,
       });
       res.json(result);
     })
@@ -155,7 +146,7 @@ export function createAdminRouter({
     requireRole("admin"),
     routeHandler(async (req, res) => {
       const result = await users.resetUserBudget(req.params.id);
-      if (!result) return res.status(404).json({ error: "User not found" });
+      if (!result) return sendNotFound(res, "User");
       res.json(result);
     })
   );
@@ -164,20 +155,7 @@ export function createAdminRouter({
     "/admin/analytics",
     requireRole("admin"),
     routeHandler(async (req, res) => {
-      const result = await users.getAnalytics({
-        startDate: req.query.startDate,
-        endDate: req.query.endDate,
-        groupBy: req.query.groupBy,
-        userId: req.query.userId,
-        type: req.query.type,
-        search: req.query.search,
-        limit: req.query.limit ? +req.query.limit : undefined,
-        offset: req.query.offset ? +req.query.offset : undefined,
-        sortBy: req.query.sortBy,
-        sortOrder: req.query.sortOrder,
-        role: req.query.role,
-        status: req.query.status,
-      });
+      const result = await users.getAnalytics(parseAnalyticsQuery(req.query));
       res.json(result);
     })
   );
