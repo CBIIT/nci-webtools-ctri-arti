@@ -1,0 +1,12 @@
+TASK MODE: cross_document_comparison
+
+Compare this protocol against its corresponding consent form. Identify meaningful discrepancies between the two documents.
+
+Do not compare sections within the same document. That analysis is handled separately.
+Focus only on cross-document discrepancies.
+
+Return JSON with this shape:
+{{output_json_example}}
+
+Input:
+{{input_json}}

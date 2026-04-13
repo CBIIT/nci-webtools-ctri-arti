@@ -25,7 +25,45 @@ function buildContradictionSection(lines, heading, review) {
   lines.push("");
 }
 
-function buildAuditReport(merged, contradictionReview, consentConsistencyReview) {
+function buildCrossDocSection(lines, heading, review) {
+  if (review.status !== "completed" || review.findings.length === 0) {
+    return;
+  }
+
+  lines.push(heading);
+  lines.push("");
+  lines.push(review.overallSummary);
+  lines.push("");
+  for (const finding of review.findings) {
+    lines.push(`- [${finding.severity}] ${finding.concept || finding.category}`);
+    lines.push(`  - Direction: ${finding.direction}`);
+    lines.push(`  - Likely Out of Sync: ${finding.likelyOutOfSync}`);
+    const protocolLoc = finding.protocol.sectionId || "unspecified";
+    const protocolPage = finding.protocol.page ? ` (p. ${finding.protocol.page})` : "";
+    const protocolFile = finding.protocol.fileName ? ` [${finding.protocol.fileName}]` : "";
+    lines.push(
+      `  - Protocol: ${protocolLoc} ${finding.protocol.sectionTitle}${protocolPage}${protocolFile}`
+    );
+    lines.push(`  - Protocol Quote: ${finding.protocol.quote}`);
+    const consentLoc = finding.consent.sectionId || "unspecified";
+    const consentPage = finding.consent.page ? ` (p. ${finding.consent.page})` : "";
+    const consentFile = finding.consent.fileName ? ` [${finding.consent.fileName}]` : "";
+    lines.push(
+      `  - Consent: ${consentLoc} ${finding.consent.sectionTitle}${consentPage}${consentFile}`
+    );
+    lines.push(`  - Consent Quote: ${finding.consent.quote}`);
+    lines.push(`  - Explanation: ${finding.explanation}`);
+    lines.push(`  - Resolution Guidance: ${finding.resolutionGuidance}`);
+  }
+  lines.push("");
+}
+
+function buildAuditReport(
+  merged,
+  contradictionReview,
+  consentConsistencyReview,
+  crossDocComparison
+) {
   const lines = [];
   lines.push("# EXECUTIVE SUMMARY: COMPLIANCE REVIEW");
   lines.push("");
@@ -79,6 +117,7 @@ function buildAuditReport(merged, contradictionReview, consentConsistencyReview)
     "## INTERNAL CONSENT FORM CONSISTENCY REVIEW",
     consentConsistencyReview
   );
+  buildCrossDocSection(lines, "## PROTOCOL VS CONSENT CROSS-DOCUMENT REVIEW", crossDocComparison);
 
   return `${lines
     .join("\n")
@@ -122,6 +161,43 @@ function buildContradictionReview(result) {
   };
 }
 
+function buildCrossDocReview(result) {
+  if (!result) {
+    return {
+      status: "not_executed",
+      overallSummary: "",
+      documentsAligned: true,
+      findings: [],
+    };
+  }
+
+  if (result.status === "completed") {
+    return {
+      status: "completed",
+      overallSummary: result.output?.overallSummary || "",
+      documentsAligned:
+        Array.isArray(result.output?.findings) && result.output.findings.length === 0,
+      findings: Array.isArray(result.output?.findings) ? result.output.findings : [],
+    };
+  }
+
+  if (result.status === "failed") {
+    return {
+      status: "failed",
+      overallSummary: result.output?.error || "Cross-document comparison failed.",
+      documentsAligned: false,
+      findings: [],
+    };
+  }
+
+  return {
+    status: "not_executed",
+    overallSummary: result.output?.message || "",
+    documentsAligned: true,
+    findings: [],
+  };
+}
+
 export function aggregateProtocolAdvisorReport(ctx) {
   const assets = ctx.steps.loadAssets;
   const parsedProtocol = ctx.steps.parseProtocol;
@@ -130,6 +206,7 @@ export function aggregateProtocolAdvisorReport(ctx) {
   const consentConsistencyReview = buildContradictionReview(
     ctx.steps.executeConsentConsistencyReview
   );
+  const crossDocComparison = buildCrossDocReview(ctx.steps.executeCrossDocComparison);
 
   const sourceVerdicts = reviewArtifacts.map((artifact) => ({
     source_id: artifact.source_review.source_id,
@@ -210,6 +287,13 @@ export function aggregateProtocolAdvisorReport(ctx) {
     subject_id: parsedProtocol.name || parsedProtocol.source || "protocol",
     subject_path: parsedProtocol.name || null,
     subject_files: parsedProtocol.files || [],
+    consentContext: ctx.steps.parseConsent
+      ? {
+          source: ctx.steps.parseConsent.source,
+          name: ctx.steps.parseConsent.name,
+          contentType: ctx.steps.parseConsent.contentType,
+        }
+      : null,
     template: {
       templateId: assets.selectedTemplate.id,
       displayName: assets.selectedTemplate.title,
@@ -232,6 +316,12 @@ export function aggregateProtocolAdvisorReport(ctx) {
     ...merged,
     contradictionReview,
     consentConsistencyReview,
-    audit_report_markdown: buildAuditReport(merged, contradictionReview, consentConsistencyReview),
+    crossDocComparison,
+    audit_report_markdown: buildAuditReport(
+      merged,
+      contradictionReview,
+      consentConsistencyReview,
+      crossDocComparison
+    ),
   };
 }

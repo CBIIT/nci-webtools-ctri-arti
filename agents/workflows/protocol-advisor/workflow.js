@@ -1,6 +1,7 @@
 import { aggregateProtocolAdvisorReport } from "./aggregate-report.js";
 import { executeConsentConsistencyReview } from "./execute-consent-consistency-review.js";
 import { executeProtocolAdvisorContradictionReview } from "./execute-contradiction-review.js";
+import { executeCrossDocComparison } from "./execute-cross-doc-comparison.js";
 import { executeProtocolAdvisorSourceReviews } from "./execute-source-reviews.js";
 import { validateProtocolAdvisorInput } from "./input-schema.js";
 import { loadProtocolAdvisorAssets } from "./load-assets.js";
@@ -56,6 +57,19 @@ export const protocolAdvisorWorkflow = {
       },
       run: executeConsentConsistencyReview,
     },
+    executeCrossDocComparison: {
+      deps: [
+        "loadAssets",
+        "parseProtocol",
+        "parseConsent",
+        "executeContradictionReview",
+        "executeConsentConsistencyReview",
+      ],
+      when(ctx) {
+        return ctx.steps.parseConsent != null;
+      },
+      run: executeCrossDocComparison,
+    },
     aggregateReport: {
       deps: [
         "loadAssets",
@@ -64,6 +78,7 @@ export const protocolAdvisorWorkflow = {
         "executeContradictionReview",
         "parseConsent",
         "executeConsentConsistencyReview",
+        "executeCrossDocComparison",
       ],
       run: aggregateProtocolAdvisorReport,
     },

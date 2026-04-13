@@ -43,6 +43,8 @@ export async function loadProtocolAdvisorAssets(ctx) {
       contradictionReviewUser: readUtf8(PROMPT_PATHS.contradictionReviewUser),
       consentContradictionReviewSystem: readUtf8(PROMPT_PATHS.consentContradictionReviewSystem),
       consentContradictionReviewUser: readUtf8(PROMPT_PATHS.consentContradictionReviewUser),
+      crossDocComparisonSystem: readUtf8(PROMPT_PATHS.crossDocComparisonSystem),
+      crossDocComparisonUser: readUtf8(PROMPT_PATHS.crossDocComparisonUser),
       finalReport: readUtf8(PROMPT_PATHS.finalReport),
       sourceReviewSchema: readUtf8(PROMPT_PATHS.sourceReviewSchema),
     },

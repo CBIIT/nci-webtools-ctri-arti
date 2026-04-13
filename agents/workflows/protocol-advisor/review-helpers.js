@@ -1,4 +1,34 @@
 import fs from "node:fs";
+import path from "node:path";
+
+export const MIME_BY_EXTENSION = {
+  ".pdf": "application/pdf",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".txt": "text/plain",
+  ".md": "text/markdown",
+};
+
+export function decodeBytes(bytes) {
+  if (Buffer.isBuffer(bytes)) {
+    return bytes;
+  }
+  if (typeof bytes === "string") {
+    return Buffer.from(bytes, "base64");
+  }
+  if (bytes instanceof Uint8Array) {
+    return Buffer.from(bytes);
+  }
+  throw new Error("Unsupported document.bytes format");
+}
+
+export function resolveMimeType(document = {}) {
+  if (document.contentType) {
+    return document.contentType;
+  }
+
+  const extension = path.extname(document.name || "").toLowerCase();
+  return MIME_BY_EXTENSION[extension] || "text/plain";
+}
 
 export const ALLOWED_VERDICTS = [
   "compliant",
@@ -8,8 +38,13 @@ export const ALLOWED_VERDICTS = [
   "not_applicable",
 ];
 
+const NULL_BYTE = new RegExp(String.fromCharCode(0), "g");
+const BOM = new RegExp("^" + String.fromCharCode(0xfeff));
+
 export function sanitizeText(text) {
-  return String(text || "").replace(/\u0000/g, "").replace(/^\uFEFF/, "");
+  return String(text || "")
+    .replace(NULL_BYTE, "")
+    .replace(BOM, "");
 }
 
 export function readUtf8(filePath) {
@@ -89,15 +124,13 @@ export function overallDisposition(sourceVerdictCounts) {
   if ((sourceVerdictCounts.non_compliant || 0) > 0) {
     return {
       code: "remediation_required",
-      recommendation:
-        "Remediation required before the protocol can be represented as compliant.",
+      recommendation: "Remediation required before the protocol can be represented as compliant.",
     };
   }
   if ((sourceVerdictCounts.insufficient_evidence || 0) > 0) {
     return {
       code: "clarification_required",
-      recommendation:
-        "Clarification required before a clean compliance conclusion is possible.",
+      recommendation: "Clarification required before a clean compliance conclusion is possible.",
     };
   }
   if ((sourceVerdictCounts.conditional_gap || 0) > 0) {

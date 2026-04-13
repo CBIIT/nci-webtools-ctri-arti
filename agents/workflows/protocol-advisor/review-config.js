@@ -38,6 +38,8 @@ export const PROMPT_PATHS = {
   consentContradictionReviewUser: resolveAssetPath(
     "./prompts/consent-contradiction-review.user.txt"
   ),
+  crossDocComparisonSystem: resolveAssetPath("./prompts/cross-doc-comparison.system.txt"),
+  crossDocComparisonUser: resolveAssetPath("./prompts/cross-doc-comparison.user.txt"),
   finalReport: resolveAssetPath("./prompts/final-report.txt"),
   sourceReviewSchema: resolveAssetPath("./schemas/source-review.schema.json"),
 };

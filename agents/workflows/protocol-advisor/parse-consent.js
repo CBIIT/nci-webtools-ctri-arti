@@ -1,37 +1,6 @@
-import path from "node:path";
-
 import { parseDocument } from "shared/parsers.js";
 
-import { sanitizeText } from "./review-helpers.js";
-
-const MIME_BY_EXTENSION = {
-  ".pdf": "application/pdf",
-  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ".txt": "text/plain",
-  ".md": "text/markdown",
-};
-
-function decodeBytes(bytes) {
-  if (Buffer.isBuffer(bytes)) {
-    return bytes;
-  }
-  if (typeof bytes === "string") {
-    return Buffer.from(bytes, "base64");
-  }
-  if (bytes instanceof Uint8Array) {
-    return Buffer.from(bytes);
-  }
-  throw new Error("Unsupported consent document.bytes format");
-}
-
-function resolveMimeType(document = {}) {
-  if (document.contentType) {
-    return document.contentType;
-  }
-
-  const extension = path.extname(document.name || "").toLowerCase();
-  return MIME_BY_EXTENSION[extension] || "text/plain";
-}
+import { decodeBytes, resolveMimeType, sanitizeText } from "./review-helpers.js";
 
 async function parseInputDocument(document, index) {
   const name = document.name || `consent-document-${index + 1}`;

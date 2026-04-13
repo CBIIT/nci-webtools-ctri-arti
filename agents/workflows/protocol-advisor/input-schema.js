@@ -58,6 +58,14 @@ export function validateProtocolAdvisorInput(input = {}) {
     throw new Error("Each protocol_advisor consent document must include bytes");
   }
 
+  if (input.document && !hasDocumentBytes(input.document)) {
+    throw new Error("protocol_advisor document must include bytes when provided");
+  }
+
+  if (input.consentDocument && !hasDocumentBytes(input.consentDocument)) {
+    throw new Error("protocol_advisor consentDocument must include bytes when provided");
+  }
+
   if (!hasProtocolText(input) && !hasSingleDocument(input) && !hasMultipleDocuments(input)) {
     throw new Error("protocol_advisor requires protocolText, document.bytes, or documents[].bytes");
   }

@@ -106,6 +106,10 @@ describe("workflows", () => {
     assert.ok(assets.sources.some((source) => source.id === "secondary_research"));
     assert.ok(assets.prompts.system.includes("You are Protocol Advisor"));
     assert.ok(assets.prompts.sourceReviewSchema.includes('"task_type"'));
+    assert.ok(assets.prompts.crossDocComparisonSystem.includes("clinical trial protocol"));
+    assert.ok(assets.prompts.crossDocComparisonUser.includes("cross_document_comparison"));
+    assert.ok(assets.prompts.consentContradictionReviewSystem.length > 0);
+    assert.ok(assets.prompts.consentContradictionReviewUser.length > 0);
   });
 
   it("runs the protocol advisor workflow end to end and emails a final DOCX report", async () => {
@@ -121,6 +125,10 @@ describe("workflows", () => {
           assert.doesNotMatch(
             params.messages[0].content[0].text,
             /"consent_consistency_review":\s*\{\s*"status": "completed"/
+          );
+          assert.doesNotMatch(
+            params.messages[0].content[0].text,
+            /"cross_document_comparison":\s*\{\s*"status": "completed"/
           );
           return {
             output: {
@@ -340,6 +348,10 @@ describe("workflows", () => {
       0
     );
     assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-cross_doc_comparison").length,
+      0
+    );
+    assert.equal(
       calls.filter((call) => call.type === "workflow-protocol_advisor-final_report").length,
       1
     );
@@ -507,6 +519,50 @@ describe("workflows", () => {
           };
         }
 
+        if (params.type === "workflow-protocol_advisor-cross_doc_comparison") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      overallSummary: "One cross-document discrepancy identified.",
+                      documentsAligned: false,
+                      findings: [
+                        {
+                          category: "risks",
+                          severity: "high",
+                          concept: "Risk of bleeding",
+                          direction: "consent_understates_protocol",
+                          likelyOutOfSync: "consent",
+                          protocol: {
+                            fileName: "protocol.txt",
+                            sectionTitle: "Risks",
+                            sectionId: "4",
+                            quote: "Participants may experience minor or major bleeding.",
+                          },
+                          consent: {
+                            fileName: "consent.txt",
+                            sectionTitle: "Possible Risks",
+                            sectionId: "6",
+                            quote: "You may have minor bruising.",
+                          },
+                          explanation:
+                            "The protocol describes a broader bleeding risk than the consent form discloses.",
+                          resolutionGuidance:
+                            "Reconcile the risk language so both documents describe the same risk scope.",
+                        },
+                      ],
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
         if (params.type === "workflow-protocol_advisor-contradiction_review") {
           return {
             output: {
@@ -530,6 +586,7 @@ describe("workflows", () => {
 
         if (params.type === "workflow-protocol_advisor-final_report") {
           assert.match(params.messages[0].content[0].text, /"consent_consistency_review"/);
+          assert.match(params.messages[0].content[0].text, /"cross_document_comparison"/);
           return {
             output: {
               message: {
@@ -541,6 +598,10 @@ describe("workflows", () => {
                       "## INTERNAL CONSENT FORM CONSISTENCY REVIEW",
                       "",
                       "Consent inconsistency summary.",
+                      "",
+                      "## PROTOCOL VS CONSENT CROSS-DOCUMENT REVIEW",
+                      "",
+                      "Cross-document discrepancy summary.",
                     ].join("\n"),
                   },
                 ],
@@ -602,8 +663,14 @@ describe("workflows", () => {
         .length,
       1
     );
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-cross_doc_comparison").length,
+      1
+    );
     assert.equal(result.context.steps.parseConsent.source, "consentText");
     assert.equal(result.output.mergedReview.consentConsistencyReview.status, "completed");
+    assert.equal(result.output.mergedReview.crossDocComparison.status, "completed");
     assert.match(result.output.report.markdown, /INTERNAL CONSENT FORM CONSISTENCY REVIEW/);
+    assert.match(result.output.report.markdown, /PROTOCOL VS CONSENT CROSS-DOCUMENT REVIEW/);
   });
 });
