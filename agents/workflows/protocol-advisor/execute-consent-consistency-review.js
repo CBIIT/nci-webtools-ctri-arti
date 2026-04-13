@@ -6,14 +6,14 @@ import {
 import { invokeGatewayJson, renderTemplate } from "./review-helpers.js";
 
 function buildSystemPrompt(assets) {
-  return assets.prompts.contradictionReviewSystem.trim();
+  return assets.prompts.consentContradictionReviewSystem.trim();
 }
 
 function buildUserPrompt(assets, input) {
-  return renderTemplate(assets.prompts.contradictionReviewUser, {
+  return renderTemplate(assets.prompts.consentContradictionReviewUser, {
     input_json: JSON.stringify(
       {
-        protocol: input.document,
+        consent: input.document,
         sections: input.sections,
       },
       null,
@@ -25,24 +25,24 @@ function buildUserPrompt(assets, input) {
         documentClean: false,
         findings: [
           {
-            category: "enrollment_sample_size",
+            category: "participant_instructions",
             severity: "high",
-            concept: "Target enrollment",
+            concept: "Fasting requirement",
             sectionA: {
-              sectionTitle: "Study Population",
-              sectionId: "3.2",
-              page: 12,
-              quote: "We will enroll 40 participants.",
+              sectionTitle: "Before Your Visit",
+              sectionId: "4",
+              page: 3,
+              quote: "Do not eat for 8 hours before your visit.",
             },
             sectionB: {
-              sectionTitle: "Statistical Considerations",
-              sectionId: "10.1",
-              page: 34,
-              quote: "The study will enroll 60 participants.",
+              sectionTitle: "Preparing for Your Appointment",
+              sectionId: "8",
+              page: 6,
+              quote: "You may eat normally before arriving.",
             },
-            explanation: "Two sections describe different target enrollment totals.",
-            resolutionGuidance:
-              "Reconcile the target enrollment language in Section 3.2 and Section 10.1.",
+            explanation:
+              "The consent gives conflicting instructions about eating before the visit.",
+            resolutionGuidance: "Reconcile the pre-visit eating instructions in Sections 4 and 8.",
           },
         ],
         citations: [],
@@ -53,20 +53,20 @@ function buildUserPrompt(assets, input) {
   }).trim();
 }
 
-export async function executeProtocolAdvisorContradictionReview(ctx, services) {
+export async function executeConsentConsistencyReview(ctx, services) {
   if (!services.gateway || typeof services.gateway.invoke !== "function") {
-    throw new Error("protocol_advisor requires a gateway service for contradiction review");
+    throw new Error("protocol_advisor requires a gateway service for consent consistency review");
   }
 
   const assets = ctx.steps.loadAssets;
-  const parsedProtocol = ctx.steps.parseProtocol;
-  const input = buildContradictionReviewInput(parsedProtocol);
+  const parsedConsent = ctx.steps.parseConsent;
+  const input = buildContradictionReviewInput(parsedConsent);
   const { response, json } = await invokeGatewayJson({
     gateway: services.gateway,
     userId: services.userId,
     requestId: services.requestId || ctx.workflow.runId,
     model: assets.model,
-    type: "workflow-protocol_advisor-contradiction_review",
+    type: "workflow-protocol_advisor-consent_consistency_review",
     system: buildSystemPrompt(assets),
     userText: buildUserPrompt(assets, input),
   });
@@ -76,11 +76,11 @@ export async function executeProtocolAdvisorContradictionReview(ctx, services) {
     model: assets.model,
     input,
     output: normalizeContradictionReviewPayload(json, {
-      emptySummary: "No contradictions identified.",
+      emptySummary: "No consent inconsistencies identified.",
     }),
     usage: response.usage || null,
     latencyMs: response.metrics?.latencyMs ?? null,
   };
 }
 
-export default executeProtocolAdvisorContradictionReview;
+export default executeConsentConsistencyReview;

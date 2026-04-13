@@ -32,6 +32,12 @@ export const PROMPT_PATHS = {
   sourceReview: resolveAssetPath("./prompts/source-review.txt"),
   contradictionReviewSystem: resolveAssetPath("./prompts/contradiction-review.system.txt"),
   contradictionReviewUser: resolveAssetPath("./prompts/contradiction-review.user.txt"),
+  consentContradictionReviewSystem: resolveAssetPath(
+    "./prompts/consent-contradiction-review.system.txt"
+  ),
+  consentContradictionReviewUser: resolveAssetPath(
+    "./prompts/consent-contradiction-review.user.txt"
+  ),
   finalReport: resolveAssetPath("./prompts/final-report.txt"),
   sourceReviewSchema: resolveAssetPath("./schemas/source-review.schema.json"),
 };

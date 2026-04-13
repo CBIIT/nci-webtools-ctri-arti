@@ -31,6 +31,7 @@ function buildFinalReportPayload(merged) {
         })),
       })),
     contradiction_review: merged.contradictionReview,
+    consent_consistency_review: merged.consentConsistencyReview,
   };
 }
 

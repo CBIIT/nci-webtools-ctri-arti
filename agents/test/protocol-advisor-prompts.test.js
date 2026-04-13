@@ -2,14 +2,44 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { aggregateProtocolAdvisorReport } from "../workflows/protocol-advisor/aggregate-report.js";
-import {
-  executeProtocolAdvisorContradictionReview,
-  splitTextIntoSections,
-  buildContradictionReviewInput,
-} from "../workflows/protocol-advisor/execute-contradiction-review.js";
+import { executeConsentConsistencyReview } from "../workflows/protocol-advisor/execute-consent-consistency-review.js";
+import { executeProtocolAdvisorContradictionReview } from "../workflows/protocol-advisor/execute-contradiction-review.js";
+import { validateProtocolAdvisorInput } from "../workflows/protocol-advisor/input-schema.js";
 import { synthesizeProtocolAdvisorFinalReport } from "../workflows/protocol-advisor/synthesize-final-report.js";
+import {
+  buildContradictionReviewInput,
+  normalizeContradictionReviewPayload,
+  splitTextIntoSections,
+} from "../workflows/shared/contradiction-helpers.js";
 
 describe("protocol advisor contradiction review", () => {
+  describe("input schema", () => {
+    it("accepts mirrored consent inputs when provided", () => {
+      const validated = validateProtocolAdvisorInput({
+        templateId: "secondary_research",
+        protocolText: "Protocol text",
+        consentText: "Consent text",
+        consentDocument: {
+          name: "consent.txt",
+          bytes: Buffer.from("Consent file"),
+          contentType: "text/plain",
+        },
+        consentDocuments: [
+          {
+            name: "consent-2.txt",
+            bytes: Buffer.from("Consent file 2"),
+            contentType: "text/plain",
+          },
+        ],
+      });
+
+      assert.equal(validated.hasConsentText, true);
+      assert.equal(validated.hasConsentDocument, true);
+      assert.equal(validated.hasConsentDocuments, true);
+      assert.equal(validated.consentDocumentCount, 2);
+    });
+  });
+
   describe("splitTextIntoSections", () => {
     it("splits text into sections by numbered headings", () => {
       const sections = splitTextIntoSections(
@@ -86,14 +116,37 @@ describe("protocol advisor contradiction review", () => {
         ].join("\n"),
       });
 
-      assert.equal(input.protocol.source, "document");
-      assert.equal(input.protocol.contentType, "application/pdf");
-      assert.equal(input.protocol.candidateSectionCount, 2);
+      assert.equal(input.document.source, "document");
+      assert.equal(input.document.contentType, "application/pdf");
+      assert.equal(input.document.candidateSectionCount, 2);
       assert.equal(input.sections.length, 2);
       assert.equal(input.sections[0].detectedTitle, "STUDY POPULATION");
       assert.equal(input.sections[0].pageStart, 3);
       assert.equal(input.sections[1].detectedTitle, "STATISTICS");
       assert.equal(input.sections[1].pageStart, 8);
+    });
+  });
+
+  describe("normalizeContradictionReviewPayload", () => {
+    it("normalizes missing and malformed contradiction fields defensively", () => {
+      const normalized = normalizeContradictionReviewPayload({
+        findings: [
+          {
+            severity: "urgent",
+            sectionA: {
+              sectionTitle: "Section A",
+              page: 4,
+            },
+            sectionB: {},
+          },
+        ],
+      });
+
+      assert.equal(normalized.documentClean, false);
+      assert.equal(normalized.findings[0].severity, "medium");
+      assert.equal(normalized.findings[0].sectionA.page, 4);
+      assert.equal(normalized.findings[0].sectionB.page, null);
+      assert.equal(normalized.findings[0].resolutionGuidance, "");
     });
   });
 
@@ -172,6 +225,82 @@ describe("protocol advisor contradiction review", () => {
       assert.equal(result.output.findings[0].sectionB.sectionTitle, "Statistics");
       assert.equal(result.output.findings[0].sectionB.page, null);
     });
+
+    it("normalizes consent consistency output defensively", async () => {
+      const result = await executeConsentConsistencyReview(
+        {
+          workflow: { runId: "run-consent-1" },
+          steps: {
+            loadAssets: {
+              model: "test-model",
+              prompts: {
+                consentContradictionReviewSystem: "system prompt",
+                consentContradictionReviewUser:
+                  "Input\n{{input_json}}\nOutput\n{{output_json_example}}",
+              },
+            },
+            parseConsent: {
+              source: "consentText",
+              contentType: "text/plain",
+              text: [
+                "1 BEFORE YOUR VISIT",
+                "Do not eat for 8 hours before your visit.",
+                "8 PREPARING FOR YOUR APPOINTMENT",
+                "You may eat normally before arriving.",
+              ].join("\n"),
+            },
+          },
+        },
+        {
+          gateway: {
+            invoke: async () => ({
+              output: {
+                message: {
+                  content: [
+                    {
+                      text: JSON.stringify({
+                        overallSummary: "Found one inconsistency.",
+                        findings: [
+                          {
+                            category: "participant_instructions",
+                            severity: "high",
+                            concept: "Fasting requirement",
+                            sectionA: {
+                              sectionTitle: "Before Your Visit",
+                              sectionId: "1",
+                              quote: "Do not eat for 8 hours before your visit.",
+                            },
+                            sectionB: {
+                              sectionTitle: "Preparing for Your Appointment",
+                              sectionId: "8",
+                              page: 6,
+                              quote: "You may eat normally before arriving.",
+                            },
+                            explanation:
+                              "The consent gives conflicting instructions about eating before the visit.",
+                            resolutionGuidance:
+                              "Reconcile the pre-visit eating instructions in Sections 1 and 8.",
+                          },
+                        ],
+                      }),
+                    },
+                  ],
+                },
+              },
+              usage: { inputTokens: 1, outputTokens: 1 },
+              metrics: { latencyMs: 1 },
+            }),
+          },
+        }
+      );
+
+      assert.equal(result.status, "completed");
+      assert.equal(result.output.documentClean, false);
+      assert.equal(result.output.findings.length, 1);
+      assert.equal(result.output.findings[0].category, "participant_instructions");
+      assert.equal(result.output.findings[0].sectionA.page, null);
+      assert.equal(result.output.findings[0].sectionB.page, 6);
+    });
   });
 
   describe("aggregate report", () => {
@@ -235,6 +364,64 @@ describe("protocol advisor contradiction review", () => {
       assert.match(report.audit_report_markdown, /p\. 14/);
       assert.match(report.audit_report_markdown, /p\. 2/);
     });
+
+    it("surfaces consent consistency results separately", () => {
+      const report = aggregateProtocolAdvisorReport({
+        steps: {
+          loadAssets: {
+            workflowName: "protocol_advisor",
+            workflowId: "protocol_advisor",
+            selectedTemplate: {
+              id: "secondary_research",
+              title: "Secondary Research",
+            },
+            categories: [],
+          },
+          parseProtocol: {
+            name: "Synthetic Protocol",
+            source: "document",
+            files: [],
+          },
+          executeSourceReviews: {
+            results: [],
+          },
+          executeContradictionReview: null,
+          executeConsentConsistencyReview: {
+            status: "completed",
+            output: {
+              overallSummary: "One consent inconsistency identified.",
+              findings: [
+                {
+                  category: "participant_instructions",
+                  severity: "high",
+                  concept: "Fasting requirement",
+                  sectionA: {
+                    sectionTitle: "Before Your Visit",
+                    sectionId: "1",
+                    page: 3,
+                    quote: "Do not eat for 8 hours before your visit.",
+                  },
+                  sectionB: {
+                    sectionTitle: "Preparing for Your Appointment",
+                    sectionId: "8",
+                    page: 6,
+                    quote: "You may eat normally before arriving.",
+                  },
+                  explanation:
+                    "The consent gives conflicting instructions about eating before the visit.",
+                  resolutionGuidance:
+                    "Reconcile the pre-visit eating instructions in Sections 1 and 8.",
+                },
+              ],
+            },
+          },
+        },
+      });
+
+      assert.equal(report.consentConsistencyReview.status, "completed");
+      assert.equal(report.consentConsistencyReview.findings.length, 1);
+      assert.match(report.audit_report_markdown, /INTERNAL CONSENT FORM CONSISTENCY REVIEW/);
+    });
   });
 
   describe("final synthesis", () => {
@@ -295,6 +482,34 @@ describe("protocol advisor contradiction review", () => {
                   },
                 ],
               },
+              consentConsistencyReview: {
+                status: "completed",
+                overallSummary: "One consent inconsistency identified.",
+                documentClean: false,
+                findings: [
+                  {
+                    category: "participant_instructions",
+                    severity: "high",
+                    concept: "Fasting requirement",
+                    sectionA: {
+                      sectionTitle: "Before Your Visit",
+                      sectionId: "1",
+                      page: 3,
+                      quote: "Do not eat for 8 hours before your visit.",
+                    },
+                    sectionB: {
+                      sectionTitle: "Preparing for Your Appointment",
+                      sectionId: "8",
+                      page: 6,
+                      quote: "You may eat normally before arriving.",
+                    },
+                    explanation:
+                      "The consent gives conflicting instructions about eating before the visit.",
+                    resolutionGuidance:
+                      "Reconcile the pre-visit eating instructions in Sections 1 and 8.",
+                  },
+                ],
+              },
             },
           },
         },
@@ -317,7 +532,9 @@ describe("protocol advisor contradiction review", () => {
       );
 
       assert.match(finalPrompt, /"contradiction_review"/);
+      assert.match(finalPrompt, /"consent_consistency_review"/);
       assert.match(finalPrompt, /"Age range"/);
+      assert.match(finalPrompt, /"Fasting requirement"/);
     });
   });
 });

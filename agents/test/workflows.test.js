@@ -118,6 +118,10 @@ describe("workflows", () => {
 
         if (params.type === "workflow-protocol_advisor-final_report") {
           assert.match(params.messages[0].content[0].text, /"contradiction_review"/);
+          assert.doesNotMatch(
+            params.messages[0].content[0].text,
+            /"consent_consistency_review":\s*\{\s*"status": "completed"/
+          );
           return {
             output: {
               message: {
@@ -331,6 +335,11 @@ describe("workflows", () => {
       1
     );
     assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-consent_consistency_review")
+        .length,
+      0
+    );
+    assert.equal(
       calls.filter((call) => call.type === "workflow-protocol_advisor-final_report").length,
       1
     );
@@ -449,5 +458,152 @@ describe("workflows", () => {
     assert.match(firstSystemPrompt, /Second file body/);
     assert.equal(result.output.protocol.files.length, 2);
     assert.equal(result.output.delivery.status, "recipient_unavailable");
+  });
+
+  it("runs consent consistency review only when consent input is provided", async () => {
+    const calls = [];
+
+    const gateway = {
+      invoke: async (params) => {
+        calls.push(params);
+
+        if (params.type === "workflow-protocol_advisor-consent_consistency_review") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      overallSummary: "One consent inconsistency identified.",
+                      documentClean: false,
+                      findings: [
+                        {
+                          category: "participant_instructions",
+                          severity: "high",
+                          concept: "Fasting requirement",
+                          sectionA: {
+                            sectionTitle: "Before Your Visit",
+                            sectionId: "1",
+                            quote: "Do not eat for 8 hours before your visit.",
+                          },
+                          sectionB: {
+                            sectionTitle: "Preparing for Your Appointment",
+                            sectionId: "8",
+                            quote: "You may eat normally before arriving.",
+                          },
+                          explanation:
+                            "The consent gives conflicting instructions about eating before the visit.",
+                          resolutionGuidance:
+                            "Reconcile the pre-visit eating instructions in Sections 1 and 8.",
+                        },
+                      ],
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
+        if (params.type === "workflow-protocol_advisor-contradiction_review") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      overallSummary: "No contradictions identified.",
+                      documentClean: true,
+                      findings: [],
+                      citations: [],
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
+        if (params.type === "workflow-protocol_advisor-final_report") {
+          assert.match(params.messages[0].content[0].text, /"consent_consistency_review"/);
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: [
+                      "# EXECUTIVE SUMMARY: IRB REGULATORY COMPLIANCE REVIEW",
+                      "",
+                      "## INTERNAL CONSENT FORM CONSISTENCY REVIEW",
+                      "",
+                      "Consent inconsistency summary.",
+                    ].join("\n"),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
+        return {
+          output: {
+            message: {
+              content: [
+                {
+                  text: JSON.stringify({
+                    task_type: "source_review",
+                    summary: "Source not applicable.",
+                    source_review: {
+                      applies: false,
+                      applicability_reason: "Not implicated by the protocol.",
+                      review_basis: "mixed",
+                      review_basis_reason: "No triggered obligations.",
+                      verdict: "not_applicable",
+                      findings: [],
+                    },
+                  }),
+                },
+              ],
+            },
+          },
+          usage: { inputTokens: 1, outputTokens: 1 },
+          metrics: { latencyMs: 1 },
+        };
+      },
+    };
+
+    const result = await runWorkflow(
+      "protocol_advisor",
+      {
+        templateId: "secondary_research",
+        protocolText: "1 PROTOCOL SUMMARY\nSynthetic protocol text",
+        consentText: [
+          "1 BEFORE YOUR VISIT",
+          "Do not eat for 8 hours before your visit.",
+          "8 PREPARING FOR YOUR APPOINTMENT",
+          "You may eat normally before arriving.",
+        ].join("\n"),
+      },
+      {
+        services: {
+          gateway,
+        },
+      }
+    );
+
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-consent_consistency_review")
+        .length,
+      1
+    );
+    assert.equal(result.context.steps.parseConsent.source, "consentText");
+    assert.equal(result.output.mergedReview.consentConsistencyReview.status, "completed");
+    assert.match(result.output.report.markdown, /INTERNAL CONSENT FORM CONSISTENCY REVIEW/);
   });
 });

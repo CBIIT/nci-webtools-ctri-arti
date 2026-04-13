@@ -2,6 +2,10 @@ function hasProtocolText(input = {}) {
   return typeof input.protocolText === "string" && input.protocolText.trim().length > 0;
 }
 
+function hasConsentText(input = {}) {
+  return typeof input.consentText === "string" && input.consentText.trim().length > 0;
+}
+
 function hasDocumentBytes(document = {}) {
   return !!document?.bytes;
 }
@@ -12,6 +16,17 @@ function hasSingleDocument(input = {}) {
 
 function hasMultipleDocuments(input = {}) {
   return Array.isArray(input.documents) && input.documents.some((item) => hasDocumentBytes(item));
+}
+
+function hasSingleConsentDocument(input = {}) {
+  return hasDocumentBytes(input.consentDocument);
+}
+
+function hasMultipleConsentDocuments(input = {}) {
+  return (
+    Array.isArray(input.consentDocuments) &&
+    input.consentDocuments.some((item) => hasDocumentBytes(item))
+  );
 }
 
 export function validateProtocolAdvisorInput(input = {}) {
@@ -31,10 +46,20 @@ export function validateProtocolAdvisorInput(input = {}) {
     throw new Error("Each protocol_advisor document must include bytes");
   }
 
-  if (!hasProtocolText(input) && !hasSingleDocument(input) && !hasMultipleDocuments(input)) {
+  const consentDocuments = Array.isArray(input.consentDocuments)
+    ? input.consentDocuments.filter(Boolean)
+    : [];
+  if (input.consentDocuments && consentDocuments.length === 0) {
     throw new Error(
-      "protocol_advisor requires protocolText, document.bytes, or documents[].bytes"
+      "protocol_advisor consentDocuments must contain at least one file when provided"
     );
+  }
+  if (consentDocuments.some((document) => !hasDocumentBytes(document))) {
+    throw new Error("Each protocol_advisor consent document must include bytes");
+  }
+
+  if (!hasProtocolText(input) && !hasSingleDocument(input) && !hasMultipleDocuments(input)) {
+    throw new Error("protocol_advisor requires protocolText, document.bytes, or documents[].bytes");
   }
 
   return {
@@ -44,5 +69,9 @@ export function validateProtocolAdvisorInput(input = {}) {
     hasDocument: hasSingleDocument(input),
     hasDocuments: hasMultipleDocuments(input),
     documentCount: documents.length + (hasSingleDocument(input) ? 1 : 0),
+    hasConsentText: hasConsentText(input),
+    hasConsentDocument: hasSingleConsentDocument(input),
+    hasConsentDocuments: hasMultipleConsentDocuments(input),
+    consentDocumentCount: consentDocuments.length + (hasSingleConsentDocument(input) ? 1 : 0),
   };
 }

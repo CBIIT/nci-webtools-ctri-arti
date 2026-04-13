@@ -1,6 +1,31 @@
 import { countBy, normalizeText, overallDisposition, verdictRank } from "./review-helpers.js";
 
-function buildAuditReport(merged, contradictionReview) {
+function buildContradictionSection(lines, heading, review) {
+  if (review.status !== "completed" || review.findings.length === 0) {
+    return;
+  }
+
+  lines.push(heading);
+  lines.push("");
+  lines.push(review.overallSummary);
+  lines.push("");
+  for (const finding of review.findings) {
+    lines.push(`- [${finding.severity}] ${finding.concept || finding.category}`);
+    const locA = finding.sectionA.sectionId || "unspecified";
+    const pageA = finding.sectionA.page ? ` (p. ${finding.sectionA.page})` : "";
+    lines.push(`  - Section A: ${locA} ${finding.sectionA.sectionTitle}${pageA}`);
+    lines.push(`  - Quote A: ${finding.sectionA.quote}`);
+    const locB = finding.sectionB.sectionId || "unspecified";
+    const pageB = finding.sectionB.page ? ` (p. ${finding.sectionB.page})` : "";
+    lines.push(`  - Section B: ${locB} ${finding.sectionB.sectionTitle}${pageB}`);
+    lines.push(`  - Quote B: ${finding.sectionB.quote}`);
+    lines.push(`  - Explanation: ${finding.explanation}`);
+    lines.push(`  - Resolution Guidance: ${finding.resolutionGuidance}`);
+  }
+  lines.push("");
+}
+
+function buildAuditReport(merged, contradictionReview, consentConsistencyReview) {
   const lines = [];
   lines.push("# EXECUTIVE SUMMARY: COMPLIANCE REVIEW");
   lines.push("");
@@ -48,26 +73,12 @@ function buildAuditReport(merged, contradictionReview) {
     lines.push("");
   }
 
-  if (contradictionReview.status === "completed" && contradictionReview.findings.length > 0) {
-    lines.push("## INTERNAL CONTRADICTIONS REVIEW");
-    lines.push("");
-    lines.push(contradictionReview.overallSummary);
-    lines.push("");
-    for (const finding of contradictionReview.findings) {
-      lines.push(`- [${finding.severity}] ${finding.concept || finding.category}`);
-      const locA = finding.sectionA.sectionId || "unspecified";
-      const pageA = finding.sectionA.page ? ` (p. ${finding.sectionA.page})` : "";
-      lines.push(`  - Section A: ${locA} ${finding.sectionA.sectionTitle}${pageA}`);
-      lines.push(`  - Quote A: ${finding.sectionA.quote}`);
-      const locB = finding.sectionB.sectionId || "unspecified";
-      const pageB = finding.sectionB.page ? ` (p. ${finding.sectionB.page})` : "";
-      lines.push(`  - Section B: ${locB} ${finding.sectionB.sectionTitle}${pageB}`);
-      lines.push(`  - Quote B: ${finding.sectionB.quote}`);
-      lines.push(`  - Explanation: ${finding.explanation}`);
-      lines.push(`  - Resolution Guidance: ${finding.resolutionGuidance}`);
-    }
-    lines.push("");
-  }
+  buildContradictionSection(lines, "## INTERNAL CONTRADICTIONS REVIEW", contradictionReview);
+  buildContradictionSection(
+    lines,
+    "## INTERNAL CONSENT FORM CONSISTENCY REVIEW",
+    consentConsistencyReview
+  );
 
   return `${lines
     .join("\n")
@@ -116,6 +127,9 @@ export function aggregateProtocolAdvisorReport(ctx) {
   const parsedProtocol = ctx.steps.parseProtocol;
   const reviewArtifacts = ctx.steps.executeSourceReviews.results;
   const contradictionReview = buildContradictionReview(ctx.steps.executeContradictionReview);
+  const consentConsistencyReview = buildContradictionReview(
+    ctx.steps.executeConsentConsistencyReview
+  );
 
   const sourceVerdicts = reviewArtifacts.map((artifact) => ({
     source_id: artifact.source_review.source_id,
@@ -217,6 +231,7 @@ export function aggregateProtocolAdvisorReport(ctx) {
   return {
     ...merged,
     contradictionReview,
-    audit_report_markdown: buildAuditReport(merged, contradictionReview),
+    consentConsistencyReview,
+    audit_report_markdown: buildAuditReport(merged, contradictionReview, consentConsistencyReview),
   };
 }
