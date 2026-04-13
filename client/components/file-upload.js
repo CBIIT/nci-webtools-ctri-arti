@@ -174,6 +174,7 @@ export function FileUpload(props) {
           <input
             type="file"
             class="d-none"
+            id=${props.id}
             accept=${acceptAttribute}
             multiple=${props.multiple || false}
             ref=${(el) => (hiddenInput = el)}

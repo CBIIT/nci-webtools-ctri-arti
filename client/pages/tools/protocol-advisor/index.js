@@ -84,22 +84,22 @@ export default function Page() {
 
         <div class="container">
           <div class="pa-section-container">
-            <form onSubmit=${handleSubmit}>
+            <form id="pa-form" onSubmit=${handleSubmit}>
               <div class="pa-content">
                 <!-- Intro Section -->
-                <div class="row">
+                <div class="row justify-content-center">
                   <div class="col-lg-9 d-flex flex-column gap-3">
                     <div class="d-flex flex-column gap-3">
-                      <h2 class="pa-section-title mb-0">
+                      <h2 id="pa-intro-title" class="pa-section-title mb-0 text-center">
                         Secure Protocol Document Upload & Analysis
                       </h2>
-                      <p class="pa-section-description mb-0">
+                      <p id="pa-intro-subtitle" class="pa-section-description mb-0">
                         Upload your research protocol and informed consent documents for secure
                         processing and regulatory review.
                       </p>
                     </div>
                     <hr class="pa-divider w-100" />
-                    <p class="pa-section-text mb-0">
+                    <p id="pa-intro-description" class="pa-section-text mb-0">
                       Securely upload your research protocol and informed consent documents to
                       receive an AI-powered regulatory compliance review. Protocol Advisor
                       automatically checks for internal inconsistencies within your protocol,
@@ -112,14 +112,19 @@ export default function Page() {
                 </div>
 
                 <!-- Form Fields -->
-                <div class="row">
-                  <div class="col-lg-5 d-flex flex-column gap-4">
+                <div class="row justify-content-center">
+                  <div class="col-lg-6 d-flex flex-column gap-5">
                     <!-- Protocol Document Upload -->
-                    <div class="d-flex flex-column gap-2">
-                      <label class="pa-label">
+                    <div id="pa-protocol-document-section" class="d-flex flex-column gap-2">
+                      <label
+                        id="pa-protocol-document-label"
+                        class="pa-label"
+                        for="protocol-document"
+                      >
                         Protocol Document<span class="pa-required">*</span>
                       </label>
                       <${FileUpload}
+                        id="protocol-document"
                         accept=${ALLOWED_EXTENSIONS}
                         maxSize=${MAX_FILE_SIZE}
                         file=${protocolFile}
@@ -136,17 +141,22 @@ export default function Page() {
                     </div>
 
                     <!-- Protocol Template -->
-                    <div class="d-flex flex-column gap-2">
+                    <div id="pa-protocol-template-section" class="d-flex flex-column gap-2">
                       <div class="d-flex flex-column gap-1">
-                        <label class="pa-label">
+                        <label
+                          id="pa-protocol-template-label"
+                          class="pa-label"
+                          for="protocol-template"
+                        >
                           Protocol Template<span class="pa-required">*</span>
                         </label>
-                        <p class="pa-description-text mb-0">
+                        <p id="pa-protocol-template-description" class="pa-description-text mb-0">
                           Select the NIH-approved template that was used in your uploaded protocol
                           document.
                         </p>
                       </div>
                       <${InlineSelect}
+                        id="protocol-template"
                         options=${NIH_TEMPLATE_OPTIONS}
                         value=${selectedTemplate}
                         onChange=${setSelectedTemplate}
@@ -156,15 +166,21 @@ export default function Page() {
                     </div>
 
                     <!-- Consent Document Upload (Optional) -->
-                    <div class="d-flex flex-column gap-2 mb-1">
+                    <div id="pa-consent-documents-section" class="d-flex flex-column gap-2 mb-1">
                       <div class="d-flex flex-column gap-1">
-                        <label class="pa-label">Consent Documents</label>
-                        <p class="pa-description-text mb-0">
+                        <label
+                          id="pa-consent-documents-label"
+                          class="pa-label"
+                          for="consent-documents"
+                          >Consent Documents</label
+                        >
+                        <p id="pa-consent-documents-description" class="pa-description-text mb-0">
                           Upload your informed consent documents to evaluate its internal
                           consistency and alignment with your protocol.
                         </p>
                       </div>
                       <${FileUpload}
+                        id="consent-documents"
                         multiple=${true}
                         accept=${ALLOWED_EXTENSIONS}
                         maxSize=${MAX_FILE_SIZE}
@@ -182,7 +198,6 @@ export default function Page() {
 
                     <!-- Information Panel -->
                     <${InfoCard}
-                      class="mt-3"
                       items=${[
                         {
                           icon: "assets/images/protocol-advisor/icon-clock.svg",
@@ -257,7 +272,12 @@ export default function Page() {
                         title=${() =>
                           canSubmit() ? "" : "Upload a valid protocol to enable analysis"}
                       >
-                        <button type="submit" class="pa-submit-btn" disabled=${() => !canSubmit()}>
+                        <button
+                          id="pa-submit-btn"
+                          type="submit"
+                          class="pa-submit-btn"
+                          disabled=${() => !canSubmit()}
+                        >
                           Start Analysis
                         </button>
                       </div>
@@ -273,28 +293,42 @@ export default function Page() {
       <!-- Confirmation Dialog -->
       <${Show} when=${showConfirmDialog}>
         <div class="pa-dialog-overlay" onClick=${cancelAnalysis}>
-          <div class="pa-dialog" onClick=${(e) => e.stopPropagation()}>
-            <h3 class="pa-dialog-title">Confirm Analysis</h3>
-            <p class="pa-dialog-text">
+          <div id="pa-confirm-dialog" class="pa-dialog" onClick=${(e) => e.stopPropagation()}>
+            <h3 id="pa-confirm-dialog-title" class="pa-dialog-title">Confirm Analysis</h3>
+            <p id="pa-confirm-dialog-description" class="pa-dialog-text">
               You are about to submit your protocol for analysis. This process takes approximately
               15-30 minutes. You will receive the compliance report at your registered email
               address.
             </p>
-            <p class="pa-dialog-text"><strong>Protocol:</strong> ${() => protocolFile()?.name}</p>
+            <p id="pa-confirm-dialog-protocol" class="pa-dialog-text">
+              <strong>Protocol:</strong> ${() => protocolFile()?.name}
+            </p>
             <${Show} when=${() => consentFiles().length > 0}>
-              <p class="pa-dialog-text">
+              <p id="pa-confirm-dialog-consent" class="pa-dialog-text">
                 <strong>Consent Documents:</strong> ${() =>
                   consentFiles()
                     .map((f) => f.name)
                     .join(", ")}
               </p>
             <//>
-            <p class="pa-dialog-text"><strong>Template:</strong> ${selectedTemplate}</p>
+            <p id="pa-confirm-dialog-template" class="pa-dialog-text">
+              <strong>Template:</strong> ${selectedTemplate}
+            </p>
             <div class="d-flex justify-content-end gap-3 mt-4">
-              <button type="button" class="pa-dialog-cancel-btn" onClick=${cancelAnalysis}>
+              <button
+                id="pa-confirm-cancel-btn"
+                type="button"
+                class="pa-dialog-cancel-btn"
+                onClick=${cancelAnalysis}
+              >
                 Cancel
               </button>
-              <button type="button" class="pa-submit-btn" onClick=${confirmAnalysis}>
+              <button
+                id="pa-confirm-submit-btn"
+                type="button"
+                class="pa-submit-btn"
+                onClick=${confirmAnalysis}
+              >
                 Confirm
               </button>
             </div>
