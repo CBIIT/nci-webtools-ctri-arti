@@ -1,4 +1,4 @@
-import { createSignal, createMemo, Show, ErrorBoundary } from "solid-js";
+import { createSignal, createMemo, ErrorBoundary } from "solid-js";
 import html from "solid-js/html";
 
 import { AlertContainer } from "../../../components/alert.js";
@@ -43,7 +43,6 @@ export default function Page() {
   const [protocolFile, setProtocolFile] = createSignal(null);
   const [consentFiles, setConsentFiles] = createSignal([]);
   const [selectedTemplate, setSelectedTemplate] = createSignal("");
-  const [showConfirmDialog, setShowConfirmDialog] = createSignal(false);
 
   const isTemplateEnabled = createMemo(() => !!protocolFile());
   const canSubmit = createMemo(() => !!protocolFile() && !!selectedTemplate());
@@ -59,16 +58,7 @@ export default function Page() {
       return;
     }
 
-    setShowConfirmDialog(true);
-  }
-
-  function confirmAnalysis() {
-    setShowConfirmDialog(false);
-    // TODO: submit to backend
-  }
-
-  function cancelAnalysis() {
-    setShowConfirmDialog(false);
+    // TODO: Open dialog
   }
 
   return html`
@@ -130,7 +120,7 @@ export default function Page() {
                         file=${protocolFile}
                         onFileChange=${setProtocolFile}
                         onRemove=${removeProtocolFile}
-                        buttonIcon=${html`<img
+                        startIcon=${html`<img
                           src="assets/images/protocol-advisor/icon-attachment.svg"
                           alt="Attach file"
                           width="16"
@@ -186,7 +176,7 @@ export default function Page() {
                         maxSize=${MAX_FILE_SIZE}
                         files=${consentFiles}
                         onFilesChange=${setConsentFiles}
-                        buttonIcon=${html`<img
+                        startIcon=${html`<img
                           src="assets/images/protocol-advisor/icon-attachment.svg"
                           alt="Attach file"
                           width="16"
@@ -289,52 +279,6 @@ export default function Page() {
           </div>
         </div>
       </div>
-
-      <!-- Confirmation Dialog -->
-      <${Show} when=${showConfirmDialog}>
-        <div class="pa-dialog-overlay" onClick=${cancelAnalysis}>
-          <div id="pa-confirm-dialog" class="pa-dialog" onClick=${(e) => e.stopPropagation()}>
-            <h3 id="pa-confirm-dialog-title" class="pa-dialog-title">Confirm Analysis</h3>
-            <p id="pa-confirm-dialog-description" class="pa-dialog-text">
-              You are about to submit your protocol for analysis. This process takes approximately
-              15-30 minutes. You will receive the compliance report at your registered email
-              address.
-            </p>
-            <p id="pa-confirm-dialog-protocol" class="pa-dialog-text">
-              <strong>Protocol:</strong> ${() => protocolFile()?.name}
-            </p>
-            <${Show} when=${() => consentFiles().length > 0}>
-              <p id="pa-confirm-dialog-consent" class="pa-dialog-text">
-                <strong>Consent Documents:</strong> ${() =>
-                  consentFiles()
-                    .map((f) => f.name)
-                    .join(", ")}
-              </p>
-            <//>
-            <p id="pa-confirm-dialog-template" class="pa-dialog-text">
-              <strong>Template:</strong> ${selectedTemplate}
-            </p>
-            <div class="d-flex justify-content-end gap-3 mt-4">
-              <button
-                id="pa-confirm-cancel-btn"
-                type="button"
-                class="pa-dialog-cancel-btn"
-                onClick=${cancelAnalysis}
-              >
-                Cancel
-              </button>
-              <button
-                id="pa-confirm-submit-btn"
-                type="button"
-                class="pa-submit-btn"
-                onClick=${confirmAnalysis}
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      <//>
     <//>
   `;
 }

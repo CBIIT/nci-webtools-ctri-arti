@@ -58,7 +58,7 @@ function partitionFiles(files, constraints) {
  * @param {string} [props.placeholder] - Placeholder text when no file is chosen
  * @param {string} [props.hint] - Hint text below the upload row (e.g. "PDF or DOCX (max 25 MB)")
  * @param {string} [props.buttonText] - Custom button label (defaults to "Choose File")
- * @param {() => any} [props.buttonIcon] - Custom icon template for the button
+ * @param {() => JSX.Element} [props.startIcon] - Custom icon template for the button
  * @param {File|null} [props.file] - Current file for single-file mode (reactive)
  * @param {(file: File|null) => void} [props.onFileChange] - Callback for single-file mode
  * @param {File[]} [props.files] - Current files for multi-file mode (reactive)
@@ -163,7 +163,7 @@ export function FileUpload(props) {
           <button type="button" class="pa-upload-btn" onClick=${() => hiddenInput?.click()}>
             ${() => props.buttonText || "Choose File"}
             ${() =>
-              props.buttonIcon ||
+              props.startIcon ||
               html`<img
                 src="assets/images/protocol-advisor/icon-attachment.svg"
                 alt="Attach file"
