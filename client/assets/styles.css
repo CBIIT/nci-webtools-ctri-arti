@@ -356,7 +356,6 @@ a.disabled-link {
   font-weight: 400 !important;
   line-height: 21px !important;
   letter-spacing: 0px !important;
-  color: #62666d !important;
 }
 
 .background-object {
@@ -741,21 +740,18 @@ ul {
 
 .usage-card-body {
   display: flex;
-  padding: 30px 41px 40px 41px !important;
+  padding: 50px 41px 40px 31px !important;
   flex-direction: column;
   align-items: flex-start;
-  gap: 20px !important;
   border-radius: 20px !important;
-  border: 3px solid var(--Blue-Blue-3, #2595df) !important;
   background: #fff !important;
-  box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.25) !important;
 }
 
 .usage-card-body-inner {
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 20px;
+  gap: 30px;
 }
 
 .users-table tbody > tr {
@@ -781,7 +777,6 @@ ul {
 }
 
 .usage-user-name {
-  color: var(--Neutral-Black, #343434);
   font-family: Poppins;
   font-size: 20px !important;
   font-style: normal;
@@ -790,7 +785,6 @@ ul {
 }
 
 .usage-user-email {
-  color: var(--Neutral-Gray-1, #62666d);
   font-family: Inter;
   font-size: 16px;
   font-style: normal;
@@ -799,6 +793,7 @@ ul {
 }
 
 .usage-overview-card {
+  color: var(--Blue-Blue-4, #2f5496);
   display: flex;
   padding: 15px 17px 12px 17px;
   flex-direction: column;
@@ -827,6 +822,7 @@ ul {
   border: none;
 }
 .table-pagination-btn {
+  color: var(--Blue-Blue-4, #2f5496);
   border-radius: 4px;
   height: 31px;
   border: 1px solid #e5e7eb !important;
@@ -837,6 +833,16 @@ ul {
 }
 .table-pagination-btn:disabled {
   opacity: 0.5;
+}
+
+.pagination-bar {
+  color: var(--Blue-Blue-4, #2f5496);
+  gap: 40px;
+  padding: 10px 20px;
+}
+
+.pagination-bar .form-select {
+  color: var(--Blue-Blue-4, #2f5496);
 }
 
 dialog.modal[open] {
@@ -1705,7 +1711,7 @@ dialog .close-btn {
 
 .page-header-banner {
   background: url("/assets/images/users/user_banner.png") center top / cover no-repeat;
-  min-height: 200px;
+  min-height: 190px;
 }
 
 .page-header-text {
@@ -1723,6 +1729,26 @@ dialog .close-btn {
   background-color: #f8f9fa;
 }
 
+.usage-overview-card {
+  display: flex;
+  padding: 15px 17px 12px 17px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 15px;
+  border-radius: 8px;
+  border: 1.75px solid var(--Blue-Blue-1, #036ac5);
+  background: #fff;
+}
+
+.usage-overview-card .form-header-label {
+  color: var(--Blue-Blue-1, #036ac5);
+}
+
+.usage-overview-card .form-select {
+  color: var(--Blue-Blue-4, #2f5496);
+}
+
 /* Usage statistic section cards */
 .usage-section-card {
   display: flex;
@@ -1730,45 +1756,48 @@ dialog .close-btn {
   align-items: stretch;
   align-self: stretch;
   width: 100%;
-  border-radius: 5px;
-  border: 1px solid var(--Neutral-Gray-2, #a5a5a5);
+  border-radius: 8px;
+  border: 1.75px solid var(--Blue-Blue-1, #036ac5);
   overflow: hidden;
 }
 
 .return-btn-color {
-  color: #ceebff;
+  color: var(--Neutral-White, #fff);
 }
 
 .usage-section-card .card-header {
-  background: var(--Purple-Purple-2, #6573af);
-  color: #ffffff;
+  background: var(--Neutral-White, #fff);
   border-bottom: none;
   border-radius: 4px 4px 0 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: 39px;
-  padding: 0 16px;
-  gap: 10px;
+  padding: 9.5px 16px;
 }
 
-.usage-section-card tbody {
-  font-size: 14px;
+.usage-table {
+  margin-bottom: 0;
 }
 
 .usage-table thead th {
-  padding: 0 !important;
-  color: var(--Neutral-Black, #343434);
-  font-family: Inter;
-  font-size: 16px;
+  padding: 13.5px 16px !important;
+  background: var(--Blue-Blue-4, #2f5496);
+  color: var(--Neutral-White, #fff);
+  font-family: Poppins;
+  font-size: 15px;
   font-style: normal;
-  font-weight: 700;
-  line-height: 24px;
+  font-weight: 600;
+  line-height: 22.5px;
 }
 
 .usage-table tbody td {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  color: var(--Blue-Blue-4, #2f5496);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  border-bottom: 1px solid var(--Blue-Blue-4, #2f5496);
 }
 
 /* Usage summary: scope layout + metrics under outer .usage-summary */
@@ -1778,12 +1807,36 @@ dialog .close-btn {
   align-items: stretch;
   align-self: stretch;
   width: 100%;
-  padding: 12px 16px;
+  padding: 20px 25px;
 }
 
 .usage-summary > .card-body .usage-metric-card {
+  border-radius: 5px;
+  border: 1px solid var(--Blue-Blue-1, #036ac5);
   min-height: 75px;
   height: 100%;
+}
+
+.usage-summary-details {
+  display: flex;
+  padding: 16px 0 3px 0;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 5px !important;
+  align-self: stretch;
+  grid-row: 1 / span 1;
+  grid-column: 2 / span 1;
+  justify-self: stretch;
+}
+
+.daily-usage-link {
+  color: var(--Blue-Blue-4, #2f5496);
+  font-weight: 700;
+}
+
+.usage-metric-label {
+  color: var(--Blue-Blue-1, #036ac5);
 }
 
 .usage-summary .usage-metric-value--requests {
@@ -1795,31 +1848,18 @@ dialog .close-btn {
 }
 
 .usage-summary .usage-metric-value--guardrail {
-  color: #a438bf;
+  color: #00c950;
 }
 
 .usage-summary .usage-metric-value--total {
-  color: #3848bf;
+  color: #016630;
 }
 
 .usage-section-card .card-header .card-title {
+  color: var(--Blue-Blue-1, #2f5496) !important;
   font-family: Poppins !important;
-  font-size: 15px !important;
+  font-size: 16px !important;
   font-weight: 600 !important;
-  line-height: 22.5px !important;
-  letter-spacing: 0.5px !important;
+  line-height: 24px !important;
   margin-bottom: 0 !important;
-}
-
-.usage-summary-details {
-  display: flex;
-  padding: 16px 0 3px 0;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 0;
-  align-self: stretch;
-  grid-row: 1 / span 1;
-  grid-column: 2 / span 1;
-  justify-self: stretch;
 }
