@@ -33,7 +33,7 @@ Route families:
 
 App Config:
 
-- Store application level configration in `app-config.js` file. Cuurently, we support environment-base toggling for tools such as `Chat`, `Translator`. In order to disable certain tool. Update the `Configuration` table with comma-seperated list of disabled tools.
+- Store application-level configuration in `app-config.js`. Tool disablement is controlled by the database `Configuration` table key/value entry for disabled tools. To disable tools such as `Protocol Advisor` or `Protocol Composer`, update that value with a comma-separated list of tool names. Each list item is trimmed and compared case-insensitively, so values like `protocoladvisor, protocolcomposor` disable both tools.
 
 Usage and analytics date filters:
 

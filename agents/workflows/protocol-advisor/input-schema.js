@@ -32,9 +32,7 @@ export function validateProtocolAdvisorInput(input = {}) {
   }
 
   if (!hasProtocolText(input) && !hasSingleDocument(input) && !hasMultipleDocuments(input)) {
-    throw new Error(
-      "protocol_advisor requires protocolText, document.bytes, or documents[].bytes"
-    );
+    throw new Error("protocol_advisor requires protocolText, document.bytes, or documents[].bytes");
   }
 
   return {

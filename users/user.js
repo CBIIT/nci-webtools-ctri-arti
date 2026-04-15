@@ -676,7 +676,7 @@ export class UserService {
    */
   async isToolEnabled(toolName) {
     const [row] = await db
-      .select()
+      .select({ value: Configuration.value })
       .from(Configuration)
       .where(eq(Configuration.key, DISABLED_TOOLS_CONFIG_KEY))
       .limit(1);

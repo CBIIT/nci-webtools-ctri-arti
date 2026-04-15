@@ -1,11 +1,5 @@
-import {
-  MAX_SOURCE_REVIEW_CONCURRENCY,
-} from "./review-config.js";
-import {
-  invokeGatewayJson,
-  renderTemplate,
-  validateSourceReview,
-} from "./review-helpers.js";
+import { MAX_SOURCE_REVIEW_CONCURRENCY } from "./review-config.js";
+import { invokeGatewayJson, renderTemplate, validateSourceReview } from "./review-helpers.js";
 
 function buildSystemPrompt(assets, parsedProtocol) {
   return renderTemplate(assets.prompts.system, {

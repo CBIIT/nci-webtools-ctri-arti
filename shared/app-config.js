@@ -14,7 +14,7 @@ const FEATURE_KEYS_LOWER = new Set(FEATURE_LIST.map((name) => name.toLowerCase()
 export function isToolEnabledFromDisabledValue(toolName, disabledToolsValue) {
   const raw = typeof toolName === "string" ? toolName.trim() : "";
   const key = raw.toLowerCase();
-  if (!key || !FEATURE_KEYS_LOWER.has(key)) {
+  if (!key) {
     return true;
   }
 

@@ -81,7 +81,9 @@ function isRule(line) {
 
 function parseBlocks(markdown) {
   const blocks = [];
-  const lines = String(markdown || "").replace(/\r\n/g, "\n").split("\n");
+  const lines = String(markdown || "")
+    .replace(/\r\n/g, "\n")
+    .split("\n");
   let index = 0;
 
   while (index < lines.length) {

@@ -9,7 +9,9 @@ export const ALLOWED_VERDICTS = [
 ];
 
 export function sanitizeText(text) {
-  return String(text || "").replace(/\u0000/g, "").replace(/^\uFEFF/, "");
+  return String(text || "")
+    .replaceAll("\0", "")
+    .replace(/^\uFEFF/, "");
 }
 
 export function readUtf8(filePath) {
@@ -89,15 +91,13 @@ export function overallDisposition(sourceVerdictCounts) {
   if ((sourceVerdictCounts.non_compliant || 0) > 0) {
     return {
       code: "remediation_required",
-      recommendation:
-        "Remediation required before the protocol can be represented as compliant.",
+      recommendation: "Remediation required before the protocol can be represented as compliant.",
     };
   }
   if ((sourceVerdictCounts.insufficient_evidence || 0) > 0) {
     return {
       code: "clarification_required",
-      recommendation:
-        "Clarification required before a clean compliance conclusion is possible.",
+      recommendation: "Clarification required before a clean compliance conclusion is possible.",
     };
   }
   if ((sourceVerdictCounts.conditional_gap || 0) > 0) {
