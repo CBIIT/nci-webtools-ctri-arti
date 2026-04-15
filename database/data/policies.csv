@@ -1,6 +1,6 @@
 id,name,resource,action
 1,Admin All,*,*
-2,View Chat,/tools/chat,view
+2,View Chat,/chat,view
 3,View Chat V2,/tools/chat-v2,view
 4,View ConsentCrafter,/tools/consent-crafter,view
 5,View Translator,/tools/translator,view
@@ -9,3 +9,5 @@ id,name,resource,action
 8,View Profile,/_/profile,view
 9,View Users,/_/users,view
 10,View Usage,/_/usage,view
+11,View Protocol Advisor,/tools/protocol-advisor,view
+12,View Protocol Composer,/tools/protocol-composer,view

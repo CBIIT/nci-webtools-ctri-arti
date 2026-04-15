@@ -9,33 +9,47 @@ export default function Page() {
 
   const links = [
     {
-      title: "Chat",
-      description: "Develop with workspace and chat tools",
-      href: "/tools/chat",
-      policy: "/tools/chat",
-      icon: html`<img src="/assets/images/icon-agents.svg" height="60" alt="Chat Icon" />`,
+      title: "Protocol Composer",
+      description: "Compose and manage clinical trial protocols",
+      href: "/tools/protocol-composer",
+      policy: "/tools/protocol-composer",
+      icon: html`<img src="/assets/images/icon-composer-new.svg" height="60" alt="Protocol Composer Icon" />`,
     },
     {
-      title: "ConsentCrafter",
+      title: "Protocol Advisor",
+      description: "Ensure your protocol document follows rules and compliance standards",
+      href: "/tools/protocol-advisor",
+      policy: "/tools/protocol-advisor",
+      icon: html`<img src="/assets/images/icon-advisor-new.svg" height="60" alt="Protocol Advisor Icon" />`,
+    },
+    {
+      title: "Consent Crafter",
       description: "Process and translate protocols and consent forms",
       href: "/tools/consent-crafter",
       policy: "/tools/consent-crafter",
-      icon: html`<img src="/assets/images/icon-pen.svg" height="60" alt="ConsentCrafter Icon" />`,
+      icon: html`<img src="/assets/images/icon-crafter-new.svg" height="60" alt="Consent Crafter Icon" />`,
     },
     {
-      title: "Translator",
+      title: "Consent Translator",
       description: "Accurately translate your documents into multiple languages",
       href: "/tools/translator",
       policy: "/tools/translator",
-      icon: html`<img src="/assets/images/icon-translate.svg" height="60" alt="Translator Icon" />`,
+      icon: html`<img src="/assets/images/icon-translator-new.svg" height="60" alt="Consent Translator Icon" />`,
     },
     {
+      title: "Chat",
+      description: "Develop with workspace and chat tools",
+      href: "/chat",
+      policy: "/chat",
+      icon: html`<img src="/assets/images/icon-chat-new.svg" height="60" alt="Chat Icon" />`,
+    },
+    /* {
       title: "New Tools",
       description: "Coming soon",
       href: "/",
       disabled: true,
       icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="New Tools Icon" />`,
-    },
+    }, */
   ];
 
   const visibleLinks = () =>
