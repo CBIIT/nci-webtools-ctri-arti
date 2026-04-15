@@ -17,6 +17,7 @@ async function validateInput(ctx) {
 
 export const protocolAdvisorWorkflow = {
   name: "protocol_advisor",
+  maxConcurrency: 3,
   nodes: {
     validateInput: {
       deps: [],

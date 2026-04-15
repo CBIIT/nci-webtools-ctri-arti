@@ -122,7 +122,7 @@ export function splitTextIntoSections(
   return sections;
 }
 
-function normalizeSeverity(value) {
+export function normalizeSeverity(value) {
   switch (String(value || "").toLowerCase()) {
     case "high":
       return "high";
@@ -133,8 +133,13 @@ function normalizeSeverity(value) {
   }
 }
 
-function normalizeLocation(location) {
+export function normalizeLocation(location, { includeFileName = false } = {}) {
   return {
+    ...(includeFileName
+      ? {
+          fileName: typeof location?.fileName === "string" ? location.fileName : "",
+        }
+      : {}),
     sectionTitle: typeof location?.sectionTitle === "string" ? location.sectionTitle : "",
     sectionId: typeof location?.sectionId === "string" ? location.sectionId : "",
     page: typeof location?.page === "number" ? location.page : null,
@@ -170,7 +175,9 @@ export function normalizeContradictionReviewPayload(payload, { emptySummary } = 
 }
 
 export function buildContradictionReviewInput(parsedDocument) {
-  const sections = splitTextIntoSections(parsedDocument.text);
+  const sections = Array.isArray(parsedDocument.sections)
+    ? parsedDocument.sections
+    : splitTextIntoSections(parsedDocument.text);
   return {
     document: {
       source: parsedDocument.source,

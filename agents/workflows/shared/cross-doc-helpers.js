@@ -1,15 +1,8 @@
-import { splitTextIntoSections } from "./contradiction-helpers.js";
-
-function normalizeSeverity(value) {
-  switch (String(value || "").toLowerCase()) {
-    case "high":
-      return "high";
-    case "low":
-      return "low";
-    default:
-      return "medium";
-  }
-}
+import {
+  normalizeLocation,
+  normalizeSeverity,
+  splitTextIntoSections,
+} from "./contradiction-helpers.js";
 
 function normalizeDirection(value) {
   switch (String(value || "").toLowerCase()) {
@@ -39,19 +32,13 @@ function normalizeSyncIndicator(value) {
   }
 }
 
-function normalizeLocation(location) {
-  return {
-    fileName: typeof location?.fileName === "string" ? location.fileName : "",
-    sectionTitle: typeof location?.sectionTitle === "string" ? location.sectionTitle : "",
-    sectionId: typeof location?.sectionId === "string" ? location.sectionId : "",
-    page: typeof location?.page === "number" ? location.page : null,
-    quote: typeof location?.quote === "string" ? location.quote : "",
-  };
-}
-
 export function buildCrossDocComparisonInput(parsedProtocol, parsedConsent) {
-  const protocolSections = splitTextIntoSections(parsedProtocol.text);
-  const consentSections = splitTextIntoSections(parsedConsent.text);
+  const protocolSections = Array.isArray(parsedProtocol.sections)
+    ? parsedProtocol.sections
+    : splitTextIntoSections(parsedProtocol.text);
+  const consentSections = Array.isArray(parsedConsent.sections)
+    ? parsedConsent.sections
+    : splitTextIntoSections(parsedConsent.text);
 
   return {
     protocol: {
@@ -91,8 +78,8 @@ export function normalizeCrossDocReviewPayload(payload, { emptySummary } = {}) {
         concept: typeof finding?.concept === "string" ? finding.concept : "",
         direction: normalizeDirection(finding?.direction),
         likelyOutOfSync: normalizeSyncIndicator(finding?.likelyOutOfSync),
-        protocol: normalizeLocation(finding?.protocol),
-        consent: normalizeLocation(finding?.consent),
+        protocol: normalizeLocation(finding?.protocol, { includeFileName: true }),
+        consent: normalizeLocation(finding?.consent, { includeFileName: true }),
         explanation: typeof finding?.explanation === "string" ? finding.explanation : "",
         resolutionGuidance:
           typeof finding?.resolutionGuidance === "string" ? finding.resolutionGuidance : "",

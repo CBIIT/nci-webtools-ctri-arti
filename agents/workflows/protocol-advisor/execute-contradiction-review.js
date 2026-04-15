@@ -3,84 +3,47 @@ import {
   normalizeContradictionReviewPayload,
 } from "../shared/contradiction-helpers.js";
 
-import { invokeGatewayJson, renderTemplate } from "./review-helpers.js";
+import { createStructuredReviewExecutor } from "./structured-review.js";
 
-function buildSystemPrompt(assets) {
-  return assets.prompts.contradictionReviewSystem.trim();
-}
-
-function buildUserPrompt(assets, input) {
-  return renderTemplate(assets.prompts.contradictionReviewUser, {
-    input_json: JSON.stringify(
+export const executeProtocolAdvisorContradictionReview = createStructuredReviewExecutor({
+  serviceError: "protocol_advisor requires a gateway service for contradiction review",
+  systemPromptKey: "contradictionReviewSystem",
+  userPromptKey: "contradictionReviewUser",
+  gatewayType: "workflow-protocol_advisor-contradiction_review",
+  buildInput: (ctx) => buildContradictionReviewInput(ctx.steps.parseProtocol),
+  buildUserInput: (input) => ({
+    protocol: input.document,
+    sections: input.sections,
+  }),
+  outputExample: {
+    overallSummary: "Short summary of findings",
+    documentClean: false,
+    findings: [
       {
-        protocol: input.document,
-        sections: input.sections,
+        category: "enrollment_sample_size",
+        severity: "high",
+        concept: "Target enrollment",
+        sectionA: {
+          sectionTitle: "Study Population",
+          sectionId: "3.2",
+          page: 12,
+          quote: "We will enroll 40 participants.",
+        },
+        sectionB: {
+          sectionTitle: "Statistical Considerations",
+          sectionId: "10.1",
+          page: 34,
+          quote: "The study will enroll 60 participants.",
+        },
+        explanation: "Two sections describe different target enrollment totals.",
+        resolutionGuidance:
+          "Reconcile the target enrollment language in Section 3.2 and Section 10.1.",
       },
-      null,
-      2
-    ),
-    output_json_example: JSON.stringify(
-      {
-        overallSummary: "Short summary of findings",
-        documentClean: false,
-        findings: [
-          {
-            category: "enrollment_sample_size",
-            severity: "high",
-            concept: "Target enrollment",
-            sectionA: {
-              sectionTitle: "Study Population",
-              sectionId: "3.2",
-              page: 12,
-              quote: "We will enroll 40 participants.",
-            },
-            sectionB: {
-              sectionTitle: "Statistical Considerations",
-              sectionId: "10.1",
-              page: 34,
-              quote: "The study will enroll 60 participants.",
-            },
-            explanation: "Two sections describe different target enrollment totals.",
-            resolutionGuidance:
-              "Reconcile the target enrollment language in Section 3.2 and Section 10.1.",
-          },
-        ],
-        citations: [],
-      },
-      null,
-      2
-    ),
-  }).trim();
-}
-
-export async function executeProtocolAdvisorContradictionReview(ctx, services) {
-  if (!services.gateway || typeof services.gateway.invoke !== "function") {
-    throw new Error("protocol_advisor requires a gateway service for contradiction review");
-  }
-
-  const assets = ctx.steps.loadAssets;
-  const parsedProtocol = ctx.steps.parseProtocol;
-  const input = buildContradictionReviewInput(parsedProtocol);
-  const { response, json } = await invokeGatewayJson({
-    gateway: services.gateway,
-    userId: services.userId,
-    requestId: services.requestId || ctx.workflow.runId,
-    model: assets.model,
-    type: "workflow-protocol_advisor-contradiction_review",
-    system: buildSystemPrompt(assets),
-    userText: buildUserPrompt(assets, input),
-  });
-
-  return {
-    status: "completed",
-    model: assets.model,
-    input,
-    output: normalizeContradictionReviewPayload(json, {
-      emptySummary: "No contradictions identified.",
-    }),
-    usage: response.usage || null,
-    latencyMs: response.metrics?.latencyMs ?? null,
-  };
-}
+    ],
+    citations: [],
+  },
+  normalize: normalizeContradictionReviewPayload,
+  emptySummary: "No contradictions identified.",
+});
 
 export default executeProtocolAdvisorContradictionReview;
