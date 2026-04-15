@@ -29,6 +29,11 @@ Route families:
 - usage and analytics: `/v1/usage`, `/v1/users/:id/usage`, `/v1/analytics`
 - budgets: `/v1/budgets/reset`, `/v1/users/:id/budget/reset`
 - config: `/v1/config`
+- appConfig: `/v1/config/enabledFeature/{toolName}`
+
+App Config:
+
+- Store application level configration in `app-config.js` file. Cuurently, we support environment-base toggling for tools such as `Chat`, `Translator`. In order to disable certain tool. Update the `Configuration` table with comma-seperated list of disabled tools.
 
 Usage and analytics date filters:
 

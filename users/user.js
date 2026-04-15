@@ -1,4 +1,4 @@
-import db, { Model, Role, Usage, User } from "database";
+import db, { Configuration, Model, Role, Usage, User } from "database";
 import { randomBytes } from "node:crypto";
 
 import {
@@ -15,6 +15,7 @@ import {
   desc,
   isNotNull,
 } from "drizzle-orm";
+import { DISABLED_TOOLS_CONFIG_KEY, isToolEnabledFromDisabledValue } from "shared/app-config.js";
 import { describeCron, USAGE_RESET_SCHEDULE } from "shared/cron.js";
 import { getDateRange, hasOwn } from "shared/utils.js";
 
@@ -667,8 +668,23 @@ export class UserService {
     return result[0] || null;
   }
 
-  // ===== Config =====
+  // ===== Environment-based Config =====
 
+  /**
+   * @param {string} toolName
+   * @returns {Promise<boolean>} `true` if enabled (not in disabled list), `false` if disabled.
+   */
+  async isToolEnabled(toolName) {
+    const [row] = await db
+      .select()
+      .from(Configuration)
+      .where(eq(Configuration.key, DISABLED_TOOLS_CONFIG_KEY))
+      .limit(1);
+
+    return isToolEnabledFromDisabledValue(toolName, row?.value);
+  }
+
+  // ===== Config =====
   getConfig() {
     const { label: budgetLabel, resetDescription: budgetResetDescription } =
       describeCron(USAGE_RESET_SCHEDULE);
