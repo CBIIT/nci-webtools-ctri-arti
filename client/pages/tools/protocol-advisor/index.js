@@ -69,27 +69,33 @@ export default function Page() {
         return null;
       }}
     >
-      <div class="bg-protocol-advisor font-smooth">
+      <div class="bg-protocol-advisor font-smooth position-relative overflow-hidden flex-fill">
         <${PageBanner} title="Protocol Advisor" />
 
         <div class="container">
-          <div class="pa-section-container">
+          <div class="p-0">
             <form id="pa-form" onSubmit=${handleSubmit}>
-              <div class="pa-content">
+              <div class="pa-content d-flex flex-column">
                 <!-- Intro Section -->
                 <div class="row justify-content-center">
                   <div class="col-lg-9 d-flex flex-column gap-3">
                     <div class="d-flex flex-column gap-3">
-                      <h2 id="pa-intro-title" class="pa-section-title mb-0 text-center">
+                      <h2
+                        id="pa-intro-title"
+                        class="pa-section-title mb-0 text-center font-poppins fw-medium"
+                      >
                         Secure Protocol Document Upload & Analysis
                       </h2>
-                      <p id="pa-intro-subtitle" class="pa-section-description mb-0">
+                      <p
+                        id="pa-intro-subtitle"
+                        class="pa-section-description mb-0 font-inter fw-normal"
+                      >
                         Upload your research protocol and informed consent documents for secure
                         processing and regulatory review.
                       </p>
                     </div>
-                    <hr class="pa-divider w-100" />
-                    <p id="pa-intro-description" class="pa-section-text mb-0">
+                    <hr class="pa-divider w-100 opacity-100" />
+                    <p id="pa-intro-description" class="pa-section-text mb-0 font-inter fw-normal">
                       Securely upload your research protocol and informed consent documents to
                       receive an AI-powered regulatory compliance review. Protocol Advisor
                       automatically checks for internal inconsistencies within your protocol,
@@ -108,10 +114,10 @@ export default function Page() {
                     <div id="pa-protocol-document-section" class="d-flex flex-column gap-2">
                       <label
                         id="pa-protocol-document-label"
-                        class="pa-label"
+                        class="pa-label font-poppins fw-medium"
                         for="protocol-document"
                       >
-                        Protocol Document<span class="pa-required">*</span>
+                        Protocol Document<span class="pa-required font-inter fw-normal">*</span>
                       </label>
                       <${FileUpload}
                         id="protocol-document"
@@ -135,12 +141,15 @@ export default function Page() {
                       <div class="d-flex flex-column gap-1">
                         <label
                           id="pa-protocol-template-label"
-                          class="pa-label"
+                          class="pa-label font-poppins fw-medium"
                           for="protocol-template"
                         >
-                          Protocol Template<span class="pa-required">*</span>
+                          Protocol Template<span class="pa-required font-inter fw-normal">*</span>
                         </label>
-                        <p id="pa-protocol-template-description" class="pa-description-text mb-0">
+                        <p
+                          id="pa-protocol-template-description"
+                          class="pa-description-text mb-0 font-inter fw-normal"
+                        >
                           Select the NIH-approved template that was used in your uploaded protocol
                           document.
                         </p>
@@ -160,11 +169,14 @@ export default function Page() {
                       <div class="d-flex flex-column gap-1">
                         <label
                           id="pa-consent-documents-label"
-                          class="pa-label"
+                          class="pa-label font-poppins fw-medium"
                           for="consent-documents"
                           >Consent Documents</label
                         >
-                        <p id="pa-consent-documents-description" class="pa-description-text mb-0">
+                        <p
+                          id="pa-consent-documents-description"
+                          class="pa-description-text mb-0 font-inter fw-normal"
+                        >
                           Upload your informed consent documents to evaluate its internal
                           consistency and alignment with your protocol.
                         </p>
@@ -193,7 +205,9 @@ export default function Page() {
                           icon: "assets/images/protocol-advisor/icon-clock.svg",
                           iconAlt: "Clock",
                           title: "Estimated Processing Time: ",
-                          description: html`<span class="pa-info-description">
+                          description: html`<span
+                            class="pa-info-description font-inter fw-normal text-white"
+                          >
                             15-30 minutes
                             <br />
                             The analysis involves comprehensive checks across multiple regulatory
@@ -204,7 +218,9 @@ export default function Page() {
                           icon: "assets/images/protocol-advisor/icon-mail.svg",
                           iconAlt: "Email",
                           title: "Report Delivery",
-                          description: html`<span class="pa-info-description">
+                          description: html`<span
+                            class="pa-info-description font-inter fw-normal text-white"
+                          >
                             You will receive a detailed compliance report at your registered email
                             address once the analysis is complete.
                           </span>`,
@@ -213,8 +229,10 @@ export default function Page() {
                           icon: "assets/images/protocol-advisor/icon-analysis.svg",
                           iconAlt: "Document analysis",
                           title: "Analysis Includes",
-                          description: html`<ul class="pa-info-list mt-1">
-                            <li>
+                          description: html`<ul
+                            class="pa-info-list list-unstyled d-flex flex-column m-0 mt-1"
+                          >
+                            <li class="d-flex align-items-center font-inter fw-normal text-white">
                               <img
                                 src="assets/images/protocol-advisor/icon-checkmark.svg"
                                 alt="Checkmark"
@@ -223,7 +241,7 @@ export default function Page() {
                               />
                               Template Completeness Verification
                             </li>
-                            <li>
+                            <li class="d-flex align-items-center font-inter fw-normal text-white">
                               <img
                                 src="assets/images/protocol-advisor/icon-checkmark.svg"
                                 alt="Checkmark"
@@ -232,7 +250,7 @@ export default function Page() {
                               />
                               Regulatory Compliance Engine
                             </li>
-                            <li>
+                            <li class="d-flex align-items-center font-inter fw-normal text-white">
                               <img
                                 src="assets/images/protocol-advisor/icon-checkmark.svg"
                                 alt="Checkmark"
@@ -241,7 +259,7 @@ export default function Page() {
                               />
                               Intra-Document Consistency Validation
                             </li>
-                            <li>
+                            <li class="d-flex align-items-center font-inter fw-normal text-white">
                               <img
                                 src="assets/images/protocol-advisor/icon-checkmark.svg"
                                 alt="Checkmark"
@@ -258,14 +276,14 @@ export default function Page() {
                     <!-- Start Analysis -->
                     <div class="d-flex justify-content-center py-3">
                       <div
-                        class="pa-submit-wrapper"
+                        class="pa-submit-wrapper d-inline-block"
                         title=${() =>
                           canSubmit() ? "" : "Upload a valid protocol to enable analysis"}
                       >
                         <button
                           id="pa-submit-btn"
                           type="submit"
-                          class="pa-submit-btn"
+                          class="pa-submit-btn text-center text-white font-nunito"
                           disabled=${() => !canSubmit()}
                         >
                           Start Analysis

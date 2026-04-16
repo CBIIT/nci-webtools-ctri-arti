@@ -142,11 +142,11 @@ export function FileUpload(props) {
         <div class="d-flex flex-column gap-2">
           <${For} each=${selectedFiles}>
             ${(file, index) => html`
-              <div class="pa-file-chip">
-                <span class="pa-file-chip-name">${file.name}</span>
+              <div class="file-chip d-inline-flex align-items-center">
+                <span class="file-chip-name fw-normal font-inter text-truncate">${file.name}</span>
                 <button
                   type="button"
-                  class="pa-file-chip-remove"
+                  class="file-chip-remove bg-transparent border-0"
                   aria-label="Remove file"
                   onClick=${() => removeFileAt(index())}
                 >
@@ -159,8 +159,12 @@ export function FileUpload(props) {
       <//>
 
       <${Show} when=${showUploadRow}>
-        <div class="pa-upload-row">
-          <button type="button" class="pa-upload-btn" onClick=${() => hiddenInput?.click()}>
+        <div class="file-upload-row d-flex flex-row align-items-stretch">
+          <button
+            type="button"
+            class="file-upload-btn d-flex align-items-center bg-transparent text-nowrap font-nunito"
+            onClick=${() => hiddenInput?.click()}
+          >
             ${() => props.buttonText || "Choose File"}
             ${() =>
               props.startIcon ||
@@ -180,15 +184,17 @@ export function FileUpload(props) {
             ref=${(el) => (hiddenInput = el)}
             onChange=${handleInputChange}
           />
-          <div class="pa-upload-status">${() => props.placeholder || "No file chosen"}</div>
+          <div class="file-upload-status d-flex align-items-center flex-fill font-inter fw-normal">
+            ${() => props.placeholder || "No file chosen"}
+          </div>
         </div>
       <//>
 
       <${Show} when=${props.hint}>
-        <span class="pa-file-type-info mt-1">${props.hint}</span>
+        <span class="file-upload-hint mt-1 font-inter fw-normal">${props.hint}</span>
       <//>
       <${Show} when=${validationError}>
-        <span class="pa-field-error">${validationError}</span>
+        <span class="file-upload-error font-inter fw-normal">${validationError}</span>
       <//>
     </div>
   `;
