@@ -227,27 +227,27 @@ The JSON object must have this exact typed structure:
 ```json
 {
   "references": string[],                   // FIRST FIELD - METADATA, NOT VISIBLE TO PATIENT - Array of sources. USE THIS SPACE TO PLAN OUT HOW TO WRITE SIMPLE AND CONCISE DESCRIPTIONS THAT ADHERE TO THE LANGUAGE GUIDELINES.
-  "study_title": string,                    // Simplified, descriptive title without abbreviations (not a question)
+  "study_title": string,                    // Plain-language title, no abbreviations, max ~10 words
   "nct_number": string,                     // NCT number exactly as written
   "institute": string,                      // Name of institute conducting the study
-  "simple_summary": string,                 // 1-2 brief sentences about study overview without using abbreviations
-  "purpose": string,                        // Why research is conducted, in plain language
-  "who_can_participate": string[],          // Array of main inclusion criteria, everyday language
-  "who_cannot_participate": string[],       // Array of main exclusion criteria, everyday language
-  "investigator_names": string[],           // Investigator names
-  "procedures": string[],                   // Array of main procedures - each must start with an action verb (have, get, take, receive)
-  "timeline": string,                       // Participation duration in simple terms
-  "visits_required": string,                // Number and frequency of clinic visits
-  "potential_benefits": string,             // One or two sentences describing possible benefits to participant
-  "potential_benefits_others": string,      // One or two sentences describing possible benefits to others
-  "potential_risks": string[],              // Array of main risks grouped by type/body system - each must start with a verb. Group related symptoms together
-  "expanded_risks": string,                 // Comprehensive risk explanation in paragraph form
-  "alternatives": string,                   // One or two sentences describing alternatives to participation
-  "costs_and_compensation": string,         // 1 brief sentence about costs and compensation
+  "simple_summary": string,                 // 1-2 short sentences, max ~25 words. Warm and clear.
+  "purpose": string,                        // 1 short sentence, max ~15 words
+  "who_can_participate": string[],          // Short fragments, max ~10 words each (e.g. "are 18 or older")
+  "who_cannot_participate": string[],       // Short fragments, max ~10 words each
+  "investigator_names": string[],           // Investigator names only
+  "procedures": string[],                   // Short fragments starting with a verb, max ~12 words each
+  "timeline": string,                       // 1 short sentence, max ~15 words
+  "visits_required": string,                // 1 short sentence, max ~15 words
+  "potential_benefits": string,             // 1-2 warm sentences, max ~25 words. Be honest there is no direct benefit, but honor what they are giving.
+  "potential_benefits_others": string,      // 1-2 sentences, max ~20 words
+  "potential_risks": string[],              // Short fragments starting with a verb, group related symptoms, max ~12 words each
+  "expanded_risks": string,                 // 2-4 short sentences, max ~60 words. Warm — name what the team will do.
+  "alternatives": string,                   // 1-2 warm sentences, max ~25 words
+  "costs_and_compensation": string,         // 1-2 short sentences, max ~20 words
   "contact_name": string,                   // Primary contact name
   "contact_email": string,                  // Primary contact email
   "contact_phone": string,                  // Primary contact phone
-  "withdrawal": string                      // 1 brief sentence about withdrawing from study
+  "withdrawal": string                      // 1 short sentence, max ~15 words
 }
 ```
 
@@ -257,6 +257,36 @@ MUST populate that field — never leave it empty.
 
 Equally important: if the protocol does NOT support a section, leave the field empty rather
 than generating placeholder or stub content. A blank field is better than a wrong one.
+
+## BREVITY CONSTRAINT
+The template is a one-page summary. Keep fields concise — but never cold. You are writing
+for someone giving their time and trust to help others. Be brief AND warm.
+
+RULES:
+1. Array items that follow a stem ("People who:", "You will:", "You might:") are SHORT
+   FRAGMENTS — one idea each. Never restate the stem. Do not write multi-sentence
+   explanations inside a single array item.
+     TOO LONG: "Get two vaccine shots — one at your first visit, and one a month later.
+                Each shot goes into the muscle in your upper arm."
+     RIGHT:    "get two vaccine shots one month apart"
+2. String fields should respect the max word count in their comment. Do not write a
+   paragraph when 1-2 sentences will do.
+     TOO LONG (4 sentences): "This study will not treat any medical condition you have. It
+                will not help your health directly. But what we learn from you may help us
+                understand how this condition works. That knowledge could help people who
+                have this condition in the future."
+     RIGHT:    "This study will not help your health directly, but what we learn from you
+                may help people with this condition in the future."
+3. In procedures and risks arrays, name what happens — do not explain WHY or HOW.
+     TOO LONG: "Have blood drawn before and after each shot so we can see how your body
+                responds to the vaccine over time"
+     RIGHT:    "have blood drawn before and after each shot"
+4. Keep warmth in benefits, alternatives, withdrawal, and expanded_risks. These are the
+   fields where the reader most needs to feel respected. A warm sentence is fine — a
+   warm paragraph is not.
+5. timeline and visits_required are 1 short sentence each — not paragraphs.
+6. When in doubt, cut words, but never cut warmth.
+7. Do not use em-dashes. Use periods or commas instead.
 
 ## DATA TYPES
 - String fields: non-empty text (or "" if not applicable)
@@ -355,7 +385,9 @@ Before submitting, verify:
 - [ ] Information is verifiable from references
 - [ ] Procedures start with action verbs (have, get, take, receive)
 - [ ] Risks start with verbs and group related symptoms
-- [ ] Output is succinct and clear
+- [ ] BREVITY: Every array item is a short fragment (not a paragraph)
+- [ ] BREVITY: Every string field respects the max word count in its comment
+- [ ] WARMTH: Benefits, alternatives, and expanded_risks sound caring, not clinical
 
 ## EXAMPLE OUTPUT - SHORTENED FOR BREVITY
 ```json
@@ -387,8 +419,8 @@ Before submitting, verify:
   "study_title": "Testing a New Vaccine to Prevent Disease",
   "nct_number": "NCT12345678",
   "institute": "National Cancer Institute",
-  "simple_summary": "We are testing if a new vaccine is safe and works well. We want to see how your body responds to it.",
-  "purpose": "We want to find out if this vaccine can help protect people from getting sick.",
+  "simple_summary": "We are testing if a new vaccine is safe. We want to see how your body responds to it.",
+  "purpose": "We want to learn if this vaccine can protect people from getting sick.",
   "who_can_participate": [
     "are 18 to 55 years old",
     "are healthy",
@@ -405,22 +437,22 @@ Before submitting, verify:
     "have blood drawn before and after each shot",
     "keep a diary of how you feel for 7 days"
   ],
-  "timeline": "You will be in the study for about 6 months",
-  "visits_required": "You will come to the clinic 5 times over 6 months",
-  "potential_benefits": "You will not directly benefit from being in this study.",
-  "potential_benefits_others": "We will learn if this vaccine is safe and works. This might help protect people in the future.",
+  "timeline": "About 6 months",
+  "visits_required": "5 clinic visits over 6 months",
+  "potential_benefits": "This study will not help your health directly, but what we learn from you may help protect others in the future.",
+  "potential_benefits_others": "What we learn may help us develop a safe and effective vaccine.",
   "potential_risks": [
     "have pain, redness, or swelling where you got the shot",
     "feel tired, have muscle aches, or get a headache",
     "have a mild fever or chills",
     "feel dizzy or faint after the shot"
   ],
-  "expanded_risks": "Most people have mild side effects that go away in a few days. The most common is a sore arm. Some people feel tired or get a headache. Very few people have serious side effects.",
-  "alternatives": "You could choose not to be in this study and wait for approved vaccines.",
-  "costs_and_compensation": "All study visits and tests are free. You will get $50 for each visit.",
+  "expanded_risks": "Most side effects are mild and go away in a few days. The most common is a sore arm. Your study team will watch you closely after each shot.",
+  "alternatives": "You do not have to join this study. You can simply choose not to take part, and it will not affect your care.",
+  "costs_and_compensation": "All visits and tests are free. You will get $50 for each visit.",
   "contact_name": "Sarah Johnson, Study Coordinator",
   "contact_email": "sarah.johnson@cancer.gov",
   "contact_phone": "(555) 123-4567",
-  "withdrawal": "You can leave the study at any time."
+  "withdrawal": "You can leave the study at any time, no questions asked."
 }
 ```

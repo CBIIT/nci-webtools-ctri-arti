@@ -240,27 +240,27 @@ The JSON object must have this exact typed structure:
 ```json
 {
   "references": string[],                   // FIRST FIELD - METADATA, NOT VISIBLE TO PATIENT - Array of sources. USE THIS SPACE TO PLAN OUT HOW TO WRITE SIMPLE AND CONCISE DESCRIPTIONS THAT ADHERE TO THE LANGUAGE GUIDELINES.
-  "study_title": string,                    // Simplified, descriptive title without abbreviations (not a question)
+  "study_title": string,                    // Plain-language title, no abbreviations, max ~10 words
   "nct_number": string,                     // NCT number exactly as written
   "institute": string,                      // Name of institute conducting the study
-  "simple_summary": string,                 // 1-2 brief sentences about study overview without using abbreviations
-  "purpose": string,                        // Why research is conducted, in plain language
-  "who_can_participate": string[],          // Array of main inclusion criteria, everyday language
-  "who_cannot_participate": string[],       // Array of main exclusion criteria, everyday language
-  "investigator_names": string[],           // Investigator names
-  "procedures": string[],                   // Array of main procedures - each must start with an action verb (have, get, take, receive)
-  "timeline": string,                       // Participation duration in simple terms
-  "visits_required": string,                // Number and frequency of clinic visits
-  "potential_benefits": string,             // One or two sentences describing possible benefits to participant
-  "potential_benefits_others": string,      // One or two sentences describing possible benefits to others
-  "potential_risks": string[],              // Array of main risks grouped. Group related symptoms together
-  "expanded_risks": string,                 // Comprehensive risk explanation in paragraph form
-  "alternatives": string,                   // One or two sentences describing alternatives to participation
-  "costs_and_compensation": string,         // 1 brief sentence about costs and compensation
+  "simple_summary": string,                 // 1-2 short sentences, max ~25 words. Warm and clear.
+  "purpose": string,                        // 1 short sentence, max ~15 words
+  "who_can_participate": string[],          // Short fragments, max ~10 words each (e.g. "are 18 or older")
+  "who_cannot_participate": string[],       // Short fragments, max ~10 words each
+  "investigator_names": string[],           // Investigator names only
+  "procedures": string[],                   // Short fragments starting with a verb, max ~12 words each
+  "timeline": string,                       // 1 short sentence, max ~15 words
+  "visits_required": string,                // 1 short sentence, max ~15 words
+  "potential_benefits": string,             // 1-2 warm sentences, max ~25 words. Name the hope honestly.
+  "potential_benefits_others": string,      // 1-2 sentences, max ~20 words
+  "potential_risks": string[],              // Short fragments starting with a verb, group related symptoms, max ~12 words each
+  "expanded_risks": string,                 // 2-4 short sentences, max ~60 words. Warm — name what the team will do.
+  "alternatives": string,                   // 1-2 warm sentences, max ~25 words
+  "costs_and_compensation": string,         // 1-2 short sentences, max ~20 words
   "contact_name": string,                   // Primary contact name
   "contact_email": string,                  // Primary contact email
   "contact_phone": string,                  // Primary contact phone
-  "withdrawal": string                      // 1 brief sentence about withdrawing from study
+  "withdrawal": string                      // 1 short sentence, max ~15 words
 }
 ```
 
@@ -270,6 +270,38 @@ MUST populate that field — never leave it empty.
 
 Equally important: if the protocol does NOT support a section, leave the field empty rather
 than generating placeholder or stub content. A blank field is better than a wrong one.
+
+## BREVITY CONSTRAINT
+The template is a one-page summary. Keep fields concise — but never cold. You are still
+writing for a scared person making a hard choice. Be brief AND warm.
+
+RULES:
+1. Array items that follow a stem ("People who:", "You will:", "You might:") are SHORT
+   FRAGMENTS — one idea each. Never restate the stem. Do not write multi-sentence
+   explanations inside a single array item.
+     TOO LONG: "Get atezolizumab through an IV (a small tube placed in your vein) at the
+                clinic. Your first two doses will be at the standard schedule your doctor
+                picks. After that, your dose will be 840 mg, and we will use your blood
+                test results to decide when you need your next dose"
+     RIGHT:    "get the study drug through an IV at the clinic"
+2. String fields should respect the max word count in their comment. Do not write a
+   paragraph when 1-2 sentences will do.
+     TOO LONG (5 sentences): "We hope this study will help you. By spacing out your doses,
+                you may have fewer clinic visits and possibly fewer side effects while
+                still keeping enough drug in your body to fight the cancer. We cannot
+                promise this will happen, because every person is different and this
+                approach is still being tested."
+     RIGHT:    "We hope this drug may help shrink your tumor or ease your symptoms."
+3. In procedures and risks arrays, name what happens — do not explain WHY or HOW.
+     TOO LONG: "Have a blood draw before each dose so we can measure how much drug is left
+                in your body. A computer model then tells us when to schedule your next dose"
+     RIGHT:    "have blood drawn before each dose"
+4. Keep warmth in benefits, alternatives, withdrawal, and expanded_risks. These are the
+   fields where the reader most needs to feel cared for. A warm sentence is fine — a
+   warm paragraph is not.
+5. timeline and visits_required are 1 short sentence each — not paragraphs.
+6. When in doubt, cut words, but never cut warmth.
+7. Do not use em-dashes. Use periods or commas instead.
 
 ## DATA TYPES
 - String fields: non-empty text (or "" if not applicable)
@@ -338,7 +370,9 @@ Before submitting, verify:
 - [ ] Information is verifiable from references
 - [ ] Procedures start with action verbs (have, get, take, receive)
 - [ ] Risks start with verbs and group related symptoms
-- [ ] Output is succinct and clear
+- [ ] BREVITY: Every array item is a short fragment (not a paragraph)
+- [ ] BREVITY: Every string field respects the max word count in its comment
+- [ ] WARMTH: Benefits, alternatives, and expanded_risks sound caring, not clinical
 
 ## EXAMPLE OUTPUT - SHORTENED FOR BREVITY
 ```json
@@ -371,11 +405,11 @@ Before submitting, verify:
     "Page 26, Withdrawal: 'Participants may withdraw from the study at any time without affecting their medical care or relationship with their family member's healthcare team. If withdrawing after genetic testing but before results disclosure, participants can choose whether to receive their results. Data and samples collected before withdrawal will be retained unless the participant specifically requests destruction.'",
     "Page 27, Alternatives: 'Alternatives to participation include: 1) Clinical genetic testing through your healthcare provider (may involve out-of-pocket costs), 2) Direct-to-consumer genetic testing (limited cancer risk assessment, not recommended for medical decisions), 3) Choosing not to undergo genetic testing and following general population screening guidelines, 4) Waiting to decide about testing at a later time. Genetic counseling through this study or clinical services can help you understand these options.'"
   ],
-  "study_title": "Testing a New Cancer Drug to Help Stop Tumor Growth",
+  "study_title": "Testing a New Drug to Slow Cancer Growth",
   "nct_number": "NCT12345678",
   "institute": "National Cancer Institute",
-  "simple_summary": "We are testing if a new drug can slow down cancer growth. We want to see if it works better than current treatments.",
-  "purpose": "We want to find out if this new drug can help people with cancer live longer with fewer side effects.",
+  "simple_summary": "We are testing if a new drug can slow cancer growth. We want to find out if it works better than current treatments.",
+  "purpose": "We want to see if this drug helps people with cancer.",
   "who_can_participate": [
     "are 18 years old or older",
     "have cancer that has spread",
@@ -391,22 +425,22 @@ Before submitting, verify:
     "have blood drawn every 2 weeks",
     "get scans every 8 weeks"
   ],
-  "timeline": "You will be in the study for about 1 year",
-  "visits_required": "You will come to the clinic every 2 weeks for the first 3 months, then once a month",
-  "potential_benefits": "The drug might slow your cancer growth or help you feel better.",
-  "potential_benefits_others": "We will learn if this drug helps people with cancer. Future patients might benefit from what we learn.",
+  "timeline": "About 1 year",
+  "visits_required": "Every 2 weeks at first, then monthly",
+  "potential_benefits": "We hope this drug may help shrink your tumor or ease your symptoms.",
+  "potential_benefits_others": "What we learn may help doctors treat cancer better in the future.",
   "potential_risks": [
     "feel tired, weak, or dizzy",
     "have stomach problems like nausea, vomiting, or diarrhea",
     "get headaches or have trouble sleeping",
     "have a higher chance of getting infections because your blood counts are low"
   ],
-  "expanded_risks": "Most people who take this drug feel tired. About half get headaches. Some people get low blood counts, which means you might get infections more easily. We will watch you closely and can treat these problems if they happen.",
-  "alternatives": "You could get the standard treatment for your cancer, join a different study, or choose not to get treatment right now.",
-  "costs_and_compensation": "The study drug and all study tests are free. We will pay for your parking.",
+  "expanded_risks": "The most common side effects are feeling tired and low blood counts. Your study team will watch you closely and can treat problems if they come up.",
+  "alternatives": "You do not have to join this study. You could get standard treatment, join another study, or focus on comfort care.",
+  "costs_and_compensation": "The study drug and all tests are free. We will pay for your parking.",
   "contact_name": "Sarah Johnson, Study Coordinator",
   "contact_email": "sarah.johnson@cancer.gov",
   "contact_phone": "(555) 123-4567",
-  "withdrawal": "You can leave the study at any time."
+  "withdrawal": "You can leave the study at any time. It will not affect your care."
 }
 ```
