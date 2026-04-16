@@ -1,7 +1,11 @@
 import { aggregateProtocolAdvisorReport } from "./aggregate-report.js";
+import { executeConsentConsistencyReview } from "./execute-consent-consistency-review.js";
+import { executeProtocolAdvisorContradictionReview } from "./execute-contradiction-review.js";
+import { executeCrossDocComparison } from "./execute-cross-doc-comparison.js";
 import { executeProtocolAdvisorSourceReviews } from "./execute-source-reviews.js";
 import { validateProtocolAdvisorInput } from "./input-schema.js";
 import { loadProtocolAdvisorAssets } from "./load-assets.js";
+import { parseConsentDocument } from "./parse-consent.js";
 import { parseProtocolDocument } from "./parse-protocol.js";
 import { renderProtocolAdvisorReportDocx } from "./render-report-docx.js";
 import { sendProtocolAdvisorResultsEmail } from "./send-results-email.js";
@@ -13,6 +17,7 @@ async function validateInput(ctx) {
 
 export const protocolAdvisorWorkflow = {
   name: "protocol_advisor",
+  maxConcurrency: 3,
   nodes: {
     validateInput: {
       deps: [],
@@ -26,12 +31,56 @@ export const protocolAdvisorWorkflow = {
       deps: ["validateInput"],
       run: parseProtocolDocument,
     },
+    parseConsent: {
+      deps: ["validateInput"],
+      when(ctx) {
+        const validated = ctx.steps.validateInput;
+        return Boolean(
+          validated?.hasConsentText ||
+          validated?.hasConsentDocument ||
+          validated?.hasConsentDocuments
+        );
+      },
+      run: parseConsentDocument,
+    },
     executeSourceReviews: {
       deps: ["loadAssets", "parseProtocol"],
       run: executeProtocolAdvisorSourceReviews,
     },
+    executeContradictionReview: {
+      deps: ["loadAssets", "parseProtocol"],
+      run: executeProtocolAdvisorContradictionReview,
+    },
+    executeConsentConsistencyReview: {
+      deps: ["loadAssets", "parseConsent"],
+      when(ctx) {
+        return ctx.steps.parseConsent != null;
+      },
+      run: executeConsentConsistencyReview,
+    },
+    executeCrossDocComparison: {
+      deps: [
+        "loadAssets",
+        "parseProtocol",
+        "parseConsent",
+        "executeContradictionReview",
+        "executeConsentConsistencyReview",
+      ],
+      when(ctx) {
+        return ctx.steps.parseConsent != null;
+      },
+      run: executeCrossDocComparison,
+    },
     aggregateReport: {
-      deps: ["loadAssets", "parseProtocol", "executeSourceReviews"],
+      deps: [
+        "loadAssets",
+        "parseProtocol",
+        "executeSourceReviews",
+        "executeContradictionReview",
+        "parseConsent",
+        "executeConsentConsistencyReview",
+        "executeCrossDocComparison",
+      ],
       run: aggregateProtocolAdvisorReport,
     },
     synthesizeFinalReport: {

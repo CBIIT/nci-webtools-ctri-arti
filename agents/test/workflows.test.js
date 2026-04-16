@@ -105,7 +105,11 @@ describe("workflows", () => {
     assert.ok(assets.sources.some((source) => source.id === "45-cfr-part-46"));
     assert.ok(assets.sources.some((source) => source.id === "secondary_research"));
     assert.ok(assets.prompts.system.includes("You are Protocol Advisor"));
-    assert.ok(assets.prompts.sourceReviewSchema.includes("\"task_type\""));
+    assert.ok(assets.prompts.sourceReviewSchema.includes('"task_type"'));
+    assert.ok(assets.prompts.crossDocComparisonSystem.includes("clinical trial protocol"));
+    assert.ok(assets.prompts.crossDocComparisonUser.includes("cross_document_comparison"));
+    assert.ok(assets.prompts.consentContradictionReviewSystem.length > 0);
+    assert.ok(assets.prompts.consentContradictionReviewUser.length > 0);
   });
 
   it("runs the protocol advisor workflow end to end and emails a final DOCX report", async () => {
@@ -117,6 +121,15 @@ describe("workflows", () => {
         calls.push(params);
 
         if (params.type === "workflow-protocol_advisor-final_report") {
+          assert.match(params.messages[0].content[0].text, /"contradiction_review"/);
+          assert.doesNotMatch(
+            params.messages[0].content[0].text,
+            /"consent_consistency_review":\s*\{\s*"status": "completed"/
+          );
+          assert.doesNotMatch(
+            params.messages[0].content[0].text,
+            /"cross_document_comparison":\s*\{\s*"status": "completed"/
+          );
           return {
             output: {
               message: {
@@ -168,6 +181,27 @@ describe("workflows", () => {
           };
         }
 
+        if (params.type === "workflow-protocol_advisor-contradiction_review") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      overallSummary: "No contradictions identified.",
+                      documentClean: true,
+                      findings: [],
+                      citations: [],
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 10, outputTokens: 10 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
         const userText = params.messages[0].content[0].text;
 
         if (userText.includes("REFERENCE SOURCE\n- id: 45-cfr-part-46")) {
@@ -193,7 +227,8 @@ describe("workflows", () => {
                             status: "insufficient_evidence",
                             issue_title: "Consent detail missing",
                             source_excerpt: "Informed consent must include required elements.",
-                            subject_evidence: "The protocol mentions consent but omits procedural detail.",
+                            subject_evidence:
+                              "The protocol mentions consent but omits procedural detail.",
                             analysis: "The protocol does not clearly describe the consent process.",
                             required_action: "Add explicit consent-process detail and timing.",
                           },
@@ -299,8 +334,27 @@ describe("workflows", () => {
       }
     );
 
-    assert.equal(calls.filter((call) => call.type === "workflow-protocol_advisor-source_review").length, 29);
-    assert.equal(calls.filter((call) => call.type === "workflow-protocol_advisor-final_report").length, 1);
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-source_review").length,
+      29
+    );
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-contradiction_review").length,
+      1
+    );
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-consent_consistency_review")
+        .length,
+      0
+    );
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-cross_doc_comparison").length,
+      0
+    );
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-final_report").length,
+      1
+    );
     assert.equal(result.output.delivery.status, "sent");
     assert.equal(result.output.delivery.recipient, "reviewer@example.org");
     assert.equal(result.output.status, "clarification_required");
@@ -324,6 +378,27 @@ describe("workflows", () => {
       invoke: async (params) => {
         if (params.type === "workflow-protocol_advisor-source_review" && !firstSystemPrompt) {
           firstSystemPrompt = params.system;
+        }
+
+        if (params.type === "workflow-protocol_advisor-contradiction_review") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      overallSummary: "No contradictions identified.",
+                      documentClean: true,
+                      findings: [],
+                      citations: [],
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
         }
 
         if (params.type === "workflow-protocol_advisor-final_report") {
@@ -395,5 +470,207 @@ describe("workflows", () => {
     assert.match(firstSystemPrompt, /Second file body/);
     assert.equal(result.output.protocol.files.length, 2);
     assert.equal(result.output.delivery.status, "recipient_unavailable");
+  });
+
+  it("runs consent consistency review only when consent input is provided", async () => {
+    const calls = [];
+
+    const gateway = {
+      invoke: async (params) => {
+        calls.push(params);
+
+        if (params.type === "workflow-protocol_advisor-consent_consistency_review") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      overallSummary: "One consent inconsistency identified.",
+                      documentClean: false,
+                      findings: [
+                        {
+                          category: "participant_instructions",
+                          severity: "high",
+                          concept: "Fasting requirement",
+                          sectionA: {
+                            sectionTitle: "Before Your Visit",
+                            sectionId: "1",
+                            quote: "Do not eat for 8 hours before your visit.",
+                          },
+                          sectionB: {
+                            sectionTitle: "Preparing for Your Appointment",
+                            sectionId: "8",
+                            quote: "You may eat normally before arriving.",
+                          },
+                          explanation:
+                            "The consent gives conflicting instructions about eating before the visit.",
+                          resolutionGuidance:
+                            "Reconcile the pre-visit eating instructions in Sections 1 and 8.",
+                        },
+                      ],
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
+        if (params.type === "workflow-protocol_advisor-cross_doc_comparison") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      overallSummary: "One cross-document discrepancy identified.",
+                      documentsAligned: false,
+                      findings: [
+                        {
+                          category: "risks",
+                          severity: "high",
+                          concept: "Risk of bleeding",
+                          direction: "consent_understates_protocol",
+                          likelyOutOfSync: "consent",
+                          protocol: {
+                            fileName: "protocol.txt",
+                            sectionTitle: "Risks",
+                            sectionId: "4",
+                            quote: "Participants may experience minor or major bleeding.",
+                          },
+                          consent: {
+                            fileName: "consent.txt",
+                            sectionTitle: "Possible Risks",
+                            sectionId: "6",
+                            quote: "You may have minor bruising.",
+                          },
+                          explanation:
+                            "The protocol describes a broader bleeding risk than the consent form discloses.",
+                          resolutionGuidance:
+                            "Reconcile the risk language so both documents describe the same risk scope.",
+                        },
+                      ],
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
+        if (params.type === "workflow-protocol_advisor-contradiction_review") {
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      overallSummary: "No contradictions identified.",
+                      documentClean: true,
+                      findings: [],
+                      citations: [],
+                    }),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
+        if (params.type === "workflow-protocol_advisor-final_report") {
+          assert.match(params.messages[0].content[0].text, /"consent_consistency_review"/);
+          assert.match(params.messages[0].content[0].text, /"cross_document_comparison"/);
+          return {
+            output: {
+              message: {
+                content: [
+                  {
+                    text: [
+                      "# EXECUTIVE SUMMARY: IRB REGULATORY COMPLIANCE REVIEW",
+                      "",
+                      "## INTERNAL CONSENT FORM CONSISTENCY REVIEW",
+                      "",
+                      "Consent inconsistency summary.",
+                      "",
+                      "## PROTOCOL VS CONSENT CROSS-DOCUMENT REVIEW",
+                      "",
+                      "Cross-document discrepancy summary.",
+                    ].join("\n"),
+                  },
+                ],
+              },
+            },
+            usage: { inputTokens: 1, outputTokens: 1 },
+            metrics: { latencyMs: 1 },
+          };
+        }
+
+        return {
+          output: {
+            message: {
+              content: [
+                {
+                  text: JSON.stringify({
+                    task_type: "source_review",
+                    summary: "Source not applicable.",
+                    source_review: {
+                      applies: false,
+                      applicability_reason: "Not implicated by the protocol.",
+                      review_basis: "mixed",
+                      review_basis_reason: "No triggered obligations.",
+                      verdict: "not_applicable",
+                      findings: [],
+                    },
+                  }),
+                },
+              ],
+            },
+          },
+          usage: { inputTokens: 1, outputTokens: 1 },
+          metrics: { latencyMs: 1 },
+        };
+      },
+    };
+
+    const result = await runWorkflow(
+      "protocol_advisor",
+      {
+        templateId: "secondary_research",
+        protocolText: "1 PROTOCOL SUMMARY\nSynthetic protocol text",
+        consentText: [
+          "1 BEFORE YOUR VISIT",
+          "Do not eat for 8 hours before your visit.",
+          "8 PREPARING FOR YOUR APPOINTMENT",
+          "You may eat normally before arriving.",
+        ].join("\n"),
+      },
+      {
+        services: {
+          gateway,
+        },
+      }
+    );
+
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-consent_consistency_review")
+        .length,
+      1
+    );
+    assert.equal(
+      calls.filter((call) => call.type === "workflow-protocol_advisor-cross_doc_comparison").length,
+      1
+    );
+    assert.equal(result.context.steps.parseConsent.source, "consentText");
+    assert.equal(result.output.mergedReview.consentConsistencyReview.status, "completed");
+    assert.equal(result.output.mergedReview.crossDocComparison.status, "completed");
+    assert.match(result.output.report.markdown, /INTERNAL CONSENT FORM CONSISTENCY REVIEW/);
+    assert.match(result.output.report.markdown, /PROTOCOL VS CONSENT CROSS-DOCUMENT REVIEW/);
   });
 });

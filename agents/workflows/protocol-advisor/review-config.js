@@ -30,6 +30,16 @@ export const CATEGORY_DEFINITIONS = [
 export const PROMPT_PATHS = {
   system: resolveAssetPath("./prompts/system.txt"),
   sourceReview: resolveAssetPath("./prompts/source-review.txt"),
+  contradictionReviewSystem: resolveAssetPath("./prompts/contradiction-review.system.txt"),
+  contradictionReviewUser: resolveAssetPath("./prompts/contradiction-review.user.txt"),
+  consentContradictionReviewSystem: resolveAssetPath(
+    "./prompts/consent-contradiction-review.system.txt"
+  ),
+  consentContradictionReviewUser: resolveAssetPath(
+    "./prompts/consent-contradiction-review.user.txt"
+  ),
+  crossDocComparisonSystem: resolveAssetPath("./prompts/cross-doc-comparison.system.txt"),
+  crossDocComparisonUser: resolveAssetPath("./prompts/cross-doc-comparison.user.txt"),
   finalReport: resolveAssetPath("./prompts/final-report.txt"),
   sourceReviewSchema: resolveAssetPath("./schemas/source-review.schema.json"),
 };

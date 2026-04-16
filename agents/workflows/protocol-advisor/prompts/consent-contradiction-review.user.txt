@@ -1,0 +1,11 @@
+TASK MODE: consent_consistency_review
+
+Review this consent form at the whole-document level for contradictory or inconsistent statements across sections.
+
+Compare sections against each other. Do not compare against the protocol or template requirements.
+
+Return JSON with this shape:
+{{output_json_example}}
+
+Input:
+{{input_json}}

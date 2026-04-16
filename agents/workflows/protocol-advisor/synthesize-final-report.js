@@ -30,6 +30,10 @@ function buildFinalReportPayload(merged) {
           required_action: finding.required_action,
         })),
       })),
+    contradiction_review: merged.contradictionReview,
+    consent_consistency_review: merged.consentConsistencyReview,
+    cross_document_comparison: merged.crossDocComparison,
+    consent_context: merged.consentContext || null,
   };
 }
 
