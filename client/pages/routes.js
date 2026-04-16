@@ -26,13 +26,6 @@ const TOOLS_CHILDREN = [
     policy: "/tools/protocol-advisor",
     importPath: "./tools/protocol-advisor/index.js",
   },
-
-  {
-    path: "chat-v2",
-    title: html`<span>Chat<sup class="text-warning">v2</sup></span>`,
-    policy: "/tools/chat-v2",
-    importPath: "./tools/chat-v2/index.js",
-  },
   {
     path: "consent-crafter",
     title: "Consent Crafter",
@@ -128,6 +121,15 @@ const ROUTES = [
     component: AuthorizedImport({
       path: "./tools/chat/index.js",
       policy: "/chat",
+    }),
+  },
+  {
+    path: "/chat-v2",
+    title: html`<span>Chat<sup class="text-warning">v2</sup></span>`,
+    policy: "/chat-v2",
+    component: AuthorizedImport({
+      path: "./tools/chat-v2/index.js",
+      policy: "/chat-v2",
     }),
   },
   {

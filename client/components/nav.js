@@ -35,7 +35,6 @@ export default function Nav(props) {
 
   const visibleChildren = (route) => route.children?.filter(isRouteVisible) || [];
   const routeHref = (route) => {
-    console.log("🚀 ~ nav.js ~ routeHref ~ route:", route);
     if (route.path === "/_" && !user()) {
       return "/api/v1/login";
     }

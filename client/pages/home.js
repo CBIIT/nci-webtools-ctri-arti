@@ -10,14 +10,14 @@ export default function Page() {
   const links = [
     {
       title: "Protocol Composer",
-      description: "Compose and manage clinical trial protocols",
+      description: "A guided, step-by-step tool for writing research protocols",
       href: "/tools/protocol-composer",
       policy: "/tools/protocol-composer",
       icon: html`<img src="/assets/images/icon-composer-new.svg" height="60" alt="Protocol Composer Icon" />`,
     },
     {
       title: "Protocol Advisor",
-      description: "Ensure your protocol document follows rules and compliance standards",
+      description: "Check your protocol against regulatory requirements before submitting to IRB",
       href: "/tools/protocol-advisor",
       policy: "/tools/protocol-advisor",
       icon: html`<img src="/assets/images/icon-advisor-new.svg" height="60" alt="Protocol Advisor Icon" />`,
@@ -31,7 +31,7 @@ export default function Page() {
     },
     {
       title: "Consent Translator",
-      description: "Accurately translate your documents into multiple languages",
+      description: "Translate your documents",
       href: "/tools/translator",
       policy: "/tools/translator",
       icon: html`<img src="/assets/images/icon-translator-new.svg" height="60" alt="Consent Translator Icon" />`,
@@ -43,13 +43,6 @@ export default function Page() {
       policy: "/chat",
       icon: html`<img src="/assets/images/icon-chat-new.svg" height="60" alt="Chat Icon" />`,
     },
-    /* {
-      title: "New Tools",
-      description: "Coming soon",
-      href: "/",
-      disabled: true,
-      icon: html`<img src="/assets/images/icon-books.svg" height="60" alt="New Tools Icon" />`,
-    }, */
   ];
 
   const visibleLinks = () =>
