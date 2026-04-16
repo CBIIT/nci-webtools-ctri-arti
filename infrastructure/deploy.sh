@@ -22,6 +22,12 @@ export AWS_REGION=${AWS_REGION:?AWS_REGION must be set}
 export GITHUB_SHA=${GITHUB_SHA:-$(git rev-parse HEAD)}
 export GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 export GITHUB_REPOSITORY=$( git ls-remote --get-url | sed -e 's/..*github.com\/\(.*\)/\1/' )
+if [ "${TIER}" == "dev" ] || [ "${TIER}" == "test" ] || [ "${TIER}" == "qa" ]; then
+    export AWS_ENV="nonprod"
+else
+    export AWS_ENV="prod"
+fi
+
 
 export PREFIX=ctri-research-optimizer-$TIER
 export ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
@@ -49,6 +55,8 @@ export USERS_IMAGE_LATEST=$ECR_REGISTRY/$PREFIX:users-latest
 # Legacy names for compatibility
 export SERVER_IMAGE=$MAIN_IMAGE
 export SERVER_IMAGE_LATEST=$MAIN_IMAGE_LATEST
+
+export AUTOTESTING_CODEBUILD_PROJECT_NAME="research-optimizer-${TIER}-auto-testing"
 
 log() {
   printf '\n==> %s\n' "$1"
@@ -111,3 +119,12 @@ docker push $USERS_IMAGE_LATEST
 
 cd infrastructure
 cdk deploy $PREFIX-ecs-service --require-approval never --context GIT_BRANCH="${GIT_BRANCH}"
+
+# log "Triggering automated testing"
+# aws codebuild start-build \
+#   --project-name "${AUTOTESTING_CODEBUILD_PROJECT_NAME}" \
+#   --environment-variables-override name=TIER,value=${TIER},type=PLAINTEXT   \
+#   --environment-variables-override name=tier,value=${TIER},type=PLAINTEXT   \
+#   --environment-variables-override name=aws_env,value=${AWS_ENV},type=PLAINTEXT   \
+#   --environment-variables-override name=AWS_ENV,value=${AWS_ENV},type=PLAINTEXT   \
+#   --environment-variables-override name=GitBranch,value=${GIT_BRANCH},type=PLAINTEXT
