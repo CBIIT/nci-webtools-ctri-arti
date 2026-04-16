@@ -64,8 +64,6 @@ export function createUsersRemote({ baseUrl, fetchImpl = fetch }) {
         method: "POST",
       }),
     getConfig: () => requestUsers("/api/v1/config"),
-    isToolEnabled: (toolName) =>
-      requestUsers(`/api/v1/config/enabledFeature/${encodeURIComponent(toolName)}`),
   };
 
   return remote;

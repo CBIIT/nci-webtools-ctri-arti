@@ -29,11 +29,10 @@ Route families:
 - usage and analytics: `/v1/usage`, `/v1/users/:id/usage`, `/v1/analytics`
 - budgets: `/v1/budgets/reset`, `/v1/users/:id/budget/reset`
 - config: `/v1/config`
-- appConfig: `/v1/config/enabledFeature/{toolName}`
 
 App Config:
 
-- Store application-level configuration in `app-config.js`. Tool disablement is controlled by the database `Configuration` table key/value entry for disabled tools. To disable tools such as `Protocol Advisor` or `Protocol Composer`, update that value with a comma-separated list of tool names. Each list item is trimmed and compared case-insensitively, so values like `protocoladvisor, protocolcomposor` disable both tools.
+- Store application-level configuration in `app-config.js`. Tool disablement is controlled by the database `Configuration` table key/value entry for disabled tools. To disable tools such as `Protocol Advisor` or `Protocol Composer`, update that value with a comma-separated list of tool names. Each list item is trimmed and compared case-insensitively, so values like `protocoladvisor, protocolcomposor` disable both tools. `/v1/config` will return a list of disabled tools.
 
 Usage and analytics date filters:
 

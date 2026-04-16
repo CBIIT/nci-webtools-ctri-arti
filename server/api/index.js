@@ -15,11 +15,8 @@ import { createToolsRouter } from "./routes/tools.js";
 
 const PUBLIC_ROUTES = new Set(["/config", "/login", "/logout", "/session", "/status"]);
 
-const PUBLIC_ROUTE_PREFIXES = ["/config/enabledFeature/"];
-
 function isPublicApiPath(path) {
-  if (PUBLIC_ROUTES.has(path)) return true;
-  return PUBLIC_ROUTE_PREFIXES.some((prefix) => path.startsWith(prefix));
+  return PUBLIC_ROUTES.has(path);
 }
 
 export function createServerApi({ modules } = {}) {

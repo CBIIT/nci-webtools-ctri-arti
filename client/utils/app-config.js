@@ -4,6 +4,7 @@ export const DEFAULT_CLIENT_CONFIG = {
   budgetLabel: "",
   budgetResetDescription: "",
   usageTypes: [],
+  disabledTools: [],
 };
 
 export function getApiKeyHeaders() {

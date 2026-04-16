@@ -81,14 +81,6 @@ export function createAuthRouter({ modules } = {}) {
   );
 
   api.get(
-    "/config/enabledFeature/:toolName",
-    routeHandler(async (req, res) => {
-      const enabled = await users.isToolEnabled(req.params.toolName);
-      res.json(enabled);
-    })
-  );
-
-  api.get(
     "/config",
     routeHandler(async (req, res) => {
       const anonymousContext = createAnonymousRequestContext({ source: "server" });

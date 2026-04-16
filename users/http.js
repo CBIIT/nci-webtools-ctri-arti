@@ -160,17 +160,9 @@ export function createUsersRouter({ application } = {}) {
   );
 
   api.get(
-    "/config/enabledFeature/:toolName",
-    routeHandler(async (req, res) => {
-      const enabled = await application.isToolEnabled(req.params.toolName);
-      res.json(enabled);
-    })
-  );
-
-  api.get(
     "/config",
     routeHandler(async (_req, res) => {
-      res.json(application.getConfig());
+      res.json(await application.getConfig());
     })
   );
 
