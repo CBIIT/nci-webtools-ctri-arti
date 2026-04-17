@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   lint:
-    name: Lint Changes
+    name: Lint Frontend Changes
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
