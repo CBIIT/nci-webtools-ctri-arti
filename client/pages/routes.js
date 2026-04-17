@@ -15,26 +15,26 @@ function createProtectedRoute({ importPath, ...route }) {
 
 const TOOLS_CHILDREN = [
   {
-    path: "chat",
-    title: "Chat",
-    policy: "/tools/chat",
-    importPath: "./tools/chat/index.js",
+    path: "protocol-composer",
+    title: "Protocol Composer",
+    policy: "/tools/protocol-composer",
+    importPath: "./tools/protocol-composer/index.js",
   },
   {
-    path: "chat-v2",
-    title: html`<span>Chat<sup class="text-warning">v2</sup></span>`,
-    policy: "/tools/chat-v2",
-    importPath: "./tools/chat-v2/index.js",
+    path: "protocol-advisor",
+    title: "Protocol Advisor",
+    policy: "/tools/protocol-advisor",
+    importPath: "./tools/protocol-advisor/index.js",
   },
   {
     path: "consent-crafter",
-    title: "ConsentCrafter",
+    title: "Consent Crafter",
     policy: "/tools/consent-crafter",
     importPath: "./tools/consent-crafter/index.js",
   },
   {
     path: "translator",
-    title: "Translator",
+    title: "Consent Translator",
     policy: "/tools/translator",
     importPath: "./tools/translate/index.js",
   },
@@ -111,8 +111,26 @@ const ROUTES = [
   },
   {
     path: "/tools",
-    title: "Tools",
+    title: "Study Tools",
     children: TOOLS_CHILDREN,
+  },
+  {
+    path: "/chat",
+    title: "Chat",
+    policy: "/chat",
+    component: AuthorizedImport({
+      path: "./tools/chat/index.js",
+      policy: "/chat",
+    }),
+  },
+  {
+    path: "/chat-v2",
+    title: html`<span>Chat<sup class="text-warning">v2</sup></span>`,
+    policy: "/chat-v2",
+    component: AuthorizedImport({
+      path: "./tools/chat-v2/index.js",
+      policy: "/chat-v2",
+    }),
   },
   {
     path: "/_",

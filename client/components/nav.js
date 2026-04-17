@@ -16,7 +16,9 @@ export default function Nav(props) {
   onMount(() => document.addEventListener("click", handleClickOutside, true));
   onCleanup(() => document.removeEventListener("click", handleClickOutside, true));
 
-  const routes = () => (typeof props.routes === "function" ? props.routes() : props.routes || []);
+  const routes = () => {
+    return typeof props.routes === "function" ? props.routes() : props.routes || [];
+  };
   const hasRouteAccess = (path, action = "view") =>
     status() === Status.LOADED && canAccess(access(), path, action);
 
