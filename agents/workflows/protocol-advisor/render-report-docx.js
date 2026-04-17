@@ -3,14 +3,15 @@ import { markdownToDocxBuffer } from "./markdown-docx.js";
 export async function renderProtocolAdvisorReportDocx(ctx) {
   const merged = ctx.steps.aggregateReport;
   const finalReport = ctx.steps.synthesizeFinalReport;
-  const primaryFileName = (merged.subject_files || []).find(
-    (file) => file?.name && file.name !== "protocolText"
-  )?.name || "";
+  const primaryFileName =
+    (merged.subject_files || []).find((file) => file?.name && file.name !== "protocolText")?.name ||
+    "";
 
   const filenameBase = String(
-    primaryFileName || (merged.subject_path && merged.subject_path !== "protocolText"
-      ? merged.subject_path
-      : "protocol-advisor-report")
+    primaryFileName ||
+      (merged.subject_path && merged.subject_path !== "protocolText"
+        ? merged.subject_path
+        : "protocol-advisor-report")
   )
     .replace(/\.[^.]+$/, "")
     .replace(/[^a-z0-9._-]+/gi, "-")

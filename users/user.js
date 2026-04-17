@@ -1,4 +1,4 @@
-import db, { Model, Role, Usage, User } from "database";
+import db, { Configuration, Model, Role, Usage, User } from "database";
 import { randomBytes } from "node:crypto";
 
 import {
@@ -15,6 +15,7 @@ import {
   desc,
   isNotNull,
 } from "drizzle-orm";
+import { DISABLED_TOOLS_CONFIG_KEY, getDisabledToolNamesFromConfig } from "shared/app-config.js";
 import { describeCron, USAGE_RESET_SCHEDULE } from "shared/cron.js";
 import { getDateRange, hasOwn } from "shared/utils.js";
 
@@ -668,14 +669,20 @@ export class UserService {
   }
 
   // ===== Config =====
-
-  getConfig() {
+  async getConfig() {
     const { label: budgetLabel, resetDescription: budgetResetDescription } =
       describeCron(USAGE_RESET_SCHEDULE);
+
+    const [row] = await db
+      .select({ value: Configuration.value })
+      .from(Configuration)
+      .where(eq(Configuration.key, DISABLED_TOOLS_CONFIG_KEY))
+      .limit(1);
 
     return {
       budgetLabel,
       budgetResetDescription,
+      disabledTools: getDisabledToolNamesFromConfig(row?.value),
     };
   }
 }

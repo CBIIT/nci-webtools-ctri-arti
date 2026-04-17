@@ -162,7 +162,7 @@ export function createUsersRouter({ application } = {}) {
   api.get(
     "/config",
     routeHandler(async (_req, res) => {
-      res.json(application.getConfig());
+      res.json(await application.getConfig());
     })
   );
 

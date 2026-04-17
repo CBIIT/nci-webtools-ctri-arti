@@ -1,9 +1,4 @@
-import {
-  countBy,
-  normalizeText,
-  overallDisposition,
-  verdictRank,
-} from "./review-helpers.js";
+import { countBy, normalizeText, overallDisposition, verdictRank } from "./review-helpers.js";
 
 function buildAuditReport(merged) {
   const lines = [];
@@ -18,7 +13,9 @@ function buildAuditReport(merged) {
 
   const topFindings = merged.findings.filter((item) => !item.duplicate_of).slice(0, 12);
   for (const finding of topFindings) {
-    lines.push(`- [${finding.status}] ${finding.issue_title} (${finding.citation || finding.source_id})`);
+    lines.push(
+      `- [${finding.status}] ${finding.issue_title} (${finding.citation || finding.source_id})`
+    );
   }
 
   lines.push("");
@@ -51,7 +48,10 @@ function buildAuditReport(merged) {
     lines.push("");
   }
 
-  return `${lines.join("\n").replace(/\n{3,}/g, "\n\n").trim()}\n`;
+  return `${lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()}\n`;
 }
 
 export function aggregateProtocolAdvisorReport(ctx) {
@@ -109,10 +109,12 @@ export function aggregateProtocolAdvisorReport(ctx) {
   }
 
   sourceVerdicts.sort(
-    (a, b) => verdictRank(a.verdict) - verdictRank(b.verdict) || a.source_id.localeCompare(b.source_id)
+    (a, b) =>
+      verdictRank(a.verdict) - verdictRank(b.verdict) || a.source_id.localeCompare(b.source_id)
   );
   findings.sort(
-    (a, b) => verdictRank(a.status) - verdictRank(b.status) || a.issue_title.localeCompare(b.issue_title)
+    (a, b) =>
+      verdictRank(a.status) - verdictRank(b.status) || a.issue_title.localeCompare(b.issue_title)
   );
 
   const uniqueFindings = findings.filter((item) => !item.duplicate_of);

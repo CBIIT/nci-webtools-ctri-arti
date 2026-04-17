@@ -97,5 +97,9 @@ export function createUsersApplication({ service = new UserService() } = {}) {
     getConfig() {
       return service.getConfig();
     },
+
+    isToolEnabled(toolName) {
+      return service.isToolEnabled(toolName);
+    },
   };
 }

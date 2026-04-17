@@ -13,6 +13,8 @@
     "./search.js": "./search.js",
     "./parsers.js": "./parsers.js",
     "./s3.js": "./s3.js",
+    "./app-config.js": "./app-config.js",
+    "./constants.js": "./constants.js",
     "./chunker.js": "./chunker.js",
     "./http-limits.js": "./http-limits.js",
     "./token-estimation.js": "./token-estimation.js",

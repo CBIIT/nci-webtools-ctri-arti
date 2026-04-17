@@ -76,12 +76,7 @@ export async function parseProtocolDocument(ctx) {
   const text =
     parts.length === 1
       ? parts[0].text
-      : parts
-          .map(
-            (part, index) =>
-              `FILE ${index + 1}: ${part.name}\n\n${part.text}`
-          )
-          .join("\n\n");
+      : parts.map((part, index) => `FILE ${index + 1}: ${part.name}\n\n${part.text}`).join("\n\n");
 
   return {
     source: parts.length === 1 ? parts[0].source : "documents",

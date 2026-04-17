@@ -15,6 +15,10 @@ import { createToolsRouter } from "./routes/tools.js";
 
 const PUBLIC_ROUTES = new Set(["/config", "/login", "/logout", "/session", "/status"]);
 
+function isPublicApiPath(path) {
+  return PUBLIC_ROUTES.has(path);
+}
+
 export function createServerApi({ modules } = {}) {
   if (!modules) {
     throw new Error("server modules are required");
@@ -26,7 +30,7 @@ export function createServerApi({ modules } = {}) {
   api.use(logRequests());
   api.use((req, res, next) => {
     const isOauthRoute = req.path === "/oauth" || req.path.startsWith("/oauth/");
-    if (PUBLIC_ROUTES.has(req.path) || isOauthRoute) {
+    if (isPublicApiPath(req.path) || isOauthRoute) {
       return next();
     }
     return requireRole()(req, res, next);

@@ -27,7 +27,7 @@ test("server auth posture keeps public routes explicit", async (t) => {
     assert.equal(logoutRes.status, 302);
   });
 
-  await t.test("config exposes shared client settings without disabled app toggles", async () => {
+  await t.test("config exposes shared client settings including disabledTools", async () => {
     const res = await request(app).get("/api/v1/config");
 
     assert.equal(res.status, 200);
@@ -35,7 +35,7 @@ test("server auth posture keeps public routes explicit", async (t) => {
     assert.ok(res.body.usageTypes.includes("embedding"));
     assert.ok(res.body.usageTypes.includes("guardrail"));
     assert.ok(res.body.usageTypes.includes("chat-summary"));
-    assert.equal("disabled" in res.body, false);
+    assert.ok(Array.isArray(res.body.disabledTools), "config should return disabledTools");
     assert.equal("budgetResetSchedule" in res.body, false);
   });
 
