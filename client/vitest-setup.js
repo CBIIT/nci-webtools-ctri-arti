@@ -39,7 +39,7 @@ class DataTransfer {
 globalThis.DataTransfer = DataTransfer;
 
 /**
- * Stubs HTMLCanvasElement.getContext to suppress jsdom's
+ * Stubs HTMLCanvasElement.getContext to suppress jsdom warning
  */
 HTMLCanvasElement.prototype.getContext = () => null;
 
