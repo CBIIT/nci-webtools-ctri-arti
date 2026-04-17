@@ -120,7 +120,7 @@ function ChatApp() {
     conversations,
     updateConversation,
     deleteConversation,
-    generateTitle,
+    _generateTitle,
   } = useAgent(urlParams);
 
   // Fetch available agents for the dropdown
@@ -387,7 +387,6 @@ function ChatApp() {
     if (form.inputFiles) form.inputFiles.value = "";
     attachmentsReset?.({ emit: false });
 
-    const isFirstMessage = agent.messages?.length === 0;
     setIsStreaming(true);
 
     try {

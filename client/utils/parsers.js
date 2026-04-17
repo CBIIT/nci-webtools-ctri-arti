@@ -334,7 +334,7 @@ export function parseJSON(input) {
         } else if (jsonString[index] !== "]") {
           break;
         }
-      } catch (e) {
+      } catch {
         return arr;
       }
     }
@@ -361,7 +361,7 @@ export function parseJSON(input) {
         } else if (jsonString[index] !== "}") {
           break;
         }
-      } catch (e) {
+      } catch {
         return obj;
       }
     }
@@ -388,7 +388,7 @@ export function parseJSON(input) {
     const partialStr = jsonString.substring(startIndex);
     try {
       return JSON.parse(partialStr + '"');
-    } catch (e) {
+    } catch {
       const lastBackslash = partialStr.lastIndexOf("\\");
       if (lastBackslash > 0) {
         return JSON.parse(partialStr.substring(0, lastBackslash) + '"');
