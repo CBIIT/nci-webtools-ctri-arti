@@ -13,3 +13,6 @@ cdk.out
 /scripts
 /docs
 /data
+
+# testing
+client/coverage

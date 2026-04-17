@@ -1,7 +1,14 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { includeIgnoreFile } from "@eslint/compat";
 import js from "@eslint/js";
 import { defineConfig, globalIgnores } from "eslint/config";
 import importPlugin from "eslint-plugin-import-x";
 import globals from "globals";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const workspacePackages = ["shared", "database", "gateway", "cms", "agents", "users"];
 
@@ -35,6 +42,7 @@ const cdnModules = [
 ];
 
 export default defineConfig([
+  includeIgnoreFile(path.resolve(__dirname, ".gitignore")),
   globalIgnores([
     "**/node_modules/**",
     "**/dist/**",
@@ -47,6 +55,7 @@ export default defineConfig([
   ]),
 
   // Base config for all JS files
+  // eslint-disable-next-line import-x/no-named-as-default-member
   importPlugin.flatConfigs.recommended,
   {
     files: ["**/*.{js,mjs,cjs}"],
@@ -117,6 +126,9 @@ export default defineConfig([
   // Test override: relax unused vars for common test parameters
   {
     files: ["**/test/**/*.js", "**/*.test.js"],
+    languageOptions: {
+      globals: { ...globals.vitest },
+    },
     rules: {
       "no-unused-vars": [
         "warn",

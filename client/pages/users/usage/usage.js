@@ -21,8 +21,6 @@ import { formatDate, calculateDateRange, getDefaultStartDate } from "../date-uti
 import { usageTableHeader } from "./usage-table-header.js";
 import { usageTable } from "./usage-table.js";
 
-const fetchConfig = () => fetch("/api/config").then((r) => r.json());
-
 function UsersList() {
   const [selectedDateRange, setSelectedDateRange] = createSignal(VALID_DATE_RANGES[0]);
   const [customDates, setCustomDates] = createSignal({

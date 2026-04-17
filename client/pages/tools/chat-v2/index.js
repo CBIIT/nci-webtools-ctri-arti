@@ -113,15 +113,8 @@ function ChatApp() {
   const searchParams = new URLSearchParams(window.location.search);
   const urlParams = Object.fromEntries(searchParams.entries());
 
-  const {
-    agent,
-    params,
-    sendMessage,
-    conversations,
-    updateConversation,
-    deleteConversation,
-    generateTitle,
-  } = useAgent(urlParams);
+  const { agent, params, sendMessage, conversations, updateConversation, deleteConversation } =
+    useAgent(urlParams);
 
   // Fetch available agents for the dropdown
   const fetchAgents = async () => {
@@ -387,7 +380,6 @@ function ChatApp() {
     if (form.inputFiles) form.inputFiles.value = "";
     attachmentsReset?.({ emit: false });
 
-    const isFirstMessage = agent.messages?.length === 0;
     setIsStreaming(true);
 
     try {
