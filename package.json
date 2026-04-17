@@ -19,6 +19,7 @@
     "start:users": "npm start -w users",
     "test": "npm test -w server",
     "lint": "eslint . --cache --cache-location ./node_modules/.cache/eslint/",
+    "lint:ci": "eslint . --cache --cache-location ./node_modules/.cache/eslint/ --max-warnings 0",
     "lint:fix": "eslint . --fix --cache --cache-location ./node_modules/.cache/eslint/",
     "db": "npx @electric-sql/pglite-socket --db=./data --port=5433 --host 0.0.0.0",
     "db:sql": "psql \"postgresql://postgres:postgres@127.0.0.1:5433/postgres?sslmode=disable&gssencmode=disable\"",
@@ -44,6 +45,7 @@
     }
   },
   "devDependencies": {
+    "@eslint/compat": "^2.0.5",
     "@eslint/js": "^10.0.1",
     "drizzle-kit": "^0.31.10",
     "eslint": "^10.2.0",
